@@ -16,7 +16,7 @@ import {
     createGenerationExecutionCache,
     type GenerationCacheAdapter,
 } from "./generation-cache.ts";
-import type { ModelVariables } from "./model.ts";
+import { getRequiredSafetyFeatures, type ModelVariables } from "./model.ts";
 
 /**
  * Text cache middleware
@@ -46,7 +46,12 @@ const textCacheAdapter: GenerationCacheAdapter = {
         const partition = cacheScope
             ? `${cacheScope}:key:${variables.auth?.apiKey?.id ?? "anonymous"}`
             : undefined;
-        return generateCacheKey(c.req.raw, bodyText, partition);
+        return generateCacheKey(
+            c.req.raw,
+            bodyText,
+            partition,
+            getRequiredSafetyFeatures(variables.model),
+        );
     },
     get: getCachedResponse,
     shouldCache(response) {
@@ -54,8 +59,7 @@ const textCacheAdapter: GenerationCacheAdapter = {
     },
     capture(c, cacheKey, response) {
         const capture = createCaptureStream(c, cacheKey, response);
-        const transformedBody = response.body?.pipeThrough(capture.stream);
-        const captured = new Response(transformedBody, {
+        const captured = new Response(capture.stream, {
             status: response.status,
             statusText: response.statusText,
             headers: response.headers,

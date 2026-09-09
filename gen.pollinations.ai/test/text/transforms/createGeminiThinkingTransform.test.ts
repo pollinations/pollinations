@@ -41,7 +41,9 @@ describe("createGeminiThinkingTransform", () => {
 
 describe("Gemini reasoning_effort model wiring", () => {
     it("wires Gemini 2.5 thinking on gemini-fast", async () => {
-        const transform = findModelByName("gemini-fast")?.transform;
+        const transform = findModelByName(
+            "google/gemini-2.5-flash-lite",
+        )?.transform;
         if (!transform) throw new Error("gemini-fast transform missing");
 
         const { options } = await transform([{ role: "user", content: "hi" }], {
@@ -55,8 +57,10 @@ describe("Gemini reasoning_effort model wiring", () => {
         expect(options.reasoning_effort).toBeUndefined();
     });
 
-    it("maps reasoning_effort=none to low for mandatory-reasoning gemini", async () => {
-        const model = "gemini";
+    it.each([
+        "gemini",
+        "google/gemini-3.8-flash",
+    ])("maps reasoning_effort=none to low for mandatory-reasoning %s", async (model) => {
         const transform = findModelByName(model)?.transform;
         if (!transform) throw new Error(`${model} transform missing`);
 

@@ -23,7 +23,9 @@ export async function generateHeaders(
     // x-portkey-* config translated from the same modelConfig.
     const additionalHeaders =
         typeof options.modelConfig.directEndpoint === "string"
-            ? { Authorization: `Bearer ${options.modelConfig.authKey}` }
+            ? options.modelConfig.directAuthHeader === "api-key"
+                ? { "api-key": String(options.modelConfig.authKey) }
+                : { Authorization: `Bearer ${options.modelConfig.authKey}` }
             : await generatePortkeyHeaders(options.modelConfig, options);
 
     log("Generated header keys:", Object.keys(additionalHeaders));

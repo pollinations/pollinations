@@ -1,9 +1,9 @@
 import { StatCard, Surface } from "@pollinations/ui";
 import type { ReactNode } from "react";
 
-// A stat's headline color. Mirrors the intent tones the tables already use, so
-// a negative P&L or an underwater margin glows the same red as its cell below.
-export type StatTone = "base" | "pos" | "neg" | "warn";
+// A stat's headline color. Outcome colors are package-owned: blue is positive,
+// red is negative. Status warnings keep their explicit warning treatment.
+export type StatTone = "base" | "pos" | "neg" | "warn" | "success";
 
 export type StatItem = {
     label: ReactNode;
@@ -14,9 +14,10 @@ export type StatItem = {
 
 const TONE_CLASS: Record<StatTone, string> = {
     base: "",
-    pos: "text-intent-success-text",
-    neg: "text-intent-danger-text",
+    pos: "text-outcome-positive-text",
+    neg: "text-outcome-negative-text",
     warn: "text-intent-warning-text",
+    success: "text-intent-success-text",
 };
 
 // The Insights header row: the same Surface + StatCard pattern the account

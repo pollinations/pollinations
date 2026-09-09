@@ -12,10 +12,7 @@
             "content": "vcr chat stream"
           }
         ],
-        "presence_penalty": 0,
-        "frequency_penalty": 0,
         "stream": true,
-        "logprobs": false,
         "stream_options": {
           "include_usage": true
         },

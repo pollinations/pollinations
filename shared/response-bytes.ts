@@ -48,3 +48,13 @@ export async function readResponseBytes(
     }
     return bytes;
 }
+
+/** Read a bounded response as UTF-8 text without buffering an untrusted body. */
+export async function readResponseText(
+    response: Response,
+    maxBytes: number,
+    tooLarge: (total: number) => Error,
+): Promise<string> {
+    const bytes = await readResponseBytes(response, maxBytes, tooLarge);
+    return new TextDecoder().decode(bytes);
+}

@@ -1,6 +1,6 @@
 # Sana compatibility route
 
-Last updated: 2026-08-19
+Last updated: 2026-09-02
 
 ## Current deployment
 
@@ -11,7 +11,7 @@ for compatibility.
 
 | Worker | Vast instance | Machine / region | GPU | All-in rate | Registered hostname |
 |--------|---------------|------------------|-----|-------------|---------------------|
-| dreamshaper-vast-01 | 48108043 | 94288 / New Zealand | RTX 4070 | $0.103000/hr | `dreamshaper-canary-46600159.myceli.ai` |
+| dreamshaper-vast-01 | 49063196 | 143507 / Mexico, MX | RTX 3060 | $0.075556/hr | `dreamshaper-canary-49063196.myceli.ai` |
 | dreamshaper-vast-02 | 47789794 | 100803 / Romania, RO | RTX 4070 | $0.093889/hr | `dreamshaper-canary-47789794.myceli.ai` |
 
 The route is:

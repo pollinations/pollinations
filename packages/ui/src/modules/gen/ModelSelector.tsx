@@ -21,6 +21,7 @@ const CATEGORY_LABELS: Record<ModelSelectorCategory, string> = {
     video: "Video",
     text: "Text",
     audio: "Audio",
+    "3d": "3D",
     embedding: "Embeddings",
     realtime: "Realtime",
 };

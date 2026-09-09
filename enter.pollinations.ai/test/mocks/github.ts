@@ -33,6 +33,7 @@ export type MockGithubState = {
         closedByPullRequestsReferences?: Array<{
             number: number;
             mergedAt: string | null;
+            author: { databaseId?: number | null } | null;
         }>;
     }>;
     mergedPullRequests: Array<{

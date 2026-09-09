@@ -57,8 +57,12 @@ export function fmtUtcDateTime(value: string | null | undefined): string {
     return `${date} ${time}`;
 }
 
-export function utcDateTimeTitle(value: string | null | undefined): string {
-    return value ?? "";
+// Compact date inside a selected-year view; full UTC boundaries stay on hover.
+export function fmtMonthDay(value: string): string {
+    const match = value.match(/^\d{4}-(\d{2})-(\d{2})/);
+    if (!match) return value || "–";
+    const name = MONTH_NAMES[Number(match[1]) - 1];
+    return name ? `${name.slice(0, 3)} ${Number(match[2])}` : value;
 }
 
 export function fmtSmartNumber(
@@ -145,11 +149,6 @@ export function fmtMarginPct(value: number | null): string {
 export function fmtUnsignedPct(value: number | null | undefined): string {
     if (value == null || !Number.isFinite(value)) return "–";
     return `${fmtSmartNumber(value)}%`;
-}
-
-export function fmtMultiplier(value: number | null): string {
-    if (value == null || !Number.isFinite(value)) return "–";
-    return `${fmtSmartNumber(value)}×`;
 }
 
 // 4-decimal dollar format for tiny unit costs (e.g. eff $/req).

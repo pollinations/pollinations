@@ -9,6 +9,7 @@ import {
     openRouterGeminiBilling,
     withVertexCacheStorage,
 } from "./gemini-billing";
+import { mergeFallbacks } from "./merge-fallbacks";
 import {
     PERPLEXITY_PRO_BILLING,
     PERPLEXITY_REASONING_BILLING,
@@ -16,6 +17,7 @@ import {
 } from "./perplexity-billing";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
+import { TEXT_FALLBACKS } from "./text-fallbacks";
 
 // Voices available for openai-audio model - exported for schema validation
 export const AUDIO_VOICES = [
@@ -34,14 +36,14 @@ export const AUDIO_VOICES = [
     "dan",
 ] as const;
 
-export const DEFAULT_TEXT_MODEL = "openai" as const;
+export const DEFAULT_TEXT_MODEL = "openai/gpt-5.4-nano" as const;
 export type TextModelName = keyof typeof TEXT_SERVICES;
 
-export const TEXT_SERVICES = {
-    "openai": {
-        aliases: ["gpt-5.4-nano"],
+const TEXT_BASE_SERVICES = {
+    "openai/gpt-5.4-nano": {
+        aliases: ["gpt-5.4-nano", "openai"],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 0.75,
@@ -60,10 +62,10 @@ export const TEXT_SERVICES = {
         contextLength: 400000,
         isSpecialized: false,
     },
-    "openai-fast": {
-        aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07"],
+    "openai/gpt-5-nano": {
+        aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07", "openai-fast"],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 0.75,
@@ -82,10 +84,10 @@ export const TEXT_SERVICES = {
         contextLength: 400000,
         isSpecialized: false,
     },
-    "gpt-oss": {
-        aliases: ["gpt-oss-20b", "ovh-reasoning"],
+    "openai/gpt-oss-20b": {
+        aliases: ["gpt-oss-20b", "ovh-reasoning", "gpt-oss"],
         provider: "ovhcloud",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
         priceMultiplier: 1,
@@ -103,13 +105,18 @@ export const TEXT_SERVICES = {
         contextLength: 131072,
         isSpecialized: false,
     },
-    "gpt-5.4": {
-        aliases: ["gpt-5.4-reasoning", "gpt-5.2", "gpt-5.2-reasoning"],
+    "openai/gpt-5.4": {
+        aliases: [
+            "gpt-5.4-reasoning",
+            "gpt-5.2",
+            "gpt-5.2-reasoning",
+            "gpt-5.4",
+        ],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(2.5),
             promptCachedTokens: perMillion(0.25),
@@ -148,10 +155,10 @@ export const TEXT_SERVICES = {
         contextLength: 1050000,
         isSpecialized: false,
     },
-    "gpt-5.4-mini": {
-        aliases: ["gpt-5-mini", "openai-mini"],
+    "openai/gpt-5.4-mini": {
+        aliases: ["gpt-5-mini", "openai-mini", "gpt-5.4-mini"],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-05-15").getTime(),
         priceMultiplier: 0.75,
@@ -170,13 +177,18 @@ export const TEXT_SERVICES = {
         contextLength: 400000,
         isSpecialized: false,
     },
-    "openai-large": {
-        aliases: ["gpt-5.5", "gpt-5.5-reasoning", "openai-reasoning"],
+    "openai/gpt-5.5": {
+        aliases: [
+            "gpt-5.5",
+            "gpt-5.5-reasoning",
+            "openai-reasoning",
+            "openai-large",
+        ],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-05-02").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(5.0),
             promptCachedTokens: perMillion(0.5),
@@ -213,13 +225,16 @@ export const TEXT_SERVICES = {
         contextLength: 1050000,
         isSpecialized: false,
     },
-    "gpt-5.6-sol": {
-        aliases: ["chatgpt-sol", "chatgpt-5.6-sol"],
+    "openai/gpt-5.6-sol": {
+        aliases: ["chatgpt-sol", "chatgpt-5.6-sol", "gpt-5.6-sol"],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
-        priceMultiplier: 0.5,
+        // OpenRouter's standard OpenAI endpoint discounts Azure output more
+        // deeply than input/cache. One third matches its output rate and keeps
+        // the other dimensions below that endpoint under a uniform multiplier.
+        priceMultiplier: 1 / 3,
         cost: {
             promptTextTokens: perMillion(5.0),
             promptCachedTokens: perMillion(0.5),
@@ -255,13 +270,13 @@ export const TEXT_SERVICES = {
         contextLength: 1050000,
         isSpecialized: false,
     },
-    "gpt-5.6-terra": {
-        aliases: ["chatgpt-terra", "chatgpt-5.6-terra"],
+    "openai/gpt-5.6-terra": {
+        aliases: ["chatgpt-terra", "chatgpt-5.6-terra", "gpt-5.6-terra"],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
-        priceMultiplier: 0.625,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(2.0),
             promptCachedTokens: perMillion(0.2),
@@ -297,13 +312,13 @@ export const TEXT_SERVICES = {
         contextLength: 1050000,
         isSpecialized: false,
     },
-    "gpt-5.6-luna": {
-        aliases: ["chatgpt-luna", "chatgpt-5.6-luna"],
+    "openai/gpt-5.6-luna": {
+        aliases: ["chatgpt-luna", "chatgpt-5.6-luna", "gpt-5.6-luna"],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.2),
             promptCachedTokens: perMillion(0.02),
@@ -339,10 +354,53 @@ export const TEXT_SERVICES = {
         contextLength: 1050000,
         isSpecialized: false,
     },
-    "mercury": {
-        aliases: ["mercury-2", "inception", "inception-mercury"],
+    "openai/gpt-6-astra": {
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-09-04").getTime(),
+        priceMultiplier: 0.75,
+        cost: {
+            promptTextTokens: perMillion(10.0),
+            promptCachedTokens: perMillion(1.0),
+            promptCacheWriteTokens: perMillion(12.5),
+            completionTextTokens: perMillion(50.0),
+        },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(20.0),
+                    promptCachedTokens: perMillion(2.0),
+                    promptCacheWriteTokens: perMillion(25.0),
+                    completionTextTokens: perMillion(75.0),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+            "≤272K context",
+        ),
+        title: "GPT-6 Astra",
+        description:
+            "Frontier reasoning for complex agentic, coding, and multimodal work",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1050000,
+        isSpecialized: false,
+    },
+    "inception/mercury-2": {
+        aliases: ["mercury-2", "inception", "inception-mercury", "mercury"],
         provider: "openrouter",
-        brand: "Inception",
+        publisher: "Inception",
         category: "text",
         addedDate: new Date("2026-06-23").getTime(),
         paidOnly: true,
@@ -361,14 +419,39 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "command-a-plus": {
+    "inception/mercury-2.5-preview": {
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Inception",
+        category: "text",
+        addedDate: new Date("2026-09-01").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter's exact Inception route rates (2026-09-01).
+        cost: {
+            promptTextTokens: perMillion(0.04),
+            promptCachedTokens: perMillion(0.004),
+            completionTextTokens: perMillion(0.15),
+        },
+        title: "Mercury 2.5 Preview",
+        description:
+            "Ultra-fast diffusion reasoning for coding, tool use, and structured outputs",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 260000,
+        isSpecialized: false,
+    },
+    "cohere/command-a-plus": {
         aliases: [
             "cohere-command-a-plus",
             "command-a-plus-05-2026",
             "cohere-command-a-plus-05-2026",
+            "command-a-plus",
         ],
         provider: "azure",
-        brand: "Cohere",
+        publisher: "Cohere",
         category: "text",
         addedDate: new Date("2026-07-30").getTime(),
         priceMultiplier: 0.75,
@@ -386,10 +469,10 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "qwen-coder": {
-        aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct"],
+    "qwen/qwen3-coder-30b-a3b-instruct": {
+        aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct", "qwen-coder"],
         provider: "ovhcloud",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
@@ -407,14 +490,15 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "mistral-small-3.2": {
+    "mistralai/mistral-small-3.2": {
         aliases: [
             "mistral-small-3.1",
             "mistral-small-2503",
             "mistral-small-3.2-24b-instruct-2506",
+            "mistral-small-3.2",
         ],
         provider: "openrouter",
-        brand: "Mistral",
+        publisher: "Mistral",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         paidOnly: true,
@@ -428,28 +512,30 @@ export const TEXT_SERVICES = {
             "Follows instructions reliably and calls functions well, at low cost",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // OpenRouter/Mistral image count varies by provider/model; Pollinations cap.
         tools: true,
         contextLength: 128000,
         isSpecialized: false,
     },
-    "mistral": {
+    "mistralai/mistral-small-4": {
         aliases: [
             "mistral-4",
             "mistral-small",
             "mistral-small-4",
             "mistral-small-2603",
+            "mistral",
         ],
         provider: "openrouter",
-        brand: "Mistral",
+        publisher: "Mistral",
         category: "text",
         addedDate: new Date("2026-05-15").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             // OpenRouter Mistral endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.15),
             promptCachedTokens: perMillion(0.015),
+            promptImageTokens: perMillion(0.15),
             completionTextTokens: perMillion(0.6),
         },
         title: "Mistral Small 4",
@@ -463,18 +549,19 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "openai-audio": {
+    "openai/gpt-audio-mini": {
         aliases: [
             "gpt-audio-mini",
             "gpt-audio-mini-2025-12-15",
             "gpt-4o-mini-audio-preview",
             "gpt-4o-mini-audio-preview-2024-12-17",
+            "openai-audio",
         ],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(0.6),
             completionTextTokens: perMillion(2.4),
@@ -491,18 +578,25 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "openai-audio-large": {
-        aliases: ["gpt-audio", "gpt-audio-1.5", "gpt-audio-2025-12-15"],
+    "openai/gpt-audio-1.5": {
+        aliases: [
+            "gpt-audio",
+            "gpt-audio-1.5",
+            "gpt-audio-2025-12-15",
+            "openai-audio-large",
+        ],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-04-02").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
+            // Azure GPT Audio 1.5 Global meters, verified against account
+            // usage and Retail Prices on 2026-08-24.
             promptTextTokens: perMillion(2.5),
             completionTextTokens: perMillion(10.0),
-            promptAudioTokens: perMillion(40.0),
-            completionAudioTokens: perMillion(80.0),
+            promptAudioTokens: perMillion(32.0),
+            completionAudioTokens: perMillion(64.0),
         },
         title: "GPT Audio 1.5",
         description:
@@ -514,10 +608,10 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "gemini-3-flash": {
-        aliases: ["gemini-3-flash-preview"],
+    "google/gemini-3-flash-preview": {
+        aliases: ["gemini-3-flash-preview", "gemini-3-flash"],
         provider: "openrouter",
-        brand: "Google",
+        publisher: "Google",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
@@ -547,28 +641,30 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini": {
-        aliases: ["gemini-3.6-flash", "gemini-3.5-flash"],
+    "google/gemini-3.7-flash": {
+        aliases: ["gemini-3.6-flash", "gemini-3.5-flash", "gemini"],
         provider: "openrouter",
-        brand: "Google",
+        publisher: "Google",
         category: "text",
         addedDate: new Date("2026-05-19").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // OpenRouter promotional rates through 2026-08-27 for the pinned
-        // google-vertex/global route.
+        // Standard OpenRouter rates for the pinned google-vertex/global route
+        // after the 50%-off launch promo ended 2026-08-27. These mirror
+        // Google's promotional pricing through 2026-12-31; list rates double
+        // on 2027-01-01 and need another update then.
         cost: {
-            promptTextTokens: perMillion(0.375),
-            promptCachedTokens: perMillion(0.0375),
-            promptCacheWriteTokens: perMillion(0.375),
-            promptAudioTokens: perMillion(0.375),
-            promptImageTokens: perMillion(0.375),
-            promptVideoTokens: perMillion(0.375),
-            completionTextTokens: perMillion(1.875),
+            promptTextTokens: perMillion(0.75),
+            promptCachedTokens: perMillion(0.075),
+            promptCacheWriteTokens: perMillion(0.75),
+            promptAudioTokens: perMillion(0.75),
+            promptImageTokens: perMillion(0.75),
+            promptVideoTokens: perMillion(0.75),
+            completionTextTokens: perMillion(3.75),
         },
         billing: openRouterGeminiBilling({
             searchCostPerThousandRequests: 14,
-            storageCostPerMillionTokenHours: 0.25,
+            storageCostPerMillionTokenHours: 0.5,
         }),
         title: "Gemini 3.7 Flash",
         description:
@@ -582,16 +678,52 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini-flash-lite-3.5": {
+    "google/gemini-3.8-flash": {
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Google",
+        category: "text",
+        addedDate: new Date("2026-09-02").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Standard OpenRouter rates for the pinned google-vertex/global route.
+        // Google's introductory pricing ends 2026-12-31.
+        cost: {
+            promptTextTokens: perMillion(0.75),
+            promptCachedTokens: perMillion(0.075),
+            promptCacheWriteTokens: perMillion(0.75),
+            promptAudioTokens: perMillion(0.75),
+            promptImageTokens: perMillion(0.75),
+            promptVideoTokens: perMillion(0.75),
+            completionTextTokens: perMillion(3.75),
+        },
+        billing: openRouterGeminiBilling({
+            searchCostPerThousandRequests: 14,
+            storageCostPerMillionTokenHours: 0.5,
+        }),
+        title: "Gemini 3.8 Flash",
+        description:
+            "Fast multimodal reasoning for long-horizon coding, autonomous agents and complex workflows",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 3600, // Gemini API image-understanding file limit.
+        maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
+        tools: true,
+        search: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "google/gemini-3.5-flash-lite": {
         aliases: [
             "gemini-flash-lite-3.1",
             "gemini-3.1-flash-lite",
             "gemini-3.1-flash-lite-preview",
             "gemini-flash-lite",
             "gemini-3.5-flash-lite",
+            "gemini-flash-lite-3.5",
         ],
         provider: "openrouter",
-        brand: "Google",
+        publisher: "Google",
         category: "text",
         addedDate: new Date("2026-04-03").getTime(),
         priceMultiplier: 1,
@@ -621,10 +753,10 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini-fast": {
-        aliases: ["gemini-2.5-flash-lite"],
+    "google/gemini-2.5-flash-lite": {
+        aliases: ["gemini-2.5-flash-lite", "gemini-fast"],
         provider: "openrouter",
-        brand: "Google",
+        publisher: "Google",
         category: "text",
         addedDate: new Date("2025-12-18").getTime(),
         priceMultiplier: 1,
@@ -654,19 +786,21 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "deepseek": {
+    "deepseek/deepseek-v4-flash": {
         aliases: [
             "deepseek-v4",
             "deepseek-v4-flash",
             "deepseek-v4-lite",
             "deepseek-lite",
             "deepseek-flash",
+            "deepseek",
         ],
         provider: "fireworks",
-        brand: "DeepSeek",
+        publisher: "DeepSeek",
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             promptTextTokens: perMillion(0.22),
             promptCachedTokens: perMillion(0.007),
@@ -681,22 +815,50 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemma": {
+    "deepseek/deepseek-v4-flash-vision-exp": {
+        aliases: [],
+        provider: "fireworks",
+        publisher: "DeepSeek",
+        category: "text",
+        addedDate: new Date("2026-09-02").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        // Fireworks standard serverless rates (2026-09-01).
+        cost: {
+            promptTextTokens: perMillion(0.22),
+            promptCachedTokens: perMillion(0.007),
+            promptImageTokens: perMillion(0.22),
+            completionTextTokens: perMillion(0.66),
+        },
+        title: "DeepSeek V4 Flash Vision Exp",
+        description:
+            "Low-cost multimodal reasoning for coding, agents and visual analysis",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 30,
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "google/gemma-4-26b-a4b-it": {
         aliases: [
             "gemma-4",
             "gemma-4-26b",
             "gemma-4-26b-a4b",
             "gemma-4-26b-a4b-it",
+            "gemma",
         ],
         provider: "openrouter",
         addedDate: new Date("2026-05-08").getTime(),
-        brand: "Google",
+        publisher: "Google",
         category: "text",
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
             // OpenRouter Novita BF16 preserves remote image URLs; verified 2026-08-22.
             promptTextTokens: perMillion(0.13),
+            promptImageTokens: perMillion(0.13),
             completionTextTokens: perMillion(0.4),
         },
         title: "Gemma 4 26B A4B",
@@ -704,23 +866,23 @@ export const TEXT_SERVICES = {
             "Efficient open-source chat with image understanding; modest on hard problems",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
         tools: true,
         reasoning: true,
         contextLength: 262144,
         isSpecialized: false,
     },
-    "gemma-4-31b": {
-        aliases: ["gemma-large", "gemma-4-31b-it"],
+    "google/gemma-4-31b-it": {
+        aliases: ["gemma-large", "gemma-4-31b-it", "gemma-4-31b"],
         provider: "openrouter",
         addedDate: new Date("2026-07-18").getTime(),
-        brand: "Google",
+        publisher: "Google",
         category: "text",
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
             // OpenRouter Novita BF16 endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.14),
+            promptImageTokens: perMillion(0.14),
             completionTextTokens: perMillion(0.4),
         },
         title: "Gemma 4 31B",
@@ -733,10 +895,10 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "deepseek-pro": {
-        aliases: ["deepseek-v4-pro"],
+    "deepseek/deepseek-v4-pro": {
+        aliases: ["deepseek-v4-pro", "deepseek-pro"],
         provider: "fireworks",
-        brand: "DeepSeek",
+        publisher: "DeepSeek",
         category: "text",
         addedDate: new Date("2026-04-24").getTime(),
         priceMultiplier: 1,
@@ -754,7 +916,7 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "grok": {
+    "x-ai/grok-4.20": {
         aliases: [
             "grok-fast",
             "grok-4-1-fast",
@@ -767,12 +929,13 @@ export const TEXT_SERVICES = {
             "grok-4-20-reasoning",
             "grok-4-20",
             "grok-4-1-fast-reasoning",
+            "grok",
         ],
         provider: "azure",
-        brand: "xAI",
+        publisher: "xAI",
         category: "text",
         addedDate: new Date("2025-11-10").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(2.0),
             promptCachedTokens: perMillion(0.2),
@@ -783,21 +946,18 @@ export const TEXT_SERVICES = {
         description: "Multimodal chat and tool calling with optional reasoning",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 100, // xAI publishes no hard image-count limit; Pollinations cap.
         tools: true,
         reasoning: true,
         contextLength: 262144,
         isSpecialized: false,
     },
-    "grok-large": {
-        aliases: ["grok-4.3", "grok-4-3", "grok-reasoning"],
+    "x-ai/grok-4.3": {
+        aliases: ["grok-4.3", "grok-4-3", "grok-reasoning", "grok-large"],
         provider: "azure",
-        brand: "xAI",
+        publisher: "xAI",
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
-        priceMultiplier: 1,
-        // xAI applies a higher price tier above 200K tokens; currently absorbed
-        // by Pollinations — see _local/model-changes-2026-06-02.md.
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(1.25),
             promptCachedTokens: perMillion(0.2),
@@ -809,45 +969,29 @@ export const TEXT_SERVICES = {
             "Strong multimodal reasoning with a huge context window at a friendly price",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 100, // xAI publishes no hard image-count limit; Pollinations cap.
         tools: true,
         reasoning: true,
-        contextLength: 1048576, // xAI Grok 4.3 context window.
+        // The selected Azure deployment caps prompts at 200K; xAI direct's 1M
+        // window and 200K+ price tier do not apply to this route.
+        contextLength: 200000,
         isSpecialized: false,
     },
-    "grok-4.6": {
-        aliases: ["grok-4.5", "grok-4-5"],
-        provider: "openrouter",
-        brand: "xAI",
+    "x-ai/grok-4.6": {
+        aliases: ["grok-4.5", "grok-4-5", "grok-4.6"],
+        provider: "azure",
+        publisher: "xAI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: true,
-        priceMultiplier: 1,
-        // OpenRouter's min_prompt_tokens override applies from 200K total
-        // prompt tokens.
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        // Microsoft Foundry Global Standard rates, published August 26, 2026.
+        // The direct route reports image tokens separately from text tokens.
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.5),
+            promptImageTokens: perMillion(2),
             completionTextTokens: perMillion(6),
         },
-        ...defineCostVariants(
-            {
-                long_context: {
-                    promptTextTokens: perMillion(4),
-                    promptCachedTokens: perMillion(1),
-                    completionTextTokens: perMillion(12),
-                },
-            },
-            longContextAtLeast(200_000),
-            {
-                long_context: {
-                    label: "Long context (200K+)",
-                    description:
-                        "At least 200,000 prompt tokens; the higher rates apply to the whole request.",
-                },
-            },
-            "<200K context",
-        ),
         title: "Grok 4.6",
         description: "Frontier reasoning for coding and knowledge work",
         inputModalities: ["text", "image"],
@@ -855,10 +999,11 @@ export const TEXT_SERVICES = {
         maxReferenceImages: 10,
         tools: true,
         reasoning: true,
-        contextLength: 500000,
+        // Azure's Global Standard deployment is capped at 200K context.
+        contextLength: 200000,
         isSpecialized: false,
     },
-    "gemini-search": {
+    "google/gemini-2.5-flash-lite:search": {
         aliases: [
             "gemini-2.5-flash-search",
             "gemini-2.5-flash-lite-search",
@@ -868,9 +1013,10 @@ export const TEXT_SERVICES = {
             "gemini-search-large",
             "gemini-3.6-flash-search",
             "gemini-3.5-flash-search",
+            "gemini-search",
         ],
         provider: "google",
-        brand: "Google",
+        publisher: "Google",
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
         paidOnly: true,
@@ -898,10 +1044,10 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "midijourney": {
-        aliases: [],
+    "pollinations/midijourney": {
+        aliases: ["midijourney"],
         provider: "azure",
-        brand: "Pollinations",
+        publisher: "Pollinations",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 0.75,
@@ -917,13 +1063,13 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: true,
     },
-    "midijourney-large": {
-        aliases: [],
+    "pollinations/midijourney-large": {
+        aliases: ["midijourney-large"],
         provider: "azure",
-        brand: "Pollinations",
+        publisher: "Pollinations",
         category: "text",
         addedDate: new Date("2026-03-23").getTime(),
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             promptTextTokens: perMillion(5.0),
             promptCachedTokens: perMillion(0.5),
@@ -956,10 +1102,10 @@ export const TEXT_SERVICES = {
         tools: true,
         isSpecialized: true,
     },
-    "claude-fast": {
-        aliases: ["claude-haiku-4.5", "claude-haiku"],
-        provider: "bedrock",
-        brand: "Anthropic",
+    "anthropic/claude-haiku-4.5": {
+        aliases: ["claude-haiku-4.5", "claude-haiku", "claude-fast"],
+        provider: "aws",
+        publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2025-12-01").getTime(),
         paidOnly: true,
@@ -981,10 +1127,10 @@ export const TEXT_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "claude": {
-        aliases: ["claude-sonnet-4.6", "claude-sonnet"],
-        provider: "bedrock",
-        brand: "Anthropic",
+    "anthropic/claude-sonnet-4.6": {
+        aliases: ["claude-sonnet-4.6", "claude-sonnet", "claude"],
+        provider: "aws",
+        publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2025-11-05").getTime(),
         paidOnly: true,
@@ -1006,16 +1152,16 @@ export const TEXT_SERVICES = {
         contextLength: 1000000, // Bedrock global Claude Sonnet 4.6 context window.
         isSpecialized: false,
     },
-    "claude-sonnet-5": {
-        aliases: ["sonnet-5"],
-        provider: "bedrock",
-        brand: "Anthropic",
+    "anthropic/claude-sonnet-5": {
+        aliases: ["sonnet-5", "claude-sonnet-5"],
+        provider: "aws",
+        publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-06-30").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Bedrock anthropic.claude-sonnet-5 promo rates through 2026-08-31.
+            // AWS Price List global standard meters, published 2026-09-01T18:36:49Z.
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.2),
             promptCacheWriteTokens: perMillion(2.5),
@@ -1031,10 +1177,10 @@ export const TEXT_SERVICES = {
         contextLength: 1000000, // Bedrock Claude Sonnet 5 context window.
         isSpecialized: false,
     },
-    "claude-opus-4.6": {
-        aliases: ["claude-opus-4.5"],
-        provider: "bedrock",
-        brand: "Anthropic",
+    "anthropic/claude-opus-4.6": {
+        aliases: ["claude-opus-4.5", "claude-opus-4.6"],
+        provider: "aws",
+        publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2025-11-10").getTime(),
         paidOnly: true,
@@ -1056,10 +1202,10 @@ export const TEXT_SERVICES = {
         contextLength: 1000000, // Bedrock global Claude Opus 4.6 context window.
         isSpecialized: false,
     },
-    "claude-opus-4.7": {
-        aliases: [],
-        provider: "bedrock",
-        brand: "Anthropic",
+    "anthropic/claude-opus-4.7": {
+        aliases: ["claude-opus-4.7"],
+        provider: "aws",
+        publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-04-22").getTime(),
         paidOnly: true,
@@ -1081,10 +1227,15 @@ export const TEXT_SERVICES = {
         contextLength: 1000000, // Bedrock global Claude Opus 4.7 context window.
         isSpecialized: false,
     },
-    "claude-large": {
-        aliases: ["claude-opus-5", "claude-opus-4.8", "claude-opus"],
-        provider: "bedrock",
-        brand: "Anthropic",
+    "anthropic/claude-opus-5": {
+        aliases: [
+            "claude-opus-5",
+            "claude-opus-4.8",
+            "claude-opus",
+            "claude-large",
+        ],
+        provider: "aws",
+        publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
         paidOnly: true,
@@ -1106,10 +1257,10 @@ export const TEXT_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
-    "claude-fable-5": {
-        aliases: [],
-        provider: "bedrock",
-        brand: "Anthropic",
+    "anthropic/claude-fable-5": {
+        aliases: ["claude-fable-5"],
+        provider: "aws",
+        publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-06-11").getTime(),
         paidOnly: true,
@@ -1131,10 +1282,42 @@ export const TEXT_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
-    "perplexity-fast": {
-        aliases: ["sonar", "perplexity-high", "perplexity-deep", "sonar-deep"],
+    "anthropic/claude-fable-5.1": {
+        aliases: [],
+        provider: "aws",
+        publisher: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-09-01").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Bedrock global.anthropic.claude-fable-5-1 global standard rates.
+            promptTextTokens: perMillion(10),
+            promptCachedTokens: perMillion(0.25),
+            promptCacheWriteTokens: perMillion(12.5),
+            completionTextTokens: perMillion(50),
+        },
+        title: "Claude Fable 5.1",
+        description:
+            "Frontier intelligence for complex reasoning, coding and long-running agents",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
+    "perplexity/sonar": {
+        aliases: [
+            "sonar",
+            "perplexity-high",
+            "perplexity-deep",
+            "sonar-deep",
+            "perplexity-fast",
+        ],
         provider: "perplexity",
-        brand: "Perplexity",
+        publisher: "Perplexity",
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
         priceMultiplier: 1,
@@ -1155,10 +1338,10 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "perplexity": {
-        aliases: ["sonar-pro", "perplexity-pro"],
+    "perplexity/sonar-pro": {
+        aliases: ["sonar-pro", "perplexity-pro", "perplexity"],
         provider: "perplexity",
-        brand: "Perplexity",
+        publisher: "Perplexity",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
         priceMultiplier: 1,
@@ -1178,10 +1361,14 @@ export const TEXT_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "perplexity-reasoning": {
-        aliases: ["sonar-reasoning", "sonar-reasoning-pro"],
+    "perplexity/sonar-reasoning-pro": {
+        aliases: [
+            "sonar-reasoning",
+            "sonar-reasoning-pro",
+            "perplexity-reasoning",
+        ],
         provider: "perplexity",
-        brand: "Perplexity",
+        publisher: "Perplexity",
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
         priceMultiplier: 1,
@@ -1202,22 +1389,24 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "kimi": {
+    "moonshotai/kimi-k2.6": {
         aliases: [
             "kimi-k2.6",
             "kimi-k2p6",
             "kimi-reasoning",
             "kimi-large",
             "kimi-thinking",
+            "kimi",
         ],
         provider: "fireworks",
-        brand: "Moonshot AI",
+        publisher: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-04-22").getTime(),
         priceMultiplier: 1,
         cost: {
             promptTextTokens: perMillion(0.95),
             promptCachedTokens: perMillion(0.16),
+            promptImageTokens: perMillion(0.95),
             completionTextTokens: perMillion(4.0),
         },
         title: "Moonshot Kimi K2.6",
@@ -1231,10 +1420,10 @@ export const TEXT_SERVICES = {
         contextLength: 262000,
         isSpecialized: false,
     },
-    "kimi-code": {
-        aliases: ["kimi-k2.7-code", "kimi-k2.7", "kimi-k2p7"],
+    "moonshotai/kimi-k2.7-code": {
+        aliases: ["kimi-k2.7-code", "kimi-k2.7", "kimi-k2p7", "kimi-code"],
         provider: "fireworks",
-        brand: "Moonshot AI",
+        publisher: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-06-12").getTime(),
         priceMultiplier: 1,
@@ -1243,6 +1432,8 @@ export const TEXT_SERVICES = {
             // prompt $0.95/M, completion $4.00/M, cache read $0.19/M.
             promptTextTokens: perMillion(0.95),
             promptCachedTokens: perMillion(0.19),
+            promptCacheWriteTokens: perMillion(0.95),
+            promptImageTokens: perMillion(0.95),
             completionTextTokens: perMillion(4.0),
         },
         title: "Moonshot Kimi K2.7 Code",
@@ -1256,10 +1447,10 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "kimi-k3": {
-        aliases: [],
+    "moonshotai/kimi-k3": {
+        aliases: ["kimi-k3"],
         provider: "fireworks",
-        brand: "Moonshot AI",
+        publisher: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
         paidOnly: false,
@@ -1280,10 +1471,15 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "laguna": {
-        aliases: ["laguna-s-2.1", "laguna-s2.1", "poolside-laguna-s-2.1"],
+    "poolside/laguna-s-2.1": {
+        aliases: [
+            "laguna-s-2.1",
+            "laguna-s2.1",
+            "poolside-laguna-s-2.1",
+            "laguna",
+        ],
         provider: "openrouter",
-        brand: "Poolside",
+        publisher: "Poolside",
         category: "text",
         addedDate: new Date("2026-07-22").getTime(),
         paidOnly: true,
@@ -1304,10 +1500,10 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "longcat": {
-        aliases: ["longcat-2.0", "longcat-2"],
+    "meituan/longcat-2.0": {
+        aliases: ["longcat-2.0", "longcat-2", "longcat"],
         provider: "openrouter",
-        brand: "Meituan",
+        publisher: "Meituan",
         category: "text",
         addedDate: new Date("2026-07-23").getTime(),
         paidOnly: true,
@@ -1328,10 +1524,10 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "inkling": {
-        aliases: ["inkling-small", "inkling-small-20260730"],
+    "thinkingmachines/inkling-small": {
+        aliases: ["inkling-small", "inkling-small-20260730", "inkling"],
         provider: "openrouter",
-        brand: "Thinking Machines",
+        publisher: "Thinking Machines",
         category: "text",
         addedDate: new Date("2026-08-01").getTime(),
         paidOnly: true,
@@ -1354,14 +1550,41 @@ export const TEXT_SERVICES = {
         contextLength: 524288,
         isSpecialized: false,
     },
-    "nemotron": {
+    "thinkingmachines/inkling": {
+        aliases: [],
+        provider: "fireworks",
+        publisher: "Thinking Machines",
+        category: "text",
+        addedDate: new Date("2026-08-30").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Fireworks standard serverless rates (2026-08-30).
+        cost: {
+            promptTextTokens: perMillion(1),
+            promptCachedTokens: perMillion(0.17),
+            promptAudioTokens: perMillion(1),
+            promptImageTokens: perMillion(1),
+            completionTextTokens: perMillion(4.05),
+        },
+        title: "Inkling",
+        description:
+            "Flagship million-token multimodal reasoning for agents, coding, visual analysis and audio understanding",
+        inputModalities: ["text", "image", "audio"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "nvidia/nemotron-3-ultra": {
         aliases: [
             "nemotron-3-ultra",
             "nvidia-nemotron-3-ultra",
             "nemotron-3-ultra-550b-a55b",
+            "nemotron",
         ],
         provider: "deepinfra",
-        brand: "NVIDIA",
+        publisher: "NVIDIA",
         category: "text",
         addedDate: new Date("2026-07-27").getTime(),
         paidOnly: true,
@@ -1383,14 +1606,15 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "nemotron-3.5-lightning": {
-        aliases: [],
+    "nvidia/nemotron-3.5-lightning": {
+        aliases: ["nemotron-3.5-lightning"],
         provider: "fireworks",
-        brand: "NVIDIA",
+        publisher: "NVIDIA",
         category: "text",
         addedDate: new Date("2026-08-19").getTime(),
         paidOnly: false,
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             // Fireworks, verified 2026-08-19: $0.05/$0.01/$0.20 per million.
             promptTextTokens: perMillion(0.05),
@@ -1407,10 +1631,10 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "mimo-v2.5": {
-        aliases: ["mimo", "mimo-2.5"],
+    "xiaomi/mimo-v2.5": {
+        aliases: ["mimo", "mimo-2.5", "mimo-v2.5"],
         provider: "openrouter",
-        brand: "Xiaomi",
+        publisher: "Xiaomi",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
         paidOnly: true,
@@ -1430,10 +1654,10 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "mimo-v2.5-pro": {
-        aliases: ["mimo-pro", "mimo-2.5-pro"],
+    "xiaomi/mimo-v2.5-pro": {
+        aliases: ["mimo-pro", "mimo-2.5-pro", "mimo-v2.5-pro"],
         provider: "openrouter",
-        brand: "Xiaomi",
+        publisher: "Xiaomi",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
         paidOnly: true,
@@ -1453,10 +1677,10 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini-large": {
-        aliases: ["gemini-3.1-pro", "gemini-2.5-pro"],
+    "google/gemini-3.1-pro-preview": {
+        aliases: ["gemini-3.1-pro", "gemini-2.5-pro", "gemini-large"],
         provider: "openrouter",
-        brand: "Google",
+        publisher: "Google",
         category: "text",
         addedDate: new Date("2025-11-19").getTime(),
         priceMultiplier: 1,
@@ -1514,10 +1738,10 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "nova-fast": {
-        aliases: ["amazon-nova-micro", "nova-micro"],
-        provider: "bedrock",
-        brand: "Amazon",
+    "amazon/nova-micro-v1": {
+        aliases: ["amazon-nova-micro", "nova-micro", "nova-fast"],
+        provider: "aws",
+        publisher: "Amazon",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
@@ -1538,10 +1762,10 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "nova": {
-        aliases: ["nova-2-lite", "amazon-nova-2-lite", "nova-2"],
-        provider: "bedrock",
-        brand: "Amazon",
+    "amazon/nova-2-lite-v1": {
+        aliases: ["nova-2-lite", "amazon-nova-2-lite", "nova-2", "nova"],
+        provider: "aws",
+        publisher: "Amazon",
         category: "text",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
@@ -1564,10 +1788,10 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "glm": {
-        aliases: ["glm-5.2", "glm-5p2"],
+    "z-ai/glm-5.2": {
+        aliases: ["glm-5.2", "glm-5p2", "glm"],
         provider: "fireworks",
-        brand: "Z.ai",
+        publisher: "Z.ai",
         category: "text",
         addedDate: new Date("2026-01-06").getTime(),
         priceMultiplier: 1,
@@ -1586,14 +1810,15 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "glm-5.3": {
-        aliases: [],
-        provider: "openrouter",
-        brand: "Z.ai",
+    "z-ai/glm-5.3": {
+        aliases: ["glm-5.3"],
+        provider: "fireworks",
+        publisher: "Z.ai",
         category: "text",
         addedDate: new Date("2026-08-19").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
+        // Fireworks standard serverless rates (2026-08-29).
         cost: {
             promptTextTokens: perMillion(1.4),
             promptCachedTokens: perMillion(0.26),
@@ -1609,10 +1834,41 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "llama": {
-        aliases: ["llama-3.3", "llama-3.3-70b", "llama-v3p3-70b-instruct"],
+    "z-ai/glm-5.3-flash": {
+        aliases: [],
+        provider: "fireworks",
+        publisher: "Z.ai",
+        category: "text",
+        addedDate: new Date("2026-08-27").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        // Fireworks standard serverless rates (2026-08-29).
+        cost: {
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.029),
+            promptImageTokens: perMillion(0.15),
+            completionTextTokens: perMillion(0.5),
+        },
+        title: "Z.ai GLM-5.3 Flash",
+        description:
+            "Low-cost million-token multimodal reasoning for agents and visual analysis",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "meta/llama-3.3-70b-instruct": {
+        aliases: [
+            "llama-3.3",
+            "llama-3.3-70b",
+            "llama-v3p3-70b-instruct",
+            "llama",
+        ],
         provider: "azure",
-        brand: "Meta",
+        publisher: "Meta",
         category: "text",
         addedDate: new Date("2026-05-01").getTime(),
         priceMultiplier: 0.75,
@@ -1629,15 +1885,16 @@ export const TEXT_SERVICES = {
         contextLength: 131072,
         isSpecialized: false,
     },
-    "llama-maverick": {
+    "meta/llama-4-maverick": {
         aliases: [
             "llama-4",
             "llama-4-maverick",
             "llama-maverick-17b",
             "llama-4-maverick-17b-128e-instruct-fp8",
+            "llama-maverick",
         ],
         provider: "azure",
-        brand: "Meta",
+        publisher: "Meta",
         category: "text",
         addedDate: new Date("2026-05-04").getTime(),
         priceMultiplier: 0.75,
@@ -1650,27 +1907,29 @@ export const TEXT_SERVICES = {
             "Open-source chat that understands images, with a huge context window",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // Azure-hosted Llama vision route has no public fixed image count; Pollinations cap.
         tools: true,
         contextLength: 1048576,
         isSpecialized: false,
         paidOnly: true,
     },
-    "llama-scout": {
+    "meta/llama-4-scout": {
         aliases: [
             "llama-4-scout",
             "llama-scout-17b",
             "llama-4-scout-17b-16e-instruct",
+            "llama-scout",
         ],
         provider: "openrouter",
-        brand: "Meta",
+        publisher: "Meta",
         category: "text",
         addedDate: new Date("2026-05-04").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             // OpenRouter DeepInfra FP8 endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.1),
+            promptImageTokens: perMillion(0.1),
             completionTextTokens: perMillion(0.3),
         },
         title: "Meta Llama 4 Scout",
@@ -1683,17 +1942,23 @@ export const TEXT_SERVICES = {
         contextLength: 327680,
         isSpecialized: false,
     },
-    "minimax-m2.7": {
-        aliases: ["minimax-m2p7", "minimax-m2.5", "minimax-m2p5"],
-        provider: "fireworks",
-        brand: "MiniMax",
+    "minimax/minimax-m2.7": {
+        aliases: [
+            "minimax-m2p7",
+            "minimax-m2.5",
+            "minimax-m2p5",
+            "minimax-m2.7",
+        ],
+        provider: "openrouter",
+        publisher: "MiniMax",
         category: "text",
         addedDate: new Date("2026-01-06").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.3),
-            promptCachedTokens: perMillion(0.06),
-            completionTextTokens: perMillion(1.2),
+            promptTextTokens: perMillion(0.25),
+            promptCachedTokens: perMillion(0.05),
+            completionTextTokens: perMillion(1),
         },
         title: "MiniMax M2.7",
         description: "Multilingual coding and agent tasks at a friendly price",
@@ -1704,13 +1969,14 @@ export const TEXT_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "minimax": {
-        aliases: ["minimax-m3", "minimax3", "minimax-3"],
+    "minimax/minimax-m3": {
+        aliases: ["minimax-m3", "minimax3", "minimax-3", "minimax"],
         provider: "fireworks",
-        brand: "MiniMax",
+        publisher: "MiniMax",
         category: "text",
         addedDate: new Date("2026-06-02").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             // Fireworks accounts/fireworks/models/minimax-m3 rates (2026-06-14):
             // prompt $0.30/M, completion $1.20/M, cache read $0.06/M.
@@ -1729,17 +1995,19 @@ export const TEXT_SERVICES = {
         contextLength: 524288,
         isSpecialized: false,
     },
-    "muse-glimmer": {
-        aliases: [],
+    "meta/muse-glimmer-30b": {
+        aliases: ["muse-glimmer"],
         provider: "fireworks",
-        brand: "Meta",
+        publisher: "Meta",
         category: "text",
         addedDate: new Date("2026-08-14").getTime(),
         paidOnly: false,
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             promptTextTokens: perMillion(0.35),
             promptCachedTokens: perMillion(0.04),
+            promptImageTokens: perMillion(0.35),
             completionTextTokens: perMillion(1.5),
         },
         title: "Muse Glimmer 30B",
@@ -1753,10 +2021,16 @@ export const TEXT_SERVICES = {
         contextLength: 131072,
         isSpecialized: false,
     },
-    "muse-spark-1.2": {
-        aliases: ["muse-spark-1.1", "muse-spark", "spark", "spark-1.1"],
+    "meta/muse-spark-1.2": {
+        aliases: [
+            "muse-spark-1.1",
+            "muse-spark",
+            "spark",
+            "spark-1.1",
+            "muse-spark-1.2",
+        ],
         provider: "vercel",
-        brand: "Meta",
+        publisher: "Meta",
         category: "text",
         addedDate: new Date("2026-08-14").getTime(),
         paidOnly: true,
@@ -1770,16 +2044,15 @@ export const TEXT_SERVICES = {
         description: "Agentic coding and tool-use model with 1M context",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // Vercel/Meta publish vision support but no fixed image-count limit.
         tools: true,
         reasoning: true,
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "mistral-large": {
-        aliases: ["mistral-large-3"],
+    "mistralai/mistral-large-3": {
+        aliases: ["mistral-large-3", "mistral-large"],
         provider: "azure",
-        brand: "Mistral",
+        publisher: "Mistral",
         category: "text",
         addedDate: new Date("2026-04-09").getTime(),
         priceMultiplier: 0.75,
@@ -1793,16 +2066,15 @@ export const TEXT_SERVICES = {
             "Polished multilingual writing and reasoning with image understanding",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // Mistral image count varies by model/token budget; Pollinations cap.
         tools: true,
         reasoning: true,
         contextLength: 256000,
         isSpecialized: false,
     },
-    "qwen-coder-large": {
-        aliases: ["qwen3-coder-next"],
+    "qwen/qwen3-coder-next": {
+        aliases: ["qwen3-coder-next", "qwen-coder-large"],
         provider: "openrouter",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-03-22").getTime(),
         paidOnly: true,
@@ -1822,7 +2094,7 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "qwen-large": {
+    "qwen/qwen3.7-plus": {
         aliases: [
             "qwen3.7",
             "qwen3.7-plus",
@@ -1830,9 +2102,10 @@ export const TEXT_SERVICES = {
             "qwen3.6",
             "qwen3.6-plus",
             "qwen3p6-plus",
+            "qwen-large",
         ],
         provider: "openrouter",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-06-12").getTime(),
         paidOnly: true,
@@ -1874,10 +2147,10 @@ export const TEXT_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
-    "qwen3.7-max": {
-        aliases: ["qwen-max", "qwen3p7-max"],
+    "qwen/qwen3.7-max": {
+        aliases: ["qwen-max", "qwen3p7-max", "qwen3.7-max"],
         provider: "openrouter",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
         paidOnly: true,
@@ -1898,10 +2171,10 @@ export const TEXT_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
-    "qwen3.8-2.4t-a95b": {
-        aliases: [],
+    "qwen/qwen3.8-2.4t-a95b": {
+        aliases: ["qwen3.8-2.4t-a95b"],
         provider: "fireworks",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-08-14").getTime(),
         paidOnly: false,
@@ -1922,21 +2195,22 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "qwen3.8-27b": {
-        aliases: [],
+    "qwen/qwen3.8-27b": {
+        aliases: ["qwen3.8-27b"],
         provider: "openrouter",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-08-18").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Chutes FP8 route rates (2026-08-18).
-            promptTextTokens: perMillion(0.4),
-            promptCachedTokens: perMillion(0.04),
-            promptImageTokens: perMillion(0.4),
-            promptVideoTokens: perMillion(0.4),
-            completionTextTokens: perMillion(3),
+            // OpenRouter Chutes FP8 route rates (2026-09-03). OpenRouter
+            // publishes one prompt rate and no separate image/video rates.
+            promptTextTokens: perMillion(0.32),
+            promptCachedTokens: perMillion(0.032),
+            promptImageTokens: perMillion(0.32),
+            promptVideoTokens: perMillion(0.32),
+            completionTextTokens: perMillion(2.5),
         },
         title: "Qwen3.8 27B",
         description:
@@ -1950,10 +2224,10 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "qwen3.8-max": {
-        aliases: [],
+    "qwen/qwen3.8-max": {
+        aliases: ["qwen3.8-max"],
         provider: "openrouter",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-08-04").getTime(),
         paidOnly: true,
@@ -1978,10 +2252,71 @@ export const TEXT_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
-    "qwen3.7-flash": {
+    "qwen/qwen3.8-max-0902": {
+        aliases: [],
+        provider: "alibaba",
+        publisher: "Qwen",
+        category: "text",
+        addedDate: new Date("2026-09-03").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Alibaba Singapore qwen3.8-max-0902 rates, including implicit cache
+        // hits (2026-09-03).
+        cost: {
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.25),
+            promptCacheWriteTokens: perMillion(2.5),
+            promptImageTokens: perMillion(2),
+            promptVideoTokens: perMillion(2),
+            completionTextTokens: perMillion(6),
+        },
+        title: "Qwen3.8 Max 0902",
+        description:
+            "Pinned September checkpoint with stronger coding and long-horizon agent performance",
+        inputModalities: ["text", "image", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        maxReferenceVideos: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
+    "qwen/qwen3.8-flash": {
         aliases: [],
         provider: "openrouter",
-        brand: "Qwen",
+        publisher: "Qwen",
+        category: "text",
+        addedDate: new Date("2026-09-05").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter Alibaba route rates, equal to the Alibaba Singapore list
+        // price with a single 0-1M context tier (2026-09-05). OpenRouter
+        // publishes one prompt rate and no separate image/video rates.
+        cost: {
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.016),
+            promptCacheWriteTokens: perMillion(0.2),
+            promptImageTokens: perMillion(0.15),
+            promptVideoTokens: perMillion(0.15),
+            completionTextTokens: perMillion(0.47),
+        },
+        title: "Qwen3.8 Flash",
+        description:
+            "Low-cost multimodal reasoning with 1M context and 131K output for agents and coding",
+        inputModalities: ["text", "image", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        maxReferenceVideos: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
+    "qwen/qwen3.7-flash": {
+        aliases: ["qwen3.7-flash"],
+        provider: "openrouter",
+        publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-07-30").getTime(),
         paidOnly: true,
@@ -2047,16 +2382,17 @@ export const TEXT_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
-    "qwen-vision": {
+    "qwen/qwen3-vl-30b-a3b-instruct": {
         aliases: [
             "qwen3-vl",
             "qwen3-vl-30b-a3b-instruct",
             "qwen3-vl-instruct",
             "qwen3-vl-plus",
             "qwen-vl",
+            "qwen-vision",
         ],
         provider: "openrouter",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-03-22").getTime(),
         paidOnly: true,
@@ -2070,45 +2406,51 @@ export const TEXT_SERVICES = {
             "Fast image understanding — describes, reads and analyzes what it sees",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
         tools: true,
         reasoning: false,
         contextLength: 131072,
         isSpecialized: false,
     },
-    "qwen-vision-pro": {
+    "qwen/qwen3-vl-235b-a22b-thinking": {
         aliases: [
             "qwen3-vl-pro",
             "qwen3-vl-235b",
             "qwen3-vl-235b-a22b-thinking",
             "qwen-vl-pro",
+            "qwen-vision-pro",
         ],
-        provider: "openrouter",
-        brand: "Qwen",
+        provider: "alibaba",
+        publisher: "Qwen",
         addedDate: new Date("2026-05-15").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         category: "text",
         cost: {
-            // OpenRouter Alibaba endpoint, verified 2026-08-22.
+            // Alibaba Model Studio Singapore PAYG, verified 2026-08-28.
             promptTextTokens: perMillion(0.4),
+            promptImageTokens: perMillion(0.4),
             completionTextTokens: perMillion(4),
+            completionReasoningTokens: perMillion(4),
         },
         title: "Qwen3 VL 235B A22B Thinking",
         description:
             "Careful visual reasoning for charts, documents and complex scenes",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
         tools: true,
         reasoning: true,
-        contextLength: 262144,
+        contextLength: 131072,
         isSpecialized: false,
     },
-    "step-flash": {
-        aliases: ["stepfun-flash", "step-3.7-flash", "step-flash-3.7"],
+    "stepfun/step-3.7-flash": {
+        aliases: [
+            "stepfun-flash",
+            "step-3.7-flash",
+            "step-flash-3.7",
+            "step-flash",
+        ],
         provider: "deepinfra",
-        brand: "StepFun",
+        publisher: "StepFun",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
         paidOnly: true,
@@ -2125,7 +2467,6 @@ export const TEXT_SERVICES = {
             "Speedy reasoning over text and images for everyday questions",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // OpenRouter image count varies by provider/model; Pollinations cap.
         tools: true,
         // Emits a chain-of-thought `reasoning` field (verified live); reasoning
         // tokens are billed within completion_tokens at the completionText rate.
@@ -2133,10 +2474,10 @@ export const TEXT_SERVICES = {
         contextLength: 256000,
         isSpecialized: false,
     },
-    "step-3.5-flash": {
-        aliases: ["stepfun-3.5-flash", "step-flash-3.5"],
+    "stepfun/step-3.5-flash": {
+        aliases: ["stepfun-3.5-flash", "step-flash-3.5", "step-3.5-flash"],
         provider: "openrouter",
-        brand: "StepFun",
+        publisher: "StepFun",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
         paidOnly: true,
@@ -2156,10 +2497,10 @@ export const TEXT_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "qwen-safety": {
-        aliases: ["qwen3guard-gen-8b"],
+    "qwen/qwen3guard-gen-8b": {
+        aliases: ["qwen3guard-gen-8b", "qwen-safety"],
         provider: "ovhcloud",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-02-15").getTime(),
         priceMultiplier: 1,
@@ -2175,3 +2516,5 @@ export const TEXT_SERVICES = {
         isSpecialized: true,
     },
 } as const satisfies Record<string, ModelDefinition>;
+
+export const TEXT_SERVICES = mergeFallbacks(TEXT_BASE_SERVICES, TEXT_FALLBACKS);

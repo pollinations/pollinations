@@ -57,7 +57,8 @@ async def run_agent_events(
 ):
     """Run the tool-calling loop, yielding progress events as they happen.
 
-    Yields {"type": "tool_start", "name"} per tool call, then exactly one
+    Yields {"type": "tool_start", "id", "name", "arguments"} per tool call,
+    then exactly one
     {"type": "final", "text", "artifacts", "iterations"}.
     """
     routing = routing or RoutingPreferences()
@@ -142,8 +143,13 @@ async def run_agent_events(
             return
 
         for tc in tool_calls:
-            _, name, _ = _tool_call_fields(tc)
-            yield {"type": "tool_start", "name": name}
+            call_id, name, arguments = _tool_call_fields(tc)
+            yield {
+                "type": "tool_start",
+                "id": call_id,
+                "name": name,
+                "arguments": arguments,
+            }
 
         # Execute every tool call in this turn concurrently.
         async def _run(call: Any) -> tuple[str, Any]:

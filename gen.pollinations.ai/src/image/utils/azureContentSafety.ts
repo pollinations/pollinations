@@ -1,4 +1,4 @@
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import debug from "debug";
 import type { AuthResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
@@ -10,16 +10,16 @@ const logError = debug("pollinations:error");
 const CATEGORIES = ["Hate", "SelfHarm", "Sexual", "Violence"] as const;
 const SEVERITY_THRESHOLD = 4;
 
-export type ContentSafetyResults = {
+type ContentSafetyResults = {
     safe: boolean;
     violations: ContentViolation[];
     formattedViolations: string;
 };
 
-export type ContentViolationCategory = (typeof CATEGORIES)[number];
-export type ContentViolationSeverity = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+type ContentViolationCategory = (typeof CATEGORIES)[number];
+type ContentViolationSeverity = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
-export type ContentViolation = {
+type ContentViolation = {
     category: ContentViolationCategory;
     severity: ContentViolationSeverity;
 };
@@ -133,17 +133,9 @@ export async function analyzeImageSafety(
     });
 }
 
-export const config = {
-    SEVERITY_THRESHOLD,
-    CATEGORIES,
-    get isConfigured() {
-        return !!getConfig();
-    },
-};
-
 /**
  * Checks prompt safety with Azure Content Safety, logs the result, and throws
- * an HttpError(400) if the prompt is unsafe.
+ * an UpstreamError(400) if the prompt is unsafe.
  */
 export async function requireSafePrompt(
     prompt: string,
@@ -158,7 +150,9 @@ export async function requireSafePrompt(
         const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
         logError("Azure Content Safety rejected prompt:", errorMessage);
 
-        const error = new HttpError(errorMessage, 400);
+        const error = UpstreamError.fromProvider(400, {
+            message: errorMessage,
+        });
         await logGptImageError(
             prompt,
             safeParams,

@@ -26,14 +26,30 @@ function bill(
     });
 }
 
+function fallbackBill(
+    model: ModelName,
+    servedBy: ModelName,
+    usage: BillingArgs["usage"],
+    input?: BillingArgs["input"],
+) {
+    return calculateUsageBilling({
+        model,
+        usage,
+        servedBy: getRegistryModelDefinition(servedBy),
+        quotedBy: getRegistryModelDefinition(model),
+        input,
+    });
+}
+
 describe("long-context cost variants", () => {
     it.each([
-        ["gpt-5.4", 272_000],
-        ["openai-large", 272_000],
-        ["midijourney-large", 272_000],
-        ["gpt-5.6-sol", 272_000],
-        ["gpt-5.6-terra", 272_000],
-        ["gpt-5.6-luna", 272_000],
+        ["openai/gpt-5.4", 272_000],
+        ["openai/gpt-5.5", 272_000],
+        ["pollinations/midijourney-large", 272_000],
+        ["openai/gpt-5.6-sol", 272_000],
+        ["openai/gpt-5.6-terra", 272_000],
+        ["openai/gpt-5.6-luna", 272_000],
+        ["openai/gpt-6-astra", 272_000],
     ] satisfies [
         ModelName,
         number,
@@ -51,17 +67,17 @@ describe("long-context cost variants", () => {
 
     it("Gemini uses OpenRouter's inclusive 200K boundary", () => {
         expect(
-            bill("gemini-large", {
+            bill("google/gemini-3.1-pro-preview", {
                 promptTextTokens: 199_999,
             }).costVariant,
         ).toBeUndefined();
         expect(
-            bill("gemini-large", {
+            bill("google/gemini-3.1-pro-preview", {
                 promptTextTokens: 200_000,
             }).costVariant,
         ).toBe("long_context");
         expect(
-            bill("gemini-large", {
+            bill("google/gemini-3.1-pro-preview", {
                 promptTextTokens: 200_001,
             }).costVariant,
         ).toBe("long_context");
@@ -69,36 +85,18 @@ describe("long-context cost variants", () => {
 
     it("Qwen uses OpenRouter's inclusive 256K boundary", () => {
         expect(
-            bill("qwen-large", {
+            bill("qwen/qwen3.7-plus", {
                 promptTextTokens: 255_999,
             }).costVariant,
         ).toBeUndefined();
         expect(
-            bill("qwen-large", {
+            bill("qwen/qwen3.7-plus", {
                 promptTextTokens: 256_000,
             }).costVariant,
         ).toBe("long_context");
         expect(
-            bill("qwen-large", {
+            bill("qwen/qwen3.7-plus", {
                 promptTextTokens: 256_001,
-            }).costVariant,
-        ).toBe("long_context");
-    });
-
-    it("Grok uses OpenRouter's inclusive 200K boundary", () => {
-        expect(
-            bill("grok-4.6", {
-                promptTextTokens: 199_999,
-            }).costVariant,
-        ).toBeUndefined();
-        expect(
-            bill("grok-4.6", {
-                promptTextTokens: 200_000,
-            }).costVariant,
-        ).toBe("long_context");
-        expect(
-            bill("grok-4.6", {
-                promptTextTokens: 200_001,
             }).costVariant,
         ).toBe("long_context");
     });
@@ -111,14 +109,14 @@ describe("long-context cost variants", () => {
         [256_000, "context_256k"],
         [256_001, "context_256k"],
     ] as const)("Qwen3.7 Flash selects the expected sheet at %s prompt tokens", (promptTextTokens, expectedVariant) => {
-        expect(bill("qwen3.7-flash", { promptTextTokens }).costVariant).toBe(
-            expectedVariant,
-        );
+        expect(
+            bill("qwen/qwen3.7-flash", { promptTextTokens }).costVariant,
+        ).toBe(expectedVariant);
     });
 
     it("Qwen3.7 Flash counts cached and media tokens toward its tiers", () => {
         expect(
-            bill("qwen3.7-flash", {
+            bill("qwen/qwen3.7-flash", {
                 promptTextTokens: 20_000,
                 promptCachedTokens: 5_000,
                 promptCacheWriteTokens: 2_000,
@@ -127,7 +125,7 @@ describe("long-context cost variants", () => {
             }).costVariant,
         ).toBe("context_32k");
         expect(
-            bill("qwen3.7-flash", {
+            bill("qwen/qwen3.7-flash", {
                 promptTextTokens: 200_000,
                 promptCachedTokens: 20_000,
                 promptCacheWriteTokens: 10_000,
@@ -178,7 +176,7 @@ describe("long-context cost variants", () => {
         ] as const;
 
         for (const [promptTextTokens, variant, rates] of expectedRates) {
-            const billing = bill("qwen3.7-flash", { promptTextTokens });
+            const billing = bill("qwen/qwen3.7-flash", { promptTextTokens });
             expect(billing.costVariant).toBe(variant);
             for (const [usageType, perMillionTokens] of Object.entries(rates)) {
                 expect(
@@ -190,8 +188,53 @@ describe("long-context cost variants", () => {
         }
     });
 
+    it.each([
+        [32_000, undefined],
+        [32_001, "context_32k"],
+        [256_000, "context_32k"],
+        [256_001, "context_256k"],
+    ] as const)("direct Alibaba uses its strict tier boundary at %s prompt tokens", (promptTextTokens, expectedVariant) => {
+        expect(
+            bill("qwen/qwen3.7-flash:alibaba", { promptTextTokens })
+                .costVariant,
+        ).toBe(expectedVariant);
+    });
+
+    it("records direct Alibaba explicit-cache cost without changing the quote", () => {
+        const billing = fallbackBill(
+            "qwen/qwen3.7-flash",
+            "qwen/qwen3.7-flash:alibaba",
+            { promptCachedTokens: 10_000 },
+            { hasExplicitCacheHit: true },
+        );
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.00003, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.00006, 12);
+        expect(billing.servedPrice).toBeCloseTo(0.00003, 12);
+    });
+
+    it("keeps the Llama Scout quote and records the absorbed Vertex loss", () => {
+        const billing = fallbackBill(
+            "meta/llama-4-scout",
+            "meta/llama-4-scout:openrouter:vertex-us-east5",
+            {
+                promptTextTokens: 1_000_000,
+                promptImageTokens: 1_000_000,
+                completionTextTokens: 1_000_000,
+            },
+        );
+
+        expect(billing.cost.totalCost).toBeCloseTo(1.2, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.5, 12);
+        expect(billing.servedPrice).toBeCloseTo(1.2, 12);
+        expect(billing.cost.totalCost - billing.price.totalPrice).toBeCloseTo(
+            0.7,
+            12,
+        );
+    });
+
     it("reprices the whole GPT-5.5 request one token above 272K", () => {
-        const billing = bill("openai-large", {
+        const billing = bill("openai/gpt-5.5", {
             promptTextTokens: 272_001,
             promptCachedTokens: 10_000,
             completionTextTokens: 1_000,
@@ -203,16 +246,17 @@ describe("long-context cost variants", () => {
             12,
         );
         expect(billing.priceDefinition).toMatchObject({
-            promptTextTokens: 10 / 1e6,
-            promptCachedTokens: 1 / 1e6,
-            completionTextTokens: 45 / 1e6,
+            promptTextTokens: (10 / 1e6) * 0.75,
+            promptCachedTokens: (1 / 1e6) * 0.75,
+            completionTextTokens: (45 / 1e6) * 0.75,
         });
     });
 
     it.each([
-        ["gpt-5.6-sol", 10, 1, 12.5, 45, 0.5],
-        ["gpt-5.6-terra", 4, 0.4, 5, 18, 0.625],
-        ["gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 1],
+        ["openai/gpt-5.6-sol", 10, 1, 12.5, 45, 1 / 3],
+        ["openai/gpt-5.6-terra", 4, 0.4, 5, 18, 0.75],
+        ["openai/gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 0.75],
+        ["openai/gpt-6-astra", 20, 2, 25, 75, 0.75],
     ] satisfies [
         ModelName,
         number,
@@ -268,7 +312,7 @@ describe("long-context cost variants", () => {
             promptVideoTokens: 10_000,
             completionTextTokens: 1_000,
         };
-        const billing = bill("gemini-large", usage);
+        const billing = bill("google/gemini-3.1-pro-preview", usage);
 
         expect(billing.costVariant).toBe("long_context");
         expect(billing.priceDefinition).toMatchObject({
@@ -289,9 +333,11 @@ describe("long-context cost variants", () => {
             },
         };
         const base = calculateUsageBilling({
-            model: "gemini-large",
+            model: "google/gemini-3.1-pro-preview",
             usage: { promptCacheWriteTokens: 100_000 },
-            servedBy: getRegistryModelDefinition("gemini-large"),
+            servedBy: getRegistryModelDefinition(
+                "google/gemini-3.1-pro-preview",
+            ),
             output: baseOutput,
         });
         expect(base.costVariant).toBeUndefined();
@@ -300,9 +346,11 @@ describe("long-context cost variants", () => {
         expect(base.adjustments[0].cost).toBeCloseTo(0.0375, 12);
 
         const long = calculateUsageBilling({
-            model: "gemini-large",
+            model: "google/gemini-3.1-pro-preview",
             usage: { promptCacheWriteTokens: 1_000_000 },
-            servedBy: getRegistryModelDefinition("gemini-large"),
+            servedBy: getRegistryModelDefinition(
+                "google/gemini-3.1-pro-preview",
+            ),
             output: {
                 usage: {
                     prompt_tokens_details: {
@@ -317,9 +365,9 @@ describe("long-context cost variants", () => {
         expect(long.adjustments[0].cost).toBeCloseTo(0.375, 12);
     });
 
-    it("Qwen and Grok apply their advertised long-context sheets", () => {
+    it("Qwen applies its advertised long-context sheet", () => {
         expect(
-            bill("qwen-large", {
+            bill("qwen/qwen3.7-plus", {
                 promptTextTokens: 256_000,
             }).priceDefinition,
         ).toMatchObject({
@@ -328,19 +376,10 @@ describe("long-context cost variants", () => {
             promptCacheWriteTokens: 1.2 / 1e6,
             completionTextTokens: 3.84 / 1e6,
         });
-        expect(
-            bill("grok-4.6", {
-                promptTextTokens: 200_000,
-            }).priceDefinition,
-        ).toMatchObject({
-            promptTextTokens: 4 / 1e6,
-            promptCachedTokens: 1 / 1e6,
-            completionTextTokens: 12 / 1e6,
-        });
     });
 
     it("bills reasoning tokens at the selected completion rate", () => {
-        const billing = bill("gpt-5.4", {
+        const billing = bill("openai/gpt-5.4", {
             promptTextTokens: 300_000,
             completionReasoningTokens: 2_000,
         });
@@ -354,13 +393,19 @@ describe("long-context cost variants", () => {
 
 describe("AssemblyAI transcription cost variants", () => {
     it.each([
-        ["universal-2", "json", false, 0.15, undefined],
-        ["universal-2", "diarized_json", false, 0.17, "diarization"],
-        ["universal-3.5-pro", "json", false, 0.21, undefined],
-        ["universal-3.5-pro", "json", true, 0.26, "prompting"],
-        ["universal-3.5-pro", "diarized_json", false, 0.23, "diarization"],
+        ["assemblyai/universal-2", "json", false, 0.15, undefined],
+        ["assemblyai/universal-2", "diarized_json", false, 0.17, "diarization"],
+        ["assemblyai/universal-3.5-pro", "json", false, 0.21, undefined],
+        ["assemblyai/universal-3.5-pro", "json", true, 0.26, "prompting"],
         [
-            "universal-3.5-pro",
+            "assemblyai/universal-3.5-pro",
+            "diarized_json",
+            false,
+            0.23,
+            "diarization",
+        ],
+        [
+            "assemblyai/universal-3.5-pro",
             "diarized_json",
             true,
             0.28,
@@ -381,11 +426,11 @@ describe("AssemblyAI transcription cost variants", () => {
 
 describe("request-mode cost variants", () => {
     it("qwen-image bills text-to-image and edit at their separate rates", () => {
-        const textToImage = bill("qwen-image", {
+        const textToImage = bill("qwen/qwen-image", {
             completionImageTokens: 1,
         });
         const edit = bill(
-            "qwen-image",
+            "qwen/qwen-image",
             { completionImageTokens: 1 },
             { hasImage: true },
         );
@@ -402,12 +447,12 @@ describe("request-mode cost variants", () => {
         const usage = { completionImageTokens: 1 };
 
         expect(
-            calculateCost("qwen-image", usage, undefined, {
+            calculateCost("qwen/qwen-image", usage, undefined, {
                 hasImage: true,
             }).totalCost,
         ).toBeCloseTo(0.03, 12);
         expect(
-            calculatePrice("qwen-image", usage, undefined, {
+            calculatePrice("qwen/qwen-image", usage, undefined, {
                 hasImage: true,
             }).totalPrice,
         ).toBeCloseTo(0.03, 12);
@@ -415,13 +460,31 @@ describe("request-mode cost variants", () => {
 });
 
 describe("resolution cost variants", () => {
+    it.each([
+        [1024, 1024, 0.04, undefined],
+        [1008, 1040, 0.06, "2048"],
+        [1024, 1040, 0.06, "2048"],
+        [2048, 2048, 0.06, "2048"],
+    ] as const)("nova-canvas bills %sx%s at $%s/image", (width, height, rate, variant) => {
+        const billing = bill(
+            "amazon/nova-canvas-v1",
+            { completionImageTokens: 1 },
+            { maxImageDimension: Math.max(width, height) },
+        );
+
+        expect(billing.costVariant).toBe(variant);
+        expect(billing.cost.totalCost).toBeCloseTo(rate, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(rate, 12);
+    });
+
     it("p-video bills the 720p base and 1080p variant", () => {
         expect(
-            bill("p-video", { completionVideoSeconds: 10 }).cost.totalCost,
+            bill("prunaai/p-video", { completionVideoSeconds: 10 }).cost
+                .totalCost,
         ).toBeCloseTo(0.2, 12);
 
         const fullHd = bill(
-            "p-video",
+            "prunaai/p-video",
             { completionVideoSeconds: 10 },
             { resolution: "1080p" },
         );
@@ -431,7 +494,7 @@ describe("resolution cost variants", () => {
 
     it("veo reprices 1080p video while inheriting its audio rate", () => {
         const billing = bill(
-            "veo",
+            "google/veo-3.1-fast",
             { completionVideoSeconds: 8, completionAudioSeconds: 8 },
             { resolution: "1080p" },
         );
@@ -443,12 +506,12 @@ describe("resolution cost variants", () => {
 
     it("wan-pro distinguishes 1080p text-to-video and image-to-video", () => {
         const text = bill(
-            "wan-pro",
+            "alibaba/wan-2.7",
             { completionVideoSeconds: 5 },
             { resolution: "1080p" },
         );
         const image = bill(
-            "wan-pro",
+            "alibaba/wan-2.7",
             { completionVideoSeconds: 5 },
             { resolution: "1080p", hasImage: true },
         );
@@ -468,7 +531,7 @@ describe("resolution cost variants", () => {
 
         for (const [resolution, rate] of tiers) {
             const billing = bill(
-                "seedance-pro",
+                "bytedance/seedance-1-pro-fast",
                 { completionVideoSeconds: 6 },
                 resolution ? { resolution } : undefined,
             );
@@ -476,9 +539,44 @@ describe("resolution cost variants", () => {
         }
     });
 
+    it("uses the Replicate video-in rates for Seedance reference videos", () => {
+        expect(
+            bill("bytedance/seedance-2.0", { completionVideoSeconds: 4 }).cost
+                .totalCost,
+        ).toBeCloseTo(4 * 0.18, 12);
+        expect(
+            bill("bytedance/seedance-2.5", { completionVideoSeconds: 4 }).cost
+                .totalCost,
+        ).toBeCloseTo(4 * 0.1028, 12);
+
+        const seedance20 = bill(
+            "bytedance/seedance-2.0",
+            { completionVideoSeconds: 4 },
+            { hasReferenceVideo: true },
+        );
+        expect(seedance20.costVariant).toBe("video_in");
+        expect(seedance20.cost.totalCost).toBeCloseTo(4 * 0.22, 12);
+
+        const seedance25_480p = bill(
+            "bytedance/seedance-2.5",
+            { completionVideoSeconds: 4 },
+            { hasReferenceVideo: true },
+        );
+        expect(seedance25_480p.costVariant).toBe("video_in_480p");
+        expect(seedance25_480p.cost.totalCost).toBeCloseTo(4 * 0.4304, 12);
+
+        const seedance25_720p = bill(
+            "bytedance/seedance-2.5",
+            { completionVideoSeconds: 4 },
+            { hasReferenceVideo: true, resolution: "720p" },
+        );
+        expect(seedance25_720p.costVariant).toBe("video_in_720p");
+        expect(seedance25_720p.cost.totalCost).toBeCloseTo(4 * 0.9676, 12);
+    });
+
     it("publishes supported resolutions with effective variant pricing", () => {
-        const definition = getRegistryModelDefinition("p-video");
-        const info = modelInfoFromDefinition("p-video", definition);
+        const definition = getRegistryModelDefinition("prunaai/p-video");
+        const info = modelInfoFromDefinition("prunaai/p-video", definition);
 
         expect(info.resolutions).toEqual(["720p", "1080p"]);
         expect(
@@ -497,7 +595,7 @@ describe("selection safety and composition", () => {
     ): ModelDefinition => ({
         aliases: [],
         provider: "test",
-        brand: "Test",
+        publisher: "Test",
         category: "text",
         cost: { promptTextTokens: 1e-6, completionTextTokens: 2e-6 },
         priceMultiplier: 1,
@@ -671,6 +769,64 @@ describe("selection safety and composition", () => {
     });
 });
 
+describe("FLUX.2 image billing", () => {
+    it("bills Pro's initial premium plus rounded input and output megapixels", () => {
+        const billing = bill("black-forest-labs/flux.2-pro", {
+            promptImageTokens: 2,
+            completionImageTokens: 4,
+        });
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.105, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.07875, 12);
+        expect(billing.adjustments).toMatchObject([
+            {
+                ruleId: "azure.flux_2_pro.initial_output_megapixel.v1",
+                units: 1,
+                cost: 0.015,
+                price: 0.01125,
+            },
+        ]);
+    });
+
+    it("attributes the Replicate fallback execution fee to Replicate", () => {
+        const billing = calculateUsageBilling({
+            model: "black-forest-labs/flux.2-pro",
+            usage: {
+                promptImageTokens: 2,
+                completionImageTokens: 4,
+            },
+            servedBy: getRegistryModelDefinition(
+                "black-forest-labs/flux.2-pro:replicate",
+            ),
+            quotedBy: getRegistryModelDefinition(
+                "black-forest-labs/flux.2-pro",
+            ),
+        });
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.105, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.07875, 12);
+        expect(billing.adjustments).toMatchObject([
+            {
+                ruleId: "replicate.flux_2_pro.run.v1",
+                units: 1,
+                cost: 0.015,
+                price: 0.01125,
+            },
+        ]);
+    });
+
+    it("bills Flex input and output megapixels at the same rate", () => {
+        const billing = bill("black-forest-labs/flux.2-flex", {
+            promptImageTokens: 2,
+            completionImageTokens: 4,
+        });
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.3, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.225, 12);
+        expect(billing.adjustments).toEqual([]);
+    });
+});
+
 describe("registry-wide variant invariants", () => {
     it("variant sheets only contain valid finite rates from the base sheet", () => {
         for (const model of getModels()) {
@@ -706,6 +862,14 @@ describe("registry-wide variant invariants", () => {
     it("every advertised non-default resolution selects a variant", () => {
         for (const model of getModels()) {
             const definition = getRegistryModelDefinition(model);
+            // Token-metered video routes keep one per-token rate; resolution
+            // changes the provider-reported output-token quantity instead.
+            if (
+                definition.cost.completionVideoTokens !== undefined &&
+                !definition.costVariants
+            ) {
+                continue;
+            }
             for (const resolution of definition.resolutions?.slice(1) ?? []) {
                 const variant = definition.selectCostVariant?.({
                     usage: {},

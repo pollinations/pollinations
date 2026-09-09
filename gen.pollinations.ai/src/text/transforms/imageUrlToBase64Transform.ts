@@ -104,11 +104,7 @@ export const imageUrlToBase64Transform: TransformFn = async (
     const provider = config?.provider as string | undefined;
     const requiresBase64ImageUrls = config?.requiresBase64ImageUrls === true;
 
-    if (
-        provider !== "vertex-ai" &&
-        provider !== "bedrock" &&
-        !requiresBase64ImageUrls
-    ) {
+    if (provider !== "bedrock" && !requiresBase64ImageUrls) {
         return { messages, options };
     }
 

@@ -1,0 +1,15 @@
+{
+  "name": "pollinations-composio-mcp-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test worker.test.js",
+    "check": "wrangler deploy --dry-run",
+    "deploy": "sops exec-file --no-fifo secrets.vars.json 'wrangler deploy --secrets-file {}'",
+    "deploy:staging": "sops exec-file --no-fifo secrets.vars.json 'wrangler deploy --env staging --secrets-file {}'"
+  },
+  "devDependencies": {
+    "wrangler": "^4.125.0"
+  }
+}

@@ -5,9 +5,41 @@ import {
 } from "@frontend/components/models/model-catalog.ts";
 import { describe, expect, it } from "vitest";
 
+it("keeps search aliases but never transfers historical statistics to a new ID", () => {
+    const catalog = [
+        {
+            name: "anthropic/claude-opus-5",
+            category: "text" as const,
+            aliases: ["claude-large", "claude-opus-4.8"],
+        },
+    ];
+    const oldStats = { avgCost: 4, requestCount: 10, userCount: 3 };
+    const [waiting] = getModelPricesFromCatalog(catalog, {
+        "claude-large": oldStats,
+    });
+    expect(waiting.name).toBe(catalog[0].name);
+    expect(waiting.aliases).toEqual(catalog[0].aliases);
+    expect(waiting.realAvgCost).toBeUndefined();
+    expect(waiting.users7d).toBeUndefined();
+
+    const [current] = getModelPricesFromCatalog(catalog, {
+        "claude-large": oldStats,
+        "anthropic/claude-opus-5": {
+            avgCost: 2,
+            requestCount: 5,
+            userCount: 2,
+        },
+    });
+    expect(current.realAvgCost).toBe(2);
+    expect(current.users7d).toBe(2);
+});
+
 describe("parseModelCatalogResponse", () => {
     it("returns the array when entries have identifiable models", () => {
-        const data = [{ name: "openai" }, { id: "flux" }];
+        const data = [
+            { name: "openai/gpt-5.4-nano" },
+            { id: "black-forest-labs/flux.1-schnell" },
+        ];
 
         expect(parseModelCatalogResponse(data)).toEqual(data);
     });
@@ -119,4 +151,23 @@ it("carries arbitrary public pricing variants and adjustments into the UI", () =
             },
         ],
     });
+});
+
+it("adds rolling user counts from public model stats", () => {
+    const [model] = getModelPricesFromCatalog(
+        [{ name: "popular-model", category: "text" }],
+        {
+            "popular-model": {
+                avgCost: 0,
+                requestCount: 100,
+                userCount: 12,
+            },
+        },
+    );
+
+    expect(model).toMatchObject({
+        name: "popular-model",
+        users7d: 12,
+    });
+    expect(model.realAvgCost).toBeUndefined();
 });

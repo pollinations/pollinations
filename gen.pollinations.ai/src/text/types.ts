@@ -39,6 +39,8 @@ export interface TransformOptions {
     additionalHeaders?: Record<string, string>;
     userApiKey?: string;
     portkeyGatewayUrl?: string;
+    /** Internal transport for managed prompt-agent Responses execution. */
+    responsesFetcher?: typeof fetch;
     jsonMode?: boolean;
     voice?: string;
     reasoning_effort?: string;
@@ -82,11 +84,18 @@ export interface ChatCompletion {
     choices?: CompletionChoice[];
     usage?: Record<string, unknown>;
     citations?: string[];
-    error?: string | { message?: string; status?: number; details?: unknown };
+    error?:
+        | string
+        | {
+              message?: string;
+              status?: number;
+              code?: number;
+              details?: unknown;
+          };
     stream?: boolean;
     responseStream?: ReadableStream | null;
     requestData?: unknown;
-    /** Portkey fallback target that served the call, e.g. "config.targets[1]". */
+    /** Worker fallback candidate that served the call. */
     fallbackTarget?: string;
     /** Internal URL of the gateway request that produced this completion. */
     upstreamRequestUrl?: URL;
@@ -105,6 +114,8 @@ export interface ServiceError extends Error {
      */
     errorCode?: string;
     details?: unknown;
+    /** Original provider response, retained independently of parsed routing details. */
+    responseBody?: string;
     model?: string;
     provider?: string;
     response?: { data?: unknown };
@@ -152,7 +163,6 @@ export interface RequestData {
 /** Configuration for the generic OpenAI client. */
 export interface OpenAIClientConfig {
     endpoint: string | ((model: string, options: TransformOptions) => string);
-    defaultOptions?: Record<string, unknown>;
     additionalHeaders?: Record<string, string>;
     fetcher?: (input: string, init?: RequestInit) => Promise<Response>;
 }

@@ -96,6 +96,18 @@ export const COMMUNITY_PAGE = {
     commitLabel: "commit",
     votesLabel: "votes",
 
+    // Quest leaderboard
+    questLeaderboardTitle: "Quest leaderboard",
+    questLeaderboardDescription:
+        "Builders who completed public GitHub POLLEN-QUEST issues.",
+    questLeaderboardCta: "Browse open quests ↗",
+    questLeaderboardTotalsLabel: "Quest leaderboard totals",
+    questLeaderboardBuildersLabel: "builders",
+    questLeaderboardCompletedLabel: "completed quests",
+    questLeaderboardPollenLabel: "Quest Pollen",
+    questLeaderboardRowCompletedLabel: "completed",
+    questLeaderboardRowPollenLabel: "Pollen",
+
     // Section 5 — Build Diary + Supporters
     buildDiaryTitle: "Build diary",
     buildDiarySubtitle: "A visual log of what we ship every day.",

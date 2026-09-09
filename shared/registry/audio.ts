@@ -1,4 +1,6 @@
+import { AUDIO_FALLBACKS } from "./audio-fallbacks";
 import { defineCostVariants } from "./cost-variants";
+import { mergeFallbacks } from "./merge-fallbacks";
 import type { ModelDefinition } from "./registry";
 
 // Voice name to ElevenLabs voice ID mapping
@@ -150,14 +152,19 @@ export const AUDIO_VOICES = [
     ...XAI_TTS_VOICES,
 ];
 
-export const DEFAULT_AUDIO_MODEL = "elevenlabs" as const;
-export type AudioModelName = keyof typeof AUDIO_SERVICES;
-
-export const AUDIO_SERVICES = {
-    elevenlabs: {
-        aliases: ["tts", "text-to-speech", "eleven", "tts-1", "tts-1-hd"],
+export const DEFAULT_AUDIO_MODEL = "elevenlabs/eleven-v3" as const;
+const AUDIO_BASE_SERVICES = {
+    "elevenlabs/eleven-v3": {
+        aliases: [
+            "tts",
+            "text-to-speech",
+            "eleven",
+            "tts-1",
+            "tts-1-hd",
+            "elevenlabs",
+        ],
         provider: "elevenlabs",
-        brand: "ElevenLabs",
+        publisher: "ElevenLabs",
         category: "audio",
         addedDate: new Date("2026-02-07").getTime(),
         priceMultiplier: 1,
@@ -180,10 +187,10 @@ export const AUDIO_SERVICES = {
             "/v1/audio/speech/with-timestamps",
         ],
     },
-    elevenflash: {
-        aliases: ["tts-flash", "eleven-flash", "flash"],
+    "elevenlabs/eleven-flash-v2.5": {
+        aliases: ["tts-flash", "eleven-flash", "flash", "elevenflash"],
         provider: "elevenlabs",
-        brand: "ElevenLabs",
+        publisher: "ElevenLabs",
         category: "audio",
         paidOnly: true,
         addedDate: new Date("2026-05-14").getTime(),
@@ -206,10 +213,15 @@ export const AUDIO_SERVICES = {
             "/v1/audio/speech/with-timestamps",
         ],
     },
-    "eleven-multilingual-v2": {
-        aliases: ["multilingual-v2", "eleven-v2", "tts-multilingual"],
+    "elevenlabs/eleven-multilingual-v2": {
+        aliases: [
+            "multilingual-v2",
+            "eleven-v2",
+            "tts-multilingual",
+            "eleven-multilingual-v2",
+        ],
         provider: "elevenlabs",
-        brand: "ElevenLabs",
+        publisher: "ElevenLabs",
         category: "audio",
         paidOnly: true,
         addedDate: new Date("2026-06-22").getTime(),
@@ -232,10 +244,10 @@ export const AUDIO_SERVICES = {
             "/v1/audio/speech/with-timestamps",
         ],
     },
-    "eleven-dialogue": {
-        aliases: ["dialogue", "text-to-dialogue"],
+    "elevenlabs/eleven-v3:dialogue": {
+        aliases: ["eleven-dialogue", "dialogue", "text-to-dialogue"],
         provider: "elevenlabs",
-        brand: "ElevenLabs",
+        publisher: "ElevenLabs",
         category: "audio",
         paidOnly: true,
         addedDate: new Date("2026-07-26").getTime(),
@@ -251,10 +263,10 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
         voices: ELEVENLABS_VOICES as string[],
     },
-    "eleven-voice-changer": {
-        aliases: ["voice-changer", "speech-to-speech"],
+    "elevenlabs/eleven-multilingual-sts-v2": {
+        aliases: ["voice-changer", "speech-to-speech", "eleven-voice-changer"],
         provider: "elevenlabs",
-        brand: "ElevenLabs",
+        publisher: "ElevenLabs",
         category: "audio",
         paidOnly: true,
         addedDate: new Date("2026-07-26").getTime(),
@@ -271,10 +283,10 @@ export const AUDIO_SERVICES = {
         voices: ELEVENLABS_VOICES as string[],
         supportedEndpoints: ["/v1/audio/voice-changer"],
     },
-    "eleven-voice-isolator": {
-        aliases: ["voice-isolator", "audio-cleanup"],
+    "elevenlabs/voice-isolator": {
+        aliases: ["voice-isolator", "audio-cleanup", "eleven-voice-isolator"],
         provider: "elevenlabs",
-        brand: "ElevenLabs",
+        publisher: "ElevenLabs",
         category: "audio",
         paidOnly: true,
         addedDate: new Date("2026-07-26").getTime(),
@@ -290,10 +302,10 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
         supportedEndpoints: ["/v1/audio/voice-isolator"],
     },
-    elevenmusic: {
-        aliases: ["music"],
+    "elevenlabs/music-v2": {
+        aliases: ["music", "elevenmusic"],
         provider: "elevenlabs",
-        brand: "ElevenLabs",
+        publisher: "ElevenLabs",
         category: "audio",
         addedDate: new Date("2026-02-08").getTime(),
         priceMultiplier: 1,
@@ -311,10 +323,10 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
     },
-    "lyria-3-clip": {
-        aliases: ["lyria", "lyria-3"],
+    "google/lyria-3-clip-preview": {
+        aliases: ["lyria", "lyria-3", "lyria-3-clip"],
         provider: "google",
-        brand: "Google",
+        publisher: "Google",
         category: "audio",
         addedDate: new Date("2026-07-24").getTime(),
         priceMultiplier: 1,
@@ -329,10 +341,10 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
-    "eleven-sfx": {
-        aliases: ["sfx", "sound-effects", "eleven-sound-effects"],
+    "elevenlabs/eleven-text-to-sound-v2": {
+        aliases: ["sfx", "sound-effects", "eleven-sound-effects", "eleven-sfx"],
         provider: "elevenlabs",
-        brand: "ElevenLabs",
+        publisher: "ElevenLabs",
         category: "audio",
         paidOnly: true,
         addedDate: new Date("2026-06-22").getTime(),
@@ -346,10 +358,10 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
-    whisper: {
-        aliases: ["whisper-1", "whisper-large-v3"],
+    "openai/whisper-large-v3": {
+        aliases: ["whisper-1", "whisper-large-v3", "whisper"],
         provider: "ovhcloud",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "audio",
         addedDate: new Date("2026-02-08").getTime(),
         priceMultiplier: 1,
@@ -363,10 +375,10 @@ export const AUDIO_SERVICES = {
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
-    "gpt-transcribe": {
-        aliases: [],
+    "openai/gpt-transcribe": {
+        aliases: ["gpt-transcribe"],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "audio",
         addedDate: new Date("2026-08-19").getTime(),
         paidOnly: false,
@@ -383,10 +395,10 @@ export const AUDIO_SERVICES = {
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
-    scribe: {
-        aliases: ["scribe_v2", "scribe-v2"],
+    "elevenlabs/scribe-v2": {
+        aliases: ["scribe_v2", "scribe-v2", "scribe"],
         provider: "elevenlabs",
-        brand: "ElevenLabs",
+        publisher: "ElevenLabs",
         category: "audio",
         addedDate: new Date("2026-02-13").getTime(),
         paidOnly: true,
@@ -401,10 +413,10 @@ export const AUDIO_SERVICES = {
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
-    "grok-transcribe": {
-        aliases: [],
+    "x-ai/grok-transcribe": {
+        aliases: ["grok-transcribe"],
         provider: "xai",
-        brand: "xAI",
+        publisher: "xAI",
         category: "audio",
         addedDate: new Date("2026-08-07").getTime(),
         paidOnly: true,
@@ -420,10 +432,10 @@ export const AUDIO_SERVICES = {
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
-    "grok-tts": {
-        aliases: [],
+    "x-ai/grok-tts": {
+        aliases: ["grok-tts"],
         provider: "xai",
-        brand: "xAI",
+        publisher: "xAI",
         category: "audio",
         addedDate: new Date("2026-08-19").getTime(),
         paidOnly: true,
@@ -440,10 +452,10 @@ export const AUDIO_SERVICES = {
         voices: [...XAI_TTS_VOICES],
         supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
-    "universal-2": {
-        aliases: ["assemblyai-universal-2", "assemblyai-u2"],
+    "assemblyai/universal-2": {
+        aliases: ["assemblyai-universal-2", "assemblyai-u2", "universal-2"],
         provider: "assemblyai",
-        brand: "AssemblyAI",
+        publisher: "AssemblyAI",
         category: "audio",
         addedDate: new Date("2026-05-02").getTime(),
         priceMultiplier: 1,
@@ -473,7 +485,7 @@ export const AUDIO_SERVICES = {
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
-    "universal-3.5-pro": {
+    "assemblyai/universal-3.5-pro": {
         aliases: [
             "universal-3-pro",
             "universal-3-5-pro",
@@ -483,9 +495,10 @@ export const AUDIO_SERVICES = {
             "assemblyai-universal-3-pro",
             "assemblyai-u3-pro",
             "assemblyai-pro",
+            "universal-3.5-pro",
         ],
         provider: "assemblyai",
-        brand: "AssemblyAI",
+        publisher: "AssemblyAI",
         category: "audio",
         addedDate: new Date("2026-05-02").getTime(),
         priceMultiplier: 1,
@@ -538,10 +551,16 @@ export const AUDIO_SERVICES = {
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
-    "stable-audio-3-medium": {
-        aliases: ["stable-audio", "stability-audio", "stable-audio-2.5"],
+    "stability-ai/stable-audio-3-medium": {
+        aliases: [
+            "stable-audio",
+            "stability-audio",
+            "stable-audio-2.5",
+            "stable-audio-3-medium",
+            "fal-ai/stable-audio-3/medium",
+        ],
         provider: "fal",
-        brand: "Stability AI",
+        publisher: "Stability AI",
         category: "audio",
         addedDate: new Date("2026-06-23").getTime(),
         priceMultiplier: 1,
@@ -561,13 +580,17 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
     },
-    "stable-audio-3-large": {
+    "stability-ai/stable-audio-3": {
         // Distinct from stable-audio-3-medium (fal): this is the larger
         // API-only model served by Stability's direct API. Keep aliases
         // non-overlapping with the medium entry.
-        aliases: ["stable-audio-3", "stable-audio-large"],
+        aliases: [
+            "stable-audio-large",
+            "stable-audio-3-large",
+            "stable-audio-3",
+        ],
         provider: "stability",
-        brand: "Stability AI",
+        publisher: "Stability AI",
         category: "audio",
         addedDate: new Date("2026-06-23").getTime(),
         priceMultiplier: 1,
@@ -586,10 +609,10 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
     },
-    "fish-audio-s2.1-pro": {
-        aliases: [],
+    "fish-audio/s2.1-pro": {
+        aliases: ["fish-audio-s2.1-pro"],
         provider: "openrouter",
-        brand: "Fish Audio",
+        publisher: "Fish Audio",
         category: "audio",
         addedDate: new Date("2026-08-19").getTime(),
         paidOnly: true,
@@ -604,14 +627,15 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
-    "qwen-tts": {
-        aliases: ["qwen3-tts", "qwen3-tts-flash"],
+    "qwen/qwen3-tts-flash": {
+        aliases: ["qwen3-tts", "qwen3-tts-flash", "qwen-tts"],
         provider: "alibaba",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "audio",
         addedDate: new Date("2026-04-22").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             // DashScope Qwen3-TTS-Flash: $0.10 per 10K characters
             completionAudioTokens: 0.01 / 1000,
@@ -621,10 +645,14 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
-    "qwen-tts-instruct": {
-        aliases: ["qwen3-tts-instruct", "qwen3-tts-instruct-flash"],
+    "qwen/qwen3-tts-instruct-flash": {
+        aliases: [
+            "qwen3-tts-instruct",
+            "qwen3-tts-instruct-flash",
+            "qwen-tts-instruct",
+        ],
         provider: "alibaba",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "audio",
         addedDate: new Date("2026-04-22").getTime(),
         paidOnly: true,
@@ -639,10 +667,10 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
-    "csm-1b": {
-        aliases: ["csm", "sesame-csm", "sesame-csm-1b"],
+    "sesame/csm-1b": {
+        aliases: ["csm", "sesame-csm", "sesame-csm-1b", "csm-1b"],
         provider: "deepinfra",
-        brand: "Sesame",
+        publisher: "Sesame",
         category: "audio",
         addedDate: new Date("2026-07-23").getTime(),
         paidOnly: true,
@@ -658,10 +686,10 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
         voices: [...CSM_VOICES],
     },
-    kokoro: {
-        aliases: ["kokoro-82m", "kokoro-tts", "hexgrad-kokoro-82m"],
+    "hexgrad/kokoro-82m": {
+        aliases: ["kokoro-82m", "kokoro-tts", "hexgrad-kokoro-82m", "kokoro"],
         provider: "deepinfra",
-        brand: "Hexgrad",
+        publisher: "Hexgrad",
         category: "audio",
         addedDate: new Date("2026-07-31").getTime(),
         paidOnly: true,
@@ -678,6 +706,12 @@ export const AUDIO_SERVICES = {
         voices: [...KOKORO_VOICES],
     },
 } satisfies Record<string, ModelDefinition>;
+
+export const AUDIO_SERVICES = mergeFallbacks(
+    AUDIO_BASE_SERVICES,
+    AUDIO_FALLBACKS,
+);
+export type AudioModelName = keyof typeof AUDIO_SERVICES;
 
 export function resolveElevenLabsVoiceId(voice: string): string {
     return VOICE_MAPPING[voice] ?? voice;

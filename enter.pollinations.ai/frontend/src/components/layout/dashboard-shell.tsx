@@ -1,16 +1,15 @@
 import {
     AccountIcon,
+    AccountMenu,
     BookIcon,
     BugIcon,
     CheckIcon,
-    ChevronIcon,
     Chip,
     ClipboardIcon,
     ColorModeToggle,
     CopyButton,
     cn,
     DiscordIcon,
-    Dropdown,
     ExternalLinkIcon,
     GenApiIcon,
     GitHubIcon,
@@ -41,7 +40,6 @@ import {
     type DashboardPage,
     type DashboardPath,
 } from "./dashboard-theme.ts";
-import { StatusNoticeBanner } from "./status-notice-banner.tsx";
 
 export type { DashboardPage } from "./dashboard-theme.ts";
 
@@ -257,8 +255,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             ),
         },
         {
-            label: "MCP Server",
-            href: `${genDocsUrl()}#tag/mcp-server`,
+            label: "MCP Servers",
+            href: `${genDocsUrl()}#tag/mcp-servers`,
             icon: (
                 <McpIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
             ),
@@ -365,7 +363,6 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-14 pb-8 lg:px-6 lg:pt-10"
                 >
                     <main className="mx-auto flex max-w-[800px] flex-col gap-6">
-                        <StatusNoticeBanner />
                         {children}
                     </main>
                 </ScrollArea>
@@ -436,13 +433,13 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         onClick={onNavigate}
                     >
                         {item.label}
-                        {item.id === "my-models" && (
+                        {(item.id === "my-models" || item.id === "quests") && (
                             <Chip
                                 intent="neutral"
                                 size="sm"
                                 className="ml-auto bg-transparent text-theme-text-soft"
                             >
-                                New!
+                                {item.id === "quests" ? "3 new!" : "New!"}
                             </Chip>
                         )}
                     </NavItem>
@@ -453,10 +450,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
         <div className="flex shrink-0 flex-col gap-2 border-t border-theme-text-strong/10 pt-4">
             {walletArea && <div className="px-1">{walletArea}</div>}
             {accountArea}
-            <DashboardFooter
-                links={showFooterLinks ? footerLinks : []}
-                note="© 2026 Myceli.AI"
-            />
+            <DashboardFooter links={showFooterLinks ? footerLinks : []} />
         </div>
     </aside>
 );
@@ -576,11 +570,10 @@ const SupportLinkRow: FC<SupportLink> = ({ label, href, icon }) => (
 
 const DashboardFooter: FC<{
     links: readonly FooterLink[];
-    note?: ReactNode;
-}> = ({ links, note }) => (
-    <>
+}> = ({ links }) => (
+    <div className="flex items-end justify-between gap-2 pl-3 text-xs leading-none text-theme-text-muted">
         {links.length > 0 && (
-            <div className="flex flex-wrap gap-x-2 gap-y-1 px-3 text-xs leading-snug text-theme-text-muted">
+            <div className="flex flex-wrap gap-x-2 gap-y-1 leading-snug">
                 {links.map((link) => (
                     <a
                         key={link.href}
@@ -594,14 +587,11 @@ const DashboardFooter: FC<{
                 ))}
             </div>
         )}
-        <div className="flex items-center justify-between gap-2 pl-3 text-xs leading-none text-theme-text-muted">
-            <span>{note}</span>
-            {/* accent on the toggle's active icon, over the neutral rail */}
-            <span data-theme="accent">
-                <ColorModeToggle />
-            </span>
-        </div>
-    </>
+        {/* accent on the toggle's active icon, over the neutral rail */}
+        <span data-theme="accent" className="ml-auto shrink-0">
+            <ColorModeToggle />
+        </span>
+    </div>
 );
 
 type AccountMenuButtonProps = {
@@ -621,33 +611,7 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
     links = [],
     className,
 }) => (
-    <Dropdown
-        align="end"
-        className="w-[var(--reference-width)] min-w-0 p-1"
-        trigger={(open) => (
-            <button
-                type="button"
-                data-theme="accent"
-                className={cn(
-                    "flex min-w-0 flex-row items-center gap-2 self-center whitespace-nowrap rounded-full bg-theme-bg-active p-1 pr-3 transition-colors hover:bg-theme-bg-hover",
-                    className,
-                )}
-            >
-                <img
-                    src={avatarUrl}
-                    alt={`${username} avatar`}
-                    className="h-8 shrink-0 rounded-full"
-                />
-                <span className="min-w-0 flex-1 truncate text-left font-medium text-theme-text-strong">
-                    {username}
-                </span>
-                <ChevronIcon
-                    expanded={open}
-                    className="ml-auto h-4 w-4 shrink-0 text-theme-text-strong transition-transform duration-200 ease-out"
-                />
-            </button>
-        )}
-    >
+    <AccountMenu name={username} avatarUrl={avatarUrl} className={className}>
         {(close) => (
             <>
                 {links.map((link) => (
@@ -686,7 +650,7 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
                 </button>
             </>
         )}
-    </Dropdown>
+    </AccountMenu>
 );
 
 const AccountMenuLinkRow: FC<AccountMenuLink> = ({

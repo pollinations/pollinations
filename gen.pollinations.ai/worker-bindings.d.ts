@@ -1,5 +1,9 @@
 interface CloudflareBindings {
     ENTER: Fetcher;
+    POLLINATIONS_MCP: Fetcher;
+    FFMPEG_MCP: Fetcher;
+    EXA_MCP: Fetcher;
+    COMPOSIO_MCP: Fetcher;
     PORTKEY?: Fetcher;
     KLEIN_VPC?: Fetcher;
     BETTER_AUTH_SECRET: string;
@@ -15,8 +19,10 @@ interface CloudflareBindings {
     INFERENCEPORT_API_KEY?: string;
     STABILITY_API_KEY?: string;
     KV: KVNamespace;
-    IMAGE_BUCKET: R2Bucket;
+    MEDIA: Service<import("../media.pollinations.ai/src/media-upload.ts").MediaUpload>;
     TEXT_BUCKET: R2Bucket;
+    /** Temporary old binary-cache source; used only for reads. */
+    LEGACY_MEDIA_BUCKET: R2Bucket;
     GENERATION_COORDINATOR: DurableObjectNamespace<
         import("./src/durable-objects/GenerationCoordinator.ts").GenerationCoordinator
     >;
@@ -28,7 +34,6 @@ interface CloudflareBindings {
         | "dev"
         | "test"
         | "development";
-    AGENT_RUNTIME_BASE_URL: string;
     STAGING_ALLOWED_GITHUB_IDS?: string;
     STAGING_ALLOWED_EMAILS?: string;
     LOG_LEVEL?: "trace" | "debug";

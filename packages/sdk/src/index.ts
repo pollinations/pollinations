@@ -78,6 +78,9 @@ export type {
     AccountKey,
     AccountPermission,
     AccountProfile,
+    AccountQuest,
+    AccountQuestReward,
+    AccountQuestsResponse,
     AudioBinaryResponse,
     AudioContentPart,
     AudioFormat,
@@ -92,15 +95,20 @@ export type {
     ChatChoice,
     ChatOptions,
     ChatResponse,
+    ChatRouting,
+    ChatRoutingCapability,
     ChatStreamChunk,
     CompletionUsage,
     CreatedKey,
     CreateKeyOptions,
     DailyUsageRecord,
     DailyUsageResponse,
+    DeveloperEarningsResponse,
+    DeveloperEarningsRow,
     DeviceAuthorization,
     DeviceCodeResponse,
     DeviceTokenResponse,
+    EarningsOptions,
     FileContentPart,
     FunctionDefinition,
     ImageContentPart,
@@ -122,6 +130,8 @@ export type {
     // Models
     ModelCategory,
     ModelInfo,
+    ModelInputModality,
+    ModelOutputModality,
     // Config
     PollinationsConfig,
     // Errors
@@ -145,6 +155,7 @@ export type {
     UsageRecord,
     UsageResponse,
     UserInfo,
+    VideoCapability,
     VideoContentPart,
     VideoGenerateOptions,
     // Video
@@ -152,5 +163,5 @@ export type {
     VideoResponse,
 } from "./types.js";
 
-// Export the error class
-export { PollinationsError } from "./types.js";
+// Export runtime constants and the error class
+export { CHAT_ROUTING_CAPABILITIES, PollinationsError } from "./types.js";

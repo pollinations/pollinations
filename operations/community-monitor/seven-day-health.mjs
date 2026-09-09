@@ -30,6 +30,12 @@ SELECT
         AND startsWith(error_message, 'Image provider error:')
     ) AS provider_4xx,
     countIf(
+        is_final
+        AND event_type = 'generate.image'
+        AND response_status >= 400 AND response_status < 500
+        AND startsWith(error_message, 'Community image endpoint responded ')
+    ) AS unclassified_upstream_4xx,
+    countIf(
         is_final AND fallback_used
         AND response_status >= 200 AND response_status < 300
     ) AS fallback_saved,
@@ -167,6 +173,7 @@ const models = healthPayload.data
             successes,
             failures5xx,
             provider4xx,
+            unclassifiedUpstream4xx: Number(row.unclassified_upstream_4xx),
             fallbackSaved: Number(row.fallback_saved),
             successRate,
             successPercent:
@@ -203,6 +210,9 @@ const output = {
     minimumSuccessPercent: MIN_SUCCESS_RATE * 100,
     minimumCurrentSuccessPercent: MIN_CURRENT_SUCCESS_RATE * 100,
     activeCommunityModelCount: activeCommunityModels.size,
+    // Current upstream input/content errors need attribution, not automatic
+    // inclusion in the outage denominator. Do not silently drop them either.
+    needsDiagnosis: models.filter((model) => model.unclassifiedUpstream4xx > 0),
     candidates,
     freshnessProtected,
     needsProbe,

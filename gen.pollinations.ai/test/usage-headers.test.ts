@@ -1,8 +1,10 @@
 import type { Usage } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
+    hasExplicitPromptCacheHit,
     openaiUsageToUsage,
     parseUsageHeaders,
+    responsesUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
 import { describe, expect, it } from "vitest";
 
@@ -31,10 +33,10 @@ describe("buildUsageHeaders", () => {
             promptCacheWriteTokens: 4096,
             completionReasoningTokens: 150,
         };
-        const headers = buildUsageHeaders("openai-fast", usage);
+        const headers = buildUsageHeaders("openai/gpt-5-nano", usage);
 
         const expected: Record<string, string> = {
-            "x-model-used": "openai-fast",
+            "x-model-used": "openai/gpt-5-nano",
             "x-usage-prompt-text-tokens": "42",
             "x-usage-completion-text-tokens": "55",
             "x-usage-prompt-cached-tokens": "50",
@@ -64,11 +66,38 @@ describe("buildUsageHeaders", () => {
             completionAudioSeconds: 3.5,
             completionVideoSeconds: 10.2,
         };
-        const headers = buildUsageHeaders("gemini-large", usage);
+        const headers = buildUsageHeaders(
+            "google/gemini-3.1-pro-preview",
+            usage,
+        );
 
         expect(headers["x-usage-prompt-audio-tokens"]).toBe("500");
         expect(headers["x-usage-completion-audio-seconds"]).toBe("3.5");
         expect(headers["x-usage-completion-video-seconds"]).toBe("10.2");
+    });
+});
+
+describe("hasExplicitPromptCacheHit", () => {
+    it("recognizes Alibaba chat and Responses explicit-cache hits", () => {
+        expect(
+            hasExplicitPromptCacheHit({
+                prompt_tokens_details: { cache_type: "ephemeral" },
+            }),
+        ).toBe(true);
+        expect(
+            hasExplicitPromptCacheHit({
+                input_tokens_details: { cache_type: "ephemeral" },
+            }),
+        ).toBe(true);
+    });
+
+    it("does not treat an explicit-cache request or implicit hit as a hit", () => {
+        expect(
+            hasExplicitPromptCacheHit({
+                prompt_tokens_details: { cache_type: "implicit" },
+            }),
+        ).toBe(false);
+        expect(hasExplicitPromptCacheHit({ cached_tokens: 100 })).toBe(false);
     });
 });
 
@@ -137,6 +166,23 @@ describe("openaiUsageToUsage", () => {
         expect(usage.promptCacheWriteTokens).toBe(8584);
         expect(usage.promptCachedTokens).toBe(0);
         expect(usage.completionTextTokens).toBe(8);
+    });
+
+    it("should handle Alibaba nested cache creation tokens", () => {
+        const usage = openaiUsageToUsage({
+            prompt_tokens: 2719,
+            completion_tokens: 5,
+            total_tokens: 2724,
+            prompt_tokens_details: {
+                cached_tokens: 0,
+                cache_creation_input_tokens: 2704,
+            },
+        });
+
+        expect(usage.promptTextTokens).toBe(15);
+        expect(usage.promptCacheWriteTokens).toBe(2704);
+        expect(usage.promptCachedTokens).toBe(0);
+        expect(usage.completionTextTokens).toBe(5);
     });
 
     it("should handle reasoning tokens in completion_tokens_details", () => {
@@ -367,7 +413,7 @@ describe("parseUsageHeaders", () => {
 
     it("should handle Headers object (from Response)", () => {
         const headers = new Headers({
-            "x-model-used": "claude-large",
+            "x-model-used": "anthropic/claude-opus-5",
             "x-usage-prompt-text-tokens": "200",
             "x-usage-prompt-cached-tokens": "100",
             "x-usage-prompt-cache-write-tokens": "4096",
@@ -429,5 +475,28 @@ describe("buildUsageHeaders + parseUsageHeaders round-trip", () => {
         expect(parsedUsage.completionAudioSeconds).toBe(
             originalUsage.completionAudioSeconds,
         );
+    });
+});
+
+describe("responsesUsageToUsage", () => {
+    it("splits cached and reasoning tokens from inclusive totals", () => {
+        expect(
+            responsesUsageToUsage({
+                input_tokens: 12,
+                input_tokens_details: {
+                    cached_tokens: 2,
+                    cache_write_tokens: 1,
+                },
+                output_tokens: 7,
+                output_tokens_details: { reasoning_tokens: 3 },
+                total_tokens: 19,
+            }),
+        ).toMatchObject({
+            promptTextTokens: 9,
+            promptCachedTokens: 2,
+            promptCacheWriteTokens: 1,
+            completionTextTokens: 4,
+            completionReasoningTokens: 3,
+        });
     });
 });

@@ -36,6 +36,34 @@ def _workspace_path(name: str) -> str:
     return full
 
 
+def _name_for_bytes(data: bytes) -> str:
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        ext = ".png"
+    elif data.startswith(b"\xff\xd8\xff"):
+        ext = ".jpg"
+    elif data.startswith((b"<svg", b"<?xml")):
+        ext = ".svg"
+    elif data.startswith(b"GIF8"):
+        ext = ".gif"
+    elif data[4:8] == b"ftyp":
+        ext = ".mp4"
+    elif data.startswith(b"\x1aE\xdf\xa3"):
+        ext = ".webm"
+    elif data.startswith(b"OggS"):
+        ext = ".ogg"
+    elif data.startswith(b"fLaC"):
+        ext = ".flac"
+    elif data.startswith(b"ID3") or data.startswith(b"\xff\xfb"):
+        ext = ".mp3"
+    elif data.startswith(b"RIFF") and data[8:12] == b"WAVE":
+        ext = ".wav"
+    elif data.startswith(b"RIFF") and data[8:12] == b"WEBP":
+        ext = ".webp"
+    else:
+        ext = ".bin"
+    return f"{uuid.uuid4().hex}{ext}"
+
+
 async def _read_source(source: str, filename: str | None) -> tuple[bytes, str]:
     """Return (bytes, filename) for a data URI, http(s) URL, or workspace path."""
     if source.startswith("data:"):
@@ -43,8 +71,10 @@ async def _read_source(source: str, filename: str | None) -> tuple[bytes, str]:
         mime = header[len("data:") :].split(";")[0] or "application/octet-stream"
         return base64.b64decode(b64), filename or f"{uuid.uuid4().hex}{_ext_for(mime)}"
     if source.startswith(("http://", "https://")):
-        name = filename or os.path.basename(source.split("?", 1)[0]) or "media.bin"
-        return await _fetch_bytes(source), name
+        data = await _fetch_bytes(source)
+        path_name = os.path.basename(source.split("?", 1)[0])
+        name = filename or (path_name if "." in path_name else _name_for_bytes(data))
+        return data, name
     full = _workspace_path(source)
     if not os.path.isfile(full):
         raise ValueError(f"workspace file not found: {source!r}")

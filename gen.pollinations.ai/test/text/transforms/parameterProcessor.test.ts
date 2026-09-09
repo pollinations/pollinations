@@ -51,7 +51,7 @@ describe("processParameters", () => {
 
     it("strips nullable stream_options for non-OpenAI Azure models", () => {
         const result = processParameters(messages, {
-            model: "mistral-large",
+            model: "mistralai/mistral-large-3",
             stream_options: null as unknown as Record<string, unknown>,
             modelConfig: {
                 provider: "azure-openai",
@@ -126,6 +126,7 @@ describe("processParameters", () => {
         "global.anthropic.claude-opus-4-8",
         "global.anthropic.claude-opus-5",
         "global.anthropic.claude-fable-5",
+        "global.anthropic.claude-fable-5-1",
     ])("strips temperature/top_p/top_k for %s", (model) => {
         const result = processParameters(messages, {
             model,

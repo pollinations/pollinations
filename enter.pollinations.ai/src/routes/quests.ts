@@ -18,9 +18,8 @@ import type {
 } from "../services/quests/types.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 
-// Bumped to v26: established GitHub, app_paid_request, and app_users_10 are
-// available; Early Adopter and app_pollen_10 are visible as coming soon.
-const CACHE_KEY = "quests:catalog:v26";
+// Bumped to v29: the Discord quest links to account connection and the server.
+const CACHE_KEY = "quests:catalog:v29";
 const CACHE_TTL = 60;
 const QUEST_CHECK_THROTTLE_SECONDS = 60;
 

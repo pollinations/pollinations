@@ -8,7 +8,7 @@ import { apiClient } from "../../api.ts";
 
 export type ModelStats = Record<
     string,
-    { avgCost: number; requestCount: number }
+    { avgCost: number; requestCount: number; userCount?: number }
 >;
 
 type TinybirdResponse = {
@@ -17,6 +17,7 @@ type TinybirdResponse = {
         avg_cost_usd: number;
         request_count?: number;
         priced_success_count?: number;
+        user_count?: number;
     }>;
 };
 
@@ -49,6 +50,7 @@ export function useModelStats(): {
                         avgCost: row.avg_cost_usd,
                         requestCount:
                             row.request_count ?? row.priced_success_count ?? 0,
+                        userCount: row.user_count,
                     };
                 }
 

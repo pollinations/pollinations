@@ -1,7 +1,8 @@
 import type { Data } from "../types";
 import { fmtMonthYear } from "./format";
 
-const MONTH_RE = /^\d{4}-\d{2}$/;
+const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export type MonthFilterValue = string | readonly string[];
 export type ValueFilter = string | readonly string[];
@@ -9,6 +10,37 @@ export type ValueFilter = string | readonly string[];
 export function monthLabel(month: string): string {
     if (!MONTH_RE.test(month)) return month;
     return fmtMonthYear(month.slice(0, 4), month.slice(5, 7));
+}
+
+export function monthName(month: string): string {
+    if (!MONTH_RE.test(month)) return month;
+    return new Intl.DateTimeFormat("en-US", {
+        month: "long",
+        timeZone: "UTC",
+    }).format(new Date(`${month}-01T00:00:00Z`));
+}
+
+export function isMonthKey(value: string): boolean {
+    return MONTH_RE.test(value);
+}
+
+export function isDateKey(value: string): boolean {
+    if (!DATE_RE.test(value)) return false;
+    const parsed = new Date(`${value}T00:00:00Z`);
+    return (
+        !Number.isNaN(parsed.getTime()) &&
+        parsed.toISOString().slice(0, 10) === value
+    );
+}
+
+export function monthShift(month: string, delta: number): string {
+    const total =
+        Number(month.slice(0, 4)) * 12 +
+        (Number(month.slice(5, 7)) - 1) +
+        delta;
+    const year = Math.floor(total / 12);
+    const shiftedMonth = (total % 12) + 1;
+    return `${String(year).padStart(4, "0")}-${String(shiftedMonth).padStart(2, "0")}`;
 }
 
 // filter is "" (everything), "YYYY" (whole year) or "YYYY-MM"; value may be a
@@ -39,15 +71,29 @@ export function matchesValue(value: string, filter: ValueFilter): boolean {
 // Credits runway must clamp to the window.
 export const WINDOW_START = "2026-01";
 
+// Navigation must not lose a selected period when another view loads fewer sources.
+// Missing months remain selectable so their absence is visible, not silently skipped.
+export function reportingMonths(now = new Date()): string[] {
+    const end = now.toISOString().slice(0, 7);
+    const months: string[] = [];
+    for (let month = WINDOW_START; month <= end; month = monthShift(month, 1)) {
+        months.push(month);
+    }
+    return months;
+}
+
 // Every in-window month observed across the OP month-grained tables, ascending.
 export function collectMonths(data: Data): string[] {
     const months = new Set<string>();
-    for (const row of data.opTransactions ?? [])
-        months.add(row.date.slice(0, 7));
-    for (const row of data.opCloud ?? []) months.add(row.start.slice(0, 7));
+    for (const row of data.opTransactions ?? []) {
+        if (isDateKey(row.date)) months.add(row.date.slice(0, 7));
+    }
+    for (const row of data.vendorLedger ?? [])
+        months.add(row.start.slice(0, 7));
     for (const row of data.opPollen ?? []) months.add(row.month);
+    for (const row of data.revenueShare ?? []) months.add(row.month);
     return [...months]
-        .filter((month) => MONTH_RE.test(month) && month >= WINDOW_START)
+        .filter((month) => isMonthKey(month) && month >= WINDOW_START)
         .sort((a, b) => a.localeCompare(b));
 }
 
@@ -58,7 +104,7 @@ export function latestClosedMonth(
     now = new Date(),
 ): string | null {
     if (months.length === 0) return null;
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const currentMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
     for (let index = months.length - 1; index >= 0; index -= 1) {
         if (months[index] < currentMonth) return months[index];
     }

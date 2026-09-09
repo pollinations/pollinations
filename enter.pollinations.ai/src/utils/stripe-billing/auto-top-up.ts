@@ -127,15 +127,11 @@ export async function processAutoTopUpForUser(
         return { status: "skipped", reason: "auto top-up disabled" };
     }
 
-    const threshold = AUTO_TOP_UP_THRESHOLD_POLLEN;
-    if ((user.packBalance ?? 0) > threshold) {
+    if ((user.packBalance ?? 0) > AUTO_TOP_UP_THRESHOLD_POLLEN) {
         return { status: "skipped", reason: "paid balance above threshold" };
     }
 
-    const pack =
-        user.autoTopUpAmountUsd == null
-            ? undefined
-            : getPollenPackByAmount(user.autoTopUpAmountUsd);
+    const pack = getPollenPackByAmount(user.autoTopUpAmountUsd);
     if (!pack) {
         return { status: "skipped", reason: "auto top-up pack invalid" };
     }

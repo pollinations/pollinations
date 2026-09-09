@@ -9,10 +9,32 @@ import {
     teardownFetchMock,
 } from "@shared/test/mocks/fetch.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
-import { afterEach, expect } from "vitest";
+import { afterEach, expect, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
 import worker from "../../src/index.ts";
 import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
+
+const bedrockMocks = vi.hoisted(() => ({
+    calls: [] as Record<string, unknown>[],
+}));
+
+vi.mock("@aws-sdk/client-bedrock-runtime", () => ({
+    BedrockRuntimeClient: vi.fn().mockImplementation(() => ({
+        send: vi.fn().mockImplementation(async (command) => {
+            bedrockMocks.calls.push(JSON.parse(command.body));
+            return {
+                body: new TextEncoder().encode(
+                    JSON.stringify({ images: ["iVBORw0KGgo="] }),
+                ),
+            };
+        }),
+    })),
+    InvokeModelCommand: vi.fn().mockImplementation((input) => input),
+}));
+
+vi.mock("@smithy/fetch-http-handler", () => ({
+    FetchHttpHandler: vi.fn(),
+}));
 
 const INPUT_IMAGE_URL = "https://media.example.test/input.png";
 const OUTPUT_IMAGE_URL = "https://media.example.test/output.png";
@@ -158,11 +180,11 @@ test("qwen-image selects text-to-image and edit billing from the real handler in
     await mocks.enable("tinybird", "replicate", "media");
 
     await generate(
-        "/image/billing-qwen-t2i?model=qwen-image&seed=101",
+        "/image/billing-qwen-t2i?model=qwen/qwen-image&seed=101",
         paidApiKey,
     );
     await generate(
-        `/image/billing-qwen-edit?model=qwen-image&seed=102&image=${encodeURIComponent(INPUT_IMAGE_URL)}`,
+        `/image/billing-qwen-edit?model=qwen/qwen-image&seed=102&image=${encodeURIComponent(INPUT_IMAGE_URL)}`,
         paidApiKey,
     );
 
@@ -173,8 +195,8 @@ test("qwen-image selects text-to-image and edit billing from the real handler in
     expect(mocks.tinybird.state.events).toHaveLength(2);
     const [textToImage, edit] = mocks.tinybird.state.events;
     expect(textToImage).toMatchObject({
-        modelRequested: "qwen-image",
-        modelUsed: "qwen-image",
+        modelRequested: "qwen/qwen-image",
+        modelUsed: "qwen/qwen-image",
         tokenCountCompletionImage: 1,
         tokenPriceCompletionImage: 0.025,
         totalCost: 0.025,
@@ -182,13 +204,56 @@ test("qwen-image selects text-to-image and edit billing from the real handler in
     });
     expect(textToImage.costVariant).toBeUndefined();
     expect(edit).toMatchObject({
-        modelRequested: "qwen-image",
-        modelUsed: "qwen-image-edit",
+        modelRequested: "qwen/qwen-image",
+        modelUsed: "qwen/qwen-image",
         costVariant: "edit",
         tokenCountCompletionImage: 1,
         tokenPriceCompletionImage: 0.03,
         totalCost: 0.03,
         totalPrice: 0.03,
+    });
+});
+
+test("nova-canvas bills the final dimensions sent to Bedrock", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    bedrockMocks.calls = [];
+
+    await generate(
+        "/image/billing-nova-low?model=nova-canvas&width=1025&height=1024&seed=105",
+        paidApiKey,
+    );
+    await generate(
+        "/image/billing-nova-high?model=nova-canvas&width=1008&height=1040&seed=106",
+        paidApiKey,
+    );
+
+    expect(
+        bedrockMocks.calls.map((call) => call.imageGenerationConfig),
+    ).toEqual([
+        expect.objectContaining({ width: 1024, height: 1024 }),
+        expect.objectContaining({ width: 1008, height: 1040 }),
+    ]);
+    expect(mocks.tinybird.state.events).toHaveLength(2);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        modelRequested: "nova-canvas",
+        modelUsed: "amazon/nova-canvas-v1",
+        tokenCountCompletionImage: 1,
+        tokenPriceCompletionImage: 0.04,
+        totalCost: 0.04,
+        totalPrice: 0.04,
+    });
+    expect(mocks.tinybird.state.events[0].costVariant).toBeUndefined();
+    expect(mocks.tinybird.state.events[1]).toMatchObject({
+        modelRequested: "nova-canvas",
+        modelUsed: "amazon/nova-canvas-v1",
+        costVariant: "2048",
+        tokenCountCompletionImage: 1,
+        tokenPriceCompletionImage: 0.06,
+        totalCost: 0.06,
+        totalPrice: 0.06,
     });
 });
 
@@ -199,7 +264,7 @@ test("p-video sends the selected resolution upstream and bills its variant", asy
     await mocks.enable("tinybird", "replicate", "media");
 
     await generate(
-        "/image/billing-pvideo?model=p-video&resolution=1080p&duration=5&seed=103",
+        "/image/billing-pvideo?model=prunaai/p-video&resolution=1080p&duration=5&seed=103",
         paidApiKey,
     );
 
@@ -210,8 +275,8 @@ test("p-video sends the selected resolution upstream and bills its variant", asy
     });
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
-        modelRequested: "p-video",
-        modelUsed: "p-video",
+        modelRequested: "prunaai/p-video",
+        modelUsed: "prunaai/p-video",
         costVariant: "1080p",
         tokenCountCompletionVideoSeconds: 5,
         tokenPriceCompletionVideoSeconds: 0.04,
@@ -260,7 +325,7 @@ test("Grok Imagine Image 2.0 forwards and bills its quality-resolution tier", as
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelRequested: "grok-imagine-image-2.0",
-        modelUsed: "grok-imagine-image-2.0",
+        modelUsed: "x-ai/grok-imagine-image-2.0",
         costVariant: "low_2k",
         tokenCountPromptImage: 1,
         tokenPricePromptImage: 0.01,

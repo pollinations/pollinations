@@ -655,7 +655,7 @@ describe("community endpoint OpenAI service", () => {
         );
     });
 
-    it("probes the exact synchronous video endpoint", async () => {
+    it("probes video generation and prefers reported usage over requested duration", async () => {
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
             expect(request.url).toBe(
@@ -674,6 +674,7 @@ describe("community endpoint OpenAI service", () => {
                         b64_json: "AAAAFGZ0eXBpc29tAAAAAGlzb20AAAAJbWRhdAA=",
                     },
                 ],
+                usage: { duration: 4.5 },
             });
         });
         vi.stubGlobal("fetch", fetchMock);
@@ -684,9 +685,67 @@ describe("community endpoint OpenAI service", () => {
                 bearerToken: "sk_saved_token",
             }),
         ).resolves.toEqual({
+            usage: { duration: 4.5 },
+            billableUsage: { completionVideoSeconds: 4.5 },
+        });
+    });
+
+    it.each([
+        undefined,
+        null,
+        {},
+        { duration: null },
+    ])("uses the probe duration when video usage is missing: %j", async (usage) => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    data: [
+                        {
+                            b64_json:
+                                "AAAAFGZ0eXBpc29tAAAAAGlzb20AAAAJbWRhdAA=",
+                        },
+                    ],
+                    usage,
+                }),
+            ),
+        );
+        await expect(
+            testCommunityVideoEndpoint({
+                baseUrl: "https://api.example.com/generate-video",
+                bearerToken: "sk_saved_token",
+            }),
+        ).resolves.toEqual({
             usage: { duration: 5 },
             billableUsage: { completionVideoSeconds: 5 },
         });
+    });
+
+    it.each([
+        { duration: 0 },
+        { duration: -1 },
+        { duration: "5" },
+    ])("rejects registration when reported video usage is invalid: %j", async (usage) => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    data: [
+                        {
+                            b64_json:
+                                "AAAAFGZ0eXBpc29tAAAAAGlzb20AAAAJbWRhdAA=",
+                        },
+                    ],
+                    usage,
+                }),
+            ),
+        );
+        await expect(
+            testCommunityVideoEndpoint({
+                baseUrl: "https://api.example.com/generate-video",
+                bearerToken: "sk_saved_token",
+            }),
+        ).rejects.toThrow("usage.duration");
     });
 
     it("probes transcription endpoints with a sample audio file and OpenAI duration usage", async () => {

@@ -1,9 +1,9 @@
+import type { SafeValue } from "@shared/schemas/safety.ts";
 import { every } from "hono/combine";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import type { SafeValue } from "@shared/schemas/safety.ts";
 import type { Env } from "@/env.ts";
-import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
+import { normalizedJsonBody } from "@/middleware/generation-cache.ts";
 import { deduplicateGeneration } from "@/middleware/generation-deduplication.ts";
 import {
     audioCache,
@@ -134,8 +134,7 @@ export function mediaResponses(protocol: MediaProtocol) {
                 // Replay the JSON edits contract: the executor parses it as
                 // already-safe, and data URIs are hashed into the cache key.
                 const safe = body.safe as SafeValue;
-                ctx.set(
-                    "generationRequestBody",
+                const edit = normalizedJsonBody(
                     JSON.stringify({
                         prompt: await applySafetyToInput(ctx, prompt, safe),
                         model: entry.id,
@@ -143,13 +142,15 @@ export function mediaResponses(protocol: MediaProtocol) {
                         ...(safe !== undefined && { safe }),
                     }),
                 );
+                ctx.set("generationRequestBody", edit);
+                ctx.set("generationCacheBody", edit);
                 ctx.set("generationRequestContentType", "application/json");
                 ctx.set(
                     "generationRequestUrl",
                     new URL("/v1/images/edits", ctx.req.url),
                 );
                 ctx.set("generationRequestMethod", "POST");
-                await prepareGenerationRequest(ctx, proceed);
+                await proceed();
             }),
             cache,
             generationAccess,

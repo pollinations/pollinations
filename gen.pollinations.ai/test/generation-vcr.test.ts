@@ -909,7 +909,10 @@ test("media text protocols route image parts through the edits contract", async 
                                 },
                                 protocol === "responses"
                                     ? { type: "input_image", image_url: image }
-                                    : { type: "image_url", image_url: { url: image } },
+                                    : {
+                                          type: "image_url",
+                                          image_url: { url: image },
+                                      },
                             ],
                         },
                     ],

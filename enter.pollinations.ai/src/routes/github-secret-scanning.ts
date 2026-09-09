@@ -1,6 +1,6 @@
 import { verify } from "node:crypto";
+import { defaultKeyHasher } from "@better-auth/api-key";
 import * as schema from "@shared/db/better-auth.ts";
-import { defaultKeyHasher } from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -11,7 +11,8 @@ import type { Env } from "../env.ts";
 const GITHUB_KEYS_URL =
     "https://api.github.com/meta/public_keys/secret_scanning";
 const POLLINATIONS_SECRET_TYPE = "pollinations_api_key";
-const PUBLIC_KEY_CACHE_MS = 60 * 60 * 1000;
+// Match the public-key endpoint's one-minute freshness window.
+const PUBLIC_KEY_CACHE_MS = 60 * 1000;
 
 const GithubPublicKeysSchema = z.object({
     public_keys: z.array(
@@ -35,9 +36,9 @@ let publicKeys = new Map<string, string>();
 let publicKeysFetchedAt = 0;
 
 async function getGithubPublicKey(keyId: string): Promise<string | undefined> {
-    const cached = publicKeys.get(keyId);
-    if (cached && Date.now() - publicKeysFetchedAt < PUBLIC_KEY_CACHE_MS) {
-        return cached;
+    // Unknown IDs must not let unauthenticated callers bypass the cache.
+    if (Date.now() - publicKeysFetchedAt < PUBLIC_KEY_CACHE_MS) {
+        return publicKeys.get(keyId);
     }
 
     const response = await fetch(GITHUB_KEYS_URL, {

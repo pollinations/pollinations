@@ -230,6 +230,15 @@ export type ModelDefinition = {
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
     /** Internal provider-route output-token cap used for fallback compatibility. */
     maxCompletionTokens?: number;
+    /**
+     * Parameters this model actually supports through Pollinations.
+     * Investigated per-model, not copied from upstream docs.
+     */
+    supportedParameters?: readonly string[];
+    /**
+     * Default values for supported parameters.
+     */
+    defaultParameters?: Readonly<Record<string, unknown>>;
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.

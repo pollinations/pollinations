@@ -746,6 +746,8 @@ export const OpenAIModelSchema = z
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),
         per_user_rpm: z.number().positive().nullable().optional(),
+        supported_parameters: z.array(z.string()).optional(),
+        default_parameters: z.record(z.unknown()).optional(),
     })
     .meta({
         description: "OpenAI-compatible model object with capability metadata",

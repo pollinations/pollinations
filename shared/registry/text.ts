@@ -61,6 +61,18 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         contextLength: 400000,
         isSpecialized: false,
+        supportedParameters: [
+            "temperature", "top_p", "max_tokens", "max_completion_tokens",
+            "frequency_penalty", "presence_penalty", "repetition_penalty",
+            "seed", "stop", "stream", "stream_options",
+            "response_format", "tools", "tool_choice",
+            "user", "logit_bias", "logprobs", "top_logprobs"
+        ],
+        defaultParameters: {
+            temperature: 0.7,
+            top_p: 1,
+            max_tokens: 4096
+        },
     },
     "openai/gpt-5-nano": {
         aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07", "openai-fast"],
@@ -154,6 +166,18 @@ const TEXT_BASE_SERVICES = {
         reasoning: true,
         contextLength: 1050000,
         isSpecialized: false,
+        supportedParameters: [
+            "temperature", "top_p", "max_tokens", "max_completion_tokens",
+            "frequency_penalty", "presence_penalty", "repetition_penalty",
+            "seed", "stop", "stream", "stream_options",
+            "response_format", "tools", "tool_choice",
+            "reasoning_effort", "user", "logit_bias", "logprobs", "top_logprobs"
+        ],
+        defaultParameters: {
+            temperature: 0.7,
+            top_p: 1,
+            max_tokens: 4096
+        },
     },
     "openai/gpt-5.4-mini": {
         aliases: ["gpt-5-mini", "openai-mini", "gpt-5.4-mini"],
@@ -814,6 +838,18 @@ const TEXT_BASE_SERVICES = {
         reasoning: true,
         contextLength: 1048576,
         isSpecialized: false,
+        supportedParameters: [
+            "temperature", "top_p", "max_tokens", "max_completion_tokens",
+            "frequency_penalty", "presence_penalty",
+            "seed", "stop", "stream", "stream_options",
+            "response_format", "tools", "tool_choice",
+            "reasoning_effort", "user"
+        ],
+        defaultParameters: {
+            temperature: 0.7,
+            top_p: 1,
+            max_tokens: 8192
+        },
     },
     "deepseek/deepseek-v4-flash-vision-exp": {
         aliases: [],

@@ -167,7 +167,18 @@ def filter_admin_actions_from_tools(tools: list, is_admin: bool, is_collaborator
 
 # Actions blocked for API users (superset of ADMIN_ACTIONS — also blocks PR comment/review)
 API_RESTRICTED_ACTIONS = {
-    "github_issue": ADMIN_ACTIONS["github_issue"] | {"create", "comment", "edit_comment", "delete_comment"},
+    "discord_search": {"members", "roles"},
+    "github_issue": ADMIN_ACTIONS["github_issue"]
+    | {
+        "create",
+        "comment",
+        "edit_comment",
+        "delete_comment",
+        "subscribe",
+        "unsubscribe",
+        "unsubscribe_all",
+        "list_subscriptions",
+    },
     "github_pr": ADMIN_ACTIONS["github_pr"] | {"comment", "review"},
     "github_project": ADMIN_ACTIONS["github_project"],
 }
@@ -263,6 +274,7 @@ DEFAULT_TOOLS = {
     "web_search",
     "web_scrape",
     "discord_search",
+    "render_visual",
     "github_overview",
     "github_issue",
 }
@@ -305,7 +317,7 @@ def filter_tools_by_intent(user_message: str, all_tools: list[dict], is_admin: b
             matched_tools.add("github_pr")
 
     # Always include these tools - AI decides when to use them
-    AI_CONTROLLED_TOOLS = {"web_search", "code_search", "discord_search"}
+    AI_CONTROLLED_TOOLS = {"web_search", "code_search", "discord_search", "render_visual"}
 
     # Filter tools list
     filtered = [

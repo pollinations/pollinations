@@ -1,5 +1,6 @@
 import type { BalanceCheckResult } from "@shared/billing/balance.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
+import { getRoutePath } from "@shared/util.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -14,6 +15,7 @@ import type {
     GenerationCacheStorage,
 } from "@/middleware/generation-cache.ts";
 import { hashGenerationCacheIdentity } from "@/middleware/generation-cache.ts";
+import type { ModelVariables } from "@/middleware/model.ts";
 
 const EXECUTOR_HEADERS = new Set([
     "accept",
@@ -40,6 +42,9 @@ export type GenerationCacheIdentity = {
 export type GenerationRequestSnapshot = {
     url: string;
     method: string;
+    /** Public route when execution uses an adapted native request. */
+    originalPath?: string;
+    originalModel?: string;
     headers: [string, string][];
     body?: Uint8Array;
 };
@@ -66,7 +71,7 @@ type DeduplicationEnv = {
                 streamRequested?: boolean;
                 detachedExecutionTracked?: boolean;
             };
-        };
+        } & Partial<ModelVariables>;
 };
 
 function createAuthSnapshot(
@@ -117,8 +122,9 @@ async function createJob(
         throw new Error("Generation balance snapshot is missing");
     }
 
+    const method = c.var.generationRequestMethod ?? c.req.method;
     let body: Uint8Array | undefined;
-    if (c.req.method !== "GET" && c.req.method !== "HEAD") {
+    if (method !== "GET" && method !== "HEAD") {
         const captured = c.var.generationRequestBody;
         body =
             captured instanceof Uint8Array
@@ -143,8 +149,12 @@ async function createJob(
     return {
         cache: { storage: adapter.storage, key },
         request: {
-            url: sanitizeUrl(c.req.url),
-            method: c.req.method,
+            url: sanitizeUrl(c.var.generationRequestUrl?.href ?? c.req.url),
+            method,
+            ...(c.var.generationRequestUrl && {
+                originalPath: getRoutePath(c),
+                originalModel: c.var.model?.requested,
+            }),
             headers,
             ...(body !== undefined && { body }),
         },
@@ -192,7 +202,8 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
         );
         const stub = c.env.GENERATION_COORDINATOR.getByName(name);
         const job = await createJob(c, cache.adapter, cache.key);
-        let outcome: GenerationOutcome;
+        let outcome: GenerationOutcome | undefined;
+        let coordinationError: HTTPException | undefined;
         try {
             outcome = (await stub.startAndWait(job)) as GenerationOutcome;
         } catch (error) {
@@ -204,21 +215,24 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
             c.get("log").error(
                 "Generation coordination failed before completion: {errorMessage}",
                 {
-                    errorMessage: rpcError.message ?? String(error),
-                    durableObjectReset: rpcError.durableObjectReset,
-                    overloaded: rpcError.overloaded,
-                    retryable: rpcError.retryable,
+                    errorMessage: rpcError?.message ?? String(error),
+                    durableObjectReset: rpcError?.durableObjectReset,
+                    overloaded: rpcError?.overloaded,
+                    retryable: rpcError?.retryable,
                 },
             );
-            throw new HTTPException(503, {
+            coordinationError = new HTTPException(503, {
                 message: "Generation coordination is unavailable",
+                cause: error,
             });
         }
-        if (outcome.status === "failed") {
+        if (outcome?.status === "failed") {
             if (c.var.track) c.var.track.detachedExecutionTracked = true;
             return replayFailedResponse(outcome.error);
         }
 
+        // An RPC failure may happen after the result was saved. Read once;
+        // never restart the coordinator or execute another generation here.
         let response: Response | null;
         try {
             response = await cache.adapter.get(
@@ -230,14 +244,22 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
                 "Error reading completed generation from cache: {error}",
                 { error },
             );
-            throw new HTTPException(503, {
-                message: "Generation cache is temporarily unavailable",
-            });
+            throw (
+                coordinationError ??
+                new HTTPException(503, {
+                    message: "Generation cache is temporarily unavailable",
+                    cause: error,
+                })
+            );
         }
         if (!response) {
-            throw new HTTPException(503, {
-                message: "Generation completed without a durable cache entry",
-            });
+            throw (
+                coordinationError ??
+                new HTTPException(503, {
+                    message:
+                        "Generation completed without a durable cache entry",
+                })
+            );
         }
         c.header("X-Cache", "HIT");
         response.headers.set("X-Cache", "HIT");

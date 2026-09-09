@@ -1,5 +1,7 @@
 import unittest
 
+from src.discord.media import OUTPUT_DPI, PALETTE
+from src.integrations.chart_renderer import PALETTE as CHART_PALETTE
 from src.integrations.chart_renderer import _output_dpi
 from src.integrations.charts import _aggregate_chart_data, _paginate_table
 from src.integrations.diagrams import diagram_viewport
@@ -34,6 +36,14 @@ class VisualLimitTests(unittest.TestCase):
         self.assertEqual(_output_dpi(16, 9), 240)
         self.assertLessEqual(16 * _output_dpi(16, 9), 3840)
         self.assertLessEqual(9 * _output_dpi(16, 9), 2160)
+
+    def test_visuals_use_high_resolution_validated_palette(self):
+        self.assertEqual(OUTPUT_DPI, 240)
+        self.assertEqual(PALETTE["accent"], (57, 135, 229))
+        self.assertEqual(
+            CHART_PALETTE["series"],
+            ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300", "#9085e9", "#e66767"],
+        )
 
 
 if __name__ == "__main__":

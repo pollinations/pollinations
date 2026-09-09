@@ -1,4 +1,4 @@
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 
 type TransformOptions = {
     format?: "image/jpeg" | "image/png" | "image/webp";
@@ -77,12 +77,14 @@ export async function transformImage(
         return Buffer.from(await response.arrayBuffer());
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        throw new HttpError(
-            `Cloudflare Images ${stage} failed: ${message}`,
-            502,
-            { service: "cloudflare-images", stage },
-            CLOUDFLARE_IMAGES_UPSTREAM_URL,
-        );
+        throw UpstreamError.fromProvider(502, {
+            message: `Cloudflare Images ${stage} failed: ${message}`,
+            responseBody: JSON.stringify({
+                service: "cloudflare-images",
+                stage,
+            }),
+            requestUrl: new URL(CLOUDFLARE_IMAGES_UPSTREAM_URL),
+        });
     }
 }
 

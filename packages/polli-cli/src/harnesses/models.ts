@@ -17,9 +17,11 @@ interface CatalogModel {
  * drive. Community models and published agents are left out:
  * they come and go, and they would triple the list.
  */
-export const fetchHarnessModels = async (): Promise<HarnessModel[]> => {
+export const fetchHarnessModels = async (
+    selectedModel: string,
+): Promise<HarnessModel[]> => {
     const { data } = await gen<{ data: CatalogModel[] }>("/v1/models");
-    return data
+    const models = data
         .filter(
             (m) =>
                 m.tools === true &&
@@ -36,4 +38,10 @@ export const fetchHarnessModels = async (): Promise<HarnessModel[]> => {
                 (modality) => modality === "text" || modality === "image",
             ),
         }));
+    if (!models.some((model) => model.id === selectedModel)) {
+        throw new Error(
+            `Model "${selectedModel}" is not a tool-calling text model. Run: polli models`,
+        );
+    }
+    return models;
 };

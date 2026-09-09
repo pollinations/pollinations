@@ -176,14 +176,14 @@ export function CommunityEndpoints({
         if (!editing) return;
         const { modality: _modality, ...proxyUpdate } = payload;
         const update =
-            editing.type === "endpoint_agent"
+            editing.type === "endpoint_agent" && payload.modality === "text"
                 ? {
                       name: payload.name,
                       title: payload.title,
                       description: payload.description,
                       visibility: payload.visibility,
-                      baseUrl: payload.baseUrl,
-                      responsesUrl: payload.responsesUrl,
+                      api: payload.api,
+                      url: payload.url,
                       upstreamModel: payload.upstreamModel,
                       perUserRpm: payload.perUserRpm,
                   }

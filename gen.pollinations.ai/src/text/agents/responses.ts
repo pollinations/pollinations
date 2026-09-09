@@ -5,8 +5,20 @@ import {
     type ResponseUsage,
     ResponseUsageSchema,
 } from "@shared/schemas/openai.ts";
-import { APICallError, type ModelMessage } from "ai";
+import {
+    APICallError,
+    type ModelMessage,
+    type ToolCallPart,
+    type ToolResultPart,
+} from "ai";
 import { z } from "zod";
+import {
+    type FunctionCall,
+    FunctionCallOutputSchema,
+    FunctionCallSchema,
+} from "./functionItems.ts";
+import { safeMcpModelOutput } from "./mcp.ts";
+import { type AgentOutputItem, collectOutput } from "./output.ts";
 import {
     type AgentOutput,
     buildUsage,
@@ -174,8 +186,113 @@ function inputMessages(request: CreateResponseRequest): ModelMessage[] {
         return messages;
     }
 
+    const itemIds = new Set<string>();
+    const toolCallIds = new Set<string>();
+    const pendingCalls = new Map<string, FunctionCall>();
+    let calls: ToolCallPart[] = [];
+    let results: ToolResultPart[] = [];
     for (const raw of request.input) {
         const item = objectValue(raw, "input");
+        if (item.id !== undefined) {
+            const id = stringValue(item.id, "input.id");
+            if (!id || itemIds.has(id)) {
+                invalidRequest(
+                    "Responses history item IDs must be unique",
+                    "input.id",
+                );
+            }
+            itemIds.add(id);
+        }
+        if (item.type === "function_call") {
+            const parsed = FunctionCallSchema.safeParse(item);
+            if (
+                !parsed.success ||
+                parsed.data.status !== "completed" ||
+                toolCallIds.has(parsed.data.call_id)
+            ) {
+                invalidRequest(
+                    "Tool history must contain unique completed function calls",
+                    "input",
+                );
+            }
+            const call = parsed.data;
+            toolCallIds.add(call.call_id);
+            let input: JsonObject;
+            try {
+                input = objectValue(
+                    JSON.parse(call.arguments),
+                    "input.arguments",
+                );
+            } catch {
+                invalidRequest(
+                    "Function call arguments must be a JSON object",
+                    "input.arguments",
+                );
+            }
+            if (!pendingCalls.size) {
+                calls = [];
+                results = [];
+                messages.push({ role: "assistant", content: calls });
+                messages.push({ role: "tool", content: results });
+            }
+            pendingCalls.set(call.call_id, call);
+            calls.push({
+                type: "tool-call",
+                toolCallId: call.call_id,
+                toolName: call.name,
+                input,
+            });
+            continue;
+        }
+        if (item.type === "function_call_output") {
+            const parsed = FunctionCallOutputSchema.safeParse(item);
+            const call = parsed.success
+                ? pendingCalls.get(parsed.data.call_id)
+                : undefined;
+            if (
+                !parsed.success ||
+                parsed.data.status !== "completed" ||
+                !call
+            ) {
+                invalidRequest(
+                    "Function outputs must match an unfinished history call",
+                    "input",
+                );
+            }
+            let output: JsonObject;
+            try {
+                output = objectValue(
+                    JSON.parse(parsed.data.output),
+                    "input.output",
+                );
+                if (
+                    !Array.isArray(output.content) ||
+                    (output.isError !== undefined &&
+                        typeof output.isError !== "boolean")
+                ) {
+                    throw new Error("Invalid MCP result");
+                }
+            } catch {
+                invalidRequest(
+                    "Function output must contain a JSON MCP result",
+                    "input.output",
+                );
+            }
+            results.push({
+                type: "tool-result",
+                toolCallId: call.call_id,
+                toolName: call.name,
+                output: safeMcpModelOutput({ output }),
+            });
+            pendingCalls.delete(call.call_id);
+            continue;
+        }
+        if (pendingCalls.size) {
+            invalidRequest(
+                "Function calls require results before the next message",
+                "input",
+            );
+        }
         if (item.type && item.type !== "message") {
             invalidRequest(
                 `Unsupported Responses input item: ${String(item.type)}`,
@@ -213,6 +330,9 @@ function inputMessages(request: CreateResponseRequest): ModelMessage[] {
         }
         invalidRequest(`Unsupported Responses message role: ${role}`, "input");
     }
+    if (pendingCalls.size) {
+        invalidRequest("Function calls require matching results", "input");
+    }
     return messages;
 }
 
@@ -227,11 +347,19 @@ function requestSettings(
     }
     if (
         request.reasoning &&
-        Object.keys(request.reasoning).some((key) => key !== "effort")
+        Object.keys(request.reasoning).some(
+            (key) => key !== "effort" && key !== "summary",
+        )
     ) {
         invalidRequest(
             "Only reasoning effort is supported by managed agents",
             "reasoning",
+        );
+    }
+    if (request.reasoning?.summary != null) {
+        invalidRequest(
+            "Reasoning summaries are not supported by managed agents",
+            "reasoning.summary",
         );
     }
     const reasoningEffort = request.reasoning?.effort;
@@ -356,10 +484,7 @@ function responseConfiguration(request: CreateResponseRequest) {
                   typeof request.reasoning.effort === "string"
                       ? request.reasoning.effort
                       : null,
-              summary:
-                  typeof request.reasoning.summary === "string"
-                      ? request.reasoning.summary
-                      : null,
+              summary: null,
           }
         : null;
     return {
@@ -392,7 +517,7 @@ function responseObject(
     output: AgentOutput,
     id: string,
     createdAt: number,
-    messageId: string,
+    items: AgentOutputItem[],
 ) {
     const incomplete =
         output.finishReason === "length" ||
@@ -401,7 +526,7 @@ function responseObject(
         id,
         object: "response" as const,
         created_at: createdAt,
-        completed_at: Math.floor(Date.now() / 1000),
+        completed_at: incomplete ? null : Math.floor(Date.now() / 1000),
         status: incomplete ? ("incomplete" as const) : ("completed" as const),
         incomplete_details: incomplete
             ? {
@@ -412,22 +537,7 @@ function responseObject(
               }
             : null,
         model: request.model,
-        output: [
-            {
-                id: messageId,
-                type: "message" as const,
-                status: incomplete ? "incomplete" : "completed",
-                role: "assistant" as const,
-                content: [
-                    {
-                        type: "output_text" as const,
-                        text: output.content,
-                        annotations: [],
-                        logprobs: [],
-                    },
-                ],
-            },
-        ],
+        output: items,
         error: null,
         usage: responseUsage(output),
         ...responseConfiguration(request),
@@ -468,7 +578,6 @@ function streamResponse(
 ): Response {
     const encoder = new TextEncoder();
     const responseId = `resp_${crypto.randomUUID()}`;
-    const messageId = `msg_${crypto.randomUUID()}`;
     const createdAt = Math.floor(Date.now() / 1000);
     let sequenceNumber = 0;
     const stream = new ReadableStream<Uint8Array>({
@@ -497,43 +606,14 @@ function streamResponse(
                 usage: null,
                 ...responseConfiguration(request),
             };
-            const initialItem = {
-                id: messageId,
-                type: "message",
-                status: "in_progress",
-                role: "assistant",
-                content: [],
-            };
-            const initialPart = {
-                type: "output_text",
-                text: "",
-                annotations: [],
-                logprobs: [],
-            };
+            const collected = collectOutput(send);
             try {
                 send("response.created", { response: initialResponse });
-                send("response.output_item.added", {
-                    output_index: 0,
-                    item: initialItem,
-                });
-                send("response.content_part.added", {
-                    item_id: messageId,
-                    output_index: 0,
-                    content_index: 0,
-                    part: initialPart,
-                });
                 const output = await streamPromptAgent(
                     runtime,
                     messages,
                     signal,
-                    (delta) =>
-                        send("response.output_text.delta", {
-                            item_id: messageId,
-                            output_index: 0,
-                            content_index: 0,
-                            delta,
-                            logprobs: [],
-                        }),
+                    collected.onPart,
                     settings,
                 );
                 const response = responseObject(
@@ -541,27 +621,8 @@ function streamResponse(
                     output,
                     responseId,
                     createdAt,
-                    messageId,
+                    collected.finish(output.finishReason),
                 );
-                const item = response.output[0];
-                const part = item.content[0];
-                send("response.output_text.done", {
-                    item_id: messageId,
-                    output_index: 0,
-                    content_index: 0,
-                    text: output.content,
-                    logprobs: [],
-                });
-                send("response.content_part.done", {
-                    item_id: messageId,
-                    output_index: 0,
-                    content_index: 0,
-                    part,
-                });
-                send("response.output_item.done", {
-                    output_index: 0,
-                    item,
-                });
                 send(
                     response.status === "incomplete"
                         ? "response.incomplete"
@@ -571,28 +632,14 @@ function streamResponse(
             } catch (error) {
                 const message =
                     error instanceof Error ? error.message : String(error);
-                const responseError = {
-                    type: "server_error",
-                    code: "agent_error",
-                    message,
-                    param: null,
-                };
-                send("error", {
-                    error: responseError,
-                });
+                const responseError = { code: "agent_error", message };
+                send("error", { ...responseError, param: null });
                 send("response.failed", {
                     response: {
-                        id: responseId,
-                        object: "response",
-                        created_at: createdAt,
-                        completed_at: Math.floor(Date.now() / 1000),
+                        ...initialResponse,
                         status: "failed",
-                        incomplete_details: null,
-                        model: request.model,
-                        output: [],
+                        output: collected.items,
                         error: responseError,
-                        usage: null,
-                        ...responseConfiguration(request),
                     },
                 });
             } finally {
@@ -621,10 +668,12 @@ export async function handlePromptAgentResponsesRequest(
         if (request.stream) {
             return streamResponse(request, runtime, messages, settings, signal);
         }
+        const collected = collectOutput();
         const output = await runPromptAgent(
             runtime,
             messages,
             signal,
+            collected.onPart,
             settings,
         );
         return Response.json(
@@ -633,7 +682,7 @@ export async function handlePromptAgentResponsesRequest(
                 output,
                 `resp_${crypto.randomUUID()}`,
                 Math.floor(Date.now() / 1000),
-                `msg_${crypto.randomUUID()}`,
+                collected.finish(output.finishReason),
             ),
         );
     } catch (error) {

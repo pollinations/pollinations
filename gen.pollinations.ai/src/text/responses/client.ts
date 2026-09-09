@@ -118,6 +118,7 @@ export async function callDirectResponses(
     try {
         response = await fetcher(target.endpoint, {
             method: "POST",
+            redirect: "manual",
             headers: {
                 "Content-Type": "application/json",
                 ...target.headers,
@@ -145,6 +146,7 @@ export async function callDirectResponses(
         error.status = remapUpstreamStatus(response.status);
         error.upstreamStatus = response.status;
         error.details = details;
+        error.responseBody = text;
         error.requestUrl = requestUrl;
         error.upstreamHeaders = collectUpstreamHeaders(response.headers);
         throw error;

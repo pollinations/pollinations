@@ -370,11 +370,9 @@ function rejectUnsupported(options: TransformOptions): void {
     const unsupported: Array<[string, boolean]> = [
         ["n", options.n != null && options.n !== 1],
         ["stop", options.stop != null],
-        ["seed", options.seed != null],
         ["logit_bias", options.logit_bias != null],
         ["logprobs", options.logprobs === true],
         ["top_logprobs", options.top_logprobs != null],
-        ["repetition_penalty", options.repetition_penalty != null],
         ["functions", options.functions != null],
         ["function_call", options.function_call != null],
         ["web_search_options", options.web_search_options != null],
@@ -436,7 +434,10 @@ export function chatToResponsesRequest(
     if (typeof options.reasoning_effort === "string") {
         request.reasoning = {
             effort: options.reasoning_effort,
-            ...(options.reasoning_effort === "none" ? {} : { summary: "auto" }),
+            // The managed-agent transport supports effort, but not summaries.
+            ...(options.reasoning_effort === "none" || options.responsesFetcher
+                ? {}
+                : { summary: "auto" }),
         };
     }
     if (maxOutputTokens != null) request.max_output_tokens = maxOutputTokens;

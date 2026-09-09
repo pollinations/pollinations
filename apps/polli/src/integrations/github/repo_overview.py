@@ -296,17 +296,19 @@ class RepoOverviewMixin:
             ],
         }
 
-    async def _fetch_labels(self) -> dict:
-        cache_key = f"labels:{self.owner}/{self.repo}"
+    async def _fetch_labels(self, limit: int = 50, after: str | None = None) -> dict:
+        limit = max(1, min(limit, 100))
+        cache_key = f"labels:{self.owner}/{self.repo}:{limit}:{after or ''}"
         cached = self._cache.get(cache_key)
         if cached is not None:
             logger.debug("Labels cache hit")
             return cached
 
         query = """
-        query Labels($owner: String!, $repo: String!) {
+        query Labels($owner: String!, $repo: String!, $limit: Int!, $after: String) {
             repository(owner: $owner, name: $repo) {
-                labels(first: 50) {
+                labels(first: $limit, after: $after) {
+                    pageInfo { hasNextPage endCursor }
                     nodes {
                         name
                         color
@@ -317,29 +319,35 @@ class RepoOverviewMixin:
         }
         """
 
-        result = await self._execute(query, {"owner": self.owner, "repo": self.repo})
+        result = await self._execute(query, {"owner": self.owner, "repo": self.repo, "limit": limit, "after": after})
 
         if result.get("error"):
             return {"error": result["error"]}
 
-        labels = result.get("data", {}).get("repository", {}).get("labels", {}).get("nodes", [])
+        connection = result.get("data", {}).get("repository", {}).get("labels", {})
+        labels = connection.get("nodes", [])
 
+        formatted_labels = [
+            {
+                "name": label["name"],
+                "color": label["color"],
+                "open_issues": label["issues"]["totalCount"],
+            }
+            for label in sorted(labels, key=lambda item: item["issues"]["totalCount"], reverse=True)
+        ]
         response = {
-            "items": [
-                {
-                    "name": l["name"],
-                    "color": l["color"],
-                    "open_issues": l["issues"]["totalCount"],
-                }
-                for l in sorted(labels, key=lambda x: x["issues"]["totalCount"], reverse=True)
-            ]
+            "labels": formatted_labels,
+            "count": len(formatted_labels),
+            "truncated": bool(connection.get("pageInfo", {}).get("hasNextPage")),
+            "next_cursor": connection.get("pageInfo", {}).get("endCursor"),
         }
 
         self._cache.set(cache_key, response)
         return response
 
-    async def _fetch_milestones(self, state: str = "OPEN") -> dict:
-        cache_key = f"milestones:{self.owner}/{self.repo}:{state.upper()}"
+    async def _fetch_milestones(self, state: str = "OPEN", limit: int = 100, after: str | None = None) -> dict:
+        limit = max(1, min(limit, 100))
+        cache_key = f"milestones:{self.owner}/{self.repo}:{state.upper()}:{limit}:{after or ''}"
         cached = self._cache.get(cache_key)
         if cached is not None:
             logger.debug("Milestones cache hit")
@@ -352,9 +360,10 @@ class RepoOverviewMixin:
             states_filter = [state.upper()]
 
         query = """
-        query Milestones($owner: String!, $repo: String!, $states: [MilestoneState!]) {
+        query Milestones($owner: String!, $repo: String!, $states: [MilestoneState!], $limit: Int!, $after: String) {
             repository(owner: $owner, name: $repo) {
-                milestones(first: 100, states: $states, orderBy: {field: DUE_DATE, direction: ASC}) {
+                milestones(first: $limit, after: $after, states: $states, orderBy: {field: DUE_DATE, direction: ASC}) {
+                    pageInfo { hasNextPage endCursor }
                     nodes {
                         title
                         description
@@ -370,27 +379,37 @@ class RepoOverviewMixin:
         }
         """
 
-        result = await self._execute(query, {"owner": self.owner, "repo": self.repo, "states": states_filter})
+        result = await self._execute(
+            query,
+            {"owner": self.owner, "repo": self.repo, "states": states_filter, "limit": limit, "after": after},
+        )
 
         if result.get("error"):
             return {"error": result["error"]}
 
-        milestones = result.get("data", {}).get("repository", {}).get("milestones", {}).get("nodes", [])
+        connection = result.get("data", {}).get("repository", {}).get("milestones", {})
+        milestones = connection.get("nodes", [])
 
+        formatted_milestones = [
+            {
+                "title": milestone["title"],
+                "description": milestone.get("description") or "",
+                "state": milestone["state"].lower(),
+                "number": milestone["number"],
+                "open_issues": milestone["issues"]["totalCount"],
+                "closed_issues": milestone["closedIssues"]["totalCount"],
+                "progress": milestone.get("progressPercentage", 0),
+                "due_on": milestone["dueOn"][:10] if milestone.get("dueOn") else None,
+            }
+            for milestone in milestones
+        ]
+        page_info = connection.get("pageInfo", {})
+        has_next_page = bool(page_info.get("hasNextPage"))
         response = {
-            "items": [
-                {
-                    "title": m["title"],
-                    "description": m.get("description") or "",
-                    "state": m["state"].lower(),
-                    "number": m["number"],
-                    "open_issues": m["issues"]["totalCount"],
-                    "closed_issues": m["closedIssues"]["totalCount"],
-                    "progress": m.get("progressPercentage", 0),
-                    "due_on": m["dueOn"][:10] if m.get("dueOn") else None,
-                }
-                for m in milestones
-            ]
+            "milestones": formatted_milestones,
+            "count": len(formatted_milestones),
+            "truncated": has_next_page,
+            "next_cursor": page_info.get("endCursor") if has_next_page else None,
         }
 
         self._cache.set(cache_key, response)

@@ -1,0 +1,26 @@
+[project]
+name = "llm-pollinations"
+version = "0.1.0"
+description = "LLM plugin for models hosted by Pollinations.ai"
+readme = "README.md"
+authors = [{name = "pollinations.ai"}]
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = [
+    "llm>=0.35",
+    "httpx",
+]
+
+[project.urls]
+Homepage = "https://github.com/pollinations/pollinations/tree/main/packages/llm-pollinations"
+Issues = "https://github.com/pollinations/pollinations/issues"
+
+[project.entry-points.llm]
+pollinations = "llm_pollinations"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[dependency-groups]
+dev = ["pytest"]

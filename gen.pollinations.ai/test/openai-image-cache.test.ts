@@ -17,6 +17,7 @@ import { MediaUpload } from "../../media.pollinations.ai/src/media-upload.ts";
 import {
     formatOpenAIImageResponse,
     prepareOpenAIImageEdit,
+    prepareOpenAIImageEditReplay,
     prepareOpenAIImageGeneration,
 } from "../src/routes/images.ts";
 
@@ -175,6 +176,40 @@ describe("OpenAI image cache", () => {
         expect((await changed.json<{ identity: string }>()).identity).not.toBe(
             results[0].identity,
         );
+    });
+    it("does not apply safety again when replaying an image edit", async () => {
+        const app = new Hono<Env>()
+            .use("*", async (c, next) => {
+                c.set("model", {
+                    requested: "flux",
+                    resolved: "flux",
+                    definition: {} as Env["Variables"]["model"]["definition"],
+                });
+                await next();
+            })
+            .post("/v1/images/edits", prepareOpenAIImageEditReplay, (c) =>
+                c.json(c.req.valid("json" as never)),
+            );
+
+        const response = await app.fetch(
+            new Request("https://gen.pollinations.ai/v1/images/edits", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    prompt: "already checked",
+                    image: [{ image_url: "https://example.com/image.png" }],
+                    safe: "true",
+                }),
+            }),
+            {} as CloudflareBindings,
+        );
+
+        expect(response.status).toBe(200);
+        expect(await response.json()).toMatchObject({
+            prompt: "already checked",
+            image: ["https://example.com/image.png"],
+            safe: "true",
+        });
     });
     it("labels base64 video responses with their media type", async () => {
         const app = new Hono<Env>()

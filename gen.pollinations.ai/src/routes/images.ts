@@ -258,6 +258,22 @@ export const prepareOpenAIImageEdit = createMiddleware<Env>(async (c, next) => {
     await next();
 });
 
+/** Parse the normalized, already-safe edit body replayed by the coordinator. */
+export const prepareOpenAIImageEditReplay = createMiddleware<Env>(
+    async (c, next) => {
+        const { imageUrls, extra, response_format, ...input } =
+            await parseEditInput(c);
+        c.req.addValidatedData("json", {
+            ...extra,
+            ...input,
+            model: c.var.model.requested,
+            image: imageUrls,
+            response_format,
+        });
+        await next();
+    },
+);
+
 /** Resolve the POST body to the equivalent public media URL used for caching. */
 export const prepareOpenAIImageGeneration = createMiddleware<Env>(
     async (c, next) => {

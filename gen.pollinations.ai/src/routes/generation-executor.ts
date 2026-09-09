@@ -51,7 +51,7 @@ import {
 } from "./generation-handlers.ts";
 import {
     handleImageGeneration,
-    prepareOpenAIImageEdit,
+    prepareOpenAIImageEditReplay,
     prepareOpenAIImageGeneration,
 } from "./images.ts";
 
@@ -198,7 +198,7 @@ generationExecutorRoutes.post(
     "/v1/images/edits",
     resolveModel("generate.image", { defaultModel: "flux" }),
     track("generate.image"),
-    prepareOpenAIImageEdit,
+    prepareOpenAIImageEditReplay,
     prepareGenerationRequest,
     imageExecutionCache,
     apiKeyBudgetReservation,

@@ -36,6 +36,7 @@ import {
     type BillingAdjustment,
     type CostDefinition,
     calculateUsageBilling,
+    getExecutionRouteId,
     getPriceDefinitionForModel,
     type ModelDefinition,
     type PriceDefinition,
@@ -136,7 +137,6 @@ type ResponseTrackingData = ProviderUsageEvidence & {
     isFinal?: boolean;
     modelUsed?: string;
     modelProviderUsed?: string;
-    modelExecuted?: string;
     executionRouteId?: string;
     usage?: Usage;
     cost?: UsageCost;
@@ -151,8 +151,7 @@ type ResponseTrackingData = ProviderUsageEvidence & {
     // merged, multiplier applied). The tracking event records this sheet so
     // recorded rates always reproduce the billed totals.
     priceDefinition?: PriceDefinition;
-    // Applied cost variant name (financial identity; modelUsed stays
-    // observational).
+    // Applied rate sheet; the public model ID stays the same across variants.
     costVariant?: string;
     contentFilterResults?: GenerationEventContentFilterParams;
     // A failure the response status cannot show. Replaces the status-derived
@@ -351,11 +350,16 @@ export const track = (eventType: EventType) =>
                             fallbackUsed:
                                 model !==
                                 requestTracking.resolvedModelRequested,
-                            modelUsed: model,
-                            modelExecuted: model,
+                            modelUsed:
+                                attempt.candidate.definition?.publicModelId ??
+                                model,
                             executionRouteId:
-                                attempt.candidate.definition?.routeId ??
-                                attempt.candidate.communityEndpoint?.id,
+                                attempt.candidate.communityEndpoint?.id ??
+                                getExecutionRouteId(
+                                    model,
+                                    attempt.candidate.definition ??
+                                        requestTracking.modelDefinition,
+                                ),
                             modelProviderUsed:
                                 attempt.candidate.definition?.provider ??
                                 requestTracking.modelProvider,
@@ -687,16 +691,19 @@ export async function trackResponse(
     const modelCalled = candidate.id || resolvedModelRequested;
     const modelProviderUsed =
         candidate.definition?.provider ?? requestTracking.modelProvider;
+    const modelUsed = candidate.definition?.publicModelId ?? modelCalled;
     const cacheHit = response.headers.get("x-cache") === "HIT";
     const fallbackUsed =
         modelCalled !== resolvedModelRequested || parseFallbackUsed(response);
     const execution = cacheHit
         ? {}
         : {
-              modelExecuted: modelCalled,
               executionRouteId:
-                  candidate.definition?.routeId ??
-                  candidate.communityEndpoint?.id,
+                  candidate.communityEndpoint?.id ??
+                  getExecutionRouteId(
+                      modelCalled,
+                      candidate.definition ?? requestTracking.modelDefinition,
+                  ),
           };
     let providerEvidence: ProviderUsageEvidence = cacheHit
         ? {}
@@ -729,7 +736,7 @@ export async function trackResponse(
     }
     if (!response.ok) {
         return notBilled({
-            modelUsed: modelCalled,
+            modelUsed,
         });
     }
 
@@ -752,7 +759,7 @@ export async function trackResponse(
                 kind: contentTypeGuard.kind,
             },
         );
-        return notBilled({ modelUsed: modelCalled });
+        return notBilled({ modelUsed });
     }
 
     const { modelUsage, output, contentFilterResults } =
@@ -790,7 +797,7 @@ export async function trackResponse(
                 output,
                 input: billingInput,
             }),
-            modelUsed: modelUsage?.model ?? modelCalled,
+            modelUsed,
             modelProviderUsed,
             ...execution,
             ...providerEvidence,
@@ -835,7 +842,7 @@ export async function trackResponse(
                 ...notBilled(),
                 ...adjustmentOnlyBilling,
                 responseStatus: 502,
-                modelUsed: modelCalled,
+                modelUsed,
                 usage: {},
                 contentFilterResults,
                 errorTracking: {
@@ -855,7 +862,7 @@ export async function trackResponse(
                 hasCostEstimate: false,
                 fallbackUsed,
                 ...adjustmentOnlyBilling,
-                modelUsed: modelCalled,
+                modelUsed,
                 modelProviderUsed,
                 ...execution,
                 ...providerEvidence,
@@ -865,7 +872,7 @@ export async function trackResponse(
         }
         return notBilled({
             contentFilterResults,
-            modelUsed: modelCalled,
+            modelUsed,
         });
     }
     // Cost follows the model that ran; price follows the one the caller asked
@@ -897,7 +904,7 @@ export async function trackResponse(
         adjustments,
         priceDefinition,
         costVariant,
-        modelUsed: modelUsage.model,
+        modelUsed,
         modelProviderUsed,
         ...execution,
         ...providerEvidence,
@@ -1198,7 +1205,6 @@ function createTrackingEvent({
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
-        modelExecuted: responseTracking.modelExecuted,
         executionRouteId: responseTracking.executionRouteId,
         providerResponseId: responseTracking.providerResponseId,
         providerUpstreamReported: responseTracking.providerUpstreamReported,

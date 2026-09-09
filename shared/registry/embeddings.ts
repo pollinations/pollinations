@@ -9,7 +9,6 @@ export const DEFAULT_EMBEDDING_MODEL: EmbeddingServiceId =
 
 const EMBEDDING_BASE_SERVICES = {
     "google/gemini-embedding-2": {
-        routeId: "google/gemini-embedding-2:google",
         aliases: ["embedding", "gemini-2"],
         provider: "google",
         publisher: "Google",
@@ -31,7 +30,6 @@ const EMBEDDING_BASE_SERVICES = {
         contextLength: 8192,
     },
     "openai/text-embedding-3-small": {
-        routeId: "openai/text-embedding-3-small:azure",
         aliases: ["embedding-small", "openai-3-small"],
         provider: "azure",
         publisher: "OpenAI",
@@ -49,7 +47,6 @@ const EMBEDDING_BASE_SERVICES = {
         contextLength: 8192,
     },
     "openai/text-embedding-3-large": {
-        routeId: "openai/text-embedding-3-large:azure",
         aliases: ["embedding-large", "openai-3-large"],
         provider: "azure",
         publisher: "OpenAI",
@@ -67,7 +64,6 @@ const EMBEDDING_BASE_SERVICES = {
         contextLength: 8192,
     },
     "cohere/embed-v4.0": {
-        routeId: "cohere/embed-v4.0:azure",
         aliases: [
             "embed-v-4-0",
             "cohere-embed-v-4-0",
@@ -92,7 +88,6 @@ const EMBEDDING_BASE_SERVICES = {
         contextLength: 128000,
     },
     "qwen/qwen3-embedding-8b": {
-        routeId: "qwen/qwen3-embedding-8b:fireworks",
         aliases: ["qwen3-embedding", "qwen3-embedding-8b"],
         provider: "fireworks",
         publisher: "Qwen",

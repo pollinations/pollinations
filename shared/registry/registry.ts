@@ -154,8 +154,10 @@ export type ModelDefinition = {
      * Must resolve in the Economics vendor registry; CI checks all bundled routes.
      */
     provider: string;
-    /** Stable execution identity, independent of the public ID and route priority. */
+    /** Explicit deployment identity; defaults to <public model ID>:<provider>. */
     routeId?: string;
+    /** Public model served by a hidden route; derived by mergeFallbacks. */
+    publicModelId?: string;
     /** Exact gateway-side request cap per Pollinations user. Null/unset means uncapped. */
     perUserRpm?: number | null;
     /** Ordered model ids to try when this model's upstream fails. */
@@ -523,6 +525,17 @@ const MODEL_REGISTRY = {
     ...REALTIME_SERVICES,
     ...MODEL3D_SERVICES,
 } as Record<ModelName, ModelDefinition>;
+
+/** Internal route metadata only; never changes public IDs or selects an upstream. */
+export function getExecutionRouteId(
+    id: string,
+    definition: ModelDefinition,
+): string {
+    return (
+        definition.routeId ??
+        `${definition.publicModelId ?? id}:${definition.provider}`
+    );
+}
 
 /**
  * Resolve a model name from a canonical name or alias

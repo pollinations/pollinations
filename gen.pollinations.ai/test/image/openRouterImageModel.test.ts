@@ -1,4 +1,5 @@
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { getExecutionRouteId } from "@shared/registry/registry.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
 import {
@@ -340,9 +341,10 @@ describe("OpenRouter Gemini image", () => {
                 .toLowerCase()
                 .replace(/^google-/, "")
                 .replaceAll("/", "-");
-            expect(definition.routeId?.split(":openrouter")[1], id).toBe(
-                `:${pin}`,
-            );
+            expect(
+                getExecutionRouteId(id, definition).split(":openrouter")[1],
+                id,
+            ).toBe(`:${pin}`);
         }
     });
 

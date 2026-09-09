@@ -71,10 +71,9 @@ export type TinybirdEvent = {
     // Model
     modelRequested?: string | null;
     resolvedModelRequested?: string;
+    /** Public ID of the serving model, including when a fallback ran. */
     modelUsed?: string;
     modelProviderUsed?: string;
-    /** Serving catalog ID; distinct from provider-reported modelUsed values. */
-    modelExecuted?: string;
     /** Stable configured route, or the immutable community endpoint ID. */
     executionRouteId?: string;
     /** Provider's reference for matching a generation to its reported charge. */

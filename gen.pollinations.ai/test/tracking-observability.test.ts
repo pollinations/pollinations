@@ -516,6 +516,10 @@ describe("tracking observability", () => {
         expect(tinybirdRequests[0].headers.get("authorization")).toBe(
             "Bearer test_tinybird_token",
         );
+        // Internal accounting canonicalization does not rewrite the provider response.
+        expect(response.headers.get("x-model-used")).toBe(
+            "gpt-5-nano-2025-08-07",
+        );
         const event = await tinybirdRequests[0].json();
         expect(event).toMatchObject({
             requestPath: "/v1/chat/completions",
@@ -524,8 +528,7 @@ describe("tracking observability", () => {
             responseStatus: 200,
             modelRequested: "openai/gpt-5.4-nano",
             resolvedModelRequested: "openai/gpt-5.4-nano",
-            modelUsed: "gpt-5-nano-2025-08-07",
-            modelExecuted: "openai/gpt-5.4-nano",
+            modelUsed: "openai/gpt-5.4-nano",
             executionRouteId: "openai/gpt-5.4-nano:azure",
             providerResponseId: "chatcmpl_test",
             hasCostEstimate: true,
@@ -622,7 +625,7 @@ describe("tracking observability", () => {
             providerReportedCostUsd: 0.02,
             providerResponseId: "gen-unbilled-cost",
             executionRouteId: `${model}:openrouter:vertex-global`,
-            modelExecuted: model,
+            modelUsed: model,
             hasCostEstimate: hasUsage,
             totalPrice: 0,
             isBilledUsage: false,
@@ -699,7 +702,7 @@ describe("tracking observability", () => {
         );
         expect(events).toHaveLength(1);
         expect(events[0]).toMatchObject({
-            modelExecuted: model,
+            modelUsed: model,
             modelProviderUsed: "openrouter",
             executionRouteId: `${model}:openrouter`,
             providerResponseId: "gen-image",
@@ -2446,7 +2449,7 @@ describe("tracking observability", () => {
                 new Date(event.startTime).getTime(),
         ).toBeGreaterThanOrEqual(100);
         expect(event.tokenCountCompletionText).toBe(500);
-        expect(event.modelUsed).toBe("gpt-5-nano-2025-08-07");
+        expect(event.modelUsed).toBe("openai/gpt-5.4-nano");
         expect(event.isBilledUsage).toBe(true);
     });
 
@@ -3356,7 +3359,6 @@ describe("trackResponse provider accounting evidence", () => {
             candidateFixture(model),
         );
         expect(tracking).toMatchObject({
-            modelExecuted: model,
             modelUsed: model,
             executionRouteId: `${model}:openrouter:vertex-global`,
             providerResponseId: "gen-provider-123",
@@ -3368,6 +3370,32 @@ describe("trackResponse provider accounting evidence", () => {
         expect(tracking.price).toEqual(missing.price);
         expect(tracking.price?.totalPrice).not.toBe(0.42);
         expect(missing.providerReportedCostUsd).toBeUndefined();
+    });
+
+    it("keeps a public model stable across provider routes and records cross-model fallbacks", async () => {
+        const route = `${model}:openrouter:ai-studio-priority` as const;
+        const sameModel = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(false, model),
+            response(0.42),
+            candidateFixture(route),
+        );
+        const differentModel = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(),
+            response(0.42),
+            candidateFixture(route),
+        );
+        for (const tracking of [sameModel, differentModel]) {
+            expect(tracking).toMatchObject({
+                modelUsed: model,
+                modelProviderUsed: "openrouter",
+                executionRouteId: route,
+                fallbackUsed: true,
+            });
+        }
+        // A fallback still charges the customer's original quote.
+        expect(differentModel.price).not.toEqual(sameModel.price);
     });
 
     it("retains a measured zero", async () => {
@@ -3424,7 +3452,7 @@ describe("trackResponse provider accounting evidence", () => {
             },
         );
         expect(tracking.executionRouteId).toBe(endpoint.id);
-        expect(tracking.modelExecuted).toBe(endpoint.modelId);
+        expect(tracking.modelUsed).toBe(endpoint.modelId);
         expect(tracking.providerReportedCostUsd).toBeUndefined();
     });
 

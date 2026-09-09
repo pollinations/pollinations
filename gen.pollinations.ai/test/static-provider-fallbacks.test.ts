@@ -6,12 +6,14 @@ import { mergeFallbacks } from "@shared/registry/merge-fallbacks.ts";
 import { MODEL3D_SERVICES } from "@shared/registry/model3d.ts";
 import {
     calculateUsageBilling,
+    getExecutionRouteId,
     getModels,
     getRegistryModelDefinition,
     getVisibleAudioModels,
     getVisibleImageModels,
     getVisibleTextModels,
     type ModelDefinition,
+    type ModelName,
 } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { TEXT_FALLBACKS } from "@shared/registry/text-fallbacks.ts";
@@ -130,6 +132,7 @@ function expectInheritedRoute(
     }
     expect(parent.fallbacks).toContain(routeId);
     expect(route).toMatchObject({
+        publicModelId: parentId,
         aliases: [],
         hidden: true,
         fallbackOnly: true,
@@ -164,7 +167,9 @@ describe("static provider fallbacks", () => {
                       }
                     | undefined
             )?.provider;
-            const suffix = definition.routeId?.split(":openrouter")[1];
+            const suffix = getExecutionRouteId(id, definition).split(
+                ":openrouter",
+            )[1];
             if (routing?.only) {
                 expect(routing.only, id).toHaveLength(1);
                 expect(routing.allow_fallbacks, id).toBe(false);
@@ -180,36 +185,56 @@ describe("static provider fallbacks", () => {
         }
     });
 
-    it("preserves a route identity when the public catalog name changes", () => {
-        const model = TEXT_SERVICES["google/gemini-3.7-flash"];
-        const renamed = mergeFallbacks({ "renamed-public-model": model }, {});
-        expect(renamed["renamed-public-model"].routeId).toBe(model.routeId);
-    });
-
     it("assigns a distinct execution identity to every bundled route", () => {
         const routes = new Set<string>();
         for (const id of getModels()) {
             const definition = getRegistryModelDefinition(id);
-            expect(definition.routeId, id).toBeTruthy();
-            const routeId = definition.routeId as string;
+            const routeId = getExecutionRouteId(id, definition);
             expect(routes.has(routeId), `${id}: duplicate ${routeId}`).toBe(
                 false,
             );
             routes.add(routeId);
-            if (definition.fallbackOnly) expect(routeId).toBe(id);
+            const publicId = definition.publicModelId ?? id;
+            // Bedrock is the existing route label for the canonical AWS supplier.
+            const providers =
+                definition.provider === "aws"
+                    ? ["aws", "bedrock"]
+                    : [definition.provider];
+            expect(
+                providers.some((provider) => {
+                    const prefix = `${publicId}:${provider}`;
+                    return (
+                        routeId === prefix || routeId.startsWith(`${prefix}:`)
+                    );
+                }),
+                `${id}: route identity must match its serving model and provider`,
+            ).toBe(true);
+            if (definition.fallbackOnly) {
+                expect(routeId).toBe(id);
+                expect(
+                    getRegistryModelDefinition(
+                        definition.publicModelId as ModelName,
+                    ),
+                ).toBeDefined();
+            }
         }
     });
 
-    it("preserves execution identities when a provider route becomes primary", () => {
+    it("keeps the public ID and route identities when providers change priority", () => {
         const id = "x-ai/grok-imagine-video";
         const primary = IMAGE_SERVICES[id];
         const secondary = IMAGE_SERVICES["x-ai/grok-imagine-video:openrouter"];
+        const primaryRoute = getExecutionRouteId(id, primary);
         const reordered = mergeFallbacks(
             { [id]: { ...secondary, fallbackOnly: false, hidden: false } },
-            { [id]: { [primary.routeId]: { provider: primary.provider } } },
+            { [id]: { [primaryRoute]: { provider: primary.provider } } },
         );
-        expect(reordered[id].routeId).toBe(secondary.routeId);
-        expect(reordered[primary.routeId].routeId).toBe(primary.routeId);
+        expect(getExecutionRouteId(id, reordered[id])).toBe(secondary.routeId);
+        expect(reordered[primaryRoute].routeId).toBe(primaryRoute);
+        expect(reordered[primaryRoute].publicModelId).toBe(id);
+        const newProvider = { ...primary, provider: "new-provider" };
+        expect(getExecutionRouteId(id, newProvider)).toBe(`${id}:new-provider`);
+        expect(newProvider).not.toHaveProperty("routeId");
     });
 
     it("preserves the Astra quote while recording Data Zone costs", () => {

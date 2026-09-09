@@ -10,7 +10,6 @@ export type ImageModelName = keyof typeof IMAGE_SERVICES;
 
 const IMAGE_BASE_SERVICES = {
     "krea/krea-2-medium": {
-        routeId: "krea/krea-2-medium:fal",
         aliases: ["krea-2", "krea"],
         provider: "fal",
         publisher: "Krea",
@@ -28,7 +27,6 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
     },
     "lykon/dreamshaper-8-lcm": {
-        routeId: "lykon/dreamshaper-8-lcm:vast",
         // "sana" is kept as an alias so existing callers and the legacy image
         // proxy worker keep working unchanged.
         aliases: ["sana", "dreamshaper"],
@@ -48,7 +46,6 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
     },
     "black-forest-labs/flux.1-kontext-pro": {
-        routeId: "black-forest-labs/flux.1-kontext-pro:azure",
         aliases: ["kontext"],
         provider: "azure",
         publisher: "Black Forest Labs",
@@ -66,7 +63,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 1, // Azure FLUX.1 Kontext edit route forwards one input image.
     },
     "black-forest-labs/flux.2-pro": {
-        routeId: "black-forest-labs/flux.2-pro:azure",
         aliases: ["flux-2-pro"],
         provider: "azure",
         publisher: "Black Forest Labs",
@@ -105,7 +101,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 8, // Azure FLUX.2 Pro route limit.
     },
     "black-forest-labs/flux.2-flex": {
-        routeId: "black-forest-labs/flux.2-flex:azure",
         aliases: ["flux-2-flex"],
         provider: "azure",
         publisher: "Black Forest Labs",
@@ -127,7 +122,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 10,
     },
     "microsoft/mai-image-2.5-flash": {
-        routeId: "microsoft/mai-image-2.5-flash:azure",
         aliases: [],
         provider: "azure",
         publisher: "Microsoft",
@@ -245,7 +239,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 14, // Gemini 3 Pro Image provider limit.
     },
     "bytedance/seedream-5.0-lite": {
-        routeId: "bytedance/seedream-5.0-lite:replicate",
         aliases: ["seedream5"],
         provider: "replicate",
         publisher: "ByteDance",
@@ -265,7 +258,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
     },
     "bytedance/seedream-5.0-pro": {
-        routeId: "bytedance/seedream-5.0-pro:replicate",
         aliases: ["seedream-5-pro", "seedream-pro-5", "seedream5-pro"],
         provider: "replicate",
         publisher: "ByteDance",
@@ -283,7 +275,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 10,
     },
     "bytedance/seedream-4.0": {
-        routeId: "bytedance/seedream-4.0:replicate",
         aliases: ["seedream"],
         provider: "replicate",
         publisher: "ByteDance",
@@ -325,7 +316,6 @@ const IMAGE_BASE_SERVICES = {
     // v4 presets sit in a single 3.4–4.2 MP band (no 1K/2K/4K tier split). So a
     // flat per-image cost is correct regardless of aspect ratio / resolution.
     "ideogram-ai/ideogram-v4-turbo": {
-        routeId: "ideogram-ai/ideogram-v4-turbo:replicate",
         aliases: ["ideogram-v4-turbo"],
         provider: "replicate",
         publisher: "Ideogram",
@@ -342,7 +332,6 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
     },
     "ideogram-ai/ideogram-v4-balanced": {
-        routeId: "ideogram-ai/ideogram-v4-balanced:replicate",
         aliases: ["ideogram-v4-balanced"],
         provider: "replicate",
         publisher: "Ideogram",
@@ -359,7 +348,6 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
     },
     "ideogram-ai/ideogram-v4-quality": {
-        routeId: "ideogram-ai/ideogram-v4-quality:replicate",
         aliases: ["ideogram-v4-quality"],
         provider: "replicate",
         publisher: "Ideogram",
@@ -377,7 +365,6 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
     },
     "openai/gpt-image-1-mini": {
-        routeId: "openai/gpt-image-1-mini:azure",
         aliases: ["gpt-image", "gpt-image-1-mini", "gptimage"],
         provider: "azure",
         publisher: "OpenAI",
@@ -397,7 +384,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
     },
     "openai/gpt-image-1.5": {
-        routeId: "openai/gpt-image-1.5:azure",
         aliases: ["gpt-image-1.5", "gpt-image-large", "gptimage-large"],
         provider: "azure",
         publisher: "OpenAI",
@@ -420,7 +406,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
     },
     "openai/gpt-image-2": {
-        routeId: "openai/gpt-image-2:azure",
         aliases: ["gpt-image-2"],
         provider: "azure",
         publisher: "OpenAI",
@@ -443,7 +428,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
     },
     "openai/gpt-image-2.5-flare": {
-        routeId: "openai/gpt-image-2.5-flare:openai",
         aliases: [],
         provider: "openai",
         publisher: "OpenAI",
@@ -466,7 +450,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 16,
     },
     "openai/gpt-image-2.5-sunburst": {
-        routeId: "openai/gpt-image-2.5-sunburst:openai",
         aliases: [],
         provider: "openai",
         publisher: "OpenAI",
@@ -489,7 +472,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 16,
     },
     "black-forest-labs/flux.1-schnell": {
-        routeId: "black-forest-labs/flux.1-schnell:vast",
         aliases: ["flux"],
         provider: "vast",
         publisher: "Black Forest Labs",
@@ -506,7 +488,6 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
     },
     "tongyi-mai/z-image-turbo": {
-        routeId: "tongyi-mai/z-image-turbo:vast",
         aliases: ["z-image", "z-image-turbo", "zimage"],
         provider: "vast",
         publisher: "Alibaba",
@@ -524,7 +505,6 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
     },
     "google/veo-3.1-fast": {
-        routeId: "google/veo-3.1-fast:google",
         aliases: [
             "veo-3.1-fast",
             "veo-720p",
@@ -573,7 +553,6 @@ const IMAGE_BASE_SERVICES = {
         allowedDurations: [4, 6, 8],
     },
     "google/gemini-omni-1.1-flash": {
-        routeId: "google/gemini-omni-1.1-flash:google",
         aliases: [],
         provider: "google",
         publisher: "Google",
@@ -602,7 +581,6 @@ const IMAGE_BASE_SERVICES = {
         defaultDuration: 5,
     },
     "bytedance/seedance-1-pro-fast": {
-        routeId: "bytedance/seedance-1-pro-fast:replicate",
         aliases: ["seedance-pro"],
         provider: "replicate",
         publisher: "ByteDance",
@@ -651,7 +629,6 @@ const IMAGE_BASE_SERVICES = {
         defaultDuration: 5,
     },
     "bytedance/seedance-2.0": {
-        routeId: "bytedance/seedance-2.0:replicate",
         aliases: ["seedance-2", "seedance-2.0"],
         provider: "replicate",
         publisher: "ByteDance",
@@ -698,7 +675,6 @@ const IMAGE_BASE_SERVICES = {
         defaultDuration: 5,
     },
     "bytedance/seedance-2.0-mini": {
-        routeId: "bytedance/seedance-2.0-mini:replicate",
         aliases: ["seedance-2.0-mini"],
         provider: "replicate",
         publisher: "ByteDance",
@@ -739,7 +715,6 @@ const IMAGE_BASE_SERVICES = {
         defaultDuration: 5,
     },
     "bytedance/seedance-2.0-fast": {
-        routeId: "bytedance/seedance-2.0-fast:replicate",
         aliases: ["seedance-2.0-fast"],
         provider: "replicate",
         publisher: "ByteDance",
@@ -764,7 +739,6 @@ const IMAGE_BASE_SERVICES = {
         defaultDuration: 5,
     },
     "alibaba/wan-2.6": {
-        routeId: "alibaba/wan-2.6:replicate",
         aliases: ["wan2.6", "wan-i2v", "wan"],
         provider: "replicate",
         publisher: "Alibaba",
@@ -790,7 +764,6 @@ const IMAGE_BASE_SERVICES = {
         allowedDurations: [5, 10, 15],
     },
     "alibaba/wan-2.2-fast": {
-        routeId: "alibaba/wan-2.2-fast:replicate",
         aliases: ["wan2.2", "wan-2.2", "wan-fast"],
         provider: "replicate",
         publisher: "Alibaba",
@@ -816,7 +789,6 @@ const IMAGE_BASE_SERVICES = {
         defaultDuration: 5,
     },
     "alibaba/wan-2.7": {
-        routeId: "alibaba/wan-2.7:replicate",
         aliases: [
             "wan2.7",
             "wan-2.7",
@@ -884,7 +856,6 @@ const IMAGE_BASE_SERVICES = {
         defaultDuration: 5,
     },
     "alibaba/wan-3.0": {
-        routeId: "alibaba/wan-3.0:fal",
         aliases: ["wan-3.0"],
         provider: "fal",
         publisher: "Alibaba",
@@ -940,7 +911,6 @@ const IMAGE_BASE_SERVICES = {
         defaultDuration: 5,
     },
     "alibaba/wan-2.7-image": {
-        routeId: "alibaba/wan-2.7-image:replicate",
         aliases: ["wan2.7-image", "wan-img", "wan-image"],
         provider: "replicate",
         publisher: "Alibaba",
@@ -960,7 +930,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 9, // Pollinations route cap.
     },
     "alibaba/wan-2.7-image-pro": {
-        routeId: "alibaba/wan-2.7-image-pro:replicate",
         aliases: ["wan2.7-image-pro", "wan-img-pro", "wan-image-pro"],
         provider: "replicate",
         publisher: "Alibaba",
@@ -981,7 +950,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 9, // Pollinations route cap.
     },
     "qwen/qwen-image": {
-        routeId: "qwen/qwen-image:replicate",
         aliases: [
             "qwen-image-plus",
             "qwen-image-2512",
@@ -1024,7 +992,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 3, // DashScope Qwen Image Edit route cap.
     },
     "qwen/qwen-image-3": {
-        routeId: "qwen/qwen-image-3:fal",
         aliases: ["qwen-image-3"],
         provider: "fal",
         publisher: "Qwen",
@@ -1064,7 +1031,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 3,
     },
     "x-ai/grok-imagine-image": {
-        routeId: "x-ai/grok-imagine-image:xai",
         aliases: ["grok-imagine-image", "grok-imagine"],
         provider: "xai",
         publisher: "xAI",
@@ -1083,7 +1049,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 1, // xAI image edit route forwards one input image.
     },
     "x-ai/grok-imagine-image-quality": {
-        routeId: "x-ai/grok-imagine-image-quality:openrouter",
         aliases: [
             "grok-aurora",
             "aurora",
@@ -1192,7 +1157,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 1,
     },
     "x-ai/grok-imagine-video": {
-        routeId: "x-ai/grok-imagine-video:fal",
         aliases: ["grok-imagine-video", "grok-video-pro"],
         provider: "fal",
         publisher: "xAI",
@@ -1215,7 +1179,6 @@ const IMAGE_BASE_SERVICES = {
         defaultDuration: 5,
     },
     "x-ai/grok-imagine-video-1.5": {
-        routeId: "x-ai/grok-imagine-video-1.5:openrouter",
         aliases: ["grok-imagine-video-1.5"],
         provider: "openrouter",
         publisher: "xAI",
@@ -1264,7 +1227,6 @@ const IMAGE_BASE_SERVICES = {
         defaultDuration: 5,
     },
     "bytedance/seedance-2.5": {
-        routeId: "bytedance/seedance-2.5:replicate",
         aliases: ["seedance-2.5"],
         provider: "replicate",
         publisher: "ByteDance",
@@ -1334,7 +1296,6 @@ const IMAGE_BASE_SERVICES = {
         defaultDuration: 4,
     },
     "alibaba/happyhorse-1.1": {
-        routeId: "alibaba/happyhorse-1.1:openrouter",
         aliases: ["happyhorse", "happy-horse-1.1", "happyhorse-1.1"],
         provider: "openrouter",
         publisher: "Alibaba",
@@ -1356,7 +1317,6 @@ const IMAGE_BASE_SERVICES = {
         defaultDuration: 5,
     },
     "minimax/minimax-h3": {
-        routeId: "minimax/minimax-h3:fal",
         aliases: ["minimax-h3"],
         provider: "fal",
         publisher: "MiniMax",
@@ -1399,7 +1359,6 @@ const IMAGE_BASE_SERVICES = {
         defaultDuration: 5,
     },
     "minimax/minimax-h3-max-turbo": {
-        routeId: "minimax/minimax-h3-max-turbo:fal",
         aliases: [],
         provider: "fal",
         publisher: "MiniMax",
@@ -1439,7 +1398,6 @@ const IMAGE_BASE_SERVICES = {
         allowedDurations: [5, 10, 15],
     },
     "black-forest-labs/flux.2-klein-4b": {
-        routeId: "black-forest-labs/flux.2-klein-4b:vast",
         aliases: ["flux-klein", "klein"],
         provider: "vast",
         publisher: "Black Forest Labs",
@@ -1457,7 +1415,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 10, // Pollinations self-hosted route cap.
     },
     "prunaai/p-image": {
-        routeId: "prunaai/p-image:deepinfra",
         aliases: ["pruna-image", "pruna", "p-image"],
         provider: "deepinfra",
         publisher: "Pruna",
@@ -1474,7 +1431,6 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
     },
     "prunaai/p-image-edit": {
-        routeId: "prunaai/p-image-edit:deepinfra",
         aliases: ["pruna-edit", "pruna-image-edit", "p-image-edit"],
         provider: "deepinfra",
         publisher: "Pruna",
@@ -1494,7 +1450,6 @@ const IMAGE_BASE_SERVICES = {
     // Pruna p-video is one Replicate model priced per second by resolution:
     // 720p $0.02/s and 1080p $0.04/s in standard mode.
     "prunaai/p-video": {
-        routeId: "prunaai/p-video:replicate",
         aliases: [
             "pruna-video",
             "p-video-720p",

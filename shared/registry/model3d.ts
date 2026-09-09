@@ -13,7 +13,6 @@ export type Model3dName = keyof typeof MODEL3D_SERVICES;
 // shared/schemas/generation-event.ts and a Tinybird schema change.
 const MODEL3D_BASE_SERVICES = {
     "microsoft/trellis-2": {
-        routeId: "microsoft/trellis-2:inferenceport",
         aliases: [
             "trellis-2-low",
             "trellis-2-medium",
@@ -56,7 +55,6 @@ const MODEL3D_BASE_SERVICES = {
         resolutions: ["low", "medium", "high"],
     },
     "nvidia/asset-harvester": {
-        routeId: "nvidia/asset-harvester:inferenceport",
         aliases: ["asset-harvester"],
         publisher: "NVIDIA",
         provider: "inferenceport",
@@ -74,7 +72,6 @@ const MODEL3D_BASE_SERVICES = {
         maxReferenceImages: 1,
     },
     "hyper3d/rodin-2.5": {
-        routeId: "hyper3d/rodin-2.5:fal",
         aliases: ["rodin", "hyper3d-rodin"],
         provider: "fal",
         publisher: "Hyper3D",

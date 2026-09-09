@@ -8,9 +8,12 @@ import {
     type ModelInfo,
     PollinationsError,
 } from "@pollinations/sdk";
+import { SANDBOX_TOP_UP } from "../../config";
 
 export const API_BASE_URL = (
-    import.meta.env.VITE_POLLINATIONS_API_BASE_URL ||
+    (SANDBOX_TOP_UP
+        ? "https://staging.gen.pollinations.ai"
+        : import.meta.env.VITE_POLLINATIONS_API_BASE_URL) ||
     "https://gen.pollinations.ai"
 ).replace(/\/$/, "");
 

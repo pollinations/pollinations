@@ -2,12 +2,18 @@ import { PolliProvider } from "@pollinations/sdk/react";
 import { ContentHeader, useColorMode } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import { createFileRoute } from "@tanstack/react-router";
+import { lazy, Suspense, useState } from "react";
 import { ENTER_URL, POLLI_APP_KEY } from "../config";
 import { routeHead } from "../routeMeta";
 import { Playground } from "../ui/play/Playground";
 import { BottomScene } from "../ui/site/BottomScene";
 import { HeroScene } from "../ui/site/HeroScene";
 import { PageCard } from "../ui/site/PageCard";
+
+const TopUpKeyDemo =
+    import.meta.env.DEV || import.meta.env.MODE === "website-v2"
+        ? lazy(() => import("../ui/play/TopUpKeyDemo"))
+        : null;
 
 export const Route = createFileRoute("/play")({
     head: () => routeHead("/play"),
@@ -18,17 +24,26 @@ export const Route = createFileRoute("/play")({
  * Play controls, including the signed-in profile, use the shared UI treatment.
  */
 function AccountAction() {
+    const [topUpOpen, setTopUpOpen] = useState(
+        () =>
+            typeof window !== "undefined" &&
+            new URLSearchParams(window.location.search).has("app_top_up"),
+    );
     return (
         <div className="self-start">
             <AppUserMenu
-                dashboardHref={`${ENTER_URL}/keys`}
                 triggerVariant="action"
+                onTopUpKey={TopUpKeyDemo ? () => setTopUpOpen(true) : undefined}
                 labels={{
-                    authorize: "Connect your account",
-                    topUpAccount: "Manage access",
-                    logout: "Disconnect",
+                    authorize: "Connect",
+                    logout: "Disconnect app",
                 }}
             />
+            {TopUpKeyDemo && topUpOpen && (
+                <Suspense fallback={null}>
+                    <TopUpKeyDemo onClose={() => setTopUpOpen(false)} />
+                </Suspense>
+            )}
         </div>
     );
 }

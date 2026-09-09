@@ -12,6 +12,10 @@ not_found_handling = "single-page-application"
 run_worker_first = ["/*", "!/assets/*", "!/heroes/*", "!/tool-scenes/*", "!/app-art/*", "!/supporters/*", "!/data/*", "!/legal/*"]
 
 # Public hostnames are attached directly in the Myceli account.
+[env.website-v2]
+name = "pollinations-ai-website-v2"
+workers_dev = true
+
 [env.production]
 
 [[env.production.routes]]

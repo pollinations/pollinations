@@ -1,7 +1,10 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
-import { MODEL_CATEGORIES } from "../registry/registry.ts";
+import {
+    CHAT_PARAMETER_TYPES,
+    MODEL_CATEGORIES,
+} from "../registry/registry.ts";
 import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
 import { SafeSchema } from "./safety.ts";
 
@@ -302,6 +305,17 @@ const ChatCompletionStreamOptionsSchema = z
     })
     .nullable()
     .optional();
+
+// Shared with the registry ChatParameter shape, exposed on model listings.
+const ChatParameterSchema = z.object({
+    name: z.string(),
+    type: z.enum(CHAT_PARAMETER_TYPES),
+    description: z.string().optional(),
+    min: z.number().optional(),
+    max: z.number().optional(),
+    enum: z.array(z.string()).optional(),
+    condition: z.string().optional(),
+});
 
 export const CreateChatCompletionRequestSchema = z
     .object({
@@ -746,6 +760,13 @@ export const OpenAIModelSchema = z
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),
         per_user_rpm: z.number().positive().nullable().optional(),
+        supported_parameters: z.array(ChatParameterSchema).optional(),
+        default_parameters: z
+            .record(
+                z.string(),
+                z.union([z.string(), z.number(), z.boolean(), z.null()]),
+            )
+            .optional(),
     })
     .meta({
         description: "OpenAI-compatible model object with capability metadata",

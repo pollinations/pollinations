@@ -3,6 +3,7 @@ import { SAFETY_FEATURES } from "../schemas/safety.ts";
 import { publicPriceInfo, toFixedPoint } from "./public-pricing";
 import {
     type BillingAdjustmentRule,
+    CHAT_PARAMETER_TYPES,
     getPriceDefinitionForModel,
     getRegistryModelDefinition,
     getVisibleAudioModels,
@@ -29,6 +30,16 @@ export const ModelCapabilitySchema = z.enum([
 ]);
 
 export type ModelCapability = z.infer<typeof ModelCapabilitySchema>;
+
+const ChatParameterSchema = z.object({
+    name: z.string(),
+    type: z.enum(CHAT_PARAMETER_TYPES),
+    description: z.string().optional(),
+    min: z.number().optional(),
+    max: z.number().optional(),
+    enum: z.array(z.string()).optional(),
+    condition: z.string().optional(),
+});
 
 // Pricing uses registry field names directly, filtering out zero/undefined values
 // Fields: promptTextTokens, promptCachedTokens, promptCacheWriteTokens,
@@ -119,6 +130,13 @@ export const ModelInfoSchema = z.object({
     alpha: z.boolean().optional(),
     flat_rate: z.boolean().optional(),
     added_date: z.number().optional(),
+    supported_parameters: z.array(ChatParameterSchema).optional(),
+    default_parameters: z
+        .record(
+            z.string(),
+            z.union([z.string(), z.number(), z.boolean(), z.null()]),
+        )
+        .optional(),
 });
 
 export type ModelInfo = z.infer<typeof ModelInfoSchema>;
@@ -231,6 +249,12 @@ export function modelInfoFromDefinition(
                 ? service.cost.promptTextTokens === undefined
                 : undefined),
         added_date: service.addedDate,
+        supported_parameters:
+            service.category === "text"
+                ? service.supportedParameters
+                : undefined,
+        default_parameters:
+            service.category === "text" ? service.defaultParameters : undefined,
     };
 }
 

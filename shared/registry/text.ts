@@ -16,7 +16,7 @@ import {
     PERPLEXITY_SONAR_BILLING,
 } from "./perplexity-billing";
 import { perMillion } from "./price-helpers";
-import type { ModelDefinition } from "./registry";
+import type { ChatParameter, ModelDefinition } from "./registry";
 import { TEXT_FALLBACKS } from "./text-fallbacks";
 
 // Voices available for openai-audio model - exported for schema validation
@@ -38,6 +38,199 @@ export const AUDIO_VOICES = [
 
 export const DEFAULT_TEXT_MODEL = "openai/gpt-5.4-nano" as const;
 export type TextModelName = keyof typeof TEXT_SERVICES;
+
+// Chat-Completions parameters that actually reach the provider for GPT-5-family
+// models. `omitOpenAISampling` in availableModels.ts strips
+// temperature/top_p/top_k/frequency_penalty/presence_penalty/repetition_penalty/
+// seed before the request leaves the gateway, so those are deliberately absent.
+// Only documentary metadata — generation behaviour is unchanged.
+const gpt5FamilySamplingOmittedParameters: ChatParameter[] = [
+    {
+        name: "reasoning_effort",
+        type: "string",
+        enum: ["none", "minimal", "low", "medium", "high", "xhigh", "max"],
+        description:
+            "Reasoning depth. Passed through unchanged; the provider chooses the effort.",
+    },
+    {
+        name: "max_completion_tokens",
+        type: "integer",
+        min: 0,
+        description: "Maximum number of output tokens.",
+    },
+    {
+        name: "max_tokens",
+        type: "integer",
+        min: 0,
+        condition:
+            "Alias converted to max_completion_tokens before reaching the provider.",
+        description: "Alternative way to set the maximum output tokens.",
+    },
+    {
+        name: "stream",
+        type: "boolean",
+        description: "Stream the response (adds a usage chunk).",
+    },
+    {
+        name: "tools",
+        type: "string",
+        condition: "Requires tool_calling capability.",
+        description: "Function tools the model may call.",
+    },
+    {
+        name: "tool_choice",
+        type: "string",
+        enum: ["none", "auto", "required"],
+        condition: "Requires tool_calling capability.",
+        description: "Whether and which tool to call.",
+    },
+    {
+        name: "response_format",
+        type: "string",
+        condition: "JSON mode or structured output.",
+        description: "Requested output format (text or JSON).",
+    },
+    {
+        name: "stop",
+        type: "string",
+        description: "Stop sequences that end generation.",
+    },
+    {
+        name: "user",
+        type: "string",
+        description: "End-user identifier for abuse tracking.",
+    },
+];
+
+const grok46Parameters: ChatParameter[] = [
+    {
+        name: "temperature",
+        type: "number",
+        min: 0,
+        max: 2,
+        description: "Sampling temperature for output randomness.",
+    },
+    {
+        name: "top_p",
+        type: "number",
+        min: 0,
+        max: 1,
+        description: "Nucleus sampling probability mass.",
+    },
+    {
+        name: "reasoning_effort",
+        type: "string",
+        enum: ["none", "minimal", "low", "medium", "high", "xhigh", "max"],
+        description:
+            "Reasoning depth. Passed through unchanged; the provider chooses the effort.",
+    },
+    {
+        name: "max_tokens",
+        type: "integer",
+        min: 0,
+        description: "Maximum number of output tokens.",
+    },
+    {
+        name: "max_completion_tokens",
+        type: "integer",
+        min: 0,
+        condition: "Converted to max_tokens before reaching the provider.",
+        description: "Alternative way to set the maximum output tokens.",
+    },
+    {
+        name: "stream",
+        type: "boolean",
+        description: "Stream the response.",
+    },
+    {
+        name: "tools",
+        type: "string",
+        condition: "Requires tool_calling capability.",
+        description: "Function tools the model may call.",
+    },
+    {
+        name: "tool_choice",
+        type: "string",
+        enum: ["none", "auto", "required"],
+        condition: "Requires tool_calling capability.",
+        description: "Whether and which tool to call.",
+    },
+    {
+        name: "response_format",
+        type: "string",
+        condition: "JSON mode or structured output.",
+        description: "Requested output format (text or JSON).",
+    },
+    {
+        name: "stop",
+        type: "string",
+        description: "Stop sequences that end generation.",
+    },
+    {
+        name: "seed",
+        type: "integer",
+        min: -1,
+        description: "Seed for reproducible generation.",
+    },
+];
+
+const claudeSonnet5Parameters: ChatParameter[] = [
+    {
+        name: "reasoning_effort",
+        type: "string",
+        enum: ["none", "minimal", "low", "medium", "high", "xhigh"],
+        condition:
+            "Maps to Claude adaptive thinking output_config.effort; xhigh normalizes to high.",
+        description: "Reasoning depth via extended thinking.",
+    },
+    {
+        name: "max_tokens",
+        type: "integer",
+        min: 0,
+        description: "Maximum number of output tokens.",
+    },
+    {
+        name: "max_completion_tokens",
+        type: "integer",
+        min: 0,
+        condition: "Converted to max_tokens before reaching the provider.",
+        description: "Alternative way to set the maximum output tokens.",
+    },
+    {
+        name: "stream",
+        type: "boolean",
+        description: "Stream the response.",
+    },
+    {
+        name: "tools",
+        type: "string",
+        condition: "Requires tool_calling capability.",
+        description: "Function tools the model may call.",
+    },
+    {
+        name: "tool_choice",
+        type: "string",
+        enum: ["none", "auto", "required"],
+        condition: "Requires tool_calling capability.",
+        description: "Whether and which tool to call.",
+    },
+    {
+        name: "response_format",
+        type: "string",
+        condition: "JSON mode or structured output.",
+        description: "Requested output format (text or JSON).",
+    },
+    {
+        name: "stop",
+        type: "string",
+        description: "Stop sequences that end generation.",
+    },
+    {
+        name: "user",
+        type: "string",
+        description: "End-user identifier.",
+    },
+];
 
 const TEXT_BASE_SERVICES = {
     "openai/gpt-5.4-nano": {
@@ -61,6 +254,7 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         contextLength: 400000,
         isSpecialized: false,
+        supportedParameters: gpt5FamilySamplingOmittedParameters,
     },
     "openai/gpt-5-nano": {
         aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07", "openai-fast"],
@@ -1002,6 +1196,7 @@ const TEXT_BASE_SERVICES = {
         // Azure's Global Standard deployment is capped at 200K context.
         contextLength: 200000,
         isSpecialized: false,
+        supportedParameters: grok46Parameters,
     },
     "google/gemini-2.5-flash-lite:search": {
         aliases: [
@@ -1176,6 +1371,11 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         contextLength: 1000000, // Bedrock Claude Sonnet 5 context window.
         isSpecialized: false,
+        supportedParameters: claudeSonnet5Parameters,
+        // The Bedrock native config injects max_tokens: 64000 when the caller
+        // omits it (modelConfigs.ts "claude-sonnet-5"), so this is a real
+        // gateway-applied default.
+        defaultParameters: { max_tokens: 64000 },
     },
     "anthropic/claude-opus-4.6": {
         aliases: ["claude-opus-4.5", "claude-opus-4.6"],

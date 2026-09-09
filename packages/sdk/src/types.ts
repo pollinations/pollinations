@@ -954,6 +954,22 @@ export interface ModelInfo {
     is_specialized?: boolean;
     paid_only?: boolean;
     pricing?: Record<string, string> & { currency: "pollen" };
+    /** Chat-Completions parameters this model accepts (text models only). */
+    supported_parameters?: ChatParameterInfo[];
+    /** Default values applied when a parameter is omitted (text models only). */
+    default_parameters?: Record<string, string | number | boolean | null>;
+}
+
+/** Describes one Chat-Completions parameter a text model accepts. */
+export interface ChatParameterInfo {
+    name: string;
+    type: "string" | "number" | "boolean" | "integer";
+    description?: string;
+    min?: number;
+    max?: number;
+    enum?: string[];
+    /** Documents conditional behaviour (gateway conversion, provider caps, etc.). */
+    condition?: string;
 }
 
 // ============================================================================

@@ -42,6 +42,17 @@ Supported media models also advertise both endpoints and return generated-file
 links as assistant text. Reference-required models return their normal missing-input
 error; use their native endpoint until attachments are supported here.
 
+`supported_parameters` and `default_parameters` let apps discover which
+Chat-completions controls a text model accepts and their defaults, backed by
+the model registry. `supported_parameters` lists parameters that actually reach
+the provider after Pollinations' gateway transforms — controls the gateway
+strips (for example, sampling parameters on models that do not accept them) or
+that the provider silently ignores are never listed. Each entry may carry a
+`condition` documenting gateway conversion, mutual exclusion, or provider-side
+caps. `default_parameters` lists values Pollinations applies when the caller
+omits the parameter. These fields describe Chat-Completions behaviour only and
+do not imply anything about a model's native `/v1/responses` contract.
+
 ## Community Models
 
 Community models use an `owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `community=true` to return only community models or `community=false` to exclude them.

@@ -114,6 +114,32 @@ export const VIDEO_CAPABILITIES = [
 
 export type VideoCapability = (typeof VIDEO_CAPABILITIES)[number];
 
+/**
+ * Describes a Chat-Completions parameter a model actually honors after the
+ * Pollinations gateway transform pipeline.  Only include parameters that
+ * survive the model's transforms in `availableModels.ts` and reach the
+ * provider — never parameters the gateway strips or the provider silently
+ * ignores.  This metadata is Chat-Completions-specific and does not imply
+ * anything about the native `/v1/responses` contract.
+ */
+export type ChatParameter = {
+    name: string;
+    type: "string" | "number" | "boolean" | "integer";
+    description?: string;
+    min?: number;
+    max?: number;
+    enum?: string[];
+    /** Documents conditional behaviour (e.g. mutual exclusion, gateway conversion, provider-side caps). */
+    condition?: string;
+};
+
+export const CHAT_PARAMETER_TYPES = [
+    "string",
+    "number",
+    "boolean",
+    "integer",
+] as const;
+
 export type BillingAdjustmentRule = BillingRateDefinition & {
     // Counts billable units from the response output (stream outputs carry a
     // `streamEvents` array). Returning 0 skips the rule for this request.
@@ -230,6 +256,18 @@ export type ModelDefinition = {
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
     /** Internal provider-route output-token cap used for fallback compatibility. */
     maxCompletionTokens?: number;
+    /**
+     * Chat-Completions parameters this model actually accepts after gateway
+     * transforms.  Only text-category models should populate this; it must
+     * stay `undefined` for image/audio/video/3d/embedding/realtime models.
+     */
+    supportedParameters?: ChatParameter[];
+    /**
+     * Default values Pollinations applies when the caller omits a parameter.
+     * Only populate for values the gateway explicitly sets (e.g. via provider
+     * config `defaultOptions`), never for unknown provider-side defaults.
+     */
+    defaultParameters?: Record<string, string | number | boolean | null>;
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.

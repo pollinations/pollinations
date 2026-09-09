@@ -350,7 +350,15 @@ export const CreateChatCompletionRequestSchema = z
                 "Controls Perplexity Sonar search context. Pollinations currently supports low and high.",
             )
             .optional(),
-        temperature: z.number().min(0).max(2).nullable().optional(),
+        temperature: z
+            .number()
+            .min(0)
+            .max(2)
+            .nullable()
+            .optional()
+            .describe(
+                "Sampling controls are ignored for model families that do not consistently support them, regardless of reasoning mode.",
+            ),
         top_p: z.number().min(0).max(1).nullable().optional(),
         tools: z.array(ChatCompletionToolSchema).optional(),
         tool_choice: ChatCompletionToolChoiceOptionSchema.optional(),
@@ -796,6 +804,14 @@ const imageResolutionField = z
         description:
             "Output resolution for resolution-priced image and video models (Pollinations extension)",
     });
+const imageResponseFormatField = z
+    .enum(["url", "b64_json"])
+    .optional()
+    .default("b64_json")
+    .meta({
+        description:
+            'Return format. "url" returns a stored media.pollinations.ai URL, "b64_json" returns base64-encoded image data',
+    });
 
 export const CreateImageRequestSchema = z
     .object({
@@ -806,14 +822,7 @@ export const CreateImageRequestSchema = z
         n: imageNField,
         size: imageSizeField,
         quality: imageQualityField,
-        response_format: z
-            .enum(["url", "b64_json"])
-            .optional()
-            .default("b64_json")
-            .meta({
-                description:
-                    'Return format. "url" returns a pollinations.ai URL, "b64_json" returns base64-encoded image data',
-            }),
+        response_format: imageResponseFormatField,
         user: z.string().optional().meta({
             description: "End-user identifier for abuse tracking",
         }),
@@ -842,7 +851,8 @@ const ImageDataSchema = z.object({
     url: z.string().optional(),
     b64_json: z.string().optional(),
     media_type: z.string().optional().meta({
-        description: "MIME type for non-raster output such as image/svg+xml",
+        description:
+            "MIME type, included for URL responses and non-raster output",
     }),
     revised_prompt: z.string().optional(),
 });
@@ -892,6 +902,7 @@ export const CreateImageEditRequestSchema = z
         n: imageNField,
         size: imageEditSizeField,
         quality: imageQualityField,
+        response_format: imageResponseFormatField,
         resolution: imageResolutionField,
         safe: SafeSchema,
     })

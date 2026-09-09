@@ -17,7 +17,10 @@ import {
 import { readResponseBytes } from "@shared/response-bytes.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { validateUserMediaUrl } from "@shared/user-media-url.ts";
-import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
+import {
+    errorResponseDescriptions,
+    mediaResponseHeaders,
+} from "@shared/utils/api-docs.ts";
 import { type Context, Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { describeRoute } from "hono-openapi";
@@ -3239,6 +3242,7 @@ export const audioRoutes = new Hono<Env>()
             responses: {
                 200: {
                     description: "Success - Returns transformed speech",
+                    headers: mediaResponseHeaders,
                     content: {
                         "audio/mpeg": {
                             schema: { type: "string", format: "binary" },
@@ -3306,6 +3310,7 @@ export const audioRoutes = new Hono<Env>()
                 200: {
                     description:
                         "Success - Returns isolated speech as MP3 audio",
+                    headers: mediaResponseHeaders,
                     content: {
                         "audio/mpeg": {
                             schema: { type: "string", format: "binary" },
@@ -3437,6 +3442,7 @@ export const audioRoutes = new Hono<Env>()
             responses: {
                 200: {
                     description: "Success - Returns audio data",
+                    headers: mediaResponseHeaders,
                     content: {
                         "audio/mpeg": {
                             schema: { type: "string", format: "binary" },

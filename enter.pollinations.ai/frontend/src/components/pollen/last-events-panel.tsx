@@ -1,4 +1,5 @@
 import {
+    ArrowRightIcon,
     Button,
     CardIcon,
     Chip,
@@ -16,7 +17,7 @@ import { type FC, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { formatActivityPollenThreshold } from "../activity/format-activity-pollen.ts";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 15;
 const RECENT_WINDOW_DAYS = 90;
 const TABLE_HEADER_CELL_CLASS = "px-2 py-1.5";
 const TABLE_CELL_CLASS = "px-2 py-1.5 text-xs";
@@ -77,55 +78,64 @@ function formatTimestamp(value: string): string {
 }
 
 function formatSignedPollen(event: LastEvent): string {
+    if (event.pollen === 0) return "0";
     const sign = event.kind === "earnings" ? "+" : "-";
     return `${sign}${formatActivityPollenThreshold(event.pollen)}`;
 }
 
-function EventKindChip({ kind }: { kind: LastEvent["kind"] }) {
-    if (kind === "earnings") {
-        return (
-            <Chip intent="alpha" size="sm">
-                Earned
-            </Chip>
-        );
-    }
+function EventKindChip({ event }: { event: LastEvent }) {
+    const earned = event.kind === "earnings";
+    const label = earned ? "Earned" : "Spent";
     return (
-        <Chip intent="danger" size="sm">
-            Used
-        </Chip>
+        <span className="inline-flex items-center gap-1.5">
+            <Chip
+                intent={earned ? "info" : "danger"}
+                size="icon"
+                aria-hidden="true"
+            >
+                <ArrowRightIcon
+                    className={`h-3 w-3 ${earned ? "rotate-90" : "-rotate-90"}`}
+                />
+            </Chip>
+            {label}
+        </span>
     );
 }
 
-function MeterSourceChip({ source }: { source: string | null }) {
-    if (source === "tier") {
+function EventPollenChip({ event }: { event: LastEvent }) {
+    const amount = formatSignedPollen(event);
+    if (event.meterSource !== "tier" && event.meterSource !== "pack") {
         return (
-            <TierChip
-                size="sm"
-                aria-label="quest"
-                title="quest"
-                className="justify-center"
-            >
-                <SproutIcon className="h-3.5 w-3.5" aria-hidden="true" />
-            </TierChip>
+            <span className="whitespace-nowrap tabular-nums">
+                {amount}
+                <span className="sr-only"> Pollen</span>
+            </span>
         );
     }
-    if (source === "pack") {
-        return (
-            <PaidChip
-                size="sm"
-                aria-label="paid"
-                title="paid"
-                className="justify-center"
-            >
-                <CardIcon className="h-3.5 w-3.5" aria-hidden="true" />
-            </PaidChip>
-        );
-    }
-    return (
-        <Chip intent="neutral" size="sm">
-            unknown
-        </Chip>
+    const source = event.meterSource === "tier" ? "Quest" : "Paid";
+    const props = {
+        size: "sm" as const,
+        title: `${source} Pollen`,
+        "aria-label": `${amount} ${source} Pollen`,
+        className:
+            "inline-flex shrink-0 items-center gap-2 whitespace-nowrap tabular-nums",
+    };
+    const content = (
+        <>
+            {event.meterSource === "tier" ? (
+                <SproutIcon
+                    className="h-3.5 w-3.5 shrink-0"
+                    aria-hidden="true"
+                />
+            ) : (
+                <CardIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            )}
+            <span>{amount}</span>
+        </>
     );
+    if (event.meterSource === "tier")
+        return <TierChip {...props}>{content}</TierChip>;
+    return <PaidChip {...props}>{content}</PaidChip>;
 }
 
 function mergeLastEvents(
@@ -250,35 +260,29 @@ export const LastEventsPanel: FC = () => {
                                 <span className="font-semibold text-ink-900 truncate">
                                     {event.primary}
                                 </span>
-                                <span
-                                    className={`tabular-nums font-semibold shrink-0 ${
-                                        event.kind === "earnings"
-                                            ? "text-intent-success-text"
-                                            : "text-intent-danger-text"
-                                    }`}
-                                >
-                                    {formatSignedPollen(event)}
-                                </span>
+                                <EventPollenChip event={event} />
                             </div>
                             <div className="flex items-center justify-between gap-2 text-xs">
                                 <span className="text-ink-600 tabular-nums">
                                     {formatTimestamp(event.timestamp)}
                                 </span>
-                                <EventKindChip kind={event.kind} />
+                                <EventKindChip event={event} />
                             </div>
                             <div className="flex items-center justify-between gap-2 text-xs">
                                 <span className="text-ink-500 truncate">
                                     {event.secondary}
                                 </span>
-                                <MeterSourceChip source={event.meterSource} />
                             </div>
                         </li>
                     ))}
                 </ul>
 
                 <div className="hidden overflow-x-auto sm:block">
-                    <Table className="text-left text-xs">
-                        <TableHead>
+                    <Table
+                        aria-label="Last events"
+                        className="text-left text-xs"
+                    >
+                        <TableHead className="sr-only">
                             <TableRow className="hover:bg-transparent">
                                 <TableHeaderCell
                                     className={TABLE_HEADER_CELL_CLASS}
@@ -286,7 +290,6 @@ export const LastEventsPanel: FC = () => {
                                     Time
                                 </TableHeaderCell>
                                 <TableHeaderCell
-                                    align="center"
                                     className={TABLE_HEADER_CELL_CLASS}
                                 >
                                     Type
@@ -297,20 +300,13 @@ export const LastEventsPanel: FC = () => {
                                     Details
                                 </TableHeaderCell>
                                 <TableHeaderCell
-                                    align="center"
-                                    className={TABLE_HEADER_CELL_CLASS}
-                                >
-                                    Source
-                                </TableHeaderCell>
-                                <TableHeaderCell
-                                    align="right"
                                     className={TABLE_HEADER_CELL_CLASS}
                                 >
                                     Pollen
                                 </TableHeaderCell>
                             </TableRow>
                         </TableHead>
-                        <TableBody className="divide-divider/70">
+                        <TableBody divider="neutral">
                             {state.rows.map((event) => (
                                 <TableRow key={`${event.kind}-${event.id}`}>
                                     <TableCell
@@ -319,11 +315,8 @@ export const LastEventsPanel: FC = () => {
                                     >
                                         {formatTimestamp(event.timestamp)}
                                     </TableCell>
-                                    <TableCell
-                                        align="center"
-                                        className={TABLE_CELL_CLASS}
-                                    >
-                                        <EventKindChip kind={event.kind} />
+                                    <TableCell className={TABLE_CELL_CLASS}>
+                                        <EventKindChip event={event} />
                                     </TableCell>
                                     <TableCell
                                         className={`${TABLE_CELL_CLASS} text-ink-900`}
@@ -338,23 +331,10 @@ export const LastEventsPanel: FC = () => {
                                         </div>
                                     </TableCell>
                                     <TableCell
-                                        align="center"
+                                        numeric
                                         className={TABLE_CELL_CLASS}
                                     >
-                                        <MeterSourceChip
-                                            source={event.meterSource}
-                                        />
-                                    </TableCell>
-                                    <TableCell
-                                        align="right"
-                                        numeric
-                                        className={`${TABLE_CELL_CLASS} font-semibold ${
-                                            event.kind === "earnings"
-                                                ? "text-intent-success-text"
-                                                : "text-intent-danger-text"
-                                        }`}
-                                    >
-                                        {formatSignedPollen(event)}
+                                        <EventPollenChip event={event} />
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -379,7 +359,7 @@ export const LastEventsPanel: FC = () => {
                             disabled={state.loading}
                             className="self-start sm:self-auto"
                         >
-                            {loadingMore ? "Loading…" : "Load more"}
+                            {loadingMore ? "Loading…" : "Show more"}
                         </Button>
                     )}
                 </div>

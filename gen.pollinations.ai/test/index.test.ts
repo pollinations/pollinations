@@ -887,20 +887,17 @@ fixtureTest(
         expect(urlGeneration.data[0]?.media_type).toBe("image/svg+xml");
         await waitOnExecutionContext(urlContext);
 
-        const cachedContext = createExecutionContext();
-        const cachedResponse = await worker.fetch(
-            new Request(urlGeneration.data[0]?.url || ""),
-            bindings,
-            cachedContext,
+        const storedUrl = new URL(urlGeneration.data[0]?.url || "");
+        expect(storedUrl.origin).toBe("https://media.pollinations.ai");
+        const cachedResponse = await bindings.MEDIA.get(
+            storedUrl.pathname.slice(1),
         );
+        if (!cachedResponse) throw new Error("Generated SVG was not stored");
         expect(cachedResponse.status).toBe(200);
-        expect(cachedResponse.headers.get("x-cache")).toBe("HIT");
-        expect(cachedResponse.headers.get("x-cache-type")).toBeNull();
         expect(cachedResponse.headers.get("content-type")).toBe(
             "image/svg+xml",
         );
         expect(await cachedResponse.text()).toBe(svg);
-        await waitOnExecutionContext(cachedContext);
 
         const editContext = createExecutionContext();
         const editResponse = await worker.fetch(
@@ -953,6 +950,67 @@ fixtureTest(
                 },
             ],
         });
+
+        // A URL response must work on the first generation, including when a
+        // generic client supplies a stream flag this image endpoint ignores.
+        for (const endpoint of ["generations", "edits"]) {
+            for (const stream of [false, true]) {
+                const body = {
+                    model: "recraft-vector",
+                    prompt: `cold stored URL ${endpoint} ${stream}`,
+                    response_format: "url",
+                    seed: 910,
+                    stream,
+                    ...(endpoint === "edits" && {
+                        image: "https://example.com/source.svg",
+                    }),
+                };
+                const countBefore = requests.length;
+                let storedUrl: string | undefined;
+                for (const authorization of [
+                    `Bearer ${paidApiKey}`,
+                    undefined,
+                ]) {
+                    const ctx = createExecutionContext();
+                    const headers = new Headers({
+                        "Content-Type": "application/json",
+                    });
+                    if (authorization)
+                        headers.set("Authorization", authorization);
+                    const response = await worker.fetch(
+                        new Request(
+                            `https://staging.gen.pollinations.ai/v1/images/${endpoint}`,
+                            {
+                                method: "POST",
+                                headers,
+                                body: JSON.stringify(body),
+                            },
+                        ),
+                        bindings,
+                        ctx,
+                    );
+                    expect(response.status).toBe(200);
+                    const result = await response.json<{
+                        data: Array<{ url: string }>;
+                    }>();
+                    const url = result.data[0].url;
+                    expect(url).toMatch(
+                        /^https:\/\/media\.pollinations\.ai\/[a-f0-9]{64}$/,
+                    );
+                    expect(response.headers.get("Link")).toBe(
+                        `<${url}>; rel="enclosure"`,
+                    );
+                    if (storedUrl) expect(url).toBe(storedUrl);
+                    storedUrl = url;
+                    const stored = await bindings.MEDIA.get(
+                        new URL(url).pathname.slice(1),
+                    );
+                    expect(await stored?.text()).toBe(svg);
+                    await waitOnExecutionContext(ctx);
+                }
+                expect(requests).toHaveLength(countBefore + 1);
+            }
+        }
     },
 );
 

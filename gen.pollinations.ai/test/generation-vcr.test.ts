@@ -459,8 +459,11 @@ async function fakePortkeyResponse(request: Request) {
                         },
               })}\n\n`
             : "";
+        const costTrailer = prompt.includes("vcr cost-only usage trailer")
+            ? 'data: {"choices":[],"usage":{"cost_usd":"0.00010310","prompt_tokens_details":{"cached_tokens":0}}}\n\n'
+            : "";
         return new Response(
-            `${earlyUsageChunk}data: ${JSON.stringify(streamEvent)}\n\n${usageChunk}${invalidUsageChunk}data: [DONE]\n\n`,
+            `${earlyUsageChunk}data: ${JSON.stringify(streamEvent)}\n\n${usageChunk}${invalidUsageChunk}${costTrailer}data: [DONE]\n\n`,
             {
                 headers: {
                     "content-type": "text/event-stream; charset=utf-8",
@@ -911,6 +914,49 @@ test.for([
     });
     expect(event.totalPrice).toBeGreaterThan(0);
     expect(mocks.tinybird.state.errorEvents).toHaveLength(0);
+    const balanceAfter = await getUserBalance(db, caller.userId);
+    expect(balanceBefore.packBalance - balanceAfter.packBalance).toBeCloseTo(
+        event.totalPrice,
+        12,
+    );
+});
+
+test("chat bills token usage once when a provider appends cost-only metadata", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const caller = await createTestApiKey({ user: { packBalance: 100 } });
+    const db = drizzle(env.DB);
+    const balanceBefore = await getUserBalance(db, caller.userId);
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${caller.key}`,
+        },
+        body: JSON.stringify({
+            model: "openai/gpt-5-nano",
+            stream: true,
+            messages: [
+                { role: "user", content: "vcr cost-only usage trailer" },
+            ],
+        }),
+    });
+    expect(response.status).toBe(200);
+    const stream = await response.text();
+    expect(stream).toContain("[DONE]");
+    expect(stream).not.toContain("usage_missing");
+    await wait();
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.errorEvents).toHaveLength(0);
+    const event = mocks.tinybird.state.events[0];
+    expect(event).toMatchObject({
+        responseStatus: 200,
+        isBilledUsage: true,
+        tokenCountPromptText: 7,
+        tokenCountCompletionText: 3,
+    });
+    expect(event.totalPrice).toBeGreaterThan(0);
     const balanceAfter = await getUserBalance(db, caller.userId);
     expect(balanceBefore.packBalance - balanceAfter.packBalance).toBeCloseTo(
         event.totalPrice,
@@ -1900,12 +1946,14 @@ test("simple text forwards options through provider transforms once", async ({
     expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
     expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
         model: "gpt-5-nano",
-        seed: 42,
-        temperature: 1,
         max_completion_tokens: 16,
         reasoning_effort: "medium",
         messages: [{ role: "user", content: "vcr simple text" }],
     });
+    expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty("seed");
+    expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty(
+        "temperature",
+    );
     expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty("top_p");
     expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty(
         "presence_penalty",

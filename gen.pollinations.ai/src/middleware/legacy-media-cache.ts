@@ -62,7 +62,9 @@ export function legacyMediaCacheKey(
 async function requestLegacyKey(
     c: Context<GenerationCacheEnv>,
 ): Promise<string> {
-    const url = new URL(c.var.generationCacheUrl ?? c.req.url);
+    const url = new URL(
+        c.var.generationCacheUrl ?? c.var.generationRequestUrl ?? c.req.url,
+    );
     if (!c.var.generationCacheUrl && c.var.generationCacheBody) {
         url.searchParams.set(
             "__request_body",

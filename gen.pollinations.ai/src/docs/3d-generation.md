@@ -9,12 +9,12 @@ https://gen.pollinations.ai/3d/no_prompt_for_trellis_needed?model=microsoft%2Ftr
 
 **Available models:** {{3D_MODELS}}
 
-> **Note:** `hyper3d/rodin-2.5` requires Paid Pollen. `microsoft/trellis-2` (the default)
+> **Note:** `hyper3d/rodin-2.5` and `nvidia/asset-harvester` require Paid Pollen. `microsoft/trellis-2` (the default)
 > supports `low`, `medium`, and `high` resolution and works with Quest Pollen.
 
 ### NVIDIA Asset Harvester
 
-`nvidia/asset-harvester` (alias: `asset-harvester`) generates 3D Gaussian Splat
+`nvidia/asset-harvester` generates 3D Gaussian Splat
 models in PLY format. Unlike other 3D models that return GLB, Asset Harvester
 returns raw PLY binary suitable for real-time rendering in Gaussian Splat
 viewers (e.g. SuperSplat, Three.js with Gaussian PLY loader).

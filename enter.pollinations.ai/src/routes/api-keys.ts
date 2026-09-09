@@ -9,7 +9,7 @@ import { validator } from "@shared/middleware/validator.ts";
 import {
     filterPermissionsToVisibleModels,
     getVisibleModelIdsForUser,
-    validateModelPermissionIds,
+    normalizeModelPermissionIds,
 } from "@shared/registry/visible-model-ids.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -127,7 +127,7 @@ const UpdateApiKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "Canonical model IDs from /models; aliases are rejected. null = all models allowed",
+            "Model IDs or aliases from /models; saved as canonical IDs. null = all models allowed",
         ),
     pollenBudget: z
         .number()
@@ -169,7 +169,7 @@ const CreateApiKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "Canonical model IDs from /models; aliases are rejected. null = all models allowed",
+            "Model IDs or aliases from /models; saved as canonical IDs. null = all models allowed",
         ),
     pollenBudget: z
         .number()
@@ -351,7 +351,7 @@ export const apiKeysRoutes = new Hono<Env>()
             const updatedPermissions = buildUpdatedPermissions(
                 existingPermissions,
                 Array.isArray(allowedModels)
-                    ? await validateModelPermissionIds(c.env.DB, allowedModels)
+                    ? await normalizeModelPermissionIds(c.env.DB, allowedModels)
                     : allowedModels,
                 sanitizedAccountPerms,
             );

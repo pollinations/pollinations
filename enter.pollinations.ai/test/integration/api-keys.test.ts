@@ -919,19 +919,19 @@ describe("API Key Management", () => {
             expect(response.headers.get("pragma")).toBe("no-cache");
         });
 
-        test("rejects aliases and unknown IDs on key create and update without changing permissions", async ({
+        test("normalizes aliases on create and rejects unknown IDs without changing permissions", async ({
             sessionToken,
         }) => {
             const canonical = "black-forest-labs/flux.1-schnell";
             const created = await createApiKeyViaApi(sessionToken, {
                 name: "canonical-only-permissions",
-                allowedModels: [canonical],
+                allowedModels: ["flux", canonical],
             });
             const headers = {
                 "Content-Type": "application/json",
                 Cookie: `better-auth.session_token=${sessionToken}`,
             };
-            for (const model of ["flux", "nanobanana2", "retired-model"]) {
+            for (const model of ["retired-model", "missing/unknown"]) {
                 for (const path of [
                     "/api/api-keys",
                     `/api/api-keys/${created.id}/update`,
@@ -950,7 +950,7 @@ describe("API Key Management", () => {
                     );
                     expect(response.status).toBe(400);
                     expect(JSON.stringify(await response.json())).toContain(
-                        "not a canonical model ID",
+                        "Unknown model permission",
                     );
                 }
             }
@@ -1061,11 +1061,20 @@ describe("API Key Management", () => {
                                 "model-owner",
                                 "private-model",
                             ),
+                            communityModelId("model-owner", "private-model"),
+                            communityModelId("other-owner", "private-model"),
                         ],
                     }),
                 },
             );
-            expect(aliasUpdate.status).toBe(400);
+            expect(aliasUpdate.status).toBe(200);
+            const stored = await db.query.apikey.findFirst({
+                where: (apikey, { eq }) => eq(apikey.id, created.id),
+            });
+            expect(JSON.parse(stored?.permissions ?? "{}").models).toEqual([
+                communityModelId("model-owner", "private-model"),
+                communityModelId("other-owner", "private-model"),
+            ]);
 
             const response = await SELF.fetch(
                 "http://localhost:3000/api/api-keys",

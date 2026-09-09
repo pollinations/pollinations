@@ -1,6 +1,9 @@
 import { env, SELF } from "cloudflare:test";
 import { createHmac } from "node:crypto";
+import { claimReward } from "@shared/billing/rewards.ts";
+import * as schema from "@shared/db/better-auth.ts";
 import {
+    rewards,
     stripeCardFingerprintAttempt as stripeCardFingerprintAttemptTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
@@ -17,6 +20,7 @@ import {
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
+import { hashGiftCode } from "../../src/services/gift-rewards.ts";
 import { STRIPE_NEW_CARD_GATE_METADATA } from "../../src/utils/stripe-card-gate.ts";
 import { test } from "../fixtures.ts";
 import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
@@ -25,6 +29,146 @@ const base = "http://localhost:3000/api/stripe";
 const stripeWebhookUrl = "http://localhost:3000/api/webhooks/stripe";
 const stripePmcId = "pmc_1SrYT96O03AauPe8ijLy6sZU";
 const checkoutAmounts = POLLEN_PACKS.map((pack) => `/checkout/${pack.packKey}`);
+
+test("gift checkout reuses normal checkout and privately delivers the paid code", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const headers = { cookie: `better-auth.session_token=${sessionToken}` };
+    const checkout = await SELF.fetch(`${base}/checkout/p10?gift=true`, {
+        headers,
+        redirect: "manual",
+    });
+    expect(checkout.status).toBe(302);
+    await checkout.text();
+    const body = mocks.stripe.state.requests.find(
+        (r) => r.path === "/v1/checkout/sessions",
+    )?.body;
+    expectUsdPriceData(body, 10, "10 Pollen gift");
+    expect(body?.payment_method_configuration).toBe(stripePmcId);
+    expect(body?.customer).toBe("cus_mock_1");
+    const code = body?.["metadata[giftCode]"];
+    expect(code).toMatch(/^[a-f0-9]{32}$/);
+    expect(
+        body?.["invoice_creation[invoice_data][custom_fields][0][value]"],
+    ).toBe(code);
+    expect(body?.success_url).toContain("gift_session={CHECKOUT_SESSION_ID}");
+    const db = drizzle(env.DB, { schema });
+    const [buyer] = await db.select().from(userTable).limit(1);
+    const session = mocks.stripe.state.checkoutSessions[0];
+    if (!session || !code) throw new Error("Expected gift checkout");
+    session.metadata = { userId: buyer.id, packKey: "p10", giftCode: code };
+    session.payment_status = "unpaid";
+    session.payment_intent = "pi_gift_receipt";
+    const receiptUrl = `${base}/gifts/${session.id}`;
+    const anonymous = await SELF.fetch(receiptUrl);
+    expect(anonymous.status).toBe(401);
+    await anonymous.text();
+    const unpaid = await SELF.fetch(receiptUrl, { headers });
+    expect(unpaid.status).toBe(409);
+    expect(await unpaid.text()).not.toContain(code);
+    expect(await db.select().from(rewards)).toEqual([]);
+    session.payment_status = "paid";
+    session.metadata.userId = "other-buyer";
+    const otherBuyer = await SELF.fetch(receiptUrl, { headers });
+    expect(otherBuyer.status).toBe(404);
+    expect(await otherBuyer.text()).not.toContain(code);
+    session.metadata.userId = buyer.id;
+    for (let i = 0; i < 2; i++) {
+        const receipt = await SELF.fetch(receiptUrl, { headers });
+        expect(receipt.status).toBe(200);
+        expect(receipt.headers.get("cache-control")).toBe("no-store");
+        expect(await receipt.json()).toEqual({ code });
+    }
+    expect(await db.select().from(rewards)).toHaveLength(1);
+    const [after] = await db
+        .select()
+        .from(userTable)
+        .where(eq(userTable.id, buyer.id));
+    expect(after.packBalance).toBe(buyer.packBalance);
+});
+
+test("paid gift webhooks record a reward instead of crediting the buyer; refund reverses the recipient once", async ({
+    sessionToken: _sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const db = drizzle(env.DB, { schema });
+    const [buyer] = await db.select().from(userTable).limit(1);
+    const code = "1234567890abcdef1234567890abcdef";
+    const checkout = {
+        id: "cs_gift_webhook",
+        object: "checkout.session",
+        payment_status: "paid",
+        payment_intent: "pi_gift_webhook",
+        amount_subtotal: 1000,
+        amount_total: 1000,
+        currency: "usd",
+        metadata: { userId: buyer.id, packKey: "p10", giftCode: code },
+    };
+    for (const type of [
+        "checkout.session.completed",
+        "checkout.session.async_payment_succeeded",
+    ]) {
+        const payload = JSON.stringify({
+            id: `evt_gift_${type}`,
+            type,
+            livemode: false,
+            data: { object: checkout },
+        });
+        const response = await SELF.fetch(stripeWebhookUrl, {
+            method: "POST",
+            headers: { "stripe-signature": signStripeWebhookPayload(payload) },
+            body: payload,
+        });
+        expect(response.status).toBe(200);
+        await response.text();
+    }
+    const rows = await db.select().from(rewards);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].userId).toBeNull();
+    expect(rows[0].pollenAmount).toBe(10);
+    const [after] = await db
+        .select()
+        .from(userTable)
+        .where(eq(userTable.id, buyer.id));
+    expect(after.packBalance).toBe(buyer.packBalance);
+    await claimReward(db, {
+        rewardId: rows[0].id,
+        userId: buyer.id,
+        giftCodeHash: await hashGiftCode(code),
+    });
+    for (const status of ["pending", "failed", "succeeded", "succeeded"]) {
+        const payload = JSON.stringify({
+            id: `evt_gift_refund_${status}`,
+            type: "refund.updated",
+            livemode: false,
+            data: {
+                object: {
+                    id: "re_gift",
+                    status,
+                    payment_intent: "pi_gift_webhook",
+                    amount: 1000,
+                },
+            },
+        });
+        const response = await SELF.fetch(stripeWebhookUrl, {
+            method: "POST",
+            headers: { "stripe-signature": signStripeWebhookPayload(payload) },
+            body: payload,
+        });
+        expect(response.status).toBe(200);
+        await response.text();
+        const [current] = await db
+            .select()
+            .from(userTable)
+            .where(eq(userTable.id, buyer.id));
+        expect(current.packBalance).toBe(
+            (buyer.packBalance ?? 0) + (status === "succeeded" ? 0 : 10),
+        );
+    }
+});
 
 function signStripeWebhookPayload(payload: string): string {
     const timestamp = Math.floor(Date.now() / 1000);

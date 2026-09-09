@@ -494,6 +494,9 @@ export const rewards = sqliteTable("rewards", {
     .defaultNow()
     .notNull(),
   claimedAt: integer("claimed_at", { mode: "timestamp" }),
+  // Unassigned gifts are private rewards, not entries in the quest catalog.
+  giftCodeHash: text("gift_code_hash").unique(),
+  canceledAt: integer("canceled_at", { mode: "timestamp" }),
 }, (table) => [
   index("idx_rewards_user_id").on(table.userId),
 ]);

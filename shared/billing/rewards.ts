@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull, or, type SQL, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import type * as schema from "../db/better-auth.ts";
 import { rewards, user as userTable } from "../db/better-auth.ts";
@@ -26,7 +26,9 @@ export interface RecordRewardInput {
      * "quest:{issue}" or rewardKey().
      */
     idempotencyKey: string;
-    userId: string;
+    userId: string | null;
+    /** Only bearer-code gifts may be recorded without a recipient. */
+    giftCodeHash?: string;
     amount: number;
     /** Which balance bucket to credit on claim. */
     bucket: Bucket;
@@ -81,10 +83,14 @@ export async function recordRewards(
 
     const rows = inputs.map((input) => {
         assertRewardAmount(input.amount);
+        if (input.userId === null && !input.giftCodeHash) {
+            throw new Error("Unassigned rewards require a gift code");
+        }
         return {
             id: crypto.randomUUID(),
             idempotencyKey: input.idempotencyKey,
             userId: input.userId,
+            giftCodeHash: input.giftCodeHash,
             questId: input.questId ?? null,
             title: input.title,
             url: input.url ?? null,
@@ -131,12 +137,28 @@ export async function claimReward(
     {
         rewardId,
         userId,
+        giftCodeHash,
     }: {
         rewardId: string;
         userId: string;
+        giftCodeHash?: string;
     },
 ): Promise<ClaimRewardResult> {
-    const row = await loadRewardForUser(db, rewardId, userId);
+    const eligible = and(
+        eq(rewards.id, rewardId),
+        isNull(rewards.canceledAt),
+        or(
+            eq(rewards.userId, userId),
+            giftCodeHash
+                ? and(
+                      isNull(rewards.userId),
+                      isNull(rewards.claimedAt),
+                      eq(rewards.giftCodeHash, giftCodeHash),
+                  )
+                : undefined,
+        ),
+    );
+    const row = await loadReward(db, eligible);
     if (!row) return { claimed: false, reward: null, newBalance: null };
     if (row.claimedAt !== null) {
         return { claimed: false, reward: row, newBalance: null };
@@ -151,14 +173,8 @@ export async function claimReward(
     const [, updateResult] = await db.batch([
         db
             .update(rewards)
-            .set({ claimedAt })
-            .where(
-                and(
-                    eq(rewards.id, rewardId),
-                    eq(rewards.userId, userId),
-                    isNull(rewards.claimedAt),
-                ),
-            ),
+            .set({ claimedAt, userId })
+            .where(and(eligible, isNull(rewards.claimedAt))),
         db
             .update(userTable)
             .set({
@@ -172,7 +188,7 @@ export async function claimReward(
         (updateResult as Array<{ newBalance: number | null }>) ?? [];
     const claimed = updatedRows.length === 1;
     if (!claimed) {
-        const latest = await loadRewardForUser(db, rewardId, userId);
+        const latest = await loadReward(db, eligible);
         return { claimed: false, reward: latest, newBalance: null };
     }
 
@@ -183,10 +199,9 @@ export async function claimReward(
     };
 }
 
-async function loadRewardForUser(
+async function loadReward(
     db: AuthDb,
-    rewardId: string,
-    userId: string,
+    eligible: SQL | undefined,
 ): Promise<ClaimRewardResult["reward"]> {
     const rows = await db
         .select({
@@ -199,7 +214,7 @@ async function loadRewardForUser(
             claimedAt: rewards.claimedAt,
         })
         .from(rewards)
-        .where(and(eq(rewards.id, rewardId), eq(rewards.userId, userId)))
+        .where(eligible)
         .limit(1);
 
     const row = rows[0];

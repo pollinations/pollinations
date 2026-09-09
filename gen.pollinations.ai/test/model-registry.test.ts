@@ -58,6 +58,7 @@ describe("getGenerationModelRegistry", () => {
             .filter(
                 (entry) =>
                     !entry.communityEndpoint &&
+                    entry.definition.category === "text" &&
                     entry.supportedEndpoints.includes("/v1/responses"),
             )
             .map((entry) => entry.id)

@@ -11,6 +11,7 @@ async function getRows(path) {
 export const registrations = () => getRows("/kpi/registrations");
 export const activations = () => getRows("/kpi/activations");
 export const revenue = (weeks) => getRows(`/kpi/revenue?weeks_back=${weeks}`);
+export const dailyRevenue = () => getRows("/kpi/revenue/daily");
 export const appSubmissions = () => getRows("/kpi/app-submissions");
 
 export const weekly = (pipe, weeks) =>

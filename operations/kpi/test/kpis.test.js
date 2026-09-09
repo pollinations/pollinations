@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { formatValue } from "../src/lib/format";
 import { buildDailyRevenueComparison } from "../src/lib/dailyRevenue";
+import { formatValue } from "../src/lib/format";
 import {
     KPI_VIEWS,
     KPIS,
@@ -39,10 +39,7 @@ describe("daily revenue comparison", () => {
         ];
 
         expect(
-            buildDailyRevenueComparison(
-                rows,
-                new Date("2026-09-09T12:00:00Z"),
-            ),
+            buildDailyRevenueComparison(rows, new Date("2026-09-09T12:00:00Z")),
         ).toEqual([
             {
                 week: "2026-09-07",

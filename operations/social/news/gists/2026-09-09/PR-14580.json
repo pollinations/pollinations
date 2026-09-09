@@ -1,0 +1,33 @@
+{
+  "pr_number": 14580,
+  "title": "fix: add ?raw module declaration to test environment",
+  "author": "samucamg",
+  "url": "https://github.com/pollinations/pollinations/pull/14580",
+  "merged_at": "2026-09-09T00:24:07Z",
+  "labels": [],
+  "pr_body_excerpt": "Supersedes #14397.\r\n\r\n- Declares wildcard module for `*?raw` static imports in `enter.pollinations.ai/test/env.d.ts`.\r\n- Prevents TypeScript compiler errors when importing raw SQL or static assets in tests.\r\n- Keeps the change isolated to 5 lines without unrelated changes.\r\n\r\nCo-authored-by: Karan Ray <karanray06@users.noreply.github.com>\r\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Raw imports, no buzzing",
+    "blurb": "The test hive now recognizes `?raw` imports without stopping to argue with TypeScript. Five small lines, one less compiler tantrum.",
+    "summary": "Added a wildcard `*?raw` module declaration to `enter.pollinations.ai/test/env.d.ts`, allowing tests to statically import raw SQL and assets without TypeScript compiler errors.",
+    "impact": "Contributors can add raw-file test fixtures such as SQL or static assets with `?raw` imports and get clean TypeScript checks.",
+    "keywords": [
+      "typescript",
+      "tests",
+      "raw-imports",
+      "enter",
+      "developer-experience"
+    ],
+    "visual_concept": "Polli, wearing tiny librarian glasses, files a glowing raw SQL scroll into a cozy test-environment cabinet while a small CRT monitor robot happily confirms the import. Code-plants and a few pixel flowers make the internal tooling scene feel cared for rather than bureaucratic.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny librarian glasses, placing a glowing raw SQL scroll labeled '?raw' into a retro test cabinet while a cheerful CRT monitor robot displays a green check mark. Lime green (#ecf874) glows prominently among code-plants, pixel flowers, and warm cream-lavender pastel gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14580.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny librarian glasses, placing a glowing raw SQL scroll labeled '?raw' into a retro test cabinet while a cheerful CRT monitor robot displays a green check mark. Lime green (#ecf874) glows prominently among code-plants, pixel flowers, and warm cream-lavender pastel gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-09T00:25:06.789026+00:00"
+}

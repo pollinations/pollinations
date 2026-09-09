@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-08",
+  "period_start": "2026-09-08",
+  "period_end": "2026-09-08",
+  "generated_at": "2026-09-09T06:30:18.567186+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-08/images/reddit.jpg"
+    }
+  ],
+  "title": "Activity, media storage, and model fallback updates",
+  "text": "15 PRs landed today. The practical theme is that a few parts of the system are now easier to inspect, recover, and keep running when providers do provider things.\n\nAccount activity now has independent navigation and chart selection, plus usage and earnings breakdown tables. This should make activity less of a single opaque number and more of something you can trace.\n\nGenerated files now use media storage, and older cached media can be recovered on demand. That is mostly unglamorous plumbing, which is usually where the missing file reports come from.\n\nModel routing gained fallbacks and improved Grok video routing. GPT Image 2.5 paid-only models were also added. Stream usage is preserved through cost-only updates, so a provider finishing a stream strangely should no longer erase the usage record.\n\nOn the contributor side: provider mappings are canonicalized and validated, image-edit test failures are visible in the model dashboard, Ask Polli's authorization heredoc was corrected, and the EC2 monitor setup/failure reporting was updated. Daily news generation can also run without Buffer staging.\n\nAPIDOCS.md was regenerated three times, because generated docs remain undefeated at finding their way out of sync.\n\nCode: https://github.com/pollinations/pollinations\nAPI docs: https://github.com/pollinations/pollinations/blob/master/APIDOCS.md"
+}

@@ -9,6 +9,21 @@ import { perMillion } from "./price-helpers";
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    "perplexity/sonar": {
+        "perplexity/sonar:openrouter:perplexity": {
+            provider: "openrouter",
+        },
+    },
+    "perplexity/sonar-pro": {
+        "perplexity/sonar-pro:openrouter:perplexity": {
+            provider: "openrouter",
+        },
+    },
+    "perplexity/sonar-reasoning-pro": {
+        "perplexity/sonar-reasoning-pro:openrouter:perplexity": {
+            provider: "openrouter",
+        },
+    },
     "openai/gpt-6-astra": {
         "openai/gpt-6-astra:azure:datazone": {
             provider: "azure",

@@ -38,9 +38,9 @@ For all Pollinations-hosted MCP servers, see the
 | `getModelStatus` | Inspect recent requests, errors, and latency | `/v1/models/status` |
 | `getBalance` | Check remaining Pollen; requires `account:usage` | `/account/balance` |
 
-Generated media is uploaded unlisted to `media.pollinations.ai` and returned as
-an MCP resource link, so binary data does not consume model context. Anyone
-with the link can access it, and it expires after 30 days.
+Generated media is returned as an MCP resource link using the API's existing
+public Media URL. No download or re-upload is needed, and binary data does not
+consume model context. Anyone with the link can access it; expired files return 404.
 
 Models, voices, capabilities, and pricing come from the live registry. Use
 `listModels` before selecting a model or voice.

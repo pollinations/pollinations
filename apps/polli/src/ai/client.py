@@ -1,10 +1,9 @@
 import asyncio
+import codecs
 import json
 import logging
-import random
 import time
-from collections.abc import Callable
-from contextvars import ContextVar
+from collections.abc import AsyncIterator, Awaitable, Callable
 
 from ..utils.cache import TTLCache
 from ..utils.json import dumps as _json_dumps
@@ -12,7 +11,6 @@ from ..utils.json import loads as _json_loads
 
 MAX_RETRIES = 3
 RETRY_DELAY = 5
-MAX_SEED = 2**31 - 1
 
 
 def _recent_queries(all_tool_calls: list[dict], tool_names: list[str], limit: int = 8) -> str:
@@ -75,15 +73,15 @@ class UpstreamAuthError(Exception):
 
 import aiohttp
 
-# Per-request auth override (used by API mode to pass through user's key)
-_auth_override: ContextVar[str] = ContextVar("auth_override", default="")
-
 from ..core.config import config
+from ..core.request_auth import authorization_or, request_authorization
+
+# Backward-compatible alias for the API layer.
+_auth_override = request_authorization
 from .prompts import get_tool_system_prompt
 from .tool_filters import (
     filter_admin_actions_from_tools,
     filter_api_tools,
-    filter_tools_by_intent,
     get_tools_with_embeddings,
 )
 from .tools import GITHUB_TOOLS
@@ -139,7 +137,7 @@ class PollinationsClient:
 
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {config.ai.token}",
+            "Authorization": _auth_override.get() or authorization_or(config.ai.token),
         }
 
         url = f"{config.ai.api_base}/v1/chat/completions"
@@ -150,7 +148,6 @@ class PollinationsClient:
             "messages": messages,
             "temperature": temperature,
             "max_tokens": max_tokens,
-            "seed": random.randint(0, MAX_SEED),
         }
 
         try:
@@ -163,19 +160,25 @@ class PollinationsClient:
             ) as response:
                 if response.status == 200:
                     data = await response.json()
-                    return data["choices"][0]["message"].get("content", "")
+                    choice = data["choices"][0]
+                    content = choice["message"].get("content", "")
+                    if not content:
+                        finish_reason = choice.get("finish_reason")
+                        if finish_reason not in {"stop", "length", "content_filter", "tool_calls"}:
+                            finish_reason = "unknown"
+                        logger.warning("generate_text returned empty content (finish_reason=%s)", finish_reason)
+                    return content
                 else:
-                    error_text = await response.text()
                     if response.status == 402:
                         logger.warning("generate_text: insufficient balance (402), bailing")
                         return None
-                    logger.error(f"generate_text error: HTTP {response.status}: {error_text[:200]}")
+                    logger.error("generate_text error: HTTP %s", response.status)
                     return None
-        except Exception as e:
-            logger.error(f"generate_text error: {e}")
+        except Exception as exc:
+            logger.error("generate_text failed (exception=%s)", type(exc).__name__)
             return None
 
-    def register_tool_handler(self, name: str, handler: callable):
+    def register_tool_handler(self, name: str, handler: Callable):
         self._tool_handlers[name] = handler
 
     async def process_with_tools(
@@ -190,6 +193,8 @@ class PollinationsClient:
         tool_context: dict | None = None,
         mode: str = "discord",
         api_params: dict | None = None,
+        event_handler: Callable[[dict], Awaitable[None]] | None = None,
+        raw_messages: list[dict] | None = None,
     ) -> dict:
         is_collaborator = (tool_context or {}).get("is_collaborator", False)
         system_content = get_tool_system_prompt(is_admin=is_admin, is_collaborator=is_collaborator, mode=mode)
@@ -200,8 +205,44 @@ class PollinationsClient:
         else:
             system_content += "\n\n## USER MODE\nUser is NOT admin. Read-only + create/comment only. Admin actions will return permission error."
 
-        # Build messages
-        messages = [{"role": "system", "content": system_content}]
+        # API callers supply an OpenAI conversation verbatim. Polli adds only its
+        # private system prompt; Discord keeps its richer thread framing below.
+        if raw_messages is not None:
+            api_messages = [{"role": "system", "content": system_content}, *raw_messages]
+            return await self._call_with_tools(
+                api_messages,
+                discord_username,
+                is_admin=is_admin,
+                user_message=user_message,
+                tool_context=tool_context,
+                mode=mode,
+                api_params=api_params,
+                event_handler=event_handler,
+            )
+
+        # Build Discord messages
+        messages: list[dict[str, object]] = [{"role": "system", "content": system_content}]
+        if mode == "discord":
+            location_context = tool_context or {}
+            source_channel_id = location_context.get("source_channel_id")
+            parent_channel_id = location_context.get("parent_channel_id")
+            channel_id = location_context.get("channel_id")
+            thread_id = location_context.get("thread_id")
+            if all(
+                value is None or (type(value) is int and value > 0)
+                for value in (source_channel_id, parent_channel_id, channel_id, thread_id)
+            ):
+                location_lines = ["## DISCORD LOCATION (trusted system metadata)"]
+                if source_channel_id is not None:
+                    location_lines.append(f"Original source channel ID: {source_channel_id}")
+                if parent_channel_id is not None:
+                    location_lines.append(f"Parent channel ID: {parent_channel_id}")
+                if channel_id is not None:
+                    location_lines.append(f"Current response channel ID: {channel_id}")
+                if thread_id is not None:
+                    location_lines.append(f"Current thread ID: {thread_id}")
+                if len(location_lines) > 1:
+                    messages.append({"role": "system", "content": "\n".join(location_lines)})
         if thread_history:
             # Separate system messages from conversation messages
             system_msgs = [m for m in thread_history if m.get("role") == "system"]
@@ -274,14 +315,12 @@ class PollinationsClient:
         if video_urls:
             notices.append(
                 f"[User attached or linked {len(video_urls)} video/GIF(s). "
-                "These URLs are context, not image inputs:\n"
-                + "\n".join(f"- {url}" for url in video_urls[:5])
-                + "]"
+                "These URLs are context, not image inputs:\n" + "\n".join(f"- {url}" for url in video_urls[:5]) + "]"
             )
         file_notice = "\n\n" + "\n\n".join(notices) if notices else ""
 
         if image_urls:
-            content = [
+            content: list[dict[str, object]] = [
                 {
                     "type": "text",
                     "text": f"[{discord_username}]: {user_message}{file_notice}",
@@ -310,6 +349,7 @@ class PollinationsClient:
             tool_context=tool_context,
             mode=mode,
             api_params=api_params,
+            event_handler=event_handler,
         )
         return result
 
@@ -323,6 +363,7 @@ class PollinationsClient:
         tool_context: dict | None = None,
         mode: str = "discord",
         api_params: dict | None = None,
+        event_handler: Callable[[dict], Awaitable[None]] | None = None,
     ) -> dict:
         """Make API call with tool support and handle tool calls."""
 
@@ -330,25 +371,24 @@ class PollinationsClient:
         all_tool_results = []
 
         # Start with all tools, conditionally including code_search if enabled
-        all_tools = get_tools_with_embeddings(
-            GITHUB_TOOLS.copy(), config.code_search.is_configured
-        )
+        code_search_enabled = config.code_search.is_configured or config.code_search.local_repo_enabled
+        all_tools = get_tools_with_embeddings(GITHUB_TOOLS.copy(), code_search_enabled)
 
         is_collaborator = (tool_context or {}).get("is_collaborator", False)
+        client_tools = list((api_params or {}).get("tools") or [])
         if mode == "api":
             all_tools = filter_api_tools(all_tools)
         else:
             all_tools = filter_admin_actions_from_tools(all_tools, is_admin, is_collaborator)
-        tools = (
-            filter_tools_by_intent(user_message, all_tools, is_admin or is_collaborator) if user_message else all_tools
-        )
+        internal_tool_names = {tool.get("function", {}).get("name") for tool in all_tools}
+        client_tools = [
+            tool for tool in client_tools if tool.get("function", {}).get("name") not in internal_tool_names
+        ]
+        client_tool_names = {tool.get("function", {}).get("name") for tool in client_tools}
+        tools = [*all_tools, *client_tools]
 
-        # Log available tools for debugging
-        all_tool_names = [t["function"]["name"] for t in all_tools]
-        filtered_tool_names = [t["function"]["name"] for t in tools]
-        logger.info(f"Available tools (is_admin={is_admin}): {', '.join(all_tool_names)}")
-        if len(tools) < len(all_tools):
-            logger.info(f"Filtered tools to: {', '.join(filtered_tool_names)}")
+        tool_names = [tool["function"]["name"] for tool in tools]
+        logger.info("Available tools (is_admin=%s): %s", is_admin, ", ".join(tool_names))
 
         all_content_blocks = []
         total_usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
@@ -364,6 +404,8 @@ class PollinationsClient:
 
         for iteration in range(max_iterations):
             start_time = time.time()
+            # Tool-selection rounds stay buffered so private planning text cannot leak.
+            # Once no private tools remain, the final answer streams in real time.
             response = await self._call_api_with_tools(messages, tools=tools, mode=mode, api_params=api_params)
             api_time = time.time() - start_time
             logger.info(f"AI API call took {api_time:.1f}s (iteration {iteration + 1})")
@@ -394,13 +436,50 @@ class PollinationsClient:
             tool_calls = response.get("tool_calls", [])
 
             if not tool_calls:
-                # No tool calls, return the text response
+                if event_handler:
+                    final_response = await self._call_api_with_tools_stream(
+                        messages,
+                        tools=None,
+                        mode=mode,
+                        api_params=api_params,
+                        event_handler=event_handler,
+                    )
+                    if final_response:
+                        final_usage = final_response.get("usage")
+                        if final_usage:
+                            for key in total_usage:
+                                total_usage[key] += final_usage.get(key, 0)
+                        return {
+                            "response": final_response.get("content", ""),
+                            "tool_calls": all_tool_calls,
+                            "tool_results": all_tool_results,
+                            "content_blocks": all_content_blocks,
+                            "usage": total_usage,
+                            "finish_reason": final_response.get("finish_reason") or "stop",
+                        }
                 return {
                     "response": response.get("content", ""),
                     "tool_calls": all_tool_calls,
                     "tool_results": all_tool_results,
                     "content_blocks": all_content_blocks,
                     "usage": total_usage,
+                    "finish_reason": response.get("finish_reason") or "stop",
+                }
+
+            caller_tool_calls = [
+                tool_call
+                for tool_call in tool_calls
+                if tool_call.get("function", {}).get("name", "").split(":")[-1] in client_tool_names
+            ]
+            if caller_tool_calls:
+                return {
+                    "response": response.get("content", ""),
+                    "client_tool_calls": caller_tool_calls,
+                    "tool_calls": all_tool_calls,
+                    "tool_results": all_tool_results,
+                    "content_blocks": all_content_blocks,
+                    "usage": total_usage,
+                    "finish_reason": "tool_calls",
                 }
 
             # Execute tool calls in parallel
@@ -626,23 +705,140 @@ class PollinationsClient:
                 result = await handler(**args)
                 # Log result summary
                 if result.get("error"):
-                    logger.warning(f"Tool {func_name} returned error: {result.get('error')[:200]}")
+                    logger.warning("Tool %s returned an error", func_name)
                 else:
-                    logger.info(f"Tool {func_name} succeeded")
+                    logger.info("Tool %s succeeded", func_name)
                 # Cache successful read-only results
                 if cache_key and not result.get("error"):
                     self._cache.set(cache_key, result)
                 return result
-            except Exception as e:
-                logger.error(f"Tool {func_name} failed: {e}")
-                return {"error": str(e)}
+            except Exception as exc:
+                logger.error("Tool %s failed (exception=%s)", func_name, type(exc).__name__)
+                return {"error": str(exc)}
 
         # Run all tool calls in parallel
         tasks = [execute_single(tc) for tc in tool_calls]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # Convert exceptions to error dicts
-        return [r if not isinstance(r, Exception) else {"error": str(r)} for r in results]
+        return [r if isinstance(r, dict) else {"error": str(r)} for r in results]
+
+    async def _call_api_with_tools_stream(
+        self,
+        messages: list[dict],
+        tools: list | None,
+        mode: str,
+        api_params: dict | None,
+        event_handler: Callable[[dict], Awaitable[None]],
+    ) -> dict | None:
+        override = _auth_override.get()
+        if mode == "api" and not override:
+            return None
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": override if mode == "api" else authorization_or(config.ai.token),
+        }
+        model = (api_params or {}).get("model", config.ai.model)
+        payload = {
+            "model": model,
+            "messages": messages,
+            "stream": True,
+            "stream_options": {"include_usage": True},
+        }
+        explicit_seed = (api_params or {}).get("seed")
+        if explicit_seed is not None:
+            payload["seed"] = explicit_seed
+        for key, value in (api_params or {}).items():
+            if key not in {"model", "_explicit_model", "seed", "stream", "stream_options"} and value is not None:
+                payload[key] = value
+        if tools:
+            payload["tools"] = tools
+            payload["tool_choice"] = "auto"
+
+        session = await self.get_session()
+        url = f"{config.ai.api_base}/v1/chat/completions"
+        content = ""
+        tool_calls: dict[int, dict] = {}
+        usage = None
+        finish_reason = None
+        async with session.post(url, json=payload, headers=headers) as response:
+            if response.status in (401, 403) and mode == "api":
+                raise UpstreamAuthError(response.status, await response.text())
+            if response.status != 200:
+                logger.warning("Streaming API error: HTTP %s", response.status)
+                return None
+            decoder = codecs.getincrementaldecoder("utf-8")()
+            buffer = ""
+
+            async def consume(block: str) -> None:
+                nonlocal content, usage, finish_reason
+                data_lines = [line[5:].lstrip() for line in block.splitlines() if line.startswith("data:")]
+                if not data_lines:
+                    return
+                payload = "\n".join(data_lines)
+                if payload == "[DONE]":
+                    return
+                data = _json_loads(payload)
+                if data.get("usage"):
+                    usage = data["usage"]
+                choice = (data.get("choices") or [{}])[0]
+                delta = choice.get("delta") or {}
+                if delta.get("content"):
+                    content += delta["content"]
+                    await event_handler({"type": "content.delta", "delta": delta["content"]})
+                for partial in delta.get("tool_calls") or []:
+                    index = partial.get("index", 0)
+                    call = tool_calls.setdefault(
+                        index,
+                        {"id": "", "type": "function", "function": {"name": "", "arguments": ""}},
+                    )
+                    call["id"] += partial.get("id", "")
+                    function = partial.get("function") or {}
+                    call["function"]["name"] += function.get("name", "")
+                    call["function"]["arguments"] += function.get("arguments", "")
+                if choice.get("finish_reason"):
+                    finish_reason = choice["finish_reason"]
+
+            async for chunk in response.content.iter_any():
+                buffer += decoder.decode(chunk).replace("\r\n", "\n").replace("\r", "\n")
+                while "\n\n" in buffer:
+                    block, buffer = buffer.split("\n\n", 1)
+                    await consume(block)
+            buffer += decoder.decode(b"", final=True)
+            if buffer.strip():
+                await consume(buffer)
+        return {
+            "content": content,
+            "tool_calls": [tool_calls[index] for index in sorted(tool_calls)],
+            "content_blocks": [],
+            "usage": usage,
+            "finish_reason": finish_reason,
+        }
+
+    async def stream_with_tools(self, **kwargs) -> AsyncIterator[dict]:
+        queue: asyncio.Queue[dict] = asyncio.Queue()
+
+        async def emit(event: dict) -> None:
+            await queue.put(event)
+
+        task = asyncio.create_task(self.process_with_tools(**kwargs, event_handler=emit))
+        try:
+            while not task.done() or not queue.empty():
+                try:
+                    yield await asyncio.wait_for(queue.get(), timeout=0.1)
+                except TimeoutError:
+                    continue
+            result = await task
+            for tool_call in result.get("client_tool_calls", []):
+                yield {"type": "client.tool_call.delta", "tool_call": tool_call}
+            yield {
+                "type": "completed",
+                "usage": result.get("usage"),
+                "finish_reason": result.get("finish_reason", "stop"),
+            }
+        finally:
+            if not task.done():
+                task.cancel()
 
     async def _call_api_with_tools(
         self,
@@ -655,9 +851,7 @@ class PollinationsClient:
         """Make API call to Pollinations with tool definitions.
 
         Includes:
-        - Random seed parameter (0 to int32 max) for each request
         - 3 retry attempts with 5s delay between retries
-        - New random seed for each retry attempt
         - Pass-through of OpenAI generation params (temperature, max_tokens, etc.)
         """
         # API mode: MUST use the user's passed-through key, never the bot's internal token.
@@ -671,7 +865,7 @@ class PollinationsClient:
                 return None
             auth_token = override
         else:
-            auth_token = override or f"Bearer {config.ai.token}"
+            auth_token = authorization_or(config.ai.token)
         headers = {
             "Content-Type": "application/json",
             "Authorization": auth_token,
@@ -680,22 +874,19 @@ class PollinationsClient:
         url = f"{config.ai.api_base}/v1/chat/completions"
         last_error = None
 
-        current_model = config.ai.model
+        requested_model = (api_params or {}).get("model", config.ai.model)
+        explicit_model = bool((api_params or {}).get("_explicit_model"))
+        current_model = requested_model
         for attempt in range(MAX_RETRIES):
-            # Use caller's seed if provided (default 42), otherwise random per attempt
-            caller_seed = (api_params or {}).get("seed") if api_params else None
-            seed = caller_seed if caller_seed is not None else 42
-
             payload = {
                 "model": current_model,
                 "messages": messages,
-                "seed": seed,
             }
 
             # Merge caller-provided OpenAI params (temperature, max_tokens, etc.)
             if api_params:
                 for k, v in api_params.items():
-                    if k != "seed" and v is not None:
+                    if k not in {"model", "_explicit_model"} and v is not None:
                         payload[k] = v
 
             if tools:
@@ -704,7 +895,7 @@ class PollinationsClient:
 
             try:
                 session = await self.get_session()
-                logger.debug(f"API attempt {attempt + 1}/{MAX_RETRIES} with seed {seed}")
+                logger.debug(f"API attempt {attempt + 1}/{MAX_RETRIES}")
 
                 async with session.post(
                     url,
@@ -730,29 +921,32 @@ class PollinationsClient:
                             "usage": data.get("usage"),
                         }
                     else:
-                        error_text = await response.text()
-                        last_error = f"HTTP {response.status}: {error_text[:100]}"
-                        logger.warning(f"Pollinations API error (attempt {attempt + 1}): {last_error}")
+                        last_error = f"HTTP {response.status}"
+                        logger.warning("Pollinations API error (attempt %s): HTTP %s", attempt + 1, response.status)
                         # 402 = global balance exhausted -- bail immediately, no retry
                         if response.status == 402:
                             break
                         # Other errors: switch to fallback model on next attempt
-                        if config.ai.fallback_model and current_model != config.ai.fallback_model:
+                        if (
+                            not explicit_model
+                            and config.ai.fallback_model
+                            and current_model != config.ai.fallback_model
+                        ):
                             logger.info(f"Switching to fallback model {config.ai.fallback_model!r} after error")
                             current_model = config.ai.fallback_model
                         # In API mode, propagate auth errors immediately — don't retry
                         if mode == "api" and response.status in (401, 403):
-                            raise UpstreamAuthError(response.status, error_text)
+                            raise UpstreamAuthError(response.status, "HTTP authentication error")
 
             except TimeoutError:
                 last_error = f"Timeout after {timeout}s"
                 logger.warning(f"API timeout (attempt {attempt + 1})")
-            except aiohttp.ClientError as e:
-                last_error = f"Network error: {e}"
-                logger.warning(f"Network error (attempt {attempt + 1}): {e}")
-            except Exception as e:
-                last_error = f"Error: {e}"
-                logger.warning(f"API error (attempt {attempt + 1}): {e}")
+            except aiohttp.ClientError as exc:
+                last_error = f"Network error ({type(exc).__name__})"
+                logger.warning("Network error (attempt %s, exception=%s)", attempt + 1, type(exc).__name__)
+            except Exception as exc:
+                last_error = f"Error ({type(exc).__name__})"
+                logger.warning("API error (attempt %s, exception=%s)", attempt + 1, type(exc).__name__)
 
             # Wait before retry (except on last attempt)
             if attempt < MAX_RETRIES - 1:
@@ -760,7 +954,7 @@ class PollinationsClient:
                 await asyncio.sleep(RETRY_DELAY)
 
         # All retries failed
-        logger.error(f"All {MAX_RETRIES} API attempts failed. Last error: {last_error}")
+        logger.error("All %s API attempts failed. Last error category: %s", MAX_RETRIES, last_error)
         return None
 
     def get_topic_summary_fast(self, message: str) -> str:
@@ -837,8 +1031,8 @@ Output ONLY the formatted message, nothing else."""
             response = await self._call_api_with_tools(messages, tools=None, timeout=30)
             if response and response.get("content"):
                 return response["content"].strip()
-        except Exception as e:
-            logger.error(f"Failed to format notification with AI: {e}")
+        except Exception as exc:
+            logger.error("Failed to format notification with AI (exception=%s)", type(exc).__name__)
 
         # Fallback to simple format if AI fails
         return self._format_notification_fallback(issue, changes, issue_url)
@@ -887,7 +1081,7 @@ pollinations_client = PollinationsClient()
 # =============================================================================
 
 
-async def web_search_handler(query: str, **kwargs) -> dict:
+async def web_search_handler(query: str, **_kwargs) -> dict:
     """
     Handle web_search tool calls via Perplexity (sonar-pro) through Pollinations.
 
@@ -913,7 +1107,7 @@ async def web_search_handler(query: str, **kwargs) -> dict:
 
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {config.ai.token}",
+        "Authorization": _auth_override.get() or authorization_or(config.ai.token),
     }
 
     payload = {
@@ -930,16 +1124,39 @@ async def web_search_handler(query: str, **kwargs) -> dict:
         ) as response:
             if response.status == 200:
                 data = await response.json()
-                content = data["choices"][0]["message"].get("content", "")
-                return {"result": content, "model": model, "query": query}
+                message = data["choices"][0]["message"]
+                content = message.get("content", "")
+                sources = []
+                citations = data.get("citations") or message.get("citations") or []
+                for index, citation in enumerate(citations, start=1):
+                    source_url = (
+                        citation
+                        if isinstance(citation, str)
+                        else citation.get("url") if isinstance(citation, dict) else None
+                    )
+                    if isinstance(source_url, str) and source_url.startswith(("https://", "http://")):
+                        sources.append({"index": index, "url": source_url})
+                if not sources:
+                    for annotation in message.get("annotations") or []:
+                        citation = annotation.get("url_citation", {}) if isinstance(annotation, dict) else {}
+                        if not isinstance(citation, dict):
+                            continue
+                        source_url = citation.get("url")
+                        if isinstance(source_url, str) and source_url.startswith(("https://", "http://")):
+                            sources.append({"url": source_url, "title": citation.get("title", "")})
+                if sources:
+                    content += "\n\nSources:\n" + "\n".join(
+                        f"[{source['index']}] {source['url']}" if "index" in source else source["url"]
+                        for source in sources
+                    )
+                return {"result": content, "sources": sources, "model": model, "query": query}
             else:
-                error_text = await response.text()
-                logger.error(f"Web search API error: {response.status} - {error_text[:200]}")
+                logger.error("Web search API error: HTTP %s", response.status)
                 return {"error": f"Search failed: HTTP {response.status}"}
 
     except TimeoutError:
         logger.error("Web search timeout")
         return {"error": "Search timed out. Try a simpler query."}
-    except Exception as e:
-        logger.error(f"Web search error: {e}")
-        return {"error": f"Search failed: {str(e)}"}
+    except Exception as exc:
+        logger.error("Web search error (exception=%s)", type(exc).__name__)
+        return {"error": f"Search failed: {str(exc)}"}

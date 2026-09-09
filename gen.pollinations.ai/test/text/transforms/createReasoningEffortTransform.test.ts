@@ -87,6 +87,7 @@ describe("reasoning_effort model wiring", () => {
         "deepseek",
         "qwen-large",
         "qwen3.7-flash",
+        "qwen/qwen3.8-flash",
         "qwen3.8-27b",
         "qwen3.8-2.4t-a95b",
         "longcat",
@@ -94,6 +95,7 @@ describe("reasoning_effort model wiring", () => {
         "nemotron-3.5-lightning",
         "minimax",
         "muse-glimmer",
+        "inception/mercury-2.5-preview",
     ])("disables thinking via reasoning_effort=none on %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);

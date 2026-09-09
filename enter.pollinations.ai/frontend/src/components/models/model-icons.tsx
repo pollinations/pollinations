@@ -46,6 +46,7 @@ export const CAPABILITY_ICON: Record<DisplayCapability, Icon> = {
     reasoning: ReasoningIcon,
     web_search: SearchIcon,
     code_execution: CodeIcon,
+    pollinations_models: ToolIcon,
 };
 
 export const PRICE_ICON: Record<PriceKind, Icon> = {

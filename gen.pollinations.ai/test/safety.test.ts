@@ -1,35 +1,41 @@
 import {
+    createExecutionContext,
+    waitOnExecutionContext,
+} from "cloudflare:test";
+import { env } from "cloudflare:workers";
+import {
     communityEndpointPrices,
     communityModelDefinition,
     type ProxyCommunityEndpointRuntime,
 } from "@shared/community-endpoints.ts";
+import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import {
     parseSafeFeatures,
     SAFETY_HEADER_NAME,
     SafeSchema,
 } from "@shared/schemas/safety.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
-import { Hono } from "hono";
+import { Hono, type MiddlewareHandler } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
+import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
+import { imageCache, imageExecutionCache } from "@/middleware/media-cache.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
-import {
-    applySafety,
-    applySafetyToChatRequest,
-    withSafetyHeaders,
-} from "@/middleware/safety.ts";
+import { getRequiredSafetyFeatures } from "@/middleware/model.ts";
+import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
+import { applySafetyToResponseRequest } from "@/text/responses/safety.ts";
 import type { BedrockResponse } from "@/utils/bedrock-guardrail.ts";
-import {
-    generateCacheKey as generateMediaCacheKey,
-    SAFETY_CACHE_VERSION as MEDIA_SAFETY_CACHE_VERSION,
-} from "@/utils/media-cache.ts";
+import { generateCacheKey as generateMediaCacheKey } from "@/utils/media-cache.ts";
 import {
     generateCacheKey as generateTextCacheKey,
     prepareMetadata as prepareTextCacheMetadata,
 } from "@/utils/text-cache.ts";
 import { generateChatCompletion } from "../src/routes/generation-handlers.ts";
-import { prepareOpenAIImageGeneration } from "../src/routes/images.ts";
+import {
+    prepareOpenAIImageEdit,
+    prepareOpenAIImageGeneration,
+} from "../src/routes/images.ts";
 
 const testLog = {
     getChild: () => testLog,
@@ -50,22 +56,47 @@ const configuredEnv = {
     BEDROCK_GUARDRAIL_VERSION: "1",
 } as CloudflareBindings;
 
-function safetyApp() {
+function safetyApp(
+    requiredSafetyFeatures: ModelVariables["model"]["definition"]["requiredSafetyFeatures"] = [],
+) {
     return new Hono<Env>()
         .use("*", async (c, next) => {
             c.set("log", testLog);
             c.set("requestId", "test-request");
+            c.set("model", {
+                requested: "test-model",
+                resolved: "test-model",
+                definition: {
+                    requiredSafetyFeatures,
+                } as ModelVariables["model"]["definition"],
+            });
             await next();
         })
         .get("/scan/:text", async (c) => {
-            const text = await applySafety(c, c.req.param("text"));
+            const text = await applySafetyToInput(c, c.req.param("text"));
             return withSafetyHeaders(c, new Response(text));
+        })
+        .post("/texts", async (c) => {
+            const body = await c.req.json<{
+                texts: string[];
+                safe?: "privacy";
+            }>();
+            const texts = await applySafetyToInput(c, body.texts, body.safe);
+            return withSafetyHeaders(c, Response.json(texts));
         })
         .post("/chat", async (c) => {
             const body = await c.req.json();
-            const safeBody = await applySafetyToChatRequest(
+            const safeBody = await applySafetyToInput(
                 c,
-                body as Parameters<typeof applySafetyToChatRequest>[1],
+                body as CreateChatCompletionRequest & Record<string, unknown>,
+            );
+            return withSafetyHeaders(c, Response.json(safeBody));
+        })
+        .post("/responses", async (c) => {
+            const body = await c.req.json();
+            const safeBody = await applySafetyToResponseRequest(
+                c,
+                body as Parameters<typeof applySafetyToResponseRequest>[1],
             );
             return withSafetyHeaders(c, Response.json(safeBody));
         });
@@ -116,7 +147,7 @@ describe("safety schema", () => {
 // The Bedrock-backed tests sign requests with AWS SigV4 (WebCrypto HMAC-SHA256)
 // inside the workerd runtime; that crypto path can take several seconds on a cold
 // or loaded runtime, so give these blocks generous headroom over the 5s default.
-describe("applySafety", { timeout: 30000 }, () => {
+describe("applySafetyToInput text", { timeout: 30000 }, () => {
     beforeEach(() => {
         guardrailResponse = { action: "NONE", assessments: [] };
         fetchMock = vi.fn(async () => Response.json(guardrailResponse));
@@ -149,6 +180,38 @@ describe("applySafety", { timeout: 30000 }, () => {
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
+    it("does not let safe=false disable model-required checks", async () => {
+        guardrailResponse = intervened({
+            contentPolicy: {
+                filters: [{ action: "BLOCKED", type: "SEXUAL" }],
+            },
+        });
+        const response = await safetyApp(["sexual", "violence"]).request(
+            "/scan/blocked?safe=false",
+            undefined,
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(400);
+        expect(fetchMock).toHaveBeenCalledOnce();
+        expect(response.headers.get("X-Safety-Applied")).toBe(
+            "sexual,violence",
+        );
+    });
+
+    it("unions caller and model-required checks", async () => {
+        const response = await safetyApp(["sexual", "violence"]).request(
+            "/scan/hello?safe=privacy",
+            undefined,
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("X-Safety-Applied")).toBe(
+            "privacy,sexual,violence",
+        );
+    });
+
     it("redacts privacy matches", async () => {
         guardrailResponse = intervened(
             {
@@ -177,6 +240,109 @@ describe("applySafety", { timeout: 30000 }, () => {
         expect(response.headers.get("X-Safety-Redacted")).toBe("EMAIL");
     });
 
+    it.each([
+        "generations",
+        "edits",
+    ])("keeps the original %s cache identity when replay redacts again", async (operation) => {
+        const path = `/v1/images/${operation}`;
+        let originalKey: string | undefined;
+        let cacheWrite: Promise<void> | undefined;
+        const app = safetyApp()
+            .use("*", async (c, next) => {
+                c.req.addValidatedData("json", await c.req.json());
+                if (originalKey) {
+                    c.set("generationExecution", {
+                        cacheKey: originalKey,
+                        registerCacheWrite: (write) => {
+                            cacheWrite = write;
+                        },
+                    });
+                }
+                await next();
+            })
+            .post(
+                path,
+                operation === "edits"
+                    ? prepareOpenAIImageEdit
+                    : prepareOpenAIImageGeneration,
+                prepareGenerationRequest,
+                (c, next) => {
+                    const cache = (originalKey
+                        ? imageExecutionCache
+                        : imageCache) as unknown as MiddlewareHandler<Env>;
+                    return cache(c, next);
+                },
+                (c) =>
+                    originalKey
+                        ? new Response(
+                              (
+                                  c.req.valid("json" as never) as {
+                                      prompt: string;
+                                  }
+                              ).prompt,
+                              {
+                                  headers: { "Content-Type": "image/png" },
+                              },
+                          )
+                        : c.json({
+                              key: c.var.generationCache?.key,
+                              body: c.var.generationRequestBody,
+                          }),
+            );
+        const bindings = { ...env, ...configuredEnv };
+        const ctx = createExecutionContext();
+        const prompt = `portrait ${crypto.randomUUID()}`;
+        guardrailResponse = intervened({}, [
+            { text: `${prompt} first redaction` },
+        ]);
+        const prepared = await app.request(
+            path,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    prompt,
+                    safe: true,
+                    seed: 7,
+                    image: "https://example.com/reference.png",
+                }),
+            },
+            bindings,
+            ctx,
+        );
+        expect(prepared.status).toBe(200);
+        const snapshot = await prepared.json<{
+            key: string;
+            body: string;
+        }>();
+        originalKey = snapshot.key;
+        expect(originalKey).toMatch(/^[a-f0-9]{64}$/);
+
+        const secondPrompt = `${prompt} second redaction`;
+        guardrailResponse = intervened({}, [{ text: secondPrompt }]);
+        const replay = await app.request(
+            path,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: snapshot.body,
+            },
+            bindings,
+            ctx,
+        );
+        expect(replay.status).toBe(200);
+        expect(await replay.text()).toBe(secondPrompt);
+        expect(cacheWrite).toBeDefined();
+        await cacheWrite;
+        await waitOnExecutionContext(ctx);
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        const stored = await env.MEDIA.get(originalKey);
+        expect(stored?.headers.get("Link")).toBe(
+            `<https://media.pollinations.ai/${originalKey}>; rel="enclosure"`,
+        );
+        expect(await stored?.text()).toBe(secondPrompt);
+    });
+
     it("uses the redacted prompt for OpenAI image cache URLs", async () => {
         guardrailResponse = intervened(
             {
@@ -195,7 +361,9 @@ describe("applySafety", { timeout: 30000 }, () => {
         const model: ModelVariables["model"] = {
             requested: "flux",
             resolved: "flux",
-            definition: {} as ModelVariables["model"]["definition"],
+            definition: {
+                requiredSafetyFeatures: ["privacy"],
+            } as ModelVariables["model"]["definition"],
         };
         const app = new Hono<Env>()
             .use("*", async (c, next) => {
@@ -221,7 +389,7 @@ describe("applySafety", { timeout: 30000 }, () => {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     prompt: "portrait of a@example.com",
-                    safe: "privacy",
+                    safe: false,
                 }),
             },
             configuredEnv,
@@ -274,6 +442,39 @@ describe("applySafety", { timeout: 30000 }, () => {
         expect(await response.text()).toBe("hello");
         expect(response.headers.get("X-Safety-Applied")).toBe("privacy");
         expect(fetchMock).toHaveBeenCalledOnce();
+    });
+
+    it("prepares multiple text inputs for one guardrail request", async () => {
+        guardrailResponse = intervened(
+            {
+                sensitiveInformationPolicy: {
+                    piiEntities: [
+                        {
+                            action: "ANONYMIZED",
+                            match: "a@example.com",
+                            type: "EMAIL",
+                        },
+                    ],
+                },
+            },
+            [{ text: "first {EMAIL}" }, { text: "second" }],
+        );
+
+        const response = await safetyApp().request(
+            "/texts",
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    texts: ["first a@example.com", "second"],
+                    safe: "privacy",
+                }),
+            },
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(200);
+        expect(fetchMock).toHaveBeenCalledOnce();
+        expect(await response.json()).toEqual(["first {EMAIL}", "second"]);
     });
 
     it("blocks requested content categories", async () => {
@@ -364,7 +565,7 @@ describe("applySafety", { timeout: 30000 }, () => {
     });
 });
 
-describe("applySafetyToChatRequest", { timeout: 30000 }, () => {
+describe("applySafetyToInput", { timeout: 30000 }, () => {
     beforeEach(() => {
         guardrailResponse = { action: "NONE", assessments: [] };
         fetchMock = vi.fn(async () => Response.json(guardrailResponse));
@@ -449,6 +650,57 @@ describe("applySafetyToChatRequest", { timeout: 30000 }, () => {
         });
     });
 
+    it("checks array-form function outputs in Responses requests", async () => {
+        guardrailResponse = intervened(
+            {
+                sensitiveInformationPolicy: {
+                    piiEntities: [
+                        {
+                            action: "ANONYMIZED",
+                            match: "a@example.com",
+                            type: "EMAIL",
+                        },
+                    ],
+                },
+            },
+            [{ text: "email {EMAIL}" }],
+        );
+
+        const response = await safetyApp().request(
+            "/responses",
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    model: "openai",
+                    safe: "privacy",
+                    input: [
+                        {
+                            type: "function_call_output",
+                            call_id: "call_123",
+                            output: [
+                                {
+                                    type: "input_text",
+                                    text: "email a@example.com",
+                                },
+                            ],
+                        },
+                    ],
+                }),
+            },
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(200);
+        expect(fetchMock).toHaveBeenCalledOnce();
+        await expect(response.json()).resolves.toMatchObject({
+            input: [
+                {
+                    output: [{ type: "input_text", text: "email {EMAIL}" }],
+                },
+            ],
+        });
+    });
+
     it("redacts PII before sending a community model request upstream", async () => {
         guardrailResponse = intervened(
             {
@@ -471,13 +723,15 @@ describe("applySafetyToChatRequest", { timeout: 30000 }, () => {
             id: "community-endpoint-id",
             ownerUserId: "owner-id",
             modelId: "owner/community-model",
+            api: "chat_completions",
             name: "community-model",
             title: "Community Model",
             description: null,
             modality: "text",
             imagePricing: "request",
             inputModalities: ["text"],
-            baseUrl: "https://community.example.test/v1",
+            requiredSafetyFeatures: [],
+            baseUrl: "https://community.example.test/v1/chat/completions",
             upstreamModel: "upstream-model",
             visibility: "public",
             paidOnly: false,
@@ -515,6 +769,13 @@ describe("applySafetyToChatRequest", { timeout: 30000 }, () => {
                     },
                 });
             },
+        );
+        vi.stubGlobal(
+            "fetch",
+            (input: RequestInfo | URL, init?: RequestInit) =>
+                new Request(input, init).url === endpoint.baseUrl
+                    ? upstreamFetch(input, init)
+                    : fetchMock(input, init),
         );
         const app = new Hono<Env>()
             .use("*", async (c, next) => {
@@ -556,8 +817,6 @@ describe("applySafetyToChatRequest", { timeout: 30000 }, () => {
             {
                 ...configuredEnv,
                 BETTER_AUTH_SECRET: secret,
-                PORTKEY_GATEWAY_URL: "https://portkey.test",
-                PORTKEY: { fetch: upstreamFetch },
             } as unknown as CloudflareBindings,
         );
 
@@ -658,6 +917,64 @@ describe("applySafetyToChatRequest", { timeout: 30000 }, () => {
 });
 
 describe("safety cache keys", () => {
+    it("keeps disabled safety on the existing text and media keys", async () => {
+        const request = new Request(
+            "https://gen.pollinations.ai/text/hello?model=openai",
+        );
+        expect(
+            await generateTextCacheKey(request, undefined, undefined, []),
+        ).toBe(await generateTextCacheKey(request));
+
+        const url = new URL("https://gen.pollinations.ai/image/hello");
+        expect(await generateMediaCacheKey(url, undefined, [])).toBe(
+            await generateMediaCacheKey(url),
+        );
+    });
+
+    it("partitions required safety by its canonical settings", async () => {
+        const request = new Request(
+            "https://gen.pollinations.ai/text/hello?model=openai",
+        );
+        const withoutSafety = await generateTextCacheKey(request);
+        const harmfulContent = await generateTextCacheKey(
+            request,
+            undefined,
+            undefined,
+            ["violence", "sexual"],
+        );
+        const privacy = await generateTextCacheKey(
+            request,
+            undefined,
+            undefined,
+            ["privacy"],
+        );
+
+        expect(harmfulContent).not.toBe(withoutSafety);
+        expect(harmfulContent).not.toBe(privacy);
+        expect(harmfulContent).toBe(
+            await generateTextCacheKey(request, undefined, undefined, [
+                "sexual",
+                "violence",
+            ]),
+        );
+    });
+
+    it("includes fallback requirements", () => {
+        const model = {
+            requested: "primary",
+            resolved: "primary",
+            definition: { requiredSafetyFeatures: ["sexual"] },
+            fallbackEntries: [
+                { definition: { requiredSafetyFeatures: ["violence"] } },
+            ],
+        } as ModelVariables["model"];
+
+        expect(getRequiredSafetyFeatures(model)).toEqual([
+            "sexual",
+            "violence",
+        ]);
+    });
+
     it("adds a safety namespace to text cache keys when safe is active", async () => {
         const noSafety = await generateTextCacheKey(
             new Request("https://gen.pollinations.ai/text/hello?model=openai"),
@@ -666,6 +983,26 @@ describe("safety cache keys", () => {
             new Request(
                 "https://gen.pollinations.ai/text/hello?model=openai&safe=privacy",
             ),
+        );
+
+        const mediaUrl = new URL(
+            "https://gen.pollinations.ai/image/hello?model=flux",
+        );
+        const mediaWithoutSafety = await generateMediaCacheKey(mediaUrl);
+        const mediaHarmfulContent = await generateMediaCacheKey(
+            mediaUrl,
+            undefined,
+            ["violence", "sexual"],
+        );
+        expect(mediaHarmfulContent).not.toBe(mediaWithoutSafety);
+        expect(mediaHarmfulContent).not.toBe(
+            await generateMediaCacheKey(mediaUrl, undefined, ["privacy"]),
+        );
+        expect(mediaHarmfulContent).toBe(
+            await generateMediaCacheKey(mediaUrl, undefined, [
+                "sexual",
+                "violence",
+            ]),
         );
 
         expect(withSafety).not.toBe(noSafety);
@@ -703,38 +1040,36 @@ describe("safety cache keys", () => {
         expect(withQueryOverride).not.toBe(withHeaderSafety);
     });
 
-    it("separates media cache keys when safe is active", () => {
-        const withSafety = generateMediaCacheKey(
+    it("separates media cache keys when safe is active", async () => {
+        const withSafety = await generateMediaCacheKey(
             new URL("https://gen.pollinations.ai/image/hello?safe=true"),
         );
-        const withoutSafety = generateMediaCacheKey(
+        const withoutSafety = await generateMediaCacheKey(
             new URL("https://gen.pollinations.ai/image/hello?safe=false"),
         );
 
         expect(withSafety).not.toBe(withoutSafety);
-        expect(withSafety).toContain(`__safety_${MEDIA_SAFETY_CACHE_VERSION}`);
+        expect(withSafety).toMatch(/^[a-f0-9]{64}$/);
     });
 
-    it("separates media cache keys when safe is provided by header", () => {
-        const withoutHeaderSafety = generateMediaCacheKey(
+    it("separates media cache keys when safe is provided by header", async () => {
+        const withoutHeaderSafety = await generateMediaCacheKey(
             new URL("https://gen.pollinations.ai/image/hello"),
         );
-        const withHeaderSafety = generateMediaCacheKey(
+        const withHeaderSafety = await generateMediaCacheKey(
             new URL("https://gen.pollinations.ai/image/hello"),
             "privacy",
         );
-        const withQueryOverride = generateMediaCacheKey(
+        const withQueryOverride = await generateMediaCacheKey(
             new URL("https://gen.pollinations.ai/image/hello?safe=false"),
             "privacy",
         );
 
         expect(withHeaderSafety).not.toBe(withoutHeaderSafety);
-        expect(withHeaderSafety).toContain(
-            `__safety_${MEDIA_SAFETY_CACHE_VERSION}`,
-        );
+        expect(withHeaderSafety).toMatch(/^[a-f0-9]{64}$/);
         expect(withQueryOverride).not.toBe(withHeaderSafety);
         expect(withQueryOverride).toBe(
-            generateMediaCacheKey(
+            await generateMediaCacheKey(
                 new URL("https://gen.pollinations.ai/image/hello?safe=false"),
             ),
         );

@@ -1,4 +1,6 @@
-import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
+import { bytesToHex } from "@shared/client-ip.ts";
+import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { mediaResponseHeaders } from "@shared/utils/api-docs.ts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import {
@@ -23,22 +25,21 @@ import {
     tagsForItems,
 } from "./catalog.ts";
 
+import { readMedia } from "./media-upload.ts";
+
 export { MediaUpload } from "./media-upload.ts";
 
 const DOMAIN = "media.pollinations.ai";
 // gen.pollinations.ai proxies /account/* to enter — using the public path
 // keeps internal services consistent with the documented SDK/external usage.
 const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
-// Untagged uploads cannot be deleted through the API, and each unique id always
-// maps to the same bytes, so they can be cached immutably. Tagged uploads are
-// deletable and must never be retained by downstream caches after deletion.
-const IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable";
-const PUBLISHED_CACHE_CONTROL = "no-store";
+// Random unlisted IDs are immutable. Tagged uploads can be deleted, and custom
+// IDs can be reused after expiry; neither should remain in downstream caches.
+const UNCACHED_CACHE_CONTROL = "no-store";
 const DEFAULT_MAX_SIZE = 104857600; // 100 MB
 
 interface Env {
     MEDIA_BUCKET: R2Bucket;
-    IMAGE_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
     DB: D1Database;
 }
@@ -166,17 +167,25 @@ const UploadResponseSchema = z.object({
         ),
 });
 
+const UploadIdSchema = z
+    .string()
+    .regex(
+        /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/,
+        "id must start with a letter or digit and contain only letters, digits, dots, underscores, or hyphens (max 128 characters)",
+    )
+    .optional()
+    .describe(
+        "Optional case-sensitive ID, scoped to your account. The returned id includes an opaque account prefix. Existing IDs return 409; omit for a random ID.",
+    );
+
 const JsonUploadRequestSchema = z.object({
+    id: UploadIdSchema,
     data: z
         .string()
-        .optional()
+        .min(1)
         .describe(
             "Base64-encoded file bytes (with or without a data: prefix).",
         ),
-    genCacheKey: z
-        .string()
-        .optional()
-        .describe("Gen cache key to point to instead of uploading data bytes."),
     contentType: z
         .string()
         .optional()
@@ -272,7 +281,7 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file via multipart/form-data (field `file`) or application/json (base64 `data`). Returns a unique id and its retrieval URL; each upload gets its own id (re-uploading the same bytes yields a new one). Files are retained for 30 days.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted: reachable only by their unguessable id URL, never listed anywhere. **Alpha:** the publish tagging is new and may still change.",
+            "Upload an image, audio, or video file via multipart/form-data (field `file`) or application/json (base64 `data`). Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.",
         requestBody: {
             content: {
                 "multipart/form-data": {
@@ -280,6 +289,11 @@ api.post(
                         type: "object",
                         required: ["file"],
                         properties: {
+                            id: {
+                                type: "string",
+                                description: UploadIdSchema.description,
+                                pattern: z.toJSONSchema(UploadIdSchema).pattern,
+                            },
                             file: {
                                 type: "string",
                                 format: "binary",
@@ -312,7 +326,7 @@ api.post(
             },
             400: {
                 description:
-                    "No/empty file, invalid JSON/base64, invalid tags, or tags on a key with no user account",
+                    "No/empty file, invalid JSON/base64, invalid ID/tags, or custom ID/tags on a key with no user account",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -323,8 +337,22 @@ api.post(
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
+            409: {
+                description:
+                    "The custom ID already has a file or gallery entry; nothing was replaced",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
             413: {
                 description: "File too large (max 100MB)",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            500: {
+                description:
+                    "Upload failed. The file may already have been stored, so retrying a custom ID can return 409.",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -351,6 +379,7 @@ api.post(
         let fileBuffer: ArrayBuffer;
         let contentType: string;
         let fileName: string | undefined;
+        let requestedId: string | undefined;
 
         const requestContentType = c.req.header("content-type") || "";
         const rawTags: string[] = [];
@@ -358,6 +387,16 @@ api.post(
         try {
             if (requestContentType.includes("multipart/form-data")) {
                 const formData = await c.req.formData();
+                const parsedId = UploadIdSchema.safeParse(
+                    formData.get("id") ?? undefined,
+                );
+                if (!parsedId.success) {
+                    return c.json(
+                        { error: parsedId.error.issues[0].message },
+                        400,
+                    );
+                }
+                requestedId = parsedId.data;
                 const file = formData.get("file") as File | null;
 
                 if (!(file instanceof File)) {
@@ -399,44 +438,32 @@ api.post(
                     );
                 }
                 const body = parsedBody.data;
+                requestedId = body.id;
 
-                if (body.genCacheKey) {
-                    fileBuffer = new ArrayBuffer(0);
-                    contentType =
-                        body.contentType || "application/octet-stream";
-                    fileName = body.name;
-                } else if (body.data) {
-                    const base64Data = body.data.includes(",")
-                        ? body.data.split(",")[1]
-                        : body.data;
-                    let binaryString: string;
-                    try {
-                        binaryString = atob(base64Data);
-                    } catch {
-                        return c.json({ error: "Invalid base64 data" }, 400);
-                    }
-                    const bytes = new Uint8Array(binaryString.length);
-                    for (let i = 0; i < binaryString.length; i++) {
-                        bytes[i] = binaryString.charCodeAt(i);
-                    }
-                    fileBuffer = bytes.buffer;
-
-                    if (fileBuffer.byteLength > maxSize) {
-                        return c.json(fileTooLargeError(maxSize), 413);
-                    }
-                    if (fileBuffer.byteLength === 0) {
-                        return c.json({ error: "Empty file" }, 400);
-                    }
-
-                    contentType =
-                        body.contentType || "application/octet-stream";
-                    fileName = body.name;
-                } else {
-                    return c.json(
-                        { error: "Must provide data or genCacheKey" },
-                        400,
-                    );
+                const base64Data = body.data.includes(",")
+                    ? body.data.split(",")[1]
+                    : body.data;
+                let binaryString: string;
+                try {
+                    binaryString = atob(base64Data);
+                } catch {
+                    return c.json({ error: "Invalid base64 data" }, 400);
                 }
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                fileBuffer = bytes.buffer;
+
+                if (fileBuffer.byteLength > maxSize) {
+                    return c.json(fileTooLargeError(maxSize), 413);
+                }
+                if (fileBuffer.byteLength === 0) {
+                    return c.json({ error: "Empty file" }, 400);
+                }
+
+                contentType = body.contentType || "application/octet-stream";
+                fileName = body.name;
 
                 if (body.tags) {
                     const tagValues = Array.isArray(body.tags)
@@ -474,33 +501,52 @@ api.post(
 
             // One id for everything: the R2 storage key, the retrieval id,
             // and (for user uploads) the catalog row id.
-            const id = crypto.randomUUID();
-            const cacheControl =
-                tags.length > 0
-                    ? PUBLISHED_CACHE_CONTROL
-                    : IMMUTABLE_CACHE_CONTROL;
-
-            const customMetadata: Record<string, string> = {
-                uploadedAt: new Date().toISOString(),
-                originalName: fileName || "",
-                uploadedBy: authResult.name || "",
-                keyType: authResult.type,
-            };
-
-            if (requestContentType.includes("application/json")) {
-                const body = await c.req.json().catch(() => ({}));
-                if (body.genCacheKey) {
-                    customMetadata.genCacheKey = body.genCacheKey;
+            let id: string = crypto.randomUUID();
+            if (requestedId !== undefined) {
+                if (authResult.userId === null) {
+                    return c.json(
+                        { error: "Custom IDs require a user-owned API key" },
+                        400,
+                    );
+                }
+                const namespace = bytesToHex(
+                    await crypto.subtle.digest(
+                        "SHA-256",
+                        new TextEncoder().encode(authResult.userId),
+                    ),
+                );
+                id = `u_${namespace}_${requestedId}`;
+                // An expired published file still has a gallery entry. Do not
+                // attach a new upload to that old entry, even without new tags.
+                if (
+                    (await catalogItemOwner(getDb(c.env.DB), id)) !== undefined
+                ) {
+                    return c.json({ error: "Media ID already exists" }, 409);
                 }
             }
+            const cacheControl =
+                tags.length > 0 || requestedId !== undefined
+                    ? UNCACHED_CACHE_CONTROL
+                    : IMMUTABLE_CACHE_CONTROL;
 
-            await c.env.MEDIA_BUCKET.put(id, fileBuffer, {
+            const stored = await c.env.MEDIA_BUCKET.put(id, fileBuffer, {
+                ...(requestedId !== undefined && {
+                    onlyIf: new Headers({ "If-None-Match": "*" }),
+                }),
                 httpMetadata: {
                     contentType,
                     cacheControl,
                 },
-                customMetadata,
+                customMetadata: {
+                    uploadedAt: new Date().toISOString(),
+                    originalName: fileName || "",
+                    uploadedBy: authResult.name || "",
+                    keyType: authResult.type,
+                },
             });
+            if (requestedId !== undefined && stored === null) {
+                return c.json({ error: "Media ID already exists" }, 409);
+            }
 
             // Tags are the publish action: only tagged uploads get catalog
             // rows (untagged uploads stay uncataloged blobs behind their
@@ -727,15 +773,20 @@ api.delete(
     },
 );
 
-api.get(
+api.on(
+    ["GET", "HEAD"],
     "/:id",
     describeRoute({
         tags: ["media.pollinations.ai"],
         summary: "Retrieve media",
-        description: "Get a file by its id. Access keeps files from expiring.",
+        description:
+            "Get a file by its id. Retrieving the body refreshes its 30-day retention once the file is at least 15 days old. HEAD requests do not refresh retention.",
         security: [],
         responses: {
-            200: { description: "File content with appropriate Content-Type" },
+            200: {
+                description: "File content with appropriate Content-Type",
+                headers: mediaResponseHeaders,
+            },
             404: {
                 description: "File not found",
                 content: {
@@ -748,83 +799,16 @@ api.get(
         const id = c.req.param("id");
 
         try {
-            const object = await c.env.MEDIA_BUCKET.get(id);
-
-            if (!object) {
+            const response = await readMedia(
+                c.env,
+                id,
+                c.executionCtx,
+                c.req.method,
+            );
+            if (!response) {
                 return c.json({ error: "Not found" }, 404);
             }
-
-            let responseBody: ReadableStream;
-            let objectSize = object.size;
-
-            if (object.customMetadata?.genCacheKey) {
-                const genObject = await c.env.IMAGE_BUCKET.get(
-                    object.customMetadata.genCacheKey,
-                );
-                if (!genObject) {
-                    return c.json({ error: "Underlying media not found" }, 404);
-                }
-
-                // If pointer object is old, touch it
-                const ageMs = Date.now() - object.uploaded.getTime();
-                if (ageMs >= 15 * 24 * 60 * 60 * 1000) {
-                    // 15 days
-                    c.executionCtx.waitUntil(
-                        c.env.MEDIA_BUCKET.put(id, "", {
-                            httpMetadata: object.httpMetadata,
-                            customMetadata: object.customMetadata,
-                            onlyIf: { etagMatches: object.etag },
-                        }).catch((err) =>
-                            console.error("Pointer TTL refresh error:", err),
-                        ),
-                    );
-                }
-
-                objectSize = genObject.size;
-                responseBody = refreshR2ObjectTtl(
-                    c.env.IMAGE_BUCKET,
-                    object.customMetadata.genCacheKey,
-                    genObject,
-                    (promise) => c.executionCtx.waitUntil(promise),
-                    (error) => {
-                        console.error("Gen TTL refresh error:", error);
-                    },
-                );
-            } else {
-                responseBody = refreshR2ObjectTtl(
-                    c.env.MEDIA_BUCKET,
-                    id,
-                    object,
-                    (promise) => c.executionCtx.waitUntil(promise),
-                    (error) => {
-                        console.error("TTL refresh error:", error);
-                    },
-                );
-            }
-
-            const headers = new Headers();
-            headers.set(
-                "Content-Type",
-                object.httpMetadata?.contentType || "application/octet-stream",
-            );
-            headers.set(
-                "Cache-Control",
-                object.httpMetadata?.cacheControl || IMMUTABLE_CACHE_CONTROL,
-            );
-            headers.set("X-Content-Id", id);
-            headers.set("X-Content-Size", objectSize.toString());
-
-            const originalName = object.customMetadata?.originalName;
-            if (originalName) {
-                // RFC 5987: use filename* with UTF-8 encoding to safely handle any characters
-                const sanitized = encodeURIComponent(originalName);
-                headers.set(
-                    "Content-Disposition",
-                    `inline; filename*=UTF-8''${sanitized}`,
-                );
-            }
-
-            return new Response(responseBody, { headers });
+            return response;
         } catch (error) {
             console.error("Retrieve error:", error);
             return c.json({ error: "Retrieval failed" }, 500);
@@ -888,56 +872,6 @@ api.get(
     },
 );
 
-api.on(
-    "HEAD",
-    "/:id",
-    describeRoute({
-        tags: ["media.pollinations.ai"],
-        summary: "Check if media exists",
-        description:
-            "Check existence and metadata without downloading the file.",
-        security: [],
-        responses: {
-            200: {
-                description:
-                    "File exists (headers include Content-Type, Content-Length, X-Content-Id)",
-            },
-            404: { description: "File not found" },
-        },
-    }),
-    async (c) => {
-        const id = c.req.param("id");
-
-        try {
-            const object = await c.env.MEDIA_BUCKET.head(id);
-
-            if (!object) {
-                return new Response(null, { status: 404 });
-            }
-
-            const headers = new Headers();
-            headers.set(
-                "Content-Type",
-                object.httpMetadata?.contentType || "application/octet-stream",
-            );
-            headers.set("Content-Length", object.size.toString());
-            headers.set(
-                "Cache-Control",
-                object.httpMetadata?.cacheControl || IMMUTABLE_CACHE_CONTROL,
-            );
-            headers.set("X-Content-Id", id);
-
-            if (object.customMetadata?.uploadedAt) {
-                headers.set("X-Uploaded-At", object.customMetadata.uploadedAt);
-            }
-
-            return new Response(null, { status: 200, headers });
-        } catch {
-            return new Response(null, { status: 500 });
-        }
-    },
-);
-
 const app = new Hono<{ Bindings: Env }>();
 
 app.use(
@@ -946,7 +880,7 @@ app.use(
         origin: "*",
         allowMethods: ["GET", "POST", "DELETE", "HEAD", "OPTIONS"],
         allowHeaders: ["Content-Type", "Authorization"],
-        exposeHeaders: ["X-Content-Id", "X-Content-Size"],
+        exposeHeaders: ["X-Content-Id", "X-Content-Size", "Link"],
     }),
 );
 

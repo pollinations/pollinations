@@ -20,10 +20,12 @@ import {
 import { communityEndpointPriceFieldsForModality } from "@shared/community-endpoints.ts";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { OpenWebUiLink } from "../models/open-webui-link.tsx";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
 import {
     type CommunityEndpoint,
+    openWebUiTestableModelId,
     type ProxyCommunityEndpoint,
     storedPriceToFormValue,
     VISIBILITY_LABELS,
@@ -48,6 +50,7 @@ export function CommunityEndpointCard({
     const isAgent = endpoint.type !== "proxy";
     const priceGroups =
         endpoint.type === "proxy" ? communityPriceGroups(endpoint) : [];
+    const testableModelId = openWebUiTestableModelId(endpoint);
 
     return (
         <Surface
@@ -72,17 +75,6 @@ export function CommunityEndpointCard({
                         {isAgent && (
                             <Chip intent="news" size="sm">
                                 Agent
-                            </Chip>
-                        )}
-                        {endpoint.pending && (
-                            <Chip
-                                intent="neutral"
-                                size="sm"
-                                title={`Changes queued — effective ${new Date(
-                                    endpoint.pending.effectiveAt,
-                                ).toLocaleString()}`}
-                            >
-                                Changes queued
                             </Chip>
                         )}
                     </div>
@@ -139,6 +131,8 @@ export function CommunityEndpointCard({
                 </Alert>
             )}
 
+            <PendingChangeNotice endpoint={endpoint} />
+
             <div className="mt-4 grid gap-2">
                 <CommunityDetailRow
                     icon={<TokensIcon className="h-3.5 w-3.5" />}
@@ -150,7 +144,12 @@ export function CommunityEndpointCard({
                     <CommunityDetailRow
                         icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}
                         label="Endpoint"
-                        value={endpoint.baseUrl}
+                        value={
+                            endpoint.type === "endpoint_agent" ||
+                            endpoint.modality === "text"
+                                ? endpoint.url
+                                : endpoint.baseUrl
+                        }
                         copyLabel="Copy endpoint"
                     />
                 )}
@@ -189,11 +188,18 @@ export function CommunityEndpointCard({
                     />
                 ))}
             </div>
-            <div className="mt-3">
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
                 <Link
                     to="/activity"
                     search={{
-                        ...currentPeriod(),
+                        usageGranularity: "day",
+                        usagePeriod: currentPeriod().period,
+                        usageBucket: undefined,
+                        usageAnchor: undefined,
+                        earningsGranularity: "day",
+                        earningsPeriod: currentPeriod().period,
+                        earningsBucket: undefined,
+                        earningsAnchor: undefined,
                         earningsModels: [endpoint.modelId],
                         usageMetric: undefined,
                         usageKeys: undefined,
@@ -205,8 +211,62 @@ export function CommunityEndpointCard({
                 >
                     View activity
                 </Link>
+                {testableModelId && (
+                    <OpenWebUiLink modelId={testableModelId} variant="text" />
+                )}
             </div>
         </Surface>
+    );
+}
+
+function PendingChangeNotice({ endpoint }: { endpoint: CommunityEndpoint }) {
+    const pending = endpoint.pending;
+    if (!pending) return null;
+
+    const visibility = pending.visibility ?? endpoint.visibility;
+    const pendingProxy =
+        endpoint.type === "proxy"
+            ? ({
+                  ...endpoint,
+                  ...pending,
+                  visibility,
+                  paidOnly: pending.paidOnly ?? endpoint.paidOnly,
+                  imagePricing: pending.imagePricing ?? endpoint.imagePricing,
+              } satisfies ProxyCommunityEndpoint)
+            : null;
+    const priceGroups = pendingProxy ? communityPriceGroups(pendingProxy) : [];
+
+    return (
+        <Alert intent="info" className="mt-3" title="Changes queued">
+            <div className="flex flex-col gap-1 text-sm">
+                <span>
+                    Effective {new Date(pending.effectiveAt).toLocaleString()}
+                </span>
+                <span>
+                    Visibility: {VISIBILITY_LABELS[visibility]}
+                    {pendingProxy &&
+                        ` · ${pendingProxy.paidOnly ? "Paid Pollen only" : "Quest and Paid Pollen"}`}
+                </span>
+                {pendingProxy && (
+                    <span className="flex flex-wrap items-center gap-1.5">
+                        <span>Pricing:</span>
+                        {priceGroups.length > 0 ? (
+                            priceGroups.map((group) => (
+                                <span
+                                    key={group.key}
+                                    className="inline-flex items-center gap-1"
+                                >
+                                    {group.label}
+                                    <CommunityPriceBadges group={group} />
+                                </span>
+                            ))
+                        ) : (
+                            <span>Free</span>
+                        )}
+                    </span>
+                )}
+            </div>
+        </Alert>
     );
 }
 

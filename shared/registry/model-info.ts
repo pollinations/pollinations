@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SAFETY_FEATURES } from "../schemas/safety.ts";
 import { publicPriceInfo, toFixedPoint } from "./public-pricing";
 import {
     type BillingAdjustmentRule,
@@ -38,9 +39,11 @@ export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),
     category: z.enum(MODEL_CATEGORIES),
-    brand: z.string(),
+    publisher: z
+        .string()
+        .describe("Human-readable model publisher, not the inference provider"),
     brand_url: z.string().url().optional(),
-    community: z.boolean().optional(),
+    community: z.boolean(),
     agent: z.boolean().optional(),
     base_model: z.string().optional(),
     per_user_rpm: z.number().positive().nullable().optional(),
@@ -87,6 +90,7 @@ export const ModelInfoSchema = z.object({
     description: z.string().optional(),
     input_modalities: z.array(z.enum(MODEL_INPUT_MODALITIES)).optional(),
     output_modalities: z.array(z.enum(MODEL_OUTPUT_MODALITIES)).optional(),
+    required_safety: z.array(z.enum(SAFETY_FEATURES)).optional(),
     supported_endpoints: z.array(z.string()).optional(),
     video_capabilities: z.array(z.enum(VIDEO_CAPABILITIES)).optional(),
     min_duration: z.number().positive().optional(),
@@ -163,9 +167,9 @@ export function modelInfoFromDefinition(
         name,
         aliases: service.aliases,
         category: service.category,
-        brand: service.brand,
+        publisher: service.publisher,
         brand_url: service.brandUrl,
-        community: options.community || undefined,
+        community: options.community ?? false,
         agent: options.agent || undefined,
         per_user_rpm: service.perUserRpm,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
@@ -201,6 +205,7 @@ export function modelInfoFromDefinition(
         description: service.description,
         input_modalities: service.inputModalities,
         output_modalities: service.outputModalities,
+        required_safety: service.requiredSafetyFeatures,
         supported_endpoints: service.supportedEndpoints,
         video_capabilities: service.videoCapabilities,
         min_duration: service.minDuration,

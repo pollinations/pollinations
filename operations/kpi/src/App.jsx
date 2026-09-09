@@ -9,7 +9,9 @@ import {
     Surface,
     Text,
 } from "@pollinations/ui";
+import { DashboardAccountMenu, DashboardSignIn } from "@pollinations/ui/auth";
 import { useState } from "react";
+import { signIn, signOut, useDashboardSession } from "./auth";
 import { FunnelBars } from "./components/FunnelBars";
 import { KPITrendTable } from "./components/KPITrendTable";
 import { KpiExplorer } from "./components/KpiExplorer";
@@ -18,6 +20,7 @@ import { RetentionTable } from "./components/RetentionTable";
 import { Trend } from "./components/Trend";
 import { SOURCE_LABELS, useKpiData } from "./hooks/useKpiData";
 import { calcChange, formatValue, weekLabel } from "./lib/format";
+import { DEFAULT_WEEKS, WEEK_RANGES, weeksFromSearch } from "./lib/range";
 
 const EXPORT_COLUMNS = [
     ["week", "Week"],
@@ -61,48 +64,102 @@ function Tile({ label, value, format, current, previous }) {
     );
 }
 
-function LoadingScreen({ done, active }) {
+function AccountControls({ accountUser }) {
     return (
-        <main className="mx-auto flex w-full max-w-sm flex-col gap-4 px-4 py-16">
-            <Text as="p" tone="soft">
-                Loading KPIs from all data sources…
-            </Text>
-            <div className="flex flex-col gap-1.5">
-                {SOURCE_LABELS.map((label) => {
-                    const complete = done.includes(label);
-                    const running = !complete && active === label;
-                    return (
-                        <Text
-                            key={label}
-                            as="div"
-                            size="sm"
-                            tone={
-                                running ? "strong" : complete ? "base" : "muted"
-                            }
-                            className="flex items-center gap-2"
-                        >
-                            <span
-                                aria-hidden="true"
-                                className="w-4 text-center"
+        <>
+            <ColorModeToggle />
+            {accountUser && (
+                <DashboardAccountMenu user={accountUser} onSignOut={signOut} />
+            )}
+        </>
+    );
+}
+
+function LoadingScreen({ done, active, accountUser }) {
+    return (
+        <div className="min-h-screen bg-app-bg">
+            <AppHeader
+                navLabel="KPI dashboard links"
+                innerClassName="polli:max-w-7xl polli:flex-row polli:items-center polli:justify-end"
+                navClassName="polli:items-center"
+            >
+                <AccountControls accountUser={accountUser} />
+            </AppHeader>
+            <main className="mx-auto flex w-full max-w-sm flex-col gap-4 px-4 py-16">
+                <Text as="p" tone="soft">
+                    Loading KPIs from all data sources…
+                </Text>
+                <div className="flex flex-col gap-1.5">
+                    {SOURCE_LABELS.map((label) => {
+                        const complete = done.includes(label);
+                        const running = !complete && active === label;
+                        return (
+                            <Text
+                                key={label}
+                                as="div"
+                                size="sm"
+                                tone={
+                                    running
+                                        ? "strong"
+                                        : complete
+                                          ? "base"
+                                          : "muted"
+                                }
+                                className="flex items-center gap-2"
                             >
-                                {complete ? "✓" : running ? "◍" : "·"}
-                            </span>
-                            {label}
-                        </Text>
-                    );
-                })}
-            </div>
-        </main>
+                                <span
+                                    aria-hidden="true"
+                                    className="w-4 text-center"
+                                >
+                                    {complete ? "✓" : running ? "◍" : "·"}
+                                </span>
+                                {label}
+                            </Text>
+                        );
+                    })}
+                </div>
+            </main>
+        </div>
     );
 }
 
 const EXPLORER_ID = "kpi-explorer";
 
 export default function App() {
+    const { user, isPending, error } = useDashboardSession();
+    if (isPending)
+        return (
+            <main>
+                <Text>Checking sign-in…</Text>
+            </main>
+        );
+    if (error)
+        return (
+            <main>
+                <Alert>Could not check your session. Please reload.</Alert>
+            </main>
+        );
+    if (!user) return <DashboardSignIn appName="KPI" onSignIn={signIn} />;
+    return <Dashboard accountUser={user} />;
+}
+
+function Dashboard({ accountUser }) {
     // Which unit each cycling row is showing, and which row the explorer plots.
     // Both live here so the chart follows the table.
     const [viewIndex, setViewIndex] = useState({});
     const [explored, setExplored] = useState("registrations:0");
+    const [weeks, setWeeks] = useState(() =>
+        weeksFromSearch(window.location.search),
+    );
+
+    const changeWeeks = (event) => {
+        const next = Number(event.target.value);
+        setWeeks(next);
+        const url = new URL(window.location.href);
+        if (next === DEFAULT_WEEKS) url.searchParams.delete("weeks");
+        else url.searchParams.set("weeks", String(next));
+        window.history.replaceState(null, "", url);
+    };
 
     const cycleView = (key) =>
         setViewIndex((prev) => ({ ...prev, [key]: (prev[key] ?? 0) + 1 }));
@@ -126,9 +183,17 @@ export default function App() {
         github,
         currentWeek,
         previousWeek,
-    } = useKpiData();
+    } = useKpiData(weeks);
 
-    if (loading) return <LoadingScreen done={done} active={active} />;
+    if (loading) {
+        return (
+            <LoadingScreen
+                done={done}
+                active={active}
+                accountUser={accountUser}
+            />
+        );
+    }
 
     const wapc = currentWeek?.packPurchases || 0;
     const funnelStages = currentWeek
@@ -156,6 +221,7 @@ export default function App() {
                 navLabel="KPI dashboard links"
                 autoHide
                 innerClassName="polli:max-w-7xl polli:flex-row polli:items-center polli:justify-between"
+                navClassName="polli:items-center"
             >
                 <Button
                     size="sm"
@@ -167,19 +233,36 @@ export default function App() {
                         Export CSV
                     </span>
                 </Button>
-                <ColorModeToggle />
+                <AccountControls accountUser={accountUser} />
             </AppHeader>
 
             <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-5 sm:px-6 md:py-7">
-                <div className="flex flex-col gap-1">
-                    <Heading as="h1" size="title">
-                        KPI Dashboard
-                    </Heading>
-                    <Text as="p" tone="base">
-                        Weekly KPIs for pollinations.ai. Figures are the last
-                        full week ({weekLabel(currentWeek?.week)}) against the
-                        one before it.
-                    </Text>
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                    <div className="flex flex-col gap-1">
+                        <Heading as="h1" size="title">
+                            KPI
+                        </Heading>
+                        <Text as="p" tone="base">
+                            Weekly KPIs for pollinations.ai. Figures are the
+                            last full week ({weekLabel(currentWeek?.week)})
+                            against the one before it.
+                        </Text>
+                    </div>
+                    <label className="flex items-center gap-2 text-sm text-theme-text-muted">
+                        Range
+                        <select
+                            aria-label="KPI time range"
+                            value={weeks}
+                            onChange={changeWeeks}
+                            className="rounded-lg bg-theme-bg-subtle px-2.5 py-1.5 font-medium text-theme-text-strong hover:bg-theme-bg-hover"
+                        >
+                            {WEEK_RANGES.map((range) => (
+                                <option key={range} value={range}>
+                                    {range} weeks
+                                </option>
+                            ))}
+                        </select>
+                    </label>
                 </div>
 
                 {missing.length > 0 && (

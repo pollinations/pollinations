@@ -108,11 +108,13 @@ async def code_search_handler(
         if action == "tree":
             return await local_repo.tree(path or "", depth=depth)
 
-        if action in ("callers", "callees", "impact"):
+        if action in ("symbols", "callers", "callees", "impact"):
             if not query:
-                return {"error": f"query (the symbol name) is required for action='{action}'"}
+                return {"error": f"query is required for action='{action}'"}
             if not config.code_search.graph_enabled:
                 return {"error": "The code graph is not enabled; use action='grep' instead."}
+            if action == "symbols":
+                return await code_graph.symbols(query, limit=max_results)
             if action == "callers":
                 return await code_graph.callers(query, limit=max_results)
             if action == "callees":
@@ -121,13 +123,18 @@ async def code_search_handler(
 
         if action == "status":
             status = await local_repo.repo_status()
-            status["graph_enabled"] = config.code_search.graph_enabled
+            graph = await code_graph.graph_status() if config.code_search.graph_enabled else {"available": False}
+            status["backends"] = {
+                "semantic": config.code_search.is_configured,
+                "local": config.code_search.local_repo_enabled,
+                "graph": graph,
+            }
             return status
 
         return {
             "error": (
                 f"Unknown action '{action}'. Use: search, grep, read, list, tree, "
-                "callers, callees, impact, status."
+                "symbols, callers, callees, impact, status."
             )
         }
 

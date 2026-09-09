@@ -59,6 +59,7 @@ describe("pi harness", () => {
             .pollinations as Record<string, unknown>;
         expect(provider).toMatchObject({
             api: "openai-completions",
+            apiKey: "pollinations",
             baseUrl: "https://gen.pollinations.ai/v1",
         });
         expect((provider.models as { id: string }[]).map((m) => m.id)).toEqual([
@@ -211,6 +212,17 @@ describe("pi harness", () => {
         expect(pi.status(ctx).configured).toBe(false);
     });
 
+    it("reports unconfigured when the provider API key marker is missing", () => {
+        configurePi(ctx, settings);
+        const data = readJson(modelsFile());
+        const provider = (
+            data.providers as Record<string, Record<string, unknown>>
+        ).pollinations;
+        delete provider.apiKey;
+        writeFileSync(modelsFile(), `${JSON.stringify(data, null, 2)}\n`);
+        expect(pi.status(ctx).configured).toBe(false);
+    });
+
     it("preserves a corrupt snapshot and refuses to disable", () => {
         configurePi(ctx, settings);
         const snapshot = join(
@@ -223,6 +235,38 @@ describe("pi harness", () => {
         expect(() => disablePi(ctx)).toThrow();
         expect(snapshotFiles()).toHaveLength(1);
         expect(pi.status(ctx).configured).toBe(true);
+    });
+
+    it("keeps the snapshot when stripping edited config fails", () => {
+        configurePi(ctx, settings);
+        writeFileSync(modelsFile(), "{");
+
+        expect(() => disablePi(ctx)).toThrow();
+        expect(snapshotFiles()).toHaveLength(1);
+        expect(read(modelsFile())).toBe("{");
+        expect(existsSync(authFile())).toBe(true);
+    });
+
+    it("restores an incomplete setup snapshot without checking hashes", () => {
+        mkdirSync(agentDir(), { recursive: true });
+        const original = '{"providers":{}}\n';
+        writeFileSync(modelsFile(), original);
+        configurePi(ctx, settings);
+        const path = join(
+            home,
+            ".pollinations",
+            "harnesses",
+            snapshotFiles()[0],
+        );
+        const snapshot = readJson(path);
+        snapshot.complete = false;
+        writeFileSync(path, JSON.stringify(snapshot));
+        writeFileSync(modelsFile(), "partially written config");
+
+        expect(disablePi(ctx).outcome).toBe("restored");
+        expect(read(modelsFile())).toBe(original);
+        expect(existsSync(authFile())).toBe(false);
+        expect(snapshotFiles()).toHaveLength(0);
     });
 
     it("keeps one backup per harness home", () => {

@@ -19,6 +19,8 @@ import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import { checkQuestsForUser } from "../services/quest-checker.ts";
+import { ACCOUNT_SETUP_QUEST_GROUP } from "../services/quests/index.ts";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
@@ -90,7 +92,7 @@ async function requireOwnedKey(
     const key = await db.query.apikey.findFirst({
         where: and(
             eq(schema.apikey.id, keyId),
-            eq(schema.apikey.userId, userId),
+            eq(schema.apikey.referenceId, userId),
         ),
     });
     if (!key) {
@@ -245,6 +247,16 @@ export const apiKeysRoutes = new Hono<Env>()
                 defaultCreatedVia: createdVia,
             });
 
+            c.executionCtx.waitUntil(
+                checkQuestsForUser(c.env, user.id, [
+                    ACCOUNT_SETUP_QUEST_GROUP,
+                ]).catch((error) =>
+                    c.get("log").warn("API key quest check failed: {error}", {
+                        error,
+                    }),
+                ),
+            );
+
             return c.json(created);
         },
     )
@@ -266,7 +278,7 @@ export const apiKeysRoutes = new Hono<Env>()
             setPrivateNoStoreHeaders(c);
 
             const keys = await db.query.apikey.findMany({
-                where: eq(schema.apikey.userId, user.id),
+                where: eq(schema.apikey.referenceId, user.id),
                 orderBy: (apikey, { desc }) => [desc(apikey.createdAt)],
             });
             const parsedPermissions = keys.map((key) =>

@@ -20,7 +20,6 @@ const KV_TTL = 600; // 10 minutes — codes are single-use and short-lived
 const CODE_LENGTH = 40;
 export const DEVICE_CODE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
 
-/** What the consent page stored when the user approved the request. */
 type StoredCode = {
     key: string;
     clientId: string;

@@ -19,10 +19,7 @@ import { getRequiredSafetyFeatures } from "@/middleware/model.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { applySafetyToResponseRequest } from "@/text/responses/safety.ts";
 import type { BedrockResponse } from "@/utils/bedrock-guardrail.ts";
-import {
-    generateCacheKey as generateMediaCacheKey,
-    SAFETY_CACHE_VERSION as MEDIA_SAFETY_CACHE_VERSION,
-} from "@/utils/media-cache.ts";
+import { generateCacheKey as generateMediaCacheKey } from "@/utils/media-cache.ts";
 import {
     generateCacheKey as generateTextCacheKey,
     prepareMetadata as prepareTextCacheMetadata,
@@ -816,8 +813,8 @@ describe("safety cache keys", () => {
         ).toBe(await generateTextCacheKey(request));
 
         const url = new URL("https://gen.pollinations.ai/image/hello");
-        expect(generateMediaCacheKey(url, undefined, [])).toBe(
-            generateMediaCacheKey(url),
+        expect(await generateMediaCacheKey(url, undefined, [])).toBe(
+            await generateMediaCacheKey(url),
         );
     });
 
@@ -878,17 +875,21 @@ describe("safety cache keys", () => {
         const mediaUrl = new URL(
             "https://gen.pollinations.ai/image/hello?model=flux",
         );
-        const mediaWithoutSafety = generateMediaCacheKey(mediaUrl);
-        const mediaHarmfulContent = generateMediaCacheKey(mediaUrl, undefined, [
-            "violence",
-            "sexual",
-        ]);
+        const mediaWithoutSafety = await generateMediaCacheKey(mediaUrl);
+        const mediaHarmfulContent = await generateMediaCacheKey(
+            mediaUrl,
+            undefined,
+            ["violence", "sexual"],
+        );
         expect(mediaHarmfulContent).not.toBe(mediaWithoutSafety);
         expect(mediaHarmfulContent).not.toBe(
-            generateMediaCacheKey(mediaUrl, undefined, ["privacy"]),
+            await generateMediaCacheKey(mediaUrl, undefined, ["privacy"]),
         );
         expect(mediaHarmfulContent).toBe(
-            generateMediaCacheKey(mediaUrl, undefined, ["sexual", "violence"]),
+            await generateMediaCacheKey(mediaUrl, undefined, [
+                "sexual",
+                "violence",
+            ]),
         );
 
         expect(withSafety).not.toBe(noSafety);
@@ -926,38 +927,36 @@ describe("safety cache keys", () => {
         expect(withQueryOverride).not.toBe(withHeaderSafety);
     });
 
-    it("separates media cache keys when safe is active", () => {
-        const withSafety = generateMediaCacheKey(
+    it("separates media cache keys when safe is active", async () => {
+        const withSafety = await generateMediaCacheKey(
             new URL("https://gen.pollinations.ai/image/hello?safe=true"),
         );
-        const withoutSafety = generateMediaCacheKey(
+        const withoutSafety = await generateMediaCacheKey(
             new URL("https://gen.pollinations.ai/image/hello?safe=false"),
         );
 
         expect(withSafety).not.toBe(withoutSafety);
-        expect(withSafety).toContain(`__safety_${MEDIA_SAFETY_CACHE_VERSION}`);
+        expect(withSafety).toMatch(/^[a-f0-9]{64}$/);
     });
 
-    it("separates media cache keys when safe is provided by header", () => {
-        const withoutHeaderSafety = generateMediaCacheKey(
+    it("separates media cache keys when safe is provided by header", async () => {
+        const withoutHeaderSafety = await generateMediaCacheKey(
             new URL("https://gen.pollinations.ai/image/hello"),
         );
-        const withHeaderSafety = generateMediaCacheKey(
+        const withHeaderSafety = await generateMediaCacheKey(
             new URL("https://gen.pollinations.ai/image/hello"),
             "privacy",
         );
-        const withQueryOverride = generateMediaCacheKey(
+        const withQueryOverride = await generateMediaCacheKey(
             new URL("https://gen.pollinations.ai/image/hello?safe=false"),
             "privacy",
         );
 
         expect(withHeaderSafety).not.toBe(withoutHeaderSafety);
-        expect(withHeaderSafety).toContain(
-            `__safety_${MEDIA_SAFETY_CACHE_VERSION}`,
-        );
+        expect(withHeaderSafety).toMatch(/^[a-f0-9]{64}$/);
         expect(withQueryOverride).not.toBe(withHeaderSafety);
         expect(withQueryOverride).toBe(
-            generateMediaCacheKey(
+            await generateMediaCacheKey(
                 new URL("https://gen.pollinations.ai/image/hello?safe=false"),
             ),
         );

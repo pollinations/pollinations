@@ -170,6 +170,13 @@ async function inferenceportFetch<T>(
         );
     }
 
+    // A failed status check does not mean the generation failed. Never resubmit.
+    if (method === "GET" && response.status >= 500) {
+        await response.body?.cancel();
+        await sleep(Math.min(POLL_INTERVAL_MS, remainingTime(deadline)));
+        return inferenceportFetch<T>(token, method, path, deadline);
+    }
+
     if (!response.ok) {
         const text = await response.text().catch(() => "<no body>");
         throw new InferenceportError(

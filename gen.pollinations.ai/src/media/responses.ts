@@ -1,3 +1,4 @@
+import type { SafeValue } from "@shared/schemas/safety.ts";
 import { every } from "hono/combine";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -16,32 +17,51 @@ import {
 } from "@/text/responses/chatResponse.ts";
 import { generationAccess } from "@/utils/generation-access.ts";
 import { getGenerationModelRegistry } from "../model-registry.ts";
+import { prepareImageEditRequest } from "../routes/images.ts";
 import { mediaPromptRoute } from "./prompt-route.ts";
 import { createMediaResponse, mediaResponseStream } from "./response-output.ts";
 
 type MediaProtocol = "responses" | "chat/completions";
 
+type MediaInput = { prompt: string; images: string[] };
+
+/** Chat `image_url` and Responses `input_image` parts, as URLs or data URIs. */
+function imagePart(part: { type?: unknown; image_url?: unknown }) {
+    if (part.type !== "image_url" && part.type !== "input_image") return;
+    const url =
+        typeof part.image_url === "string"
+            ? part.image_url
+            : (part.image_url as { url?: unknown } | undefined)?.url;
+    return typeof url === "string" ? url : undefined;
+}
+
 /** Earlier conversation is context for text models, not a media prompt. */
-export function mediaPrompt(input: unknown): string {
+export function mediaPrompt(input: unknown): MediaInput {
     let content: unknown = input;
+    const images: string[] = [];
     if (Array.isArray(input)) {
         content = input.findLast((item) => item?.role === "user")?.content;
     }
     if (Array.isArray(content)) {
-        if (
-            content.some(
-                (part) =>
-                    !part ||
-                    !["text", "input_text"].includes(part.type) ||
-                    typeof part.text !== "string",
-            )
-        ) {
-            throw new HTTPException(400, {
-                message:
-                    "Media generation accepts text only; use the native media endpoints for attachments.",
-            });
+        const texts: string[] = [];
+        for (const part of content) {
+            const image = part && imagePart(part);
+            if (image) {
+                images.push(image);
+            } else if (
+                part &&
+                ["text", "input_text"].includes(part.type) &&
+                typeof part.text === "string"
+            ) {
+                texts.push(part.text);
+            } else {
+                throw new HTTPException(400, {
+                    message:
+                        "Media generation accepts text and image parts only; use the native media endpoints for other attachments.",
+                });
+            }
         }
-        content = content.map((part) => part.text).join("\n");
+        content = texts.join("\n");
     }
     if (typeof content !== "string" || !content.trim()) {
         throw new HTTPException(400, {
@@ -59,7 +79,7 @@ export function mediaPrompt(input: unknown): string {
             message: "Media prompt cannot be only '.' or '..'.",
         });
     }
-    return content;
+    return { prompt: content, images };
 }
 
 /** Generate through the native durable pipeline, then only change presentation. */
@@ -86,20 +106,43 @@ export function mediaResponses(protocol: MediaProtocol) {
             }),
             track(entry.eventType),
             createMiddleware<Env>(async (ctx, proceed) => {
-                const prompt = mediaPrompt(
+                const { prompt, images } = mediaPrompt(
                     protocol === "responses" ? body.input : body.messages,
                 );
-                const url = new URL(
-                    `${route}${encodeURIComponent(prompt)}`,
-                    ctx.req.url,
-                );
-                url.searchParams.set("model", entry.id);
-                if (body.safe !== undefined)
-                    url.searchParams.set("safe", String(body.safe));
-                ctx.set("generationRequestUrl", url);
-                ctx.set("generationRequestMethod", "GET");
                 // The provider is not a text stream; only the final wrapper is.
                 ctx.var.track.streamRequested = false;
+                if (images.length === 0) {
+                    const url = new URL(
+                        `${route}${encodeURIComponent(prompt)}`,
+                        ctx.req.url,
+                    );
+                    url.searchParams.set("model", entry.id);
+                    if (body.safe !== undefined)
+                        url.searchParams.set("safe", String(body.safe));
+                    ctx.set("generationRequestUrl", url);
+                    ctx.set("generationRequestMethod", "GET");
+                    return proceed();
+                }
+                // The edits executor runs image and video (start frame)
+                // models; 3D has its own handler.
+                if (
+                    route !== "/image/" ||
+                    !entry.definition.inputModalities?.includes("image")
+                )
+                    throw new HTTPException(400, {
+                        message: `Model "${entry.id}" does not accept image input on this endpoint.`,
+                    });
+                await prepareImageEditRequest(ctx, {
+                    prompt,
+                    imageUrls: images,
+                    safe: body.safe as SafeValue,
+                    extra: {},
+                });
+                ctx.set(
+                    "generationRequestUrl",
+                    new URL("/v1/images/edits", ctx.req.url),
+                );
+                ctx.set("generationRequestMethod", "POST");
                 await proceed();
             }),
             cache,

@@ -628,6 +628,18 @@ export const portkeyConfig: PortkeyConfigMap = {
     "sonar-pro": () => createPerplexityModelConfig({ model: "sonar-pro" }),
     "sonar-reasoning-pro": () =>
         createPerplexityModelConfig({ model: "sonar-reasoning-pro" }),
+    "perplexity/sonar": createPinnedOpenRouterConfig(
+        "perplexity/sonar",
+        "perplexity",
+    ),
+    "perplexity/sonar-pro": createPinnedOpenRouterConfig(
+        "perplexity/sonar-pro",
+        "perplexity",
+    ),
+    "perplexity/sonar-reasoning-pro": createPinnedOpenRouterConfig(
+        "perplexity/sonar-reasoning-pro",
+        "perplexity",
+    ),
 
     "accounts/fireworks/models/glm-5p2": () =>
         createFireworksModelConfig({

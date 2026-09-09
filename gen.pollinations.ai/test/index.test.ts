@@ -2521,7 +2521,7 @@ fixtureTest(
         await expect(response.json()).resolves.toMatchObject({
             error: {
                 message:
-                    'Model "elevenlabs" cannot be used on /v1/audio/transcriptions. Supported endpoints: /audio/{text}, /v1/audio/speech, /v1/audio/speech/with-timestamps.',
+                    'Model "elevenlabs" cannot be used on /v1/audio/transcriptions. Supported endpoints: /audio/{text}, /v1/audio/speech, /v1/audio/speech/with-timestamps, /v1/responses, /v1/chat/completions.',
             },
         });
     },

@@ -41,7 +41,11 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
         label: config.label,
         async getKey(c) {
             const variables = c.var as typeof c.var & Partial<ModelVariables>;
-            const cacheUrl = c.var.generationCacheUrl ?? new URL(c.req.url);
+            const cacheUrl = new URL(
+                c.var.generationCacheUrl ??
+                    c.var.generationRequestUrl ??
+                    c.req.url,
+            );
             if (!c.var.generationCacheUrl && c.var.generationCacheBody) {
                 cacheUrl.searchParams.set(
                     "__request_body",

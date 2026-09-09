@@ -5639,16 +5639,18 @@ fixtureTest.each(["video", "image", "v1/images/generations"])(
                 expect(body).toEqual(
                     isProbe
                         ? { prompt: body.prompt, duration: 5 }
-                        : {
-                              prompt: "green sprout",
-                              ...(route !== "v1/images/generations"
-                                  ? {
-                                        reference_images: [
-                                            "https://media.example.com/style.jpg",
-                                        ],
-                                    }
-                                  : {}),
-                          },
+                        : body.prompt === "media video prompt"
+                          ? { prompt: body.prompt }
+                          : {
+                                prompt: "green sprout",
+                                ...(route !== "v1/images/generations"
+                                    ? {
+                                          reference_images: [
+                                              "https://media.example.com/style.jpg",
+                                          ],
+                                      }
+                                    : {}),
+                            },
                 );
                 return Response.json({
                     data: [{ b64_json: TEST_MP4_BASE64 }],
@@ -5895,7 +5897,59 @@ fixtureTest.each(["video", "image", "v1/images/generations"])(
         expect(
             openaiCatalog.data.find((model) => model.id === registered.modelId)
                 ?.supported_endpoints,
-        ).toEqual(communityEndpointSupportedEndpoints("video", ["text"]));
+        ).toEqual([
+            ...communityEndpointSupportedEndpoints("video", ["text"]),
+            "/v1/responses",
+            "/v1/chat/completions",
+        ]);
+
+        // Text protocols leave duration to the provider and only wrap its URL.
+        let mediaLink: string | null = null;
+        for (const protocol of ["responses", "chat/completions"]) {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(`https://gen.pollinations.ai/v1/${protocol}`, {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${caller.key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: registered.modelId,
+                        ...(protocol === "responses"
+                            ? { input: "media video prompt" }
+                            : {
+                                  messages: [
+                                      {
+                                          role: "user",
+                                          content: "media video prompt",
+                                      },
+                                  ],
+                                  stream: true,
+                              }),
+                    }),
+                }),
+                coordinatedEnv,
+                ctx,
+            );
+            expect(response.status, await response.clone().text()).toBe(200);
+            expect(await response.text()).toContain("[Video](https://media.");
+            if (mediaLink) expect(response.headers.get("Link")).toBe(mediaLink);
+            mediaLink = response.headers.get("Link");
+            await waitOnExecutionContext(ctx);
+        }
+        expect(generationCalls).toBe(2);
+        expect(
+            balanceAfter.tierBalance -
+                (await getUserBalance(db, caller.userId)).tierBalance,
+        ).toBeCloseTo(0.36, 10);
+        expect(
+            ingestedEvents.filter(
+                (event) =>
+                    event.modelUsed === registered.modelId &&
+                    event.isBilledUsage === true,
+            ),
+        ).toHaveLength(2);
 
         const excessivePriceResponse = await fetchEnterApi(
             enterApi,

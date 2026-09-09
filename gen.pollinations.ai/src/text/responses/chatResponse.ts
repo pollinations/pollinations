@@ -184,6 +184,7 @@ export function responsesToChatCompletion(
     value: unknown,
     requestedModel: string,
     requestUrl: URL,
+    options: { requireUsage?: boolean } = {},
 ): ChatCompletion {
     if (!value || typeof value !== "object") {
         throw serviceError(
@@ -209,8 +210,8 @@ export function responsesToChatCompletion(
             data,
         );
     }
-    const usage = ResponseUsageSchema.safeParse(data.usage);
-    if (!usage.success) {
+    const usage = ResponseUsageSchema.nullish().safeParse(data.usage);
+    if (!usage.success || (options.requireUsage !== false && !usage.data)) {
         throw serviceError(
             "Responses provider returned an invalid response or omitted usage",
             requestUrl,
@@ -230,7 +231,7 @@ export function responsesToChatCompletion(
                     finish_reason: finishReason(data),
                 },
             ],
-            usage: chatUsage(usage.data),
+            ...(usage.data ? { usage: chatUsage(usage.data) } : {}),
         },
         requestUrl,
     );
@@ -258,6 +259,7 @@ function withUpstreamRequestUrl(
 export function responsesToChatStream(
     source: ReadableStream<Uint8Array<ArrayBuffer>>,
     requestedModel: string,
+    options: { requireUsage?: boolean } = {},
 ): ReadableStream<Uint8Array<ArrayBuffer>> {
     let id = `chatcmpl-${crypto.randomUUID()}`;
     let created = Math.floor(Date.now() / 1000);
@@ -621,8 +623,14 @@ export function responsesToChatStream(
                     }
 
                     const response = (payload.response ?? {}) as ResponsesData;
-                    const usage = ResponseUsageSchema.safeParse(response.usage);
-                    if (!usage.success) {
+                    const usage = ResponseUsageSchema.nullish().safeParse(
+                        response.usage,
+                    );
+                    if (
+                        !payload.response ||
+                        !usage.success ||
+                        (options.requireUsage !== false && !usage.data)
+                    ) {
                         fail(
                             controller,
                             "Responses provider omitted valid terminal usage",
@@ -697,16 +705,17 @@ export function responsesToChatStream(
                     }
                     ensureRole(controller);
                     controller.enqueue(chunk({}, finishReason(response)));
-                    controller.enqueue(
-                        dataEvent({
-                            id,
-                            object: "chat.completion.chunk",
-                            created,
-                            model,
-                            choices: [],
-                            usage: chatUsage(usage.data),
-                        }),
-                    );
+                    if (usage.data)
+                        controller.enqueue(
+                            dataEvent({
+                                id,
+                                object: "chat.completion.chunk",
+                                created,
+                                model,
+                                choices: [],
+                                usage: chatUsage(usage.data),
+                            }),
+                        );
                     controller.enqueue(dataEvent("[DONE]"));
                     terminal = true;
                 },

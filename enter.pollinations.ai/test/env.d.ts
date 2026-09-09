@@ -4,3 +4,8 @@ declare module "cloudflare:test" {
         TEST_MIGRATIONS: D1Migration[];
     }
 }
+
+declare module "*?raw" {
+    const content: string;
+    export default content;
+}

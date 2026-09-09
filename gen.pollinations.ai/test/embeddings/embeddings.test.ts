@@ -878,7 +878,8 @@ describe("POST /v1/embeddings", () => {
         expect(billed).toHaveLength(1);
         expect(billed[0]).toMatchObject({
             modelRequested: TEST_COHERE_MODEL,
-            modelUsed: "cohere/embed-v4.0:azure:sweden",
+            modelUsed: TEST_COHERE_MODEL,
+            executionRouteId: "cohere/embed-v4.0:azure:sweden",
             totalCost:
                 modality === "image"
                     ? (4 * 0.47) / 1_000_000

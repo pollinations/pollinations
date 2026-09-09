@@ -27,6 +27,56 @@ Any other value (e.g. `tru`, `yes`, `2`) returns **400 Bad Request**.
 
 Example: `GET /models?community=false`
 
+### Reliability filtering and health metadata
+
+All model discovery endpoints also accept an optional `reliability` query
+parameter:
+
+| Parameter | Values | Behaviour |
+|-----------|--------|-----------|
+| *(omitted)* | | Returns all models (default, backward-compatible) |
+| `reliability=reliable` | `reliable` | Keeps only models with a high recent success rate |
+| `reliability=all` | `all` | Explicit default, same as omitting |
+
+Every entry in `/v1/models`, `/v1/models/:model`, and the rich lists
+carries two extra fields:
+
+- `reliability`: `reliable`, `unreliable`, or `unknown`. A model is
+  `reliable` when at least 20 requests were observed in the last 60 minutes
+  and at least 95% succeeded. Requests rescued by a fallback count as
+  successes; requests the caller broke (4xx) are excluded. No usable data
+  means `unknown` — experimental status is tracked separately and never
+  affects this verdict.
+- `health`: `{success_rate, sample_count, window_minutes, last_request_at}`,
+  or `null` when unknown.
+
+Examples:
+
+```bash
+# Official, reliable models only
+curl "https://gen.pollinations.ai/v1/models?community=false&reliability=reliable"
+
+# Same via headers, for clients that append /models to a base URL
+# and cannot add query strings (Open WebUI, LibreChat, Cline)
+curl https://gen.pollinations.ai/v1/models \
+  -H "X-Model-Source: official" \
+  -H "X-Model-Reliability: reliable"
+```
+
+```python
+import requests
+
+models = requests.get(
+    "https://gen.pollinations.ai/v1/models",
+    params={"reliability": "reliable"},
+).json()["data"]
+print([(m["id"], m["reliability"], m["health"]) for m in models])
+```
+
+Query parameters win when both a query param and its header are present.
+Filtering never changes generation permissions: hidden, permission-filtered,
+and unaffordable models stay hidden exactly as before.
+
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.
 Modalities, video frame controls, voices, and context length remain separate

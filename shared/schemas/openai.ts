@@ -350,7 +350,15 @@ export const CreateChatCompletionRequestSchema = z
                 "Controls Perplexity Sonar search context. Pollinations currently supports low and high.",
             )
             .optional(),
-        temperature: z.number().min(0).max(2).nullable().optional(),
+        temperature: z
+            .number()
+            .min(0)
+            .max(2)
+            .nullable()
+            .optional()
+            .describe(
+                "Sampling controls are ignored for model families that do not consistently support them, regardless of reasoning mode.",
+            ),
         top_p: z.number().min(0).max(1).nullable().optional(),
         tools: z.array(ChatCompletionToolSchema).optional(),
         tool_choice: ChatCompletionToolChoiceOptionSchema.optional(),

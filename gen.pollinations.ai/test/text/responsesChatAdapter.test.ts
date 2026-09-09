@@ -921,10 +921,8 @@ describe("Chat Completions over Responses", () => {
     it.each([
         ["n", { n: 2 }],
         ["stop", { stop: ["END"] }],
-        ["seed", { seed: 42 }],
         ["logit_bias", { logit_bias: { "1": 1 } }],
         ["logprobs", { logprobs: true }],
-        ["repetition penalty", { repetition_penalty: 1.1 }],
         ["legacy functions", { functions: [{ name: "old" }] }],
         ["stored state", { store: true }],
         ["previous response", { previous_response_id: "resp_previous" }],
@@ -947,6 +945,27 @@ describe("Chat Completions over Responses", () => {
             errorCode: "unsupported_parameter",
         });
         expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("ignores seed and repetition_penalty without changing mapped controls", () => {
+        const options = {
+            model: "provider-model",
+            seed: 42,
+            repetition_penalty: 1.1,
+            temperature: 0.7,
+            max_tokens: 128,
+        };
+        const request = chatToResponsesRequest(
+            [{ role: "user", content: "Hi" }],
+            options,
+        );
+        expect(request).not.toHaveProperty("seed");
+        expect(request).not.toHaveProperty("repetition_penalty");
+        expect(request).toMatchObject({
+            temperature: 0.7,
+            max_output_tokens: 128,
+        });
+        expect(options.seed).toBe(42);
     });
 
     it("accepts named messages and drops the unsupported name field", () => {

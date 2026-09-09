@@ -52,6 +52,18 @@ export function createChatStreamUsageValidator() {
                 error?: unknown;
             };
             if (error && typeof error === "object") errorSeen = true;
+            // Some providers append cost/cache metadata after their token totals.
+            // It is not a new token count; billing also uses the last complete usage.
+            if (
+                usage &&
+                typeof usage === "object" &&
+                !Array.isArray(usage) &&
+                !["prompt_tokens", "completion_tokens", "total_tokens"].some(
+                    (key) => key in usage,
+                )
+            ) {
+                return;
+            }
             // Providers may send provisional counts; only the last update is final.
             if (usage !== null && usage !== undefined) lastUsage = usage;
         },

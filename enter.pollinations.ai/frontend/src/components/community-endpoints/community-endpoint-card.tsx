@@ -192,7 +192,14 @@ export function CommunityEndpointCard({
                 <Link
                     to="/activity"
                     search={{
-                        ...currentPeriod(),
+                        usageGranularity: "day",
+                        usagePeriod: currentPeriod().period,
+                        usageBucket: undefined,
+                        usageAnchor: undefined,
+                        earningsGranularity: "day",
+                        earningsPeriod: currentPeriod().period,
+                        earningsBucket: undefined,
+                        earningsAnchor: undefined,
                         earningsModels: [endpoint.modelId],
                         usageMetric: undefined,
                         usageKeys: undefined,

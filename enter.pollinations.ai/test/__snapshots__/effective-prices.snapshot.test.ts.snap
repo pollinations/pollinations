@@ -544,6 +544,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000009,
     },
   },
+  "cohere/embed-v4.0:azure:sweden": {
+    "cost": {
+      "promptImageTokens": 0.00000047,
+      "promptTextTokens": 0.00000012,
+    },
+    "price": {
+      "promptImageTokens": 0.0000003525,
+      "promptTextTokens": 0.00000009,
+    },
+  },
   "deepseek/deepseek-v4-flash": {
     "cost": {
       "completionTextTokens": 0.00000066,
@@ -1105,6 +1115,21 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "price": {
       "completionAudioSeconds": 0.02,
       "completionVideoSeconds": 0.08,
+    },
+  },
+  "google/veo-3.1-fast:replicate": {
+    "cost": {
+      "completionAudioSeconds": 0.05,
+      "completionVideoSeconds": 0.1,
+    },
+    "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.1,
+      },
+    },
+    "price": {
+      "completionAudioSeconds": 0.05,
+      "completionVideoSeconds": 0.1,
     },
   },
   "hexgrad/kokoro-82m": {
@@ -1760,6 +1785,28 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000075,
     },
   },
+  "openai/gpt-6-astra:azure:datazone": {
+    "cost": {
+      "completionTextTokens": 0.000055,
+      "promptCacheWriteTokens": 0.00001375,
+      "promptCachedTokens": 0.0000011,
+      "promptTextTokens": 0.000011,
+    },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.0000825,
+        "promptCacheWriteTokens": 0.0000275,
+        "promptCachedTokens": 0.0000022,
+        "promptTextTokens": 0.000022,
+      },
+    },
+    "price": {
+      "completionTextTokens": 0.00004125,
+      "promptCacheWriteTokens": 0.0000103125,
+      "promptCachedTokens": 0.000000825,
+      "promptTextTokens": 0.00000825,
+    },
+  },
   "openai/gpt-audio-1.5": {
     "cost": {
       "completionAudioTokens": 0.000064,
@@ -1860,6 +1907,34 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCachedTokens": 0.0000009375,
       "promptImageTokens": 0.000006,
       "promptTextTokens": 0.00000375,
+    },
+  },
+  "openai/gpt-image-2.5-flare": {
+    "cost": {
+      "completionImageTokens": 0.00003,
+      "promptCachedTokens": 0.00000125,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
+    },
+    "price": {
+      "completionImageTokens": 0.00003,
+      "promptCachedTokens": 0.00000125,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
+    },
+  },
+  "openai/gpt-image-2.5-sunburst": {
+    "cost": {
+      "completionImageTokens": 0.00003,
+      "promptCachedTokens": 0.00000125,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
+    },
+    "price": {
+      "completionImageTokens": 0.00003,
+      "promptCachedTokens": 0.00000125,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
     },
   },
   "openai/gpt-image-2:openai": {
@@ -2664,6 +2739,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000015,
     },
   },
+  "x-ai/grok-4.6:azure:sweden": {
+    "cost": {
+      "completionTextTokens": 0.000006,
+      "promptCachedTokens": 0.0000005,
+      "promptImageTokens": 0.000002,
+      "promptTextTokens": 0.000002,
+    },
+    "price": {
+      "completionTextTokens": 0.0000045,
+      "promptCachedTokens": 0.000000375,
+      "promptImageTokens": 0.0000015,
+      "promptTextTokens": 0.0000015,
+    },
+  },
   "x-ai/grok-imagine-image": {
     "cost": {
       "completionImageTokens": 0.02,
@@ -2754,7 +2843,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0.01,
     },
   },
-  "x-ai/grok-imagine-video:fal": {
+  "x-ai/grok-imagine-video:openrouter": {
     "cost": {
       "completionVideoSeconds": 0.07,
       "promptImageTokens": 0.002,

@@ -56,6 +56,8 @@ export type CommunityEndpointTestResult = {
     imagePricing?: CommunityEndpointImagePricing;
     /** Image tests only: input types detected by the generation/edit probes. */
     inputModalities?: ModelInputModality[];
+    /** Image tests only: editing failed, but generation remains usable. */
+    imageEditError?: string;
 };
 
 function authorizationHeaders(bearerToken: string): HeadersInit {
@@ -305,14 +307,20 @@ export async function testCommunityImageEndpoint({
     if (!imageBytes || !imageMimeType) {
         throw new Error("Endpoint did not return a supported image");
     }
-    const supportsImageInput = await testCommunityImageEdits(
-        { baseUrl, bearerToken, model },
-        imageBytes,
-        imageMimeType,
-    );
-    const inputModalities: ModelInputModality[] = supportsImageInput
-        ? ["text", "image"]
-        : ["text"];
+    let imageEditError: string | undefined;
+    try {
+        await testCommunityImageEdits(
+            { baseUrl, bearerToken, model },
+            imageBytes,
+            imageMimeType,
+        );
+    } catch (error) {
+        imageEditError =
+            error instanceof Error ? error.message : "Image edit test failed";
+    }
+    const inputModalities: ModelInputModality[] = imageEditError
+        ? ["text"]
+        : ["text", "image"];
 
     // Endpoints that return valid OpenAI image token usage are billed
     // per token ("tokens"); everything else falls back to a fixed price
@@ -324,6 +332,7 @@ export async function testCommunityImageEndpoint({
             billableUsage: openaiImageUsageToUsage(openaiUsage),
             imagePricing: "tokens",
             inputModalities,
+            imageEditError,
         };
     }
     return {
@@ -331,6 +340,7 @@ export async function testCommunityImageEndpoint({
         billableUsage: { completionImageTokens: 1 },
         imagePricing: "request",
         inputModalities,
+        imageEditError,
     };
 }
 
@@ -565,7 +575,7 @@ async function testCommunityImageEdits(
     { baseUrl, bearerToken, model }: ModelEndpointTestInput,
     imageBytes: Uint8Array,
     imageMimeType: string,
-): Promise<boolean> {
+): Promise<void> {
     const formData = new FormData();
     formData.append("model", model);
     formData.append("prompt", "Add a small blue dot to the image.");
@@ -578,15 +588,13 @@ async function testCommunityImageEdits(
         `source.${imageMimeType.split("/")[1] ?? "png"}`,
     );
 
-    try {
-        const body = await fetchJson(communityImageEditsUrl(baseUrl), {
-            method: "POST",
-            headers: authorizationHeaders(bearerToken),
-            body: formData,
-        });
-        const editedImage = await firstCommunityImageBytes(body, baseUrl);
-        return Boolean(editedImage && detectImageMimeType(editedImage));
-    } catch {
-        return false;
+    const body = await fetchJson(communityImageEditsUrl(baseUrl), {
+        method: "POST",
+        headers: authorizationHeaders(bearerToken),
+        body: formData,
+    });
+    const editedImage = await firstCommunityImageBytes(body, baseUrl);
+    if (!editedImage || !detectImageMimeType(editedImage)) {
+        throw new Error("Editing endpoint did not return a supported image");
     }
 }

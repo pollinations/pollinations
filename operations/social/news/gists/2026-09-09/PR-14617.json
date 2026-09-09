@@ -1,0 +1,34 @@
+{
+  "pr_number": 14617,
+  "title": "fix: bill community videos from reported usage",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14617",
+  "merged_at": "2026-09-09T03:25:03Z",
+  "labels": [],
+  "pr_body_excerpt": "## Changes\n- Allow omitted video duration when the provider reports generated seconds in `usage.duration`.\n- Bill reported duration first; fall back to requested duration only when usage is missing. Invalid reported usage or neither duration returns an error.\n- Share the reader between registration and generation; update publisher and Scalar docs.\n\n## Verification\n187 focused tests pass; Gen and Enter typechecks pass. Coverage includes reported-duration priority, requested-duration fallback, all three media routes, failures without charges, and disconnect/rejoin/cache with one billed execution.\n\n## Status\nDirectly tested `NamanSoni78/Seedance-2.5` without duration: HTTP 200 with a video URL but no usage. Existing calls with duration remain supported. The publisher still needs to report usage for duration-less calls from the media-to-Responses/Chat adapter. Draft pending that end-to-end check. No catalog pricing or routing changes.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Videos bill by the seconds",
+    "blurb": "Community video calls can now let the finished clip report its own runtime. The meter listens to what was actually generated, which is a surprisingly useful skill for a meter.",
+    "summary": "Community video billing now prioritizes provider-reported `usage.duration`, allowing requests to omit a duration when the provider returns generated seconds while preserving requested-duration fallback for existing calls.",
+    "impact": "Video creators can use duration-less community video requests with providers that report `usage.duration`, and billed executions use the generated runtime first; invalid or absent duration data returns a clear error without charging.",
+    "keywords": [
+      "community-video",
+      "billing",
+      "usage.duration",
+      "media",
+      "OpenAI-compatible",
+      "providers"
+    ],
+    "visual_concept": "Depict a cozy community-video workstation where a retro monitor plays a tiny pixel film reel and reports its runtime on a receipt-like usage meter. Polli, wearing a little director beret, watches the meter carefully as a code-plant grows beside it, representing the provider reporting the actual generated seconds before billing.",
+    "image_prompt": "A cozy pixel art garden-studio where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears a tiny director beret and checks a retro video monitor beside a receipt meter reading \"USAGE: 12s\"; a code-plant and small film reel sprout from a prominent lime green (#ecf874) flower pot. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) details, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14617.jpg",
+    "prompt": "A cozy pixel art garden-studio where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears a tiny director beret and checks a retro video monitor beside a receipt meter reading \"USAGE: 12s\"; a code-plant and small film reel sprout from a prominent lime green (#ecf874) flower pot. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) details, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-09T03:26:05.116512+00:00"
+}

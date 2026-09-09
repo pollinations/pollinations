@@ -1,0 +1,33 @@
+{
+  "pr_number": 14455,
+  "title": "fix: allow 127.0.0.1 redirects for local website auth",
+  "author": "afanasevmylife",
+  "url": "https://github.com/pollinations/pollinations/pull/14455",
+  "merged_at": "2026-09-09T06:16:24Z",
+  "labels": [],
+  "pr_body_excerpt": "- Documents the website key’s registered `localhost` and `127.0.0.1` redirect addresses and existing any-port behavior.\n- Keeps exact hostname matching unchanged; the live registration fix was applied separately.\n- Removes the broader OAuth matcher change and its associated test. Final diff: two comment lines in one file.\n\nFixes #14361",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Loopback, properly labeled",
+    "blurb": "The website auth map now labels its two local garden gates: localhost and 127.0.0.1. Same paths, fewer future archaeology expeditions.",
+    "summary": "Documented that website keys register both localhost and 127.0.0.1 redirect addresses with existing any-port support, while exact hostname matching remains unchanged.",
+    "impact": "Developers can now see the intended local OAuth redirect behavior directly in the website API configuration without changing production matching rules.",
+    "keywords": [
+      "oauth",
+      "authentication",
+      "redirects",
+      "localhost",
+      "documentation"
+    ],
+    "visual_concept": "A cozy local-development garden shed with two clearly labeled loopback gates, one reading “localhost” and one reading “127.0.0.1,” both leading toward a small retro login terminal. Polli, wearing tiny developer glasses and holding a clipboard, checks the labels while code-vines and pixel flowers grow around the shed.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny developer glasses, checking two small garden gates labeled in simple pixel font “localhost” and “127.0.0.1” beside a retro auth terminal; code-plants and flowers curl around the gates, with lime green (#ecf874) prominent in the warm cream, mint, and lavender scene. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14455.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny developer glasses, checking two small garden gates labeled in simple pixel font “localhost” and “127.0.0.1” beside a retro auth terminal; code-plants and flowers curl around the gates, with lime green (#ecf874) prominent in the warm cream, mint, and lavender scene. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-09T06:17:28.444591+00:00"
+}

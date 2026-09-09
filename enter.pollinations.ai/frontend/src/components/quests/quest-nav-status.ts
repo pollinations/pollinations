@@ -20,5 +20,5 @@ export function questNavLabel(
     const available = quests.filter(
         (quest) => quest.state === "available" && !completed.has(quest.id),
     ).length;
-    return available > 0 ? `${available} new` : null;
+    return available > 0 ? `${available} new!` : null;
 }

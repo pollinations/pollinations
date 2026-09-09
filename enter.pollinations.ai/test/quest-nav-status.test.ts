@@ -28,7 +28,7 @@ describe("questNavLabel", () => {
                 ],
                 [reward("done", "2026-09-09T00:00:00Z")],
             ),
-        ).toBe("2 new");
+        ).toBe("2 new!");
     });
 
     it("hides the badge when nothing needs attention", () => {

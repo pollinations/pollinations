@@ -55,12 +55,13 @@ const MODEL3D_BASE_SERVICES = {
         resolutions: ["low", "medium", "high"],
     },
     "nvidia/asset-harvester": {
-        aliases: ["asset-harvester"],
+        aliases: [],
         publisher: "NVIDIA",
         provider: "inferenceport",
         category: "3d",
         addedDate: new Date("2026-09-07").getTime(),
         priceMultiplier: 1,
+        paidOnly: true,
         flatRate: true,
         cost: {
             completionImageTokens: 0.07,

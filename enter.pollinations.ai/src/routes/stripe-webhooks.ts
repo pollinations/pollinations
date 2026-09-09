@@ -6,10 +6,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import type Stripe from "stripe";
 import type { Env } from "../env.ts";
-import {
-    recordGiftReward,
-    refundGiftReward,
-} from "../services/gift-rewards.ts";
+import { recordGiftReward } from "../services/gift-rewards.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 import {
     creditAutoTopUpInvoice,
@@ -812,14 +809,6 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "refund.updated":
             case "refund.failed": {
                 const refund = event.data.object as Stripe.Refund;
-                if (refund.status === "succeeded" && refund.payment_intent) {
-                    await refundGiftReward(
-                        c.env.DB,
-                        typeof refund.payment_intent === "string"
-                            ? refund.payment_intent
-                            : refund.payment_intent.id,
-                    );
-                }
                 console.log(`Refund ${event.type}: ${refund.id}`);
                 c.executionCtx.waitUntil(
                     sendStripeEventToTinybird(c.env, {

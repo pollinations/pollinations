@@ -27,7 +27,7 @@ export interface RecordRewardInput {
      */
     idempotencyKey: string;
     userId: string | null;
-    /** Only bearer-code gifts may be recorded without a recipient. */
+    /** Gifts use the code hash as their ID and can start without a recipient. */
     giftCodeHash?: string;
     amount: number;
     /** Which balance bucket to credit on claim. */
@@ -87,10 +87,9 @@ export async function recordRewards(
             throw new Error("Unassigned rewards require a gift code");
         }
         return {
-            id: crypto.randomUUID(),
+            id: input.giftCodeHash ?? crypto.randomUUID(),
             idempotencyKey: input.idempotencyKey,
             userId: input.userId,
-            giftCodeHash: input.giftCodeHash,
             questId: input.questId ?? null,
             title: input.title,
             url: input.url ?? null,
@@ -146,14 +145,13 @@ export async function claimReward(
 ): Promise<ClaimRewardResult> {
     const eligible = and(
         eq(rewards.id, rewardId),
-        isNull(rewards.canceledAt),
         or(
             eq(rewards.userId, userId),
             giftCodeHash
                 ? and(
                       isNull(rewards.userId),
                       isNull(rewards.claimedAt),
-                      eq(rewards.giftCodeHash, giftCodeHash),
+                      eq(rewards.id, giftCodeHash),
                   )
                 : undefined,
         ),

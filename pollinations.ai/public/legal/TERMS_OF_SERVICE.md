@@ -75,7 +75,7 @@ Fees are per plan/order/invoice; currency is by default USD. Pollen purchases, i
 
 **Pollen.** "Pollen" is an in-service credit used only to pay for Pollinations API usage. Pollen is not legal tender, e-money, cryptocurrency, a deposit, a bank account balance, or stored value outside the Service. Once credited to a wallet, Pollen is not transferable, withdrawable, or redeemable for cash except where required by law or expressly approved by us as a refund under these Terms.
 
-**Gift codes.** Signed-in users can buy a single-use Pollen gift code and share it before redemption. The code is shown after payment and on the Stripe invoice. Anyone with the code can sign in and claim its full value as Paid Pollen; it cannot be moved to another wallet after claiming. Unclaimed codes do not expire; claimed Pollen follows the wallet-inactivity rule below. A successful refund cancels the code and reverses any Pollen already claimed, which can leave a negative balance if it has been spent. Keep gift codes private.
+**Gift codes.** Signed-in users can buy a single-use Pollen gift code and share it before redemption. The code is shown after payment and on the Stripe invoice. Anyone with the code can sign in and claim its full value as Paid Pollen; it cannot be moved to another wallet after claiming. Unclaimed codes do not expire; claimed Pollen follows the wallet-inactivity rule below. Keep gift codes private.
 
 **Balances.** Your wallet may include:
 
@@ -96,7 +96,7 @@ Developer earnings are credited as Pollen to the developer wallet in the same ba
 
 **Payments.** Payments are processed by Stripe Payments Europe, Limited. Stripe sends purchase invoices by email.
 
-**No late payments.** All Pollen is prepaid: there are no invoices, due dates, or late fees. A balance can go below zero when final usage on a request exceeds the pre-flight estimate or when refunded gift credit is reversed after use; that negative balance clears automatically through later credits to that balance or future top-ups, as described under Request billing above. We may refuse new paid-model requests until a negative Paid Pollen balance is covered.
+**No late payments.** All Pollen is prepaid: there are no invoices, due dates, or late fees. The only way a balance can go below zero is when final usage on a request exceeds the pre-flight estimate; that negative balance clears automatically through later credits to that balance or future top-ups, as described under Request billing above. We may refuse new paid-model requests until a negative Paid Pollen balance is covered.
 
 **Price changes.** Prices, model costs, and Pollen rates may change at any time without notice; what's shown at top-up or in the pre-flight estimate is what applies to that transaction. If a change materially raises the cost of models you actively use, you may request a refund of unused Paid Pollen balance within 14 days.
 

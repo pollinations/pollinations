@@ -15,7 +15,6 @@ import questDashboard from "../../../operations/quest-dashboard/worker.js";
 import {
     hashGiftCode,
     recordGiftReward,
-    refundGiftReward,
 } from "../../src/services/gift-rewards.ts";
 import { test } from "../fixtures.ts";
 
@@ -310,7 +309,8 @@ describe("gift rewards", () => {
             .from(rewards)
             .where(eq(rewards.id, rewardId));
         expect(row.questId).toBeNull();
-        expect(row.giftCodeHash).not.toBe(code);
+        expect(row.id).toBe(giftCodeHash);
+        expect(row.id).not.toBe(code);
         expect(row.claimedAt).not.toBeNull();
         if (!row.userId) throw new Error("Expected recipient");
         expect(
@@ -334,47 +334,6 @@ describe("gift rewards", () => {
                 })
             ).claimed,
         ).toBe(false);
-    });
-
-    test.for([
-        false,
-        true,
-    ])("refund cancels once, claimed=%s", async (claimFirst) => {
-        const db = drizzle(env.DB, { schema });
-        await seedUser(db, "gift-refund", 7, 20);
-        const {
-            rewardIds: [rewardId],
-        } = await recordGiftReward(env.DB, session);
-        const args = {
-            rewardId,
-            userId: "gift-refund",
-            giftCodeHash: await hashGiftCode(code),
-        };
-        if (claimFirst) await claimReward(db, args);
-        await refundGiftReward(env.DB, "pi_reward_gift");
-        await refundGiftReward(env.DB, "pi_reward_gift");
-        expect((await recordGiftReward(env.DB, session)).recorded).toBe(0);
-        expect((await claimReward(db, args)).reward).toBeNull();
-        const balance = await getUserBalance(db, "gift-refund");
-        expect(balance.packBalance).toBe(20);
-        expect(balance.tierBalance).toBe(7);
-    });
-
-    test("refund racing a claim leaves no gift credit", async () => {
-        const db = drizzle(env.DB, { schema });
-        await seedUser(db, "gift-race");
-        const {
-            rewardIds: [rewardId],
-        } = await recordGiftReward(env.DB, session);
-        await Promise.all([
-            claimReward(db, {
-                rewardId,
-                userId: "gift-race",
-                giftCodeHash: await hashGiftCode(code),
-            }),
-            refundGiftReward(env.DB, "pi_reward_gift"),
-        ]);
-        expect((await getUserBalance(db, "gift-race")).packBalance).toBe(0);
     });
 
     test("private preview does not claim; shared claim endpoint adds it to personal Bonus rewards", async ({
@@ -429,6 +388,23 @@ describe("gift rewards", () => {
             .where(eq(rewards.id, rewardId));
         expect(pending.userId).toBeNull();
         expect(pending.claimedAt).toBeNull();
+        // The public reward ID is not a bearer credential. Only the original
+        // code can unlock an unassigned reward.
+        for (const [body, status] of [
+            [{}, 404],
+            [{ code: rewardId }, 400],
+        ] as const) {
+            const denied = await SELF.fetch(
+                `${url}/rewards/${rewardId}/claim`,
+                {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify(body),
+                },
+            );
+            expect(denied.status).toBe(status);
+            await denied.text();
+        }
         const claim = await SELF.fetch(`${url}/rewards/${rewardId}/claim`, {
             method: "POST",
             headers,
@@ -444,8 +420,5 @@ describe("gift rewards", () => {
         expect(personal).toContain(rewardId);
         expect(personal).not.toContain(code);
         expect(personal).not.toContain("giftCodeHash");
-        await refundGiftReward(env.DB, "pi_reward_gift");
-        const canceled = await SELF.fetch(`${url}/rewards`, { headers });
-        expect(await canceled.text()).not.toContain(rewardId);
     });
 });

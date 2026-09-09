@@ -114,10 +114,9 @@ export const questsRoutes = new Hono<Env>()
                 .from(rewardsTable)
                 .where(
                     and(
-                        eq(rewardsTable.giftCodeHash, hash),
+                        eq(rewardsTable.id, hash),
                         isNull(rewardsTable.userId),
                         isNull(rewardsTable.claimedAt),
-                        isNull(rewardsTable.canceledAt),
                     ),
                 )
                 .limit(1);
@@ -258,12 +257,7 @@ export const questsRoutes = new Hono<Env>()
                     url: rewardsTable.url,
                 })
                 .from(rewardsTable)
-                .where(
-                    and(
-                        eq(rewardsTable.userId, user.id),
-                        isNull(rewardsTable.canceledAt),
-                    ),
-                )
+                .where(eq(rewardsTable.userId, user.id))
                 .orderBy(desc(rewardsTable.earnedAt));
 
             const rewards = rewardRows.map((row) => ({

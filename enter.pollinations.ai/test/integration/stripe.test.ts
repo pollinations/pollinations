@@ -89,7 +89,7 @@ test("gift checkout reuses normal checkout and privately delivers the paid code"
     expect(after.packBalance).toBe(buyer.packBalance);
 });
 
-test("paid gift webhooks record a reward instead of crediting the buyer; refund reverses the recipient once", async ({
+test("paid gift webhooks record once; refunds do not change gift rewards in this MVP", async ({
     sessionToken: _sessionToken,
     mocks,
 }) => {
@@ -164,9 +164,7 @@ test("paid gift webhooks record a reward instead of crediting the buyer; refund 
             .select()
             .from(userTable)
             .where(eq(userTable.id, buyer.id));
-        expect(current.packBalance).toBe(
-            (buyer.packBalance ?? 0) + (status === "succeeded" ? 0 : 10),
-        );
+        expect(current.packBalance).toBe((buyer.packBalance ?? 0) + 10);
     }
 });
 

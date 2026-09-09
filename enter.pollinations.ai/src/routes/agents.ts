@@ -23,6 +23,7 @@ import {
     deleteCodeAgent,
     deployCodeAgent,
     loadCodeAgentSource,
+    resolveCodeAgentCommit,
 } from "../services/code-agent.ts";
 import {
     BuiltinMcpServerIdSchema,
@@ -189,23 +190,28 @@ async function syncCodeAgent(c: Context<Env>, id: string) {
         { expirationTtl: 60 },
     );
 
-    const resolved = await loadCodeAgentSource(
+    const deployedCommitSha = await resolveCodeAgentCommit(
+        c.env,
         config.repository,
-        config.directory,
     );
-    if (resolved.deployedCommitSha === config.deployedCommitSha) {
+    if (deployedCommitSha === config.deployedCommitSha) {
         return {
             updated: false,
-            deployedCommitSha: resolved.deployedCommitSha,
+            deployedCommitSha,
         };
     }
-    await deployCodeAgent(c.env, id, resolved.source);
+    const source = await loadCodeAgentSource(
+        config.repository,
+        config.directory,
+        deployedCommitSha,
+    );
+    await deployCodeAgent(c.env, id, source);
     await db
         .update(schema.communityEndpoint)
         .set({
             payload: JSON.stringify({
                 ...config,
-                deployedCommitSha: resolved.deployedCommitSha,
+                deployedCommitSha,
             }),
             updatedAt: new Date(),
         })
@@ -215,7 +221,7 @@ async function syncCodeAgent(c: Context<Env>, id: string) {
                 eq(schema.communityEndpoint.type, "code_agent"),
             ),
         );
-    return { updated: true, deployedCommitSha: resolved.deployedCommitSha };
+    return { updated: true, deployedCommitSha };
 }
 
 async function requireAgentWriteAccess(
@@ -256,6 +262,7 @@ async function requireAgentWriteAccess(
             message: "Community model name is already registered",
         });
     }
+    return owner;
 }
 
 export const agentsRoutes = new Hono<Env>()
@@ -337,7 +344,7 @@ export const agentsRoutes = new Hono<Env>()
             tags: ["🤖 Community Agents"],
             summary: "Create Agent",
             description:
-                "Create a prompt agent or deploy `agent.js` from a public GitHub repository. Code agents export a default function accepting `{ request, pollinations, mcp }` and return an OpenAI Responses-compatible Response. API keys require `account:keys`.",
+                "Create a prompt agent or, with community publisher access, deploy `agent.js` from a public GitHub repository. Code agents export a default function accepting `{ request, pollinations, mcp }` and return an OpenAI Responses-compatible Response. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Created agent",
@@ -358,24 +365,38 @@ export const agentsRoutes = new Hono<Env>()
             const input = c.req.valid("json");
             requireAccountPermission(c.var.auth.apiKey, "keys");
             const db = drizzle(c.env.DB, { schema });
-            await requireAgentWriteAccess(
+            const owner = await requireAgentWriteAccess(
                 db,
                 user.id,
                 input.name,
                 input.visibility,
             );
+            if (
+                input.type === "code_agent" &&
+                !isCommunityEndpointOwnerAllowed(owner)
+            ) {
+                throw new HTTPException(403, {
+                    message:
+                        "Code agent deployment requires community publishing approval",
+                });
+            }
             const id = crypto.randomUUID();
             let payload: string;
             if (input.type === "code_agent") {
-                const resolved = await loadCodeAgentSource(
+                const deployedCommitSha = await resolveCodeAgentCommit(
+                    c.env,
+                    input.repository,
+                );
+                const source = await loadCodeAgentSource(
                     input.repository,
                     input.directory,
+                    deployedCommitSha,
                 );
-                await deployCodeAgent(c.env, id, resolved.source);
+                await deployCodeAgent(c.env, id, source);
                 payload = JSON.stringify({
                     repository: input.repository,
                     directory: input.directory,
-                    deployedCommitSha: resolved.deployedCommitSha,
+                    deployedCommitSha,
                 });
             } else {
                 payload = serializePromptAgentConfig(input);

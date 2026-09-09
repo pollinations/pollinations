@@ -7576,6 +7576,53 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     ).resolves.toEqual([]);
 });
 
+fixtureTest(
+    "restricts code agent deployment to approved publishers",
+    async () => {
+        const ownerUserId = await createTestUser({
+            githubId: COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID,
+            githubUsername: `owner-${crypto.randomUUID().slice(0, 8)}`,
+        });
+        const sessionToken = `session-${crypto.randomUUID()}`;
+        await db.insert(sessionTable).values({
+            id: `session-${crypto.randomUUID()}`,
+            token: sessionToken,
+            userId: ownerUserId,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        const cookie = (await signedSessionCookie(sessionToken)).replace(
+            "better-auth.session_token",
+            "__Secure-better-auth.session_token",
+        );
+        const deploymentFetch = vi.fn();
+        vi.stubGlobal("fetch", deploymentFetch);
+        const deniedOwnerEnv = {
+            ...env,
+            BETTER_AUTH_URL: "https://enter.test",
+        };
+
+        const response = await fetchEnterApi(
+            await createEnterFrontendApi(),
+            new Request("https://enter.test/api/account/agents", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Cookie: cookie },
+                body: JSON.stringify({
+                    type: "code_agent",
+                    name: `code-${crypto.randomUUID().slice(0, 8)}`,
+                    title: "Private Code Agent",
+                    repository: "https://github.com/example/agents",
+                }),
+            }),
+            deniedOwnerEnv,
+        );
+
+        expect(response.status).toBe(403);
+        expect(deploymentFetch).not.toHaveBeenCalled();
+    },
+);
+
 fixtureTest("creates, updates, lists, and deletes code agents", async () => {
     const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
     const modelName = `code-${crypto.randomUUID().slice(0, 8)}`;
@@ -7760,7 +7807,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         updated: false,
         deployedCommitSha: commit,
     });
-    expect(deploymentFetch).toHaveBeenCalledTimes(8);
+    expect(deploymentFetch).toHaveBeenCalledTimes(7);
 
     const listResponse = await fetchEnterApi(
         enterApi,
@@ -7791,8 +7838,8 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         enterEnv,
     );
     expect(deleteResponse.status).toBe(200);
-    expect(deploymentFetch).toHaveBeenCalledTimes(9);
-    expect(deploymentFetch.mock.calls[8][1]?.method).toBe("DELETE");
+    expect(deploymentFetch).toHaveBeenCalledTimes(8);
+    expect(deploymentFetch.mock.calls[7][1]?.method).toBe("DELETE");
 });
 
 fixtureTest("validates community fallback targets on write", async () => {

@@ -8,6 +8,7 @@ import {
     CopyButton,
     currentPeriod,
     ExternalLinkIcon,
+    GitHubIcon,
     GlobeIcon,
     IconButton,
     LockIcon,
@@ -25,6 +26,7 @@ import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
 import {
     type CommunityEndpoint,
+    type ManagedAgent,
     openWebUiTestableModelId,
     type ProxyCommunityEndpoint,
     storedPriceToFormValue,
@@ -33,6 +35,7 @@ import {
 
 type CommunityEndpointCardProps = {
     endpoint: CommunityEndpoint;
+    agent?: ManagedAgent;
     isToggling: boolean;
     onToggle: () => void;
     onEdit?: () => void;
@@ -41,6 +44,7 @@ type CommunityEndpointCardProps = {
 
 export function CommunityEndpointCard({
     endpoint,
+    agent,
     isToggling,
     onToggle,
     onEdit,
@@ -144,6 +148,16 @@ export function CommunityEndpointCard({
                     value={endpoint.modelId}
                     copyLabel="Copy model id"
                 />
+                {agent?.type === "code_agent" && (
+                    <CommunityDetailRow
+                        icon={<GitHubIcon className="h-3.5 w-3.5" />}
+                        label="Source"
+                        value={`${agent.repository}/${
+                            agent.directory ? `${agent.directory}/` : ""
+                        }agent.js @ ${agent.deployedCommitSha.slice(0, 7)}`}
+                        copyLabel="Copy source"
+                    />
+                )}
                 {hasUpstreamEndpoint && (
                     <CommunityDetailRow
                         icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}

@@ -20,8 +20,9 @@ import {
     type AgentListingDetailsPayload,
     type AgentPayload,
     agentListingToForm,
+    type CodeAgentCommunityEndpoint,
     emptyAgentForm,
-    type ManagedPromptAgent,
+    type ManagedAgent,
     type ModelListingFormState,
     type PromptAgentCommunityEndpoint,
     toAgentListingPayload,
@@ -31,8 +32,8 @@ import {
 type AgentDialogFormState = AgentFormState & ModelListingFormState;
 
 type AgentDialogProps = {
-    agent?: ManagedPromptAgent;
-    endpoint?: PromptAgentCommunityEndpoint;
+    agent?: ManagedAgent;
+    endpoint?: PromptAgentCommunityEndpoint | CodeAgentCommunityEndpoint;
     canPublish: boolean;
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -64,11 +65,18 @@ export function AgentDialog({
             ...agentListingToForm(open ? endpoint : undefined),
             ...emptyAgentForm,
             ...(open &&
-                agent && {
+                agent?.type === "prompt_agent" && {
                     systemPrompt: agent.systemPrompt,
                     baseModel: agent.baseModel,
                     requiredSafetyFeatures: agent.requiredSafetyFeatures,
                     mcpServers: agent.mcpServers,
+                }),
+            ...(open &&
+                agent?.type === "code_agent" && {
+                    type: "code_agent" as const,
+                    repository: agent.repository,
+                    directory: agent.directory,
+                    requiredSafetyFeatures: agent.requiredSafetyFeatures,
                 }),
         });
         setError(null);
@@ -145,7 +153,11 @@ export function AgentDialog({
                     {!agent && (
                         <FieldStack
                             label="Agent type"
-                            helper="Use a prompt and model, or deploy code from GitHub."
+                            helper={
+                                canPublish
+                                    ? "Use a prompt and model, or deploy code from GitHub."
+                                    : "Use a prompt and model. Code deployment requires publishing access."
+                            }
                             alignLabelRow
                         >
                             <ButtonGroup aria-label="Agent type">
@@ -166,23 +178,25 @@ export function AgentDialog({
                                     )}
                                     Prompt agent
                                 </TabButton>
-                                <TabButton
-                                    active={form.type === "code_agent"}
-                                    disabled={isSubmitting}
-                                    onClick={() =>
-                                        setForm((current) => ({
-                                            ...current,
-                                            type: "code_agent",
-                                        }))
-                                    }
-                                    size="sm"
-                                    className="min-w-28 gap-1.5"
-                                >
-                                    {form.type === "code_agent" && (
-                                        <CheckIcon className="h-3.5 w-3.5" />
-                                    )}
-                                    Code agent
-                                </TabButton>
+                                {canPublish && (
+                                    <TabButton
+                                        active={form.type === "code_agent"}
+                                        disabled={isSubmitting}
+                                        onClick={() =>
+                                            setForm((current) => ({
+                                                ...current,
+                                                type: "code_agent",
+                                            }))
+                                        }
+                                        size="sm"
+                                        className="min-w-28 gap-1.5"
+                                    >
+                                        {form.type === "code_agent" && (
+                                            <CheckIcon className="h-3.5 w-3.5" />
+                                        )}
+                                        Code agent
+                                    </TabButton>
+                                )}
                             </ButtonGroup>
                         </FieldStack>
                     )}
@@ -217,7 +231,7 @@ export function AgentDialog({
                         {form.type === "code_agent" ? (
                             <CodeAgentFields
                                 form={form}
-                                disabled={isSubmitting}
+                                disabled={isSubmitting || !!agent}
                                 onChange={(field, value) =>
                                     setForm((current) => ({
                                         ...current,

@@ -1,5 +1,6 @@
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
+import { type GitHubApiEnv, githubApiHeaders } from "./github-api.ts";
 
 type CodeAgentDeploymentEnv = {
     CLOUDFLARE_ACCOUNT_ID: string;
@@ -11,6 +12,19 @@ type CodeAgentDeploymentEnv = {
 const MAIN_MODULE = `
 function jsonError(message) {
   return Response.json({ error: { message } }, { status: 500 });
+}
+
+async function readMcpResponse(response) {
+  const text = await response.text();
+  if (!response.headers.get("content-type")?.includes("text/event-stream")) {
+    return JSON.parse(text);
+  }
+  for (const line of text.split(/\\r?\\n/)) {
+    if (!line.startsWith("data:")) continue;
+    const data = line.slice(5).trim();
+    if (data && data !== "[DONE]") return JSON.parse(data);
+  }
+  throw new Error("MCP tool call returned no result");
 }
 
 export default {
@@ -33,7 +47,10 @@ export default {
       }
       const response = await pollinations(\`/mcp/\${encodeURIComponent(server)}\`, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          accept: "application/json, text/event-stream",
+          "content-type": "application/json",
+        },
         body: JSON.stringify({
           jsonrpc: "2.0",
           id: crypto.randomUUID(),
@@ -44,7 +61,7 @@ export default {
       if (!response.ok) {
         throw new Error(\`MCP tool call failed (\${response.status})\`);
       }
-      const body = await response.json();
+      const body = await readMcpResponse(response);
       if (body.error) {
         throw new Error(body.error.message || "MCP tool call failed");
       }
@@ -71,11 +88,6 @@ export default {
 const GITHUB_API = "https://api.github.com";
 const GITHUB_RAW = "https://raw.githubusercontent.com";
 const MAX_SOURCE_BYTES = 65_536;
-const GITHUB_HEADERS = {
-    Accept: "application/vnd.github+json",
-    "User-Agent": "pollinations-enter",
-    "X-GitHub-Api-Version": "2022-11-28",
-};
 const GitHubCommitSchema = z.object({
     sha: z.string().regex(/^[0-9a-f]{40}$/),
 });
@@ -85,15 +97,14 @@ function githubRepositoryParts(repository: string) {
     return { owner, name };
 }
 
-/** Resolve and load the fixed agent.js entrypoint from a public GitHub repo. */
-export async function loadCodeAgentSource(
+export async function resolveCodeAgentCommit(
+    env: GitHubApiEnv,
     repository: string,
-    directory: string,
-): Promise<{ source: string; deployedCommitSha: string }> {
+): Promise<string> {
     const { owner, name } = githubRepositoryParts(repository);
     const commitResponse = await fetch(
         `${GITHUB_API}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/commits/HEAD`,
-        { headers: GITHUB_HEADERS },
+        { headers: await githubApiHeaders(env) },
     );
     if (commitResponse.status === 404 || commitResponse.status === 409) {
         throw new HTTPException(400, {
@@ -111,10 +122,19 @@ export async function loadCodeAgentSource(
             message: "GitHub returned an invalid repository revision",
         });
     }
+    return commit.data.sha;
+}
 
+/** Load agent.js from an already resolved, immutable GitHub revision. */
+export async function loadCodeAgentSource(
+    repository: string,
+    directory: string,
+    commitSha: string,
+): Promise<string> {
+    const { owner, name } = githubRepositoryParts(repository);
     const entrypoint = directory ? `${directory}/agent.js` : "agent.js";
     const sourceResponse = await fetch(
-        `${GITHUB_RAW}/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/${commit.data.sha}/${entrypoint
+        `${GITHUB_RAW}/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/${commitSha}/${entrypoint
             .split("/")
             .map(encodeURIComponent)
             .join("/")}`,
@@ -144,7 +164,7 @@ export async function loadCodeAgentSource(
             message: "agent.js must be at most 64 KiB",
         });
     }
-    return { source, deployedCommitSha: commit.data.sha };
+    return source;
 }
 
 function deploymentConfig(env: CodeAgentDeploymentEnv) {

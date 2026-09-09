@@ -11,7 +11,7 @@ This is different from hosting your own OpenAI-compatible model endpoint. It is 
 3. Configure a prompt and base model, or enter a public GitHub repository and optional directory.
 4. Save it. The dashboard creates the agent configuration and registers its callable model name.
 
-A linked GitHub username is required to create an agent. Private agents are visible and callable only by their owner. Publishing an agent for everyone requires [community publisher access](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml).
+A linked GitHub username is required to create an agent. Private agents are visible and callable only by their owner. Code agents and public listings require [community publisher access](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml).
 
 ## Prompt agent configuration
 

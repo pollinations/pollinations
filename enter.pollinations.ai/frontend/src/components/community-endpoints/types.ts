@@ -453,7 +453,7 @@ export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
 }
 
 export function agentListingToForm(
-    endpoint?: PromptAgentCommunityEndpoint,
+    endpoint?: PromptAgentCommunityEndpoint | CodeAgentCommunityEndpoint,
 ): ModelListingFormState {
     return endpoint
         ? {

@@ -32,7 +32,6 @@ import {
     type EndpointPayload,
     type FallbackModelOption,
     type ManagedAgent,
-    type ManagedPromptAgent,
     type PromptAgentCommunityEndpoint,
     readError,
 } from "./types.ts";
@@ -72,9 +71,7 @@ export function CommunityEndpoints({
     const [toggling, setToggling] = useState<CommunityEndpoint | null>(null);
     const [togglingId, setTogglingId] = useState<string | null>(null);
     const [agentCreateOpen, setAgentCreateOpen] = useState(false);
-    const [editingAgent, setEditingAgent] = useState<ManagedPromptAgent | null>(
-        null,
-    );
+    const [editingAgent, setEditingAgent] = useState<ManagedAgent | null>(null);
     const [deletingAgent, setDeletingAgent] = useState<ManagedAgent | null>(
         null,
     );
@@ -132,7 +129,14 @@ export function CommunityEndpoints({
         if (!editingAgent) return;
         const response = await apiClient.account.agents[":id"].$patch({
             param: { id: editingAgent.id },
-            json: { ...payload, ...listing },
+            json:
+                editingAgent.type === "code_agent"
+                    ? {
+                          ...listing,
+                          requiredSafetyFeatures:
+                              payload.requiredSafetyFeatures,
+                      }
+                    : { ...payload, ...listing },
         });
         if (!response.ok) throw new Error(await readError(response));
         await loadEndpoints();
@@ -330,16 +334,16 @@ export function CommunityEndpoints({
             endpoint.type === "prompt_agent" || endpoint.type === "code_agent"
                 ? agentById.get(endpoint.id)
                 : undefined;
-        const promptAgent = agent?.type === "prompt_agent" ? agent : undefined;
         return (
             <CommunityEndpointCard
                 key={endpoint.id}
                 endpoint={endpoint}
+                agent={agent}
                 isToggling={togglingId === endpoint.id}
                 onToggle={() => setToggling(endpoint)}
                 onEdit={
-                    promptAgent
-                        ? () => setEditingAgent(promptAgent)
+                    agent
+                        ? () => setEditingAgent(agent)
                         : endpoint.type === "proxy" ||
                             endpoint.type === "endpoint_agent"
                           ? () => setEditing(endpoint)
@@ -450,8 +454,9 @@ export function CommunityEndpoints({
                                     Create your first agent
                                 </p>
                                 <p className="text-sm text-theme-text-muted">
-                                    Build from a prompt and model, or deploy
-                                    agent.js from GitHub.
+                                    {canPublish
+                                        ? "Build from a prompt and model, or deploy agent.js from GitHub."
+                                        : "Build from a prompt and model."}
                                 </p>
                             </Surface>
                         ) : (
@@ -462,10 +467,10 @@ export function CommunityEndpoints({
                         <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                             <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                Private agents do not need approval. To publish
-                                agents for everyone in <strong>/models</strong>,
-                                submit a {publisherAccessRequestLink} for agents
-                                or both.
+                                Private prompt agents do not need approval. Code
+                                agents and public agents require publishing
+                                access. Request it through the{" "}
+                                {publisherAccessRequestLink}.
                             </span>
                         </p>
                     )}

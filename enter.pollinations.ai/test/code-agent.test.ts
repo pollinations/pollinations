@@ -3,9 +3,11 @@ import {
     deleteCodeAgent,
     deployCodeAgent,
     loadCodeAgentSource,
+    resolveCodeAgentCommit,
 } from "../src/services/code-agent.ts";
 
 const deploymentEnv = {
+    ENVIRONMENT: "test",
     CLOUDFLARE_ACCOUNT_ID: "account-id",
     CODE_AGENT_DEPLOY_API_TOKEN: "deploy-token",
     CODE_AGENT_DISPATCH_NAMESPACE: "code-agents-test",
@@ -49,6 +51,10 @@ describe("code agent deployment", () => {
         const wrapper = await (form.get("index.mjs") as Blob).text();
         expect(wrapper).toContain('headers.delete("authorization")');
         expect(wrapper).toContain("return fetch(url, init)");
+        expect(wrapper).toContain(
+            'accept: "application/json, text/event-stream"',
+        );
+        expect(wrapper).toContain('line.startsWith("data:")');
         expect(wrapper).toContain('method: "tools/call"');
         expect(wrapper).toContain("request: safeRequest, pollinations, mcp");
     });
@@ -71,12 +77,20 @@ describe("code agent deployment", () => {
         });
         vi.stubGlobal("fetch", fetchMock);
 
+        const deployedCommitSha = await resolveCodeAgentCommit(
+            deploymentEnv,
+            "https://github.com/example/agents",
+        );
         await expect(
             loadCodeAgentSource(
                 "https://github.com/example/agents",
                 "tools/image",
+                deployedCommitSha,
             ),
-        ).resolves.toEqual({ source, deployedCommitSha: commit });
+        ).resolves.toBe(source);
+        expect(fetchMock.mock.calls[0]?.[1]?.headers).toMatchObject({
+            Authorization: "token mock_github_auth_token",
+        });
     });
 
     it("fails closed when deployment is not configured", async () => {

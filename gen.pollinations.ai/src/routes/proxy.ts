@@ -139,6 +139,8 @@ const ImageEditMultipartSchema = z
 // Health window for catalog enrichment. 24h keeps lower-traffic models
 // populated; the same window feeds the model-monitor reliability read.
 const HEALTH_WINDOW_MINUTES = 24 * 60;
+const MODEL_SOURCE_HEADER = "Pollinations-Model-Source";
+const MODEL_RELIABILITY_HEADER = "Pollinations-Model-Reliability";
 
 // Build dynamic model lists from registry for use in API descriptions
 const imageModelNames = getImageModelIds()
@@ -296,6 +298,35 @@ function filterEntriesByQueryParams(
     );
 }
 
+function getModelListParams(c: Context<Env>): ModelListQueryParams {
+    const query = c.req.valid("query" as never) as ModelListQueryParams;
+    const headers = ModelListQueryParamsSchema.safeParse({
+        source: c.req.header(MODEL_SOURCE_HEADER),
+        reliability: c.req.header(MODEL_RELIABILITY_HEADER),
+    });
+    if (!headers.success) {
+        throw new HTTPException(400, {
+            message: "Invalid model catalog filter header",
+        });
+    }
+    if (
+        (query.source &&
+            headers.data.source &&
+            query.source !== headers.data.source) ||
+        (query.reliability &&
+            headers.data.reliability &&
+            query.reliability !== headers.data.reliability)
+    ) {
+        throw new HTTPException(400, {
+            message: "Conflicting model catalog filters",
+        });
+    }
+    return {
+        source: query.source ?? headers.data.source,
+        reliability: query.reliability ?? headers.data.reliability,
+    };
+}
+
 // Attach measured health to each entry's info copy. Unknown models (no health
 // row) are left without the field: missing data means unknown, never healthy.
 function withHealthInfo(
@@ -320,9 +351,7 @@ const modelsListHandler = (
     [
         validator("query", ModelListQueryParamsSchema),
         async (c: Context<Env>) => {
-            const params = c.req.valid(
-                "query" as never,
-            ) as ModelListQueryParams;
+            const params = getModelListParams(c);
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
             return c.json(
@@ -492,9 +521,7 @@ export const proxyRoutes = new Hono<Env>()
         }),
         validator("query", ModelListQueryParamsSchema),
         async (c) => {
-            const params = c.req.valid(
-                "query" as never,
-            ) as ModelListQueryParams;
+            const params = getModelListParams(c);
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
             const modelEntries = filterEntriesByQueryParams(

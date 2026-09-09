@@ -29,6 +29,10 @@ Any other value (e.g. `source=true`, `reliability=unreliable`) returns **400 Bad
 
 Example: `GET /models?source=official&reliability=reliable`
 
+Clients that cannot add query parameters may send the equivalent
+`Pollinations-Model-Source` and `Pollinations-Model-Reliability` headers. A
+conflicting query and header value returns **400 Bad Request**.
+
 Filtering discovery never changes generation permissions or routing: a model hidden by `?reliability=reliable` still generates normally when requested directly.
 
 Rich model endpoints include `capabilities` for agentic/model traits:
@@ -46,8 +50,8 @@ Built-in models may use separate upstream routes for Chat and Responses.
 ### Client examples
 
 Most OpenAI-compatible clients fetch models by appending `/models` to a base
-URL, so query filters cannot be used there — pass the filters from an
-environment where you control the request instead:
+URL. Configure the filter headers when the client supports custom headers, or
+fetch the filtered list separately:
 
 **curl**
 
@@ -82,7 +86,7 @@ field:
 
 ```json
 {
-  "name": "openai-fast",
+  "name": "openai/gpt-5-nano",
   "health": {
     "status": "healthy",
     "success_rate": 0.997,

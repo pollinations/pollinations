@@ -191,6 +191,14 @@ test("rejects invalid source and reliability values", async () => {
         const response = await fetchWorker(`/models${query}`);
         expect(response.status).toBe(400);
     }
+
+    expect(
+        (
+            await fetchWorker("/models", {
+                headers: { "Pollinations-Model-Source": "invalid" },
+            })
+        ).status,
+    ).toBe(400);
 });
 
 test("filters the model list by source", async () => {
@@ -208,6 +216,18 @@ test("filters the model list by source", async () => {
     expect(official.every((m) => !m.community)).toBe(true);
     expect(community.every((m) => m.community)).toBe(true);
     expect(official.length + community.length).toBe(all.length);
+
+    const officialByHeader = (await (
+        await fetchWorker("/models", {
+            headers: { "Pollinations-Model-Source": "official" },
+        })
+    ).json()) as { community?: boolean }[];
+    expect(officialByHeader.every((m) => !m.community)).toBe(true);
+
+    const conflicting = await fetchWorker("/models?source=community", {
+        headers: { "Pollinations-Model-Source": "official" },
+    });
+    expect(conflicting.status).toBe(400);
 });
 
 test("reliability filtering keeps unmeasured models and excludes the unavailable", async ({
@@ -216,26 +236,33 @@ test("reliability filtering keeps unmeasured models and excludes the unavailable
     await resetModelHealthCacheForTest();
     await bypassHealthCache({
         data: [
-            healthRow("openai-fast", { ok: 50, fail: 0 }),
-            healthRow("openai", { ok: 50, fail: 50 }),
+            healthRow("openai/gpt-5-nano", { ok: 50, fail: 0 }),
+            healthRow("openai/gpt-5.4-nano", { ok: 50, fail: 50 }),
         ],
     });
 
     const all = (await (await fetchWorker("/models")).json()) as {
         name: string;
     }[];
-    // openai-fast: healthy; openai: 50% failures => unavailable; everything
-    // else: no health row => unknown, kept.
-    expect(all.some((m) => m.name === "openai")).toBe(true);
+    // GPT-5 Nano: healthy; GPT-5.4 Nano: 50% failures => unavailable;
+    // everything else: no health row => unknown, kept.
+    expect(all.some((m) => m.name === "openai/gpt-5.4-nano")).toBe(true);
 
     const reliable = (await (
         await fetchWorker("/models?reliability=reliable")
     ).json()) as { name: string }[];
-    expect(reliable.some((m) => m.name === "openai-fast")).toBe(true);
-    expect(reliable.some((m) => m.name === "openai")).toBe(false);
+    expect(reliable.some((m) => m.name === "openai/gpt-5-nano")).toBe(true);
+    expect(reliable.some((m) => m.name === "openai/gpt-5.4-nano")).toBe(false);
+
+    const reliableByHeader = (await (
+        await fetchWorker("/models", {
+            headers: { "Pollinations-Model-Reliability": "reliable" },
+        })
+    ).json()) as { name: string }[];
+    expect(reliableByHeader).toEqual(reliable);
     // Unmeasured models stay: missing data means unknown, not unreliable.
     const unmeasured = all.filter(
-        (m) => !["openai", "openai-fast"].includes(m.name),
+        (m) => !["openai/gpt-5.4-nano", "openai/gpt-5-nano"].includes(m.name),
     );
     expect(unmeasured.length).toBeGreaterThan(0);
     for (const model of unmeasured) {
@@ -248,18 +275,20 @@ test("exposes health metadata consistently across list, retrieve, and /models", 
 }) => {
     await resetModelHealthCacheForTest();
     await bypassHealthCache({
-        data: [healthRow("openai-fast", { ok: 100, fail: 1 })],
+        data: [healthRow("openai/gpt-5-nano", { ok: 100, fail: 1 })],
     });
 
     const listed = (
         (await (await fetchWorker("/v1/models")).json()) as {
             data: { id: string; health?: unknown }[];
         }
-    ).data.find((m) => m.id === "openai-fast");
+    ).data.find((m) => m.id === "openai/gpt-5-nano");
     expect(listed?.health).toBeDefined();
 
     const retrieved = (await (
-        await fetchWorker("/v1/models/openai-fast")
+        await fetchWorker(
+            `/v1/models/${encodeURIComponent("openai/gpt-5-nano")}`,
+        )
     ).json()) as { health?: unknown };
     expect(retrieved.health).toEqual(listed?.health);
 
@@ -268,7 +297,7 @@ test("exposes health metadata consistently across list, retrieve, and /models", 
             name: string;
             health?: unknown;
         }[]
-    ).find((m) => m.name === "openai-fast");
+    ).find((m) => m.name === "openai/gpt-5-nano");
     expect(rich?.health).toEqual(listed?.health);
 });
 
@@ -277,7 +306,7 @@ test("health fields describe status, sample, window, and freshness", async ({
 }) => {
     await resetModelHealthCacheForTest();
     await bypassHealthCache({
-        data: [healthRow("openai-fast", { ok: 100, fail: 1 })],
+        data: [healthRow("openai/gpt-5-nano", { ok: 100, fail: 1 })],
     });
 
     const model = (
@@ -285,7 +314,7 @@ test("health fields describe status, sample, window, and freshness", async ({
             name: string;
             health?: Record<string, unknown>;
         }[]
-    ).find((m) => m.name === "openai-fast");
+    ).find((m) => m.name === "openai/gpt-5-nano");
     const health = model?.health;
     expect(health).toBeDefined();
     expect(health?.status).toBe("healthy"); // 100/101 success, >= MIN_SAMPLE
@@ -301,7 +330,7 @@ test("marks a small sample as unknown, not healthy", async ({
 }) => {
     await resetModelHealthCacheForTest();
     await bypassHealthCache({
-        data: [healthRow("openai-fast", { ok: 1, fail: 0 })],
+        data: [healthRow("openai/gpt-5-nano", { ok: 1, fail: 0 })],
     });
 
     const model = (
@@ -309,7 +338,7 @@ test("marks a small sample as unknown, not healthy", async ({
             name: string;
             health?: Record<string, unknown>;
         }[]
-    ).find((m) => m.name === "openai-fast");
+    ).find((m) => m.name === "openai/gpt-5-nano");
     expect(model?.health?.status).toBe("unknown");
 });
 
@@ -331,13 +360,13 @@ test("degraded status survives reliability filtering, unavailable does not", asy
     await resetModelHealthCacheForTest();
     await bypassHealthCache({
         data: [
-            healthRow("openai-fast", { ok: 95, fail: 5 }), // 5% => degraded
-            healthRow("openai", { ok: 50, fail: 50 }), // 50% => unavailable
+            healthRow("openai/gpt-5-nano", { ok: 95, fail: 5 }), // 5% => degraded
+            healthRow("openai/gpt-5.4-nano", { ok: 50, fail: 50 }), // 50% => unavailable
         ],
     });
     const reliable = (await (
         await fetchWorker("/models?reliability=reliable")
     ).json()) as { name: string }[];
-    expect(reliable.some((m) => m.name === "openai-fast")).toBe(true);
-    expect(reliable.some((m) => m.name === "openai")).toBe(false);
+    expect(reliable.some((m) => m.name === "openai/gpt-5-nano")).toBe(true);
+    expect(reliable.some((m) => m.name === "openai/gpt-5.4-nano")).toBe(false);
 });

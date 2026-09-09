@@ -139,7 +139,9 @@ test(
         });
         await env.DB.prepare("UPDATE apikey SET permissions = ? WHERE id = ?")
             .bind(
-                JSON.stringify({ models: ["openai/gpt-5-nano", "retired-model"] }),
+                JSON.stringify({
+                    models: ["openai/gpt-5-nano", "retired-model"],
+                }),
                 created.id,
             )
             .run();

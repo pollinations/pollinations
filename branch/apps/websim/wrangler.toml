@@ -1,0 +1,25 @@
+name = "websim"
+main = "worker.js"
+compatibility_date = "2026-05-01"
+
+routes = [
+  { pattern = "websim.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
+  { pattern = "websim.pollinations.ai", zone_name = "pollinations.ai", custom_domain = true }
+]
+
+[assets]
+directory = "dist"
+binding = "ASSETS"
+not_found_handling = "none"
+run_worker_first = true
+
+[vars]
+PORT = "16386"
+
+[observability]
+enabled = true
+
+[dev]
+port = 16386
+local_protocol = "http"
+ip = "localhost"

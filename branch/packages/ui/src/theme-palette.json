@@ -1,0 +1,10 @@
+{
+    "bgPale": {
+        "accent": "#fef8eb",
+        "neutral": "#fffefb"
+    },
+    "bgActive": {
+        "accent": "#ffd76d"
+    },
+    "brandDark": "#110518"
+}

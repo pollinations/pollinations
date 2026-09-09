@@ -1,0 +1,32 @@
+{
+    "compilerOptions": {
+        "target": "esnext",
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "lib": ["esnext", "dom", "dom.iterable"],
+        "types": [
+            "@cloudflare/workers-types",
+            "@cloudflare/vitest-pool-workers",
+            "node"
+        ],
+        "strict": true,
+        "useUnknownInCatchVariables": false,
+        "noEmit": true,
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "allowImportingTsExtensions": true,
+        "resolveJsonModule": true,
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["src/*"],
+            "@shared/*": ["../shared/*"]
+        }
+    },
+    "include": [
+        "src/**/*",
+        "test/**/*",
+        "worker-bindings.d.ts"
+    ],
+    "exclude": ["node_modules"]
+}

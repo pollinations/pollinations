@@ -1,0 +1,13 @@
+**/node_modules
+**/.git
+**/.next
+**/dist
+**/.cache
+**/coverage
+**/*.log
+**/.env*
+**/.encrypted*
+**/temp
+**/tmp
+**/.DS_Store
+**/Thumbs.db

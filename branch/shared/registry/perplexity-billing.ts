@@ -1,0 +1,215 @@
+import type { BillingRules } from "./registry";
+
+type PerplexityCostOutput = {
+    usage?: {
+        cost?: {
+            request_cost?: unknown;
+        };
+        search_context_size?: unknown;
+    };
+    streamEvents?: unknown[];
+};
+
+// Reject provider-reported request_cost that would poison the ledger.
+const PROVIDER_COST_CLAMP_FACTOR = 10;
+
+// Distinguish "no cost object at all" (expected regression case) from "cost
+// object present but request_cost malformed" (should alert louder).
+type ProviderRequestCostRead =
+    | { status: "absent" }
+    | { status: "malformed"; raw: unknown }
+    | { status: "ok"; value: number };
+
+// Read `usage.cost.request_cost` from a single response or stream event.
+function readProviderRequestCost(event: unknown): ProviderRequestCostRead {
+    const cost = (event as PerplexityCostOutput | undefined)?.usage?.cost;
+    if (cost == null) return { status: "absent" };
+    if (typeof cost !== "object") return { status: "malformed", raw: cost };
+    if (!("request_cost" in cost)) return { status: "absent" };
+    const value = cost.request_cost;
+    if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+        return { status: "malformed", raw: value };
+    }
+    return { status: "ok", value };
+}
+
+function getPerplexityReportedRequestCost(
+    output: unknown,
+): ProviderRequestCostRead {
+    const o = output as PerplexityCostOutput | undefined;
+    const events = o?.streamEvents ?? (o ? [o] : []);
+    for (const event of [...events].reverse()) {
+        const read = readProviderRequestCost(event);
+        if (read.status !== "absent") return read;
+    }
+    return { status: "absent" };
+}
+
+function getReportedSearchContextSize(output: unknown): string | undefined {
+    const o = output as PerplexityCostOutput | undefined;
+    const events = o?.streamEvents ?? (o ? [o] : []);
+    for (const event of [...events].reverse()) {
+        const size = (event as PerplexityCostOutput | undefined)?.usage
+            ?.search_context_size;
+        if (typeof size === "string") return size;
+    }
+    return undefined;
+}
+
+// Resolve the per-request cost via clamp-and-alert (never throws):
+//  - absent provider cost       → static fee + WARN (Perplexity-regression signal)
+//  - malformed provider cost    → static fee + ERROR
+//  - provider cost > 10× static → clamp to static fee + ERROR
+//  - otherwise                  → provider-reported cost verbatim
+// The gateway supplies the effective search tier used for billing. A reported
+// `search_context_size` that differs from it means the provider drifted — logged
+// as WARN.
+function resolvePerplexityRequestCost(args: {
+    output: unknown;
+    model: string;
+    ruleId: string;
+    staticFee: number;
+    expectedSearchContextSize: string;
+}): number {
+    const { output, model, ruleId, staticFee, expectedSearchContextSize } =
+        args;
+
+    const reported = getReportedSearchContextSize(output);
+    if (reported && reported !== expectedSearchContextSize) {
+        console.warn(
+            `[billing] perplexity search_context_size drift: model=${model} rule=${ruleId} expected=${expectedSearchContextSize} reported=${reported} — static fee assumed the expected tier`,
+        );
+    }
+
+    const read = getPerplexityReportedRequestCost(output);
+    if (read.status === "absent") {
+        // Expected for non-stream Perplexity until the gateway cost-preserving
+        // fix deploys. WARN so a persistent absence is visible without paging.
+        console.warn(
+            `[billing] provider request_cost absent for model=${model} rule=${ruleId} — using static fee ${staticFee}`,
+        );
+        return staticFee;
+    }
+    if (read.status === "malformed") {
+        console.error(
+            `[billing] malformed provider request_cost (${JSON.stringify(read.raw) ?? String(read.raw)}) for model=${model} rule=${ruleId} — using static fee ${staticFee}`,
+        );
+        return staticFee;
+    }
+    if (read.value > staticFee * PROVIDER_COST_CLAMP_FACTOR) {
+        console.error(
+            `[billing] provider request_cost ${read.value} exceeds 10× static fee ${staticFee} for model=${model} rule=${ruleId} — clamped to static fee`,
+        );
+        return staticFee;
+    }
+    return read.value;
+}
+
+function createPerplexitySearchBilling(
+    id: string,
+    description: string,
+    unitCost: number,
+    expectedSearchContextSize: string,
+): BillingRules {
+    return {
+        adjustments: [
+            {
+                id,
+                description,
+                kind: "search_request",
+                unit: "request",
+                unitCost,
+                publicPricing: {
+                    label: "Search",
+                    quantity: 1_000,
+                    unit: "requests",
+                },
+                countUnits: () => 1,
+                resolveUnitCost: (output, model) =>
+                    resolvePerplexityRequestCost({
+                        output,
+                        model,
+                        ruleId: id,
+                        staticFee: unitCost,
+                        expectedSearchContextSize,
+                    }),
+            },
+        ],
+    };
+}
+
+export const PERPLEXITY_SONAR_BILLING: BillingRules = {
+    adjustments: [
+        {
+            id: "perplexity.sonar_low.search_request.v1",
+            description:
+                "Perplexity Search adds $5 / 1K requests for low search context.",
+            kind: "search_request",
+            unit: "request",
+            unitCost: 5 / 1000,
+            publicPricing: {
+                label: "Search",
+                quantity: 1_000,
+                unit: "requests",
+                option: {
+                    group: "search_context",
+                    value: "low",
+                    label: "Low search context",
+                    default: true,
+                },
+            },
+            countUnits: (_output, input) =>
+                input?.searchContextSize === "high" ? 0 : 1,
+            resolveUnitCost: (output, model) =>
+                resolvePerplexityRequestCost({
+                    output,
+                    model,
+                    ruleId: "perplexity.sonar_low.search_request.v1",
+                    staticFee: 5 / 1000,
+                    expectedSearchContextSize: "low",
+                }),
+        },
+        {
+            id: "perplexity.sonar_high.search_request.v1",
+            description:
+                "Perplexity Search adds $12 / 1K requests for high search context.",
+            kind: "search_request",
+            unit: "request",
+            unitCost: 12 / 1000,
+            publicPricing: {
+                label: "Search",
+                quantity: 1_000,
+                unit: "requests",
+                option: {
+                    group: "search_context",
+                    value: "high",
+                    label: "High search context",
+                },
+            },
+            countUnits: (_output, input) =>
+                input?.searchContextSize === "high" ? 1 : 0,
+            resolveUnitCost: (output, model) =>
+                resolvePerplexityRequestCost({
+                    output,
+                    model,
+                    ruleId: "perplexity.sonar_high.search_request.v1",
+                    staticFee: 12 / 1000,
+                    expectedSearchContextSize: "high",
+                }),
+        },
+    ],
+};
+
+export const PERPLEXITY_PRO_BILLING = createPerplexitySearchBilling(
+    "perplexity.sonar_pro_high.search_request.v1",
+    "Perplexity Search adds $14 / 1K requests for high search context.",
+    14 / 1000,
+    "high",
+);
+
+export const PERPLEXITY_REASONING_BILLING = createPerplexitySearchBilling(
+    "perplexity.sonar_reasoning_high.search_request.v1",
+    "Perplexity Search adds $14 / 1K requests for high search context.",
+    14 / 1000,
+    "high",
+);

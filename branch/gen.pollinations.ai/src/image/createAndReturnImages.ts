@@ -1,0 +1,1044 @@
+import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
+import debug from "debug";
+import {
+    fetchFromWeightedServer,
+    type ServerType,
+} from "./availableServers.ts";
+import { getImageEnv } from "./env.ts";
+import {
+    callAzureFlux2,
+    callAzureFluxKontext,
+} from "./models/azureFluxKontextModel.js";
+import { callAzureMaiImage } from "./models/azureMaiImageModel.ts";
+import { callFalFallbackImage } from "./models/falFallbackMediaModel.ts";
+import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
+import {
+    callIdeogramBalancedAPI,
+    callIdeogramQualityAPI,
+    callIdeogramTurboAPI,
+} from "./models/ideogramReplicateModel.ts";
+import { callKreaImageAPI } from "./models/kreaModel.ts";
+import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
+import {
+    callOpenRouterGeminiImageAPI,
+    callOpenRouterGrokImagineImage2API,
+    callOpenRouterGrokImagineProAPI,
+    callOpenRouterRecraftVectorAPI,
+    callOpenRouterSeedreamProAPI,
+} from "./models/openRouterImageModel.ts";
+import {
+    callFluxSchnellDeepInfraAPI,
+    callPrunaImageAPI,
+    callPrunaImageEditAPI,
+} from "./models/prunaModel.ts";
+import { callQwenImage3API } from "./models/qwenImage3Model.ts";
+import { callQwenImageAPI } from "./models/qwenImageModel.ts";
+import { callReplicateFallbackImage } from "./models/replicateFallbackImageModel.ts";
+import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
+import {
+    callSeedream5ProAPI,
+    callSeedreamAPI,
+} from "./models/seedreamReplicateModel.ts";
+import { callWanImageAPI } from "./models/wanImageModel.ts";
+import { callXaiImageAPI } from "./models/xaiModel.ts";
+import { callZImageFalAPI } from "./models/zImageFalModel.ts";
+import type { ImageParams } from "./params.ts";
+import { sanitizeString } from "./util.ts";
+import { closestByRatio } from "./utils/aspectRatio.ts";
+import {
+    analyzeImageSafety,
+    type ContentSafetyFlags,
+    requireSafePrompt,
+} from "./utils/azureContentSafety.ts";
+import { logGptImageError } from "./utils/gptImageLogger.ts";
+import {
+    base64ToBuffer,
+    bufferToUint8Array,
+    detectMimeType,
+    downloadUserImage,
+} from "./utils/imageDownload.ts";
+import {
+    resizeForGptImage,
+    convertToJpeg as transformToJpeg,
+} from "./utils/imageTransform.ts";
+import type { TrackingData } from "./utils/trackingHeaders.ts";
+import { writeExifMetadata } from "./writeExifMetadata.ts";
+
+// Loggers
+const logError = debug("pollinations:error");
+const logPerf = debug("pollinations:perf");
+const logOps = debug("pollinations:ops");
+const logCloudflare = debug("pollinations:cloudflare");
+
+type AzureGPTImageTokenDetails = {
+    cached_tokens?: number;
+    image_tokens?: number;
+    text_tokens?: number;
+};
+
+type AzureGPTImageUsage = {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+    prompt_tokens_details?: AzureGPTImageTokenDetails;
+    completion_tokens_details?: AzureGPTImageTokenDetails;
+    input_tokens?: number;
+    output_tokens?: number;
+    input_tokens_details?: AzureGPTImageTokenDetails;
+    output_tokens_details?: AzureGPTImageTokenDetails;
+};
+
+export type ImageGenerationResult = {
+    buffer: Buffer;
+    mimeType?: string;
+    isMature: boolean;
+    isChild: boolean;
+    // Tracking data for enter service headers
+    trackingData: TrackingData;
+};
+
+export type AuthResult = {
+    tokenAuth: boolean;
+    userId: string | null;
+};
+
+function safeTokenCount(value: unknown): number {
+    return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function mapAzureGPTImageUsage(
+    usage: AzureGPTImageUsage | undefined,
+    separateCompletionTextTokens: boolean,
+) {
+    const promptTokens =
+        safeTokenCount(usage?.prompt_tokens) ||
+        safeTokenCount(usage?.input_tokens);
+    const completionTokens =
+        safeTokenCount(usage?.completion_tokens) ||
+        safeTokenCount(usage?.output_tokens) ||
+        safeTokenCount(usage?.total_tokens);
+
+    const promptDetails =
+        usage?.prompt_tokens_details || usage?.input_tokens_details;
+    const completionDetails =
+        usage?.completion_tokens_details || usage?.output_tokens_details;
+
+    const promptCachedTokens = safeTokenCount(promptDetails?.cached_tokens);
+    const promptImageTokens = safeTokenCount(promptDetails?.image_tokens);
+    const promptTextTokens =
+        safeTokenCount(promptDetails?.text_tokens) ||
+        Math.max(promptTokens - promptCachedTokens - promptImageTokens, 0);
+
+    const completionTextTokens = separateCompletionTextTokens
+        ? safeTokenCount(completionDetails?.text_tokens)
+        : 0;
+    const completionImageTokens =
+        safeTokenCount(completionDetails?.image_tokens) ||
+        Math.max(completionTokens - completionTextTokens, 0) ||
+        1;
+
+    const totalTokenCount =
+        safeTokenCount(usage?.total_tokens) ||
+        promptTextTokens +
+            promptCachedTokens +
+            promptImageTokens +
+            completionTextTokens +
+            completionImageTokens;
+
+    return {
+        promptTextTokens,
+        promptCachedTokens,
+        promptImageTokens,
+        completionTextTokens,
+        completionImageTokens,
+        totalTokenCount,
+    };
+}
+
+/**
+ * Resizes an input image buffer for GPT Image editing to reduce token costs.
+ * GPT Image 1.5 calculates input tokens as: (width × height) / 750
+ * Large images can result in very high token costs (e.g., 4K = ~11,000 tokens)
+ *
+ * @param buffer - The input image buffer
+ * @param maxDimension - Max width/height for resize (1536 for gpt-image-1, 3840 for gpt-image-2)
+ * @returns Resized buffer (PNG format) if image exceeds max pixels, otherwise original
+ */
+async function resizeInputImageForGptImage(
+    buffer: Buffer,
+    maxDimension = 1536,
+): Promise<Buffer> {
+    try {
+        return await resizeForGptImage(buffer, maxDimension);
+    } catch (error) {
+        logError("Failed to resize input image, using original:", error);
+        return buffer;
+    }
+}
+
+/**
+ * Calls self-hosted image generation servers (zimage or flux pool).
+ * @param {string} prompt - The prompt for image generation.
+ * @param {Object} safeParams - The parameters for image generation.
+ * @param {ServerType} poolType - Which registered server pool to use.
+ * @returns {Promise<Array>} - The generated images.
+ */
+export const callSelfHostedServer = async (
+    prompt: string,
+    safeParams: ImageParams,
+    poolType: ServerType = "zimage",
+): Promise<ImageGenerationResult> => {
+    try {
+        logOps("safeParams", safeParams);
+        // Always use max steps (4) - every request is an authenticated gateway request
+        const steps = 4;
+        logOps("calculated_steps", steps);
+
+        prompt = sanitizeString(prompt);
+
+        const body = {
+            prompts: [prompt],
+            width: safeParams.width,
+            height: safeParams.height,
+            seed: safeParams.seed,
+            steps: steps,
+        };
+
+        logOps(
+            "calling prompt",
+            body.prompts,
+            "width",
+            body.width,
+            "height",
+            body.height,
+        );
+
+        // Start timing for fetch
+        const fetchStartTime = Date.now();
+
+        let response = null;
+
+        // The pool helper retries each other registered worker once when the
+        // selected backend rejects the request with queue-full 503.
+        try {
+            const requestInit = {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(getImageEnv("PLN_GPU_TOKEN") && {
+                        "x-backend-token": getImageEnv("PLN_GPU_TOKEN"),
+                    }),
+                },
+                body: JSON.stringify(body),
+            };
+            response = await fetchFromWeightedServer(poolType, requestInit);
+        } catch (error) {
+            logError(`Fetch failed for ${safeParams.model}:`, error.message);
+            logError("Request body:", JSON.stringify(body, null, 2));
+            throw error;
+        }
+
+        const fetchEndTime = Date.now();
+
+        // Calculate the time spent in fetch
+        const fetchDuration = fetchEndTime - fetchStartTime;
+        logPerf(`Fetch duration: ${fetchDuration}ms`);
+
+        if (!response.ok) {
+            logError("Error from server. input was", body);
+            throw UpstreamError.fromProvider(response.status, {
+                message: `Server responded with ${response.status}`,
+            });
+        }
+
+        const jsonResponse = await response.json();
+
+        const { image, ...rest } = Array.isArray(jsonResponse)
+            ? jsonResponse[0]
+            : jsonResponse;
+
+        if (!image) {
+            logError("image is null");
+            throw UpstreamError.fromProvider(502, {
+                message: "Image server returned no image",
+            });
+        }
+
+        logOps("decoding base64 image");
+
+        const buffer = base64ToBuffer(image);
+
+        return {
+            buffer,
+            ...rest,
+            trackingData: {
+                actualModel: safeParams.model,
+                usage: {
+                    completionImageTokens: 1,
+                    totalTokenCount: 1,
+                },
+            },
+        };
+    } catch (e) {
+        logError("Error in callSelfHostedServer:", e);
+        throw e;
+    }
+};
+
+/**
+ * Converts an image buffer to JPEG format if it's not already a JPEG.
+ * @param {Buffer} buffer - The image buffer to convert.
+ * @returns {Promise<Buffer>} - The converted image buffer.
+ */
+export async function convertToJpeg(buffer: Buffer): Promise<Buffer> {
+    if (detectMimeType(buffer) !== "image/jpeg") {
+        return transformToJpeg(buffer);
+    }
+    return buffer;
+}
+
+interface GPTImageConfig {
+    provider: "azure" | "openai";
+    baseUrl: string;
+    modelName: string;
+    apiKeyEnv: string;
+    region: string;
+}
+
+const AZURE_API_VERSION = "2025-04-01-preview";
+
+// Every endpoint is a resource dedicated to a single model: Azure abuse blocks
+// are per-resource, so sharing one resource across models turns a block into a
+// multi-model outage (issue #12446). Keep it one model per resource.
+const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
+    "openai/gpt-image-1-mini": [
+        {
+            provider: "azure",
+            baseUrl:
+                "https://myceli-prod-img-mini-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
+            modelName: "gpt-image-1-mini",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_MINI_SWEDEN_API_KEY",
+            region: "swedencentral",
+        },
+        {
+            provider: "azure",
+            baseUrl:
+                "https://myceli-prod-img-mini-westus3.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
+            modelName: "gpt-image-1-mini",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY",
+            region: "westus3",
+        },
+    ],
+    "openai/gpt-image-1.5": [
+        {
+            provider: "azure",
+            baseUrl:
+                "https://myceli-prod-img-15-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
+            modelName: "gpt-image-1.5",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_15_SWEDEN_API_KEY",
+            region: "swedencentral",
+        },
+        {
+            provider: "azure",
+            baseUrl:
+                "https://myceli-prod-img-15-westus3.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
+            modelName: "gpt-image-1.5",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_15_WESTUS3_API_KEY",
+            region: "westus3",
+        },
+    ],
+    "openai/gpt-image-2": [
+        {
+            provider: "azure",
+            baseUrl:
+                "https://myceli-prod-img-2-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-2",
+            modelName: "gpt-image-2",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY",
+            region: "swedencentral",
+        },
+        {
+            provider: "azure",
+            baseUrl:
+                "https://myceli-prod-img-2-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-2",
+            modelName: "gpt-image-2",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY",
+            region: "eastus2",
+        },
+    ],
+    "openai/gpt-image-1-mini:openai": [
+        {
+            provider: "openai",
+            baseUrl: "https://api.openai.com/v1",
+            modelName: "gpt-image-1-mini",
+            apiKeyEnv: "OPENAI_API_KEY",
+            region: "direct",
+        },
+    ],
+    "openai/gpt-image-1.5:openai": [
+        {
+            provider: "openai",
+            baseUrl: "https://api.openai.com/v1",
+            modelName: "gpt-image-1.5",
+            apiKeyEnv: "OPENAI_API_KEY",
+            region: "direct",
+        },
+    ],
+    "openai/gpt-image-2:openai": [
+        {
+            provider: "openai",
+            baseUrl: "https://api.openai.com/v1",
+            modelName: "gpt-image-2",
+            apiKeyEnv: "OPENAI_API_KEY",
+            region: "direct",
+        },
+    ],
+    "openai/gpt-image-2.5-flare": [
+        {
+            provider: "openai",
+            baseUrl: "https://api.openai.com/v1",
+            modelName: "gpt-image-2.5-flare",
+            apiKeyEnv: "OPENAI_API_KEY",
+            region: "direct",
+        },
+    ],
+    "openai/gpt-image-2.5-sunburst": [
+        {
+            provider: "openai",
+            baseUrl: "https://api.openai.com/v1",
+            modelName: "gpt-image-2.5-sunburst",
+            apiKeyEnv: "OPENAI_API_KEY",
+            region: "direct",
+        },
+    ],
+};
+
+const gptImageEndpointIndexes = new Map<string, number>();
+
+/** Round robins the Azure regions to spread load. One region per request. */
+function nextGPTImageConfig(model: string): GPTImageConfig {
+    const configs =
+        GPTIMAGE_CONFIGS[model] || GPTIMAGE_CONFIGS["openai/gpt-image-1-mini"];
+    const index = gptImageEndpointIndexes.get(model) ?? 0;
+    const config = configs[index % configs.length];
+    gptImageEndpointIndexes.set(model, (index + 1) % configs.length);
+    return config;
+}
+
+const callGPTImageWithEndpoint = async (
+    prompt: string,
+    safeParams: ImageParams,
+    userInfo: AuthResult,
+    config: GPTImageConfig = GPTIMAGE_CONFIGS["openai/gpt-image-1-mini"][0],
+): Promise<ImageGenerationResult> => {
+    const apiKey = getImageEnv(config.apiKeyEnv);
+
+    if (!apiKey) {
+        throw new Error(
+            `${config.apiKeyEnv} not found in environment variables`,
+        );
+    }
+
+    const isEditMode = safeParams.image && safeParams.image.length > 0;
+    const path = isEditMode ? "images/edits" : "images/generations";
+    const endpoint =
+        config.provider === "azure"
+            ? `${config.baseUrl}/${path}?api-version=${AZURE_API_VERSION}`
+            : `${config.baseUrl}/${path}`;
+    logCloudflare(
+        `Using ${config.provider} ${config.modelName} in ${config.region} for ${isEditMode ? "edit" : "generation"}`,
+    );
+
+    // Map safeParams to API size parameter.
+    // gpt-image-2 supports arbitrary resolutions with constraints.
+    // Older gpt-image-1 models (via Azure) only support 3 fixed sizes; snap via closest ratio.
+    let size: string;
+    if (config.modelName.startsWith("gpt-image-2")) {
+        // gpt-image-2 constraints:
+        //   Both edges multiples of 16px, long edge ≤ 3840px (4K)
+        //   Aspect ratio ≤ 3:1, pixel count 655,360–8,294,400
+        const clamp = (v: number) => Math.round(Math.max(16, v) / 16) * 16;
+        let w = clamp(safeParams.width);
+        let h = clamp(safeParams.height);
+        // Cap aspect ratio before the edge cap so extreme inputs (e.g. 16x8000)
+        // shrink the long edge instead of flooring the short edge to 0.
+        if (w > h * 3) w = Math.floor((h * 3) / 16) * 16;
+        else if (h > w * 3) h = Math.floor((w * 3) / 16) * 16;
+        const longEdge = Math.max(w, h);
+        if (longEdge > 3840) {
+            const scale = 3840 / longEdge;
+            w = Math.floor((w * scale) / 16) * 16;
+            h = Math.floor((h * scale) / 16) * 16;
+        }
+        let pixels = w * h;
+        if (pixels < 655360) {
+            const scale = Math.sqrt(655360 / pixels);
+            w = Math.ceil((w * scale) / 16) * 16;
+            h = Math.ceil((h * scale) / 16) * 16;
+            pixels = w * h;
+        }
+        if (pixels > 8294400) {
+            const scale = Math.sqrt(8294400 / pixels);
+            w = Math.floor((w * scale) / 16) * 16;
+            h = Math.floor((h * scale) / 16) * 16;
+        }
+        size = `${w}x${h}`;
+    } else {
+        size = closestByRatio(safeParams.width, safeParams.height, [
+            { size: "1536x1024", ratio: 1.5 },
+            { size: "1024x1536", ratio: 1 / 1.5 },
+            { size: "1024x1024", ratio: 1 },
+        ]).size;
+    }
+
+    // Use requested quality - access control runs in this worker's auth/balance middleware
+    const quality = safeParams.quality === "hd" ? "high" : safeParams.quality;
+
+    // Set output format to png if model is gptimage, otherwise jpeg
+    const outputFormat = "png";
+    const requestBody = {
+        ...(config.provider === "openai" ? { model: config.modelName } : {}),
+        prompt: sanitizeString(prompt),
+        size,
+        quality,
+        output_format: outputFormat,
+        n: 1,
+        background: safeParams.transparent ? "transparent" : undefined,
+    };
+
+    // Add background parameter for transparent images when using gptimage model
+    if (safeParams.transparent) {
+        logCloudflare(
+            "Adding background=transparent parameter for gptimage model",
+        );
+    }
+
+    // We'll only use the requestBody for generation mode
+    // For edit mode, we'll use FormData instead
+
+    if (safeParams.seed) {
+        logCloudflare(
+            `Seed value ${safeParams.seed} not supported by GPT Image API, ignoring`,
+        );
+    }
+
+    logCloudflare("Calling GPT Image API with params:", requestBody);
+
+    let response = null;
+
+    if (isEditMode) {
+        // For edit mode, always use FormData (multipart/form-data)
+        const formData = new FormData();
+
+        // Add the prompt
+        formData.append("prompt", sanitizeString(prompt));
+
+        // Handle images based on their type
+        try {
+            // Convert to array if it's a string (backward compatible)
+            const imageUrls = Array.isArray(safeParams.image)
+                ? safeParams.image
+                : [safeParams.image];
+
+            if (imageUrls.length === 0) {
+                // Handle errors for missing image
+                throw UpstreamError.fromProvider(400, {
+                    message:
+                        "Image URL is required for GPT Image edit mode but was not provided",
+                });
+            }
+
+            // Process each image in the array
+            for (let i = 0; i < imageUrls.length; i++) {
+                const imageUrl = imageUrls[i];
+                try {
+                    logCloudflare(
+                        `Fetching image ${i + 1}/${imageUrls.length} from URL: ${imageUrl}`,
+                    );
+
+                    const { buffer: originalBuffer, mimeType } =
+                        await downloadUserImage(imageUrl);
+
+                    // Resize large input images to reduce token costs
+                    // GPT Image 1.5 calculates input tokens as: (width × height) / 750
+                    // gpt-image-2 supports larger inputs up to 3840px
+                    const inputMaxDimension = config.modelName.startsWith(
+                        "gpt-image-2",
+                    )
+                        ? 3840
+                        : 1536;
+                    const buffer = await resizeInputImageForGptImage(
+                        originalBuffer,
+                        inputMaxDimension,
+                    );
+
+                    // Only check safety after we've successfully fetched the image
+                    logCloudflare(
+                        `Checking safety of input image ${i + 1}/${imageUrls.length}`,
+                    );
+                    const imageSafetyResult = await analyzeImageSafety(buffer);
+
+                    if (!imageSafetyResult.safe) {
+                        const errorMessage = `Input image ${i + 1} contains unsafe content: ${imageSafetyResult.formattedViolations}`;
+                        const error = new Error(errorMessage);
+                        await logGptImageError(
+                            prompt,
+                            safeParams,
+                            userInfo,
+                            error,
+                            imageSafetyResult,
+                        );
+                        throw error;
+                    }
+
+                    // Use the image[] array notation as required by Azure OpenAI API
+                    // Create a Blob with explicit MIME type to avoid application/octet-stream
+                    const extension = `.${mimeType.split("/")[1]}`;
+                    const imageBlob = new Blob([bufferToUint8Array(buffer)], {
+                        type: mimeType,
+                    });
+                    formData.append("image[]", imageBlob, `image${extension}`);
+                } catch (error) {
+                    // Preserve UpstreamError status (e.g. 400 from downloadUserImage);
+                    // wrap other errors as generic processing failures.
+                    logError(`Error processing image ${i + 1}:`, error.message);
+                    if (error instanceof UpstreamError) throw error;
+                    throw new Error(
+                        `Failed to process image: ${error.message}`,
+                    );
+                }
+            }
+        } catch (error) {
+            logError("Error processing image for editing:", error);
+            if (error instanceof UpstreamError) throw error;
+            throw new Error(`Failed to process image: ${error.message}`);
+        }
+
+        if (config.provider === "openai") {
+            formData.append("model", config.modelName);
+        }
+        formData.append("size", size);
+        formData.append("output_format", outputFormat);
+        formData.append("quality", quality);
+        formData.append("n", "1");
+
+        // Add background parameter for transparent images when using gptimage model
+        if (safeParams.transparent) {
+            formData.append("background", "transparent");
+            logCloudflare(
+                "Adding background=transparent parameter for gptimage edit mode",
+            );
+        }
+
+        // Log the endpoint and headers for debugging
+        logCloudflare(`Sending edit request to endpoint: ${endpoint}`);
+
+        // Single attempt - no retry logic
+        response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+            },
+            // biome-ignore lint: linter is confused here
+            body: formData as any,
+        });
+
+        logCloudflare(`Edit request response status: ${response.status}`);
+    } else {
+        // Standard JSON request for generation - single attempt, no retry logic
+        response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify(requestBody),
+        });
+    }
+
+    await ensureUpstreamOk(response, endpoint);
+
+    const data = (await response.json()) as {
+        data?: Array<{ b64_json?: string }>;
+        usage?: AzureGPTImageUsage;
+    };
+
+    if (!data.data?.[0]?.b64_json) {
+        throw new Error("Invalid response from GPT Image API");
+    }
+
+    // Convert base64 to buffer
+    const imageBuffer = base64ToBuffer(data.data[0].b64_json);
+
+    const usage = mapAzureGPTImageUsage(
+        data.usage,
+        config.modelName === "gpt-image-1.5",
+    );
+
+    logCloudflare("GPT Image full usage:", data.usage);
+    logCloudflare(
+        `GPT Image billable usage: promptText=${usage.promptTextTokens}, promptCached=${usage.promptCachedTokens}, promptImage=${usage.promptImageTokens}, completionText=${usage.completionTextTokens}, completionImage=${usage.completionImageTokens}`,
+    );
+
+    // Azure doesn't provide content safety information directly, so we'll set defaults
+    // In a production environment, you might want to use a separate content moderation service
+    return {
+        buffer: imageBuffer,
+        isMature: false, // Default assumption
+        isChild: false, // Default assumption
+        trackingData: {
+            actualModel: safeParams.model,
+            usage,
+        },
+    };
+};
+
+export const callGPTImage = async (
+    prompt: string,
+    safeParams: ImageParams,
+    userInfo: AuthResult,
+    model: string = "openai/gpt-image-1-mini",
+): Promise<ImageGenerationResult> => {
+    // One region, one attempt. Azure bills a generation it completed even when
+    // we never saw the response, so a second region would pay for a second
+    // image to answer a request the caller has already been told failed.
+    const config = nextGPTImageConfig(model);
+    try {
+        return await callGPTImageWithEndpoint(
+            prompt,
+            safeParams,
+            userInfo,
+            config,
+        );
+    } catch (error) {
+        logError(
+            `Error calling ${config.provider} GPT Image API (${config.modelName}, ${config.region}):`,
+            error,
+        );
+        throw error;
+    }
+};
+
+/**
+ * Formats user auth info for logging.
+ */
+function formatAuthInfo(userInfo: AuthResult): string {
+    return userInfo
+        ? `tokenAuth=${userInfo.tokenAuth}, userId=${userInfo.userId || "none"}`
+        : "No userInfo provided";
+}
+
+const generateImage = async (
+    prompt: string,
+    safeParams: ImageParams,
+    userInfo: AuthResult,
+): Promise<ImageGenerationResult> => {
+    switch (safeParams.model) {
+        case "openai/gpt-image-1-mini":
+        case "openai/gpt-image-1.5":
+        case "openai/gpt-image-2":
+        case "openai/gpt-image-2.5-flare":
+        case "openai/gpt-image-2.5-sunburst":
+        case "openai/gpt-image-1-mini:openai":
+        case "openai/gpt-image-1.5:openai":
+        case "openai/gpt-image-2:openai": {
+            const [gptConfig] = GPTIMAGE_CONFIGS[safeParams.model];
+            logError(
+                `GPT Image (${gptConfig.modelName}) authentication check:`,
+                formatAuthInfo(userInfo),
+            );
+
+            try {
+                await requireSafePrompt(prompt, safeParams, userInfo);
+                return await callGPTImage(
+                    prompt,
+                    safeParams,
+                    userInfo,
+                    safeParams.model,
+                );
+            } catch (error) {
+                logError(
+                    `GPT Image generation or safety check failed:`,
+                    error.message,
+                );
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
+
+        case "google/gemini-2.5-flash-image":
+        case "google/gemini-3.1-flash-image":
+        case "google/gemini-3.1-flash-image:openrouter:ai-studio":
+        case "google/gemini-3.1-flash-lite-image": {
+            logError(
+                "Nano Banana authentication check:",
+                formatAuthInfo(userInfo),
+            );
+
+            try {
+                if (safeParams.safe) {
+                    await requireSafePrompt(prompt, safeParams, userInfo);
+                }
+
+                return await callOpenRouterGeminiImageAPI(prompt, safeParams);
+            } catch (error) {
+                logError(
+                    "OpenRouter Gemini image generation or safety check failed:",
+                    error.message,
+                );
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
+
+        case "google/gemini-3-pro-image":
+        case "google/gemini-3-pro-image:openrouter:vertex-global": {
+            logError(
+                "Nano Banana authentication check:",
+                formatAuthInfo(userInfo),
+            );
+
+            try {
+                if (safeParams.safe) {
+                    await requireSafePrompt(prompt, safeParams, userInfo);
+                }
+
+                return await callOpenRouterGeminiImageAPI(prompt, safeParams);
+            } catch (error) {
+                logError(
+                    "OpenRouter Gemini image generation or safety check failed:",
+                    error.message,
+                );
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
+
+        case "black-forest-labs/flux.1-kontext-pro": {
+            try {
+                return await callAzureFluxKontext(prompt, safeParams, userInfo);
+            } catch (error) {
+                logError(
+                    "Azure Flux Kontext generation failed:",
+                    error.message,
+                );
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
+
+        case "black-forest-labs/flux.2-pro":
+        case "black-forest-labs/flux.2-flex": {
+            try {
+                return await callAzureFlux2(prompt, safeParams, userInfo);
+            } catch (error) {
+                logError("Azure FLUX.2 generation failed:", error.message);
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
+
+        case "microsoft/mai-image-2.5-flash": {
+            try {
+                return await callAzureMaiImage(prompt, safeParams, userInfo);
+            } catch (error) {
+                logError("Azure MAI image generation failed:", error.message);
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
+
+        case "bytedance/seedream-5.0-lite":
+            return await callSeedream5API(prompt, safeParams);
+
+        case "bytedance/seedream-5.0-lite:fal":
+            return await callFalFallbackImage(prompt, safeParams);
+
+        case "bytedance/seedream-5.0-pro":
+            return await callSeedream5ProAPI(prompt, safeParams);
+
+        case "bytedance/seedream-4.0":
+            return await callSeedreamAPI(prompt, safeParams);
+
+        case "bytedance/seedream-4.5":
+            return await callOpenRouterSeedreamProAPI(prompt, safeParams);
+
+        case "ideogram-ai/ideogram-v4-turbo":
+            return await callIdeogramTurboAPI(prompt, safeParams);
+
+        case "ideogram-ai/ideogram-v4-balanced":
+            return await callIdeogramBalancedAPI(prompt, safeParams);
+
+        case "ideogram-ai/ideogram-v4-quality":
+            return await callIdeogramQualityAPI(prompt, safeParams);
+
+        case "black-forest-labs/flux.2-klein-4b":
+            return await callFluxKleinAPI(prompt, safeParams);
+
+        case "krea/krea-2-medium":
+            return await callKreaImageAPI(prompt, safeParams);
+
+        case "prunaai/p-image":
+            return await callPrunaImageAPI(prompt, safeParams);
+
+        case "x-ai/grok-imagine-image":
+            return await callXaiImageAPI(
+                prompt,
+                safeParams,
+                "grok-imagine-image",
+            );
+
+        case "x-ai/grok-imagine-image-quality":
+            return await callOpenRouterGrokImagineProAPI(prompt, safeParams);
+
+        case "x-ai/grok-imagine-image-2.0":
+            return await callOpenRouterGrokImagineImage2API(prompt, safeParams);
+
+        case "recraft/recraft-v4.1-vector":
+            return await callOpenRouterRecraftVectorAPI(prompt, safeParams);
+
+        case "prunaai/p-image-edit":
+            return await callPrunaImageEditAPI(prompt, safeParams);
+
+        case "amazon/nova-canvas-v1":
+            return await callNovaCanvasAPI(prompt, safeParams);
+
+        case "alibaba/wan-2.7-image":
+            return await callWanImageAPI(prompt, safeParams, false);
+
+        case "alibaba/wan-2.7-image-pro":
+            return await callWanImageAPI(prompt, safeParams, true);
+
+        case "qwen/qwen-image":
+            return await callQwenImageAPI(prompt, safeParams);
+
+        case "qwen/qwen-image-3":
+            return await callQwenImage3API(prompt, safeParams);
+
+        case "black-forest-labs/flux.1-kontext-pro:replicate":
+        case "black-forest-labs/flux.2-pro:replicate":
+        case "qwen/qwen-image-3:replicate":
+        case "prunaai/p-image-edit:replicate":
+        case "krea/krea-2-medium:replicate":
+            return await callReplicateFallbackImage(prompt, safeParams);
+
+        case "lykon/dreamshaper-8-lcm":
+            // pool key stays "sana" — see VALID_TYPES in availableServers.ts
+            return await callSelfHostedServer(prompt, safeParams, "sana");
+
+        case "black-forest-labs/flux.1-schnell":
+            return await callSelfHostedServer(prompt, safeParams, "flux");
+
+        case "black-forest-labs/flux.1-schnell:deepinfra":
+            return await callFluxSchnellDeepInfraAPI(prompt, safeParams);
+
+        case "tongyi-mai/z-image-turbo:fal":
+            return await callZImageFalAPI(prompt, safeParams);
+
+        default:
+            // Z-Image Turbo is the only model that reaches the default branch
+            // (the model enum is closed and every other model is dispatched above)
+            return await callSelfHostedServer(prompt, safeParams);
+    }
+};
+
+// GPT Image logging functions have been moved to utils/gptImageLogger.js
+
+const extractMaturityFlags = (
+    result: ImageGenerationResult,
+): ContentSafetyFlags => {
+    const r = result as ImageGenerationResult & {
+        has_nsfw_concept?: boolean;
+        concept?: { special_scores?: Record<string, number> };
+    };
+    const isMature = Boolean(r.isMature || r.has_nsfw_concept);
+    const isChild =
+        Boolean(r.isChild) ||
+        Object.values(r.concept?.special_scores || {})
+            ?.slice(1)
+            .some((score) => score > -0.05);
+    return { isMature, isChild };
+};
+
+const prepareMetadata = (
+    prompt: string,
+    originalPrompt: string,
+    safeParams: ImageParams,
+): ImageParams & { prompt: string; originalPrompt: string } => {
+    return { prompt, originalPrompt, ...safeParams };
+};
+
+/**
+ * Processes the image buffer with format conversion and metadata
+ * @param {Buffer} buffer - The raw image buffer
+ * @param {Object} metadataObj - Metadata to embed in the image
+ * @param {Object} maturity - Additional maturity information
+ * @returns {Promise<Buffer>} - The processed image buffer
+ */
+const processImageBuffer = async (
+    buffer: Buffer,
+    metadataObj: object,
+    maturity: object,
+): Promise<Buffer> => {
+    const processedBuffer = await convertToJpeg(buffer);
+    return await writeExifMetadata(processedBuffer, metadataObj, maturity);
+};
+
+/**
+ * Creates and returns images with metadata, checking for NSFW content.
+ * @param {string} prompt - The prompt for image generation.
+ * @param {Object} safeParams - Parameters for image generation.
+ * @param {string} originalPrompt - The original prompt before any transformations.
+ * @param {Object} userInfo - User authentication info for safety logging.
+ * @returns {Promise<{buffer: Buffer, isChild: boolean, isMature: boolean}>}
+ */
+export async function createAndReturnImageCached(
+    prompt: string,
+    safeParams: ImageParams,
+    originalPrompt: string,
+    userInfo: AuthResult,
+): Promise<ImageGenerationResult> {
+    try {
+        // Generate the image using the appropriate model
+        const result = await generateImage(prompt, safeParams, userInfo);
+
+        // Extract maturity flags
+        const maturityFlags = extractMaturityFlags(result);
+        const { isMature, isChild } = maturityFlags;
+        logError("isMature", isMature, "concepts", isChild);
+
+        // Safety check
+        if (safeParams.safe && isMature) {
+            throw UpstreamError.fromProvider(400, {
+                message:
+                    "NSFW content detected. This request cannot be fulfilled when safe mode is enabled.",
+            });
+        }
+
+        // Prepare metadata
+        const { buffer: _buffer, ...maturity } = result;
+        const metadataObj = prepareMetadata(prompt, originalPrompt, safeParams);
+
+        // Preserve vector output and PNG alpha; JPEG conversion flattens transparency.
+        const processedBuffer =
+            result.mimeType === "image/svg+xml" ||
+            (safeParams.transparent &&
+                detectMimeType(result.buffer) === "image/png")
+                ? result.buffer
+                : await processImageBuffer(
+                      result.buffer,
+                      metadataObj,
+                      maturity,
+                  );
+
+        return {
+            buffer: processedBuffer,
+            mimeType: result.mimeType,
+            isChild,
+            isMature,
+            trackingData: result.trackingData,
+        };
+    } catch (error) {
+        logError("Error in createAndReturnImageCached:", error);
+        throw error;
+    }
+}

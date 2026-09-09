@@ -1,0 +1,627 @@
+---
+name: model-debugging
+description: Debug and diagnose model errors in Pollinations services. Analyze logs, find error patterns, identify affected users.
+---
+
+# Model Debugging Skill
+
+Use this skill when:
+- Investigating model failures, high error rates, or service issues
+- Finding users affected by errors (402 billing, 403 permissions, 500 backend)
+- Analyzing Tinybird/Cloudflare logs for patterns
+- Diagnosing specific request failures
+
+# Understanding Model Monitor Error Rates
+
+**Why does the Model Monitor show high error rates when models work fine manually?**
+
+The Model Monitor at https://monitor.pollinations.ai shows **all real-world traffic**, including:
+
+- **401 errors**: Anonymous users without API keys (most common)
+- **402 errors**: Users with insufficient pollen balance or exhausted API key budget
+- **403 errors**: Users denied access to specific models (API key restrictions)
+- **400 errors**: Invalid request parameters (e.g., `openai-audio` without `modalities` param)
+- **429 errors**: Rate-limited requests
+- **500/504 errors**: Actual backend failures (investigate these)
+
+When you test manually with a valid secret key (`sk_`), you bypass auth/quota issues, so models appear to work fine.
+
+**Key insight**: High 401/402/403/400 rates are **expected** from real-world usage. Focus investigation on 500/504 errors.
+
+---
+
+# Data Flow Architecture
+
+```
+User Request → enter.pollinations.ai (Cloudflare Worker)
+                    ↓
+              Logs to Cloudflare Workers Observability
+                    ↓
+              Events stored in D1 database
+                    ↓
+              Batched to Tinybird (async, 100-500 events)
+                    ↓
+              Model Monitor queries Tinybird (model_health.pipe)
+```
+
+**Structured Logging**: enter.pollinations.ai uses LogTape with:
+- `requestId`: Unique per request (passed to downstream via `x-request-id` header)
+- `status`, `body`: Full error response from downstream services
+- Context: `method`, `routePath`, `userAgent`, `ipAddress`
+
+---
+
+# Quick Diagnostics
+
+## 1. Check Model Monitor
+View current model health at: https://monitor.pollinations.ai
+
+## 2. Query Recent Errors from D1 Database
+```bash
+# Via enter.pollinations.ai worker (requires wrangler)
+cd enter.pollinations.ai
+npx wrangler d1 execute pollinations-db --remote --command "SELECT model_requested, response_status, error_message, COUNT(*) as count FROM event WHERE response_status >= 400 AND created_at > datetime('now', '-1 hour') GROUP BY model_requested, response_status, error_message ORDER BY count DESC LIMIT 20"
+```
+
+## 3. Capture Live Logs
+
+### enter.pollinations.ai (Cloudflare Worker)
+```bash
+cd enter.pollinations.ai
+wrangler tail --format json | tee logs.jsonl
+# Or with formatting:
+wrangler tail --format json | npx tsx scripts/format-logs.ts
+```
+
+### gen.pollinations.ai (image + text gateway)
+Image and text generation now run inside the gen Cloudflare Worker (the legacy EC2 `image-pollinations` and `text-pollinations` services are decommissioned). Use `wrangler tail` from `gen.pollinations.ai/`:
+```bash
+cd gen.pollinations.ai
+wrangler tail --format json | tee gen-logs.jsonl
+```
+
+### Legacy anonymous image (OVH)
+Anonymous traffic to `image.pollinations.ai` still terminates on the OVH host:
+```bash
+# Real-time logs
+ssh -i ~/.ssh/id_rsa_ovh ubuntu@57.130.31.42 "sudo journalctl -u image-pollinations -f"
+
+# Last 3 minutes
+ssh -i ~/.ssh/id_rsa_ovh ubuntu@57.130.31.42 "sudo journalctl -u image-pollinations --since '3 minutes ago' --no-pager" > legacy-image-logs.txt
+```
+
+---
+
+# Common Error Patterns
+
+## Azure Content Safety DNS Failure
+**Error**: `getaddrinfo ENOTFOUND gptimagemain1-resource.cognitiveservices.azure.com`
+**Cause**: Azure Content Safety resource deleted or misconfigured
+**Impact**: Fail-open (content proceeds without safety check)
+**Fix**: Create new Azure Content Safety resource and update `.env`:
+```
+AZURE_CONTENT_SAFETY_ENDPOINT=https://<new-resource>.cognitiveservices.azure.com/
+AZURE_CONTENT_SAFETY_API_KEY=<new-key>
+```
+
+## Azure Kontext Content Filter
+**Error**: `Content rejected due to sexual/hate/violence content detection`
+**Cause**: Azure's content moderation blocking prompts/images
+**Impact**: 400 error returned to user
+**Fix**: User error - prompt violates content policy
+
+## Vertex AI Invalid Image
+**Error**: `Provided image is not valid`
+**Cause**: User passing unsupported image URL (e.g., Google Drive links)
+**Impact**: 400 error returned to user
+**Fix**: User error - need direct image URL
+
+## Translation Service Down
+**Error**: `No active translate servers available`
+**Cause**: Translation service unavailable
+**Impact**: Prompts not translated (non-fatal)
+**Fix**: Check translation service status
+
+## OpenAI Audio Invalid Voice
+**Error**: `Invalid value for audio.voice`
+**Cause**: User requesting unsupported voice name
+**Impact**: 400 error returned to user
+**Fix**: User error - use supported voices: alloy, echo, fable, onyx, nova, shimmer, coral, verse, ballad, ash, sage, etc.
+
+## Oversized Text Seed Surfaced as 500
+**Error**: `'seed' must be Integer`, `invalid request error`, or a generic upstream 500
+**Cause**: A client sent a seed above signed INT32 max (`2147483647`) to a strict provider
+**Impact**: The provider may misclassify invalid client input as 500, inflating model health errors
+**Fix**: Reject oversized seeds as 400 at gateway validation; group incidents by user, API key, and request shape before treating them as a model outage
+
+## Veo No Video Data
+**Error**: `No video data in response`
+**Cause**: Vertex AI returned empty video response
+**Impact**: 500 error
+**Fix**: Check Vertex AI quota/status, may be transient
+
+---
+
+# Environment Variables to Check
+
+Image and text env vars now live in the gen Worker secrets (`gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json`, SOPS-encrypted). Decrypt to inspect:
+```bash
+sops -d gen.pollinations.ai/secrets/prod.vars.json | jq 'keys[] | select(test("AZURE|GOOGLE|CLOUDFLARE|OPENAI"))'
+```
+
+Key variables:
+- `AZURE_CONTENT_SAFETY_ENDPOINT` - Azure Content Safety API endpoint
+- `AZURE_CONTENT_SAFETY_API_KEY` - Azure Content Safety API key
+- `GOOGLE_PROJECT_ID` - Google Cloud project for Vertex AI
+- `AZURE_MYCELI_PROD_SWEDEN_API_KEY` - Shared Azure API key (Kontext, GPT Image, GPT Image 1.5)
+
+---
+
+# Updating Secrets
+
+Secrets are stored encrypted with SOPS:
+- `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json`
+- `enter.pollinations.ai/secrets/{dev,staging,prod}.vars.json`
+
+To update:
+```bash
+# Decrypt, edit, re-encrypt
+sops gen.pollinations.ai/secrets/prod.vars.json
+
+# Deploy to the gen Worker (secrets ship with the deploy)
+cd gen.pollinations.ai && npm run deploy
+```
+
+---
+
+# Log Analysis Commands
+
+```bash
+# Count errors by type (against captured wrangler-tail JSON)
+jq -r '.logs[]?.message[]? // .message? // empty' gen-logs.jsonl | grep -oE "(Azure Flux Kontext|Vertex AI|No active translate|getaddrinfo ENOTFOUND)" | sort | uniq -c | sort -rn
+
+# Find content filter rejections
+jq -r '.logs[]?.message[]? // .message? // empty' gen-logs.jsonl | grep -i "Content rejected" | sort | uniq -c
+```
+
+---
+
+# Model-Specific Debugging
+
+| Model | Backend | Common Issues |
+|-------|---------|---------------|
+| `flux` | Azure/Replicate | Rate limits, content filter |
+| `kontext` | Azure Flux Kontext | Content filter (strict) |
+| `nanobanana` | Vertex AI Gemini | Invalid image URLs, content filter |
+| `seedream-pro` | ByteDance ARK | NSFW filter, API key issues |
+| `veo` | Vertex AI | Quota, empty responses |
+| `openai-audio` | Azure OpenAI | Invalid voice names |
+| `deepseek` | DeepSeek API | Rate limits, API key |
+
+---
+
+# Cloudflare Workers Observability API
+
+The enter.pollinations.ai worker has structured logging enabled. You can query logs programmatically via the Cloudflare Workers Observability API.
+
+## Prerequisites
+
+### 1. Get Account ID
+```bash
+# From wrangler.toml
+grep account_id enter.pollinations.ai/wrangler.toml
+```
+
+### 2. Create API Token with Workers Observability Permission
+
+**Via Cloudflare Dashboard:**
+1. Go to https://dash.cloudflare.com/profile/api-tokens
+2. Click **Create Token**
+3. Click **Create Custom Token**
+4. Configure:
+   - **Token name**: `Workers Observability Read`
+   - **Permissions**:
+     - Account → Workers Scripts → Read
+     - Account → Workers Observability → Edit (required for query API)
+   - **Account Resources**: Include → Your Account
+5. Click **Continue to summary** → **Create Token**
+6. Copy the token immediately (shown only once)
+
+### 3. Store Token Securely
+
+The token is stored in SOPS-encrypted secrets:
+- **Location**: `enter.pollinations.ai/secrets/env.json`
+- **Key**: `CLOUDFLARE_OBSERVABILITY_TOKEN`
+
+To add/update:
+```bash
+# Step 1: Decrypt to temp file
+cd /path/to/pollinations
+sops -d enter.pollinations.ai/secrets/env.json > /tmp/env.json
+
+# Step 2: Add the token (use jq)
+jq '. + {"CLOUDFLARE_OBSERVABILITY_TOKEN": "your_token"}' /tmp/env.json > /tmp/env_updated.json
+
+# Step 3: Re-encrypt (must rename to match .sops.yaml pattern)
+cp /tmp/env_updated.json /tmp/env.json
+sops -e /tmp/env.json > enter.pollinations.ai/secrets/env.json
+
+# Step 4: Cleanup
+rm /tmp/env.json /tmp/env_updated.json
+
+# Verify
+sops -d enter.pollinations.ai/secrets/env.json | jq 'keys'
+```
+
+**Note**: The `.sops.yaml` config requires filenames matching `env.json$` pattern.
+
+## API Endpoint
+
+```
+POST https://api.cloudflare.com/client/v4/accounts/{account_id}/workers/observability/telemetry/query
+```
+
+## Query Examples
+
+### Setup: Get Credentials from SOPS
+
+```bash
+# Extract credentials from encrypted secrets
+ACCOUNT_ID=$(sops -d enter.pollinations.ai/secrets/env.json | jq -r '.CLOUDFLARE_ACCOUNT_ID')
+API_TOKEN=$(sops -d enter.pollinations.ai/secrets/env.json | jq -r '.CLOUDFLARE_OBSERVABILITY_TOKEN')
+```
+
+### List Available Log Keys (Working)
+
+This endpoint works and shows what fields are available:
+
+```bash
+curl -s "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/workers/observability/telemetry/keys" \
+  -H "Authorization: Bearer $API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"timeframe": {"from": '$(( $(date +%s) - 86400 ))'000, "to": '$(date +%s)'000}, "datasets": ["workers"]}' | jq '.result[:10]'
+```
+
+### Query Recent Errors (Last 15 Minutes)
+
+**Note**: The `/query` endpoint requires a saved `queryId`. For ad-hoc queries, use the Cloudflare Dashboard Query Builder or `wrangler tail`.
+
+```bash
+# This format requires a saved query ID
+
+# Query errors with status >= 400
+curl -s "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/workers/observability/telemetry/query" \
+  -H "Authorization: Bearer $API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "timeframe": {
+      "from": '$(( $(date +%s) - 900 ))'000,
+      "to": '$(date +%s)'000
+    },
+    "parameters": {
+      "datasets": ["workers"],
+      "filters": [
+        {"key": "$workers.scriptName", "operation": "eq", "type": "string", "value": "enter-pollinations-ai"},
+        {"key": "$metadata.statusCode", "operation": "gte", "type": "number", "value": 400}
+      ],
+      "calculations": [{"operator": "count"}],
+      "groupBys": [
+        {"type": "string", "value": "$metadata.statusCode"},
+        {"type": "string", "value": "$metadata.error"}
+      ],
+      "limit": 50
+    }
+  }' | jq '.result.events.events[:20]'
+```
+
+### Query Errors by Model
+
+```bash
+curl -s "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/workers/observability/telemetry/query" \
+  -H "Authorization: Bearer $API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "timeframe": {
+      "from": '$(( $(date +%s) - 3600 ))'000,
+      "to": '$(date +%s)'000
+    },
+    "parameters": {
+      "datasets": ["workers"],
+      "filters": [
+        {"key": "$workers.scriptName", "operation": "eq", "type": "string", "value": "enter-pollinations-ai"},
+        {"key": "$metadata.statusCode", "operation": "gte", "type": "number", "value": 400}
+      ],
+      "calculations": [{"operator": "count"}],
+      "groupBys": [
+        {"type": "string", "value": "model"},
+        {"type": "string", "value": "$metadata.statusCode"}
+      ],
+      "limit": 100
+    }
+  }' | jq '.result.calculations[0].aggregates'
+```
+
+### Get Raw Error Events with Full Details
+
+```bash
+curl -s "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/workers/observability/telemetry/query" \
+  -H "Authorization: Bearer $API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "timeframe": {
+      "from": '$(( $(date +%s) - 900 ))'000,
+      "to": '$(date +%s)'000
+    },
+    "parameters": {
+      "datasets": ["workers"],
+      "filters": [
+        {"key": "$workers.scriptName", "operation": "eq", "type": "string", "value": "enter-pollinations-ai"},
+        {"key": "$metadata.statusCode", "operation": "gte", "type": "number", "value": 500}
+      ],
+      "limit": 20
+    }
+  }' | jq '.result.events.events[] | {
+    timestamp: .timestamp,
+    statusCode: ."$metadata".statusCode,
+    error: ."$metadata".error,
+    message: ."$metadata".message,
+    requestId: ."$workers".requestId,
+    url: ."$metadata".url
+  }'
+```
+
+### List Available Log Keys
+
+```bash
+curl -s "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/workers/observability/telemetry/keys" \
+  -H "Authorization: Bearer $API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "timeframe": {
+      "from": '$(( $(date +%s) - 3600 ))'000,
+      "to": '$(date +%s)'000
+    },
+    "datasets": ["workers"],
+    "filters": [
+      {"key": "$workers.scriptName", "operation": "eq", "type": "string", "value": "enter-pollinations-ai"}
+    ]
+  }' | jq '.result.keys'
+```
+
+## Structured Logging in enter.pollinations.ai
+
+The worker uses LogTape for structured logging with these key fields:
+
+- **requestId**: Unique ID per request (first 8 chars shown in logs)
+- **method**: HTTP method (GET, POST)
+- **routePath**: Request URL
+- **status**: Response status code
+- **duration**: Request duration in ms
+
+Downstream errors are logged with:
+```typescript
+log.warn("Chat completions error {status}: {body}", {
+    status: response.status,
+    body: responseText,
+});
+```
+
+## Tinybird Analytics (Alternative)
+
+For aggregated model health stats, query Tinybird directly.
+
+> **⚠️ Use the prod read token from SOPS — do NOT use `.tinyb`.** The `.tinyb` in `enter.pollinations.ai/observability/` points to the **staging** workspace (`pollinations_enter_staging`), which has ~no real traffic, so prod queries come back empty. Get the prod token instead:
+> ```bash
+> TB=$(sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.TINYBIRD_READ_TOKEN')
+> ```
+> This single token works for **both** pipes (`/v0/pipes/...`) and raw SQL (`/v0/sql`) against the prod workspace (`pollinations_enter`). The public Model Monitor reads cached health data through `gen.pollinations.ai`; it does not expose a Tinybird token.
+
+```bash
+H="https://api.europe-west2.gcp.tinybird.co"
+
+# Get model health stats — pass minutes (default pipe window is short; use 240 for last 4h)
+curl -s "$H/v0/pipes/model_health.json?token=$TB&minutes=240" | jq '.data'
+
+# Detailed server-side error breakdown (full messages, upstream status/body, user attribution)
+curl -s "$H/v0/pipes/recent_server_errors.json?token=$TB&minutes=240&limit=500" -o /tmp/errs.json
+```
+
+**`model_health` columns** (note: NOT `error_count`/`error_rate`): `model`, `event_type`, `provider`, `model_used`, `total_requests`, `status_2xx`, `errors_4xx`, `errors_5xx`, `last_error_at`, `latency_p50_ms`, `latency_p95_ms`, `avg_latency_ms`, `last_request_at`. Sort by `errors_5xx` to find backend issues.
+
+**`recent_server_errors`** is the go-to pipe for root-causing (defined in `enter.pollinations.ai/observability/endpoints/recent_server_errors.pipe`, params `minutes` default 1440, `limit` default 200). It returns `timestamp, status, upstream_status, upstream_host, upstream_body, message, error_code, error_class, model_requested, route_path, request_inputs, user_id, user_tier, api_key_id`. There is **no** `model_errors` pipe.
+
+> **JSON quirk**: `recent_server_errors` rows contain raw newlines in `stack`/`message`, which break `jq`. Parse with Python instead: `python3 -c "import json; d=json.load(open('/tmp/errs.json'),strict=False); ..."`.
+
+> **Reading 5xx**: `upstream_status` reveals the true cause. `502 (up 429)` = provider throttle (e.g. Bedrock "Too many tokens" — account-level TPM quota, often a peak-traffic spike across many users, not one abuser). `502 (up 403)` from `api.openai.com` with `unsupported_country_region_territory` = Cloudflare egress PoP in an OpenAI-blocked country. `500 (up 500)` from Vertex/xAI = provider-side transient ("high load"/"Internal error") — no action.
+
+---
+
+# Debugging Workflow
+
+1. **Check Model Monitor** - https://monitor.pollinations.ai
+   - Identify which models have high error rates
+   - Note the error code breakdown (401, 402, 403, 400, 500, etc.)
+
+2. **Query Cloudflare Logs** - Use the API queries above
+   - Get raw error events with full details
+   - Look for patterns in error messages
+   - Group by `user_id`, `api_key_id`, route, and sanitized `request_inputs` before calling the pattern a model-wide outage
+   - A concentrated burst from one caller can be invalid input even when the upstream reports 500
+
+3. **Correlate with Request ID** - If you have a specific request ID:
+   ```bash
+   # Filter by request ID
+   curl -s "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/workers/observability/telemetry/query" \
+     -H "Authorization: Bearer $API_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "timeframe": {"from": '$(( $(date +%s) - 86400 ))'000, "to": '$(date +%s)'000},
+       "parameters": {
+         "datasets": ["workers"],
+         "filters": [
+           {"key": "$workers.requestId", "operation": "eq", "type": "string", "value": "REQUEST_ID_HERE"}
+         ],
+         "limit": 100
+       }
+     }' | jq '.result.events.events'
+   ```
+
+4. **Check Gateway Logs** - Tail the gen Worker (image + text both run here):
+   ```bash
+   cd gen.pollinations.ai && wrangler tail --format json | tee gen-logs.jsonl
+   ```
+
+5. **Test Model Directly** - Verify if model is actually broken:
+   ```bash
+   TOKEN=$(grep ENTER_API_TOKEN_REMOTE enter.pollinations.ai/.testingtokens | cut -d= -f2)
+
+   # Test text model
+   curl -s 'https://gen.pollinations.ai/v1/chat/completions' \
+     -H "Authorization: Bearer $TOKEN" \
+     -H 'Content-Type: application/json' \
+     -d '{"model": "MODEL_NAME", "messages": [{"role": "user", "content": "Test"}]}' \
+     -w "\nHTTP: %{http_code}\n"
+
+   # Test image model
+   curl -s 'https://gen.pollinations.ai/image/test?model=MODEL_NAME&width=256&height=256' \
+     -H "Authorization: Bearer $TOKEN" \
+     -w "\nHTTP: %{http_code}\n" -o /dev/null
+   ```
+
+---
+
+# Current Status & Limitations
+
+## Cloudflare Observability API
+
+**What works:**
+- `/telemetry/keys` - List available log fields ✅
+- `/telemetry/values` - Get unique values for a field ✅
+- Token stored in SOPS: `enter.pollinations.ai/secrets/env.json` ✅
+
+**Limitations:**
+- `/telemetry/query` requires a saved `queryId` from the dashboard
+- For ad-hoc queries, use **Cloudflare Dashboard** → Workers & Pages → pollinations-enter → Observability → Investigate
+- Or use `wrangler tail` for real-time logs
+
+## Alternative: Tinybird (Recommended for Aggregates)
+
+Tinybird provides pre-aggregated model health stats and raw event data.
+
+### Token Locations
+
+- **Prod read token (use this)**: `enter.pollinations.ai/secrets/prod.vars.json` → `TINYBIRD_READ_TOKEN` (via SOPS). Works for both pipes and raw `/v0/sql` against prod (`pollinations_enter`).
+- **`.tinyb`** = **staging** workspace (`pollinations_enter_staging`) — empty of prod traffic. Only use for staging-specific debugging.
+
+### Basic Queries
+
+```bash
+# Prod read token from SOPS — works for pipes AND raw SQL
+TB=$(sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.TINYBIRD_READ_TOKEN')
+
+# Get model health (last 4h)
+curl -s "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health.json?token=$TB&minutes=240" | jq '.data'
+```
+
+### Raw SQL Queries
+
+The prod `TINYBIRD_READ_TOKEN` above can query the raw `generation_event_v2` datasource directly via `/v0/sql` (verified). Reuse `$TB`:
+
+```bash
+# Find users with frequent 403 errors (last 24 hours)
+curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
+  --data-urlencode "q=SELECT ge.user_id, any(users.github_username) AS github_username, argMax(ge.user_tier, ge.start_time) AS user_tier, count() as error_403_count
+FROM generation_event_v2 ge
+LEFT JOIN (SELECT id, github_username FROM d1_user WHERE synced_at = (SELECT max(synced_at) FROM d1_user)) users ON ge.user_id = users.id
+WHERE ge.response_status = 403
+  AND ge.start_time > now() - interval 24 hour
+  AND ge.user_id != ''
+  AND ge.user_id != 'undefined'
+GROUP BY ge.user_id
+ORDER BY error_403_count DESC
+LIMIT 20"
+
+# Find users with 500 errors (actual backend issues)
+curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
+  --data-urlencode "q=SELECT ge.user_id, any(users.github_username) AS github_username, ge.model_requested, ge.error_message, count() as error_count
+FROM generation_event_v2 ge
+LEFT JOIN (SELECT id, github_username FROM d1_user WHERE synced_at = (SELECT max(synced_at) FROM d1_user)) users ON ge.user_id = users.id
+WHERE ge.response_status >= 500
+  AND ge.start_time > now() - interval 24 hour
+GROUP BY ge.user_id, ge.model_requested, ge.error_message
+ORDER BY error_count DESC
+LIMIT 20"
+
+# Check specific user's recent errors
+curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
+  --data-urlencode "q=SELECT start_time, response_status, model_requested, error_message
+FROM generation_event_v2
+WHERE user_id = 'USER_ID_HERE'
+  AND start_time > now() - interval 24 hour
+ORDER BY start_time DESC
+LIMIT 50"
+```
+
+### Datasource Schema
+
+The `generation_event_v2` datasource is defined in `enter.pollinations.ai/observability/datasources/generation_event_v2.datasource` and includes:
+- `user_id`, `user_tier` (join `d1_user.id` for the current GitHub display name)
+- `response_status`, `error_message`, `error_response_code`
+- `model_requested`, `model_used`
+- `total_price`, `total_cost`
+- `start_time`, `end_time`, `response_time`
+
+---
+
+# Scripts
+
+Helper scripts for common debugging tasks. Run from repo root.
+
+## Find Users with 403 Errors (Quota Issues)
+
+```bash
+# Find users with >10 403 errors in last 24 hours
+.claude/skills/model-debugging/scripts/find-403-users.sh 24 10
+```
+
+## Find 500 Errors (Backend Issues)
+
+```bash
+# Find 500+ errors grouped by user/model/message
+.claude/skills/model-debugging/scripts/find-500-errors.sh 24
+```
+
+## Check Specific User's Errors
+
+```bash
+# See a user's recent errors by internal user ID
+.claude/skills/model-debugging/scripts/check-user-errors.sh USER_ID_HERE 24
+```
+
+---
+
+# Notes
+
+- **401 errors**: User authentication issues (no API key) - **expected from anonymous traffic**
+- **402 errors**: Pollen/billing issues (user ran out of credits or key budget) - **expected**
+- **403 errors**: Permission issues (model not allowed for API key) - **expected**
+- **400 errors**: Usually user input errors (bad prompts, invalid params) - **expected**
+- **500 errors**: Backend/infrastructure issues - **investigate these**
+- **504 errors**: Timeouts (model too slow or hung) - **investigate these**
+
+---
+
+# Tested Models (All Working as of 2025-12-22)
+
+| Model | Type | Endpoint | Status |
+|-------|------|----------|--------|
+| `openai` | text | POST /v1/chat/completions | ✅ |
+| `openai-fast` | text | POST /v1/chat/completions | ✅ |
+| `openai-large` | text | POST /v1/chat/completions | ✅ |
+| `openai-audio` | text | GET /text/{prompt}?model=openai-audio&voice=alloy | ✅ (MP3) |
+| `claude` | text | POST /v1/chat/completions | ✅ |
+| `gemini-fast` | text | POST /v1/chat/completions | ✅ |
+| `flux` | image | GET /image/{prompt} | ✅ |
+| `nanobanana-pro` | image | GET /image/{prompt} | ✅ |
+| `seedream-pro` | image | GET /image/{prompt} | ✅ |
+| `seedance-pro` | video | GET /image/{prompt} | ✅ (MP4) |

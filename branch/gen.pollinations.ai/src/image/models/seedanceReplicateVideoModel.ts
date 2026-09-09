@@ -1,0 +1,194 @@
+import { UpstreamError } from "@shared/error.ts";
+/**
+ * ByteDance Seedance Pro-Fast video generation via Replicate.
+ *
+ * Replaces the BytePlus ARK path for seedance-pro. The `seedance` (Lite)
+ * model has been retired from the registry — Replicate's
+ * bytedance/seedance-1-lite endpoint is reproducibly broken (E004 incident
+ * 1cah9wlWR9 at all resolutions, May 2026) and BytePlus is being deprecated.
+ *
+ * Replicate prices 480p / 720p / 1080p differently ($0.015 / $0.025 / $0.06
+ * per sec for pro-fast); the request resolution drives both upstream routing
+ * and the registry cost variant.
+ */
+
+import debug from "debug";
+import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
+import type { ImageParams } from "../params.ts";
+import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
+import { fetchUpstream } from "../utils/fetchUpstream.ts";
+import { toDataUri } from "../utils/imageDownload.ts";
+import {
+    runReplicatePrediction,
+    toReplicateUpstreamError,
+} from "../utils/replicateClient.ts";
+
+const logOps = debug("pollinations:seedance:ops");
+const logError = debug("pollinations:seedance:error");
+
+// Replicate's seedance-1-lite/pro-fast accept these aspect ratios. Validate at
+// the boundary so users get 400 instead of a Replicate 422 round-trip.
+const SEEDANCE_ASPECT_RATIOS = [
+    "16:9",
+    "4:3",
+    "1:1",
+    "3:4",
+    "9:16",
+    "21:9",
+    "9:21",
+] as const;
+type SeedanceAspectRatio = (typeof SEEDANCE_ASPECT_RATIOS)[number];
+
+function resolveSeedanceAspectRatio(
+    safeParams: ImageParams,
+): SeedanceAspectRatio {
+    const requested = safeParams.aspectRatio;
+    if (requested) {
+        if ((SEEDANCE_ASPECT_RATIOS as readonly string[]).includes(requested)) {
+            return requested as SeedanceAspectRatio;
+        }
+        throw UpstreamError.fromProvider(400, {
+            message: `aspectRatio "${requested}" is not supported by Seedance. Supported: ${SEEDANCE_ASPECT_RATIOS.join(", ")}.`,
+        });
+    }
+    if (safeParams.width && safeParams.height) {
+        // Derive a supported ratio from width/height (documented schema
+        // contract: "If not set, determined by width/height").
+        return closestRatioLogSpace(
+            safeParams.width,
+            safeParams.height,
+            SEEDANCE_ASPECT_RATIOS,
+        );
+    }
+    return "16:9";
+}
+
+interface SeedanceInput {
+    prompt: string;
+    duration: number;
+    resolution: "480p" | "720p" | "1080p";
+    aspect_ratio: SeedanceAspectRatio;
+    fps: 24;
+    camera_fixed: boolean;
+    seed?: number;
+    image?: string;
+}
+
+interface SeedanceModelConfig {
+    /** Replicate model owner/name (no version pin — pinned by Replicate's "latest"). */
+    model: string;
+    /** Tracking label for usage metrics + analytics. */
+    trackingLabel: string;
+    /** Display name for error context. */
+    displayName: string;
+    /** Default duration in seconds when the request omits it. */
+    defaultDuration: number;
+    /** Max duration accepted by the upstream (Replicate caps at 12). */
+    maxDuration: number;
+}
+
+const SEEDANCE_PRO_FAST_CONFIG: SeedanceModelConfig = {
+    model: "bytedance/seedance-1-pro-fast",
+    trackingLabel: "bytedance/seedance-1-pro-fast",
+    displayName: "Seedance 1.0 Pro Fast",
+    defaultDuration: 5,
+    maxDuration: 10,
+};
+
+async function generateSeedanceVideo(
+    config: SeedanceModelConfig,
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<VideoGenerationResult> {
+    // Replicate's duration range is [2, 12]. Clamp to upstream + our config max.
+    const requestedDuration = Math.floor(
+        safeParams.duration ?? config.defaultDuration,
+    );
+    const duration = Math.max(
+        2,
+        Math.min(config.maxDuration, requestedDuration),
+    );
+
+    const images = safeParams.image ?? [];
+
+    const input: SeedanceInput = {
+        prompt,
+        duration,
+        resolution:
+            safeParams.resolution === "480p" ||
+            safeParams.resolution === "1080p"
+                ? safeParams.resolution
+                : "720p",
+        aspect_ratio: resolveSeedanceAspectRatio(safeParams),
+        fps: 24,
+        camera_fixed: false,
+    };
+    if (safeParams.seed !== undefined) {
+        input.seed = safeParams.seed;
+    }
+
+    if (images.length >= 1) input.image = await toDataUri(images[0]);
+
+    logOps(`${config.displayName} input:`, {
+        ...input,
+        prompt: prompt.slice(0, 80),
+        image: input.image ? "[data uri]" : undefined,
+    });
+
+    let videoUrl: string;
+    let actualDurationSeconds: number | undefined;
+    try {
+        const result = await runReplicatePrediction<SeedanceInput, string>({
+            model: config.model,
+            input,
+        });
+        videoUrl = result.output;
+        actualDurationSeconds = result.videoOutputDurationSeconds;
+        logOps(`${config.displayName} prediction succeeded:`, {
+            id: result.id,
+            predict_time: result.predictTimeSeconds,
+            video_output_duration: actualDurationSeconds,
+        });
+    } catch (err) {
+        logError(`${config.displayName} prediction call failed:`, err);
+        throw toReplicateUpstreamError(
+            err,
+            `${config.displayName} generation failed`,
+        );
+    }
+
+    const videoResponse = await fetchUpstream(videoUrl, {
+        errorLabel: `Failed to download ${config.displayName} output video`,
+    });
+    const buffer = Buffer.from(await videoResponse.arrayBuffer());
+    logOps(
+        `${config.displayName} video downloaded:`,
+        (buffer.length / 1024 / 1024).toFixed(2),
+        "MB",
+    );
+
+    // Bill on the actual output length Replicate reports; fall back to the
+    // requested duration if the metric is missing.
+    const billedDuration = actualDurationSeconds ?? duration;
+
+    return {
+        buffer,
+        mimeType: "video/mp4",
+        durationSeconds: billedDuration,
+        trackingData: {
+            actualModel: config.trackingLabel,
+            usage: {
+                completionVideoSeconds: billedDuration,
+            },
+        },
+    };
+}
+
+/**
+ * Seedance Pro-Fast via Replicate — T2V and I2V (first frame only).
+ */
+export const callSeedanceProAPI = (
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<VideoGenerationResult> =>
+    generateSeedanceVideo(SEEDANCE_PRO_FAST_CONFIG, prompt, safeParams);

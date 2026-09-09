@@ -1,0 +1,269 @@
+import { UpstreamError } from "@shared/error.ts";
+import debug from "debug";
+import { isNetworkFailure } from "../fallback.ts";
+
+const logServer = debug("pollinations:server");
+
+// "sana" is the pool key for the dreamshaper workers. It keeps the old name on
+// purpose: /register rejects unknown types, so a worker cannot join a pool that
+// only exists once this change is deployed. Keeping the key lets workers
+// register first and the routing switch land on a populated pool, with no
+// window where requests hit an empty one.
+export const VALID_TYPES = ["flux", "zimage", "sana"] as const;
+export type ServerType = (typeof VALID_TYPES)[number];
+
+type ServerEntry = {
+    url: string;
+    lastHeartbeat: number;
+    // Last observed /generate latency (ms), measured by the gen worker. Used to
+    // weight load balancing toward faster backends so a slow GPU (e.g. a 3090
+    // next to a 4090) does not get an equal share and drown. Absent until the
+    // first request to that server has completed.
+    lastMs?: number;
+};
+
+const SERVER_TIMEOUT = 180000;
+const REGISTRY_TTL_SECONDS = 240;
+const REGISTRY_WRITE_THROTTLE_MS = 30_000;
+// Persist a server's latest latency at most this often (KV ~1 write/sec/key).
+const LATENCY_WRITE_THROTTLE_MS = 20_000;
+// Latency assumed for a server with no measurement yet, so it still gets
+// sampled (not starved or flooded) on cold start.
+const DEFAULT_LATENCY_MS = 8000;
+
+let serverRegistry: KVNamespace | null = null;
+let registryEnvironment = "development";
+const recentWrites = new Map<string, number>();
+const recentLatencyWrites = new Map<string, number>();
+
+export function setServerRegistryBinding(
+    binding: KVNamespace,
+    environment = "development",
+): void {
+    serverRegistry = binding;
+    registryEnvironment = environment;
+}
+
+function getServerRegistry(): KVNamespace {
+    if (!serverRegistry) {
+        throw new Error("Image server registry is not configured");
+    }
+    return serverRegistry;
+}
+
+export function isValidType(type: string): type is ServerType {
+    return (VALID_TYPES as readonly string[]).includes(type);
+}
+
+function prefix(type: ServerType): string {
+    return `image:server:${registryEnvironment}:${type}:`;
+}
+
+// Latency is stored under a separate key from the heartbeat entry so the two
+// writers (registerServer heartbeats vs recordLatency samples) never touch the
+// same key. That makes lastMs impossible to clobber via a stale heartbeat read.
+function latencyKey(type: ServerType, hash: string): string {
+    return `image:latency:${registryEnvironment}:${type}:${hash}`;
+}
+
+async function urlHash(url: string): Promise<string> {
+    const data = new TextEncoder().encode(url);
+    const digest = await crypto.subtle.digest("SHA-1", data);
+    const bytes = new Uint8Array(digest);
+    let hex = "";
+    for (let i = 0; i < bytes.length; i++) {
+        hex += bytes[i].toString(16).padStart(2, "0");
+    }
+    return hex;
+}
+
+export const registerServer = async (
+    url: string,
+    type: ServerType,
+): Promise<void> => {
+    const kv = getServerRegistry();
+    const key = prefix(type) + (await urlHash(url));
+    const now = Date.now();
+    const lastWrite = recentWrites.get(key);
+    if (
+        lastWrite !== undefined &&
+        now - lastWrite < REGISTRY_WRITE_THROTTLE_MS
+    ) {
+        logServer(`Skipped throttled write for ${type} server ${url}`);
+        return;
+    }
+    // Heartbeat writes only the liveness entry. Latency lives under its own key
+    // (recordLatency), so this write can never wipe a server's routing weight.
+    const entry: ServerEntry = { url, lastHeartbeat: now };
+    await kv.put(key, JSON.stringify(entry), {
+        expirationTtl: REGISTRY_TTL_SECONDS,
+    });
+    recentWrites.set(key, now);
+    logServer(`Registered ${type} server ${url}`);
+};
+
+export async function getRegisteredServers(
+    type: ServerType,
+): Promise<ServerEntry[]> {
+    const kv = getServerRegistry();
+    const { keys } = await kv.list({ prefix: prefix(type) });
+    if (keys.length === 0) return [];
+
+    const now = Date.now();
+    const entries = await Promise.all(
+        keys.map(async (k) => {
+            const entry = await kv.get<ServerEntry>(k.name, "json");
+            if (!entry || now - entry.lastHeartbeat >= SERVER_TIMEOUT) {
+                return null;
+            }
+            // Merge the latency recorded under the separate latency key.
+            const hash = k.name.slice(prefix(type).length);
+            const lastMs = await kv.get<number>(latencyKey(type, hash), "json");
+            return lastMs != null ? { ...entry, lastMs } : entry;
+        }),
+    );
+    return entries.filter((e): e is ServerEntry => e !== null);
+}
+
+// Weighted-random pick over active servers, weighted by 1/lastMs so faster
+// backends receive proportionally more traffic (a 3090 next to a 4090 gets a
+// smaller share instead of an equal one). Weighted rather than always-pick-the-
+// fastest to avoid herding every request onto one server between updates.
+// Unmeasured servers use a neutral default so they still get sampled. Pure
+// function — exported for testing.
+export function chooseWeightedServer(servers: ServerEntry[]): string {
+    if (servers.length === 1) return servers[0].url;
+    const weights = servers.map((s) => 1 / (s.lastMs ?? DEFAULT_LATENCY_MS));
+    const total = weights.reduce((a, b) => a + b, 0);
+    let r = Math.random() * total;
+    for (let i = 0; i < servers.length; i++) {
+        r -= weights[i];
+        if (r <= 0) return servers[i].url;
+    }
+    return servers[servers.length - 1].url;
+}
+
+// Save the latency of the most recent successful /generate under the server's
+// dedicated latency key, so chooseWeightedServer can weight toward faster
+// backends. Separate key = a heartbeat can never overwrite it. Throttled to one
+// write per LATENCY_WRITE_THROTTLE_MS per server (KV caps at ~1 write/sec/key).
+// Best-effort: never throws into the request path.
+export const recordLatency = async (
+    type: ServerType,
+    url: string,
+    lastMs: number,
+): Promise<void> => {
+    if (!serverRegistry || !Number.isFinite(lastMs) || lastMs <= 0) return;
+    const hash = await urlHash(url);
+    const key = latencyKey(type, hash);
+    const now = Date.now();
+    const lastWrite = recentLatencyWrites.get(key);
+    if (
+        lastWrite !== undefined &&
+        now - lastWrite < LATENCY_WRITE_THROTTLE_MS
+    ) {
+        return;
+    }
+    try {
+        await serverRegistry.put(key, JSON.stringify(lastMs), {
+            expirationTtl: REGISTRY_TTL_SECONDS,
+        });
+        recentLatencyWrites.set(key, now);
+        logServer(`Recorded latency ${lastMs}ms for ${url}`);
+    } catch (err) {
+        logServer(`Failed to record latency for ${url}: ${err}`);
+    }
+};
+
+// Test-only: clear in-process throttle state between cases.
+export function __resetLatencyStateForTests(): void {
+    recentLatencyWrites.clear();
+    recentWrites.clear();
+}
+
+type ReplayableRequestInit = Omit<RequestInit, "body"> & { body?: string };
+
+/**
+ * Fetches from the weighted pool, retrying distinct workers only when the
+ * request was not accepted (HTTP 503 or a known network failure). The body is
+ * deliberately restricted to a string so every retry can safely resend it.
+ *
+ * Do not add AbortSignal.timeout() here without production Workerd validation:
+ * a timeout signal previously broke every pool request despite passing locally.
+ */
+export const fetchFromWeightedServer = async (
+    type: ServerType = "flux",
+    options: ReplayableRequestInit,
+): Promise<Response> => {
+    const remainingServers = await getRegisteredServers(type);
+    if (remainingServers.length === 0) {
+        throw UpstreamError.fromProvider(503, {
+            message: `No active ${type} servers available`,
+        });
+    }
+
+    while (true) {
+        const serverUrl = chooseWeightedServer(remainingServers);
+        const selectedIndex = remainingServers.findIndex(
+            (server) => server.url === serverUrl,
+        );
+        remainingServers.splice(selectedIndex, 1);
+
+        const startedAt = Date.now();
+        let response: Response;
+        try {
+            response = await fetch(`${serverUrl}/generate`, options);
+        } catch (error) {
+            if (!isNetworkFailure(error) || remainingServers.length === 0) {
+                throw error;
+            }
+            console.warn(
+                `[${type}] Network failure from ${serverUrl}; retrying another pool worker`,
+            );
+            continue;
+        }
+        // Record latency for successful responses only (a 5xx/timeout would
+        // record the full timeout window and wrongly down-weight a recovering
+        // server). Awaited (not fire-and-forget): a floating promise can be
+        // cancelled when the Worker invocation completes, dropping the KV
+        // write. The cost is bounded by the in-memory write throttle.
+        if (response.ok) {
+            await recordLatency(type, serverUrl, Date.now() - startedAt);
+            return response;
+        }
+
+        let errorBody = "";
+        try {
+            errorBody = await response.text();
+        } catch {
+            errorBody = "Could not read error response body";
+        }
+
+        const error = UpstreamError.fromProvider(response.status, {
+            message: `Image backend rejected request with status ${response.status}`,
+            responseBody: errorBody,
+            requestUrl: new URL(`${serverUrl}/generate`),
+        });
+
+        // A queue-full response means this backend did not accept the request.
+        // Try each other registered worker once so spare pool capacity is used
+        // before the caller receives a 503. Other failures stay single-attempt:
+        // retrying a request that may already have started can duplicate work.
+        if (response.status !== 503 || remainingServers.length === 0) {
+            console.error(
+                `[${type}] Server ${serverUrl} returned ${response.status}:`,
+                {
+                    status: response.status,
+                    statusText: response.statusText,
+                    body: errorBody,
+                },
+            );
+            throw error;
+        }
+
+        console.warn(
+            `[${type}] Server ${serverUrl} returned 503; retrying another pool worker`,
+            { body: errorBody },
+        );
+    }
+};

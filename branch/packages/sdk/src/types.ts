@@ -1,0 +1,1083 @@
+export interface PollinationsConfig {
+    /** API key for authentication (get one at https://enter.pollinations.ai/keys) */
+    apiKey?: string;
+    /** Base URL for the API (defaults to https://gen.pollinations.ai) */
+    baseUrl?: string;
+    /** Default timeout in ms for all requests (default: 300000 = 5min) */
+    timeout?: number;
+    /** Timeout in ms for text requests (default: 300000 = 5min) */
+    textTimeout?: number;
+    /** Timeout in ms for image requests (default: 600000 = 10min) */
+    imageTimeout?: number;
+    /** Timeout in ms for video requests (default: 1200000 = 20min) */
+    videoTimeout?: number;
+}
+
+/** Common options for all request methods */
+export interface RequestOptions {
+    /** AbortSignal for request cancellation */
+    signal?: AbortSignal;
+}
+
+// ============================================================================
+// Image Generation
+// ============================================================================
+
+/** Image model (use getImageModels() to fetch available models) */
+export type ImageModel = string;
+
+/** Available video models */
+export type VideoModel = string;
+
+/** Image quality options */
+export type ImageQuality = "low" | "medium" | "high" | "hd";
+
+/** Reasoning depth for supported image models */
+export type ImageReasoningMode = "fast" | "balanced" | "pro";
+
+/** Options for image generation */
+export interface ImageGenerateOptions extends RequestOptions {
+    /** Image model to use (server default: 'zimage') */
+    model?: ImageModel;
+    /** Image width in pixels (default: 1024) */
+    width?: number;
+    /** Image height in pixels (default: 1024) */
+    height?: number;
+    /** Model-specific output resolution tier (for example, "1k" or "2k") */
+    resolution?: string;
+    /** Seed for reproducible generation (default: random) */
+    seed?: number;
+    /** Enable safety content filters (default: false) */
+    safe?: boolean;
+    /** Output quality (default: 'medium') */
+    quality?: ImageQuality;
+    /** Reference image URL(s) for image-to-image generation */
+    referenceImage?: string | string[];
+    /** Enable transparent background - outputs PNG (default: false) */
+    transparent?: boolean;
+    /** How closely to follow prompt, 1-20 (higher = stricter) */
+    guidanceScale?: number;
+    /**
+     * Reasoning mode for supported image models.
+     * Booleans are accepted for backward compatibility: true = "pro",
+     * false = "balanced".
+     */
+    reasoning?: boolean | ImageReasoningMode;
+}
+
+/** Options for image editing (POST /v1/images/edits) */
+export interface ImageEditOptions extends RequestOptions {
+    /** Image model to use (server default: 'flux') */
+    model?: ImageModel;
+    /** Source image URL(s) for editing */
+    image?: string | string[];
+}
+
+/** Response from image generation */
+export interface ImageResponse {
+    /** The generated image as a Buffer (Node.js) or ArrayBuffer (browser) */
+    buffer: ArrayBuffer;
+    /** Content type (image/jpeg or image/png) */
+    contentType: string;
+    /** The URL that was used to generate the image */
+    url: string;
+}
+
+// ============================================================================
+// Video Generation
+// ============================================================================
+
+/** Options for video generation */
+export interface VideoGenerateOptions extends RequestOptions {
+    /** Video model to use (server default: 'veo') */
+    model?: VideoModel;
+    /** Duration in seconds (supported range varies by model) */
+    duration?: number;
+    /** Aspect ratio (e.g., '16:9', '9:16', '1:1') */
+    aspectRatio?: string;
+    /** Model-specific output resolution tier (for example, "720p" or "1080p") */
+    resolution?: string;
+    /** Seed for reproducible generation */
+    seed?: number;
+    /** Enable audio generation where supported by the selected video model */
+    audio?: boolean;
+    /** Reference image URL(s) for image-to-video. For video, image[0] is the start frame and image[1] is the end frame when supported. */
+    referenceImage?: string | string[];
+    /** Enable safety content filters (default: false) */
+    safe?: boolean;
+}
+
+/** Response from video generation */
+export interface VideoResponse {
+    /** The generated video as a Buffer (Node.js) or ArrayBuffer (browser) */
+    buffer: ArrayBuffer;
+    /** Content type (video/mp4) */
+    contentType: string;
+    /** The URL that was used to generate the video */
+    url: string;
+}
+
+// ============================================================================
+// Text Generation
+// ============================================================================
+
+/** Text model (use getTextModels() to fetch available models) */
+export type TextModel = string;
+
+/** Message roles for chat */
+export type MessageRole =
+    | "system"
+    | "developer"
+    | "user"
+    | "assistant"
+    | "tool"
+    | "function";
+
+/** Text content part */
+export interface TextContentPart {
+    type: "text";
+    text: string;
+}
+
+/** Image content part for vision */
+export interface ImageContentPart {
+    type: "image_url";
+    image_url: {
+        url: string;
+        detail?: "auto" | "low" | "high";
+        mime_type?: string;
+    };
+}
+
+/** Video content part */
+export interface VideoContentPart {
+    type: "video_url";
+    video_url: {
+        url: string;
+        mime_type?: string;
+    };
+}
+
+/** Audio content part */
+export interface AudioContentPart {
+    type: "input_audio";
+    input_audio: {
+        /** Base64 encoded audio data */
+        data: string;
+        format: "wav" | "mp3" | "flac" | "opus" | "pcm16";
+    };
+}
+
+/** File content part */
+export interface FileContentPart {
+    type: "file";
+    file: {
+        file_data?: string;
+        file_id?: string;
+        file_name?: string;
+        file_url?: string;
+        mime_type?: string;
+    };
+}
+
+/** All possible content parts */
+export type MessageContentPart =
+    | TextContentPart
+    | ImageContentPart
+    | VideoContentPart
+    | AudioContentPart
+    | FileContentPart;
+
+/** Message content - either a string or array of content parts */
+export type MessageContent = string | MessageContentPart[];
+
+/** A chat message */
+export interface Message {
+    role: MessageRole;
+    content: MessageContent;
+    name?: string;
+    /** For tool messages */
+    tool_call_id?: string;
+}
+
+/** Options for simple text generation */
+export interface TextGenerateOptions extends RequestOptions {
+    /** Text model to use (server default: 'openai') */
+    model?: TextModel;
+    /** System prompt to set context */
+    systemPrompt?: string;
+    /** Seed for reproducible generation */
+    seed?: number;
+    /** Return response as JSON (default: false) */
+    json?: boolean;
+    /** Temperature 0-2, higher = more creative (default: 1) */
+    temperature?: number;
+    /** Maximum tokens to generate */
+    maxTokens?: number;
+    /** Frequency penalty -2 to 2 */
+    frequencyPenalty?: number;
+    /** Presence penalty -2 to 2 */
+    presencePenalty?: number;
+    /** Enable streaming response (default: false) */
+    stream?: boolean;
+    /** Keep generation private (default: false) */
+    private?: boolean;
+}
+
+/** Response format options */
+export type ResponseFormat =
+    | { type: "text" }
+    | { type: "json_object" }
+    | { type: "json_schema"; json_schema: JsonSchema };
+
+/** JSON schema for structured output */
+export interface JsonSchema {
+    name: string;
+    description?: string;
+    schema: Record<string, unknown>;
+    strict?: boolean;
+}
+
+/** Tool definition */
+export interface Tool {
+    type: "function";
+    function: {
+        name: string;
+        description?: string;
+        parameters?: Record<string, unknown>;
+        strict?: boolean;
+    };
+}
+
+/** Built-in tool types */
+export type BuiltInToolType =
+    | "code_execution"
+    | "google_search"
+    | "google_maps"
+    | "url_context"
+    | "computer_use"
+    | "file_search";
+
+/** Capabilities that router models can delegate to downstream models. */
+export const CHAT_ROUTING_CAPABILITIES = [
+    "text",
+    "web_search",
+    "image_generation",
+    "image_editing",
+    "video",
+    "audio",
+] as const;
+
+/** Capability names accepted by router-model routing preferences. */
+export type ChatRoutingCapability = (typeof CHAT_ROUTING_CAPABILITIES)[number];
+
+/** Optional downstream-model overrides for router models. */
+export type ChatRouting = Partial<Record<ChatRoutingCapability, string>>;
+
+/** Options for chat completions (POST endpoint) */
+export interface ChatOptions extends RequestOptions {
+    /** Text model to use (server default: 'openai') */
+    model?: TextModel;
+    /** Per-capability downstream model overrides for router models. */
+    routing?: ChatRouting;
+    /** Temperature 0-2 (default: 1) */
+    temperature?: number;
+    /** Top P sampling 0-1 (default: 1) */
+    topP?: number;
+    /** Maximum tokens to generate */
+    maxTokens?: number;
+    /** Frequency penalty -2 to 2 */
+    frequencyPenalty?: number;
+    /** Presence penalty -2 to 2 */
+    presencePenalty?: number;
+    /** Repetition penalty */
+    repetitionPenalty?: number;
+    /** Stop sequences (max 4) */
+    stop?: string | string[];
+    /** Seed for reproducible generation */
+    seed?: number;
+    /** Keep generation private (default: false) */
+    private?: boolean;
+    /** Enable streaming response (default: false) */
+    stream?: boolean;
+    /** Include usage stats in streaming response */
+    streamOptions?: { include_usage?: boolean };
+    /** Response format */
+    responseFormat?: ResponseFormat;
+    /** Tools available to the model */
+    tools?: (Tool | { type: BuiltInToolType })[];
+    /** Tool choice: 'none', 'auto', 'required', or specific function */
+    toolChoice?:
+        | "none"
+        | "auto"
+        | "required"
+        | { type: "function"; function: { name: string } };
+    /** Allow parallel tool calls (default: true) */
+    parallelToolCalls?: boolean;
+    /** Reasoning effort for thinking models */
+    reasoningEffort?: "none" | "minimal" | "low" | "medium" | "high" | "xhigh";
+    /** Output modalities */
+    modalities?: ("text" | "audio")[];
+    /** Audio output options */
+    audio?: {
+        voice?: AudioVoice;
+        format?: AudioFormat;
+    };
+    /** User identifier for tracking */
+    user?: string;
+    /** Logit bias for token probabilities */
+    logitBias?: Record<string, number>;
+    /** Return log probabilities */
+    logprobs?: boolean;
+    /** Number of top log probabilities to return (0-20) */
+    topLogprobs?: number;
+    /** Legacy function calling (use tools instead) */
+    functions?: FunctionDefinition[];
+    /** Legacy function call control (use toolChoice instead) */
+    functionCall?: "none" | "auto" | { name: string };
+}
+
+/** Legacy function definition (use Tool instead) */
+export interface FunctionDefinition {
+    name: string;
+    description?: string;
+    parameters?: Record<string, unknown>;
+}
+
+/** A tool call in the response */
+export interface ToolCall {
+    id: string;
+    type: "function";
+    function: {
+        name: string;
+        arguments: string;
+    };
+}
+
+/** Token usage information */
+export interface CompletionUsage {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+    prompt_tokens_details?: {
+        cached_tokens?: number;
+        audio_tokens?: number;
+    };
+    completion_tokens_details?: {
+        reasoning_tokens?: number;
+        audio_tokens?: number;
+    };
+}
+
+/** A choice in the chat response */
+export interface ChatChoice {
+    index: number;
+    message: {
+        role: "assistant";
+        content: string | null;
+        tool_calls?: ToolCall[];
+        audio?: {
+            transcript: string;
+            data: string;
+            id: string;
+            expires_at: number;
+        } | null;
+        reasoning_content?: string | null;
+    };
+    finish_reason: "stop" | "length" | "tool_calls" | "content_filter" | null;
+    logprobs?: {
+        content?: Array<{
+            token: string;
+            logprob: number;
+            bytes?: number[];
+            top_logprobs?: Array<{
+                token: string;
+                logprob: number;
+                bytes?: number[];
+            }>;
+        }>;
+    } | null;
+}
+
+/** Chat completion response */
+export interface ChatResponse {
+    id: string;
+    object: "chat.completion";
+    created: number;
+    model: string;
+    choices: ChatChoice[];
+    usage?: CompletionUsage;
+    system_fingerprint?: string;
+    citations?: string[];
+}
+
+/** A chunk in streaming response */
+export interface ChatStreamChunk {
+    id: string;
+    object: "chat.completion.chunk";
+    created: number;
+    model: string;
+    choices: Array<{
+        index: number;
+        delta: {
+            role?: Exclude<MessageRole, "function">;
+            content?: string | null;
+            /** Deprecated OpenAI function-call delta. */
+            function_call?: {
+                name?: string;
+                arguments?: string;
+            };
+            refusal?: string | null;
+            tool_calls?: Array<{
+                index: number;
+                id?: string;
+                type?: "function";
+                function?: {
+                    name?: string;
+                    arguments?: string;
+                };
+            }>;
+        };
+        finish_reason:
+            | "stop"
+            | "length"
+            | "tool_calls"
+            | "content_filter"
+            | "function_call"
+            | null;
+        logprobs?: ChatChoice["logprobs"];
+    }>;
+    usage?: CompletionUsage | null;
+    service_tier?: "auto" | "default" | "flex" | "scale" | "priority" | null;
+    system_fingerprint?: string;
+}
+
+// ============================================================================
+// Audio Generation
+// ============================================================================
+
+/** Voice option for audio generation */
+export type AudioVoice = string;
+
+/** Audio format options */
+export type AudioFormat = "wav" | "mp3" | "flac" | "opus" | "pcm16";
+
+/** Dedicated audio/music model */
+export type AudioModel = "elevenlabs" | "elevenmusic" | string;
+
+/** Options for text-to-speech generation (GET /audio/{text} or POST /v1/audio/speech) */
+export interface AudioGenerateOptions extends RequestOptions {
+    /** Voice to use (server default: 'alloy') */
+    voice?: AudioVoice;
+    /** Audio model to use (server default: 'elevenlabs') */
+    model?: AudioModel;
+    /** Duration in seconds (for music models like elevenmusic) */
+    duration?: number;
+    /** Seed for reproducibility */
+    seed?: number;
+}
+
+/** Response from dedicated audio endpoints (binary audio data) */
+export interface AudioBinaryResponse {
+    /** The generated audio as a Buffer (Node.js) or ArrayBuffer (browser) */
+    buffer: ArrayBuffer;
+    /** Content type (audio/mpeg) */
+    contentType: string;
+}
+
+/** Audio response from chat with audio modality */
+export interface AudioResponse {
+    /** Transcript of the audio */
+    transcript: string;
+    /** Base64 encoded audio data */
+    data: string;
+    /** Audio ID */
+    id: string;
+    /** Expiration timestamp */
+    expiresAt: number;
+}
+
+// ============================================================================
+// Speech-to-Text (Transcription)
+// ============================================================================
+
+/** STT model options */
+export type TranscriptionModel =
+    | "whisper-large-v3"
+    | "whisper-1"
+    | "scribe"
+    | "universal-2"
+    | "universal-3.5-pro"
+    | "universal-3-pro"
+    | string;
+
+/** Response format for transcription */
+export type TranscriptionResponseFormat =
+    | "json"
+    | "text"
+    | "verbose_json"
+    | "srt"
+    | "vtt";
+
+/** Options for speech-to-text transcription */
+export interface TranscribeOptions extends RequestOptions {
+    /** Model to use (server default: 'whisper-large-v3') */
+    model?: TranscriptionModel;
+    /** Language code (ISO-639-1, e.g. 'en', 'fr') */
+    language?: string;
+    /** Response format (default: 'json') */
+    responseFormat?: TranscriptionResponseFormat;
+    /** Optional prompt to guide transcription style */
+    prompt?: string;
+    /** Temperature 0-1 for sampling */
+    temperature?: number;
+}
+
+/** Transcription response */
+export interface TranscriptionResponse {
+    /** Transcribed text */
+    text: string;
+}
+
+/** Verbose transcription response with word/segment details */
+export interface TranscriptionVerboseResponse extends TranscriptionResponse {
+    task: string;
+    language: string;
+    duration: number;
+    words?: Array<{ word: string; start: number; end: number }>;
+    segments?: Array<{ id: number; start: number; end: number; text: string }>;
+}
+
+// ============================================================================
+// Media Upload
+// ============================================================================
+
+/** Options for media upload */
+export interface UploadOptions extends RequestOptions {
+    /** Original filename (optional) */
+    name?: string;
+    /** Content type (auto-detected if omitted) */
+    contentType?: string;
+    /** Tags that publish the upload to public tag galleries */
+    tags?: string[];
+}
+
+/** Response from media upload */
+export interface UploadResponse {
+    /** Unique media id (also the retrieval id) */
+    id: string;
+    /** Public URL for the uploaded media */
+    url: string;
+    /** Content type of the uploaded file */
+    contentType: string;
+    /** File size in bytes */
+    size: number;
+    /** Tags the upload was published with; present only when tagged */
+    tags?: string[];
+}
+
+// ============================================================================
+// BYOP (Bring Your Own Pollen)
+// ============================================================================
+
+/** Account permission scopes */
+export type AccountPermission = "profile" | "usage" | "keys";
+
+/** Options for building a BYOP authorization URL */
+export interface AuthorizeOptions {
+    /** URL to redirect back to after authorization */
+    redirectUrl: string;
+    /** Your app's publishable key (shows app name to user) */
+    appKey?: string;
+    /** OAuth state value echoed back to the redirect URL */
+    state?: string;
+    /** Authorization host (defaults to https://enter.pollinations.ai) */
+    authBaseUrl?: string;
+    /** Restrict to specific models */
+    models?: string[];
+    /** Numeric pollen cap. Omit for the default cap. */
+    budget?: number;
+    /** Key lifetime in days (default: 30) */
+    expiry?: number;
+    /** Account permissions to request */
+    permissions?: AccountPermission[];
+}
+
+// ============================================================================
+// Account
+// ============================================================================
+
+/** User profile information */
+export interface AccountProfile {
+    githubUsername: string | null;
+    image: string | null;
+    /** Only returned when the API key has the `profile` permission */
+    name?: string | null;
+    /** Only returned when the API key has the `profile` permission */
+    email?: string | null;
+}
+
+/** Account balance */
+export interface AccountBalance {
+    /**
+     * Pollen remaining for this caller. Budgeted API keys see the key budget
+     * here, not the account total.
+     */
+    balance: number;
+    /**
+     * Full account balances. Present only when the caller can view account
+     * usage (session or `account:usage`).
+     */
+    accountBalance?: {
+        total: number;
+        tier: number;
+        paid: number;
+    };
+}
+
+/** Quest reward earned by the authenticated account */
+export interface AccountQuestReward {
+    id: string;
+    questId: string | null;
+    title: string;
+    pollenAmount: number;
+    balanceBucket: string;
+    earnedAt: string;
+    claimedAt: string | null;
+}
+
+/** Quest catalog entry with the authenticated account's status */
+export interface AccountQuest {
+    id: string;
+    title: string;
+    description: string;
+    category: string;
+    state: "available" | "completed" | "coming_soon";
+    status: "open" | "completed" | "coming_soon";
+    rewardAmount: number;
+    balanceBucket: "tier" | "pack";
+    url: string | null;
+    reward: AccountQuestReward | null;
+}
+
+/** Quest status response */
+export interface AccountQuestsResponse {
+    quests: AccountQuest[];
+}
+
+/** Usage record */
+export interface UsageRecord {
+    timestamp: string;
+    type: string;
+    model: string;
+    api_key: string;
+    api_key_type: string;
+    meter_source: string;
+    input_text_tokens: number;
+    input_cached_tokens: number;
+    input_audio_tokens: number;
+    input_audio_seconds: number;
+    input_image_tokens: number;
+    output_text_tokens: number;
+    output_reasoning_tokens: number;
+    output_audio_tokens: number;
+    output_audio_seconds: number;
+    output_image_tokens: number;
+    output_video_seconds: number;
+    cost_usd: number;
+    response_time_ms: number;
+}
+
+/** Usage response */
+export interface UsageResponse {
+    usage: UsageRecord[];
+    count: number;
+}
+
+/** Options for fetching usage */
+export interface UsageOptions {
+    /** Response format (default: 'json') */
+    format?: "json" | "csv";
+    /** Number of days to include, max 90 (default: 30) */
+    days?: number;
+    /** Max records to return, 1-50000 (default: 100). CSV exports are capped at 50000. */
+    limit?: number;
+    /** ISO timestamp cursor for pagination */
+    before?: string;
+    /** Exact period granularity */
+    granularity?: "day" | "week" | "month";
+    /** Exact period, e.g. YYYY-MM-DD, YYYY-WNN, or YYYY-MM */
+    period?: string;
+}
+
+/** Options for fetching current-key usage. CSV export is not supported here. */
+export type KeyUsageOptions = Omit<UsageOptions, "format">;
+
+/** Options for fetching daily usage */
+export interface DailyUsageOptions {
+    /** Response format (default: 'json') */
+    format?: "json" | "csv";
+    /** Number of days to include, max 90 (default: 90) */
+    days?: number;
+    /** Exact period granularity */
+    granularity?: "day" | "week" | "month";
+    /** Exact period, e.g. YYYY-MM-DD, YYYY-WNN, or YYYY-MM */
+    period?: string;
+    /** Filter to one or more API keys by id */
+    api_key_ids?: string[];
+}
+
+/** Daily usage summary */
+export interface DailyUsageRecord {
+    date: string;
+    model: string;
+    meter_source: string;
+    requests: number;
+    cost_usd: number;
+}
+
+/** Daily usage response */
+export interface DailyUsageResponse {
+    usage: DailyUsageRecord[];
+    count: number;
+}
+
+/** Developer earnings row for one (date, earning entity) bucket */
+export interface DeveloperEarningsRow {
+    /** Date bucket (YYYY-MM-DD); empty string on rollup rows */
+    date: string;
+    /** Earning entity id (BYOP app key or community model) */
+    entity_id: string;
+    entity_name: string;
+    source: "byop_markup" | "community_model";
+    requests: number;
+    paid_requests: number;
+    tier_requests: number;
+    baseline_price: number;
+    pollen_earned: number;
+    paid_earned: number;
+    tier_earned: number;
+    cost_usd: number;
+    reward_rate: number;
+}
+
+/** Response for GET /account/earnings */
+export interface DeveloperEarningsResponse {
+    daily: DeveloperEarningsRow[];
+    perEntity: DeveloperEarningsRow[];
+}
+
+/** Options for fetching developer earnings (time-window selection) */
+export type EarningsOptions = Pick<
+    DailyUsageOptions,
+    "days" | "granularity" | "period"
+>;
+
+/** API key validation response */
+export interface KeyInfo {
+    valid: boolean;
+    type: string;
+    name?: string | null;
+    expiresAt?: string | null;
+    expiresIn?: number | null;
+    permissions?: {
+        models?: string[] | null;
+        account?: string[] | null;
+    };
+    pollenBudget?: number | null;
+    rateLimitEnabled?: boolean;
+}
+
+/** Detailed key record returned by GET /account/keys (list) */
+export interface AccountKey {
+    id: string;
+    name: string;
+    /** First few characters of the key (for identification) */
+    start?: string;
+    prefix: string;
+    type?: string;
+    createdAt: string;
+    expiresAt: string | null;
+    lastRequest: string | null;
+    permissions: {
+        models?: string[];
+        account?: string[];
+    } | null;
+    metadata: Record<string, unknown> | null;
+    pollenBalance: number | null;
+    enabled: boolean;
+}
+
+/** Key-scope permissions that can be granted on created keys. */
+export type KeyAccountPermission = "profile" | "usage" | "keys" | string;
+
+/** Options for POST /account/keys */
+export interface CreateKeyOptions {
+    /** Human-readable name */
+    name: string;
+    /** Key type (default: "secret") */
+    type?: "secret" | "publishable";
+    /** Expiry in seconds from creation */
+    expiresIn?: number;
+    /** Restrict to specific model IDs */
+    allowedModels?: string[];
+    /** Pollen budget cap */
+    pollenBudget?: number;
+    /**
+     * Account permissions to grant (e.g. `["profile", "usage"]`).
+     * Without this, scoped keys cannot read account state beyond their
+     * own key metadata, budget, and per-key usage.
+     * `"keys"` is auto-stripped server-side on the BYOP flow.
+     */
+    accountPermissions?: KeyAccountPermission[];
+    /**
+     * Allowed OAuth redirect URIs for publishable app keys. Required when
+     * creating a `publishable` key that drives the `/authorize` BYOP flow.
+     * Matching pins scheme, host, port, and path; one trailing slash is
+     * ignored; loopback ports are matched port-agnostically.
+     */
+    redirectUris?: string[];
+    /**
+     * Opt the publishable app key into developer earnings. Defaults to
+     * `false` server-side; only meaningful on `type: "publishable"` keys.
+     */
+    earningsEnabled?: boolean;
+}
+
+/**
+ * Response from POST /account/keys — includes the raw `key` value which
+ * is ONLY shown at creation time. Store it immediately.
+ */
+export interface CreatedKey {
+    id: string;
+    /** The secret key value. Only returned once at creation. */
+    key: string;
+    name: string;
+    type: string;
+    prefix: string;
+    expiresAt: string | null;
+    permissions: {
+        models?: string[];
+        account?: string[];
+    } | null;
+    pollenBudget: number | null;
+}
+
+// ============================================================================
+// Model Information
+// ============================================================================
+
+/** Known model categories, in catalog display order. The canonical enum lives
+ * in shared/registry (ModelInfoSchema); categories the SDK doesn't know yet
+ * pass through the model catalog unfiltered and sort last. */
+export const MODEL_CATEGORIES = [
+    "image",
+    "video",
+    "text",
+    "audio",
+    "3d",
+    "embedding",
+    "realtime",
+] as const;
+
+/** Model category */
+export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
+
+/** Inputs accepted by a model */
+export type ModelInputModality = "text" | "image" | "audio" | "video";
+
+/** Outputs produced by a model */
+export type ModelOutputModality =
+    | "text"
+    | "image"
+    | "audio"
+    | "video"
+    | "embedding"
+    | "3d";
+
+/** Per-model video frame-control capabilities (video models only) */
+export type VideoCapability =
+    | "start_frame"
+    | "end_frame"
+    | "keyframes"
+    | "reference_images"
+    | "reference_videos"
+    | "reference_audios"
+    | "audio_output";
+
+/** Per-model agentic/text capabilities */
+export type ModelCapability =
+    | "tool_calling"
+    | "reasoning"
+    | "web_search"
+    | "code_execution"
+    | "pollinations_models";
+
+/** Model information */
+export interface ModelInfo {
+    /** Fields added by the model registry pass through without an SDK release. */
+    [key: string]: unknown;
+    id?: string;
+    name: string;
+    /** Display name. Present on registry endpoints (/models, /text/models, …); absent on OpenAI-compatible /v1/models. */
+    title?: string;
+    category?: ModelCategory;
+    /** Human-readable model publisher, not the inference provider. Replaces brand. */
+    publisher?: string;
+    description?: string;
+    aliases?: string[];
+    community?: boolean;
+    agent?: boolean;
+    base_model?: string;
+    input_modalities?: ModelInputModality[];
+    output_modalities?: ModelOutputModality[];
+    video_capabilities?: VideoCapability[];
+    resolutions?: string[];
+    min_duration?: number;
+    max_duration?: number;
+    default_duration?: number;
+    allowed_durations?: number[];
+    duration_step?: number;
+    max_reference_images?: number;
+    max_reference_videos?: number;
+    capabilities?: ModelCapability[];
+    tools?: boolean;
+    vision?: boolean;
+    audio?: boolean;
+    reasoning?: boolean;
+    uncensored?: boolean;
+    voices?: string[];
+    maxInputChars?: number;
+    context_length?: number;
+    supported_endpoints?: string[];
+    supportsSystemMessages?: boolean;
+    is_specialized?: boolean;
+    paid_only?: boolean;
+    pricing?: Record<string, string> & { currency: "pollen" };
+}
+
+// ============================================================================
+// Device Flow (OAuth)
+// ============================================================================
+
+/** Raw response from POST /api/device/code */
+export interface DeviceCodeResponse {
+    device_code: string;
+    user_code: string;
+    verification_uri_complete: string;
+    expires_in: number;
+    interval: number;
+}
+
+/** Raw response from POST /api/device/token (polling) */
+export interface DeviceTokenResponse {
+    access_token?: string;
+    error?: string;
+    error_description?: string;
+}
+
+/** Options for starting device flow */
+export interface AuthorizeDeviceOptions extends RequestOptions {
+    /** OAuth client ID. Defaults to the public polli CLI client. */
+    clientId?: string;
+    /** Space-separated scope string (default: "generate keys usage") */
+    scope?: string;
+}
+
+/**
+ * Handle returned by `authorizeDevice()` — surfaces the user-facing
+ * verification URL/code, and exposes `poll()` to block until approval.
+ */
+export interface DeviceAuthorization {
+    /** Short code the user types in the verification page */
+    userCode: string;
+    /** URL to open in a browser (includes the user code as a query param) */
+    verificationUri: string;
+    /** When the device code expires and polling must stop */
+    expiresAt: Date;
+    /** Block until the user approves. Resolves with an access token or throws. */
+    poll(): Promise<string>;
+}
+
+/** User identity returned by GET /api/device/userinfo */
+export interface UserInfo {
+    sub?: string;
+    name?: string;
+    email?: string;
+    picture?: string;
+    preferred_username?: string;
+    githubUsername?: string;
+    [key: string]: unknown;
+}
+
+// ============================================================================
+// Image Generation (OpenAI-compatible POST /v1/images/generations)
+// ============================================================================
+
+/** Options for POST /v1/images/generations */
+export interface ImageGenerateV1Options extends RequestOptions {
+    /** Image model to use (server default: 'flux') */
+    model?: ImageModel;
+    /** Size string like "1024x1024". Alternative to width + height. */
+    size?: string;
+    /** Image width in pixels (converted to `size` when both dimensions provided) */
+    width?: number;
+    /** Image height in pixels */
+    height?: number;
+    /** Number of images to generate (default: 1) */
+    n?: number;
+    /** Response format (default: server decides — usually b64_json) */
+    responseFormat?: "url" | "b64_json";
+    /** Reasoning mode for supported image models. Booleans are accepted for backward compatibility. */
+    reasoning?: boolean | ImageReasoningMode;
+    /** Seed for reproducible generation */
+    seed?: number;
+    /** Output quality */
+    quality?: ImageQuality;
+}
+
+// ============================================================================
+// Error Types
+// ============================================================================
+
+/** API error details */
+export interface PollinationsErrorDetails {
+    code:
+        | "BAD_REQUEST"
+        | "UNAUTHORIZED"
+        | "INSUFFICIENT_BALANCE"
+        | "PERMISSION_DENIED"
+        | "INTERNAL_ERROR"
+        | string;
+    message: string;
+    timestamp: string;
+    details?: Record<string, unknown>;
+    requestId?: string;
+}
+
+/** Pollinations SDK Error */
+export class PollinationsError extends Error {
+    code: string;
+    status: number;
+    details?: Record<string, unknown>;
+    requestId?: string;
+    /** Retry-After header value in seconds */
+    retryAfter?: number;
+
+    constructor(
+        message: string,
+        code: string,
+        status: number,
+        details?: Record<string, unknown>,
+        requestId?: string,
+        retryAfter?: number,
+    ) {
+        super(message);
+        this.name = "PollinationsError";
+        this.code = code;
+        this.status = status;
+        this.details = details;
+        this.requestId = requestId;
+        this.retryAfter = retryAfter;
+    }
+}

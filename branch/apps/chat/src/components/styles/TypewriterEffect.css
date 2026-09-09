@@ -1,0 +1,27 @@
+.typewriter-container {
+  position: relative;
+}
+
+.typewriter-content {
+  display: inline;
+}
+
+.typewriter-cursor {
+  display: inline-block;
+  width: 6px;
+  height: 1.2em;
+  background-color: var(--text-primary, #333);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: blink 1s step-end infinite;
+  border-radius: 1px;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+body.dark .typewriter-cursor {
+  background-color: var(--text-primary, #fff);
+}

@@ -1,0 +1,22 @@
+{
+  "request": {
+    "url": "https://text.test/status?case=vcr",
+    "method": "GET",
+    "body": {
+      "type": "empty",
+      "data": null
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "",
+    "headers": {
+      "content-type": "text/plain;charset=UTF-8"
+    },
+    "body": {
+      "type": "text",
+      "data": "snapshot response"
+    }
+  }
+}

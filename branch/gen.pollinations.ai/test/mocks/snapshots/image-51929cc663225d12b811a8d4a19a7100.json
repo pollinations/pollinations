@@ -1,0 +1,24 @@
+{
+  "request": {
+    "url": "http://ec2-54-147-14-220.compute-1.amazonaws.com:16384/prompt/vcr%20red%20square?model=flux&width=256&height=256&seed=42",
+    "method": "GET",
+    "body": {
+      "type": "empty",
+      "data": null
+    },
+    "params": {}
+  },
+  "response": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "content-type": "image/png",
+      "x-model-used": "flux",
+      "x-usage-completion-image-tokens": "1"
+    },
+    "body": {
+      "type": "binary",
+      "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg=="
+    }
+  }
+}

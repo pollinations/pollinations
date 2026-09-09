@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /sign-in
+Disallow: /authorize
+Disallow: /error
+Disallow: /keys
+Disallow: /pollen
+Disallow: /activity
+
+Sitemap: https://enter.pollinations.ai/sitemap.xml

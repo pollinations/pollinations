@@ -1,0 +1,17 @@
+{
+    "name": "pollinations-mcp-core",
+    "version": "2.5.1",
+    "private": true,
+    "description": "Internal tool handlers for the hosted Pollinations MCP server",
+    "type": "module",
+    "scripts": {
+        "test": "node --test test/*.test.js"
+    },
+    "dependencies": {
+        "@modelcontextprotocol/server": "^2.0.0",
+        "zod": "^4.2.0"
+    },
+    "engines": {
+        "node": ">=20.0.0"
+    }
+}

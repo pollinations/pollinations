@@ -1,0 +1,96 @@
+body.polli-ui-shell {
+    height: auto;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+body.polli-ui-shell #root {
+    height: auto;
+    min-height: 100dvh;
+}
+
+.websim-control-panel,
+.websim-output-panel {
+    min-height: 0;
+}
+
+.websim-main-grid {
+    align-items: stretch;
+}
+
+.websim-control-panel {
+    min-height: clamp(24rem, 58dvh, 36rem);
+}
+
+.websim-output-panel {
+    min-height: clamp(22rem, 56dvh, 34rem);
+}
+
+.websim-prompt-input {
+    min-height: clamp(9rem, 28dvh, 14rem);
+    line-height: 1.55;
+}
+
+.websim-preview-frame {
+    min-height: clamp(16rem, 45dvh, 26rem);
+}
+
+.websim-preview-placeholder {
+    aspect-ratio: auto;
+}
+
+.websim-model-options {
+    gap: 0.5rem;
+}
+
+.websim-model-option {
+    min-width: 8.5rem;
+}
+
+@media (min-width: 640px) {
+    .websim-title {
+        font-size: 3rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .websim-main-grid {
+        min-height: clamp(24rem, calc(100dvh - 14rem), 40rem);
+    }
+
+    .websim-control-panel,
+    .websim-output-panel {
+        height: 100%;
+        min-height: 0;
+    }
+
+    .websim-output-panel {
+        position: static;
+    }
+
+    .websim-preview-frame {
+        min-height: 0;
+    }
+}
+
+@media (min-width: 1024px) and (min-height: 760px) {
+    .websim-output-panel {
+        position: sticky;
+        top: 1rem;
+    }
+}
+
+@media (max-height: 760px) {
+    .websim-prompt-input {
+        min-height: clamp(8rem, 24dvh, 11rem);
+    }
+}
+
+@media (max-width: 520px) {
+    .websim-model-option {
+        min-width: calc(50% - 0.25rem);
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+}

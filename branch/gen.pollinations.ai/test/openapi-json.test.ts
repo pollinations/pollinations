@@ -1,0 +1,315 @@
+import {
+    createExecutionContext,
+    waitOnExecutionContext,
+} from "cloudflare:test";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import worker from "../src/index.ts";
+
+function envWithEnterSchema(schema: unknown): CloudflareBindings {
+    return {
+        ENTER: {
+            fetch: async () =>
+                new Response(JSON.stringify(schema), {
+                    headers: { "Content-Type": "application/json" },
+                }),
+        } as unknown as Fetcher,
+        ENVIRONMENT: "test",
+        LOG_LEVEL: "debug",
+        LOG_FORMAT: "text",
+    } as CloudflareBindings;
+}
+
+function mockMediaSchema() {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response(
+            JSON.stringify({ paths: {}, components: { schemas: {} } }),
+            { headers: { "Content-Type": "application/json" } },
+        ),
+    );
+}
+
+function collectPropertySets(value: unknown): Record<string, unknown>[] {
+    if (!value || typeof value !== "object") return [];
+
+    const record = value as Record<string, unknown>;
+    const properties =
+        record.properties &&
+        typeof record.properties === "object" &&
+        !Array.isArray(record.properties)
+            ? [record.properties as Record<string, unknown>]
+            : [];
+
+    return [
+        ...properties,
+        ...Object.values(record).flatMap((child) => collectPropertySets(child)),
+    ];
+}
+
+const ENTER_SCHEMA = {
+    openapi: "3.1.0",
+    info: { title: "Enter", version: "0.0.0" },
+    paths: { "/account/key": { get: { tags: ["Account"] } } },
+};
+
+describe("/openapi.json", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("serves the merged OpenAPI spec as JSON at a discoverable URL", async () => {
+        const ctx = createExecutionContext();
+        mockMediaSchema();
+
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/openapi.json"),
+            envWithEnterSchema(ENTER_SCHEMA),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toContain(
+            "application/json",
+        );
+        // Discoverable: the spec must stay indexable (no noindex robots tag).
+        expect(response.headers.get("X-Robots-Tag")).toBeNull();
+        const schema = (await response.json()) as {
+            openapi: string;
+            paths: Record<string, unknown>;
+        };
+        expect(schema.openapi).toBe("3.1.0");
+        expect(Object.keys(schema.paths).length).toBeGreaterThan(0);
+        // Gen-owned merged paths prove the real merge ran (not a stub/404).
+        expect(schema.paths["/v1/chat/completions"]).toBeDefined();
+        expect(schema.paths["/v1/responses"]).toBeDefined();
+        expect(schema.paths["/image/{prompt}"]).toBeDefined();
+        expect(schema.paths["/account/key"]).toBeDefined();
+        expect(schema.paths["/v1/audio/music/upload"]).toBeUndefined();
+
+        for (const [path, method] of [
+            ["/image/{prompt}", "get"],
+            ["/video/{prompt}", "get"],
+            ["/3d/{prompt}", "get"],
+            ["/3d/{prompt}", "post"],
+            ["/audio/{text}", "get"],
+            ["/v1/images/generations", "post"],
+            ["/v1/images/edits", "post"],
+            ["/v1/audio/speech", "post"],
+            ["/v1/audio/voice-changer", "post"],
+            ["/v1/audio/voice-isolator", "post"],
+        ]) {
+            expect(schema).toHaveProperty(
+                ["paths", path, method, "responses", "200", "headers", "Link"],
+                expect.objectContaining({
+                    schema: { type: "string" },
+                    example: expect.stringMatching(
+                        /^<https:\/\/media\.pollinations\.ai\/[^>]+>; rel="enclosure"$/,
+                    ),
+                }),
+            );
+        }
+        for (const path of [
+            "/v1/audio/transcriptions",
+            "/v1/audio/speech/with-timestamps",
+        ]) {
+            expect(schema).not.toHaveProperty([
+                "paths",
+                path,
+                "post",
+                "responses",
+                "200",
+                "headers",
+                "Link",
+            ]);
+        }
+
+        const imageEditOperation = schema.paths["/v1/images/edits"] as {
+            post: {
+                requestBody: {
+                    required: boolean;
+                    content: Record<string, { schema: unknown }>;
+                };
+            };
+        };
+        const editBody = imageEditOperation.post.requestBody;
+        expect(editBody.required).toBe(true);
+        expect(editBody.content["application/json"].schema).toMatchObject({
+            type: "object",
+            required: ["prompt", "image"],
+            properties: {
+                image: { anyOf: expect.any(Array) },
+                response_format: {
+                    enum: ["url", "b64_json"],
+                    default: "b64_json",
+                },
+            },
+        });
+        const multipart = editBody.content["multipart/form-data"].schema;
+        expect(multipart).toMatchObject({
+            anyOf: [
+                { required: ["prompt", "image"] },
+                { required: ["prompt", "image[]"] },
+            ],
+        });
+        const multipartProperties = collectPropertySets(multipart);
+        expect(multipartProperties.some((fields) => "n" in fields)).toBe(false);
+        expect(multipartProperties).toContainEqual(
+            expect.objectContaining({
+                image: {
+                    anyOf: [
+                        expect.objectContaining({
+                            type: "string",
+                            format: "binary",
+                        }),
+                        { type: "string" },
+                        expect.objectContaining({ type: "array", minItems: 1 }),
+                    ],
+                },
+            }),
+        );
+
+        const modelProperties = collectPropertySets(
+            schema.paths["/models"],
+        ).find(
+            (properties) =>
+                "name" in properties &&
+                "category" in properties &&
+                "community" in properties,
+        );
+        if (!modelProperties) throw new Error("Model schema not found");
+        expect((modelProperties.category as { enum?: string[] }).enum).toEqual([
+            "text",
+            "image",
+            "audio",
+            "video",
+            "3d",
+            "embedding",
+            "realtime",
+        ]);
+        expect(
+            (
+                modelProperties.input_modalities as {
+                    items?: { enum?: string[] };
+                }
+            ).items?.enum,
+        ).toEqual(["text", "image", "audio", "video"]);
+        expect(
+            (
+                modelProperties.output_modalities as {
+                    items?: { enum?: string[] };
+                }
+            ).items?.enum,
+        ).toEqual(["text", "image", "audio", "video", "embedding", "3d"]);
+
+        const openAIModelProperties = collectPropertySets(
+            schema.paths["/v1/models"],
+        ).find(
+            (properties) =>
+                "id" in properties &&
+                "owned_by" in properties &&
+                "community" in properties,
+        );
+        expect(openAIModelProperties).toEqual(
+            expect.objectContaining({
+                aliases: expect.any(Object),
+                category: expect.any(Object),
+                community: expect.any(Object),
+                title: expect.any(Object),
+            }),
+        );
+
+        const statusOperation = schema.paths["/v1/models/status"] as {
+            get: {
+                parameters: { name: string }[];
+            };
+        };
+        expect(statusOperation.get.parameters.map(({ name }) => name)).toEqual([
+            "minutes",
+            "format",
+        ]);
+        expect(
+            collectPropertySets(schema.paths["/v1/models/status"]).some(
+                (properties) => "data" in properties,
+            ),
+        ).toBe(true);
+
+        const speechRequestPropertySets = collectPropertySets(schema).filter(
+            (properties) =>
+                "reference_audio" in properties &&
+                "composition_plan" in properties,
+        );
+        expect(speechRequestPropertySets.length).toBeGreaterThan(0);
+
+        const chatRequestPropertySets = collectPropertySets(schema).filter(
+            (properties) => "reasoning_effort" in properties,
+        );
+        expect(chatRequestPropertySets.length).toBeGreaterThan(0);
+        for (const properties of chatRequestPropertySets) {
+            expect(properties.thinking).toBeUndefined();
+            expect(properties.thinking_budget).toBeUndefined();
+        }
+
+        for (const path of ["/v1/chat/completions", "/v1/responses"]) {
+            const operation = schema.paths[path] as {
+                post?: {
+                    responses?: Record<
+                        string,
+                        { content?: Record<string, unknown> }
+                    >;
+                };
+            };
+            expect(operation.post?.responses?.["200"]?.content).toHaveProperty(
+                "application/json",
+            );
+            expect(operation.post?.responses?.["200"]?.content).toHaveProperty(
+                "text/event-stream",
+            );
+            expect(operation.post?.responses?.["502"]).toBeDefined();
+        }
+
+        const embeddingRequestPropertySets = collectPropertySets(schema).filter(
+            (properties) =>
+                "input_type" in properties && "task_type" in properties,
+        );
+        expect(embeddingRequestPropertySets.length).toBeGreaterThan(0);
+        for (const properties of embeddingRequestPropertySets) {
+            const inputType = properties.input_type as {
+                enum?: string[];
+            };
+            expect(inputType.enum).toEqual(["query", "document"]);
+        }
+    });
+
+    it("returns the same spec as /docs/open-api/generate-schema", async () => {
+        const aliasCtx = createExecutionContext();
+        mockMediaSchema();
+        const aliasRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/openapi.json"),
+            envWithEnterSchema(ENTER_SCHEMA),
+            aliasCtx,
+        );
+        await waitOnExecutionContext(aliasCtx);
+        const aliasSchema = (await aliasRes.json()) as Record<string, unknown>;
+        vi.restoreAllMocks();
+
+        const canonicalCtx = createExecutionContext();
+        mockMediaSchema();
+        const canonicalRes = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/open-api/generate-schema",
+            ),
+            envWithEnterSchema(ENTER_SCHEMA),
+            canonicalCtx,
+        );
+        await waitOnExecutionContext(canonicalCtx);
+        const canonicalSchema = (await canonicalRes.json()) as Record<
+            string,
+            unknown
+        >;
+
+        expect(Object.keys(aliasSchema).sort()).toEqual(
+            Object.keys(canonicalSchema).sort(),
+        );
+        expect(aliasSchema).toEqual(canonicalSchema);
+    });
+});

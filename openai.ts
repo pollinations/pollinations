@@ -1,0 +1,916 @@
+// AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
+
+import { z } from "zod";
+import { MODEL_CATEGORIES } from "../registry/registry.ts";
+import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
+import { SafeSchema } from "./safety.ts";
+
+const FunctionParametersSchema = z.record(z.string(), z.any());
+
+const FunctionObjectSchema = z.object({
+    description: z.string().optional(),
+    name: z.string(),
+    parameters: FunctionParametersSchema.optional(),
+    strict: z.boolean().nullable().default(false).optional(),
+});
+
+const ChatCompletionFunctionsSchema = z
+    .object({
+        description: z.string().optional(),
+        name: z.string(),
+        parameters: FunctionParametersSchema.optional(),
+    })
+    .strict();
+
+const ChatCompletionFunctionCallOptionSchema = z.object({
+    name: z.string(),
+});
+
+// Standard OpenAI function tool
+const FunctionToolSchema = z.object({
+    type: z.literal("function"),
+    function: FunctionObjectSchema,
+});
+
+// Gemini-specific built-in tools (no additional config needed)
+// See: https://ai.google.dev/gemini-api/docs/tools
+const GeminiBuiltInToolSchema = z.object({
+    type: z.enum([
+        "code_execution", // Run Python code in sandbox
+        "google_search", // Real-time web search grounding
+        "google_maps", // Location/maps grounding
+        "url_context", // Read/ground on specific URLs
+        "computer_use", // Browser automation (Preview)
+        "file_search", // Search uploaded files
+    ]),
+});
+
+const ChatCompletionToolSchema = z.union([
+    FunctionToolSchema,
+    GeminiBuiltInToolSchema,
+]);
+
+const ChatCompletionNamedToolChoiceSchema = z.object({
+    type: z.literal("function"),
+    function: z.object({ name: z.string() }),
+});
+
+const ChatCompletionToolChoiceOptionSchema = z.union([
+    z.enum(["none", "auto", "required"]),
+    ChatCompletionNamedToolChoiceSchema,
+]);
+
+const PromptCacheBreakpointSchema = z
+    .object({ mode: z.literal("explicit") })
+    .strict()
+    .optional()
+    .describe(
+        "Marks the end of a static prompt prefix when prompt_cache_options.mode is explicit.",
+    )
+    .meta({ $id: "PromptCacheBreakpoint" });
+
+const PromptCacheOptionsSchema = z
+    .object({
+        mode: z.enum(["implicit", "explicit"]).optional(),
+        ttl: z.literal("30m").optional(),
+    })
+    .strict()
+    .optional()
+    .meta({ $id: "PromptCacheOptions" });
+
+const ChatCompletionRequestMessageContentPartImageSchema = z.object({
+    type: z.literal("image_url"),
+    image_url: z.object({
+        url: z.string(),
+        detail: z.enum(["auto", "low", "high"]).optional(),
+        mime_type: z.string().optional(), // For explicit MIME type (e.g., "image/jpeg")
+    }),
+    prompt_cache_breakpoint: PromptCacheBreakpointSchema,
+});
+
+// Video URL content type - currently supported by Gemini models only
+// Enables native YouTube video analysis (visual frames + audio) without manual extraction
+const ChatCompletionRequestMessageContentPartVideoSchema = z.object({
+    type: z.literal("video_url"),
+    video_url: z.object({
+        url: z.string(), // Supports YouTube URLs, gs://, https://, or data: URLs
+        mime_type: z.string().optional(), // Auto-detected for YouTube URLs as "video/mp4"
+    }),
+});
+
+// Anthropic prompt caching support
+const CacheControlSchema = z
+    .object({
+        type: z.enum(["ephemeral"]),
+    })
+    .describe(
+        "Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova models). Place on the final content block of the prefix; repeat requests bill the cached prefix at ~10% of the input rate. See Text Generation → Prompt caching.",
+    )
+    .optional()
+    .meta({ $id: "CacheControl" });
+
+const ChatCompletionRequestMessageContentPartTextSchema = z.object({
+    type: z.literal("text"),
+    text: z.string(),
+    cache_control: CacheControlSchema,
+    prompt_cache_breakpoint: PromptCacheBreakpointSchema,
+});
+
+const ChatCompletionRequestMessageContentPartAudioSchema = z.object({
+    type: z.literal("input_audio"),
+    input_audio: z.object({
+        data: z.string(), // base64 encoded audio
+        format: z.enum(["wav", "mp3", "flac", "opus", "pcm16"]),
+    }),
+    cache_control: CacheControlSchema,
+    prompt_cache_breakpoint: PromptCacheBreakpointSchema,
+});
+
+// File content for document/file uploads
+const ChatCompletionRequestMessageContentPartFileSchema = z.object({
+    type: z.literal("file"),
+    file: z.object({
+        file_data: z.string().optional(),
+        file_id: z.string().optional(),
+        file_name: z.string().optional(),
+        file_url: z.string().optional(),
+        mime_type: z.string().optional(),
+    }),
+    cache_control: CacheControlSchema,
+    prompt_cache_breakpoint: PromptCacheBreakpointSchema,
+});
+
+const ChatCompletionRequestMessageContentPartSchema = z
+    .union([
+        ChatCompletionRequestMessageContentPartTextSchema,
+        ChatCompletionRequestMessageContentPartImageSchema,
+        ChatCompletionRequestMessageContentPartVideoSchema,
+        ChatCompletionRequestMessageContentPartAudioSchema,
+        ChatCompletionRequestMessageContentPartFileSchema,
+        // Allow any other content types for provider-specific extensions
+        z
+            .object({ type: z.string() })
+            .passthrough(),
+    ])
+    .meta({ $id: "MessageContentPart" });
+
+export type MessageContentPart = z.infer<
+    typeof ChatCompletionRequestMessageContentPartSchema
+>;
+
+// Provider response content blocks. These are not request-level controls.
+const ChatCompletionMessageContentPartThinkingSchema = z.object({
+    type: z.literal("thinking"),
+    thinking: z.string(),
+});
+
+const ChatCompletionMessageContentPartRedactedThinkingSchema = z.object({
+    type: z.literal("redacted_thinking"),
+    data: z.string(),
+});
+
+const ChatCompletionRequestSystemMessageSchema = z
+    .object({
+        content: z.union([
+            z.string(),
+            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+        ]),
+        role: z.literal("system"),
+        name: z.string().optional(),
+        cache_control: CacheControlSchema,
+    })
+    .passthrough();
+
+const ChatCompletionRequestDeveloperMessageSchema = z
+    .object({
+        content: z.union([
+            z.string(),
+            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+        ]),
+        role: z.literal("developer"),
+        name: z.string().optional(),
+        cache_control: CacheControlSchema,
+    })
+    .passthrough();
+
+const ChatCompletionRequestUserMessageSchema = z
+    .object({
+        content: z.union([
+            z.string(),
+            z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+        ]),
+        role: z.literal("user"),
+        name: z.string().optional(),
+    })
+    .passthrough();
+
+const ChatCompletionMessageToolCallSchema = z.object({
+    id: z.string(),
+    type: z.literal("function"),
+    function: z.object({
+        name: z.string(),
+        arguments: z.string(),
+    }),
+});
+
+const ChatCompletionMessageToolCallsSchema = z.array(
+    ChatCompletionMessageToolCallSchema,
+);
+
+const ChatCompletionRequestAssistantMessageSchema = z
+    .object({
+        content: z
+            .union([
+                z.string(),
+                z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+            ])
+            .nullable()
+            .optional(),
+        role: z.literal("assistant"),
+        name: z.string().optional(),
+        tool_calls: ChatCompletionMessageToolCallsSchema.optional(),
+        function_call: z
+            .object({
+                arguments: z.string(),
+                name: z.string(),
+            })
+            .nullable()
+            .optional(),
+        cache_control: CacheControlSchema,
+    })
+    .passthrough();
+
+const ChatCompletionRequestToolMessageSchema = z
+    .object({
+        role: z.literal("tool"),
+        content: z
+            .union([
+                z.string(),
+                z.array(ChatCompletionRequestMessageContentPartSchema).min(1),
+            ])
+            .nullable(),
+        tool_call_id: z.string(),
+        name: z.string().optional(),
+        cache_control: CacheControlSchema,
+    })
+    .passthrough();
+
+const ChatCompletionRequestFunctionMessageSchema = z
+    .object({
+        role: z.literal("function"),
+        content: z.string().nullable(),
+        name: z.string(),
+    })
+    .passthrough();
+
+const ChatCompletionRequestMessageSchema = z.union([
+    ChatCompletionRequestSystemMessageSchema,
+    ChatCompletionRequestDeveloperMessageSchema,
+    ChatCompletionRequestUserMessageSchema,
+    ChatCompletionRequestAssistantMessageSchema,
+    ChatCompletionRequestToolMessageSchema,
+    ChatCompletionRequestFunctionMessageSchema,
+]);
+
+const ResponseFormatTextSchema = z.object({ type: z.literal("text") });
+
+const ResponseFormatJsonObjectSchema = z.object({
+    type: z.literal("json_object"),
+});
+
+const ResponseFormatJsonSchemaSchema = z.record(z.string(), z.any());
+
+const ResponseFormatJsonSchemaSchemaContainer = z.object({
+    type: z.literal("json_schema"),
+    json_schema: z.object({
+        description: z.string().optional(),
+        name: z.string().optional(),
+        schema: ResponseFormatJsonSchemaSchema,
+        strict: z.boolean().nullable().default(false).optional(),
+    }),
+});
+
+const ResponseFormatUnionSchema = z.union([
+    ResponseFormatTextSchema,
+    ResponseFormatJsonSchemaSchemaContainer,
+    ResponseFormatJsonObjectSchema,
+]);
+
+const ChatCompletionStreamOptionsSchema = z
+    .object({
+        include_usage: z.boolean().optional(),
+    })
+    .nullable()
+    .optional();
+
+export const CreateChatCompletionRequestSchema = z
+    .object({
+        messages: z.array(ChatCompletionRequestMessageSchema),
+        model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({
+            description:
+                "AI model for text generation. See /v1/models for full list.",
+        }),
+        modalities: z.array(z.enum(["text", "audio"])).optional(),
+        audio: z
+            .object({
+                voice: z.enum(AUDIO_VOICES),
+                format: z.enum(["wav", "mp3", "flac", "opus", "pcm16"]),
+            })
+            .optional(),
+        frequency_penalty: z.number().min(-2).max(2).nullable().optional(),
+        repetition_penalty: z.number().min(0).max(2).nullable().optional(),
+        logit_bias: z
+            .record(z.string(), z.number().int())
+            .nullable()
+            .optional()
+            .default(null),
+        logprobs: z.boolean().nullable().optional(),
+        top_logprobs: z.number().int().min(0).max(20).nullable().optional(),
+        max_tokens: z.number().int().min(0).nullable().optional(),
+        presence_penalty: z.number().min(-2).max(2).nullable().optional(),
+        response_format: ResponseFormatUnionSchema.optional(),
+        seed: z.number().int().min(-1).max(2147483647).nullable().optional(),
+        stop: z
+            .union([z.string().nullable(), z.array(z.string()).min(1).max(4)])
+            .optional(),
+        stream: z.boolean().nullable().optional().default(false),
+        stream_options: ChatCompletionStreamOptionsSchema,
+        safe: SafeSchema,
+        reasoning_effort: z
+            .enum(["none", "minimal", "low", "medium", "high", "xhigh", "max"])
+            .describe(
+                'Requests reasoning depth for models that support adjustable reasoning. "none" requests no reasoning.',
+            )
+            .optional(),
+        web_search_options: z
+            .object({
+                search_context_size: z.enum(["low", "medium", "high"]),
+            })
+            .describe(
+                "Controls Perplexity Sonar search context. Pollinations currently supports low and high.",
+            )
+            .optional(),
+        temperature: z
+            .number()
+            .min(0)
+            .max(2)
+            .nullable()
+            .optional()
+            .describe(
+                "Sampling controls are ignored for model families that do not consistently support them, regardless of reasoning mode.",
+            ),
+        top_p: z.number().min(0).max(1).nullable().optional(),
+        tools: z.array(ChatCompletionToolSchema).optional(),
+        tool_choice: ChatCompletionToolChoiceOptionSchema.optional(),
+        parallel_tool_calls: z.boolean().optional().default(true),
+        user: z.string().optional(),
+        prompt_cache_key: z.string().optional(),
+        prompt_cache_options: PromptCacheOptionsSchema,
+        prompt_cache_retention: z.enum(["in_memory", "24h"]).optional(),
+        function_call: z
+            .union([
+                z.enum(["none", "auto"]),
+                ChatCompletionFunctionCallOptionSchema,
+            ])
+            .optional(), // deprecated, supported
+        functions: z
+            .array(ChatCompletionFunctionsSchema)
+            .min(1)
+            .max(128)
+            .optional(), // deprecated, supported
+    })
+    .passthrough();
+
+export type CreateChatCompletionRequest = z.infer<
+    typeof CreateChatCompletionRequestSchema
+>;
+
+const StatelessResponseIncludeSchema = z.enum([
+    "web_search_call.action.sources",
+    "code_interpreter_call.outputs",
+    "computer_call_output.output.image_url",
+    "file_search_call.results",
+    "message.input_image.image_url",
+    "message.output_text.logprobs",
+]);
+
+const ResponseFunctionToolSchema = z
+    .object({
+        type: z.literal("function"),
+        name: z.string(),
+        description: z.string().optional(),
+        parameters: FunctionParametersSchema.optional(),
+        strict: z.boolean().nullable().optional(),
+    })
+    .passthrough();
+
+/**
+ * Stateless subset of OpenAI's create Response request.
+ *
+ * Stateful fields accept only their inert SDK defaults so clients may send
+ * `store: false` / nulls without opting Pollinations into response storage.
+ */
+export const CreateResponseRequestSchema = z
+    .object({
+        model: z.string().optional().default(DEFAULT_TEXT_MODEL),
+        input: z.union([z.string(), z.array(z.unknown()).min(1)]),
+        instructions: z.string().nullish(),
+        reasoning: z.record(z.string(), z.any()).nullish(),
+        max_output_tokens: z.number().int().positive().nullish(),
+        max_tool_calls: z.number().int().positive().nullish(),
+        stream: z.boolean().optional().default(false),
+        stream_options: z
+            .object({ include_obfuscation: z.boolean().optional() })
+            .strict()
+            .nullish(),
+        store: z.literal(false).optional().default(false),
+        previous_response_id: z.null().optional(),
+        conversation: z.null().optional(),
+        background: z.literal(false).nullish(),
+        include: z.array(StatelessResponseIncludeSchema).nullish(),
+        context_management: z.array(z.never()).max(0).nullish(),
+        prompt: z.null().optional(),
+        text: z.record(z.string(), z.any()).optional(),
+        tools: z.array(ResponseFunctionToolSchema).optional(),
+        tool_choice: z.any().optional(),
+        parallel_tool_calls: z.boolean().optional(),
+        metadata: z.record(z.string(), z.string()).optional(),
+        user: z.string().optional(),
+        safety_identifier: z.string().max(64).optional(),
+        prompt_cache_key: z.string().optional(),
+        prompt_cache_options: PromptCacheOptionsSchema,
+        prompt_cache_retention: z.enum(["in_memory", "24h"]).optional(),
+        service_tier: z.string().optional(),
+        temperature: z.number().min(0).max(2).nullish(),
+        top_p: z.number().min(0).max(1).nullish(),
+        top_logprobs: z.number().int().min(0).max(20).nullish(),
+        frequency_penalty: z.number().min(-2).max(2).nullish(),
+        presence_penalty: z.number().min(-2).max(2).nullish(),
+        truncation: z.enum(["auto", "disabled"]).nullish(),
+        safe: SafeSchema,
+    })
+    .strict();
+
+export type CreateResponseRequest = z.infer<typeof CreateResponseRequestSchema>;
+
+export const ResponseUsageSchema = z
+    .object({
+        input_tokens: z.number().int().nonnegative(),
+        input_tokens_details: z
+            .object({
+                cached_tokens: z.number().int().nonnegative().nullish(),
+                cache_write_tokens: z.number().int().nonnegative().nullish(),
+                audio_tokens: z.number().int().nonnegative().nullish(),
+                image_tokens: z.number().int().nonnegative().nullish(),
+                video_tokens: z.number().int().nonnegative().nullish(),
+            })
+            .passthrough()
+            .nullish(),
+        output_tokens: z.number().int().nonnegative(),
+        output_tokens_details: z
+            .object({
+                reasoning_tokens: z.number().int().nonnegative().nullish(),
+                audio_tokens: z.number().int().nonnegative().nullish(),
+                image_tokens: z.number().int().nonnegative().nullish(),
+                accepted_prediction_tokens: z
+                    .number()
+                    .int()
+                    .nonnegative()
+                    .nullish(),
+                rejected_prediction_tokens: z
+                    .number()
+                    .int()
+                    .nonnegative()
+                    .nullish(),
+            })
+            .passthrough()
+            .nullish(),
+        total_tokens: z.number().int().nonnegative(),
+    })
+    .passthrough();
+
+export type ResponseUsage = z.infer<typeof ResponseUsageSchema>;
+
+export const CreateResponseResponseSchema = z
+    .object({
+        id: z.string(),
+        object: z.literal("response"),
+        created_at: z.number().int().optional(),
+        model: z.string(),
+        status: z.enum([
+            "completed",
+            "failed",
+            "in_progress",
+            "cancelled",
+            "queued",
+            "incomplete",
+        ]),
+        output: z.array(z.object({ type: z.string() }).passthrough()),
+        usage: ResponseUsageSchema.nullable(),
+    })
+    .passthrough()
+    .superRefine((response, context) => {
+        if (
+            (response.status === "completed" ||
+                response.status === "incomplete") &&
+            response.usage === null
+        ) {
+            context.addIssue({
+                code: "custom",
+                path: ["usage"],
+                message: "Successful Responses must include valid usage",
+            });
+        }
+    })
+    .meta({ $id: "CreateResponseResponse" });
+
+export type CreateResponseResponse = z.infer<
+    typeof CreateResponseResponseSchema
+>;
+
+export const ResponseTerminalEventSchema = z
+    .object({
+        type: z.enum([
+            "response.completed",
+            "response.incomplete",
+            "response.failed",
+        ]),
+        response: z
+            .object({
+                model: z.string().optional(),
+                usage: ResponseUsageSchema.nullable(),
+            })
+            .passthrough(),
+    })
+    .passthrough()
+    .superRefine((event, context) => {
+        if (event.type !== "response.failed" && event.response.usage === null) {
+            context.addIssue({
+                code: "custom",
+                path: ["response", "usage"],
+                message: "Successful Responses must include valid usage",
+            });
+        }
+    });
+
+const ChatCompletionMessageContentBlockSchema = z.union([
+    ChatCompletionRequestMessageContentPartTextSchema,
+    ChatCompletionRequestMessageContentPartImageSchema,
+    ChatCompletionMessageContentPartThinkingSchema,
+    ChatCompletionMessageContentPartRedactedThinkingSchema,
+    // Allow any other content types for provider-specific extensions (video, audio, file, etc.)
+    z
+        .object({ type: z.string() })
+        .passthrough(),
+]);
+
+const ChatCompletionResponseMessageSchema = z.object({
+    content: z.string().nullish(),
+    tool_calls: ChatCompletionMessageToolCallsSchema.nullish(),
+    role: z.literal("assistant"),
+    function_call: z
+        .object({
+            arguments: z.string(),
+            name: z.string(),
+        })
+        .nullish(),
+    content_blocks: z.array(ChatCompletionMessageContentBlockSchema).nullish(),
+    audio: z
+        .object({
+            transcript: z.string(),
+            data: z.string(), // base64 encoded audio
+            id: z.string().optional(),
+            expires_at: z.number().int().optional(),
+        })
+        .nullish(),
+    // DeepSeek reasoning format
+    reasoning_content: z.string().nullish(),
+});
+
+const ChatCompletionTokenTopLogprobSchema = z.object({
+    token: z.string(),
+    logprob: z.number(),
+    bytes: z.array(z.number().int()).nullable(),
+});
+
+const ChatCompletionTokenLogprobSchema = z.object({
+    token: z.string(),
+    logprob: z.number(),
+    bytes: z.array(z.number().int()).nullable(),
+    top_logprobs: z.array(ChatCompletionTokenTopLogprobSchema),
+});
+
+const ChatCompletionChoiceLogprobsSchema = z
+    .object({
+        content: z.array(ChatCompletionTokenLogprobSchema).nullable(),
+    })
+    .nullable();
+
+export const CompletionUsageSchema = z
+    .object({
+        cached_input_tokens: z.number().int().nonnegative().nullish(),
+        cache_creation_input_tokens: z.number().int().nonnegative().nullish(),
+        cache_read_input_tokens: z.number().int().nonnegative().nullish(),
+        completion_tokens: z.number().int().nonnegative(),
+        completion_tokens_details: z
+            .object({
+                accepted_prediction_tokens: z
+                    .number()
+                    .int()
+                    .nonnegative()
+                    .nullish(),
+                audio_tokens: z.number().int().nonnegative().nullish(),
+                reasoning_tokens: z.number().int().nonnegative().nullish(),
+                rejected_prediction_tokens: z
+                    .number()
+                    .int()
+                    .nonnegative()
+                    .nullish(),
+            })
+            .nullish(),
+        prompt_tokens: z.number().int().nonnegative(),
+        prompt_tokens_details: z
+            .object({
+                audio_tokens: z.number().int().nonnegative().nullish(),
+                cache_write_tokens: z.number().int().nonnegative().nullish(),
+                cached_tokens: z.number().int().nonnegative().nullish(),
+                cache_creation_input_tokens: z
+                    .number()
+                    .int()
+                    .nonnegative()
+                    .nullish(),
+                cache_type: z.string().nullish(),
+                image_tokens: z.number().int().nonnegative().nullish(),
+            })
+            .nullish(),
+        reasoning_tokens: z.number().int().nonnegative().nullish(),
+        total_tokens: z.number().int().nonnegative(),
+    })
+    .meta({ $id: "CompletionUsage" });
+
+export type CompletionUsage = z.infer<typeof CompletionUsageSchema>;
+
+export const ContentFilterSeveritySchema = z
+    .enum(["safe", "low", "medium", "high"])
+    .meta({ $id: "ContentFilterSeverity" });
+
+export type ContentFilterSeverity = z.infer<typeof ContentFilterSeveritySchema>;
+
+export const ContentFilterResultSchema = z
+    .object({
+        hate: z.object({
+            filtered: z.boolean(),
+            severity: ContentFilterSeveritySchema,
+        }),
+        self_harm: z.object({
+            filtered: z.boolean(),
+            severity: ContentFilterSeveritySchema,
+        }),
+        sexual: z.object({
+            filtered: z.boolean(),
+            severity: ContentFilterSeveritySchema,
+        }),
+        violence: z.object({
+            filtered: z.boolean(),
+            severity: ContentFilterSeveritySchema,
+        }),
+        jailbreak: z.object({
+            filtered: z.boolean(),
+            detected: z.boolean(),
+        }),
+        protected_material_text: z.object({
+            filtered: z.boolean(),
+            detected: z.boolean(),
+        }),
+        protected_material_code: z.object({
+            filtered: z.boolean(),
+            detected: z.boolean(),
+        }),
+    })
+    .partial()
+    .meta({ $id: "ContentFilterResult" });
+
+export type ContentFilterResult = z.infer<typeof ContentFilterResultSchema>;
+
+export const PromptFilterResultSchema = z.array(
+    z.object({
+        prompt_index: z.number().int().nonnegative(),
+        content_filter_results: ContentFilterResultSchema.optional(),
+    }),
+);
+
+const CompletionChoiceSchema = z.object({
+    // Accept any string - backends may return various values (stop, length, error, max_tokens, etc.)
+    finish_reason: z.string().nullable().optional(),
+    index: z.number().int().nonnegative().optional(), // Optional for non-OpenAI providers
+    message: ChatCompletionResponseMessageSchema.optional(), // Optional for non-OpenAI providers
+    logprobs: ChatCompletionChoiceLogprobsSchema.nullish(),
+    content_filter_results: ContentFilterResultSchema.nullish(),
+});
+
+export const CreateChatCompletionResponseSchema = z.object({
+    id: z.string(),
+    choices: z.array(CompletionChoiceSchema),
+    prompt_filter_results: PromptFilterResultSchema.nullish(),
+    created: z.number().int(),
+    model: z.string().optional(),
+    system_fingerprint: z.string().nullish(),
+    object: z.literal("chat.completion"),
+    usage: CompletionUsageSchema,
+    citations: z.array(z.string()).optional(), // Perplexity citations
+});
+
+export type CreateChatCompletionResponse = z.infer<
+    typeof CreateChatCompletionResponseSchema
+>;
+
+export const OpenAIModelSchema = z
+    .object({
+        id: z.string(),
+        object: z.literal("model"),
+        created: z.number(),
+        owned_by: z.string(),
+        aliases: z.array(z.string()),
+        category: z.enum(MODEL_CATEGORIES),
+        community: z.boolean(),
+        title: z.string(),
+        description: z.string().optional(),
+        input_modalities: z.array(z.string()).optional(),
+        output_modalities: z.array(z.string()).optional(),
+        supported_endpoints: z.array(z.string()).optional(),
+        agent: z.boolean().optional(),
+        base_model: z.string().optional(),
+        pricing: z.record(z.string(), z.string()).optional(),
+        capabilities: z.array(z.string()).optional(),
+        tools: z.boolean().optional(),
+        reasoning: z.boolean().optional(),
+        context_length: z.number().optional(),
+        per_user_rpm: z.number().positive().nullable().optional(),
+        supported_parameters: z.array(z.string()).optional(),
+        default_parameters: z.record(z.unknown()).optional(),
+    })
+    .meta({
+        description: "OpenAI-compatible model object with capability metadata",
+    });
+
+export const GetModelResponseSchema = OpenAIModelSchema;
+
+export const GetModelsResponseSchema = z
+    .object({
+        object: z.literal("list"),
+        data: z.array(OpenAIModelSchema),
+    })
+    .meta({
+        description: "OpenAI-compatible list of available models.",
+    });
+
+// OpenAI Images API Schemas
+
+// Shared fields between image generation and editing requests
+const imageModelField = z
+    .string()
+    .optional()
+    .default("black-forest-labs/flux.1-schnell")
+    .meta({
+        description: "The model to use for image generation",
+    });
+const imageNField = z
+    .number()
+    .int()
+    .min(1)
+    .max(1)
+    .optional()
+    .default(1)
+    .meta({ description: "Number of images to generate (currently max 1)" });
+const imageSizeMeta = {
+    description: "Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512)",
+};
+const imageSizeField = z
+    .string()
+    .optional()
+    .default("1024x1024")
+    .meta(imageSizeMeta);
+const imageEditSizeField = z.string().optional().meta(imageSizeMeta);
+const imageQualityField = z
+    .enum(["standard", "hd", "low", "medium", "high"])
+    .optional()
+    .default("medium")
+    .meta({
+        description:
+            "Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents",
+    });
+const imageResolutionField = z
+    .enum(["1k", "2k", "360p", "480p", "720p", "768p", "1080p", "4k"])
+    .optional()
+    .meta({
+        description:
+            "Output resolution for resolution-priced image and video models (Pollinations extension)",
+    });
+const imageResponseFormatField = z
+    .enum(["url", "b64_json"])
+    .optional()
+    .default("b64_json")
+    .meta({
+        description:
+            'Return format. "url" returns a stored media.pollinations.ai URL, "b64_json" returns base64-encoded image data',
+    });
+
+export const CreateImageRequestSchema = z
+    .object({
+        prompt: z.string().min(1).max(32000).meta({
+            description: "A text description of the desired image(s)",
+        }),
+        model: imageModelField,
+        n: imageNField,
+        size: imageSizeField,
+        quality: imageQualityField,
+        response_format: imageResponseFormatField,
+        user: z.string().optional().meta({
+            description: "End-user identifier for abuse tracking",
+        }),
+        image: z
+            .union([z.string(), z.array(z.string())])
+            .optional()
+            .meta({
+                description:
+                    "Reference image URL(s) for image-to-image generation (Pollinations extension)",
+            }),
+        // Reference media is supported only by the native GET image/video
+        // routes. Keep these keys explicit so the passthrough extension
+        // policy cannot accidentally expose them on OpenAI POST requests.
+        reference_images: z.never().optional(),
+        reference_videos: z.never().optional(),
+        reference_audios: z.never().optional(),
+        resolution: imageResolutionField,
+        safe: SafeSchema,
+    })
+    .passthrough() // Allow Pollinations extensions: seed, safe, etc.
+    .meta({ $id: "CreateImageRequest" });
+
+export type CreateImageRequest = z.infer<typeof CreateImageRequestSchema>;
+
+const ImageDataSchema = z.object({
+    url: z.string().optional(),
+    b64_json: z.string().optional(),
+    media_type: z.string().optional().meta({
+        description:
+            "MIME type, included for URL responses and non-raster output",
+    }),
+    revised_prompt: z.string().optional(),
+});
+
+export const ImageUsageSchema = z.object({
+    input_tokens: z.number().int().nonnegative(),
+    output_tokens: z.number().int().nonnegative(),
+    total_tokens: z.number().int().nonnegative(),
+    input_tokens_details: z.object({
+        text_tokens: z.number().int().nonnegative(),
+        image_tokens: z.number().int().nonnegative(),
+    }),
+});
+
+export const CreateImageResponseSchema = z
+    .object({
+        created: z.number().int(),
+        data: z.array(ImageDataSchema),
+        usage: ImageUsageSchema,
+    })
+    .meta({ $id: "CreateImageResponse" });
+
+// Schema for JSON-based image edit requests
+// For multipart/form-data requests, parsing is done manually in the route handler
+export const CreateImageEditRequestSchema = z
+    .object({
+        prompt: z.string().min(1).max(32000).meta({
+            description: "A text description of the desired edit",
+        }),
+        image: z
+            .union([
+                z.string().meta({ description: "Image URL" }),
+                z.array(
+                    z.object({
+                        image_url: z.string().meta({
+                            description:
+                                "URL or base64 data URI of the source image",
+                        }),
+                    }),
+                ),
+            ])
+            .meta({
+                description:
+                    "Source image(s). A URL string, or an array of {image_url} objects (OpenAI format)",
+            }),
+        model: imageModelField,
+        n: imageNField,
+        size: imageEditSizeField,
+        quality: imageQualityField,
+        response_format: imageResponseFormatField,
+        resolution: imageResolutionField,
+        safe: SafeSchema,
+    })
+    .passthrough()
+    .meta({ $id: "CreateImageEditRequest" });
+
+export type CreateImageEditRequest = z.infer<
+    typeof CreateImageEditRequestSchema
+>;

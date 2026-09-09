@@ -1,0 +1,16 @@
+{
+  "target": "script",
+  "credentials": "myceli",
+  "sops": "default",
+  "install": "npm ci --prefix ../.. && npm ci",
+  "deploy": "npm run deploy && sops exec-file --no-fifo secrets/env.json 'npx wrangler secret bulk {}'",
+  "verify": [
+    "https://kpi.pollinations.ai/"
+  ],
+  "watch": [
+    "packages/auth/",
+    "packages/ui/",
+    "package.json",
+    "package-lock.json"
+  ]
+}

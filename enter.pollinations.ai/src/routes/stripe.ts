@@ -12,6 +12,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
+import { recordGiftReward } from "../services/gift-rewards.ts";
 import { getCohortFromCountry } from "../utils/currency-router.ts";
 import { createStripeClient } from "../utils/stripe.ts";
 import {
@@ -65,6 +66,10 @@ export const stripeRoutes = new Hono<Env>()
         }
 
         const userId = session.user.id;
+        const giftCode =
+            c.req.query("gift") === "true"
+                ? crypto.randomUUID().replaceAll("-", "")
+                : undefined;
 
         // Create Stripe client
         const stripe = createStripeClient(c.env);
@@ -123,8 +128,12 @@ export const stripeRoutes = new Hono<Env>()
                             unit_amount: pack.amountUsd * 100,
                             tax_behavior: "exclusive",
                             product_data: {
-                                name: pack.checkoutName,
-                                description: pack.checkoutDescription,
+                                name: giftCode
+                                    ? `${pack.amountUsd} Pollen gift`
+                                    : pack.checkoutName,
+                                description: giftCode
+                                    ? "A single-use code to claim Paid Pollen at /redeem."
+                                    : pack.checkoutDescription,
                                 images: [pack.checkoutImageUrl],
                                 tax_code: pack.taxCode,
                             },
@@ -168,10 +177,23 @@ export const stripeRoutes = new Hono<Env>()
                         rendering_options: {
                             amount_tax_display: "exclude_tax",
                         },
+                        ...(giftCode
+                            ? {
+                                  custom_fields: [
+                                      { name: "Gift code", value: giftCode },
+                                  ],
+                                  footer: `Claim your gift at ${new URL("/redeem", baseUrl)}`,
+                              }
+                            : {}),
                     },
                 },
-                metadata: packMetadata,
-                success_url: `${pollenReturnUrl}&stripe_success=true&session_id={CHECKOUT_SESSION_ID}`,
+                metadata: {
+                    ...packMetadata,
+                    ...(giftCode ? { giftCode } : {}),
+                },
+                success_url: giftCode
+                    ? `${pollenReturnUrl}&gift_session={CHECKOUT_SESSION_ID}`
+                    : `${pollenReturnUrl}&stripe_success=true&session_id={CHECKOUT_SESSION_ID}`,
                 cancel_url: `${pollenReturnUrl}&stripe_canceled=true`,
             });
 
@@ -187,6 +209,30 @@ export const stripeRoutes = new Hono<Env>()
             // Return generic message to client - don't expose internal error details
             return c.json({ error: "Failed to create checkout session" }, 500);
         }
+    })
+
+    .get("/gifts/:sessionId", async (c) => {
+        const user = await requireSessionUser(c);
+        const session = await createStripeClient(
+            c.env,
+        ).checkout.sessions.retrieve(c.req.param("sessionId"));
+        if (
+            session.metadata?.userId !== user.id ||
+            !session.metadata.giftCode
+        ) {
+            throw new HTTPException(404, { message: "Gift not found" });
+        }
+        c.header("Cache-Control", "no-store");
+        if (session.payment_status !== "paid") {
+            return c.json(
+                { error: "Payment is still processing. Check again shortly." },
+                409,
+            );
+        }
+        // The return page also fulfills paid purchases if the webhook is late.
+        // The reward's unique payment key makes this safe to repeat.
+        await recordGiftReward(c.env.DB, session);
+        return c.json({ code: session.metadata.giftCode });
     })
 
     /**

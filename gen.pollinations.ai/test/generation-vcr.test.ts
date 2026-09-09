@@ -826,7 +826,7 @@ test("media Responses and Chat share native generation, cache and one debit", as
     ).toHaveLength(1);
 });
 
-test("media text protocols reject missing user text and attachments before generation", async ({
+test("media text protocols reject invalid prompts and attachments before generation", async ({
     mocks,
 }) => {
     await mocks.enable("tinybird", "deepInfra");
@@ -834,6 +834,9 @@ test("media text protocols reject missing user text and attachments before gener
     for (const protocol of ["responses", "chat/completions"]) {
         for (const messages of [
             [{ role: "assistant", content: "no user prompt" }],
+            ...[".", "..", "\ud800", "\udc00"].map((content) => [
+                { role: "user", content },
+            ]),
             [
                 {
                     role: "user",
@@ -867,6 +870,30 @@ test("media text protocols reject missing user text and attachments before gener
             await response.text();
             await wait();
         }
+    }
+    expect(mocks.deepInfra.state.requests).toHaveLength(0);
+    expect(
+        mocks.tinybird.state.events.some((event) => event.isBilledUsage),
+    ).toBe(false);
+});
+
+test("media Responses rejects invalid string input before generation", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "deepInfra");
+    const { key } = await createTestApiKey({ user: { tierBalance: 100 } });
+    for (const input of [".", "..", "\ud800", "\udc00"]) {
+        const { response, wait } = await fetchWorker("/v1/responses", {
+            method: "POST",
+            headers: {
+                authorization: `Bearer ${key}`,
+                "content-type": "application/json",
+            },
+            body: JSON.stringify({ model: "flux", input }),
+        });
+        expect(response.status, await response.clone().text()).toBe(400);
+        expect(await response.text()).toContain("Media prompt");
+        await wait();
     }
     expect(mocks.deepInfra.state.requests).toHaveLength(0);
     expect(

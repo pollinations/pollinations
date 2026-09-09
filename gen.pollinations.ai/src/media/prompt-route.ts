@@ -1,6 +1,6 @@
 import type { GenerationModelEntry } from "../model-registry.ts";
 
-/** Only models that can generate from text alone belong on the text protocols. */
+/** Text-input media with a reachable native generation route. */
 export function mediaPromptRoute(
     entry: Pick<GenerationModelEntry, "definition" | "supportedEndpoints">,
 ): string | undefined {

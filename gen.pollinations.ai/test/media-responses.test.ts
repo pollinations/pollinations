@@ -34,12 +34,18 @@ describe("media text protocols", () => {
             ]),
         ).toBe("a cat\nin space");
         expect(mediaPrompt(" literal prompt ")).toBe(" literal prompt ");
+        expect(mediaPrompt("猫 🚀 ... %2F")).toBe("猫 🚀 ... %2F");
+        expect(mediaPrompt(" . ")).toBe(" . ");
     });
 
     it.each([
         null,
         [],
         " ",
+        ".",
+        "..",
+        "\ud800",
+        "\udc00",
         [{ role: "assistant", content: "hello" }],
         [{ role: "user", content: [{ type: "input_image", image_url: url }] }],
     ])("rejects absent text and attachments: %j", (input) => {
@@ -143,6 +149,7 @@ describe("media text protocols", () => {
             "veo",
             "elevenlabs/eleven-v3",
             "hyper3d/rodin-2.5",
+            "prunaai/p-image-edit",
         ]) {
             const entry = registry.resolve(model);
             if (!entry) throw new Error(`Missing registry model: ${model}`);

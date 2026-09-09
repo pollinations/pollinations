@@ -48,6 +48,17 @@ export function mediaPrompt(input: unknown): string {
             message: "Media generation requires text in the last user message.",
         });
     }
+    if (!content.isWellFormed()) {
+        throw new HTTPException(400, {
+            message: "Media prompt contains invalid Unicode.",
+        });
+    }
+    // URL normalization would remove these native-route path segments.
+    if (content === "." || content === "..") {
+        throw new HTTPException(400, {
+            message: "Media prompt cannot be only '.' or '..'.",
+        });
+    }
     return content;
 }
 

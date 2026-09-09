@@ -39,6 +39,8 @@ Managed prompt agents accept `reasoning.effort` (Responses) and `reasoning_effor
 
 Image, video, audio and 3D models that advertise these endpoints in [`/models`](/models) accept a text prompt. Only the last user message's text (or a string Responses `input`) is used; history, instructions and text-generation settings are ignored. Attachments return HTTP 400. Use the native media endpoints for edits and generation settings.
 
+Empty prompts, malformed Unicode and prompts consisting only of `.` or `..` return HTTP 400. Reference-required models return their normal missing-input error.
+
 Dialogue models expect one `<voice>: <text>` turn per line, just like `/audio`. Community speech models available only through `/v1/audio/speech` are not included.
 
 ```bash
@@ -55,7 +57,7 @@ curl https://gen.pollinations.ai/v1/chat/completions \
 
 Both return assistant text: a Markdown image embed for images, or a Markdown link for audio, video and 3D, followed by the plain public file URL. The URL is also in the `Link` header. With `stream: true`, events arrive after generation finishes.
 
-Media uses its normal billing units, not text tokens: Responses returns `usage: null`; Chat omits `usage`. Video uses the native model or provider's default duration.
+Media uses its normal billing units, not text tokens: Responses returns `usage: null`; Chat JSON omits `usage`. Chat streaming chunks contain `usage: null`, with no final usage chunk. Video uses the native model or provider's default duration.
 
 ### Reasoning
 

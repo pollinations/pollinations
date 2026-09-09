@@ -3,7 +3,6 @@ import { every } from "hono/combine";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
-import { normalizedJsonBody } from "@/middleware/generation-cache.ts";
 import { deduplicateGeneration } from "@/middleware/generation-deduplication.ts";
 import {
     audioCache,
@@ -11,7 +10,6 @@ import {
     model3dCache,
 } from "@/middleware/media-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
-import { applySafetyToInput } from "@/middleware/safety.ts";
 import { track } from "@/middleware/track.ts";
 import {
     responsesToChatCompletion,
@@ -19,6 +17,7 @@ import {
 } from "@/text/responses/chatResponse.ts";
 import { generationAccess } from "@/utils/generation-access.ts";
 import { getGenerationModelRegistry } from "../model-registry.ts";
+import { prepareImageEditRequest } from "../routes/images.ts";
 import { mediaPromptRoute } from "./prompt-route.ts";
 import { createMediaResponse, mediaResponseStream } from "./response-output.ts";
 
@@ -124,27 +123,21 @@ export function mediaResponses(protocol: MediaProtocol) {
                     ctx.set("generationRequestMethod", "GET");
                     return proceed();
                 }
+                // The edits executor runs image and video (start frame)
+                // models; 3D has its own handler.
                 if (
-                    entry.definition.category !== "image" ||
+                    route !== "/image/" ||
                     !entry.definition.inputModalities?.includes("image")
                 )
                     throw new HTTPException(400, {
-                        message: `Model "${entry.id}" does not accept image input.`,
+                        message: `Model "${entry.id}" does not accept image input on this endpoint.`,
                     });
-                // Replay the JSON edits contract: the executor parses it as
-                // already-safe, and data URIs are hashed into the cache key.
-                const safe = body.safe as SafeValue;
-                const edit = normalizedJsonBody(
-                    JSON.stringify({
-                        prompt: await applySafetyToInput(ctx, prompt, safe),
-                        model: entry.id,
-                        image: images.map((image_url) => ({ image_url })),
-                        ...(safe !== undefined && { safe }),
-                    }),
-                );
-                ctx.set("generationRequestBody", edit);
-                ctx.set("generationCacheBody", edit);
-                ctx.set("generationRequestContentType", "application/json");
+                await prepareImageEditRequest(ctx, {
+                    prompt,
+                    imageUrls: images,
+                    safe: body.safe as SafeValue,
+                    extra: {},
+                });
                 ctx.set(
                     "generationRequestUrl",
                     new URL("/v1/images/edits", ctx.req.url),

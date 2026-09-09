@@ -877,7 +877,7 @@ test("media text protocols reject invalid prompts and attachments before generat
     ).toBe(false);
 });
 
-test("media text protocols route image parts through the edits contract", async ({
+test("media text protocols share one edit generation with native edits", async ({
     mocks,
 }) => {
     await mocks.enable("tinybird", "deepInfra");
@@ -885,6 +885,27 @@ test("media text protocols route image parts through the edits contract", async 
     const image = `data:image/png;base64,${png1x1Base64}`;
     const prompt = `edit wrapper ${crypto.randomUUID()}`;
     const bindings = withInlineGenerationCoordinator(env);
+    const native = await fetchWorker(
+        "/v1/images/edits",
+        {
+            method: "POST",
+            headers: {
+                authorization: `Bearer ${key}`,
+                "content-type": "application/json",
+            },
+            body: JSON.stringify({
+                model: "prunaai/p-image-edit",
+                prompt,
+                image,
+            }),
+        },
+        bindings,
+    );
+    expect(native.response.status, await native.response.clone().text()).toBe(
+        200,
+    );
+    await native.wait();
+    expect(mocks.deepInfra.state.requests).toHaveLength(1);
     const request = (protocol: string, model: string) =>
         fetchWorker(
             `/v1/${protocol}`,
@@ -934,7 +955,8 @@ test("media text protocols route image parts through the edits contract", async 
         /^!\[Image\]\(https:\/\/media\./,
     );
     await Promise.all(results.map(({ wait }) => wait()));
-    // Both protocols share one edit generation, keyed on the hashed body.
+    // All three entry points hash the same edit body, so the native
+    // generation serves both text protocols from the cache.
     expect(mocks.deepInfra.state.requests).toHaveLength(1);
     expect(mocks.deepInfra.state.requests[0]).toMatchObject({
         prompt,

@@ -1,0 +1,46 @@
+{
+    "compilerOptions": {
+        "target": "esnext",
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "rootDirs": ["src"],
+        "lib": ["esnext", "dom", "dom.iterable"],
+        "types": ["node"],
+        "jsx": "react-jsx",
+        "jsxImportSource": "react",
+
+        "forceConsistentCasingInFileNames": true,
+        "isolatedModules": true,
+
+        "strict": true,
+        "noImplicitAny": true,
+        "noImplicitThis": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "allowImportingTsExtensions": true,
+        "allowJs": true,
+        "checkJs": false,
+
+        "noEmit": true,
+        "resolveJsonModule": true,
+        "sourceMap": true,
+        "skipLibCheck": true,
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["src/*"],
+            "@frontend/*": ["frontend/src/*"],
+            "@shared/*": ["../shared/*"]
+        }
+    },
+    "include": [
+        "worker-runtime.d.ts",
+        "worker-bindings.d.ts",
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "frontend/src/**/*.ts",
+        "frontend/src/**/*.tsx"
+    ]
+}

@@ -1,0 +1,404 @@
+import {
+    Alert,
+    Button,
+    CardIcon,
+    CheckIcon,
+    Chip,
+    ClipboardIcon,
+    CopyButton,
+    currentPeriod,
+    ExternalLinkIcon,
+    GlobeIcon,
+    IconButton,
+    LockIcon,
+    PencilIcon,
+    Surface,
+    TerminalIcon,
+    TokensIcon,
+    XIcon,
+} from "@pollinations/ui";
+import { communityEndpointPriceFieldsForModality } from "@shared/community-endpoints.ts";
+import { Link } from "@tanstack/react-router";
+import type { ReactNode } from "react";
+import { OpenWebUiLink } from "../models/open-webui-link.tsx";
+import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
+import type { PriceKind } from "../models/types.ts";
+import {
+    type CommunityEndpoint,
+    openWebUiTestableModelId,
+    type ProxyCommunityEndpoint,
+    storedPriceToFormValue,
+    VISIBILITY_LABELS,
+} from "./types.ts";
+
+type CommunityEndpointCardProps = {
+    endpoint: CommunityEndpoint;
+    isToggling: boolean;
+    onToggle: () => void;
+    onEdit: () => void;
+    onDelete: () => void;
+};
+
+export function CommunityEndpointCard({
+    endpoint,
+    isToggling,
+    onToggle,
+    onEdit,
+    onDelete,
+}: CommunityEndpointCardProps) {
+    const isPublic = endpoint.visibility === "public";
+    const isAgent = endpoint.type !== "proxy";
+    const priceGroups =
+        endpoint.type === "proxy" ? communityPriceGroups(endpoint) : [];
+    const testableModelId = openWebUiTestableModelId(endpoint);
+
+    return (
+        <Surface
+            className={`transition-colors hover:bg-surface-opaque/90 ${
+                endpoint.hidden ? "opacity-60" : ""
+            }`}
+        >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <h3 className="min-w-0 basis-full truncate text-base font-semibold text-theme-text-strong sm:basis-auto">
+                            {endpoint.title}
+                        </h3>
+                        <Chip intent={isPublic ? "news" : "neutral"} size="sm">
+                            {isPublic ? (
+                                <GlobeIcon className="h-3 w-3" />
+                            ) : (
+                                <LockIcon className="h-3 w-3" />
+                            )}
+                            {VISIBILITY_LABELS[endpoint.visibility]}
+                        </Chip>
+                        {isAgent && (
+                            <Chip intent="news" size="sm">
+                                Agent
+                            </Chip>
+                        )}
+                    </div>
+                    {endpoint.description && (
+                        <p className="mt-1 text-sm text-theme-text-muted">
+                            {endpoint.description}
+                        </p>
+                    )}
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                    <Button
+                        type="button"
+                        size="sm"
+                        intent={endpoint.hidden ? "info" : "danger"}
+                        disabled={isToggling}
+                        onClick={onToggle}
+                    >
+                        {isToggling
+                            ? "Saving…"
+                            : endpoint.hidden
+                              ? "Relist"
+                              : "Hide"}
+                    </Button>
+                    <IconButton
+                        intent="info"
+                        title={isAgent ? "Edit agent" : "Edit model"}
+                        tooltip={isAgent ? "Edit agent" : "Edit model"}
+                        tooltipAlign="center"
+                        onClick={onEdit}
+                    >
+                        <PencilIcon className="h-4 w-4" />
+                    </IconButton>
+                    <IconButton
+                        intent="danger"
+                        title="Delete model"
+                        tooltip="Delete model"
+                        tooltipAlign="center"
+                        onClick={onDelete}
+                    >
+                        <XIcon className="h-4 w-4" />
+                    </IconButton>
+                </div>
+            </div>
+
+            {endpoint.hidden && (
+                <Alert intent="danger" className="mt-3">
+                    <div className="flex flex-col gap-1">
+                        <span className="font-semibold">Model hidden</span>
+                        <span className="text-sm">
+                            {endpoint.hiddenReason ??
+                                "Hidden due to repeated failures."}
+                        </span>
+                    </div>
+                </Alert>
+            )}
+
+            <PendingChangeNotice endpoint={endpoint} />
+
+            <div className="mt-4 grid gap-2">
+                <CommunityDetailRow
+                    icon={<TokensIcon className="h-3.5 w-3.5" />}
+                    label="Model ID"
+                    value={endpoint.modelId}
+                    copyLabel="Copy model id"
+                />
+                {endpoint.type !== "prompt_agent" && (
+                    <CommunityDetailRow
+                        icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}
+                        label="Endpoint"
+                        value={
+                            endpoint.type === "endpoint_agent" ||
+                            endpoint.modality === "text"
+                                ? endpoint.url
+                                : endpoint.baseUrl
+                        }
+                        copyLabel="Copy endpoint"
+                    />
+                )}
+                {endpoint.type !== "prompt_agent" && (
+                    <>
+                        {endpoint.type === "proxy" && (
+                            <CommunityDetailRow
+                                icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                                label="Modality"
+                                value={endpoint.modality}
+                            />
+                        )}
+                        {(endpoint.type !== "proxy" ||
+                            endpoint.modality !== "video") && (
+                            <CommunityDetailRow
+                                icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                                label="Upstream model"
+                                value={endpoint.upstreamModel}
+                            />
+                        )}
+                        {endpoint.perUserRpm !== null && (
+                            <CommunityDetailRow
+                                icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                                label="Per-user limit"
+                                value={`${endpoint.perUserRpm} RPM/user`}
+                            />
+                        )}
+                    </>
+                )}
+                {priceGroups.map((group) => (
+                    <CommunityDetailRow
+                        key={group.key}
+                        icon={<CardIcon className="h-3.5 w-3.5" />}
+                        label={group.label}
+                        value={<CommunityPriceBadges group={group} />}
+                    />
+                ))}
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+                <Link
+                    to="/activity"
+                    search={{
+                        usageGranularity: "day",
+                        usagePeriod: currentPeriod().period,
+                        usageBucket: undefined,
+                        usageAnchor: undefined,
+                        earningsGranularity: "day",
+                        earningsPeriod: currentPeriod().period,
+                        earningsBucket: undefined,
+                        earningsAnchor: undefined,
+                        earningsModels: [endpoint.modelId],
+                        usageMetric: undefined,
+                        usageKeys: undefined,
+                        usageModels: undefined,
+                        earningsMetric: undefined,
+                        earningsApps: undefined,
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-theme-text-muted underline underline-offset-2 transition-colors hover:text-theme-text-strong"
+                >
+                    View activity
+                </Link>
+                {testableModelId && (
+                    <OpenWebUiLink modelId={testableModelId} variant="text" />
+                )}
+            </div>
+        </Surface>
+    );
+}
+
+function PendingChangeNotice({ endpoint }: { endpoint: CommunityEndpoint }) {
+    const pending = endpoint.pending;
+    if (!pending) return null;
+
+    const visibility = pending.visibility ?? endpoint.visibility;
+    const pendingProxy =
+        endpoint.type === "proxy"
+            ? ({
+                  ...endpoint,
+                  ...pending,
+                  visibility,
+                  paidOnly: pending.paidOnly ?? endpoint.paidOnly,
+                  imagePricing: pending.imagePricing ?? endpoint.imagePricing,
+              } satisfies ProxyCommunityEndpoint)
+            : null;
+    const priceGroups = pendingProxy ? communityPriceGroups(pendingProxy) : [];
+
+    return (
+        <Alert intent="info" className="mt-3" title="Changes queued">
+            <div className="flex flex-col gap-1 text-sm">
+                <span>
+                    Effective {new Date(pending.effectiveAt).toLocaleString()}
+                </span>
+                <span>
+                    Visibility: {VISIBILITY_LABELS[visibility]}
+                    {pendingProxy &&
+                        ` · ${pendingProxy.paidOnly ? "Paid Pollen only" : "Quest and Paid Pollen"}`}
+                </span>
+                {pendingProxy && (
+                    <span className="flex flex-wrap items-center gap-1.5">
+                        <span>Pricing:</span>
+                        {priceGroups.length > 0 ? (
+                            priceGroups.map((group) => (
+                                <span
+                                    key={group.key}
+                                    className="inline-flex items-center gap-1"
+                                >
+                                    {group.label}
+                                    <CommunityPriceBadges group={group} />
+                                </span>
+                            ))
+                        ) : (
+                            <span>Free</span>
+                        )}
+                    </span>
+                )}
+            </div>
+        </Alert>
+    );
+}
+
+type CommunityDetailRowProps = {
+    icon: ReactNode;
+    label: string;
+    value: ReactNode;
+    copyLabel?: string;
+};
+
+function CommunityDetailRow({
+    icon,
+    label,
+    value,
+    copyLabel,
+}: CommunityDetailRowProps) {
+    const copyValue = typeof value === "string" ? value : null;
+
+    return (
+        <div className="grid min-w-0 gap-1 text-xs text-theme-text-muted sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:items-center">
+            <span className="inline-flex items-center gap-1.5 font-medium text-theme-text-muted">
+                <span className="text-theme-text-muted">{icon}</span>
+                {label}
+            </span>
+            <span className="flex min-w-0 items-center gap-1.5">
+                {typeof value === "string" ? (
+                    <span className="min-w-0 truncate font-mono text-theme-text-strong">
+                        {value}
+                    </span>
+                ) : (
+                    value
+                )}
+                {copyLabel && copyValue && (
+                    <CopyButton
+                        value={copyValue}
+                        tooltip={copyLabel}
+                        copiedTooltip="Copied"
+                        className="inline-flex shrink-0 items-center justify-center rounded-md p-1 text-theme-text-muted transition-colors hover:bg-theme-bg-active hover:text-theme-text-strong"
+                    >
+                        {(copied: boolean) =>
+                            copied ? (
+                                <CheckIcon className="h-3.5 w-3.5" />
+                            ) : (
+                                <ClipboardIcon className="h-3.5 w-3.5" />
+                            )
+                        }
+                    </CopyButton>
+                )}
+            </span>
+        </div>
+    );
+}
+
+function CommunityPriceBadges({ group }: { group: CommunityPriceGroup }) {
+    return (
+        <span className="flex min-w-0 flex-wrap items-center gap-1">
+            {group.badges.map(({ badge }) => (
+                <PriceBadge
+                    key={`${group.key}-${badge.kind}-${badge.price}`}
+                    {...badge}
+                />
+            ))}
+        </span>
+    );
+}
+
+type CommunityPriceGroup = {
+    key: "input" | "output";
+    label: string;
+    badges: CommunityPriceBadge[];
+};
+
+type CommunityPriceBadge = {
+    badge: PriceBadgeConfig;
+};
+
+function communityPriceGroups(
+    endpoint: ProxyCommunityEndpoint,
+): CommunityPriceGroup[] {
+    const groups: Record<CommunityPriceGroup["key"], CommunityPriceBadge[]> = {
+        input: [],
+        output: [],
+    };
+
+    for (const field of communityEndpointPriceFieldsForModality(
+        endpoint.modality,
+        endpoint.imagePricing,
+    )) {
+        const price = endpoint[field.key];
+        if (price <= 0) continue;
+        const groupKey = communityPriceGroupKey(field.usageType);
+        if (!groupKey) continue;
+        const kind = communityPriceKind(field.usageType);
+        groups[groupKey].push({
+            badge: {
+                price: storedPriceToFormValue(price, field.priceUnit),
+                kind,
+                subKinds: [kind],
+                unit:
+                    field.priceUnit === "million"
+                        ? "token"
+                        : field.priceUnit === "second" ||
+                            field.priceUnit === "video_second"
+                          ? "second"
+                          : "request",
+            },
+        });
+    }
+
+    const priceGroups: CommunityPriceGroup[] = [
+        { key: "input", label: "Input price", badges: groups.input },
+        { key: "output", label: "Output price", badges: groups.output },
+    ];
+
+    return priceGroups.filter((group) => group.badges.length > 0);
+}
+
+function communityPriceGroupKey(
+    usageType: string,
+): CommunityPriceGroup["key"] | null {
+    if (usageType.startsWith("prompt")) return "input";
+    if (usageType.startsWith("completion")) return "output";
+    return null;
+}
+
+function communityPriceKind(usageType: string): PriceKind {
+    if (usageType === "promptCachedTokens") return "cached";
+    if (usageType === "promptCacheWriteTokens") return "cacheWrite";
+    if (usageType === "completionReasoningTokens") return "reasoning";
+    if (usageType === "promptAudioTokens") return "audioIn";
+    if (usageType === "completionAudioTokens") return "audioOut";
+    if (usageType.includes("Image")) return "image";
+    if (usageType.includes("Video")) return "video";
+    return "text";
+}

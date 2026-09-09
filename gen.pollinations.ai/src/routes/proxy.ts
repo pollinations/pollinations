@@ -1,0 +1,1201 @@
+import { type Context, Hono } from "hono";
+import { every } from "hono/combine";
+import { resolver as baseResolver, describeRoute } from "hono-openapi";
+import type { Env } from "@/env.ts";
+import { handleRegisterServer } from "@/image/handler.ts";
+import { auth } from "@/middleware/auth.ts";
+import { balance } from "@/middleware/balance.ts";
+import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
+import { deduplicateGeneration } from "@/middleware/generation-deduplication.ts";
+import {
+    audioCache,
+    imageCache,
+    model3dCache,
+} from "@/middleware/media-cache.ts";
+import { resolveModel } from "@/middleware/model.ts";
+import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
+import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
+import { textCache } from "@/middleware/text-cache.ts";
+import { track } from "@/middleware/track.ts";
+import {
+    MediaChatCompletionSchema,
+    MediaResponseSchema,
+    mediaResponseDescription,
+} from "../media/response-output.ts";
+import { mediaResponses } from "../media/responses.ts";
+import {
+    formatOpenAIImageResponse,
+    handleImageGeneration,
+    prepareOpenAIImageEdit,
+    prepareOpenAIImageGeneration,
+} from "./images.ts";
+
+// Wrapper for resolver that enables schema deduplication via $ref
+// Schemas with .meta({ $id: "Name" }) will be extracted to components/schemas
+const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
+    baseResolver(schema, { reused: "ref" });
+
+import { validator } from "@shared/middleware/validator.ts";
+import { AUDIO_VOICES } from "@shared/registry/audio.ts";
+import {
+    DEFAULT_IMAGE_MODEL,
+    getImageModelIds,
+    getVideoModelIds,
+} from "@shared/registry/image.ts";
+import { ModelInfoSchema } from "@shared/registry/model-info.ts";
+import {
+    DEFAULT_3D_MODEL,
+    getModel3dModelIds,
+} from "@shared/registry/model3d.ts";
+import {
+    DEFAULT_REALTIME_MODEL,
+    REALTIME_MODEL_NAMES,
+} from "@shared/registry/realtime.ts";
+import {
+    CreateChatCompletionRequestSchema,
+    CreateChatCompletionResponseSchema,
+    CreateImageEditRequestSchema,
+    CreateImageRequestSchema,
+    CreateImageResponseSchema,
+    CreateResponseRequestSchema,
+    CreateResponseResponseSchema,
+    GetModelResponseSchema,
+    GetModelsResponseSchema,
+} from "@shared/schemas/openai.ts";
+import { SafeSchema } from "@shared/schemas/safety.ts";
+import {
+    errorResponseDescriptions,
+    mediaResponseHeaders,
+} from "@shared/utils/api-docs.ts";
+import { createFactory } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
+import { z } from "zod";
+import {
+    CreateEmbeddingRequestSchema,
+    CreateEmbeddingResponseSchema,
+} from "@/schemas/embeddings.ts";
+import {
+    GenerateImageRequestQueryParamsSchema,
+    GenerateVideoRequestQueryParamsSchema,
+} from "@/schemas/image.ts";
+import {
+    Generate3dRequestBodySchema,
+    Generate3dRequestQueryParamsSchema,
+} from "@/schemas/model3d.ts";
+import {
+    type ModelListQueryParams,
+    ModelListQueryParamsSchema,
+} from "@/schemas/models.ts";
+import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
+import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
+import { generateCreateResponse } from "@/text/responses/handler.ts";
+import {
+    apiKeyBudgetReservation,
+    generationAccess,
+} from "@/utils/generation-access.ts";
+import {
+    type GenerationModelEntry,
+    getGenerationModelRegistry,
+} from "../model-registry.ts";
+import { handleSimpleAudio } from "./audio.ts";
+import {
+    generateChatCompletion,
+    generateEmbeddingsResponse,
+    generateImageVideo,
+    generateModel3d,
+    generateSimpleText,
+    generateTextContent,
+    simpleAudioQuerySchema,
+    textBodyLimit,
+} from "./generation-handlers.ts";
+import { handleRealtimeWebSocket } from "./realtime.ts";
+
+const ModelInfoListSchema = z.array(ModelInfoSchema).meta({
+    description: "List of models with pricing and metadata",
+});
+
+// Multipart edits are parsed manually; describe only the fields that parser reads.
+const ImageEditUploadSchema = z.union([
+    z.file(),
+    z.string(),
+    z.array(z.union([z.file(), z.string()])).min(1),
+]);
+const ImageEditMultipartSchema = z
+    .intersection(
+        CreateImageEditRequestSchema.omit({ image: true, n: true }),
+        z.union([
+            z.object({ image: ImageEditUploadSchema }).passthrough(),
+            z.object({ "image[]": ImageEditUploadSchema }).passthrough(),
+        ]),
+    )
+    .meta({
+        description:
+            "Provide source files or URLs using image or image[]. Repeat either field for multiple images.",
+    });
+
+// Build dynamic model lists from registry for use in API descriptions
+const imageModelNames = getImageModelIds()
+    .map((id) => `\`${id}\``)
+    .join(", ");
+
+const videoModelNames = getVideoModelIds()
+    .map((id) => `\`${id}\``)
+    .join(", ");
+
+const model3dModelNames = getModel3dModelIds()
+    .map((id) => `\`${id}\``)
+    .join(", ");
+
+function describeRealtimeWebSocket(path: "/realtime" | "/v1/realtime") {
+    return describeRoute({
+        tags: ["🎙️ Realtime"],
+        summary: "Realtime WebSocket",
+        description: [
+            "OpenAI-compatible Realtime WebSocket for voice, multimodal, and transcription sessions.",
+            "",
+            `Connect with \`wss://gen.pollinations.ai${path}?model=${DEFAULT_REALTIME_MODEL}\` and send/receive OpenAI Realtime JSON events over the socket. Selecting \`elevenlabs/scribe-v2-realtime\` creates a transcription session automatically.`,
+            "Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients can use `?key=pk_...` because they cannot set custom authorization headers.",
+            "",
+            `**Models:** ${REALTIME_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}.`,
+            "",
+            "**Billing:** requires a positive balance and settles one session total when the socket closes.",
+        ].join("\n"),
+        responses: {
+            101: {
+                description: "WebSocket connection established",
+            },
+            ...errorResponseDescriptions(
+                400,
+                401,
+                402,
+                403,
+                426,
+                429,
+                500,
+                503,
+            ),
+        },
+    });
+}
+
+const factory = createFactory<Env>();
+
+// Shared handler for image and video generation (used by both /image/ and /video/ routes)
+const imageVideoHandlers = factory.createHandlers(
+    track("generate.image"),
+    imageCache,
+    generationAccess,
+    deduplicateGeneration,
+    apiKeyBudgetReservation,
+    generateImageVideo,
+);
+
+// 3D shares the image event type to avoid changing Tinybird consumers.
+const model3dHandlers = factory.createHandlers(
+    resolveModel("generate.image", { defaultModel: DEFAULT_3D_MODEL }),
+    track("generate.image"),
+    model3dCache,
+    generationAccess,
+    deduplicateGeneration,
+    apiKeyBudgetReservation,
+    generateModel3d,
+);
+
+// Group access/coordination to stay within Hono's typed handler-count limit.
+const chatCompletionHandlers = factory.createHandlers(
+    textBodyLimit,
+    validator("json", CreateChatCompletionRequestSchema),
+    mediaResponses("chat/completions"),
+    resolveModel("generate.text"),
+    track("generate.text"),
+    textCache,
+    every(generationAccess, deduplicateGeneration),
+    apiKeyBudgetReservation,
+    generateChatCompletion,
+);
+
+const responsesHandlers = factory.createHandlers(
+    textBodyLimit,
+    validator("json", CreateResponseRequestSchema),
+    mediaResponses("responses"),
+    resolveModel("generate.text"),
+    track("generate.text"),
+    textCache,
+    every(generationAccess, deduplicateGeneration),
+    apiKeyBudgetReservation,
+    generateCreateResponse,
+);
+
+// Helper to filter models by API key permissions and paid balance.
+function filterEntriesByPermissions(
+    entries: GenerationModelEntry[],
+    allowedModels: string[] | undefined,
+    hasPaidBalance?: boolean,
+): GenerationModelEntry[] {
+    return entries.filter((entry) => {
+        if (allowedModels && !allowedModels.includes(entry.id)) return false;
+        if (entry.info.paid_only && hasPaidBalance === false) return false;
+        return true;
+    });
+}
+
+// Check if authenticated user has paid balance (pack > 0)
+// Auth middleware already fetches the full user row (SELECT *), so no extra DB query needed.
+// Returns undefined if no user (unauthenticated), true/false otherwise.
+// biome-ignore lint/suspicious/noExplicitAny: User type doesn't include balance fields from SELECT *
+function hasPaidBalance(c: any): boolean | undefined {
+    const user = c.var?.auth?.user;
+    if (!user) return undefined;
+    return (user.packBalance ?? 0) > 0;
+}
+
+// Optionally filter entries by the validated `?community` query parameter.
+function filterEntriesByCommunityParam(
+    entries: GenerationModelEntry[],
+    communityParam: string | undefined,
+): GenerationModelEntry[] {
+    if (communityParam === undefined) return entries;
+    const wantCommunity = communityParam === "true" || communityParam === "1";
+    return entries.filter(
+        (entry) => (entry.communityEndpoint !== undefined) === wantCommunity,
+    );
+}
+
+// Factory for model-list endpoints: validates the community query parameter,
+// filters by API key permissions, paid balance, and community flag,
+// then returns the model list as JSON.
+const modelsListHandler = (
+    getEntries: (
+        c: Context<Env>,
+    ) => GenerationModelEntry[] | Promise<GenerationModelEntry[]>,
+) =>
+    [
+        validator("query", ModelListQueryParamsSchema),
+        async (c: Context<Env>) => {
+            const { community } = c.req.valid(
+                "query" as never,
+            ) as ModelListQueryParams;
+            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const paidBalance = hasPaidBalance(c);
+            return c.json(
+                filterEntriesByCommunityParam(
+                    filterEntriesByPermissions(
+                        await getEntries(c),
+                        allowedModels,
+                        paidBalance,
+                    ),
+                    community,
+                ).map((entry) => entry.info),
+            );
+        },
+    ] as const;
+
+async function getVisibleModelEntries(c: Context<Env>) {
+    return (await getGenerationModelRegistry(c.env)).visibleEntries(
+        c.var.auth?.user?.id,
+    );
+}
+
+async function getVisibleModelEntriesForEventType(
+    c: Context<Env>,
+    eventType: GenerationModelEntry["eventType"],
+) {
+    return (await getVisibleModelEntries(c)).filter(
+        (entry) => entry.eventType === eventType,
+    );
+}
+
+// "3d" models share the "generate.image" EventType with image/video models
+// (see model-registry.ts's eventTypeForCategory), so /3d/models and
+// /image/models must additionally split on category.
+async function getVisibleModel3dEntries(c: Context<Env>) {
+    return (
+        await getVisibleModelEntriesForEventType(c, "generate.image")
+    ).filter((entry) => entry.definition.category === "3d");
+}
+
+async function getVisibleImageAndVideoEntries(c: Context<Env>) {
+    return (
+        await getVisibleModelEntriesForEventType(c, "generate.image")
+    ).filter((entry) => entry.definition.category !== "3d");
+}
+
+// Video models share the "generate.image" event type with image models, so
+// filter by category to return a video-only list for /video/models.
+async function getVisibleVideoModelEntries(c: Context<Env>) {
+    return (
+        await getVisibleModelEntriesForEventType(c, "generate.image")
+    ).filter((entry) => entry.definition.category === "video");
+}
+
+// Single OpenAI-compatible mapper shared by /v1/models (list) and
+// /v1/models/:model (retrieve). `created` derives from the registry addedDate
+// so both endpoints return stable timestamps instead of per-request wall-clock
+// values.
+function toOpenAIModelEntry(entry: GenerationModelEntry) {
+    return {
+        id: entry.info.name,
+        object: "model" as const,
+        created: Math.floor(entry.definition.addedDate / 1000),
+        owned_by: entry.info.publisher,
+        aliases: entry.info.aliases,
+        category: entry.info.category,
+        community: entry.info.community,
+        title: entry.info.title,
+        description: entry.info.description,
+        input_modalities: entry.info.input_modalities,
+        output_modalities: entry.info.output_modalities,
+        supported_endpoints: entry.supportedEndpoints,
+        ...(entry.info.agent && { agent: true }),
+        ...(entry.info.base_model && {
+            base_model: entry.info.base_model,
+        }),
+        pricing: entry.info.pricing,
+        capabilities: entry.info.capabilities,
+        ...(entry.info.tools && { tools: entry.info.tools }),
+        ...(entry.info.reasoning && { reasoning: entry.info.reasoning }),
+        ...(entry.info.context_length && {
+            context_length: entry.info.context_length,
+        }),
+        ...(entry.info.per_user_rpm !== undefined && {
+            per_user_rpm: entry.info.per_user_rpm,
+        }),
+    };
+}
+
+// Resolve one model by ID or alias against the caller-visible registry view.
+// Returns null when unknown, hidden, or a private community model owned by
+// someone else.
+async function resolveVisibleModelEntry(
+    c: Context<Env>,
+    modelId: string,
+): Promise<GenerationModelEntry | null> {
+    const entry = (await getGenerationModelRegistry(c.env)).resolve(modelId);
+    if (!entry) return null;
+    if (!entry.visible) {
+        const endpoint = entry.communityEndpoint;
+        if (
+            endpoint?.visibility !== "private" ||
+            endpoint.ownerUserId !== c.var.auth?.user?.id
+        ) {
+            return null;
+        }
+    }
+    return entry;
+}
+
+export const proxyRoutes = new Hono<Env>()
+    // Edge rate limiter: first line of defense (10 req/s per IP)
+    .use("*", edgeRateLimit)
+    // Optional auth for models endpoints - doesn't require auth but uses it if provided
+    .use("/v1/models", auth())
+    .use("/v1/models/:model", auth())
+    .use("/image/models", auth())
+    .use("/3d/models", auth())
+    .use("/video/models", auth())
+    .use("/text/models", auth())
+    .use("/audio/models", auth())
+    .use("/embeddings/models", auth())
+    .use("/models", auth())
+    .get(
+        "/v1/models",
+        describeRoute({
+            tags: ["🤖 Models"],
+            summary: "List Models (OpenAI-compatible)",
+            description:
+                'Returns available models in the OpenAI-compatible format (`{object: "list", data: [...]}`), with Pollinations pricing and capability extensions. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` for richer metadata. When authenticated: the owner\'s private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.',
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(GetModelsResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 500),
+            },
+        }),
+        validator("query", ModelListQueryParamsSchema),
+        async (c) => {
+            const { community } = c.req.valid(
+                "query" as never,
+            ) as ModelListQueryParams;
+            const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+            const paidBalance = hasPaidBalance(c);
+            const modelEntries = filterEntriesByCommunityParam(
+                filterEntriesByPermissions(
+                    await getVisibleModelEntries(c),
+                    allowedModels,
+                    paidBalance,
+                ),
+                community,
+            );
+            return c.json({
+                object: "list" as const,
+                data: modelEntries.map(toOpenAIModelEntry),
+            });
+        },
+    )
+    .get(
+        "/v1/models/:model",
+        describeRoute({
+            tags: ["🤖 Models"],
+            summary: "Retrieve Model (OpenAI-compatible)",
+            description:
+                "Returns a single model by ID or alias in the OpenAI-compatible format, resolved to its canonical ID with stable created timestamps and Pollinations pricing and capability extensions. Visibility, API-key model permissions, and paid-only rules match the list endpoint. Returns 404 when the model does not exist or is not accessible to the caller.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(GetModelResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 404, 500),
+            },
+        }),
+        async (c) => {
+            // Unknown, hidden, permission-filtered, and unaffordable models
+            // all collapse to the same 404 so the endpoint does not leak
+            // existence information.
+            const modelId = c.req.param("model");
+            const visible = await resolveVisibleModelEntry(c, modelId);
+            if (!visible) {
+                throw new HTTPException(404, {
+                    message: `Model '${modelId}' not found`,
+                });
+            }
+            // Same permission and paid-only semantics as the list endpoint.
+            const [entry] = filterEntriesByPermissions(
+                [visible],
+                c.var.auth?.apiKey?.permissions?.models,
+                hasPaidBalance(c),
+            );
+            if (!entry) {
+                throw new HTTPException(404, {
+                    message: `Model '${modelId}' not found`,
+                });
+            }
+            return c.json(toOpenAIModelEntry(entry));
+        },
+    )
+    .get(
+        "/models",
+        describeRoute({
+            tags: ["🤖 Models"],
+            summary: "List Models",
+            description:
+                "Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(ModelInfoListSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 500),
+            },
+        }),
+        ...modelsListHandler(getVisibleModelEntries),
+    )
+    .get(
+        "/3d/models",
+        describeRoute({
+            tags: ["🤖 Models"],
+            summary: "List 3D Models",
+            description:
+                "Returns all available 3D model generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(ModelInfoListSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 500),
+            },
+        }),
+        ...modelsListHandler(getVisibleModel3dEntries),
+    )
+    .get(
+        "/image/models",
+        describeRoute({
+            tags: ["🤖 Models"],
+            summary: "List Image & Video Models",
+            description:
+                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `output_modalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(ModelInfoListSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 500),
+            },
+        }),
+        ...modelsListHandler(getVisibleImageAndVideoEntries),
+    )
+    .get(
+        "/video/models",
+        describeRoute({
+            tags: ["🤖 Models"],
+            summary: "List Video Models",
+            description:
+                "Returns all available video generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(ModelInfoListSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 500),
+            },
+        }),
+        ...modelsListHandler(getVisibleVideoModelEntries),
+    )
+    .get(
+        "/text/models",
+        describeRoute({
+            tags: ["🤖 Models"],
+            summary: "List Text Models (Detailed)",
+            description:
+                "Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(ModelInfoListSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 500),
+            },
+        }),
+        ...modelsListHandler((c) =>
+            getVisibleModelEntriesForEventType(c, "generate.text"),
+        ),
+    )
+    .get(
+        "/audio/models",
+        describeRoute({
+            tags: ["🤖 Models"],
+            summary: "List Audio Models",
+            description:
+                "Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(ModelInfoListSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 500),
+            },
+        }),
+        ...modelsListHandler((c) =>
+            getVisibleModelEntriesForEventType(c, "generate.audio"),
+        ),
+    )
+    .get(
+        "/embeddings/models",
+        describeRoute({
+            tags: ["🔢 Embeddings"],
+            summary: "List Embedding Models",
+            description:
+                "Returns available embedding models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(ModelInfoListSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 500),
+            },
+        }),
+        ...modelsListHandler((c) =>
+            getVisibleModelEntriesForEventType(c, "generate.embedding"),
+        ),
+    )
+    .post("/register", handleRegisterServer)
+    .get("/register", handleRegisterServer)
+    // Auth required for all endpoints below (API key only - no session cookies)
+    .use(auth())
+    .use(frontendKeyRateLimit)
+    .use(balance)
+    .get(
+        "/realtime",
+        describeRealtimeWebSocket("/realtime"),
+        validator("query", RealtimeRequestQueryParamsSchema),
+        resolveModel("generate.realtime", {
+            supportedEndpoint: "/realtime",
+        }),
+        handleRealtimeWebSocket,
+    )
+    .get(
+        "/v1/realtime",
+        describeRealtimeWebSocket("/v1/realtime"),
+        validator("query", RealtimeRequestQueryParamsSchema),
+        resolveModel("generate.realtime", {
+            supportedEndpoint: "/v1/realtime",
+        }),
+        handleRealtimeWebSocket,
+    )
+    .post(
+        "/v1/chat/completions",
+        describeRoute({
+            tags: ["✍️ Text"],
+            summary: "Chat Completions",
+            description: [
+                "Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by pointing it to `https://gen.pollinations.ai`.",
+                "",
+                "Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.",
+                "",
+                "Successful text JSON responses contain usage. Text streams contain a usage chunk before `[DONE]`; missing text-provider usage fails the response.",
+                "",
+                mediaResponseDescription,
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Chat completion JSON or SSE stream",
+                    headers: mediaResponseHeaders,
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z.union([
+                                    CreateChatCompletionResponseSchema,
+                                    MediaChatCompletionSchema,
+                                ]),
+                            ),
+                        },
+                        "text/event-stream": {
+                            schema: resolver(
+                                z.string().meta({
+                                    description:
+                                        "OpenAI-compatible Chat Completions SSE events ending with data: [DONE]. Text models include a usage chunk; media models omit it.",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
+            },
+        }),
+        ...chatCompletionHandlers,
+    )
+    .post(
+        "/v1/responses",
+        describeRoute({
+            tags: ["✍️ Text"],
+            summary: "Create Response",
+            description: [
+                "Generate a stateless OpenAI-compatible Response through a model that advertises `/v1/responses` in `supported_endpoints`.",
+                "",
+                "Built-in models use their configured Responses URL. Community text models and endpoint agents registered with the Responses API use their selected URL for both Responses and adapted Chat requests. Managed prompt agents serialize Responses JSON and SSE around their configured prompt and MCP tool loop. Built-in Chat routes may use a separate upstream API.",
+                "",
+                "OpenAI prompt_cache_options and prompt_cache_breakpoint controls pass through direct Responses requests and Chat requests adapted to Responses. Managed prompt agents preserve caller breakpoints or apply an explicit breakpoint after their configured static prompt.",
+                "",
+                "Response storage, previous response IDs, conversations, background execution, and encrypted or referenced state are not supported. Direct providers may accept caller-supplied function tools; managed prompt agents ignore these definitions and use only their configured MCP tools. Completed MCP output items can be replayed as history without executing them again.",
+                "",
+                "Successful text JSON responses and terminal streaming events contain usage; missing text-provider usage fails the response.",
+                "",
+                mediaResponseDescription,
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Responses JSON or semantic Responses SSE",
+                    headers: mediaResponseHeaders,
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z.union([
+                                    CreateResponseResponseSchema,
+                                    MediaResponseSchema,
+                                ]),
+                            ),
+                        },
+                        "text/event-stream": {
+                            schema: resolver(
+                                z.string().meta({
+                                    description:
+                                        "Responses API SSE events ending with response.completed, response.incomplete, or response.failed. Text models include usage; media models return usage: null. A data: [DONE] marker may follow.",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
+            },
+        }),
+        ...responsesHandlers,
+    )
+    .post(
+        "/v1/embeddings",
+        describeRoute({
+            tags: ["🔢 Embeddings"],
+            summary: "Create Embeddings",
+            description: [
+                "Generate vector embeddings with an OpenAI-compatible response format.",
+                "",
+                "**Models:** `google/gemini-embedding-2` supports text, image, audio, and video. `cohere/embed-v4.0` supports text and one image. OpenAI and Qwen embedding models are text-only.",
+                "",
+                "**Input:** Pass a string, an array of up to 32 strings, or supported multimodal content parts (`text`, `image_url`, `input_audio`, `video_url`) in the `input` field.",
+                "",
+                "**Retrieval roles:** Use `task_type` with Gemini text input; it is converted to the model's recommended prompt instruction. Use `input_type` (`query` or `document`) with Cohere.",
+                "",
+                "**Billing:** Gemini task instructions count toward prompt token usage. Cohere image requests expose one combined usage count, so text accompanying an image is billed at the image-input rate.",
+                "",
+                "**Gemini migration:** `google/gemini-embedding-2` uses the GA embedding space. Do not mix preview-era and GA vectors; re-embed stored `google/gemini-embedding-2` data before comparing it with new results.",
+                "",
+                "**Dimensions:** Defaults are model-specific. Qwen supports up to 4096; Gemini and OpenAI large up to 3072; OpenAI small up to 1536; Cohere supports 256, 512, 1024, or 1536.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(CreateEmbeddingResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        textBodyLimit,
+        validator("json", CreateEmbeddingRequestSchema),
+        resolveModel("generate.embedding"),
+        track("generate.embedding"),
+        prepareGenerationRequest,
+        textCache,
+        generationAccess,
+        deduplicateGeneration,
+        every(apiKeyBudgetReservation, generateEmbeddingsResponse),
+    )
+    .post(
+        "/text",
+        describeRoute({
+            tags: ["✍️ Text"],
+            summary: "Text Generation With Messages",
+            description: [
+                "Generate text from an OpenAI-style messages array and return the assistant content directly.",
+                "",
+                "Use `/v1/chat/completions` when you need the full OpenAI-compatible JSON response.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description:
+                        "Generated text response, audio bytes, JSON message object, or SSE when stream=true",
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        textBodyLimit,
+        validator("json", CreateChatCompletionRequestSchema),
+        resolveModel("generate.text"),
+        track("generate.text"),
+        textCache,
+        generationAccess,
+        deduplicateGeneration,
+        apiKeyBudgetReservation,
+        generateTextContent,
+    )
+    .get(
+        "/text/:prompt{[\\s\\S]+}",
+        describeRoute({
+            tags: ["✍️ Text"],
+            summary: "Simple Text Generation",
+            description: [
+                "Generate text from a prompt via a simple GET request. Returns plain text.",
+                "",
+                "This is a simplified alternative to the OpenAI-compatible `/v1/chat/completions` endpoint — ideal for quick prototyping or simple integrations.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Generated text response",
+                    content: {
+                        "text/plain": {
+                            schema: { type: "string" },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        validator(
+            "param",
+            z.object({
+                prompt: z.string().min(1).meta({
+                    description: "Text prompt for generation",
+                    example: "Write a haiku about coding",
+                }),
+            }),
+        ),
+        validator("query", GenerateTextRequestQueryParamsSchema),
+        resolveModel("generate.text"),
+        track("generate.text"),
+        textCache,
+        generationAccess,
+        deduplicateGeneration,
+        apiKeyBudgetReservation,
+        generateSimpleText,
+    )
+    .get(
+        // Use :prompt{[\\s\\S]+} regex to capture everything including slashes AND newlines
+        // .+ doesn't match newlines, but [\s\S]+ matches any character including \n
+        // This creates a named param for OpenAPI docs while matching any characters
+        "/image/:prompt{[\\s\\S]+}",
+        describeRoute({
+            tags: ["🖼️ Image"],
+            summary: "Generate Image",
+            description: [
+                "Generate an image from a text prompt. Returns JPEG, PNG, or SVG depending on the selected model.",
+                "",
+                `**Available models:** ${imageModelNames}. \`${DEFAULT_IMAGE_MODEL}\` is the default.`,
+                "",
+                "Browse all available models and their capabilities at [`/image/models`](https://gen.pollinations.ai/image/models).",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success - Returns the generated image",
+                    headers: mediaResponseHeaders,
+                    content: {
+                        "image/jpeg": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
+                        "image/png": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
+                        "image/svg+xml": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        validator(
+            "param",
+            z.object({
+                prompt: z.string().min(1).meta({
+                    description: "Text description of the image to generate",
+                    example: "a beautiful sunset over mountains",
+                }),
+            }),
+        ),
+        validator("query", GenerateImageRequestQueryParamsSchema),
+        resolveModel("generate.image"),
+        ...imageVideoHandlers,
+    )
+    .get(
+        "/video/:prompt{[\\s\\S]+}",
+        describeRoute({
+            tags: ["🎬 Video"],
+            summary: "Generate Video",
+            description: [
+                "Generate a video from a text prompt. Returns MP4.",
+                "",
+                `**Available models:** ${videoModelNames}.`,
+                "",
+                "Use `duration` to set video length, `aspectRatio` for orientation, and `audio` where the selected model supports audio output.",
+                "",
+                "You can pass reference images via the `image` parameter: `image[0]` is the start frame, and `image[1]` is the end frame for models with `end_frame` in `video_capabilities`.",
+                "",
+                "Seedance 2.0 and 2.5 also accept `reference_images`, `reference_videos`, and `reference_audios` for guidance distinct from frame controls. Separate URLs with `|`; commas inside URLs are preserved.",
+                "",
+                "Browse all available models and their `video_capabilities` at [`/image/models`](https://gen.pollinations.ai/image/models).",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success - Returns the generated video",
+                    headers: mediaResponseHeaders,
+                    content: {
+                        "video/mp4": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        validator(
+            "param",
+            z.object({
+                prompt: z.string().min(1).meta({
+                    description: "Text description of the video to generate",
+                    example: "a sunset timelapse over the ocean",
+                }),
+            }),
+        ),
+        validator("query", GenerateVideoRequestQueryParamsSchema),
+        resolveModel("generate.image", { defaultModel: "google/veo-3.1-fast" }),
+        ...imageVideoHandlers,
+    )
+    .get(
+        "/3d/:prompt{[\\s\\S]+}",
+        describeRoute({
+            tags: ["🧊 3D"],
+            summary: "Generate 3D Model",
+            description: [
+                "Generate a 3D model from a text prompt or reference image(s). Returns GLB by default. `nvidia/asset-harvester` returns PLY.",
+                "",
+                `**Available models:** ${model3dModelNames}. \`${DEFAULT_3D_MODEL}\` is the default.`,
+                "",
+                "Pass reference image URL(s) via the `image` parameter for image-to-3D models (`microsoft/trellis-2`, `nvidia/asset-harvester`). Separate multiple URLs with `|` or `,`. `hyper3d/rodin-2.5` accepts both images and a text prompt.",
+                "",
+                "Browse all available models and their input requirements at [`/3d/models`](https://gen.pollinations.ai/3d/models).",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success - Returns the generated 3D model",
+                    headers: mediaResponseHeaders,
+                    content: {
+                        "model/gltf-binary": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        validator(
+            "param",
+            z.object({
+                prompt: z.string().min(1).meta({
+                    description:
+                        "Text description of the 3D model to generate (required for text-to-3D models such as Hyper3D Rodin; ignored by image-only models such as Trellis 2)",
+                    example: "a low-poly treasure chest",
+                }),
+            }),
+        ),
+        validator("query", Generate3dRequestQueryParamsSchema),
+        ...model3dHandlers,
+    )
+    .post(
+        "/3d/:prompt{[\\s\\S]+}",
+        describeRoute({
+            tags: ["🧊 3D"],
+            summary: "Generate 3D Model With JSON",
+            description:
+                "Generate a 3D model from a text prompt or reference image using JSON parameters. `microsoft/trellis-2` supports `low`, `medium`, and `high` resolution with variable pricing. `nvidia/asset-harvester` returns PLY.",
+            responses: {
+                200: {
+                    description: "Success - Returns the generated 3D model",
+                    headers: mediaResponseHeaders,
+                    content: {
+                        "model/gltf-binary": {
+                            schema: {
+                                type: "string",
+                                format: "binary",
+                            },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        validator(
+            "param",
+            z.object({
+                prompt: z.string().min(1).meta({
+                    description:
+                        "Text description of the 3D model to generate (required for text-to-3D models; ignored by image-only models)",
+                    example: "a low-poly treasure chest",
+                }),
+            }),
+        ),
+        validator(
+            "query",
+            z
+                .object({
+                    key: z.string().optional().meta({
+                        description:
+                            "API key (alternative to Authorization header)",
+                    }),
+                    safe: SafeSchema,
+                })
+                .strict(),
+        ),
+        validator("json", Generate3dRequestBodySchema),
+        resolveModel("generate.image", { defaultModel: DEFAULT_3D_MODEL }),
+        track("generate.image"),
+        every(prepareGenerationRequest, model3dCache),
+        generationAccess,
+        deduplicateGeneration,
+        every(apiKeyBudgetReservation, generateModel3d),
+    )
+    .get(
+        "/audio/:text",
+        describeRoute({
+            tags: ["🔊 Audio"],
+            summary: "Generate Audio",
+            description: [
+                "Generate speech, dialogue, music, or sound effects from text via a simple GET request.",
+                "",
+                "**Text-to-speech (default):** Returns spoken audio in the selected voice and format.",
+                "",
+                `**Known voice presets:** ${AUDIO_VOICES.join(", ")}. ElevenLabs models also accept a custom voice ID.`,
+                "",
+                "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
+                "",
+                "**Dialogue:** Set `model=elevenlabs/eleven-v3:dialogue`; provide one `<voice>: <text>` turn per line.",
+                "",
+                "**Music generation:** Set `model=elevenlabs/music-v2`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music instead of speech. `google/lyria-3-clip-preview` returns a fixed 30-second MP3 clip; `elevenlabs/music-v2` supports `duration` (3-300 seconds) and `instrumental` mode; the Stable Audio models support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success - Returns audio data",
+                    headers: mediaResponseHeaders,
+                    content: {
+                        "audio/mpeg": {
+                            schema: { type: "string", format: "binary" },
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+            },
+        }),
+        validator(
+            "param",
+            z.object({
+                text: z.string().min(1).meta({
+                    description:
+                        "Text or prompt to generate. Dialogue operation expects one `voice: text` turn per line.",
+                    example: "Hello, welcome to Pollinations!",
+                }),
+            }),
+        ),
+        validator("query", simpleAudioQuerySchema),
+        resolveModel("generate.audio", {
+            supportedEndpoint: "/audio/{text}",
+        }),
+        track("generate.audio"),
+        audioCache,
+        generationAccess,
+        deduplicateGeneration,
+        apiKeyBudgetReservation,
+        handleSimpleAudio,
+    )
+    .post(
+        "/v1/images/generations",
+        describeRoute({
+            tags: ["🖼️ Image"],
+            summary: "Generate Image (OpenAI-compatible)",
+            description: [
+                "OpenAI-compatible image generation endpoint.",
+                "",
+                'Generate images from text prompts. Supports `response_format: "url"` (returns the stored media URL; fetching it never generates an image) or `"b64_json"` (returns base64-encoded image data, default).',
+                "",
+                "**Authentication:** Include your API key as `Authorization: Bearer YOUR_API_KEY`.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success",
+                    headers: mediaResponseHeaders,
+                    content: {
+                        "application/json": {
+                            schema: resolver(CreateImageResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+            },
+        }),
+        validator("json", CreateImageRequestSchema),
+        resolveModel("generate.image"),
+        track("generate.image"),
+        every(prepareOpenAIImageGeneration, formatOpenAIImageResponse),
+        prepareGenerationRequest,
+        imageCache,
+        generationAccess,
+        deduplicateGeneration,
+        every(apiKeyBudgetReservation, handleImageGeneration),
+    )
+    .post(
+        "/v1/images/edits",
+        describeRoute({
+            tags: ["🖼️ Image"],
+            summary: "Edit Image (OpenAI-compatible)",
+            requestBody: {
+                required: true,
+                content: {
+                    "application/json": {
+                        // @ts-expect-error hono-openapi's request-body types lag JSON Schema 2020-12.
+                        schema: z.toJSONSchema(CreateImageEditRequestSchema, {
+                            io: "input",
+                        }),
+                    },
+                    "multipart/form-data": {
+                        // @ts-expect-error hono-openapi's request-body types lag JSON Schema 2020-12.
+                        schema: z.toJSONSchema(ImageEditMultipartSchema, {
+                            io: "input",
+                        }),
+                    },
+                },
+            },
+            description: [
+                "OpenAI-compatible image editing endpoint.",
+                "",
+                "Edit images using a text prompt and one or more source images.",
+                "Accepts JSON with image URLs or multipart/form-data with file uploads.",
+                'Set response_format to "url" for a stored media URL, or "b64_json" for base64 image data (default).',
+                "Community image models forward edits to the registrant's OpenAI-compatible endpoint as multipart form data.",
+                "",
+                "**Authentication:** Include your API key as `Authorization: Bearer YOUR_API_KEY`.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Success",
+                    headers: mediaResponseHeaders,
+                    content: {
+                        "application/json": {
+                            schema: resolver(CreateImageResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 500),
+            },
+        }),
+        resolveModel("generate.image", {
+            defaultModel: "black-forest-labs/flux.1-schnell",
+        }),
+        track("generate.image"),
+        every(prepareOpenAIImageEdit, formatOpenAIImageResponse),
+        prepareGenerationRequest,
+        imageCache,
+        generationAccess,
+        deduplicateGeneration,
+        apiKeyBudgetReservation,
+        handleImageGeneration,
+    );

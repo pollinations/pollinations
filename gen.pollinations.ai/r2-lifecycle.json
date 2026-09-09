@@ -1,0 +1,20 @@
+{
+  "rules": [
+    {
+      "id": "Default Multipart Abort Rule",
+      "enabled": true,
+      "conditions": { "prefix": "" },
+      "abortMultipartUploadsTransition": {
+        "condition": { "type": "Age", "maxAge": 604800 }
+      }
+    },
+    {
+      "id": "cleanup-30days",
+      "enabled": true,
+      "conditions": { "prefix": "" },
+      "deleteObjectsTransition": {
+        "condition": { "type": "Age", "maxAge": 2592000 }
+      }
+    }
+  ]
+}

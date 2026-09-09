@@ -1,0 +1,23 @@
+CREATE TABLE `community_endpoint` (
+	`id` text PRIMARY KEY NOT NULL,
+	`owner_user_id` text NOT NULL,
+	`name` text NOT NULL,
+	`description` text,
+	`base_url` text NOT NULL,
+	`upstream_model` text NOT NULL,
+	`bearer_token_ciphertext` text NOT NULL,
+	`prompt_text_price` real NOT NULL,
+	`prompt_cached_price` real DEFAULT 0 NOT NULL,
+	`prompt_cache_write_price` real DEFAULT 0 NOT NULL,
+	`prompt_audio_price` real DEFAULT 0 NOT NULL,
+	`prompt_image_price` real DEFAULT 0 NOT NULL,
+	`completion_text_price` real NOT NULL,
+	`completion_reasoning_price` real DEFAULT 0 NOT NULL,
+	`completion_audio_price` real DEFAULT 0 NOT NULL,
+	`created_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,
+	`updated_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,
+	FOREIGN KEY (`owner_user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE INDEX `idx_community_endpoint_owner_user_id` ON `community_endpoint` (`owner_user_id`);--> statement-breakpoint
+CREATE UNIQUE INDEX `idx_community_endpoint_owner_name` ON `community_endpoint` (`owner_user_id`,`name`);

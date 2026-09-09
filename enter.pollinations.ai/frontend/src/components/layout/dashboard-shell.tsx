@@ -1,0 +1,674 @@
+import {
+    AccountIcon,
+    AccountMenu,
+    BookIcon,
+    BugIcon,
+    CheckIcon,
+    Chip,
+    ClipboardIcon,
+    ColorModeToggle,
+    CopyButton,
+    cn,
+    DiscordIcon,
+    ExternalLinkIcon,
+    GenApiIcon,
+    GitHubIcon,
+    McpIcon,
+    MenuIcon,
+    NavItem,
+    ScrollArea,
+    SignOutIcon,
+    TerminalIcon,
+    useScrollLock,
+    WalletIcon,
+    XIcon,
+} from "@pollinations/ui";
+import logoWordmarkUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
+import { Link, useRouterState } from "@tanstack/react-router";
+import type {
+    ComponentType,
+    CSSProperties,
+    FC,
+    PropsWithChildren,
+    ReactNode,
+    RefObject,
+} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { genDocsUrl } from "../../config.ts";
+import {
+    DASHBOARD_NAV_ITEMS,
+    type DashboardPage,
+    type DashboardPath,
+} from "./dashboard-theme.ts";
+
+export type { DashboardPage } from "./dashboard-theme.ts";
+
+type DashboardNavItem = {
+    id: DashboardPage;
+    to: DashboardPath;
+    label: string;
+    icon: ComponentType<{ className?: string }>;
+};
+
+const brandWordmarkMask: CSSProperties = {
+    WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
+    mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
+};
+
+type DashboardShellProps = PropsWithChildren<{
+    navItems?: readonly DashboardNavItem[];
+    githubUsername?: string;
+    githubAvatarUrl?: string;
+    onSignOut?: () => void;
+    accountArea?: ReactNode;
+    walletArea?: ReactNode;
+    showFooterLinks?: boolean;
+}>;
+
+type BrandLink = {
+    href: string;
+    label: string;
+    icon: ReactNode;
+    text: string;
+    count?: string;
+};
+
+type SupportAction = {
+    label: string;
+    icon: ReactNode;
+    copyLabel: string;
+    idleIcon: ReactNode;
+    successIcon: ReactNode;
+    copyValue: string | (() => string | Promise<string>);
+};
+
+type SupportLink = {
+    label: string;
+    href: string;
+    icon?: ReactNode;
+};
+
+type FooterLink = {
+    label: string;
+    href: string;
+};
+
+type AccountMenuLink = {
+    href: string;
+    label: string;
+    icon: ReactNode;
+    ariaLabel?: string;
+};
+
+const brandLinks: readonly BrandLink[] = [
+    {
+        href: "https://github.com/pollinations/pollinations",
+        label: "Pollinations on GitHub",
+        icon: <GitHubIcon className="h-full w-full" />,
+        text: "github",
+        count: "5k",
+    },
+    {
+        href: "https://discord.gg/pollinations-ai-885844321461485618",
+        label: "Discord community",
+        icon: <DiscordIcon className="h-full w-full" />,
+        text: "discord",
+        count: "19k",
+    },
+];
+
+const footerLinks: readonly FooterLink[] = [
+    { label: "Terms", href: "https://pollinations.ai/terms" },
+    { label: "Privacy", href: "https://pollinations.ai/privacy" },
+    { label: "Refunds", href: "https://pollinations.ai/refunds" },
+];
+
+const accountMenuLinks: readonly AccountMenuLink[] = [
+    {
+        href: "https://discord.com/channels/885844321461485618/889573359111774329",
+        label: "Get Help",
+        icon: <DiscordIcon className="h-full w-full" />,
+        ariaLabel: "Get help in the Discord community chat",
+    },
+    {
+        href: "https://github.com/pollinations/pollinations/issues",
+        label: "Report a Bug",
+        icon: <BugIcon className="h-full w-full" />,
+        ariaLabel: "Report a bug on GitHub",
+    },
+];
+
+export const DashboardShell: FC<DashboardShellProps> = ({
+    navItems = DASHBOARD_NAV_ITEMS,
+    githubUsername,
+    githubAvatarUrl,
+    onSignOut,
+    accountArea,
+    walletArea,
+    showFooterLinks = true,
+    children,
+}) => {
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const drawerRef = useRef<HTMLDivElement>(null);
+    const menuButtonRef = useRef<HTMLButtonElement>(null);
+    const mainScrollRef = useRef<HTMLDivElement>(null);
+    const location = useRouterState({ select: (state) => state.location });
+    const activeNavItem = DASHBOARD_NAV_ITEMS.find(
+        (item) => item.to === location.pathname,
+    );
+    const activePage = activeNavItem?.id;
+    const activePageLabel =
+        location.pathname === "/account"
+            ? "Account"
+            : (activeNavItem?.label ?? "Dashboard");
+
+    useDashboardShellBodyClass();
+    useScrollLock(isDrawerOpen);
+
+    useEffect(() => {
+        const canonicalUrl = new URL(
+            location.pathname,
+            window.location.origin,
+        ).toString();
+        const title = `${activePageLabel} | pollinations.ai`;
+        document.title = title;
+        document
+            .querySelector('link[rel="canonical"]')
+            ?.setAttribute("href", canonicalUrl);
+        document
+            .querySelector('meta[property="og:url"]')
+            ?.setAttribute("content", canonicalUrl);
+        document
+            .querySelector('meta[property="og:title"]')
+            ?.setAttribute("content", title);
+        document
+            .querySelector('meta[name="twitter:title"]')
+            ?.setAttribute("content", title);
+    }, [activePageLabel, location.pathname]);
+
+    const closeDrawer = useCallback(() => {
+        const activeElement = document.activeElement;
+        if (
+            activeElement instanceof HTMLElement &&
+            drawerRef.current?.contains(activeElement)
+        ) {
+            menuButtonRef.current?.focus({ preventScroll: true });
+        }
+
+        setIsDrawerOpen(false);
+    }, []);
+
+    useEffect(() => {
+        if (!isDrawerOpen) return;
+
+        function handleKeyDown(event: KeyboardEvent): void {
+            if (event.key === "Escape") closeDrawer();
+        }
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [closeDrawer, isDrawerOpen]);
+
+    useEffect(() => {
+        const scrollElement = mainScrollRef.current;
+        if (!scrollElement) return;
+
+        if (activePage === "pollen" && location.hash === "buy-pollen") {
+            const target = scrollElement.querySelector("#buy-pollen");
+            if (target instanceof HTMLElement) {
+                const scrollRect = scrollElement.getBoundingClientRect();
+                const targetRect = target.getBoundingClientRect();
+                const targetTop =
+                    targetRect.top - scrollRect.top + scrollElement.scrollTop;
+
+                scrollElement.scrollTo({
+                    top: Math.max(0, targetTop - 24),
+                    behavior: "auto",
+                });
+                return;
+            }
+        }
+
+        scrollElement.scrollTo({ top: 0, behavior: "auto" });
+    }, [activePage, location.hash]);
+
+    const supportLinks: readonly SupportLink[] = [
+        {
+            label: "API",
+            href: `${genDocsUrl()}`,
+            icon: (
+                <GenApiIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
+            ),
+        },
+        {
+            label: "Connect User Wallets",
+            href: `${genDocsUrl()}#tag/connect-user-wallets`,
+            icon: (
+                <WalletIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
+            ),
+        },
+        {
+            label: "CLI",
+            href: `${genDocsUrl()}#tag/cli`,
+            icon: (
+                <TerminalIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
+            ),
+        },
+        {
+            label: "MCP Servers",
+            href: `${genDocsUrl()}#tag/mcp-servers`,
+            icon: (
+                <McpIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
+            ),
+        },
+    ];
+
+    const effectiveAccountArea =
+        accountArea ??
+        (githubUsername && onSignOut ? (
+            <AccountMenuButton
+                username={githubUsername}
+                avatarUrl={githubAvatarUrl ?? ""}
+                onSignOut={onSignOut}
+                onNavigate={closeDrawer}
+                links={accountMenuLinks}
+                className="w-full justify-start"
+            />
+        ) : null);
+
+    const supportAction: SupportAction = {
+        label: "Docs",
+        icon: <BookIcon className="h-4 w-4 shrink-0 text-theme-text-muted" />,
+        copyLabel: "Copy All",
+        // No colour on the icons — they inherit the button's text colour so they
+        // match the filled idle/copied states.
+        idleIcon: <ClipboardIcon className="h-3.5 w-3.5 shrink-0" />,
+        successIcon: <CheckIcon className="h-3.5 w-3.5 shrink-0" />,
+        copyValue: async () => {
+            const res = await fetch(`${genDocsUrl()}/llm.txt`);
+            return res.text();
+        },
+    };
+
+    const rail = (
+        <DashboardRail
+            activePage={activePage}
+            navItems={navItems}
+            supportAction={supportAction}
+            supportLinks={supportLinks}
+            accountArea={effectiveAccountArea}
+            walletArea={walletArea}
+            showFooterLinks={showFooterLinks}
+            onNavigate={closeDrawer}
+        />
+    );
+
+    return (
+        <div className="flex h-dvh overflow-hidden bg-app-bg text-theme-text-strong">
+            <div className="hidden lg:block">{rail}</div>
+            <div
+                ref={drawerRef}
+                className={cn(
+                    "fixed inset-0 z-40 transition-[visibility] lg:hidden",
+                    isDrawerOpen
+                        ? "pointer-events-auto visible delay-0"
+                        : "pointer-events-none invisible delay-[420ms]",
+                )}
+                aria-hidden={!isDrawerOpen}
+                inert={!isDrawerOpen}
+            >
+                <button
+                    type="button"
+                    className={cn(
+                        "absolute inset-0 bg-black/40 transition-opacity ease-out",
+                        "duration-[420ms]",
+                        isDrawerOpen ? "opacity-100" : "opacity-0",
+                    )}
+                    onClick={closeDrawer}
+                    aria-label="Close navigation"
+                />
+                <div
+                    className={cn(
+                        "absolute inset-y-0 left-0 flex w-[clamp(14.5rem,76vw,17rem)] transform-gpu flex-col overflow-hidden border-r border-theme-text-strong/10 bg-app-bg shadow-xl transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+                        "duration-[420ms]",
+                        isDrawerOpen ? "translate-x-0" : "-translate-x-full",
+                    )}
+                >
+                    <div className="flex shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 px-4 py-3">
+                        <div className="flex items-center justify-between gap-2">
+                            <BrandMark size="drawer" />
+                            <button
+                                type="button"
+                                className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
+                                onClick={closeDrawer}
+                                aria-label="Close navigation"
+                            >
+                                <XIcon className="h-5 w-5" />
+                            </button>
+                        </div>
+                        <BrandLinks links={brandLinks} />
+                    </div>
+                    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                        {rail}
+                    </div>
+                </div>
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col lg:ml-60">
+                <MobileMenuButton
+                    buttonRef={menuButtonRef}
+                    onOpen={() => setIsDrawerOpen(true)}
+                />
+                <ScrollArea
+                    ref={mainScrollRef}
+                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-14 pb-8 lg:px-6 lg:pt-10"
+                >
+                    <main className="mx-auto flex max-w-[800px] flex-col gap-6">
+                        {children}
+                    </main>
+                </ScrollArea>
+            </div>
+        </div>
+    );
+};
+
+function useDashboardShellBodyClass(): void {
+    useEffect(() => {
+        document.documentElement.classList.add("polli-ui-shell");
+        document.body.classList.add("polli-ui-shell");
+        return () => {
+            document.documentElement.classList.remove("polli-ui-shell");
+            document.body.classList.remove("polli-ui-shell");
+        };
+    }, []);
+}
+
+type DashboardRailProps = {
+    activePage?: DashboardPage;
+    navItems: readonly DashboardNavItem[];
+    supportAction: SupportAction;
+    supportLinks: readonly SupportLink[];
+    accountArea?: ReactNode;
+    walletArea?: ReactNode;
+    showFooterLinks: boolean;
+    onNavigate: () => void;
+};
+
+const DashboardRail: FC<DashboardRailProps> = ({
+    activePage,
+    navItems,
+    supportAction,
+    supportLinks,
+    accountArea,
+    walletArea,
+    showFooterLinks,
+    onNavigate,
+}) => (
+    <aside
+        data-theme="neutral"
+        className="flex min-h-0 flex-1 flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-60 lg:border-r lg:border-theme-text-strong/10"
+        aria-label="Dashboard navigation"
+    >
+        <div className="hidden shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1 lg:flex">
+            <BrandMark size="desktop" />
+            <BrandLinks links={brandLinks} />
+        </div>
+        <ScrollArea
+            className="-mr-2 min-h-0 flex-1 pt-3"
+            style={
+                {
+                    "--polli-color-scrollbar-thumb":
+                        "color-mix(in oklab, var(--polli-color-text-muted) 65%, transparent)",
+                } as CSSProperties
+            }
+        >
+            <nav className="flex flex-col gap-1">
+                {navItems.map((item) => (
+                    <NavItem
+                        as={Link}
+                        key={item.id}
+                        to={item.to}
+                        data-theme="accent"
+                        icon={item.icon}
+                        active={activePage === item.id}
+                        onClick={onNavigate}
+                    >
+                        {item.label}
+                        {(item.id === "my-models" || item.id === "quests") && (
+                            <Chip
+                                intent="neutral"
+                                size="sm"
+                                className="ml-auto bg-transparent text-theme-text-soft"
+                            >
+                                {item.id === "quests" ? "3 new!" : "New!"}
+                            </Chip>
+                        )}
+                    </NavItem>
+                ))}
+                <DashboardSupport action={supportAction} links={supportLinks} />
+            </nav>
+        </ScrollArea>
+        <div className="flex shrink-0 flex-col gap-2 border-t border-theme-text-strong/10 pt-4">
+            {walletArea && <div className="px-1">{walletArea}</div>}
+            {accountArea}
+            <DashboardFooter links={showFooterLinks ? footerLinks : []} />
+        </div>
+    </aside>
+);
+
+const MobileMenuButton: FC<{
+    buttonRef: RefObject<HTMLButtonElement | null>;
+    onOpen: () => void;
+}> = ({ buttonRef, onOpen }) => (
+    <button
+        ref={buttonRef}
+        type="button"
+        className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque lg:hidden"
+        onClick={onOpen}
+        aria-label="Open navigation"
+    >
+        <MenuIcon className="h-5 w-5" />
+    </button>
+);
+
+const BrandMark: FC<{ size: "desktop" | "drawer" }> = ({ size }) => (
+    <a
+        href="https://pollinations.ai"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center text-current"
+        aria-label="Pollinations"
+    >
+        <span className="sr-only">Pollinations</span>
+        <span
+            aria-hidden="true"
+            className={cn(
+                "block shrink-0 bg-current",
+                size === "desktop" ? "h-6 w-[195px]" : "h-5 w-[162px]",
+            )}
+            style={brandWordmarkMask}
+        />
+    </a>
+);
+
+const BrandLinks: FC<{ links: readonly BrandLink[] }> = ({ links }) => (
+    <div className="flex items-center gap-1.5">
+        {links.map((link) => (
+            <BrandLinkRow key={link.href} {...link} />
+        ))}
+    </div>
+);
+
+const BrandLinkRow: FC<BrandLink> = ({ href, label, icon, text, count }) => (
+    <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={label}
+        className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-surface-opaque/55 py-[3px] pr-[10px] pl-[7px] text-micro font-medium leading-none text-theme-text-strong/80 transition-colors hover:border-theme-text-strong/15 hover:bg-surface-opaque hover:text-theme-text-strong"
+    >
+        <span className="h-[11px] w-[11px]">{icon}</span>
+        <span className="-translate-y-px">{text}</span>
+        {count && (
+            <span className="ml-0.5 border-l border-theme-text-strong/15 pl-1.5 font-mono text-micro text-theme-text-muted">
+                {count}
+            </span>
+        )}
+    </a>
+);
+
+const DashboardSupport: FC<{
+    action: SupportAction;
+    links: readonly SupportLink[];
+}> = ({ action, links }) => (
+    <div className="mt-2 border-t border-theme-text-strong/10 pt-3">
+        {/* "Docs" header on the left; a small labelled copy button on the right
+            (no tooltip — the visible label says what it does). */}
+        <div className="flex items-center justify-between gap-2 px-3 py-1">
+            <span className="flex items-center gap-2 text-sm font-medium text-ink-900">
+                {action.icon}
+                {action.label}
+            </span>
+            {/* accent over the neutral rail (matches the nav buttons) */}
+            <span data-theme="accent">
+                <CopyButton
+                    value={action.copyValue}
+                    copiedTimeoutMs={1500}
+                    tooltip={null}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-theme-bg-active px-2.5 py-1 text-xs font-medium text-theme-text-strong transition-colors hover:bg-theme-bg-hover"
+                >
+                    {(copied) => (
+                        <>
+                            {copied ? action.successIcon : action.idleIcon}
+                            {copied ? "Copied" : action.copyLabel}
+                        </>
+                    )}
+                </CopyButton>
+            </span>
+        </div>
+        <div className="ml-3.5 mt-0.5 flex flex-col gap-0.5 border-l border-theme-text-strong/10 pl-2">
+            {links.map((link) => (
+                <SupportLinkRow key={link.href} {...link} />
+            ))}
+        </div>
+    </div>
+);
+
+const SupportLinkRow: FC<SupportLink> = ({ label, href, icon }) => (
+    <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group flex items-center justify-between gap-2 rounded-full px-3 py-1.5 text-left text-xs font-medium text-ink-700 transition-colors hover:bg-surface-opaque/60 hover:text-ink-950"
+    >
+        <span className="flex items-center gap-2">
+            {icon}
+            {label}
+        </span>
+        <ExternalLinkIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted transition-colors group-hover:text-theme-text-base" />
+    </a>
+);
+
+const DashboardFooter: FC<{
+    links: readonly FooterLink[];
+}> = ({ links }) => (
+    <div className="flex items-end justify-between gap-2 pl-3 text-xs leading-none text-theme-text-muted">
+        {links.length > 0 && (
+            <div className="flex flex-wrap gap-x-2 gap-y-1 leading-snug">
+                {links.map((link) => (
+                    <a
+                        key={link.href}
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="transition-colors hover:text-theme-text-strong"
+                    >
+                        {link.label}
+                    </a>
+                ))}
+            </div>
+        )}
+        {/* accent on the toggle's active icon, over the neutral rail */}
+        <span data-theme="accent" className="ml-auto shrink-0">
+            <ColorModeToggle />
+        </span>
+    </div>
+);
+
+type AccountMenuButtonProps = {
+    username: string;
+    avatarUrl: string;
+    onSignOut?: () => void;
+    onNavigate?: () => void;
+    links?: readonly AccountMenuLink[];
+    className?: string;
+};
+
+const AccountMenuButton: FC<AccountMenuButtonProps> = ({
+    username,
+    avatarUrl,
+    onSignOut,
+    onNavigate,
+    links = [],
+    className,
+}) => (
+    <AccountMenu name={username} avatarUrl={avatarUrl} className={className}>
+        {(close) => (
+            <>
+                {links.map((link) => (
+                    <AccountMenuLinkRow key={link.href} {...link} />
+                ))}
+                {links.length > 0 && (
+                    <div className="my-1 border-t border-divider" />
+                )}
+                <Link
+                    to="/account"
+                    onClick={() => {
+                        close();
+                        onNavigate?.();
+                    }}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-theme-text-strong transition-colors hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
+                >
+                    <AccountIcon
+                        className="h-4 w-4 shrink-0"
+                        aria-hidden="true"
+                    />
+                    <span>Account</span>
+                </Link>
+                <button
+                    type="button"
+                    onClick={() => {
+                        close();
+                        onSignOut?.();
+                    }}
+                    className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-theme-text-strong hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
+                >
+                    <SignOutIcon
+                        className="h-4 w-4 shrink-0"
+                        aria-hidden="true"
+                    />
+                    <span>Sign Out</span>
+                </button>
+            </>
+        )}
+    </AccountMenu>
+);
+
+const AccountMenuLinkRow: FC<AccountMenuLink> = ({
+    href,
+    label,
+    icon,
+    ariaLabel,
+}) => (
+    <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={ariaLabel ?? label}
+        className="flex items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm font-medium text-theme-text-strong transition-colors hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
+    >
+        <span className="h-4 w-4 shrink-0" aria-hidden="true">
+            {icon}
+        </span>
+        <span>{label}</span>
+    </a>
+);

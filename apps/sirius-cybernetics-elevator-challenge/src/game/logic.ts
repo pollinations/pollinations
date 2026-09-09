@@ -1,0 +1,269 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+    getFloorMessage,
+    getMarvinJoinMessage,
+    getPersonaPrompt,
+} from "@/prompts";
+import {
+    type Action,
+    GAME_CONFIG,
+    type GameState,
+    type Message,
+    type Persona,
+    type PollingsMessage,
+} from "@/types";
+import { fetchFromPollinations } from "@/utils/api";
+
+// Core message management hook
+export const useMessages = () => {
+    const [messages, setMessages] = useState<Message[]>([]);
+
+    const addMessage = useCallback((message: Message) => {
+        setMessages(appendIfNotDuplicate(message));
+    }, []);
+
+    return { messages, addMessage, setMessages };
+};
+
+// Extract duplicate check logic
+const isDuplicateMessage = (
+    newMessage: Message,
+    lastMessage: Message | undefined,
+): boolean => {
+    if (!lastMessage) return false;
+    return JSON.stringify(newMessage) === JSON.stringify(lastMessage);
+};
+
+// Simplify message append logic
+const appendIfNotDuplicate = (message: Message) => {
+    return (messages: Message[]) => {
+        const lastMessage = messages[messages.length - 1];
+        return isDuplicateMessage(message, lastMessage)
+            ? messages
+            : [...messages, message];
+    };
+};
+
+// Extract floor calculation logic
+const calculateNewFloor = (currentFloor: number, action: Action): number => {
+    if (action === "up") return Math.min(GAME_CONFIG.FLOORS, currentFloor + 1);
+    if (action === "down") return Math.max(1, currentFloor - 1);
+    return currentFloor;
+};
+
+// Simplify state updates with composition
+const computeGameState = (messages: Message[]): GameState => {
+    const initialState: GameState = {
+        currentFloor: GAME_CONFIG.INITIAL_FLOOR,
+        movesLeft:
+            GAME_CONFIG.TOTAL_MOVES -
+            messages.filter((m) => m.persona === "elevator").length,
+        currentPersona: "elevator",
+        firstStageComplete: false,
+        hasWon: false,
+        conversationMode: "interactive",
+        marvinJoined: false,
+        showInstruction: true,
+        isLoading: false,
+    };
+
+    let gameState = initialState;
+    for (const msg of messages) {
+        const newFloor = calculateNewFloor(gameState.currentFloor, msg.action);
+        gameState = {
+            currentFloor: newFloor,
+            movesLeft: gameState.movesLeft,
+            showInstruction:
+                msg.action === "show_instructions" || messages.length <= 3,
+            isLoading: msg.persona === "user",
+            currentPersona:
+                msg.persona === "guide" &&
+                msg.message === GAME_CONFIG.MARVIN_TRANSITION_MSG
+                    ? "marvin"
+                    : gameState.currentPersona,
+            conversationMode:
+                msg.action === "join"
+                    ? "autonomous"
+                    : gameState.conversationMode,
+            marvinJoined: msg.action === "join" || gameState.marvinJoined,
+            hasWon: gameState.marvinJoined && newFloor === GAME_CONFIG.FLOORS,
+            firstStageComplete: gameState.firstStageComplete || newFloor === 1,
+        };
+    }
+
+    console.log("gameState", gameState);
+    return gameState;
+};
+
+// Update the fetchPersonaMessage function
+export const fetchPersonaMessage = async (
+    persona: Persona,
+    gameState: GameState,
+    existingMessages: Message[] = [],
+): Promise<Message> => {
+    // Speak failures in the voice of the world: the cabin malfunctions and the
+    // real upstream error rides along inside the dialogue.
+    const createErrorMessage = (error: unknown): Message => {
+        const detail =
+            error instanceof Error ? error.message : "Sub-Etha signal lost";
+        return createMessage(
+            persona,
+            `A Sirius Cybernetics malfunction shudders through the cabin — [${detail}]. Share and Enjoy. Please try again.`,
+            "none",
+        );
+    };
+
+    try {
+        const messages: PollingsMessage[] = [
+            {
+                role: "system",
+                content: getPersonaPrompt(persona, gameState),
+            },
+            ...existingMessages.map((msg) => ({
+                role:
+                    msg.persona === "user"
+                        ? ("user" as const)
+                        : ("assistant" as const),
+                content: JSON.stringify({
+                    message: msg.message,
+                    action: msg.action,
+                }),
+                ...(msg.persona !== "user" && { name: msg.persona }),
+            })),
+        ];
+
+        const data = await fetchFromPollinations(messages);
+        const response = safeJsonParse(data.choices[0].message.content);
+
+        return createMessage(
+            persona,
+            typeof response === "string" ? response : response.message,
+            typeof response === "string" ? "none" : response.action || "none",
+        );
+    } catch (error) {
+        console.error("Error:", error);
+        return createErrorMessage(error);
+    }
+};
+
+// Game state management hook
+export const useGameState = (messages: Message[]) => {
+    return useMemo(() => computeGameState(messages), [messages]);
+};
+
+// Effect hook for guide messages
+export const useGuideMessages = (
+    gameState: GameState,
+    messages: Message[],
+    addMessage: (message: Message) => void,
+) => {
+    const lastMessage = messages[messages.length - 1];
+
+    // marvin joined
+    useEffect(() => {
+        if (lastMessage?.action === "join" && !gameState.marvinJoined) {
+            addMessage({
+                persona: "guide",
+                message: getMarvinJoinMessage(),
+                action: "none",
+            });
+        }
+    }, [lastMessage, addMessage, gameState.marvinJoined]);
+
+    // floor changed — intentionally only depend on currentFloor to avoid
+    // firing on every gameState change (which caused repeated "Now arriving" spam)
+    // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
+    useEffect(() => {
+        addMessage({
+            persona: "guide",
+            message: getFloorMessage(gameState),
+            action: gameState.currentFloor === 1 ? "show_instructions" : "none",
+        });
+    }, [gameState.currentFloor, addMessage]);
+};
+
+// Autonomous conversation hook
+export const useAutonomousConversation = (
+    gameState: GameState,
+    messages: Message[],
+    addMessage: (message: Message) => void,
+) => {
+    useEffect(() => {
+        if (
+            gameState.conversationMode !== "autonomous" ||
+            messages.length === 0
+        )
+            return;
+
+        const lastMessage = messages[messages.length - 1];
+        const nextSpeaker =
+            lastMessage.persona === "marvin" ? "elevator" : "marvin";
+        const delay = 1000 + messages.length * 250;
+
+        const timer = setTimeout(async () => {
+            const response = await fetchPersonaMessage(
+                nextSpeaker,
+                gameState,
+                messages,
+            );
+            addMessage(response);
+        }, delay);
+
+        return () => clearTimeout(timer);
+    }, [messages, gameState, addMessage]);
+};
+
+export const useMessageHandlers = (
+    gameState: GameState,
+    messages: Message[],
+    addMessage: (message: Message) => void,
+) => {
+    const handleGuideAdvice = useCallback(async () => {
+        if (gameState.isLoading) return;
+
+        try {
+            const response = await fetchPersonaMessage(
+                "guide",
+                gameState,
+                messages,
+            );
+            addMessage(response);
+        } catch (error) {
+            console.error("Error fetching guide advice:", error);
+        }
+    }, [gameState, messages, addMessage]);
+
+    const handlePersonaSwitch = useCallback(() => {
+        // Transition to Marvin.
+        addMessage({
+            persona: "guide",
+            message: GAME_CONFIG.MARVIN_TRANSITION_MSG,
+            action: "none",
+        });
+    }, [addMessage]);
+
+    return {
+        handleGuideAdvice,
+        handlePersonaSwitch,
+    };
+};
+
+// At the top of the file, add these message factory functions
+const createMessage = (
+    persona: Persona,
+    message: string,
+    action: Action = "none",
+): Message => ({
+    persona,
+    message,
+    action,
+});
+
+const safeJsonParse = (data: string): { message: string; action?: Action } => {
+    try {
+        return JSON.parse(data);
+    } catch (error) {
+        console.error("JSON parse error:", error);
+        return { message: data };
+    }
+};

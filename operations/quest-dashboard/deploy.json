@@ -1,0 +1,6 @@
+{
+  "target": "worker",
+  "credentials": "myceli",
+  "install": "npm ci",
+  "deploy": "npm run deploy"
+}

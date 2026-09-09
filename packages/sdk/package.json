@@ -1,0 +1,111 @@
+{
+  "name": "@pollinations/sdk",
+  "version": "5.1.0-alpha.7",
+  "description": "Official SDK for pollinations.ai - Generate images, videos, audio, and text with ease",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "unpkg": "./dist/index.browser.min.js",
+  "jsdelivr": "./dist/index.browser.min.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js",
+      "require": "./dist/react/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "prepublishOnly": "npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "pollinations",
+    "ai",
+    "image-generation",
+    "text-generation",
+    "video-generation",
+    "audio-generation",
+    "text-to-speech",
+    "tts",
+    "generative-ai",
+    "flux",
+    "openai",
+    "gemini",
+    "llm",
+    "stable-diffusion",
+    "text-to-image",
+    "text-to-video",
+    "image-to-image",
+    "img2img"
+  ],
+  "author": "pollinations.ai <hello@pollinations.ai>",
+  "contributors": [
+    {
+      "name": "Itachi-1824",
+      "email": "itachi@myceli.ai"
+    },
+    {
+      "name": "Circuit-Overtime",
+      "email": "ayushman@myceli.ai"
+    },
+    {
+      "name": "ElliotEtag",
+      "email": "elliot@myceli.ai"
+    }
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pollinations/pollinations.git",
+    "directory": "packages/sdk"
+  },
+  "homepage": "https://pollinations.ai",
+  "bugs": {
+    "url": "https://github.com/pollinations/pollinations/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0 || ^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/pollinations"
+  },
+  "dependencies": {
+    "eventsource-parser": "3.0.6"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/react": "^19.2.15",
+    "@types/react-test-renderer": "^19.1.0",
+    "react": "^19.2.5",
+    "react-test-renderer": "^19.2.5",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^2.1.0"
+  }
+}

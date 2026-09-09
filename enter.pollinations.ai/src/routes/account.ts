@@ -1,0 +1,1814 @@
+import type { Logger } from "@logtape/logtape";
+import {
+    type ApiKeyType,
+    createApiKeyForUser,
+} from "@shared/auth/api-key-creation.ts";
+import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
+import {
+    getAvailableBalance,
+    getUserBalance,
+} from "@shared/billing/balance.ts";
+import { isCommunityEndpointOwnerAllowed } from "@shared/community-endpoints.ts";
+import * as schema from "@shared/db/better-auth.ts";
+import {
+    apikey as apikeyTable,
+    rewards as rewardsTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
+import { validator } from "@shared/middleware/validator.ts";
+import {
+    filterPermissionsToVisibleModels,
+    getVisibleModelIdsForUser,
+} from "@shared/registry/visible-model-ids.ts";
+import { and, desc, eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
+import type { Context } from "hono";
+import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
+import { describeRoute, resolver } from "hono-openapi";
+import { z } from "zod";
+import type { Env } from "../env.ts";
+import { auth } from "../middleware/auth.ts";
+import { discordConfigFromEnv } from "../services/discord.ts";
+import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
+import { listQuestCards } from "../services/quests/index.ts";
+import {
+    fetchTinybirdRows,
+    requireTinybirdReadToken,
+} from "../services/tinybird.ts";
+import {
+    hasAccountPermission,
+    requireAccountPermission,
+} from "./account-permissions.ts";
+import { agentsRoutes } from "./agents.ts";
+import { communityEndpointsRoutes } from "./community-endpoints.ts";
+
+const DEFAULT_USAGE_DAYS = 30;
+const DEFAULT_DAILY_USAGE_DAYS = 90;
+const MAX_USAGE_DAYS = 90;
+const MAX_USAGE_EXPORT_ROWS = 50_000;
+
+const SECONDS_PER_DAY = 86400;
+const USAGE_MIN_DATE = "2026-01-01";
+const PERIOD_GRANULARITIES = ["day", "week", "month"] as const;
+type PeriodGranularity = (typeof PERIOD_GRANULARITIES)[number];
+
+type UsageDebugBindings = CloudflareBindings & {
+    USAGE_DEBUG_USER_ID?: string;
+};
+
+export function resolveUsageTargetUserId(
+    env: CloudflareBindings,
+    currentUserId: string,
+    apiKey?: {
+        permissions?: Record<string, string[]>;
+        metadata?: Record<string, unknown>;
+    },
+): { userId: string; overridden: boolean } {
+    if (apiKey) {
+        return { userId: currentUserId, overridden: false };
+    }
+
+    const environment = String(env.ENVIRONMENT || "");
+    const allowDebugOverride =
+        environment === "local" ||
+        environment === "development" ||
+        environment === "dev";
+
+    if (!allowDebugOverride) {
+        return { userId: currentUserId, overridden: false };
+    }
+
+    const debugUserId = (env as UsageDebugBindings).USAGE_DEBUG_USER_ID?.trim();
+    if (!debugUserId) {
+        return { userId: currentUserId, overridden: false };
+    }
+
+    return {
+        userId: debugUserId,
+        overridden: debugUserId !== currentUserId,
+    };
+}
+
+// Schema for creating an API key via the API
+const CreateKeySchema = z.object({
+    name: z.string().min(1).max(253).describe("Name for the API key"),
+    type: z
+        .enum(["secret", "publishable"])
+        .optional()
+        .default("secret")
+        .describe(
+            "Key type: secret (sk_) or publishable app key (pk_). Use publishable to create an app key.",
+        ),
+    expiresIn: z
+        .number()
+        .int()
+        .positive()
+        .max(365 * SECONDS_PER_DAY)
+        .optional()
+        .describe("Expiry in seconds from now (max 365 days)"),
+    allowedModels: z
+        .array(z.string())
+        .nullable()
+        .optional()
+        .describe("Model IDs this key can access. null = all models"),
+    pollenBudget: z
+        .number()
+        .nullable()
+        .optional()
+        .describe(
+            "Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited",
+        ),
+    accountPermissions: z
+        .array(z.string())
+        .nullable()
+        .optional()
+        .describe(
+            'Account permissions (e.g. ["usage"]). "keys" is auto-stripped.',
+        ),
+    redirectUris: z
+        .array(z.string())
+        .optional()
+        .describe(
+            "Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Must be https:// except http:// loopback URIs for local apps. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically.",
+        ),
+    earningsEnabled: z
+        .boolean()
+        .optional()
+        .describe(
+            "Enable developer earnings for publishable app keys. Defaults to false; send true to opt in.",
+        ),
+});
+
+// CSV escape helper
+const escapeCSV = (val: string | number | boolean | null) => {
+    if (val === null || val === undefined) return "";
+    if (typeof val === "number") return String(val);
+    const raw = String(val);
+    const str = /^[\t\r\n]|^\s*[=+\-@]/.test(raw) ? `'${raw}` : raw;
+    if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+        return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+};
+
+function toCsv<T>(columns: readonly (keyof T & string)[], rows: T[]): string {
+    return [
+        columns.join(","),
+        ...rows.map((row) =>
+            columns
+                .map((col) =>
+                    escapeCSV(row[col] as string | number | boolean | null),
+                )
+                .join(","),
+        ),
+    ].join("\n");
+}
+
+function addUtcDays(date: Date, days: number): Date {
+    const next = new Date(date);
+    next.setUTCDate(next.getUTCDate() + days);
+    return next;
+}
+
+type UsageWindow = {
+    since: string;
+    until: string;
+    filenamePart: string;
+};
+
+type UsageWindowDates = {
+    sinceDate: Date;
+    untilDate: Date;
+};
+
+type UsagePeriod = {
+    granularity?: PeriodGranularity;
+    period?: string;
+};
+
+function startOfUtcDay(year: number, monthIndex: number, day: number): Date {
+    return new Date(Date.UTC(year, monthIndex, day, 0, 0, 0, 0));
+}
+
+function parseUtcDayPeriod(period: string): UsageWindowDates | null {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(period);
+    if (!match) return null;
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const sinceDate = startOfUtcDay(year, month - 1, day);
+    if (
+        sinceDate.getUTCFullYear() !== year ||
+        sinceDate.getUTCMonth() !== month - 1 ||
+        sinceDate.getUTCDate() !== day
+    ) {
+        return null;
+    }
+    return { sinceDate, untilDate: addUtcDays(sinceDate, 1) };
+}
+
+function parseUtcMonthPeriod(period: string): UsageWindowDates | null {
+    const match = /^(\d{4})-(\d{2})$/.exec(period);
+    if (!match) return null;
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const sinceDate = startOfUtcDay(year, month - 1, 1);
+    if (
+        sinceDate.getUTCFullYear() !== year ||
+        sinceDate.getUTCMonth() !== month - 1
+    ) {
+        return null;
+    }
+    const untilDate = startOfUtcDay(year, month, 1);
+    return { sinceDate, untilDate };
+}
+
+function parseUtcWeekPeriod(period: string): UsageWindowDates | null {
+    const match = /^(\d{4})-W(\d{2})$/.exec(period);
+    if (!match) return null;
+    const isoYear = Number(match[1]);
+    const isoWeek = Number(match[2]);
+    if (isoWeek < 1 || isoWeek > 53) return null;
+
+    // ISO week 1 is the week containing Jan 4. Weeks start on Monday.
+    const jan4 = startOfUtcDay(isoYear, 0, 4);
+    const jan4Day = jan4.getUTCDay() || 7;
+    const weekOneMonday = addUtcDays(jan4, 1 - jan4Day);
+    const sinceDate = addUtcDays(weekOneMonday, (isoWeek - 1) * 7);
+
+    if (getUtcIsoWeekPeriod(sinceDate) !== period) return null;
+
+    return { sinceDate, untilDate: addUtcDays(sinceDate, 7) };
+}
+
+function getUtcIsoWeekPeriod(date: Date): string {
+    const utcDate = startOfUtcDay(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate(),
+    );
+    const day = utcDate.getUTCDay() || 7;
+    const thursday = addUtcDays(utcDate, 4 - day);
+    const isoYear = thursday.getUTCFullYear();
+    const yearStart = startOfUtcDay(isoYear, 0, 1);
+    const isoWeek = Math.ceil(
+        ((thursday.getTime() - yearStart.getTime()) / (SECONDS_PER_DAY * 1000) +
+            1) /
+            7,
+    );
+    return `${isoYear}-W${String(isoWeek).padStart(2, "0")}`;
+}
+
+function buildUsageWindowFromPeriod({
+    granularity,
+    period,
+}: UsagePeriod): UsageWindowDates | null {
+    if (!granularity || !period) return null;
+
+    if (granularity === "day") return parseUtcDayPeriod(period);
+    if (granularity === "week") return parseUtcWeekPeriod(period);
+    if (granularity === "month") return parseUtcMonthPeriod(period);
+
+    granularity satisfies never;
+    return null;
+}
+
+function resolveUsageWindow(days: number, period: UsagePeriod): UsageWindow {
+    const hasPeriodParam = period.granularity || period.period;
+    const periodWindow = buildUsageWindowFromPeriod(period);
+    if (hasPeriodParam && !periodWindow) {
+        throw new HTTPException(400, {
+            message:
+                "Invalid usage period. Use granularity=day&period=YYYY-MM-DD, granularity=week&period=YYYY-WNN, or granularity=month&period=YYYY-MM.",
+        });
+    }
+
+    const now = new Date();
+    const today = startOfUtcDay(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+    );
+    if (periodWindow) {
+        const minDate = new Date(`${USAGE_MIN_DATE}T00:00:00.000Z`);
+        if (
+            periodWindow.untilDate <= minDate ||
+            periodWindow.sinceDate > today
+        ) {
+            throw new HTTPException(400, {
+                message: `Usage period must overlap ${USAGE_MIN_DATE} through today.`,
+            });
+        }
+    }
+
+    const { sinceDate, untilDate } = periodWindow ?? {
+        sinceDate: addUtcDays(today, 1 - days),
+        untilDate: addUtcDays(today, 1),
+    };
+    const toTinybirdDateTime = (date: Date) =>
+        date.toISOString().slice(0, 19).replace("T", " ");
+
+    return {
+        since: toTinybirdDateTime(sinceDate),
+        until: toTinybirdDateTime(untilDate),
+        filenamePart:
+            period.granularity && period.period
+                ? `${period.granularity}-${period.period}`
+                : `${days}d`,
+    };
+}
+
+function parseCommaSeparatedQueryList(value?: string): string[] {
+    return value
+        ? Array.from(
+              new Set(
+                  value
+                      .split(",")
+                      .map((id) => id.trim())
+                      .filter((id) => id.length > 0),
+              ),
+          ).sort()
+        : [];
+}
+
+const commaSeparatedQueryList = z
+    .string()
+    .optional()
+    .transform(parseCommaSeparatedQueryList);
+// Query params schema for usage
+const usageQuerySchema = z.object({
+    format: z.enum(["json", "csv"]).optional().default("json"),
+    limit: z.coerce
+        .number()
+        .min(1)
+        .max(MAX_USAGE_EXPORT_ROWS)
+        .optional()
+        .default(100),
+    before: z.string().optional(), // ISO timestamp cursor for pagination
+    before_event_id: z.string().optional(), // Stable tie-breaker for same-second timestamps
+    days: z.coerce
+        .number()
+        .int()
+        .min(1)
+        .max(MAX_USAGE_DAYS)
+        .optional()
+        .default(DEFAULT_USAGE_DAYS),
+    granularity: z.enum(PERIOD_GRANULARITIES).optional(),
+    period: z.string().optional(),
+    api_key_ids: commaSeparatedQueryList,
+    models: commaSeparatedQueryList,
+});
+
+// Query params schema for daily usage
+const usageDailyQuerySchema = z.object({
+    format: z.enum(["json", "csv"]).optional().default("json"),
+    days: z.coerce
+        .number()
+        .int()
+        .min(1)
+        .max(MAX_USAGE_DAYS)
+        .optional()
+        .default(DEFAULT_DAILY_USAGE_DAYS),
+    granularity: z.enum(PERIOD_GRANULARITIES).optional(),
+    period: z.string().optional(),
+    api_key_ids: commaSeparatedQueryList,
+});
+
+const earningsQuerySchema = usageDailyQuerySchema.omit({ api_key_ids: true });
+
+const earningsTransactionsQuerySchema = usageQuerySchema.pick({
+    limit: true,
+    days: true,
+    granularity: true,
+    period: true,
+});
+
+// Response schema for daily usage OpenAPI documentation
+const dailyUsageRecordSchema = z.object({
+    date: z.string().describe("Date (YYYY-MM-DD format)"),
+    api_key_id: z.string().describe("API key id used for these requests"),
+    api_key: z
+        .string()
+        .nullable()
+        .describe("API key name used for these requests"),
+    model: z.string().nullable().describe("Model used"),
+    meter_source: z
+        .string()
+        .nullable()
+        .describe(
+            "Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance",
+        ),
+    requests: z.number().describe("Number of requests"),
+    cost_usd: z.number().describe("Total cost in USD"),
+});
+
+type DailyUsageRecord = z.infer<typeof dailyUsageRecordSchema>;
+
+const dailyUsageResponseSchema = z.object({
+    usage: z
+        .array(dailyUsageRecordSchema)
+        .describe("Array of daily usage records"),
+    count: z.number().describe("Number of records returned"),
+});
+
+const USAGE_CSV_COLUMNS = [
+    "timestamp",
+    "type",
+    "model",
+    "api_key",
+    "api_key_type",
+    "meter_source",
+    "input_text_tokens",
+    "input_cached_tokens",
+    "input_audio_tokens",
+    "input_audio_seconds",
+    "input_image_tokens",
+    "output_text_tokens",
+    "output_reasoning_tokens",
+    "output_audio_tokens",
+    "output_audio_seconds",
+    "output_image_tokens",
+    "output_video_seconds",
+    "cost_usd",
+    "response_time_ms",
+] as const;
+
+const DAILY_USAGE_CSV_COLUMNS = [
+    "date",
+    "api_key_id",
+    "api_key",
+    "model",
+    "meter_source",
+    "requests",
+    "cost_usd",
+] as const;
+
+const EARNINGS_CSV_COLUMNS = [
+    "date",
+    "source",
+    "entity_id",
+    "entity_name",
+    "requests",
+    "baseline_price",
+    "pollen_earned",
+    "paid_earned",
+    "tier_earned",
+    "cost_usd",
+    "reward_rate",
+] as const;
+
+const developerEarningsRowSchema = z.object({
+    date: z
+        .string()
+        .describe(
+            "Date bucket (YYYY-MM-DD or hourly); empty string on rollup rows",
+        ),
+    entity_id: z
+        .string()
+        .describe("Earning entity id (BYOP app key or community model)"),
+    entity_name: z.string().describe("Earning entity display name"),
+    source: z
+        .enum(["byop_markup", "community_model"])
+        .describe("Reward source, such as byop_markup or community_model"),
+    requests: z.number().describe("Number of billed requests"),
+    paid_requests: z
+        .number()
+        .describe("Billed requests paid from paid balance"),
+    tier_requests: z
+        .number()
+        .describe("Billed requests paid from tier balance"),
+    baseline_price: z
+        .number()
+        .describe("Model cost before markup (sum over the bucket)"),
+    pollen_earned: z
+        .number()
+        .describe("Developer credit earned over the bucket"),
+    paid_earned: z
+        .number()
+        .describe("Developer credit earned from paid-balance spend"),
+    tier_earned: z
+        .number()
+        .describe("Developer credit earned from Quest Pollen spend"),
+    cost_usd: z
+        .number()
+        .describe(
+            "Reward basis total for the bucket; BYOP rows use payer charge, community model rows use model price",
+        ),
+    reward_rate: z.number().describe("Average reward or markup rate applied"),
+});
+
+type DeveloperEarningsRow = z.infer<typeof developerEarningsRowSchema>;
+
+const developerEarningsResponseSchema = z.object({
+    daily: z
+        .array(developerEarningsRowSchema)
+        .describe("Per-(date, earning entity) buckets for the period"),
+    perEntity: z
+        .array(developerEarningsRowSchema)
+        .describe("Per-earning-entity rollups for the period"),
+});
+
+const developerEarningsTransactionSchema = z.object({
+    timestamp: z
+        .string()
+        .describe("Request timestamp (YYYY-MM-DD HH:mm:ss format)"),
+    cursor_event_id: z.string().describe("Stable event id"),
+    entity_name: z.string().describe("Earning entity display name"),
+    model: z.string().nullable().describe("Model used for generation"),
+    meter_source: z
+        .string()
+        .nullable()
+        .describe(
+            "Billing source: 'tier' = tier balance, 'pack' = paid balance",
+        ),
+    pollen_earned: z.number().describe("Developer credit earned"),
+});
+
+type DeveloperEarningsTransaction = z.infer<
+    typeof developerEarningsTransactionSchema
+>;
+
+const developerEarningsTransactionsResponseSchema = z.object({
+    transactions: z
+        .array(developerEarningsTransactionSchema)
+        .describe("Earning transaction records"),
+    count: z.number().describe("Number of records returned"),
+});
+
+// Per-entity rollups derived from the daily buckets; reward_rate is the
+// request-weighted average.
+function rollupEarningsByEntity(
+    daily: DeveloperEarningsRow[],
+): DeveloperEarningsRow[] {
+    const byEntity = new Map<
+        string,
+        DeveloperEarningsRow & { weightedRate: number }
+    >();
+    for (const row of daily) {
+        const key = `${row.source}:${row.entity_id}`;
+        const entry = byEntity.get(key);
+        if (!entry) {
+            byEntity.set(key, {
+                ...row,
+                date: "",
+                weightedRate: row.reward_rate * row.requests,
+            });
+            continue;
+        }
+        entry.requests += row.requests;
+        entry.paid_requests += row.paid_requests;
+        entry.tier_requests += row.tier_requests;
+        entry.baseline_price += row.baseline_price;
+        entry.pollen_earned += row.pollen_earned;
+        entry.paid_earned += row.paid_earned;
+        entry.tier_earned += row.tier_earned;
+        entry.cost_usd += row.cost_usd;
+        entry.weightedRate += row.reward_rate * row.requests;
+    }
+    return Array.from(byEntity.values())
+        .map(({ weightedRate, ...row }) => ({
+            ...row,
+            reward_rate: row.requests > 0 ? weightedRate / row.requests : 0,
+        }))
+        .sort((left, right) => right.pollen_earned - left.pollen_earned);
+}
+
+// Shared tail for the detailed-usage endpoints (/usage, /key/usage):
+// fetch a page from the activity usage transactions pipe, return the cursor for
+// JSON pagination, but keep CSV output on its established public columns.
+async function respondDetailedUsage(
+    c: Pick<Context<Env>, "env" | "json">,
+    log: Logger,
+    params: {
+        userId: string;
+        apiKeyIds?: string[];
+        models?: string[];
+        filenamePrefix: string;
+        filenamePeriod: string;
+        format: "json" | "csv";
+        limit: number;
+        since: string;
+        until: string;
+        before?: string;
+        beforeEventId?: string;
+    },
+): Promise<Response> {
+    const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+    const tinybirdToken = requireTinybirdReadToken(c.env);
+
+    try {
+        const usage = await fetchTinybirdRows<UsageRecordWithCursor>(
+            tinybirdOrigin,
+            "/v0/pipes/activity_usage_transactions.json",
+            tinybirdToken,
+            {
+                user_id: params.userId,
+                api_key_ids:
+                    params.apiKeyIds && params.apiKeyIds.length > 0
+                        ? params.apiKeyIds.join(",")
+                        : undefined,
+                models:
+                    params.models && params.models.length > 0
+                        ? params.models.join(",")
+                        : undefined,
+                limit: params.limit.toString(),
+                since: params.since,
+                until: params.until,
+                before: params.before,
+                before_event_id: params.beforeEventId,
+            },
+        );
+
+        if (params.format === "csv") {
+            const csv = toCsv(USAGE_CSV_COLUMNS, usage);
+            return new Response(csv, {
+                headers: {
+                    "Content-Type": "text/csv",
+                    "Content-Disposition": `attachment; filename="${params.filenamePrefix}-${usage.length}-rows-${params.filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
+                },
+            });
+        }
+
+        return c.json({ usage, count: usage.length });
+    } catch (error) {
+        log.error("Error fetching usage: {error}", { error });
+        return c.json({ error: "Failed to fetch usage data" }, 500);
+    }
+}
+
+// Response schemas for OpenAPI documentation
+const profileResponseSchema = z.object({
+    githubUsername: z.string().nullable().describe("GitHub username if linked"),
+    image: z
+        .string()
+        .nullable()
+        .describe("Profile picture URL (e.g. GitHub avatar)"),
+    communityEndpointsAllowed: z
+        .boolean()
+        .describe(
+            "Whether the account is allowed to manage community endpoints.",
+        ),
+    discordAvailable: z
+        .boolean()
+        .describe("Whether Discord account connections are available."),
+    name: z
+        .string()
+        .nullable()
+        .optional()
+        .describe(
+            "User's display name (only returned when the key has `account:profile` or `account:keys`)",
+        ),
+    email: z
+        .email()
+        .nullable()
+        .optional()
+        .describe(
+            "User's email address (only returned when the key has `account:profile` or `account:keys`)",
+        ),
+});
+
+const accountBalanceSchema = z.object({
+    total: z
+        .number()
+        .describe(
+            "Quest Pollen + paid Pollen the account can spend on a regular model. Paid-only models spend `paid` alone, so use that field for them rather than this total.",
+        ),
+    tier: z.number().describe("Quest Pollen remaining, never below 0"),
+    paid: z.number().describe("Paid Pollen remaining, never below 0"),
+});
+
+const balanceResponseSchema = z.object({
+    balance: z
+        .number()
+        .describe(
+            "Pollen remaining for this caller. Budgeted API keys see the key's remaining budget here, not the account total. Sessions and unbudgeted keys see the account total (Quest Pollen + paid).",
+        ),
+    accountBalance: accountBalanceSchema
+        .optional()
+        .describe(
+            "Full account balances. Included only when the caller can view account usage (dashboard session or `account:usage`). Omitted for budgeted keys that lack that permission so the account wallet is not leaked.",
+        ),
+});
+
+const accountQuestRewardSchema = z.object({
+    id: z.string(),
+    questId: z.string().nullable(),
+    title: z.string(),
+    pollenAmount: z.number(),
+    balanceBucket: z.string(),
+    earnedAt: z.string(),
+    claimedAt: z.string().nullable(),
+});
+
+const accountQuestSchema = z.object({
+    id: z.string(),
+    title: z.string(),
+    description: z.string(),
+    category: z.enum(QUEST_CATEGORIES),
+    state: z.enum(["available", "completed", "coming_soon"]),
+    status: z.enum(["open", "completed", "coming_soon"]),
+    rewardAmount: z.number(),
+    balanceBucket: z.enum(["tier", "pack"]),
+    url: z.string().nullable(),
+    reward: accountQuestRewardSchema.nullable(),
+});
+
+const accountQuestsResponseSchema = z.object({
+    quests: z.array(accountQuestSchema),
+});
+
+function formatRewardTimestamp(value: Date | number | string): string {
+    return value instanceof Date
+        ? value.toISOString()
+        : new Date(value).toISOString();
+}
+
+const usageRecordSchema = z.object({
+    timestamp: z
+        .string()
+        .describe("Request timestamp (YYYY-MM-DD HH:mm:ss format)"),
+    cursor_event_id: z
+        .string()
+        .describe("Event id used with `before_event_id` for stable pagination"),
+    type: z
+        .string()
+        .describe("Request type (e.g., 'generate.image', 'generate.text')"),
+    model: z.string().nullable().describe("Model used for generation"),
+    api_key_id: z
+        .string()
+        .nullable()
+        .describe("API key id used for generation"),
+    api_key: z.string().nullable().describe("API key display name"),
+    api_key_type: z
+        .string()
+        .nullable()
+        .describe("Type of API key ('secret', 'publishable')"),
+    meter_source: z
+        .string()
+        .nullable()
+        .describe(
+            "Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance",
+        ),
+    input_text_tokens: z.number().describe("Number of input text tokens"),
+    input_cached_tokens: z.number().describe("Number of cached input tokens"),
+    input_audio_tokens: z.number().describe("Number of input audio tokens"),
+    input_audio_seconds: z
+        .number()
+        .describe("Duration of input audio in seconds (for transcription/STT)"),
+    input_image_tokens: z.number().describe("Number of input image tokens"),
+    output_text_tokens: z.number().describe("Number of output text tokens"),
+    output_reasoning_tokens: z
+        .number()
+        .describe(
+            "Number of reasoning tokens (for models with chain-of-thought)",
+        ),
+    output_audio_tokens: z.number().describe("Number of output audio tokens"),
+    output_audio_seconds: z
+        .number()
+        .describe(
+            "Duration of output audio in seconds (for TTS/music generation)",
+        ),
+    output_image_tokens: z
+        .number()
+        .describe("Number of output image tokens (1 per image)"),
+    output_video_seconds: z
+        .number()
+        .describe("Duration of output video in seconds"),
+    cost_usd: z.number().describe("Cost in USD for this request"),
+    response_time_ms: z
+        .number()
+        .nullable()
+        .describe("Response time in milliseconds"),
+});
+
+type UsageRecordWithCursor = z.infer<typeof usageRecordSchema>;
+
+const usageResponseSchema = z.object({
+    usage: z.array(usageRecordSchema).describe("Array of usage records"),
+    count: z.number().describe("Number of records returned"),
+});
+
+/**
+ * Account routes - profile, balance and usage endpoints.
+ * Supports both session cookies and API keys with permission checks.
+ */
+export const accountRoutes = new Hono<Env>()
+    .use(auth({ allowApiKey: true, allowSessionCookie: true }))
+    // Account responses are per-user and must never be cached by browsers or
+    // intermediary proxies. Applied once here so nested routes (agents,
+    // my-models, keys, ...) inherit it without repeating it per handler.
+    .use("*", async (c, next) => {
+        await next();
+        c.header("Cache-Control", "private, no-store, max-age=0");
+        c.header("Pragma", "no-cache");
+    })
+    .route("/agents", agentsRoutes)
+    .route("/my-models", communityEndpointsRoutes)
+    .get(
+        "/profile",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get Profile",
+            description:
+                "Returns your account profile. GitHub username, profile image, and community model access are always returned. Name and email are returned only when the API key has `account:profile`.",
+            responses: {
+                200: {
+                    description: "User profile",
+                    content: {
+                        "application/json": {
+                            schema: resolver(profileResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            const apiKey = c.var.auth.apiKey;
+            const includeProfilePII = hasAccountPermission(apiKey, "profile");
+
+            const db = drizzle(c.env.DB);
+            const users = await db
+                .select({
+                    githubId: userTable.githubId,
+                    githubUsername: userTable.githubUsername,
+                    image: userTable.image,
+                    name: userTable.name,
+                    email: userTable.email,
+                })
+                .from(userTable)
+                .where(eq(userTable.id, user.id))
+                .limit(1);
+
+            const profile = users[0];
+            if (!profile) {
+                throw new HTTPException(404, { message: "User not found" });
+            }
+
+            return c.json({
+                githubUsername: profile.githubUsername ?? null,
+                image: profile.image ?? null,
+                communityEndpointsAllowed:
+                    isCommunityEndpointOwnerAllowed(profile),
+                discordAvailable: Boolean(discordConfigFromEnv(c.env)),
+                ...(includeProfilePII && {
+                    name: profile.name ?? null,
+                    email: profile.email ?? null,
+                }),
+            });
+        },
+    )
+    .get(
+        "/quests",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get Quest Status",
+            description:
+                "Returns the quest catalog with the authenticated account's read-only status. Globally completed quests and quests earned by the account are both returned as `completed`. API keys require the read-only `account:usage` permission. Claiming rewards remains dashboard-only.",
+            responses: {
+                200: {
+                    description: "Quest status for the authenticated account",
+                    content: {
+                        "application/json": {
+                            schema: resolver(accountQuestsResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: {
+                    description:
+                        "Permission denied - API key missing `account:usage` permission",
+                },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            requireAccountPermission(c.var.auth.apiKey, "usage");
+
+            const db = drizzle(c.env.DB, { schema });
+            const [cards, rewardRows] = await Promise.all([
+                listQuestCards({ db, env: c.env }),
+                db
+                    .select({
+                        id: rewardsTable.id,
+                        questId: rewardsTable.questId,
+                        title: rewardsTable.title,
+                        pollenAmount: rewardsTable.pollenAmount,
+                        balanceBucket: rewardsTable.balanceBucket,
+                        earnedAt: rewardsTable.earnedAt,
+                        claimedAt: rewardsTable.claimedAt,
+                    })
+                    .from(rewardsTable)
+                    .where(eq(rewardsTable.userId, user.id))
+                    .orderBy(desc(rewardsTable.earnedAt)),
+            ]);
+
+            const rewardsByQuestId = new Map<
+                string,
+                (typeof rewardRows)[number]
+            >();
+            for (const reward of rewardRows) {
+                if (reward.questId && !rewardsByQuestId.has(reward.questId)) {
+                    rewardsByQuestId.set(reward.questId, reward);
+                }
+            }
+
+            const quests = cards.map((card) => {
+                const reward = rewardsByQuestId.get(card.id) ?? null;
+                const status =
+                    card.state === "coming_soon"
+                        ? "coming_soon"
+                        : card.state === "completed" || reward
+                          ? "completed"
+                          : "open";
+
+                return {
+                    ...card,
+                    status,
+                    reward: reward
+                        ? {
+                              id: reward.id,
+                              questId: reward.questId,
+                              title: reward.title,
+                              pollenAmount: reward.pollenAmount,
+                              balanceBucket: reward.balanceBucket,
+                              earnedAt: formatRewardTimestamp(reward.earnedAt),
+                              claimedAt: reward.claimedAt
+                                  ? formatRewardTimestamp(reward.claimedAt)
+                                  : null,
+                          }
+                        : null,
+                };
+            });
+
+            return c.json({ quests });
+        },
+    )
+    .get(
+        "/balance",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get Balance",
+            description:
+                "Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget in `balance` (no scope needed). When the caller can view account usage (`account:usage` or a dashboard session), the response also includes `accountBalance: { total, tier, paid }`. Unbudgeted keys without `account:usage` get 403. Key-scoped usage is `GET /account/key/usage`; account-wide usage is `GET /account/usage`.",
+            responses: {
+                200: {
+                    description: "Pollen balance",
+                    content: {
+                        "application/json": {
+                            schema: resolver(balanceResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: {
+                    description:
+                        "Permission denied - API key has no budget and is missing `account:usage` permission",
+                },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            const apiKey = c.var.auth.apiKey;
+            const keyBudget = apiKey?.pollenBalance ?? null;
+            const canViewAccount = hasAccountPermission(apiKey, "usage");
+
+            // Unbudgeted keys cannot see any balance without account:usage.
+            if (keyBudget == null && !canViewAccount) {
+                throw new HTTPException(403, {
+                    message:
+                        "API key does not have 'account:usage' permission and no budget of its own. Add `account:usage` or set a budget on the key.",
+                });
+            }
+
+            let accountBalance:
+                | { total: number; tier: number; paid: number }
+                | undefined;
+            if (canViewAccount) {
+                // Same helper the billing path uses, so a bucket that has gone
+                // negative is clamped here exactly as it is when spending is
+                // authorized — a raw tier + pack sum would under-report the
+                // Pollen the account can actually spend.
+                const balances = await getUserBalance(
+                    drizzle(c.env.DB),
+                    user.id,
+                );
+                accountBalance = {
+                    total: getAvailableBalance(balances),
+                    tier: Math.max(0, balances.tierBalance),
+                    paid: Math.max(0, balances.packBalance),
+                };
+            }
+
+            // Budgeted keys keep seeing their remaining budget in `balance`.
+            const balance =
+                keyBudget != null ? keyBudget : (accountBalance?.total ?? 0);
+
+            return c.json(
+                accountBalance ? { balance, accountBalance } : { balance },
+            );
+        },
+    )
+    .get(
+        "/usage",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get Usage History",
+            description:
+                "Returns your request history with per-request details: model used, token counts, cost, and response time. Defaults to the last 30 days, supports up to 90 days via `days`, or exact day/week/month periods via `granularity` and `period`. Supports JSON and CSV export. Each response is capped at 50,000 rows. Use `before` with `before_event_id` for stable cursor-based pagination. API keys require the read-only `account:usage` permission.",
+            responses: {
+                200: {
+                    description: "Usage records",
+                    content: {
+                        "application/json": {
+                            schema: resolver(usageResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: {
+                    description:
+                        "Permission denied - API key missing `account:usage` permission",
+                },
+            },
+        }),
+        validator("query", usageQuerySchema),
+        async (c) => {
+            const log = c.get("log").getChild("usage");
+
+            await c.var.auth.requireAuthorization({
+                message: "Authentication required to view usage history",
+            });
+
+            const user = c.var.auth.requireUser();
+            const apiKey = c.var.auth.apiKey;
+
+            requireAccountPermission(apiKey, "usage");
+
+            const {
+                format,
+                limit,
+                before,
+                before_event_id: beforeEventId,
+                days,
+                granularity,
+                period,
+                api_key_ids: apiKeyIds,
+                models,
+            } = c.req.valid("query");
+            const { userId: usageUserId, overridden: usageUserOverridden } =
+                resolveUsageTargetUserId(c.env, user.id, apiKey);
+            const usageWindow = resolveUsageWindow(days, {
+                granularity,
+                period,
+            });
+
+            log.debug(
+                "Fetching usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} format={format} limit={limit} before={before} beforeEventId={beforeEventId} days={days}",
+                {
+                    requesterUserId: user.id,
+                    targetUserId: usageUserId,
+                    override: usageUserOverridden,
+                    format,
+                    limit,
+                    before,
+                    beforeEventId,
+                    days,
+                },
+            );
+
+            return respondDetailedUsage(c, log, {
+                userId: usageUserId,
+                filenamePrefix: "pollinations-usage-latest",
+                filenamePeriod: usageWindow.filenamePart,
+                format,
+                limit,
+                apiKeyIds,
+                models,
+                since: usageWindow.since,
+                until: usageWindow.until,
+                before,
+                beforeEventId,
+            });
+        },
+    )
+    .get(
+        "/usage/daily",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get Daily Usage",
+            description:
+                "Returns aggregated usage for the requested time window, grouped by date, API key, model, and billing source. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Requires `account:usage` permission when using API keys.",
+            responses: {
+                200: {
+                    description:
+                        "Usage records aggregated by date/API key/model/source",
+                    content: {
+                        "application/json": {
+                            schema: resolver(dailyUsageResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: {
+                    description:
+                        "Permission denied - API key missing `account:usage` permission",
+                },
+            },
+        }),
+        validator("query", usageDailyQuerySchema),
+        async (c) => {
+            const log = c.get("log").getChild("usage-daily");
+
+            await c.var.auth.requireAuthorization({
+                message: "Authentication required to view usage history",
+            });
+
+            const user = c.var.auth.requireUser();
+            const apiKey = c.var.auth.apiKey;
+
+            requireAccountPermission(apiKey, "usage");
+
+            const {
+                format,
+                days,
+                granularity,
+                period,
+                api_key_ids: apiKeyIds,
+            } = c.req.valid("query");
+            const grain = granularity === "day" ? "hour" : "day";
+            const { userId: usageUserId, overridden: usageUserOverridden } =
+                resolveUsageTargetUserId(c.env, user.id, apiKey);
+            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+            const tinybirdToken = requireTinybirdReadToken(c.env);
+            const window = resolveUsageWindow(days, { granularity, period });
+
+            try {
+                const usage = await fetchTinybirdRows<DailyUsageRecord>(
+                    tinybirdOrigin,
+                    "/v0/pipes/activity_usage_chart.json",
+                    tinybirdToken,
+                    {
+                        user_id: usageUserId,
+                        since: window.since,
+                        until: window.until,
+                        grain,
+                        api_key_ids:
+                            apiKeyIds.length > 0
+                                ? apiKeyIds.join(",")
+                                : undefined,
+                    },
+                );
+
+                log.debug(
+                    "Fetched daily usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} days={days} apiKeyIds={apiKeyIds} count={count}",
+                    {
+                        requesterUserId: user.id,
+                        targetUserId: usageUserId,
+                        override: usageUserOverridden,
+                        days,
+                        apiKeyIds,
+                        count: usage.length,
+                    },
+                );
+
+                if (format === "csv") {
+                    const csv = toCsv(DAILY_USAGE_CSV_COLUMNS, usage);
+
+                    return new Response(csv, {
+                        headers: {
+                            "Content-Type": "text/csv",
+                            "Content-Disposition": `attachment; filename="pollinations-usage-daily-${window.filenamePart}-${new Date().toISOString().split("T")[0]}.csv"`,
+                        },
+                    });
+                }
+
+                return c.json({
+                    usage,
+                    count: usage.length,
+                });
+            } catch (error) {
+                log.error("Error fetching daily usage: {error}", { error });
+                return c.json({ error: "Failed to fetch usage data" }, 500);
+            }
+        },
+    )
+    .get(
+        "/earnings/transactions",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get Earnings Transactions",
+            description:
+                "Returns recent per-request earnings transactions, newest first. Requires `account:usage` permission when using API keys.",
+            responses: {
+                200: {
+                    description: "Earnings transaction records",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                developerEarningsTransactionsResponseSchema,
+                            ),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: {
+                    description:
+                        "Permission denied - API key missing `account:usage` permission",
+                },
+            },
+        }),
+        validator("query", earningsTransactionsQuerySchema),
+        async (c) => {
+            const log = c.get("log").getChild("earnings-transactions");
+
+            await c.var.auth.requireAuthorization({
+                message: "Authentication required to view earnings",
+            });
+
+            const user = c.var.auth.requireUser();
+            const apiKey = c.var.auth.apiKey;
+
+            requireAccountPermission(apiKey, "usage");
+
+            const { limit, days, granularity, period } = c.req.valid("query");
+            const { userId: devUserId } = resolveUsageTargetUserId(
+                c.env,
+                user.id,
+                apiKey,
+            );
+            const window = resolveUsageWindow(days, { granularity, period });
+            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+            const tinybirdToken = requireTinybirdReadToken(c.env);
+
+            try {
+                const transactions =
+                    await fetchTinybirdRows<DeveloperEarningsTransaction>(
+                        tinybirdOrigin,
+                        "/v0/pipes/activity_earnings_transactions.json",
+                        tinybirdToken,
+                        {
+                            dev_user_id: devUserId,
+                            limit: limit.toString(),
+                            since: window.since,
+                            until: window.until,
+                        },
+                    );
+
+                return c.json({ transactions, count: transactions.length });
+            } catch (error) {
+                log.error("Error fetching earnings transactions: {error}", {
+                    error,
+                });
+                return c.json(
+                    { error: "Failed to fetch earnings transactions" },
+                    500,
+                );
+            }
+        },
+    )
+    .get(
+        "/earnings",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get Developer Earnings",
+            description:
+                "Returns developer earnings in one response: per-(date, entity) buckets and per-entity rollups across BYOP apps and community models. Rows include `requests`, `baseline_price`, reward basis `cost_usd`, and `reward_rate`. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. API keys require the read-only `account:usage` permission.",
+            responses: {
+                200: {
+                    description: "Earnings buckets and additive totals",
+                    content: {
+                        "application/json": {
+                            schema: resolver(developerEarningsResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: {
+                    description:
+                        "Permission denied - API key missing `account:usage` permission",
+                },
+            },
+        }),
+        validator("query", earningsQuerySchema),
+        async (c) => {
+            const log = c.get("log").getChild("earnings");
+
+            await c.var.auth.requireAuthorization({
+                message: "Authentication required to view earnings",
+            });
+
+            const user = c.var.auth.requireUser();
+            const apiKey = c.var.auth.apiKey;
+
+            requireAccountPermission(apiKey, "usage");
+
+            const { format, days, granularity, period } = c.req.valid("query");
+            const grain = granularity === "day" ? "hour" : "day";
+            const { userId: devUserId, overridden: devUserOverridden } =
+                resolveUsageTargetUserId(c.env, user.id, apiKey);
+            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+            const tinybirdToken = requireTinybirdReadToken(c.env);
+            const window = resolveUsageWindow(days, { granularity, period });
+
+            try {
+                const daily = await fetchTinybirdRows<DeveloperEarningsRow>(
+                    tinybirdOrigin,
+                    "/v0/pipes/activity_earnings_chart.json",
+                    tinybirdToken,
+                    {
+                        dev_user_id: devUserId,
+                        since: window.since,
+                        until: window.until,
+                        grain,
+                    },
+                );
+                const perEntity = rollupEarningsByEntity(daily);
+
+                log.debug(
+                    "Fetched earnings: requesterUserId={requesterUserId} devUserId={devUserId} override={override} days={days} dailyCount={dailyCount} entityCount={entityCount}",
+                    {
+                        requesterUserId: user.id,
+                        devUserId,
+                        override: devUserOverridden,
+                        days,
+                        dailyCount: daily.length,
+                        entityCount: perEntity.length,
+                    },
+                );
+
+                if (format === "csv") {
+                    const csv = toCsv(EARNINGS_CSV_COLUMNS, daily);
+
+                    return new Response(csv, {
+                        headers: {
+                            "Content-Type": "text/csv",
+                            "Content-Disposition": `attachment; filename="pollinations-earnings-${window.filenamePart}-${new Date().toISOString().split("T")[0]}.csv"`,
+                        },
+                    });
+                }
+
+                return c.json({ daily, perEntity });
+            } catch (error) {
+                log.error("Error fetching earnings: {error}", { error });
+                return c.json({ error: "Failed to fetch earnings data" }, 500);
+            }
+        },
+    )
+    .get(
+        "/keys",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "List API Keys",
+            description:
+                "List all API keys for the current user. Requires `account:keys` permission when using API keys. Secret key values are never returned.",
+            responses: {
+                200: { description: "List of API keys" },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            requireAccountPermission(c.var.auth.apiKey, "keys");
+
+            const db = drizzle(c.env.DB);
+            const keys = await db
+                .select({
+                    id: apikeyTable.id,
+                    name: apikeyTable.name,
+                    start: apikeyTable.start,
+                    prefix: apikeyTable.prefix,
+                    createdAt: apikeyTable.createdAt,
+                    expiresAt: apikeyTable.expiresAt,
+                    lastRequest: apikeyTable.lastRequest,
+                    permissions: apikeyTable.permissions,
+                    metadata: apikeyTable.metadata,
+                    pollenBalance: apikeyTable.pollenBalance,
+                    enabled: apikeyTable.enabled,
+                })
+                .from(apikeyTable)
+                .where(eq(apikeyTable.referenceId, user.id))
+                .all();
+            const parsedPermissions = keys.map((key) => {
+                if (!key.permissions) return null;
+                try {
+                    return JSON.parse(key.permissions);
+                } catch {
+                    return null;
+                }
+            });
+            const hasModelRestrictions = parsedPermissions.some((permissions) =>
+                Array.isArray(permissions?.models),
+            );
+            const visibleModelIds = hasModelRestrictions
+                ? await getVisibleModelIdsForUser(c.env.DB, user.id)
+                : null;
+
+            return c.json({
+                data: keys.map((key, index) => ({
+                    id: key.id,
+                    name: key.name,
+                    start: key.start,
+                    prefix: key.prefix,
+                    createdAt: key.createdAt,
+                    expiresAt: key.expiresAt,
+                    lastRequest: key.lastRequest,
+                    permissions: visibleModelIds
+                        ? filterPermissionsToVisibleModels(
+                              parsedPermissions[index],
+                              visibleModelIds,
+                          )
+                        : parsedPermissions[index],
+                    metadata: parseMetadata(key.metadata),
+                    pollenBalance: key.pollenBalance,
+                    enabled: key.enabled,
+                })),
+            });
+        },
+    )
+    .post(
+        "/keys",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Create API Key",
+            description:
+                'Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings off; send `earningsEnabled: true` to opt in. Requires `account:keys` permission when using API keys. The full key value is returned only once in the response. The `keys` account permission is automatically stripped from child keys to prevent escalation.',
+            responses: {
+                200: { description: "Created API key with full secret" },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+            },
+        }),
+        validator("json", CreateKeySchema),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            requireAccountPermission(c.var.auth.apiKey, "keys");
+
+            const {
+                name,
+                type,
+                expiresIn,
+                allowedModels,
+                pollenBudget,
+                accountPermissions,
+                redirectUris,
+                earningsEnabled,
+            } = c.req.valid("json");
+
+            const metadata =
+                type === "publishable"
+                    ? {
+                          ...(redirectUris?.length ? { redirectUris } : {}),
+                          ...(earningsEnabled !== undefined
+                              ? { earningsEnabled }
+                              : {}),
+                      }
+                    : undefined;
+
+            const created = await createApiKeyForUser({
+                authClient: c.var.auth.client,
+                dbBinding: c.env.DB,
+                userId: user.id,
+                name,
+                type,
+                expiresIn,
+                allowedModels,
+                pollenBudget,
+                accountPermissions,
+                metadata,
+                allowAccountKeysPermission: false,
+                defaultCreatedVia: "api",
+            });
+            return c.json(created);
+        },
+    )
+    .delete(
+        "/keys/:id",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Revoke API Key",
+            description:
+                "Delete/revoke an API key. Requires `account:keys` permission when using API keys. Cannot revoke the key used to authenticate the request.",
+            responses: {
+                200: { description: "Key revoked" },
+                400: { description: "Cannot revoke self" },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+                404: { description: "Key not found" },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            const callerKey = c.var.auth.apiKey;
+            requireAccountPermission(callerKey, "keys");
+
+            const { id } = c.req.param();
+
+            // Prevent self-revocation
+            if (callerKey && callerKey.id === id) {
+                throw new HTTPException(400, {
+                    message:
+                        "Cannot revoke the API key used to authenticate this request",
+                });
+            }
+
+            const db = drizzle(c.env.DB);
+            const key = await db
+                .select()
+                .from(apikeyTable)
+                .where(
+                    and(
+                        eq(apikeyTable.id, id),
+                        eq(apikeyTable.referenceId, user.id),
+                    ),
+                )
+                .get();
+
+            if (!key) {
+                throw new HTTPException(404, { message: "API key not found" });
+            }
+
+            await db.delete(apikeyTable).where(eq(apikeyTable.id, id));
+
+            return c.json({ success: true });
+        },
+    )
+    .get(
+        "/key",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get API Key Info",
+            description:
+                "Returns information about the API key used in the request: validity, type (secret/publishable), expiry, permissions, and remaining budget. Useful for validating keys without making generation requests.",
+            responses: {
+                200: {
+                    description: "API key status and information",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                z.object({
+                                    valid: z
+                                        .boolean()
+                                        .describe(
+                                            "Whether the API key is valid and active",
+                                        ),
+                                    type: z
+                                        .enum(["publishable", "secret"])
+                                        .describe("Type of API key"),
+                                    name: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Display name of the API key",
+                                        ),
+                                    expiresAt: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Expiry timestamp in ISO 8601 format, null if never expires",
+                                        ),
+                                    expiresIn: z
+                                        .number()
+                                        .nullable()
+                                        .describe(
+                                            "Seconds until expiry, null if never expires",
+                                        ),
+                                    permissions: z
+                                        .object({
+                                            models: z
+                                                .array(z.string())
+                                                .nullable()
+                                                .describe(
+                                                    "List of allowed model IDs, null = all models allowed",
+                                                ),
+                                            account: z
+                                                .array(z.string())
+                                                .nullable()
+                                                .describe(
+                                                    "List of account permissions, null = no account access",
+                                                ),
+                                        })
+                                        .describe("API key permissions"),
+                                    pollenBudget: z
+                                        .number()
+                                        .nullable()
+                                        .describe(
+                                            "Remaining pollen budget for this key, null = unlimited (uses user balance)",
+                                        ),
+                                    rateLimitEnabled: z
+                                        .boolean()
+                                        .describe(
+                                            "Whether rate limiting is enabled for this key",
+                                        ),
+                                    userId: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Stable id of the user that owns this key — server-attested.",
+                                        ),
+                                    byopApp: z
+                                        .object({
+                                            clientKeyId: z
+                                                .string()
+                                                .describe(
+                                                    "Publishable app key (client id) that minted this key via the BYOP authorize flow.",
+                                                ),
+                                            name: z
+                                                .string()
+                                                .nullable()
+                                                .describe(
+                                                    "Display name of the BYOP app.",
+                                                ),
+                                            appUser: z
+                                                .string()
+                                                .nullable()
+                                                .describe(
+                                                    "User id of the app account that owns the BYOP app key.",
+                                                ),
+                                        })
+                                        .nullable()
+                                        .describe(
+                                            "BYOP app attribution for keys minted through the BYOP authorize flow. Server-attested; null for non-BYOP keys.",
+                                        ),
+                                }),
+                            ),
+                        },
+                    },
+                },
+                401: {
+                    description: "Invalid or missing API key",
+                },
+            },
+        }),
+        async (c) => {
+            const log = c.get("log").getChild("account-key");
+
+            // This endpoint requires API key authentication
+            const apiKey = c.var.auth.apiKey;
+            if (!apiKey) {
+                log.debug("No API key provided");
+                throw new HTTPException(401, {
+                    message:
+                        "API key required. This endpoint validates API keys.",
+                });
+            }
+
+            log.debug("Returning status for API key: {keyId}", {
+                keyId: apiKey.id,
+            });
+
+            // Get key type from metadata (set at key creation time)
+            const keyType: ApiKeyType =
+                (apiKey.metadata?.keyType as ApiKeyType) || "secret";
+
+            // Fetch additional key details from DB
+            const db = drizzle(c.env.DB);
+            const keyDetails = await db
+                .select({
+                    expiresAt: apikeyTable.expiresAt,
+                })
+                .from(apikeyTable)
+                .where(eq(apikeyTable.id, apiKey.id))
+                .get();
+
+            let expiresAt: string | null = null;
+            let expiresIn: number | null = null;
+
+            if (keyDetails?.expiresAt) {
+                // Convert timestamp to ISO string
+                const expiryDate = new Date(keyDetails.expiresAt);
+                expiresAt = expiryDate.toISOString();
+
+                // Calculate seconds until expiry
+                const now = Date.now();
+                const msUntilExpiry = expiryDate.getTime() - now;
+
+                if (msUntilExpiry > 0) {
+                    expiresIn = Math.floor(msUntilExpiry / 1000);
+                } else {
+                    // Key is already expired
+                    expiresIn = 0;
+                }
+            }
+
+            // Format permissions for response
+            const userId = c.var.auth.user?.id;
+            const visibleModelIds =
+                userId && Array.isArray(apiKey.permissions?.models)
+                    ? await getVisibleModelIdsForUser(c.env.DB, userId)
+                    : null;
+            const effectivePermissions = visibleModelIds
+                ? filterPermissionsToVisibleModels(
+                      apiKey.permissions ?? null,
+                      visibleModelIds,
+                  )
+                : (apiKey.permissions ?? null);
+            const permissions = {
+                models: effectivePermissions?.models ?? null,
+                account: effectivePermissions?.account ?? null,
+            };
+
+            const byopApp = apiKey.byopClientKeyId
+                ? {
+                      clientKeyId: apiKey.byopClientKeyId,
+                      name: apiKey.byopClientName ?? null,
+                      appUser: apiKey.byopClientUserId ?? null,
+                  }
+                : null;
+
+            return c.json({
+                valid: true, // If we got here, the key is valid
+                type: keyType,
+                name: apiKey.name || null,
+                expiresAt,
+                expiresIn,
+                permissions,
+                pollenBudget: apiKey.pollenBalance ?? null,
+                // Generation rate limiting applies to publishable keys only.
+                rateLimitEnabled: keyType === "publishable",
+                // Server-attested identity. Downstream services (media catalog)
+                // stamp ownership from these values — never from request
+                // params — so user and BYOP app ids cannot be spoofed.
+                userId: c.var.auth.user?.id ?? null,
+                byopApp,
+            });
+        },
+    )
+    .get(
+        "/key/usage",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get API Key Usage",
+            description:
+                "Returns usage history for the API key used in the request. No scope required — a key can always read its own usage. Use `before` with `before_event_id` for stable cursor-based pagination. For account-wide usage across all keys, use `/account/usage` with `account:usage`.",
+            responses: {
+                200: {
+                    description: "Usage records for this key",
+                    content: {
+                        "application/json": {
+                            schema: resolver(usageResponseSchema),
+                        },
+                    },
+                },
+                401: {
+                    description:
+                        "API key required (this endpoint is key-auth only)",
+                },
+            },
+        }),
+        validator("query", usageQuerySchema),
+        async (c) => {
+            const log = c.get("log").getChild("key-usage");
+            const apiKey = c.var.auth.apiKey;
+            if (!apiKey) {
+                throw new HTTPException(401, {
+                    message:
+                        "API key required. This endpoint is authenticated by API key only.",
+                });
+            }
+            const user = c.var.auth.requireUser();
+
+            const {
+                format,
+                limit,
+                before,
+                before_event_id: beforeEventId,
+                days,
+                granularity,
+                period,
+                models,
+            } = c.req.valid("query");
+            const usageWindow = resolveUsageWindow(days, {
+                granularity,
+                period,
+            });
+
+            log.debug(
+                "Fetching key usage: userId={userId} keyId={keyId} days={days}",
+                { userId: user.id, keyId: apiKey.id, days },
+            );
+
+            return respondDetailedUsage(c, log, {
+                userId: user.id,
+                apiKeyIds: [apiKey.id],
+                filenamePrefix: "pollinations-key-usage",
+                filenamePeriod: usageWindow.filenamePart,
+                format,
+                limit,
+                models,
+                since: usageWindow.since,
+                until: usageWindow.until,
+                before,
+                beforeEventId,
+            });
+        },
+    );

@@ -1,0 +1,27 @@
+{
+  "name": "CatGPT",
+  "short_name": "catgpt",
+  "description": "A cat-themed AI chatbot that responds like a feline friend",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#a3e635",
+  "background_color": "#110518",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

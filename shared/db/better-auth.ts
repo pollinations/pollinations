@@ -1,0 +1,499 @@
+// Better Auth and Pollinations tables share this schema. Preserve the custom
+// fields and indexes when regenerating Better Auth's tables.
+
+import { LISTING_TYPES } from "../community-endpoints.ts";
+import type { SafetyFeature } from "../schemas/safety.ts";
+import { relations, sql } from "drizzle-orm";
+import {
+  check,
+  sqliteTable,
+  text,
+  integer,
+  real,
+  index,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
+
+export const user = sqliteTable("user", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  emailVerified: integer("email_verified", { mode: "boolean" })
+    .default(false)
+    .notNull(),
+  image: text("image"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+  role: text("role"),
+  banned: integer("banned", { mode: "boolean" }).default(false),
+  banReason: text("ban_reason"),
+  banExpires: integer("ban_expires", { mode: "timestamp" }),
+  githubId: integer("github_id"),
+  githubUsername: text("github_username"),
+  // Public branding shared by every community model owned by this account.
+  communityProviderName: text("community_provider_name"),
+  communityProviderUrl: text("community_provider_url"),
+  tier: text("tier").default("spore").notNull(),
+  tierBalance: real("tier_balance"),
+  packBalance: real("pack_balance"),
+  lastTierGrant: integer("last_tier_grant"),
+  stripeCustomerId: text("stripe_customer_id").unique(),
+  autoTopUpEnabled: integer("auto_top_up_enabled", { mode: "boolean" })
+    .default(sql`0`)
+    .notNull(),
+  autoTopUpAmountUsd: integer("auto_top_up_amount_usd"),
+}, (table) => [
+  index("idx_user_email").on(table.email),
+  index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),
+  // GitHub profile lookup for quest checks and account display.
+  uniqueIndex("user_github_id_unique").on(table.githubId),
+]);
+
+export const session = sqliteTable("session", {
+  id: text("id").primaryKey(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  token: text("token").notNull().unique(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  impersonatedBy: text("impersonated_by"),
+}, (table) => [
+  index("idx_session_user_id").on(table.userId),
+]);
+
+export const account = sqliteTable("account", {
+  id: text("id").primaryKey(),
+  accountId: text("account_id").notNull(),
+  providerId: text("provider_id").notNull(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  idToken: text("id_token"),
+  accessTokenExpiresAt: integer("access_token_expires_at", {
+    mode: "timestamp",
+  }),
+  refreshTokenExpiresAt: integer("refresh_token_expires_at", {
+    mode: "timestamp",
+  }),
+  scope: text("scope"),
+  password: text("password"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+}, (table) => [
+  index("idx_account_user_id").on(table.userId),
+]);
+
+export const verification = sqliteTable("verification", {
+  id: text("id").primaryKey(),
+  identifier: text("identifier").notNull(),
+  value: text("value").notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+}, (table) => [
+  index("idx_verification_identifier").on(table.identifier),
+]);
+
+export const apikey = sqliteTable("apikey", {
+  id: text("id").primaryKey(),
+  configId: text("config_id").default("default").notNull(),
+  name: text("name"),
+  start: text("start"),
+  prefix: text("prefix"),
+  key: text("key").notNull(),
+  referenceId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  refillInterval: integer("refill_interval"),
+  refillAmount: integer("refill_amount"),
+  lastRefillAt: integer("last_refill_at", { mode: "timestamp" }),
+  enabled: integer("enabled", { mode: "boolean" }).default(true),
+  rateLimitEnabled: integer("rate_limit_enabled", { mode: "boolean" }).default(
+    true,
+  ),
+  rateLimitTimeWindow: integer("rate_limit_time_window").default(1000),
+  rateLimitMax: integer("rate_limit_max").default(5),
+  requestCount: integer("request_count").default(0),
+  remaining: integer("remaining"),
+  lastRequest: integer("last_request", { mode: "timestamp" }),
+  expiresAt: integer("expires_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  permissions: text("permissions"),
+  metadata: text("metadata"),
+  pollenBalance: real("pollen_balance"),
+  byopClientKeyId: text("byop_client_key_id"),
+}, (table) => [
+  index("idx_apikey_key").on(table.key),
+  index('idx_apikey_expires_at').on(table.expiresAt),
+  index("idx_apikey_user_id").on(table.referenceId),
+  index("idx_apikey_config_id").on(table.configId),
+  index("idx_apikey_byop_client_key_id").on(table.byopClientKeyId),
+]);
+
+export const oauthClient = sqliteTable("oauth_client", {
+  id: text("id").primaryKey(),
+  clientId: text("client_id").notNull().unique(),
+  clientSecret: text("client_secret"),
+  disabled: integer("disabled", { mode: "boolean" }).default(false),
+  skipConsent: integer("skip_consent", { mode: "boolean" }),
+  enableEndSession: integer("enable_end_session", { mode: "boolean" }),
+  subjectType: text("subject_type"),
+  scopes: text("scopes", { mode: "json" }).$type<string[]>(),
+  userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
+  createdAt: integer("created_at", { mode: "timestamp" }),
+  updatedAt: integer("updated_at", { mode: "timestamp" }),
+  name: text("name"),
+  uri: text("uri"),
+  icon: text("icon"),
+  contacts: text("contacts", { mode: "json" }).$type<string[]>(),
+  tos: text("tos"),
+  policy: text("policy"),
+  softwareId: text("software_id"),
+  softwareVersion: text("software_version"),
+  softwareStatement: text("software_statement"),
+  redirectUris: text("redirect_uris", { mode: "json" })
+    .$type<string[]>()
+    .notNull(),
+  postLogoutRedirectUris: text("post_logout_redirect_uris", { mode: "json" })
+    .$type<string[]>(),
+  tokenEndpointAuthMethod: text("token_endpoint_auth_method"),
+  grantTypes: text("grant_types", { mode: "json" }).$type<string[]>(),
+  responseTypes: text("response_types", { mode: "json" }).$type<string[]>(),
+  public: integer("public", { mode: "boolean" }),
+  type: text("type"),
+  requirePKCE: integer("require_pkce", { mode: "boolean" }),
+  referenceId: text("reference_id"),
+  metadata: text("metadata", { mode: "json" }).$type<Record<string, unknown>>(),
+});
+
+export const oauthRefreshToken = sqliteTable("oauth_refresh_token", {
+  id: text("id").primaryKey(),
+  token: text("token").notNull(),
+  clientId: text("client_id")
+    .notNull()
+    .references(() => oauthClient.clientId, { onDelete: "cascade" }),
+  sessionId: text("session_id").references(() => session.id, {
+    onDelete: "set null",
+  }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  referenceId: text("reference_id"),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  revoked: integer("revoked", { mode: "timestamp" }),
+  authTime: integer("auth_time", { mode: "timestamp" }),
+  scopes: text("scopes", { mode: "json" }).$type<string[]>().notNull(),
+});
+
+export const oauthAccessToken = sqliteTable("oauth_access_token", {
+  id: text("id").primaryKey(),
+  token: text("token").notNull().unique(),
+  clientId: text("client_id")
+    .notNull()
+    .references(() => oauthClient.clientId, { onDelete: "cascade" }),
+  sessionId: text("session_id").references(() => session.id, {
+    onDelete: "set null",
+  }),
+  userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
+  referenceId: text("reference_id"),
+  refreshId: text("refresh_id").references(() => oauthRefreshToken.id, {
+    onDelete: "set null",
+  }),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  scopes: text("scopes", { mode: "json" }).$type<string[]>().notNull(),
+});
+
+export const oauthConsent = sqliteTable("oauth_consent", {
+  id: text("id").primaryKey(),
+  clientId: text("client_id")
+    .notNull()
+    .references(() => oauthClient.clientId, { onDelete: "cascade" }),
+  userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
+  referenceId: text("reference_id"),
+  scopes: text("scopes", { mode: "json" }).$type<string[]>().notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+});
+
+export const stripeAutoTopUpAttempt = sqliteTable("stripe_auto_top_up_attempt", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  stripeInvoiceId: text("stripe_invoice_id").unique(),
+  amountUsd: integer("amount_usd").notNull(),
+  status: text("status").notNull(),
+  failureReason: text("failure_reason"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+  completedAt: integer("completed_at", { mode: "timestamp" }),
+}, (table) => [
+  index("idx_stripe_auto_top_up_attempt_user_id").on(table.userId),
+  index("idx_stripe_auto_top_up_attempt_status").on(table.status),
+]);
+
+export const stripeCardFingerprintAttempt = sqliteTable("stripe_card_fingerprint_attempt", {
+  eventId: text("event_id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  cardFingerprint: text("card_fingerprint").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  index("idx_stripe_card_fingerprint_attempt_user_created").on(
+    table.userId,
+    table.createdAt,
+  ),
+  index("idx_stripe_card_fingerprint_attempt_user_fingerprint").on(
+    table.userId,
+    table.cardFingerprint,
+  ),
+]);
+
+export const communityEndpoint = sqliteTable("community_endpoint", {
+  id: text("id").primaryKey(),
+  ownerUserId: text("owner_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  // What this listing IS to callers, and the only thing deciding whether a
+  // call is sent a run token that spends the caller's balance.
+  //   proxy         → the owner's server, called with its upstream secret
+  //   prompt_agent  → an agent Gen runs, named by this row's id
+  //   endpoint_agent → an agent on the owner's own server
+  type: text("type", { enum: LISTING_TYPES }).default("proxy").notNull(),
+  // Every listing stores an OpenAI-compatible target. Prompt agents use an
+  // environment-neutral sentinel which is never routed.
+  baseUrl: text("base_url").notNull(),
+  upstreamModel: text("upstream_model").notNull(),
+  // Gateway policy shared by every community model and agent type.
+  requiredSafetyFeatures: text("required_safety_features", { mode: "json" })
+    .$type<SafetyFeature[]>()
+    .default(sql`'[]'`)
+    .notNull(),
+  // Everything that belongs to one kind of listing rather than all of them.
+  // Shape is selected by `type`; read it with parseListingPayload. Fields a
+  // kind does not have simply have nowhere to live, which is what replaced the
+  // per-field rejections the write path used to carry.
+  payload: text("payload").notNull().default("{}"),
+  // Models default to private (owner-only and free). Public visibility is
+  // allowlist-gated and may be free or owner-priced.
+  visibility: text("visibility", { enum: ["private", "public"] })
+    .default("private")
+    .notNull(),
+  // A public price change or private-to-public transition becomes effective
+  // 3 hours after it is submitted. The pending payload is only meaningful
+  // for proxy listings; visibility applies to every listing type.
+  pendingPayload: text("pending_payload"),
+  pendingVisibility: text("pending_visibility", {
+    enum: ["private", "public"],
+  }),
+  pendingAt: integer("pending_at", { mode: "timestamp" }),
+  hiddenAt: integer("hidden_at", { mode: "timestamp" }),
+  hiddenReason: text("hidden_reason"),
+  hiddenBy: text("hidden_by"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+}, (table) => [
+  index("idx_community_endpoint_owner_user_id").on(table.ownerUserId),
+  uniqueIndex("idx_community_endpoint_owner_name").on(
+    table.ownerUserId,
+    table.name,
+  ),
+  check(
+    "community_endpoint_type",
+    sql`type IN ('proxy', 'prompt_agent', 'endpoint_agent')`,
+  ),
+  check(
+    "community_endpoint_prompt_agent_model",
+    sql`type != 'prompt_agent' OR upstream_model = id`,
+  ),
+  check(
+    "community_endpoint_base_url",
+    sql`type != 'prompt_agent' OR base_url = 'https://agent-runtime.invalid/api/agent-runtime/v1'`,
+  ),
+]);
+
+// Drizzle relations for query builder joins
+export const userRelations = relations(user, ({ many }) => ({
+  apikeys: many(apikey),
+  sessions: many(session),
+  accounts: many(account),
+  stripeAutoTopUpAttempts: many(stripeAutoTopUpAttempt),
+  stripeCardFingerprintAttempts: many(stripeCardFingerprintAttempt),
+  communityEndpoints: many(communityEndpoint),
+}));
+
+export const apikeyRelations = relations(apikey, ({ one }) => ({
+  user: one(user, {
+    fields: [apikey.referenceId],
+    references: [user.id],
+  }),
+}));
+
+export const sessionRelations = relations(session, ({ one }) => ({
+  user: one(user, {
+    fields: [session.userId],
+    references: [user.id],
+  }),
+}));
+
+export const accountRelations = relations(account, ({ one }) => ({
+  user: one(user, {
+    fields: [account.userId],
+    references: [user.id],
+  }),
+}));
+
+export const stripeAutoTopUpAttemptRelations = relations(
+  stripeAutoTopUpAttempt,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [stripeAutoTopUpAttempt.userId],
+      references: [user.id],
+    }),
+  }),
+);
+
+export const stripeCardFingerprintAttemptRelations = relations(
+  stripeCardFingerprintAttempt,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [stripeCardFingerprintAttempt.userId],
+      references: [user.id],
+    }),
+  }),
+);
+
+export const communityEndpointRelations = relations(communityEndpoint, ({ one }) => ({
+  owner: one(user, {
+    fields: [communityEndpoint.ownerUserId],
+    references: [user.id],
+  }),
+}));
+
+// Device Authorization Grant (RFC 8628) table
+export const deviceCode = sqliteTable("device_code", {
+  id: text("id").primaryKey(),
+  deviceCode: text("device_code").notNull(),
+  userCode: text("user_code").notNull(),
+  userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  status: text("status").notNull(),
+  clientId: text("client_id"),
+  scope: text("scope"),
+}, (table) => [
+  index("idx_device_code_device_code").on(table.deviceCode),
+  index("idx_device_code_user_code").on(table.userCode),
+]);
+
+export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
+  sessionId: text("session_id").primaryKey(),
+  eventId: text("event_id").notNull(),
+  eventType: text("event_type").notNull(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  pollenCredited: real("pollen_credited").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  index("idx_stripe_checkout_credits_user_id").on(table.userId),
+]);
+
+export const polarCheckoutCredits = sqliteTable("polar_checkout_credits", {
+  orderId: text("order_id").primaryKey(),
+  eventId: text("event_id").notNull(),
+  eventType: text("event_type").notNull(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  pollenCredited: real("pollen_credited").notNull(),
+  polarCreatedAt: integer("polar_created_at").notNull(),
+  amount: integer("amount"),
+  totalAmount: integer("total_amount"),
+  currency: text("currency"),
+  customerId: text("customer_id"),
+  productId: text("product_id"),
+  productName: text("product_name"),
+  productSlug: text("product_slug"),
+  metadataJson: text("metadata_json"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
+  index("idx_polar_checkout_credits_user_id").on(table.userId),
+]);
+
+// Reward ledger: one row == one earned reward. `claimedAt` is null until the
+// user claims it, and only claiming credits the user's balance. Everything that
+// can earn pollen is modelled as a reward, so there is no reward-kind
+// discriminator — `questId` already names what was earned. The old
+// GitHub-shaped quest_payout_credits table is backfilled into here and dropped
+// by the rewards migration.
+export const rewards = sqliteTable("rewards", {
+  id: text("id").primaryKey(),
+  // Idempotency guard. Encodes the quest's completion scope, e.g.
+  // "quest:{issue}" or "quest:{questId}:github:{githubId}". The GitHub id in
+  // the key is what stops a replacement account re-earning the same reward.
+  idempotencyKey: text("idempotency_key").notNull().unique(),
+  userId: text("user_id")
+    .references(() => user.id, { onDelete: "set null" }),
+  // Catalog id of the quest that was earned; null for one-off rewards.
+  questId: text("quest_id"),
+  // Quest title snapshotted when earned, so history renders it directly.
+  title: text("title").notNull(),
+  // Optional quest link snapshotted when earned.
+  url: text("url"),
+  pollenAmount: real("pollen_amount").notNull(),
+  // Which balance bucket will be credited when claimed: "tier" or "pack".
+  balanceBucket: text("balance_bucket").notNull(),
+  earnedAt: integer("earned_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  claimedAt: integer("claimed_at", { mode: "timestamp" }),
+}, (table) => [
+  index("idx_rewards_user_id").on(table.userId),
+]);

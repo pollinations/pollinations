@@ -1,0 +1,43 @@
+DESCRIPTION >
+    D7 activations: users who made their first API request within 7 days
+    of registration, grouped by registration week. Reads first activity from
+    user_first_activity_mv so dashboard requests do not scan raw
+    generation_event_v2.
+
+TOKEN tinybird_read READ
+
+NODE registrations
+SQL >
+    %
+    SELECT
+        id AS user_id,
+        assumeNotNull(created_at) AS created_at_ts,
+        toStartOfWeek(fromUnixTimestamp(assumeNotNull(created_at)), 1) AS registration_week
+    FROM d1_user
+    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)
+        AND created_at IS NOT NULL
+        AND created_at >= {{Int64(min_created_at, 0)}}
+
+NODE first_activity
+SQL >
+    %
+    SELECT
+        user_id,
+        minMerge(first_activity_time) AS first_activity_time
+    FROM user_first_activity_mv
+    GROUP BY user_id
+
+NODE kpi_weekly_activations
+SQL >
+    SELECT
+        formatDateTime(r.registration_week, '%Y-%m-%d') AS week,
+        countIf(
+            a.first_activity_time IS NOT NULL
+            AND dateDiff('day', fromUnixTimestamp(r.created_at_ts), a.first_activity_time) BETWEEN 0 AND 7
+        ) AS activations
+    FROM registrations r
+    LEFT JOIN first_activity a ON r.user_id = a.user_id
+    GROUP BY r.registration_week
+    ORDER BY r.registration_week ASC
+
+TYPE endpoint

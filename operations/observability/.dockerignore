@@ -1,0 +1,6 @@
+.env
+.dev.vars
+grafana-data
+node_modules
+npm-debug.log
+secrets

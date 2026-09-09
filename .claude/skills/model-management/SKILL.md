@@ -1,0 +1,239 @@
+---
+name: model-management
+description: "Add, update, rename, reroute, price, or remove Pollinations text, image, video, audio, embeddings, realtime, OCR, SVG, and 3D models. Use for model research, provider changes, capability or public-endpoint edits, and model PRs."
+---
+
+# Model management
+
+Use this workflow for every model change. Keep the implementation minimal, preserve the public contract unless the user explicitly approves a change, and prove provider behavior with real requests.
+
+## Load context first
+
+1. Read the repository `AGENTS.md`.
+2. Read the live registry entry, runtime config, handler, schemas, and tests. The repository is the source of truth for what Pollinations currently offers.
+3. Read the relevant local active plan when present:
+   - `temp/manage_inference.md`
+   - `temp/manage_inferenceport.md`
+   - `temp/manage_gpus.md`
+   - `temp/manage_azure_limits.md`
+4. Check GitHub for open or merged PRs that may already implement or conflict with the work.
+5. Check current official provider documentation, catalog, pricing, availability, quotas, and deprecation notices. Then probe the exact route; the live response wins over documentation.
+
+The `temp` plans are ignored operational state, not repository truth. When working in a linked worktree where they are absent, locate the primary checkout with `git worktree list` and read them there. Never copy balances, prices, PR statuses, quotas, or candidate rankings into this skill.
+
+Read [operating-policy.md](references/operating-policy.md) before recommending a route or model. Read only the other references needed for the task:
+
+| Task | Required references |
+|---|---|
+| Find code or run locally | [repository-and-local-testing.md](references/repository-and-local-testing.md) |
+| Add, update, reroute, rename, or remove | [change-and-test-matrix.md](references/change-and-test-matrix.md) |
+| New model, provider, model ID, or price | [billing-verification.md](references/billing-verification.md) |
+
+## Mandatory confirmation gate
+
+Apply this gate only to a proposed tracked model mutation. Do not turn a
+read-only status confirmation, an approval of an already-documented planning
+decision, or a correction of an operational fact into a different mutation.
+Treat a generic “confirm” as approval only for the exact contract just shown.
+
+Do not edit any model until the user confirms its complete business and inference contract. Inspect the code and provider first; do not ask the user to discover values for you.
+
+Show one complete row per model:
+
+| Field | Required value |
+|---|---|
+| Canonical name | Public model ID after the change |
+| Aliases | Every compatibility alias, or `none` |
+| `priceMultiplier` | Exact multiplier after provider cost |
+| `paidOnly` | Whether purchased pack balance is required |
+| Pollinations GPU | `yes` only if Pollinations operates the production hardware |
+| Registry provider | Configured primary provider |
+| Primary route | Provider, deployment/host, and exact upstream model ID |
+| Best fallback candidate | Provider, deployment/host, exact upstream model ID, and why it is the best viable alternative; or `none found` with the searched routes |
+| Pollinations fallback | `use <candidate>` or `none`, with the reason for declining or lacking a viable candidate |
+
+Ask:
+
+> Please confirm: canonical name **X**, aliases **A/none**, price multiplier **M**, paid-only **yes/no**, Pollinations GPU **yes/no**, registry provider **P**, primary route **R**, best fallback candidate **C/none found**, and Pollinations fallback decision **use C/none**. Are all of these correct?
+
+An answer approves only the values shown. If a value is unknown, inferred, conflicting, or route-dependent, label it `UNKNOWN`, explain the evidence, and wait for that exact decision. A batch approval is valid only when every row is complete.
+
+### Public API changes require separate confirmation
+
+Model approval does not authorize adding, renaming, removing, or changing a public endpoint, method, transport, request or response schema, streaming behavior, or event protocol. Do not propose an API-surface change without a concrete user or developer problem it solves.
+
+Before editing, present:
+
+- the user/developer problem and the current public contract;
+- the exact proposed routes, methods, transports, schemas, streaming behavior, and events;
+- the compatibility reference, resolved by the order in step 4;
+- whether the change is additive, behavioral, deprecating, or breaking, and the affected clients;
+- the migration, coexistence, and removal plan, or `none`.
+
+State plainly: `This adds/changes the public API: ...` Then ask for explicit confirmation of that exact API change. If the problem, standard, or compatibility impact is unclear, do not edit.
+
+### Secrets are a separate approval
+
+Model approval never authorizes adding, rotating, synchronizing, deploying, revoking, or otherwise mutating a credential. Follow the exact approval wording, dedicated-PR requirement, execution order, verification, and rollback rules in `AGENTS.md`. Do not duplicate or weaken that process here.
+
+## Workflow
+
+### 1. Reconcile current state
+
+- Resolve aliases to the canonical registry entry.
+- Before any canonical rename, count production and staging API keys whose
+  `permissions.models` contains the old canonical ID. Verify the deployed
+  authorization code resolves stored aliases; registry aliases alone cannot
+  protect keys while an old exact-string reader is still running.
+- Audit every modality registry and every model change merged to `main` since
+  the current production revision; production can lag behind `main`.
+- Trace every reachable runtime route and any configured fallback.
+- Distinguish the configured provider from the provider that served an observed request.
+- Compare the intended change with open PRs and active plan entries.
+- Remove shipped work from active plans after production verification; do not keep a completed archive.
+
+### 2. Research the exact route
+
+- Use official provider/model sources for release, model identity, pricing, regions, preview status, quotas, rate limits, context, inputs, outputs, tools, caching, and deprecation.
+- Deduplicate the canonical model across providers.
+- List material route differences. Equal model names do not prove equal capabilities.
+- Probe the exact deployment and request shape Pollinations will use.
+- For every addition or modification, run a fresh web search across provider catalogs and official documentation to discover viable fallback routes; do not rely only on repository integrations or remembered availability. Verify each serious candidate against its current official model page and pricing, then probe the exact route. Compare checkpoint identity, capabilities, parameters, formats, safety/privacy, availability, latency, price, permissions, and billing. Recommend the best candidate or state `none found`; never omit the fallback decision because the primary route is healthy.
+- Inspect provider-managed routing/fallback defaults and controls. Report identity, capability, pricing, residency, and observability tradeoffs.
+
+### 3. Confirm the contract
+
+Present the mandatory row and obtain explicit confirmation before editing. If a capability or access change is intentional, state it plainly.
+
+### 4. Implement the smallest complete change
+
+- Canonical public IDs use `<publisher-slug>/<official-model-slug>`. Keep both
+  components lowercase, preserve the publisher's model family and version,
+  and follow the publisher's public slug when one exists. Never invent, drop,
+  or silently advance a version.
+- `publisher` is the human-readable publisher (`OpenAI`, `Anthropic`, `xAI`), not
+  the inference provider. Keep provider deployment IDs, casing, punctuation,
+  and revision suffixes internal when they are routing details rather than the
+  publisher's public model identity.
+- Never encode an inference provider in a public canonical ID. Deduplicate the
+  same publisher model across providers behind one public identity and declare
+  automatic routing through the registry's ordered fallback relationship.
+- Name hidden fallback registry entries `<public-canonical-id>:<provider>`.
+  The public registry key, catalogs, request model, and permissions remain the
+  public ID. Keep fallback identity separate from priority: never use
+  `:fallback`, numbered fallback suffixes, or priority labels in these IDs.
+- For a pinned OpenRouter endpoint, append a meaningful qualifier from the start:
+  `<public-canonical-id>:<provider>:<route-qualifier>`, such as
+  `google/gemini-2.5-flash-lite:openrouter:vertex-global` or
+  `google/gemini-2.5-flash-lite:openrouter:ai-studio`. Distinguish multiple
+  deployments through the same provider explicitly. Use lowercase labels;
+  never encode priority or the temporary fallback role. Preserve fallback
+  registry IDs when changing their order. For provider-managed routing without
+  a fixed backend, do not invent an endpoint qualifier.
+- The `provider` field and route configuration remain authoritative; the name
+  does not select an upstream endpoint. Keep fallback-only entries hidden,
+  without aliases, and excluded from catalogs and direct model selection.
+  Route-specific cost belongs on the serving definition; callers retain the
+  requested public model's price. Use the existing shared fallback mechanism.
+- Preserve existing `resolved_model_requested`, `model_used`, `x-model-used`,
+  provider, per-attempt, community and cache attribution semantics during a
+  canonical rename. Recorded IDs may adopt the new spelling, including hidden
+  fallback registry IDs; do not force primary IDs into execution identifiers.
+  Explicit primary execution IDs and their analytics/header contract are
+  deferred to [#14543](https://github.com/pollinations/pollinations/issues/14543).
+  Review affected consumers and any public API changes separately; do not
+  silently repurpose `x-model-used` or rewrite historical events.
+- Preserve the complete public canonical ID, including existing suffixes, when
+  naming an internal route. For example, a route for
+  `google/gemini-2.5-flash-lite:search` could be
+  `google/gemini-2.5-flash-lite:search:openrouter:ai-studio`.
+  These are naming examples, not declarations of configured routes. Link
+  routes through explicit registry keys; do not split or strip colon suffixes
+  to infer providers or fallback relationships. The fallback must preserve
+  the public model's behavior, including search in this example.
+- If users must deliberately choose a separately priced or paid-only offering
+  of the exact same publisher model, expose it as
+  `<public-canonical-id>:paid`, never with the inference provider in the slug.
+  Treat it as a separate public contract with its own price, `paidOnly` value,
+  permissions, and aliases. Do not use `:paid` for automatic fallback routing.
+- When multiple entries are only operations or parameter presets of the same
+  publisher model, consolidate them under that model identity and select the
+  operation through an explicit endpoint or request field. Do not create a
+  second canonical model or make an alias select behavior.
+- Reuse existing handlers, transforms, provider configs, schemas, and generic fallback infrastructure.
+- Implement only the explicitly approved fallback decision. Use the shared generic fallback system for an approved pair; do not add a model-specific retry layer or an unapproved fallback.
+- Expose a confirmed new public capability (per the API-change confirmation above) through two surfaces backed by one implementation: a Pollinations-native route outside `/v1` and a standard-compatible route under `/v1`.
+- Resolve the compatibility contract in this order: (1) current official OpenAI API; (2) if OpenAI defines no equivalent, the current published OpenRouter contract — a protocol-design reference here, not an inference-provider fallback; (3) if neither defines the capability, stop for an explicit API-contract decision. Document the exact reference checked.
+- Treat `/v1` as a compatibility namespace: match the selected standard's route, transport, request, response, streaming, and event contracts exactly, and keep provider-specific protocols behind the route adapters — never a Pollinations-specific or upstream-provider schema under `/v1`.
+- Prefer the selected standard's schema on the Pollinations-native route too; deliberate native divergence requires its own explicit API-change confirmation.
+- Do not collapse capabilities with materially different inputs, outputs, or transports into one endpoint merely by switching `model`. Keep distinct operations separate while reusing their shared internal handler, authorization, billing, and observability paths.
+- Treat aliases as identity-only: resolve to the canonical model, then discard the requested alias for behavior. Never infer parameters from alias spelling such as `-high`, `-search`, `-reasoning`, or `-1080p`; only explicit request parameters and canonical defaults apply. Keep a separate canonical model if the old behavior must remain.
+- Use the resolved registry entry for canonical model identity in generic handlers. Never maintain handler-level lists of model IDs for response, tracking, billing, or routing behavior.
+- Canonicalize all stale stored aliases found by the same registry-wide audit in
+  one D1 migration PR. Replace old IDs, preserve unrelated permission fields
+  and array order, deduplicate old/new pairs, prove idempotence, and verify all
+  audited old-ID counts are zero after deployment.
+- Keep every migration statement within D1's per-query CPU limit: one statement
+  per alias, and prefilter with `instr()` inside `CASE` so JSON functions never
+  run on non-matching rows. A single whole-table JSON scan fails with error
+  7429 at production scale (~150k apikey rows).
+- API-key create and update paths must store recognized aliases as canonical
+  IDs, while preserving unknown and community IDs, so migrations do not need to
+  repair newly written aliases again.
+- Before promoting a canonical rename or its migration, deploy and verify
+  alias-aware permission checks against the old registry, which must already
+  recognize every future canonical ID as an alias. Cover generation, catalogs,
+  realtime, fallback filtering and readback. Merging this prerequisite is not
+  sufficient: verify it is live before the migration can run.
+- For #13076, production migration is gated by the repository variable
+  `CANONICAL_MODEL_PERMISSION_COMPAT_VERIFIED=true`. Set it only after live
+  old/new-ID restricted-key checks pass on the compatibility deployment.
+  The post-deploy cleanup runs after both workers succeed; for a deployment
+  retry use `service=all` with `finalize_canonical_permissions=true`.
+- Keep request-time permission normalization permanently and use the existing
+  registry resolver, preserving unknown/community IDs and empty allowlists.
+  Writes and migrations still store canonical IDs. After both workers deploy,
+  repeat the bounded permission cleanup to catch old Enter writes made after
+  the migration; verify no audited old IDs remain. Do not rewrite historical
+  analytics using today's mutable aliases.
+- Update every consumer of a changed public ID at once.
+- Add aliases only for existing compatibility contracts or explicit approval.
+- Keep model names and aliases in `shared/registry/`; use the live model
+  catalog for public listings rather than maintaining a duplicate Markdown list.
+- Keep one PR per model or tightly coupled model-family change.
+- Never edit generated `APIDOCS.md`; update the source schema or route.
+
+### 5. Verify end to end
+
+- Run the relevant rows in [change-and-test-matrix.md](references/change-and-test-matrix.md).
+- For new models and provider/model-ID changes, run the full declared-modality matrix and [billing-verification.md](references/billing-verification.md).
+- Test aliases, permissions, errors, caching, capacity, and `/models` metadata.
+- When a fallback is configured, probe it directly and run the same applicable E2E matrix through a forced fallback, including capabilities, parameters, permissions, cache behavior, billing, provider attribution, errors, and expected burst. When no fallback is approved, record the researched candidate and rejection reason.
+- Verify all media is fully returned within the supported request-lifetime budget, including the durable-media checks when applicable.
+- Record exact evidence and uncertainty in the PR.
+
+### 6. Open the PR
+
+Before publishing:
+
+- Format changed files with the repository formatter.
+- Run focused tests and type checks for every touched service.
+- Review the complete diff for unrelated changes and dead code.
+- Include the approved contract, exact primary and fallback candidates, fallback decision, pricing sources, live probes, E2E results, billing evidence, capacity results, limitations, and deprecation/quota gates.
+- Leave the PR draft when a live, quota, latency, safety, or product decision remains unresolved.
+
+## Completion gate
+
+A model change is not complete until all applicable statements are true:
+
+- The configured model, aliases, provider, route, price, access, modalities, and capabilities match the approved contract.
+- Direct-provider and local E2E requests passed for every declared surface.
+- The best fallback candidate and use/decline decision are documented; every configured fallback passed direct and forced-fallback E2E verification.
+- No existing capability disappeared unless explicitly approved.
+- Every non-zero usage field is accounted for and billed at the confirmed rate.
+- Malformed or rejected requests return useful 4xx responses rather than opaque 5xx responses.
+- Capacity and media latency fit the expected production load.
+- The catalog description is developer-facing, does not repeat the title, and the publisher logo resolves.
+- No public API surface was added or changed without its separate explicit confirmation.
+- No unapproved secret or deployment mutation occurred.
+- The PR contains only this model or tightly coupled family.

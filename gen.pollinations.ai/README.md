@@ -1,0 +1,74 @@
+# gen.pollinations.ai
+
+Simplified API gateway for pollinations.ai, providing clean URLs via Cloudflare Workers service bindings.
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Request → gen.pollinations.ai worker (pollinations-gen)        │
+│              │                                                  │
+│              │ Service Binding (zero latency, same thread)      │
+│              ▼                                                  │
+│           enter.pollinations.ai worker (pollinations-enter)     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## URL Mapping
+
+| gen.pollinations.ai | Owner             |
+| ------------------- | ----------------- |
+| `/`                 | redirect → `/docs` |
+| `/docs`             | local API docs    |
+| `/models`           | generation worker |
+| `/image/*`          | generation worker |
+| `/text/*`           | generation worker |
+| `/v1/*`             | generation worker |
+| `/account/*`        | enter account API |
+
+## Development
+
+```bash
+# Install dependencies (first time only)
+npm install -D wrangler typescript @cloudflare/workers-types
+
+# Run locally (requires enter.pollinations.ai running on port 3000)
+npm run dev
+
+# Type check
+npm run typecheck
+```
+
+### Local Development with Service Bindings
+
+Run both workers simultaneously:
+
+```bash
+# Terminal 1: Run enter worker
+cd ../enter.pollinations.ai && npm run dev
+
+# Terminal 2: Run gen worker
+cd ../gen.pollinations.ai && npm run dev
+
+# Test
+curl http://localhost:8788/models
+```
+
+## Deployment
+
+```bash
+# Deploy to staging
+npm run deploy:staging
+
+# Deploy to production (requires enter worker deployed first)
+npm run deploy:production
+```
+
+**Note:** The target worker (`pollinations-enter`) must be deployed before `pollinations-gen`.
+
+## Benefits
+
+- **Zero latency** - Service bindings run in the same V8 isolate
+- **Clean separation** - Independent deployments and codebases
+- **Simple code** - Just path rewriting, no complex logic
+- **No extra cost** - Service binding calls don't add to request costs

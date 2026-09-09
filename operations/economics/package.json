@@ -1,0 +1,11 @@
+{
+  "name": "economics",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix web",
+    "build": "npm run build --prefix web",
+    "deploy": "npm run deploy --prefix web",
+    "test": "npm run test --prefix web",
+    "typecheck": "npm run typecheck --prefix web"
+  }
+}

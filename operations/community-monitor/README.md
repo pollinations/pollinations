@@ -1,0 +1,219 @@
+# Community model monitor
+
+Headless coding agent that watches community text and image models (the
+`owner/model` endpoints registered via My Models), probes them, reads Tinybird
+health, and hides unreliable ones from model listings while keeping exact-ID
+calls available. Runs on the `monitoring-agents` EC2 box (ssh alias
+`community-monitor`, see `operations/infrastructure/gpu/GPU_INSTANCES.md`),
+not in this repo's CI. The Discord bots share that host.
+
+## What's here vs what's live-only
+
+Committed (source of truth — edit here, then deploy):
+- `CYCLE.md` — the agent's full rulebook, re-read fresh every cycle.
+- `probe.mjs` — one low-load probe sweep across all community models (see
+  "Probe load" below).
+- `seven-day-health.mjs` — deterministic daily 7-day effective-success audit.
+  Final request outcomes count successful fallback rescues; image-provider 4xx
+  count as failures while ordinary client 4xx remain excluded. Models at 80%
+  or better in the freshest 24h/48h window with at least 20 requests are
+  protected from a delayed hide after a fix or new fallback.
+- `community-monitor.service` + `loop.sh` — the deployed systemd path. Each
+  cycle gets a fresh Claude process and systemd starts the next one 60 minutes
+  after completion. Headless cycles cannot be remote-controlled; a separate
+  persistent `claude --remote-control community-monitor` session runs alongside
+  as a phone-accessible console.
+- `.claude/settings.json` — project-scoped Claude Code settings. It fixes the
+  auto-compaction calculation window at 300,000 tokens for both headless cycles
+  and the remote-control session launched from the monitor directory.
+- `update-from-repo.sh` — before each cycle, fetches `origin/main` and atomically
+  refreshes only the committed prompt/runtime files. It does not activate until
+  the updater itself exists on `main`, so deploying an open PR cannot downgrade
+  the live monitor.
+- `healthcheck.sh` — hourly service/state-progress snapshot for external alerting.
+- `.env.example` — the required env var names, no values.
+
+Live-only on the box, never committed:
+- `.env` — real `POLLI_TOKEN`, `TB_TOKEN`, and `DISCORD_TOKEN` secrets.
+  Configure `mcp-discord` without `--config`; it inherits `DISCORD_TOKEN` from
+  the service environment. Never place the token in MCP command-line arguments.
+- `state.json` — cycle-to-cycle memory (last-replied message ids, alert state,
+  and billing flags). Preserve it during deployments to retain cooldowns and
+  prevent duplicate posts.
+- `people_mapping.json` — GitHub↔Discord identity map the agent maintains
+  for tagging owners correctly. Contains real Discord user IDs, so it stays
+  off git; the agent both reads and appends to it in place on the box.
+- `probe-results.json`, `loop.log` — generated output.
+
+## Provisioning / reproducing the box
+
+Current box: `monitoring-agents` in AWS account `myceli-prod`, `us-east-1`,
+`t4g.medium` (arm64), Elastic IP `3.221.108.127`, Ubuntu 24.04, Node 22,
+`@anthropic-ai/claude-code` installed globally via npm, `gh` + `screen`.
+Every new instance gets a persisted swapfile at least the size of RAM.
+
+Use a monitor-specific SSH key and the infrastructure secret manager; do not
+commit private keys or host credentials to this repository, even encrypted.
+Install Node and the `claude` CLI, clone/copy this directory, populate `.env`
+(see `.env.example`), install `community-monitor.service`, then run
+`systemctl enable --now community-monitor`.
+
+Moving credentials requires the separate, scoped approval in AGENTS.md's
+Secret Mutation Safety rules. Only after that approval, `rsync -a` the whole
+`/home/ubuntu` (this carries
+`~/.claude/` — credentials, session transcripts, and the agent's memory —
+plus `.env`, `state.json`, and `people_mapping.json`), copy the systemd unit
+and crontab, stop the old service and screen session, then on the new host
+`systemctl enable --now community-monitor` and relaunch the console with
+`screen -dmS rc-console bash -lc 'cd /home/ubuntu/monitor && set -a && source .env && set +a && exec claude --resume <session-id> --remote-control community-monitor --dangerously-skip-permissions'`.
+Pick "Resume full session" at the prompt to keep the session state intact.
+
+## Automatic prompt/runtime updates
+
+Once `update-from-repo.sh` and its systemd unit are installed, every fresh cycle
+fetches `origin/main` and updates `CYCLE.md`, `.claude/settings.json`,
+`probe.mjs`, `loop.sh`, `healthcheck.sh`, both leaderboard builders, and the
+updater itself. Changes merged to `main` apply on the next cycle. `.env`, state,
+identity mappings, logs, and generated data are never copied or removed.
+Restart the service to apply a merged change immediately. Changes to the
+systemd unit itself still require the deployment command below.
+
+Do not install PR-specific prompt overrides. In particular, a systemd drop-in
+that copies a frozen `CYCLE.md` after `update-from-repo.sh` defeats automatic
+updates even when `.source-revision` reports current `main`. Check
+`systemctl show community-monitor -p ExecStartPre` and compare the live prompt
+with `operations/community-monitor/CYCLE.md` at the recorded revision after
+deployment. Back up and remove obsolete overrides, then reload systemd.
+
+`CYCLE.md` takes precedence over Claude auto-memory and `state.json` narratives.
+Archive superseded policy notes outside the active memory directory; preserve
+unrelated notes, health counters, and cooldowns. Terminal `usage_missing` errors
+are failed requests, not informational billing flags. Investigate whether the
+provider or a shared gateway change caused them before attributing an outage.
+
+### One-time `apps/operation` to `operations` migration
+
+Before merging the repository-root move, seed its transition-aware updater on
+the monitor box:
+
+```bash
+scp operations/community-monitor/update-from-repo.sh \
+  community-monitor:/home/ubuntu/monitor/update-from-repo.sh
+ssh community-monitor "chmod +x /home/ubuntu/monitor/update-from-repo.sh && \
+  /home/ubuntu/monitor/update-from-repo.sh"
+```
+
+Before the merge it continues reading `apps/operation/community-monitor` from
+`main`. After the merge it switches to `operations/community-monitor` and keeps
+itself current. Perform this handoff before merging; the previously installed
+updater knows only the legacy path and cannot migrate itself.
+
+## Deploying runtime changes
+
+Run from the merged `main` revision. Never deploy an unmerged prompt snapshot.
+When a change adds an imported helper, install that helper before `probe.mjs`
+and refresh `update-from-repo.sh` before restarting the service so the next
+cycle knows the complete file set.
+
+```bash
+scp operations/community-monitor/{CYCLE.md,chat-stream.mjs,image-probe.mjs,probe.mjs,loop.sh,healthcheck.sh,update-from-repo.sh} \
+  community-monitor:/home/ubuntu/monitor/
+ssh community-monitor "mkdir -p /home/ubuntu/monitor/.claude"
+scp operations/community-monitor/.claude/settings.json \
+  community-monitor:/home/ubuntu/monitor/.claude/settings.json
+scp operations/community-monitor/seven-day-health.mjs \
+  community-monitor:/home/ubuntu/monitor/
+scp operations/community-monitor/leaderboard/{build-leaderboard.mjs,build-image-leaderboard.mjs,fonts-embedded.css} \
+  community-monitor:/home/ubuntu/monitor/leaderboard/
+scp operations/community-monitor/community-monitor.service \
+  community-monitor:/tmp/community-monitor.service
+ssh community-monitor "sudo install -m 0644 /tmp/community-monitor.service \
+  /etc/systemd/system/community-monitor.service && \
+  chmod +x /home/ubuntu/monitor/{probe.mjs,seven-day-health.mjs,loop.sh,healthcheck.sh,update-from-repo.sh} && \
+  sudo systemctl daemon-reload && \
+  sudo systemctl restart community-monitor"
+```
+
+## Probe load
+
+`probe.mjs` fetches live pricing and modality metadata from the public,
+unauthenticated `GET https://gen.pollinations.ai/models` catalog (no
+D1/wrangler access needed on the box):
+
+- Every listed community text model gets exactly one cache-busted streaming
+  chat request per cycle. Text probes omit `max_tokens` so reasoning models can
+  finish, and pass only when the unique marker appears in final completion
+  content inside a valid OpenAI-compatible SSE stream. Malformed JSON events,
+  missing or unterminated `[DONE]`, and post-terminal data fail the probe.
+  Coverage matters more than synthetic volume;
+  additional requests can consume a meaningful share of low-capacity provider
+  quotas and make a sweep outlive the monitor cycle.
+- Community image models use a separate low-load schedule: exactly one
+  image request per model every four hours. Models advertising `image` in
+  `input_modalities` alternate `/v1/images/edits` and `/v1/images/generations`,
+  starting with edits; the others test generation only. Edits send an embedded
+  512px PNG, avoiding external fixture hosts. Both use a cache-busted prompt,
+  default output dimensions, and `b64_json` validation. A newly listed model
+  is tested immediately. Use
+  `node probe.mjs --model '<owner/name>'` for an explicit freshness check; this
+  bypasses the cadence but still sends only one request. Targeted checks print
+  JSON without replacing the latest full sweep or changing its cadence state.
+  Image freshness checks default to generation; add `--operation edit` to test
+  edits (and `--category image` for a hidden exact ID). Results include the
+  public `requestPath`, timestamp, and request ID when returned. Match the
+  failing operation when confirming a hide or recovery; generation success
+  cannot clear an edit failure. Image output alone does not prove edit quality.
+- Text and image results record `modelUsed` and `fallbackUsed` from the
+  gateway's served-model header. A passing fallback is effective listing health,
+  not proof the primary works. Missing headers leave attribution unknown.
+  Image failures include `upstreamStatus`, `errorCode`, and a short error
+  message without copying the raw upstream body. Upstream 4xx still need
+  input/content-policy attribution; the daily audit surfaces them separately
+  in `needsDiagnosis` rather than silently dropping them or auto-hiding.
+- Actual spend is reconciled from each response's real `usage` tokens (not
+  the pre-flight estimate) and written to `state.json`'s `spend` key.
+
+Provider feedback stays request-driven: use public examples and aggregate
+metrics, reproduce the reported operation, and verify tool/caching claims
+with bounded tests. Never disclose private prompts or upstream URLs. Existing
+message limits, health thresholds, and cooldowns remain unchanged.
+
+## Model/effort
+
+The deployed agent is pinned to `claude-opus-4-8` at medium effort in
+`loop.sh`. Every cycle starts with a fresh context containing the complete
+current `CYCLE.md`. Medium effort is intentional: routine checks are
+mechanical, but owner replies and billing diagnostics require controlled
+comparisons and careful interpretation.
+
+`CLAUDE_CODE_AUTO_COMPACT_WINDOW=300000` is committed in
+`.claude/settings.json`. This is Claude Code's effective context capacity for
+auto-compaction calculations, not a model output-token limit. Project scope is
+intentional: it applies reproducibly to the headless service and the persistent
+remote-control session without modifying the machine's personal settings.
+
+Codex 5.6 Sol at medium effort is the preferred replacement once the EC2 box
+has its own non-personal Codex authentication. Do not copy a maintainer's local
+Codex credentials onto the shared server. Until that service credential is
+available, keep the Opus medium-effort runtime rather than silently leaving the
+monitor offline.
+
+## Authority split
+
+The monitor may hide a listed community model through one of three paths:
+
+- complete outage: 0% success across at least 5 attributable requests in the
+  last 30 minutes, confirmed by a fresh provider-failing probe;
+- severe failure: below 50% across at least 10 requests in four hours,
+  confirmed by a fresh provider-failing probe in the same cycle;
+- rolling floor: below 70% final user-visible success across at least 20
+  requests over seven days, unless fresh 24h/48h health vetoes the action.
+
+Successful fallback rescues count as successes. Hiding writes the
+`hidden_at`, `hidden_reason`, and `hidden_by` audit fields, removes the model
+from catalogs and fallback selection, and keeps exact-ID calls working. The
+monitor relists only its own hides after at least 90% success across ten
+post-hide requests in one hour plus a passing probe, or after a passing probe
+requested by the owner. Owners and maintainers retain full manual control.
+Discord posts are limited to actual hide and relist actions rather than advance
+warnings or routine recovery chatter.

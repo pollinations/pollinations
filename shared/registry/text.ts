@@ -122,7 +122,8 @@ const TEXT_BASE_SERVICES = {
             {
                 name: "logprobs",
                 type: "boolean",
-                description: "Whether to return log probabilities of output tokens",
+                description:
+                    "Whether to return log probabilities of output tokens",
             },
             {
                 name: "top_logprobs",
@@ -1525,7 +1526,7 @@ const TEXT_BASE_SERVICES = {
                 type: "object",
                 description: "Controls web search behavior",
                 condition:
-                    "search_context_size accepts \"low\" or \"high\"; other values are rejected by the gateway",
+                    'search_context_size accepts "low" or "high"; other values are rejected by the gateway',
             },
             {
                 name: "stream",

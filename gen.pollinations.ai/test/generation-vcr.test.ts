@@ -877,6 +877,106 @@ test("media text protocols reject invalid prompts and attachments before generat
     ).toBe(false);
 });
 
+test("media text protocols share one edit generation with native edits", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "deepInfra");
+    const { key } = await createTestApiKey({ user: { packBalance: 100 } });
+    const image = `data:image/png;base64,${png1x1Base64}`;
+    const prompt = `edit wrapper ${crypto.randomUUID()}`;
+    const bindings = withInlineGenerationCoordinator(env);
+    const native = await fetchWorker(
+        "/v1/images/edits",
+        {
+            method: "POST",
+            headers: {
+                authorization: `Bearer ${key}`,
+                "content-type": "application/json",
+            },
+            body: JSON.stringify({
+                model: "prunaai/p-image-edit",
+                prompt,
+                image,
+            }),
+        },
+        bindings,
+    );
+    expect(native.response.status, await native.response.clone().text()).toBe(
+        200,
+    );
+    await native.wait();
+    expect(mocks.deepInfra.state.requests).toHaveLength(1);
+    const request = (protocol: string, model: string) =>
+        fetchWorker(
+            `/v1/${protocol}`,
+            {
+                method: "POST",
+                headers: {
+                    authorization: `Bearer ${key}`,
+                    "content-type": "application/json",
+                },
+                body: JSON.stringify({
+                    model,
+                    [protocol === "responses" ? "input" : "messages"]: [
+                        {
+                            role: "user",
+                            content: [
+                                {
+                                    type:
+                                        protocol === "responses"
+                                            ? "input_text"
+                                            : "text",
+                                    text: prompt,
+                                },
+                                protocol === "responses"
+                                    ? { type: "input_image", image_url: image }
+                                    : {
+                                          type: "image_url",
+                                          image_url: { url: image },
+                                      },
+                            ],
+                        },
+                    ],
+                }),
+            },
+            bindings,
+        );
+    const results = await Promise.all(
+        ["responses", "chat/completions"].map((protocol) =>
+            request(protocol, "prunaai/p-image-edit"),
+        ),
+    );
+    for (const { response } of results)
+        expect(response.status, await response.clone().text()).toBe(200);
+    const chat = (await results[1].response.json()) as {
+        choices: { message: { content: string } }[];
+    };
+    expect(chat.choices[0].message.content).toMatch(
+        /^!\[Image\]\(https:\/\/media\./,
+    );
+    await Promise.all(results.map(({ wait }) => wait()));
+    // All three entry points hash the same edit body, so the native
+    // generation serves both text protocols from the cache.
+    expect(mocks.deepInfra.state.requests).toHaveLength(1);
+    expect(mocks.deepInfra.state.requests[0]).toMatchObject({
+        prompt,
+        images: [image],
+    });
+    expect(
+        mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
+    ).toHaveLength(1);
+    expect(
+        mocks.tinybird.state.events.find((event) => event.isBilledUsage),
+    ).toMatchObject({ modelRequested: "prunaai/p-image-edit" });
+
+    // A text-input-only media model rejects images before any generation.
+    const { response, wait } = await request("chat/completions", "flux");
+    expect(response.status).toBe(400);
+    expect(await response.text()).toContain("does not accept image input");
+    await wait();
+    expect(mocks.deepInfra.state.requests).toHaveLength(1);
+});
+
 test("media Responses rejects invalid string input before generation", async ({
     mocks,
 }) => {

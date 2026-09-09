@@ -25,6 +25,7 @@ import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import { deleteCodeAgent } from "../services/code-agent.ts";
 import {
     type CommunityEndpointTestResult,
     listCommunityEndpointModels,
@@ -857,8 +858,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 pendingAt ??= new Date();
             }
             update.visibility = nextVisibility;
-            if (endpoint.type === "prompt_agent") {
-                // Prompt configuration is edited through /account/agents.
+            if (
+                endpoint.type === "prompt_agent" ||
+                endpoint.type === "code_agent"
+            ) {
+                // Managed configuration is edited through /account/agents.
                 // This route only updates shared listing state such as hidden.
             } else if (endpoint.type === "endpoint_agent") {
                 const current = parseListingPayload(
@@ -1037,7 +1041,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
             requireAccountPermission(c.var.auth.apiKey, "keys");
-            await requireOwnedEndpoint(db, id, user.id);
+            const endpoint = await requireOwnedEndpoint(db, id, user.id);
             await db
                 .delete(schema.communityEndpoint)
                 .where(
@@ -1046,6 +1050,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         eq(schema.communityEndpoint.ownerUserId, user.id),
                     ),
                 );
+            if (endpoint.type === "code_agent") {
+                await deleteCodeAgent(c.env, id).catch((error) => {
+                    console.error("Failed to remove code agent Worker", error);
+                });
+            }
             return c.json({ id });
         },
     );

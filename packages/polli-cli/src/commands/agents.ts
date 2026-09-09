@@ -10,18 +10,29 @@ import {
     printTable,
 } from "../lib/output.js";
 
-type Agent = {
+type AgentBase = {
     id: string;
     name: string;
     title: string;
     description: string | null;
     visibility: "private" | "public";
-    systemPrompt: string;
-    baseModel: string;
-    mcpServers: string[];
     createdAt: string;
     updatedAt: string;
 };
+
+type PromptAgent = AgentBase & {
+    type: "prompt_agent";
+    systemPrompt: string;
+    baseModel: string;
+    mcpServers: string[];
+};
+
+type CodeAgent = AgentBase & {
+    type: "code_agent";
+    source: string;
+};
+
+type Agent = PromptAgent | CodeAgent;
 
 function readConfig(path: string): Record<string, unknown> {
     try {
@@ -72,13 +83,24 @@ function printAgents(agents: Agent[]): void {
         agents.map((agent) => ({
             id: chalk.dim(agent.id),
             name: agent.name,
-            base_model: agent.baseModel,
+            type: agent.type,
+            base_model: agent.type === "prompt_agent" ? agent.baseModel : "-",
             visibility: agent.visibility,
-            pollinations_tools: agent.mcpServers.includes("pollinations")
-                ? "yes"
-                : "no",
+            pollinations_tools:
+                agent.type === "prompt_agent"
+                    ? agent.mcpServers.includes("pollinations")
+                        ? "yes"
+                        : "no"
+                    : "built in",
         })),
-        ["id", "name", "base_model", "visibility", "pollinations_tools"],
+        [
+            "id",
+            "name",
+            "type",
+            "base_model",
+            "visibility",
+            "pollinations_tools",
+        ],
     );
 }
 
@@ -210,7 +232,7 @@ const remove = new Command("delete")
     });
 
 export const agentsCommand = new Command("agents")
-    .description("Manage prompt agents")
+    .description("Manage agents")
     .addCommand(list)
     .addCommand(get)
     .addCommand(create)

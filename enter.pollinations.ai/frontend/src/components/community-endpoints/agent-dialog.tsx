@@ -16,7 +16,7 @@ import {
     type AgentPayload,
     agentListingToForm,
     emptyAgentForm,
-    type ManagedAgent,
+    type ManagedPromptAgent,
     type ModelListingFormState,
     type PromptAgentCommunityEndpoint,
     toAgentListingPayload,
@@ -26,7 +26,7 @@ import {
 type AgentDialogFormState = AgentFormState & ModelListingFormState;
 
 type AgentDialogProps = {
-    agent?: ManagedAgent;
+    agent?: ManagedPromptAgent;
     endpoint?: PromptAgentCommunityEndpoint;
     canPublish: boolean;
     open: boolean;

@@ -24,6 +24,7 @@ import {
 import { enforceModelRateLimit } from "../../utils/model-rate-limit.ts";
 import { assertStreamContentType } from "../../utils/upstream-response.ts";
 import { createPromptAgentResponsesClient } from "../agents/client.ts";
+import { createCodeAgentResponsesClient } from "../agents/code-client.ts";
 import { communityEndpointModelConfig } from "../communityEndpoint.js";
 import { syncTextEnvironment } from "../environment.js";
 import { throwTextError } from "../errors.js";
@@ -127,6 +128,13 @@ async function responsesClientForAttempt(
             throw new Error("Managed agent request has no agent run token");
         }
         return createPromptAgentResponsesClient(c, endpoint, apiKey);
+    }
+    if (endpoint.type === "code_agent") {
+        const apiKey = config.authKey;
+        if (typeof apiKey !== "string" || !apiKey) {
+            throw new Error("Managed agent request has no agent run token");
+        }
+        return createCodeAgentResponsesClient(c, endpoint, apiKey);
     }
     const target = responsesTargetFromConfig(endpoint.upstreamModel, config);
     if (!target) {

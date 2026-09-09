@@ -32,6 +32,7 @@ import {
     type EndpointPayload,
     type FallbackModelOption,
     type ManagedAgent,
+    type ManagedPromptAgent,
     type PromptAgentCommunityEndpoint,
     readError,
 } from "./types.ts";
@@ -71,7 +72,9 @@ export function CommunityEndpoints({
     const [toggling, setToggling] = useState<CommunityEndpoint | null>(null);
     const [togglingId, setTogglingId] = useState<string | null>(null);
     const [agentCreateOpen, setAgentCreateOpen] = useState(false);
-    const [editingAgent, setEditingAgent] = useState<ManagedAgent | null>(null);
+    const [editingAgent, setEditingAgent] = useState<ManagedPromptAgent | null>(
+        null,
+    );
     const [deletingAgent, setDeletingAgent] = useState<ManagedAgent | null>(
         null,
     );
@@ -311,7 +314,10 @@ export function CommunityEndpoints({
         if (endpoint.type === "prompt_agent") {
             endpointByAgentId.set(endpoint.id, endpoint);
             agentEndpoints.push(endpoint);
-        } else if (endpoint.type === "endpoint_agent") {
+        } else if (
+            endpoint.type === "endpoint_agent" ||
+            endpoint.type === "code_agent"
+        ) {
             agentEndpoints.push(endpoint);
         } else {
             modelEndpoints.push(endpoint);
@@ -321,21 +327,24 @@ export function CommunityEndpoints({
 
     function renderEndpointCard(endpoint: CommunityEndpoint) {
         const agent =
-            endpoint.type === "prompt_agent"
+            endpoint.type === "prompt_agent" || endpoint.type === "code_agent"
                 ? agentById.get(endpoint.id)
                 : undefined;
+        const promptAgent = agent?.type === "prompt_agent" ? agent : undefined;
         return (
             <CommunityEndpointCard
                 key={endpoint.id}
                 endpoint={endpoint}
                 isToggling={togglingId === endpoint.id}
                 onToggle={() => setToggling(endpoint)}
-                onEdit={() => {
-                    if (agent) setEditingAgent(agent);
-                    else if (endpoint.type !== "prompt_agent") {
-                        setEditing(endpoint);
-                    }
-                }}
+                onEdit={
+                    promptAgent
+                        ? () => setEditingAgent(promptAgent)
+                        : endpoint.type === "proxy" ||
+                            endpoint.type === "endpoint_agent"
+                          ? () => setEditing(endpoint)
+                          : undefined
+                }
                 onDelete={() => {
                     if (agent) setDeletingAgent(agent);
                     else setDeleting(endpoint);

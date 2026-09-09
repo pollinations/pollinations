@@ -20,6 +20,7 @@ import {
     validateCommunityEndpointUrl,
 } from "@shared/community-endpoint-urls.ts";
 import {
+    CODE_AGENT_BASE_URL_PLACEHOLDER,
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointApi,
@@ -635,6 +636,17 @@ describe("community endpoint helpers", () => {
                 "prompt_agent",
                 JSON.stringify({ systemPrompt: "Missing base model" }),
             ),
+        ).toBeNull();
+        expect(
+            parseListingPayload(
+                "code_agent",
+                JSON.stringify({
+                    source: "export default () => new Response();",
+                }),
+            ),
+        ).toEqual({ source: "export default () => new Response();" });
+        expect(
+            parseListingPayload("code_agent", JSON.stringify({ source: "" })),
         ).toBeNull();
         expect(
             parseListingPayload(
@@ -7495,6 +7507,168 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
             .from(communityEndpointTable)
             .where(eq(communityEndpointTable.id, agent.id)),
     ).resolves.toEqual([]);
+});
+
+fixtureTest("creates, updates, lists, and deletes code agents", async () => {
+    const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+    const modelName = `code-${crypto.randomUUID().slice(0, 8)}`;
+    const ownerUserId = await createTestUser({
+        githubId: nextAllowedGithubId(),
+        githubUsername: ownerGithubUsername,
+    });
+    const sessionToken = `session-${crypto.randomUUID()}`;
+    await db.insert(sessionTable).values({
+        id: `session-${crypto.randomUUID()}`,
+        token: sessionToken,
+        userId: ownerUserId,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+
+    const enterApi = await createEnterFrontendApi();
+    const cookie = (await signedSessionCookie(sessionToken)).replace(
+        "better-auth.session_token",
+        "__Secure-better-auth.session_token",
+    );
+    const deploymentFetch = vi.fn(
+        async (_input: RequestInfo | URL, _init?: RequestInit) =>
+            Response.json({ success: true }),
+    );
+    vi.stubGlobal("fetch", deploymentFetch);
+    const enterEnv = {
+        ...env,
+        BETTER_AUTH_URL: "https://enter.test",
+        GEN_BASE_URL: "https://gen.pollinations.ai",
+        CODE_AGENT_DEPLOY_API_TOKEN: "test-deploy-token",
+        CODE_AGENT_DISPATCH_NAMESPACE: "code-agents-test",
+    };
+    const source = `export default async ({ request, pollinations }) => {
+        const input = await request.json();
+        return pollinations("/v1/responses", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ model: "openai-fast", input: input.input })
+        });
+    };`;
+    const createResponse = await fetchEnterApi(
+        enterApi,
+        new Request("https://enter.test/api/account/agents", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Cookie: cookie },
+            body: JSON.stringify({
+                type: "code_agent",
+                name: modelName,
+                title: "Code Agent",
+                source,
+            }),
+        }),
+        enterEnv,
+    );
+    expect(createResponse.status).toBe(200);
+    const agent = (await createResponse.json()) as {
+        id: string;
+        type: string;
+        source: string;
+    };
+    expect(agent).toMatchObject({
+        type: "code_agent",
+        source,
+        visibility: "private",
+    });
+    expect(deploymentFetch).toHaveBeenCalledTimes(1);
+
+    const [stored] = await db
+        .select()
+        .from(communityEndpointTable)
+        .where(eq(communityEndpointTable.id, agent.id));
+    expect(stored).toMatchObject({
+        type: "code_agent",
+        baseUrl: CODE_AGENT_BASE_URL_PLACEHOLDER,
+        upstreamModel: agent.id,
+    });
+    expect(JSON.parse(stored.payload)).toEqual({ source });
+
+    const registryEntry = (await getCommunityModelRegistryEntries(env)).find(
+        (entry) => entry.communityEndpoint.id === agent.id,
+    );
+    expect(registryEntry?.communityEndpoint).toMatchObject({
+        type: "code_agent",
+        api: "responses",
+        baseUrl: CODE_AGENT_BASE_URL_PLACEHOLDER,
+        upstreamModel: agent.id,
+    });
+    expect(registryEntry?.info.agent).toBe(true);
+    if (!registryEntry) throw new Error("Code agent was not registered");
+    const gatewayContext = await communityEndpointGatewayContext({
+        endpoint: registryEntry.communityEndpoint,
+        modelDefinition: registryEntry.definition,
+        requestData: { messages: [{ role: "user", content: "hello" }] },
+        secret: env.BETTER_AUTH_SECRET,
+        portkeyGatewayUrl: env.PORTKEY_GATEWAY_URL,
+        userApiKey: "sk_user_key",
+        parentRequestId: "caller-request-id",
+        parentApiKeyId: "caller-api-key-id",
+    });
+    await expect(
+        verifyAgentRunToken(
+            String(gatewayContext.modelConfig?.authKey),
+            env.BETTER_AUTH_SECRET,
+        ),
+    ).resolves.toMatchObject({
+        parentApiKeyId: "caller-api-key-id",
+        parentRequestId: "caller-request-id",
+        managedAgentId: agent.id,
+    });
+
+    const updatedSource = "export default async () => new Response('updated');";
+    const updateResponse = await fetchEnterApi(
+        enterApi,
+        new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", Cookie: cookie },
+            body: JSON.stringify({ source: updatedSource }),
+        }),
+        enterEnv,
+    );
+    expect(updateResponse.status, await updateResponse.clone().text()).toBe(
+        200,
+    );
+    await expect(updateResponse.json()).resolves.toMatchObject({
+        type: "code_agent",
+        source: updatedSource,
+    });
+    expect(deploymentFetch).toHaveBeenCalledTimes(2);
+
+    const listResponse = await fetchEnterApi(
+        enterApi,
+        new Request("https://enter.test/api/account/agents", {
+            headers: { Cookie: cookie },
+        }),
+        enterEnv,
+    );
+    expect(listResponse.status).toBe(200);
+    await expect(listResponse.json()).resolves.toMatchObject({
+        data: [
+            expect.objectContaining({
+                id: agent.id,
+                type: "code_agent",
+                source: updatedSource,
+            }),
+        ],
+    });
+
+    const deleteResponse = await fetchEnterApi(
+        enterApi,
+        new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+            method: "DELETE",
+            headers: { Cookie: cookie },
+        }),
+        enterEnv,
+    );
+    expect(deleteResponse.status).toBe(200);
+    expect(deploymentFetch).toHaveBeenCalledTimes(3);
+    expect(deploymentFetch.mock.calls[2][1]?.method).toBe("DELETE");
 });
 
 fixtureTest("validates community fallback targets on write", async () => {

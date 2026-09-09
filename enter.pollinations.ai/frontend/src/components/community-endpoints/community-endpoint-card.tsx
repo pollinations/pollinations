@@ -35,7 +35,7 @@ type CommunityEndpointCardProps = {
     endpoint: CommunityEndpoint;
     isToggling: boolean;
     onToggle: () => void;
-    onEdit: () => void;
+    onEdit?: () => void;
     onDelete: () => void;
 };
 
@@ -98,15 +98,17 @@ export function CommunityEndpointCard({
                               ? "Relist"
                               : "Hide"}
                     </Button>
-                    <IconButton
-                        intent="info"
-                        title={isAgent ? "Edit agent" : "Edit model"}
-                        tooltip={isAgent ? "Edit agent" : "Edit model"}
-                        tooltipAlign="center"
-                        onClick={onEdit}
-                    >
-                        <PencilIcon className="h-4 w-4" />
-                    </IconButton>
+                    {onEdit && (
+                        <IconButton
+                            intent="info"
+                            title={isAgent ? "Edit agent" : "Edit model"}
+                            tooltip={isAgent ? "Edit agent" : "Edit model"}
+                            tooltipAlign="center"
+                            onClick={onEdit}
+                        >
+                            <PencilIcon className="h-4 w-4" />
+                        </IconButton>
+                    )}
                     <IconButton
                         intent="danger"
                         title="Delete model"
@@ -140,7 +142,8 @@ export function CommunityEndpointCard({
                     value={endpoint.modelId}
                     copyLabel="Copy model id"
                 />
-                {endpoint.type !== "prompt_agent" && (
+                {(endpoint.type === "proxy" ||
+                    endpoint.type === "endpoint_agent") && (
                     <CommunityDetailRow
                         icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}
                         label="Endpoint"
@@ -153,7 +156,8 @@ export function CommunityEndpointCard({
                         copyLabel="Copy endpoint"
                     />
                 )}
-                {endpoint.type !== "prompt_agent" && (
+                {(endpoint.type === "proxy" ||
+                    endpoint.type === "endpoint_agent") && (
                     <>
                         {endpoint.type === "proxy" && (
                             <CommunityDetailRow

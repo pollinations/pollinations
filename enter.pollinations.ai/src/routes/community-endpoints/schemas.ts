@@ -238,6 +238,7 @@ export const UpdateEndpointSchema = ProxyUpdateSchema;
 const UPDATE_SCHEMA_BY_TYPE = {
     proxy: ProxyUpdateSchema,
     prompt_agent: PromptAgentUpdateSchema,
+    code_agent: PromptAgentUpdateSchema,
     endpoint_agent: EndpointAgentUpdateSchema,
 } as const;
 
@@ -355,6 +356,12 @@ const PromptAgentEndpointResponseSchema = z
         type: z.literal("prompt_agent"),
     })
     .strict();
+const CodeAgentEndpointResponseSchema = z
+    .object({
+        ...CommunityEndpointResponseFieldsSchema,
+        type: z.literal("code_agent"),
+    })
+    .strict();
 export const EndpointAgentResponseSchema = z
     .object({
         ...CommunityEndpointResponseFieldsSchema,
@@ -368,6 +375,7 @@ export const EndpointAgentResponseSchema = z
 export const CommunityEndpointResponseSchema = z.union([
     ProxyEndpointResponseSchema,
     PromptAgentEndpointResponseSchema,
+    CodeAgentEndpointResponseSchema,
     EndpointAgentResponseSchema,
 ]);
 export type CommunityEndpointResponse = z.infer<

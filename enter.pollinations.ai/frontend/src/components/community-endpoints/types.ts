@@ -25,8 +25,9 @@ import type { SafetyFeature } from "@shared/schemas/safety.ts";
 
 type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
 
-export type ManagedAgent = {
+export type ManagedPromptAgent = {
     id: string;
+    type: "prompt_agent";
     name: string;
     title: string;
     description: string | null;
@@ -39,8 +40,25 @@ export type ManagedAgent = {
     updatedAt: string;
 };
 
+export type ManagedCodeAgent = Pick<
+    ManagedPromptAgent,
+    | "id"
+    | "name"
+    | "title"
+    | "description"
+    | "visibility"
+    | "requiredSafetyFeatures"
+    | "createdAt"
+    | "updatedAt"
+> & {
+    type: "code_agent";
+    source: string;
+};
+
+export type ManagedAgent = ManagedPromptAgent | ManagedCodeAgent;
+
 type AgentFields = Pick<
-    ManagedAgent,
+    ManagedPromptAgent,
     "systemPrompt" | "baseModel" | "requiredSafetyFeatures" | "mcpServers"
 >;
 
@@ -99,6 +117,10 @@ export type PromptAgentCommunityEndpoint = CommunityEndpointBase & {
     type: "prompt_agent";
 };
 
+export type CodeAgentCommunityEndpoint = CommunityEndpointBase & {
+    type: "code_agent";
+};
+
 export type EndpointAgentCommunityEndpoint = CommunityEndpointBase & {
     type: "endpoint_agent";
     api: CommunityEndpointApi;
@@ -110,6 +132,7 @@ export type EndpointAgentCommunityEndpoint = CommunityEndpointBase & {
 export type CommunityEndpoint =
     | ProxyCommunityEndpoint
     | PromptAgentCommunityEndpoint
+    | CodeAgentCommunityEndpoint
     | EndpointAgentCommunityEndpoint;
 
 export type EditableEndpoint =

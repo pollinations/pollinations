@@ -25,6 +25,15 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
+        date: "2026-09-11",
+        dateLabel: "Planned for September 11",
+        emoji: "🧩",
+        title: "Community model IDs get a clearer prefix",
+        description:
+            "Community models and agents will be listed as community/username/model instead of username/model.",
+        details: ["Your existing model IDs will keep working."],
+    },
+    {
         date: "2026-08-15",
         dateLabel: "Alpha",
         emoji: "🤖",

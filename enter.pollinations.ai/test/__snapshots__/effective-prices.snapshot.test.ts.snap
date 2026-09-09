@@ -2065,6 +2065,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000003,
     },
   },
+  "perplexity/sonar-pro:openrouter:perplexity": {
+    "cost": {
+      "completionTextTokens": 0.000015,
+      "promptTextTokens": 0.000003,
+    },
+    "price": {
+      "completionTextTokens": 0.000015,
+      "promptTextTokens": 0.000003,
+    },
+  },
   "perplexity/sonar-reasoning-pro": {
     "cost": {
       "completionTextTokens": 0.000008,
@@ -2073,6 +2083,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "price": {
       "completionTextTokens": 0.000008,
       "promptTextTokens": 0.000002,
+    },
+  },
+  "perplexity/sonar-reasoning-pro:openrouter:perplexity": {
+    "cost": {
+      "completionTextTokens": 0.000008,
+      "promptTextTokens": 0.000002,
+    },
+    "price": {
+      "completionTextTokens": 0.000008,
+      "promptTextTokens": 0.000002,
+    },
+  },
+  "perplexity/sonar:openrouter:perplexity": {
+    "cost": {
+      "completionTextTokens": 0.000001,
+      "promptTextTokens": 0.000001,
+    },
+    "price": {
+      "completionTextTokens": 0.000001,
+      "promptTextTokens": 0.000001,
     },
   },
   "pollinations/midijourney": {

@@ -272,6 +272,15 @@ kpiRoutes.get("/revenue", async (c) => {
     return c.json({ data: result });
 });
 
+// Tinybird: Daily Stripe revenue for this week versus the same days last week.
+kpiRoutes.get("/revenue/daily", async (c) => {
+    const result = await fetchTinybird(c.env, "daily_stripe_revenue", {
+        days_back: 14,
+    });
+    if (result.error) return c.json({ error: result.error, data: [] }, 500);
+    return c.json({ data: result.data });
+});
+
 // Tinybird: B2B/B2C User Segments — fetched week-by-week to avoid 10s timeout
 kpiRoutes.get("/user-segments", async (c) => {
     const result = await fetchTinybirdByWeek(

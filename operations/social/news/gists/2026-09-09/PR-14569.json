@@ -1,0 +1,35 @@
+{
+  "pr_number": 14569,
+  "title": "feat: add GIMP 3 image generation and editing with BYOP",
+  "author": "harisrehman155",
+  "url": "https://github.com/pollinations/pollinations/pull/14569",
+  "merged_at": "2026-09-09T23:10:55Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #14232\n\n- Adds a standalone GIMP 3 plug-in with browser device authorization and restart-persistent private authorization.\n- Loads the authenticated live image catalog, including community models, and drives edit/resolution controls from model capabilities.\n- Generates new images or layers and edits an active layer or selection into a new layer without changing the source.\n- Keeps network work off the GTK thread and handles expired authorization, insufficient Pollen, network failures, and invalid responses.\n- Passes 11 transport/storage tests, production catalog and unattributed-device checks, native GIMP 3.0.4 macOS smoke testing, CI, and CodeQL. A publishable POLLINATIONS_GIMP_APP_KEY remains optional for attribution.",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli moves into GIMP",
+    "blurb": "GIMP 3 now has a little Pollinations panel of its own. Sign in from the browser, pick from the live image catalog, and grow fresh generations or edits into new layers without disturbing the original canvas.",
+    "summary": "Added a standalone GIMP 3 plug-in with browser device authorization, restart-persistent private auth, live including community image-model catalog support, and capability-driven generation, editing, and resolution controls.",
+    "impact": "GIMP 3 artists can authenticate once, generate images or new layers, and turn an active layer or selection into an edited new layer while keeping the source untouched.",
+    "keywords": [
+      "gimp",
+      "image-generation",
+      "image-editing",
+      "plugin",
+      "byop",
+      "community-models",
+      "layers"
+    ],
+    "visual_concept": "A cozy pixel-art GIMP-style artist desk represents the new standalone plug-in: a retro image editor window shows a canvas with separate glowing layers, a model catalog drawer, and a browser-auth key/token. Polli, wearing a tiny painter's beret, carefully paints a new layer rather than overwriting the flower-filled original; a CRT monitor robot can eagerly hold the layer palette, while code-plants and pixel flowers connect the creative tool to the open community model garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny painter's beret and painting a glowing new layer onto a retro GIMP-style image editor canvas while preserving the original flower garden layer beneath; a cute CRT-monitor robot holds a live model catalog beside code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"NEW LAYER\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14569.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny painter's beret and painting a glowing new layer onto a retro GIMP-style image editor canvas while preserving the original flower garden layer beneath; a cute CRT-monitor robot holds a live model catalog beside code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"NEW LAYER\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-09T23:11:56.020775+00:00"
+}

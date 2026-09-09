@@ -1,0 +1,34 @@
+{
+  "pr_number": 14527,
+  "title": "feat: use paired function items for hosted agents",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14527",
+  "merged_at": "2026-09-09T03:40:48Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replace managed `mcp_call` output/history with paired `function_call` / `function_call_output` items: separate item IDs, shared call IDs, namespaced tools and JSON-string results. Tool failures use MCP `isError`; no legacy managed-history mode.\n- Render completed server tools through the shared Chat adapter without client re-execution. Text still streams; pending client tool arguments wait until the terminal response. Native provider MCP items remain supported.\n- Validate complete stateless pairs with shared Zod schemas; preserve required usage, billing, cache controls and media rendering. Net production-code change: +137 lines.\n- Verified 211 focused tests, Gen TypeScript and Biome checks, including OpenAI SDK stream consumption, replay, errors and billing failures. LibreChat browser testing remains pending: Docker-free installation needs more than the available 2 GB disk.\n- Follows #14516 and the hosted-agent serialization precedent in [LibreChat](https://github.com/danny-avila/LibreChat/blob/b5c5624f138423d072acafe4c91d618a88b16554/packages/api/src/agents/responses/handlers.ts#L206-L235) and [LobeHub](https://github.com/lobehub/lobehub/blob/5bf3a37e378deb81a83e9f7a63a2441b03368125/packages/openapi/src/services/responses.service.ts#L690-L725). This is protocol alignment, not a claim that every client already renders tool cards.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Tools travel in pairs",
+    "blurb": "Hosted agents now pack each tool call with its matching result, like two labeled jars of honey on the same shelf. Clients get a cleaner, replayable conversation trail without being asked to run server tools again.",
+    "summary": "Hosted agents now emit stateless paired `function_call` and `function_call_output` items with separate item IDs, shared call IDs, namespaced tool names, and JSON-string results, replacing legacy managed `mcp_call` history while retaining native provider MCP items.",
+    "impact": "OpenAI-compatible clients can replay completed server-tool work through the shared Chat adapter without client re-execution, while text continues streaming and client-tool arguments wait for the terminal response.",
+    "keywords": [
+      "hosted agents",
+      "function calling",
+      "MCP",
+      "OpenAI compatibility",
+      "chat adapter",
+      "stateless responses"
+    ],
+    "visual_concept": "Depict a cozy garden workbench where Polli is carefully pairing two matching, tagged API scrolls: a `function_call` scroll and a `function_call_output` scroll joined by a shared pollen-colored thread. A cheerful CRT Monitor Robot watches the completed tool cards appear on its screen, while code-plants and small flowers make the protocol work feel like orderly garden tending rather than mysterious machinery.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace: the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears tiny librarian glasses while tying two labeled pixel scrolls, `function_call` and `function_call_output`, together with one lime green (#ecf874) thread; a chunky CRT-monitor robot displays the finished paired tool cards beside flowering code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, dark purple (#110518) pixel-font text, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14527.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace: the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears tiny librarian glasses while tying two labeled pixel scrolls, `function_call` and `function_call_output`, together with one lime green (#ecf874) thread; a chunky CRT-monitor robot displays the finished paired tool cards beside flowering code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, dark purple (#110518) pixel-font text, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-09T03:41:53.402512+00:00"
+}

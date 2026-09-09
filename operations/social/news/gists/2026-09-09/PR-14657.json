@@ -1,0 +1,34 @@
+{
+  "pr_number": 14657,
+  "title": "fix: pin gateway with Perplexity stream framing repair",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14657",
+  "merged_at": "2026-09-09T22:54:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Pins production Portkey deployments to the merged [Perplexity stream-framing fix](https://github.com/pollinations/gateway/pull/11), commit `9ed9584bb8fcf61172dac8028b48c15957765f5d`.\n- Prevents later default deployments from restoring the old parser. No deployment commands, routes, credentials, or secret mappings change.\n- Verified shell syntax with `bash -n` and checked the diff. The gateway fix passed 52 focused tests and seven live local requests; its production deployment uses the existing dedicated workflow.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Streams stay in formation",
+    "blurb": "The gateway now stays pinned to the Perplexity stream-framing repair instead of wandering back to an older parser. The bees have arranged the tokens into a proper little line.",
+    "summary": "Pinned production Portkey gateway deployments to commit 9ed9584, which includes the merged Perplexity stream-framing repair and keeps later deployments from restoring the old parser.",
+    "impact": "Perplexity streaming responses keep their repaired event framing across production deployments, so apps can consume streamed output reliably.",
+    "keywords": [
+      "perplexity",
+      "streaming",
+      "portkey",
+      "gateway",
+      "deployment",
+      "parser"
+    ],
+    "visual_concept": "A cozy gateway garden where orderly glowing text-token streams flow through a tiny Portkey-style archway into a retro terminal, representing stable Perplexity stream framing. Polli wears a small mechanic cap and gently pins a neat ribbon of tokens in place while code-plants and flowers grow around the gateway; the monitor robot can watch the stream arrive in clean, separated lines.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny mechanic cap as she pins a neatly framed stream of glowing text tokens through a little gateway arch into a retro CRT terminal; a cheerful monitor robot watches clean lines of data beside flowering code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, with small pixel-font text: \"STREAM OK\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14657.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny mechanic cap as she pins a neatly framed stream of glowing text tokens through a little gateway arch into a retro CRT terminal; a cheerful monitor robot watches clean lines of data beside flowering code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, with small pixel-font text: \"STREAM OK\"."
+  },
+  "generated_at": "2026-09-09T22:55:28.852046+00:00"
+}

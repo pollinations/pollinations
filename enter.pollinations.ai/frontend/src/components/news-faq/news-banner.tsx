@@ -148,27 +148,27 @@ const CanonicalModelSlugAnnouncement: FC = () => (
         className="scroll-mt-4 leading-relaxed"
     >
         <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
-            Scheduled change · Sep 7, 2026 at 14:00 UTC
+            API update
         </div>
         <div className="flex items-baseline gap-2 font-semibold text-ink-900 text-base sm:text-lg">
             <span aria-hidden="true" className="shrink-0">
                 🧪
             </span>
-            <span>We're standardizing model IDs</span>
+            <span>Model IDs are now standardized</span>
         </div>
         <p className="mt-1 text-sm text-ink-700">
-            Model IDs will use the publisher and official model name—for
-            example, <code>flux</code> →{" "}
-            <code>black-forest-labs/flux.1-schnell</code>. You can use the new
-            IDs now. Existing IDs will keep working.
+            Model IDs now follow <code>publisher/model</code>—for example,{" "}
+            <code>flux</code> → <code>black-forest-labs/flux.1-schnell</code>.
+            The model catalog uses the new IDs. Existing IDs remain supported as
+            aliases in API requests.
         </p>
         <a
-            href="https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md"
+            href="https://enter.pollinations.ai/models"
             target="_blank"
             rel="noopener noreferrer"
             className="mt-3 block w-fit text-sm font-semibold text-theme-text-soft hover:text-theme-text-strong hover:underline"
         >
-            View all model ID changes →
+            Browse models and their aliases →
         </a>
     </Surface>
 );

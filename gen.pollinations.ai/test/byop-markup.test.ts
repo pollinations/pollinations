@@ -36,7 +36,10 @@ import {
 
 const db = drizzle(env.DB);
 
-function fakeStatsEnv(price: number, model = "openai"): CloudflareBindings {
+function fakeStatsEnv(
+    price: number,
+    model = "openai/gpt-5.4-nano",
+): CloudflareBindings {
     return {
         DB: env.DB,
         KV: {
@@ -61,7 +64,7 @@ function fakeLog() {
     };
 }
 
-function testModel(model: ModelName = "openai") {
+function testModel(model: ModelName = "openai/gpt-5.4-nano") {
     return {
         requested: model,
         resolved: model,
@@ -293,6 +296,7 @@ describe("BYOP markup", () => {
         await expect(checkBalance(vars, fakeStatsEnv(1))).rejects.toMatchObject(
             {
                 status: 402,
+                errorCode: "INSUFFICIENT_BALANCE",
             },
         );
     });
@@ -398,12 +402,12 @@ describe("BYOP markup", () => {
                     packBalance: 1,
                 }),
             },
-            model: testModel("llama-maverick"),
+            model: testModel("meta/llama-4-maverick"),
             log: fakeLog(),
         } as unknown as Parameters<typeof checkBalance>[0];
 
         await expect(
-            checkBalance(vars, fakeStatsEnv(1, "llama-maverick")),
+            checkBalance(vars, fakeStatsEnv(1, "meta/llama-4-maverick")),
         ).rejects.toMatchObject({
             status: 402,
         });
@@ -428,6 +432,7 @@ describe("BYOP markup", () => {
         await expect(checkBalance(vars, fakeStatsEnv(1))).rejects.toMatchObject(
             {
                 status: 402,
+                errorCode: "KEY_BUDGET_EXHAUSTED",
             },
         );
     });
@@ -688,15 +693,45 @@ describe("BYOP markup", () => {
     });
 
     it("keeps Tinybird estimates for token-priced models", async () => {
-        const definition = getRegistryModelDefinition("openai");
+        const definition = getRegistryModelDefinition("openai/gpt-5.4-nano");
         expect(getDefinedRequestEstimate(definition)).toBeNull();
         expect(
             getEstimatedPrice(
-                { data: [{ model: "openai", avg_cost_usd: 1.25 }] },
-                "openai",
+                {
+                    data: [
+                        {
+                            model: "openai/gpt-5.4-nano",
+                            avg_cost_usd: 1.25,
+                        },
+                    ],
+                },
+                "openai/gpt-5.4-nano",
                 definition,
             ),
         ).toBe(1.25);
+    });
+
+    it("retains legacy price estimates after a canonical rename", () => {
+        const model = "openai/gpt-5.4-nano";
+        const definition = getRegistryModelDefinition(model);
+        const legacy = { model: "openai", avg_cost_usd: 1.25 };
+        expect(getEstimatedPrice({ data: [legacy] }, model, definition)).toBe(
+            1.25,
+        );
+        expect(
+            getEstimatedPrice(
+                { data: [legacy, { model, avg_cost_usd: 0.75 }] },
+                model,
+                definition,
+            ),
+        ).toBe(0.75);
+        expect(
+            getEstimatedPrice(
+                { data: [{ model: "owner/community-model", avg_cost_usd: 9 }] },
+                model,
+                definition,
+            ),
+        ).toBe(0);
     });
 
     it("does not credit or deduct for unbilled requests", async () => {

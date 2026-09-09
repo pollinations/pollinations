@@ -1,13 +1,21 @@
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { formatActivityChartDate } from "./activity-helpers";
+import { isInActivityBucket } from "./activity-period";
 import type {
     DailyUsageRecord,
     DataPoint,
     FilterState,
     ModelBreakdown,
 } from "./types";
+
+type UsageModelBreakdown = ModelBreakdown & {
+    paidPollen: number;
+    tierPollen: number;
+    paidRequests: number;
+    tierRequests: number;
+};
 
 type UsageDataResult = {
     loading: boolean;
@@ -16,28 +24,31 @@ type UsageDataResult = {
     usedModels: { id: string; label: string }[];
     usedApiKeys: { id: string; label: string }[];
     chartData: DataPoint[];
+    hasData: boolean;
+    hasPeriodData: boolean;
     stats: {
         totalRequests: number;
         totalPollen: number;
         tierPollen: number;
         paidPollen: number;
-        activeApiKeyCount: number | null;
-        topModel: {
-            id: string;
-            label: string;
-            requests: number;
-            pollen: number;
-        } | null;
+        paidRequests: number;
+        tierRequests: number;
+        modelBreakdowns: UsageModelBreakdown[];
     };
 };
 
 export function useUsageData(filters: FilterState): UsageDataResult {
     const [dailyUsage, setDailyUsage] = useState<DailyUsageRecord[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const request = useRef<AbortController | null>(null);
     const [error, setError] = useState<string | null>(null);
     const { granularity, period } = filters.period;
 
     const fetchUsage = useCallback(() => {
+        request.current?.abort();
+        const controller = new AbortController();
+        request.current = controller;
+        setDailyUsage([]);
         setLoading(true);
         setError(null);
 
@@ -50,27 +61,29 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         };
 
         apiClient.account.usage.daily
-            .$get({ query })
+            .$get({ query }, { init: { signal: controller.signal } })
             .then((r) => {
                 if (!r.ok)
                     throw new Error(`Failed to fetch usage data: ${r.status}`);
                 return r.json() as Promise<{ usage: DailyUsageRecord[] }>;
             })
             .then((data) => {
-                setDailyUsage(data.usage);
+                if (!controller.signal.aborted) setDailyUsage(data.usage);
             })
             .catch((err) => {
+                if (controller.signal.aborted) return;
                 console.error("Usage fetch error:", err);
                 setError(err.message || "Failed to load usage data");
                 setDailyUsage([]);
             })
             .finally(() => {
-                setLoading(false);
+                if (!controller.signal.aborted) setLoading(false);
             });
     }, [granularity, period]);
 
     useEffect(() => {
         fetchUsage();
+        return () => request.current?.abort();
     }, [fetchUsage]);
 
     const usedModels = useMemo(() => {
@@ -88,7 +101,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         const apiKeyLabels = new Map<string, string>();
         for (const r of dailyUsage) {
             if (apiKeyLabels.has(r.api_key_id)) continue;
-            apiKeyLabels.set(r.api_key_id, r.api_key || r.api_key_id);
+            apiKeyLabels.set(r.api_key_id, r.api_key || "Unnamed key");
         }
 
         return Array.from(apiKeyLabels.entries())
@@ -96,19 +109,9 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             .sort((a, b) => a.label.localeCompare(b.label));
     }, [dailyUsage]);
 
-    const { chartData, stats } = useMemo(() => {
-        // Selections may reference ids absent from the current period; ignore
-        // stale ids so an all-stale selection falls back to "All".
-        const validKeyIds = new Set(dailyUsage.map((r) => r.api_key_id));
-        const selectedKeyIds = filters.selectedKeyIds.filter((id) =>
-            validKeyIds.has(id),
-        );
-        const validModels = new Set(
-            dailyUsage.map((r) => r.model).filter(Boolean),
-        );
-        const selectedModels = filters.selectedModels.filter((model) =>
-            validModels.has(model),
-        );
+    const { chartData, stats, hasData } = useMemo(() => {
+        const selectedKeyIds = filters.selectedKeyIds;
+        const selectedModels = filters.selectedModels;
         const filtered = dailyUsage.filter((r: DailyUsageRecord) => {
             if (
                 selectedKeyIds.length > 0 &&
@@ -117,8 +120,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 return false;
             if (
                 selectedModels.length > 0 &&
-                r.model &&
-                !selectedModels.includes(r.model)
+                !selectedModels.includes(r.model ?? "")
             )
                 return false;
             return true;
@@ -131,7 +133,6 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             tierPollen: number;
             paidRequests: number;
             paidPollen: number;
-            byModel: Map<string, { requests: number; pollen: number }>;
         };
         const buckets = new Map<string, DayBucket>();
 
@@ -144,7 +145,6 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 tierPollen: 0,
                 paidRequests: 0,
                 paidPollen: 0,
-                byModel: new Map(),
             };
             cur.requests += r.requests || 0;
             cur.pollen += r.cost_usd || 0;
@@ -157,15 +157,6 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 cur.paidPollen += r.cost_usd || 0;
             }
 
-            if (r.model) {
-                const modelData = cur.byModel.get(r.model) || {
-                    requests: 0,
-                    pollen: 0,
-                };
-                modelData.requests += r.requests || 0;
-                modelData.pollen += r.cost_usd || 0;
-                cur.byModel.set(r.model, modelData);
-            }
             buckets.set(dateKey, cur);
         });
 
@@ -184,19 +175,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 tierPollen: 0,
                 paidRequests: 0,
                 paidPollen: 0,
-                byModel: new Map(),
             };
-            const modelBreakdown: ModelBreakdown[] = Array.from(
-                d.byModel.entries(),
-            )
-                .map(([modelId, modelStats]) => ({
-                    model: modelId,
-                    label: modelId,
-                    requests: modelStats.requests,
-                    pollen: modelStats.pollen,
-                }))
-                .sort((a, b) => b.requests - a.requests);
-
             const tierKey =
                 filters.metric === "requests" ? "tierRequests" : "tierPollen";
             const paidKey =
@@ -208,25 +187,27 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 tierValue: d[tierKey],
                 paidValue: d[paidKey],
                 timestamp: date,
-                modelBreakdown,
             };
         });
 
-        const totalReq = filtered.reduce(
+        const selectedRows = filtered.filter((row) =>
+            isInActivityBucket(row.date, filters.period),
+        );
+        const totalReq = selectedRows.reduce(
             (s: number, r: DailyUsageRecord) => s + (r.requests || 0),
             0,
         );
-        const totalPollen = filtered.reduce(
+        const totalPollen = selectedRows.reduce(
             (s: number, r: DailyUsageRecord) => s + (r.cost_usd || 0),
             0,
         );
-        const tierPollen = filtered
+        const tierPollen = selectedRows
             .filter((r) => r.meter_source === "tier")
             .reduce(
                 (s: number, r: DailyUsageRecord) => s + (r.cost_usd || 0),
                 0,
             );
-        const paidPollen = filtered
+        const paidPollen = selectedRows
             .filter((r) => r.meter_source !== "tier")
             .reduce(
                 (s: number, r: DailyUsageRecord) => s + (r.cost_usd || 0),
@@ -234,54 +215,60 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             );
         const modelTotals = new Map<
             string,
-            { requests: number; pollen: number }
+            {
+                requests: number;
+                pollen: number;
+                paidPollen: number;
+                tierPollen: number;
+                paidRequests: number;
+                tierRequests: number;
+            }
         >();
-        const activeApiKeyIds = new Set<string>();
-        for (const r of filtered) {
-            if (r.api_key_id) activeApiKeyIds.add(r.api_key_id);
+        for (const r of selectedRows) {
             if (!r.model) continue;
             const cur = modelTotals.get(r.model) || {
                 requests: 0,
                 pollen: 0,
+                paidPollen: 0,
+                tierPollen: 0,
+                paidRequests: 0,
+                tierRequests: 0,
             };
             cur.requests += r.requests || 0;
             cur.pollen += r.cost_usd || 0;
+            if (r.meter_source === "tier") {
+                cur.tierPollen += r.cost_usd || 0;
+                cur.tierRequests += r.requests || 0;
+            } else {
+                cur.paidPollen += r.cost_usd || 0;
+                cur.paidRequests += r.requests || 0;
+            }
             modelTotals.set(r.model, cur);
         }
-        const topModelEntry = Array.from(modelTotals.entries()).sort(
-            (left, right) => {
-                const leftValue =
-                    filters.metric === "requests"
-                        ? left[1].requests
-                        : left[1].pollen;
-                const rightValue =
-                    filters.metric === "requests"
-                        ? right[1].requests
-                        : right[1].pollen;
-                return rightValue - leftValue;
-            },
-        )[0];
-        const topModel = topModelEntry
-            ? (() => {
-                  const [id, modelStats] = topModelEntry;
-                  return {
-                      id,
-                      label: id,
-                      requests: modelStats.requests,
-                      pollen: modelStats.pollen,
-                  };
-              })()
-            : null;
+        const modelBreakdowns: UsageModelBreakdown[] = Array.from(
+            modelTotals.entries(),
+        )
+            .map(([model, totals]) => ({ model, label: model, ...totals }))
+            .sort((a, b) => b[filters.metric] - a[filters.metric]);
         return {
             chartData: sorted,
+            hasData: filtered.length > 0,
             stats: {
                 totalRequests: totalReq,
                 totalPollen,
                 tierPollen,
                 paidPollen,
-                activeApiKeyCount:
-                    activeApiKeyIds.size > 0 ? activeApiKeyIds.size : null,
-                topModel,
+                paidRequests: selectedRows.reduce(
+                    (sum, row) =>
+                        sum + (row.meter_source !== "tier" ? row.requests : 0),
+                    0,
+                ),
+                tierRequests: selectedRows.reduce(
+                    (sum, row) =>
+                        sum + (row.meter_source === "tier" ? row.requests : 0),
+                    0,
+                ),
+                modelBreakdowns,
             },
         };
     }, [
@@ -299,6 +286,8 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         usedModels,
         usedApiKeys,
         chartData,
+        hasData,
         stats,
+        hasPeriodData: dailyUsage.length > 0,
     };
 }

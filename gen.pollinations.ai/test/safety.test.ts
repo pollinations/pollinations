@@ -1,4 +1,9 @@
 import {
+    createExecutionContext,
+    waitOnExecutionContext,
+} from "cloudflare:test";
+import { env } from "cloudflare:workers";
+import {
     communityEndpointPrices,
     communityModelDefinition,
     type ProxyCommunityEndpointRuntime,
@@ -10,25 +15,27 @@ import {
     SafeSchema,
 } from "@shared/schemas/safety.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
-import { Hono } from "hono";
+import { Hono, type MiddlewareHandler } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
+import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
+import { imageCache, imageExecutionCache } from "@/middleware/media-cache.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import { getRequiredSafetyFeatures } from "@/middleware/model.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { applySafetyToResponseRequest } from "@/text/responses/safety.ts";
 import type { BedrockResponse } from "@/utils/bedrock-guardrail.ts";
-import {
-    generateCacheKey as generateMediaCacheKey,
-    SAFETY_CACHE_VERSION as MEDIA_SAFETY_CACHE_VERSION,
-} from "@/utils/media-cache.ts";
+import { generateCacheKey as generateMediaCacheKey } from "@/utils/media-cache.ts";
 import {
     generateCacheKey as generateTextCacheKey,
     prepareMetadata as prepareTextCacheMetadata,
 } from "@/utils/text-cache.ts";
 import { generateChatCompletion } from "../src/routes/generation-handlers.ts";
-import { prepareOpenAIImageGeneration } from "../src/routes/images.ts";
+import {
+    prepareOpenAIImageEdit,
+    prepareOpenAIImageGeneration,
+} from "../src/routes/images.ts";
 
 const testLog = {
     getChild: () => testLog,
@@ -231,6 +238,109 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
         expect(await response.text()).toBe("email {EMAIL}");
         expect(response.headers.get("X-Safety-Applied")).toBe("privacy");
         expect(response.headers.get("X-Safety-Redacted")).toBe("EMAIL");
+    });
+
+    it.each([
+        "generations",
+        "edits",
+    ])("keeps the original %s cache identity when replay redacts again", async (operation) => {
+        const path = `/v1/images/${operation}`;
+        let originalKey: string | undefined;
+        let cacheWrite: Promise<void> | undefined;
+        const app = safetyApp()
+            .use("*", async (c, next) => {
+                c.req.addValidatedData("json", await c.req.json());
+                if (originalKey) {
+                    c.set("generationExecution", {
+                        cacheKey: originalKey,
+                        registerCacheWrite: (write) => {
+                            cacheWrite = write;
+                        },
+                    });
+                }
+                await next();
+            })
+            .post(
+                path,
+                operation === "edits"
+                    ? prepareOpenAIImageEdit
+                    : prepareOpenAIImageGeneration,
+                prepareGenerationRequest,
+                (c, next) => {
+                    const cache = (originalKey
+                        ? imageExecutionCache
+                        : imageCache) as unknown as MiddlewareHandler<Env>;
+                    return cache(c, next);
+                },
+                (c) =>
+                    originalKey
+                        ? new Response(
+                              (
+                                  c.req.valid("json" as never) as {
+                                      prompt: string;
+                                  }
+                              ).prompt,
+                              {
+                                  headers: { "Content-Type": "image/png" },
+                              },
+                          )
+                        : c.json({
+                              key: c.var.generationCache?.key,
+                              body: c.var.generationRequestBody,
+                          }),
+            );
+        const bindings = { ...env, ...configuredEnv };
+        const ctx = createExecutionContext();
+        const prompt = `portrait ${crypto.randomUUID()}`;
+        guardrailResponse = intervened({}, [
+            { text: `${prompt} first redaction` },
+        ]);
+        const prepared = await app.request(
+            path,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    prompt,
+                    safe: true,
+                    seed: 7,
+                    image: "https://example.com/reference.png",
+                }),
+            },
+            bindings,
+            ctx,
+        );
+        expect(prepared.status).toBe(200);
+        const snapshot = await prepared.json<{
+            key: string;
+            body: string;
+        }>();
+        originalKey = snapshot.key;
+        expect(originalKey).toMatch(/^[a-f0-9]{64}$/);
+
+        const secondPrompt = `${prompt} second redaction`;
+        guardrailResponse = intervened({}, [{ text: secondPrompt }]);
+        const replay = await app.request(
+            path,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: snapshot.body,
+            },
+            bindings,
+            ctx,
+        );
+        expect(replay.status).toBe(200);
+        expect(await replay.text()).toBe(secondPrompt);
+        expect(cacheWrite).toBeDefined();
+        await cacheWrite;
+        await waitOnExecutionContext(ctx);
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        const stored = await env.MEDIA.get(originalKey);
+        expect(stored?.headers.get("Link")).toBe(
+            `<https://media.pollinations.ai/${originalKey}>; rel="enclosure"`,
+        );
+        expect(await stored?.text()).toBe(secondPrompt);
     });
 
     it("uses the redacted prompt for OpenAI image cache URLs", async () => {
@@ -613,6 +723,7 @@ describe("applySafetyToInput", { timeout: 30000 }, () => {
             id: "community-endpoint-id",
             ownerUserId: "owner-id",
             modelId: "owner/community-model",
+            api: "chat_completions",
             name: "community-model",
             title: "Community Model",
             description: null,
@@ -620,7 +731,7 @@ describe("applySafetyToInput", { timeout: 30000 }, () => {
             imagePricing: "request",
             inputModalities: ["text"],
             requiredSafetyFeatures: [],
-            baseUrl: "https://community.example.test/v1",
+            baseUrl: "https://community.example.test/v1/chat/completions",
             upstreamModel: "upstream-model",
             visibility: "public",
             paidOnly: false,
@@ -658,6 +769,13 @@ describe("applySafetyToInput", { timeout: 30000 }, () => {
                     },
                 });
             },
+        );
+        vi.stubGlobal(
+            "fetch",
+            (input: RequestInfo | URL, init?: RequestInit) =>
+                new Request(input, init).url === endpoint.baseUrl
+                    ? upstreamFetch(input, init)
+                    : fetchMock(input, init),
         );
         const app = new Hono<Env>()
             .use("*", async (c, next) => {
@@ -699,8 +817,6 @@ describe("applySafetyToInput", { timeout: 30000 }, () => {
             {
                 ...configuredEnv,
                 BETTER_AUTH_SECRET: secret,
-                PORTKEY_GATEWAY_URL: "https://portkey.test",
-                PORTKEY: { fetch: upstreamFetch },
             } as unknown as CloudflareBindings,
         );
 
@@ -810,8 +926,8 @@ describe("safety cache keys", () => {
         ).toBe(await generateTextCacheKey(request));
 
         const url = new URL("https://gen.pollinations.ai/image/hello");
-        expect(generateMediaCacheKey(url, undefined, [])).toBe(
-            generateMediaCacheKey(url),
+        expect(await generateMediaCacheKey(url, undefined, [])).toBe(
+            await generateMediaCacheKey(url),
         );
     });
 
@@ -872,17 +988,21 @@ describe("safety cache keys", () => {
         const mediaUrl = new URL(
             "https://gen.pollinations.ai/image/hello?model=flux",
         );
-        const mediaWithoutSafety = generateMediaCacheKey(mediaUrl);
-        const mediaHarmfulContent = generateMediaCacheKey(mediaUrl, undefined, [
-            "violence",
-            "sexual",
-        ]);
+        const mediaWithoutSafety = await generateMediaCacheKey(mediaUrl);
+        const mediaHarmfulContent = await generateMediaCacheKey(
+            mediaUrl,
+            undefined,
+            ["violence", "sexual"],
+        );
         expect(mediaHarmfulContent).not.toBe(mediaWithoutSafety);
         expect(mediaHarmfulContent).not.toBe(
-            generateMediaCacheKey(mediaUrl, undefined, ["privacy"]),
+            await generateMediaCacheKey(mediaUrl, undefined, ["privacy"]),
         );
         expect(mediaHarmfulContent).toBe(
-            generateMediaCacheKey(mediaUrl, undefined, ["sexual", "violence"]),
+            await generateMediaCacheKey(mediaUrl, undefined, [
+                "sexual",
+                "violence",
+            ]),
         );
 
         expect(withSafety).not.toBe(noSafety);
@@ -920,38 +1040,36 @@ describe("safety cache keys", () => {
         expect(withQueryOverride).not.toBe(withHeaderSafety);
     });
 
-    it("separates media cache keys when safe is active", () => {
-        const withSafety = generateMediaCacheKey(
+    it("separates media cache keys when safe is active", async () => {
+        const withSafety = await generateMediaCacheKey(
             new URL("https://gen.pollinations.ai/image/hello?safe=true"),
         );
-        const withoutSafety = generateMediaCacheKey(
+        const withoutSafety = await generateMediaCacheKey(
             new URL("https://gen.pollinations.ai/image/hello?safe=false"),
         );
 
         expect(withSafety).not.toBe(withoutSafety);
-        expect(withSafety).toContain(`__safety_${MEDIA_SAFETY_CACHE_VERSION}`);
+        expect(withSafety).toMatch(/^[a-f0-9]{64}$/);
     });
 
-    it("separates media cache keys when safe is provided by header", () => {
-        const withoutHeaderSafety = generateMediaCacheKey(
+    it("separates media cache keys when safe is provided by header", async () => {
+        const withoutHeaderSafety = await generateMediaCacheKey(
             new URL("https://gen.pollinations.ai/image/hello"),
         );
-        const withHeaderSafety = generateMediaCacheKey(
+        const withHeaderSafety = await generateMediaCacheKey(
             new URL("https://gen.pollinations.ai/image/hello"),
             "privacy",
         );
-        const withQueryOverride = generateMediaCacheKey(
+        const withQueryOverride = await generateMediaCacheKey(
             new URL("https://gen.pollinations.ai/image/hello?safe=false"),
             "privacy",
         );
 
         expect(withHeaderSafety).not.toBe(withoutHeaderSafety);
-        expect(withHeaderSafety).toContain(
-            `__safety_${MEDIA_SAFETY_CACHE_VERSION}`,
-        );
+        expect(withHeaderSafety).toMatch(/^[a-f0-9]{64}$/);
         expect(withQueryOverride).not.toBe(withHeaderSafety);
         expect(withQueryOverride).toBe(
-            generateMediaCacheKey(
+            await generateMediaCacheKey(
                 new URL("https://gen.pollinations.ai/image/hello?safe=false"),
             ),
         );

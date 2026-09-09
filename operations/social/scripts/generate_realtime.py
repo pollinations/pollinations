@@ -142,7 +142,8 @@ Changed files:
 
     response = call_pollinations_api(
         system_prompt, user_prompt, token,
-        temperature=0.2
+        temperature=0.2,
+        response_format={"type": "json_object"},
     )
     return parse_json_response(response) if response else None
 

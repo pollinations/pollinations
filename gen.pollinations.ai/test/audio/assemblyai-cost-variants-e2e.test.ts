@@ -126,7 +126,7 @@ test("AssemblyAI prompt and diarization select the combined billing sheet", asyn
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelRequested: "universal-3.5-pro",
-        modelUsed: "universal-3.5-pro",
+        modelUsed: "assemblyai/universal-3.5-pro",
         costVariant: "prompting_diarization",
         tokenCountPromptAudioSeconds: 3600,
         tokenPricePromptAudioSeconds: 0.28 / 3600,

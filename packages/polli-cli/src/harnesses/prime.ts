@@ -1,19 +1,16 @@
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
 import {
     commandExists,
     readTextIfExists,
     removeIfExists,
+    resolveHomePath,
     writeTextAtomic,
 } from "./fs.js";
 import { resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
-import {
-    applyWithSnapshot,
-    clearSnapshot,
-    restoreSnapshot,
-} from "./snapshot.js";
+import { applyWithSnapshot, restoreOrStrip } from "./snapshot.js";
 import type {
     HarnessAdapter,
     HarnessContext,
@@ -30,13 +27,7 @@ const DEFAULT_MODEL = "deepseek";
 export const primeAgentDir = (ctx: HarnessContext) => {
     const configured = ctx.env.PRIME_AGENT_CODING_AGENT_DIR;
     if (!configured?.trim()) return join(ctx.home, ".prime", "agent");
-    const expanded =
-        configured === "~"
-            ? ctx.home
-            : configured.startsWith("~/") || configured.startsWith("~\\")
-              ? join(ctx.home, configured.slice(2))
-              : configured;
-    return resolve(expanded);
+    return resolveHomePath(ctx.home, configured);
 };
 const modelsPath = (ctx: HarnessContext) =>
     join(primeAgentDir(ctx), "models.json");
@@ -210,12 +201,7 @@ export const configurePrime = (
 };
 
 export const disablePrime = (ctx: HarnessContext): HarnessResult => {
-    const managedFiles = files(ctx);
-    let outcome: HarnessResult["outcome"] = "restored";
-    if (restoreSnapshot(ctx, ID, managedFiles) !== "restored") {
-        outcome = stripConfig(ctx) ? "stripped" : "unchanged";
-        clearSnapshot(ctx, ID, managedFiles);
-    }
+    const outcome = restoreOrStrip(ctx, ID, files(ctx), () => stripConfig(ctx));
     return { ...result(ctx), configured: false, outcome };
 };
 
@@ -233,12 +219,7 @@ export const prime: HarnessAdapter = {
             );
         }
         const model = options.model ?? DEFAULT_MODEL;
-        const models = await fetchHarnessModels();
-        if (!models.some((candidate) => candidate.id === model)) {
-            throw new Error(
-                `Model "${model}" is not a tool-calling text model. Run: polli models`,
-            );
-        }
+        const models = await fetchHarnessModels(model);
 
         const apiKey = await resolveHarnessKey(
             { id: ID, label: LABEL, existingKey: readKey(ctx) },

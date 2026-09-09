@@ -1,5 +1,4 @@
 import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
-import { communityOpenAIBaseUrl } from "@shared/community-endpoint-urls.ts";
 import {
     type CommunityEndpointRuntime,
     isFreeCommunityEndpoint,
@@ -132,11 +131,10 @@ export async function communityEndpointModelConfig({
 
     return {
         provider: "openai",
-        "custom-host": communityOpenAIBaseUrl(endpoint.baseUrl),
         authKey,
         model: endpoint.upstreamModel,
-        ...(endpoint.responsesUrl
-            ? { responsesEndpoint: endpoint.responsesUrl }
-            : {}),
+        ...(endpoint.api === "responses"
+            ? { responsesEndpoint: endpoint.baseUrl }
+            : { directEndpoint: endpoint.baseUrl }),
     };
 }

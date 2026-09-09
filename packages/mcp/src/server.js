@@ -2,7 +2,6 @@ import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { accountTools } from "./services/accountService.js";
 import { audioTools } from "./services/audioService.js";
-import { authTools } from "./services/authService.js";
 import { discoveryTools } from "./services/discoveryService.js";
 import { embeddingTools } from "./services/embeddingService.js";
 import { imageTools } from "./services/imageService.js";
@@ -10,7 +9,9 @@ import { model3dTools } from "./services/model3dService.js";
 import { textTools } from "./services/textService.js";
 import { validateApiBaseUrl } from "./utils/coreUtils.js";
 
-const serviceTools = [
+const SERVER_VERSION = "2.5.1";
+
+const tools = [
     ...imageTools,
     ...textTools,
     ...audioTools,
@@ -22,21 +23,14 @@ const serviceTools = [
 
 export { createMcpHandler };
 
-function createServerInstructions(apiBaseUrl, includeAuthTools, version) {
-    const authentication = includeAuthTools
-        ? `Set your API key first using the setApiKey tool:
-- **Publishable keys (pk_)**: Client-safe and rate-limited
-- **Secret keys (sk_)**: Server-side only and can spend Pollen`
-        : `Send a Pollinations API key with every MCP request:
+const SERVER_INSTRUCTIONS = `# Pollinations MCP Server v${SERVER_VERSION}
+
+## Authentication
+Send a Pollinations API key with every MCP request:
 
 \`Authorization: Bearer YOUR_KEY\`
 
-The credential is forwarded to the Pollinations API for that request only.`;
-
-    return `# Pollinations MCP Server v${version}
-
-## Authentication
-${authentication}
+The credential is forwarded to the Pollinations API for that request only.
 
 Get your API key at: https://enter.pollinations.ai/keys
 
@@ -52,34 +46,21 @@ Pollinations is a live multi-model gateway. Never decide that a requested model 
 - Use getModelStatus for recent health and latency, not model discovery.
 
 ## API Endpoint
-All requests go through: ${apiBaseUrl}`;
-}
+All requests go through: ${validateApiBaseUrl()}`;
 
-export function buildServer({
-    apiBaseUrl = validateApiBaseUrl(),
-    includeAuthTools = true,
-    version = "2.5.0",
-} = {}) {
+export function buildServer() {
     const server = new McpServer(
         {
             name: "pollinations-mcp",
-            version,
+            version: SERVER_VERSION,
         },
         {
-            instructions: createServerInstructions(
-                apiBaseUrl,
-                includeAuthTools,
-                version,
-            ),
+            instructions: SERVER_INSTRUCTIONS,
             capabilities: {
                 tools: {},
             },
         },
     );
-
-    const tools = includeAuthTools
-        ? [...serviceTools, ...authTools]
-        : serviceTools;
 
     for (const tool of tools) {
         const [name, description, inputSchema, handler] = tool;

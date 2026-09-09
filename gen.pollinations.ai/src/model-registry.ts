@@ -30,6 +30,7 @@ import {
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
 import { linkFallbackEntries } from "./fallback.ts";
+import { mediaPromptRoute } from "./media/prompt-route.ts";
 import { supportsDirectResponses } from "./text/availableModels.ts";
 
 const REGISTRY_TTL_MS = 60_000;
@@ -144,7 +145,7 @@ function communityEntryToGenerationEntry(
     );
     if (
         entry.communityEndpoint.modality === "text" &&
-        entry.communityEndpoint.responsesUrl
+        entry.communityEndpoint.api === "responses"
     ) {
         supportedEndpoints.push("/v1/responses");
     }
@@ -203,7 +204,22 @@ function buildRegistry(
 ): GenerationModelRegistry {
     // Link on copies: STATIC_ENTRIES is module-level and shared across registry
     // rebuilds, so resolution must never mutate the originals.
-    const entries = sourceEntries.map((entry) => ({ ...entry }));
+    const entries = sourceEntries.map((entry) => {
+        const supportedEndpoints = mediaPromptRoute(entry)
+            ? [
+                  ...new Set([
+                      ...entry.supportedEndpoints,
+                      "/v1/responses",
+                      "/v1/chat/completions",
+                  ]),
+              ]
+            : entry.supportedEndpoints;
+        return {
+            ...entry,
+            supportedEndpoints,
+            info: { ...entry.info, supported_endpoints: supportedEndpoints },
+        };
+    });
     // Build lookup keys before presentation sorting so duplicate aliases keep
     // their declaration-order, first-wins resolution behavior.
     const byIdOrAlias = new Map<string, GenerationModelEntry>();

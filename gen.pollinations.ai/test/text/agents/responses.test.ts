@@ -1,12 +1,6 @@
-import {
-    afterAll,
-    beforeAll,
-    beforeEach,
-    describe,
-    expect,
-    it,
-    vi,
-} from "vitest";
+import OpenAI from "openai";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { collectOutput } from "../../../src/text/agents/output.ts";
 import {
     handlePromptAgentResponsesRequest,
     PromptAgentResponsesRequestSchema,
@@ -23,15 +17,6 @@ const RUNTIME = {
     fetcher: (input: RequestInfo | URL, init?: RequestInit) =>
         globalThis.fetch(input, init),
 };
-
-function rethrowUnhandledRejection(reason: unknown): void {
-    throw reason;
-}
-
-// Keep the migrated AI SDK failure-path tests under Enter's existing
-// workerd rejection behavior without weakening Gen's test suite globally.
-beforeAll(() => process.on("unhandledRejection", rethrowUnhandledRejection));
-afterAll(() => process.off("unhandledRejection", rethrowUnhandledRejection));
 
 function request(input: Record<string, unknown>) {
     return PromptAgentResponsesRequestSchema.parse({
@@ -120,10 +105,10 @@ describe("managed agent Responses runtime", () => {
 
         const response = await handlePromptAgentResponsesRequest(
             request({
+                reasoning: { effort: "low", summary: null },
                 instructions: "Answer in one sentence.",
                 max_output_tokens: 123,
                 temperature: 0.4,
-                reasoning: { effort: "low" },
                 prompt_cache_key: "stable-prefix",
                 prompt_cache_options: { mode: "explicit" },
                 metadata: { trace: "test" },
@@ -339,6 +324,14 @@ describe("managed agent Responses runtime", () => {
             new AbortController().signal,
             RUNTIME,
         );
+        const sdkResponse = response.clone();
+        const sdk = new OpenAI({
+            apiKey: "test",
+            fetch: async () => sdkResponse,
+        });
+        const aggregated = sdk.responses
+            .stream({ model: "test-agent", input: "hello", store: false })
+            .finalResponse();
         const body = await response.text();
         const events = streamEvents(body);
 
@@ -367,6 +360,9 @@ describe("managed agent Responses runtime", () => {
                 },
             },
         });
+        expect(await aggregated).toMatchObject(
+            events.at(-1)?.response as object,
+        );
     });
 
     it.each([
@@ -417,7 +413,9 @@ describe("managed agent Responses runtime", () => {
         const events = streamEvents(await response.text());
         expect(events.at(-2)).toMatchObject({
             type: "error",
-            error: { code: "agent_error" },
+            code: "agent_error",
+            message: expect.any(String),
+            param: null,
         });
         expect(events.at(-1)).toMatchObject({
             type: "response.failed",
@@ -491,7 +489,9 @@ describe("managed agent Responses runtime", () => {
         const events = streamEvents(await response.text());
         expect(events.at(-2)).toMatchObject({
             type: "error",
-            error: { code: "agent_error" },
+            code: "agent_error",
+            message: expect.any(String),
+            param: null,
         });
         expect(events.at(-1)).toMatchObject({
             type: "response.failed",
@@ -502,7 +502,362 @@ describe("managed agent Responses runtime", () => {
         ).toBe(false);
     });
 
+    it.each([
+        false,
+        true,
+    ])("replays completed function pairs with isError %j without executing them", async (isError) => {
+        const call = {
+            type: "function_call",
+            id: "fc_prior",
+            call_id: "prior-call",
+            name: "mcp__exa__search",
+            arguments: '{"query":"old question"}',
+            status: "completed",
+        };
+        const result = {
+            type: "function_call_output",
+            id: "fco_prior",
+            call_id: call.call_id,
+            status: "completed",
+            output: JSON.stringify({
+                content: [
+                    {
+                        type: "text",
+                        text: isError ? "Saved failure" : "Saved answer",
+                    },
+                ],
+                ...(isError ? { isError } : {}),
+            }),
+        };
+        const fetchMock = vi.fn(
+            async (input: RequestInfo | URL, init?: RequestInit) => {
+                const upstream = new Request(input, init);
+                expect(upstream.url).toBe(
+                    "https://gen.test/v1/chat/completions",
+                );
+                const body = (await upstream.json()) as Record<string, unknown>;
+                expect(body.messages).toEqual(
+                    expect.arrayContaining([
+                        expect.objectContaining({
+                            role: "assistant",
+                            tool_calls: [
+                                {
+                                    id: "prior-call",
+                                    type: "function",
+                                    function: {
+                                        name: "mcp__exa__search",
+                                        arguments: call.arguments,
+                                    },
+                                },
+                            ],
+                        }),
+                        {
+                            role: "tool",
+                            tool_call_id: "prior-call",
+                            content: JSON.stringify([
+                                {
+                                    type: "text",
+                                    text: isError
+                                        ? "Saved failure"
+                                        : "Saved answer",
+                                },
+                            ]),
+                        },
+                        expect.objectContaining({
+                            role: "user",
+                            content: "What happened?",
+                        }),
+                    ]),
+                );
+                return Response.json({
+                    choices: [
+                        {
+                            message: {
+                                role: "assistant",
+                                content: "I remember",
+                            },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 4,
+                        completion_tokens: 2,
+                        total_tokens: 6,
+                    },
+                });
+            },
+        );
+        vi.stubGlobal("fetch", fetchMock);
+        const response = await handlePromptAgentResponsesRequest(
+            request({
+                input: [
+                    call,
+                    result,
+                    { role: "user", content: "What happened?" },
+                ],
+            }),
+            new AbortController().signal,
+            RUNTIME,
+        );
+        expect(response.status).toBe(200);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(await response.json()).toMatchObject({
+            output: [{ type: "message", content: [{ text: "I remember" }] }],
+            usage: { tool_call_counts: {} },
+        });
+        for (const input of [
+            [call],
+            [result],
+            [result, call],
+            [call, call, result],
+            [call, result, result],
+            [
+                call,
+                result,
+                { ...call, id: "fc_new" },
+                { ...result, id: "fco_new" },
+            ],
+            [{ ...call, status: "in_progress" }, result],
+            [call, { ...result, status: "incomplete" }],
+            [call, { ...result, status: "failed" }],
+            [call, { ...result, id: call.id }],
+            [call, { ...result, call_id: "unmatched" }],
+            [call, { role: "user", content: "Too soon" }, result],
+            [{ ...call, arguments: "invalid JSON" }, result],
+            [{ ...call, arguments: "[]" }, result],
+            [{ ...call, name: "external" }, result],
+            [call, { ...result, output: "plain text" }],
+            [call, { ...result, output: "{}" }],
+            [{ type: "mcp_call", id: "old", status: "completed" }],
+        ]) {
+            const invalid = await handlePromptAgentResponsesRequest(
+                request({ input }),
+                new AbortController().signal,
+                RUNTIME,
+            );
+            expect(invalid.status).toBe(400);
+        }
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("preserves parallel function pairs, sanitized results and ordering in JSON, events and replay", async () => {
+        const events: Record<string, unknown>[] = [];
+        const collected = collectOutput((type, payload) => {
+            events.push(structuredClone({ type, ...payload }));
+        });
+        collected.onPart({ type: "text-delta", text: "Checking both tools." });
+        for (const toolCallId of ["call_search", "call_image"]) {
+            collected.onPart({
+                type: "tool-call",
+                toolCallId,
+                toolName: `mcp__pollinations__${toolCallId.slice(5)}`,
+                input: { prompt: "Test" },
+            });
+        }
+        // Parallel execution may complete in a different order than the calls.
+        collected.onPart({
+            type: "tool-result",
+            toolCallId: "call_image",
+            toolName: "mcp__pollinations__image",
+            input: { prompt: "Test" },
+            output: {
+                content: [
+                    { type: "text", text: "Generated image" },
+                    {
+                        type: "resource_link",
+                        uri: "https://media.test/image.png",
+                        name: "Image",
+                        mimeType: "image/png",
+                    },
+                    {
+                        type: "image",
+                        data: "PRIVATE_BINARY",
+                        mimeType: "image/png",
+                    },
+                ],
+                _meta: { private: "PRIVATE_METADATA" },
+            },
+        });
+        collected.onPart({
+            type: "tool-error",
+            toolCallId: "call_search",
+            toolName: "mcp__pollinations__search",
+            input: { prompt: "Test" },
+            error: new Error("Search unavailable"),
+        });
+        collected.onPart({ type: "text-delta", text: "Here is the image." });
+        const output = collected.finish("stop");
+        expect(output.map((item) => item.type)).toEqual([
+            "message",
+            "function_call",
+            "function_call",
+            "function_call_output",
+            "function_call_output",
+            "message",
+        ]);
+        expect(new Set(output.map((item) => item.id)).size).toBe(output.length);
+        expect(output[1]).toMatchObject({
+            id: expect.stringMatching(/^fc_/),
+            call_id: "call_search",
+            name: "mcp__pollinations__search",
+            arguments: '{"prompt":"Test"}',
+            status: "completed",
+        });
+        expect(output[3]).toMatchObject({
+            id: expect.stringMatching(/^fco_/),
+            call_id: "call_image",
+            status: "completed",
+        });
+        expect(output[4]).toMatchObject({
+            call_id: "call_search",
+            status: "completed",
+            output: JSON.stringify({
+                isError: true,
+                content: [{ type: "text", text: "Search unavailable" }],
+            }),
+        });
+        expect(JSON.stringify(output)).not.toContain("PRIVATE_");
+        expect(
+            events
+                .filter((event) => event.type === "response.output_item.done")
+                .map((event) => event.item),
+        ).toEqual(output);
+        expect(
+            events.filter(
+                (event) =>
+                    event.type === "response.function_call_arguments.done",
+            ),
+        ).toHaveLength(2);
+        expect(
+            events
+                .filter(
+                    (event) =>
+                        event.type === "response.function_call_arguments.delta",
+                )
+                .map((event) => event.delta),
+        ).toEqual(['{"prompt":"Test"}', '{"prompt":"Test"}']);
+        expect(
+            events.some((event) => String(event.type).includes("mcp_call")),
+        ).toBe(false);
+        expect(
+            events
+                .filter((event) => event.type === "response.output_item.added")
+                .map((event) => (event.item as Record<string, unknown>).status),
+        ).toEqual(Array(6).fill("in_progress"));
+
+        const fetchMock = vi.fn(
+            async (input: RequestInfo | URL, init?: RequestInit) => {
+                const upstream = new Request(input, init);
+                expect(upstream.url).toBe(
+                    "https://gen.test/v1/chat/completions",
+                );
+                const body = (await upstream.json()) as {
+                    messages: Record<string, unknown>[];
+                };
+                const assistant = body.messages.find(
+                    (message) => message.tool_calls,
+                );
+                expect(assistant?.tool_calls).toMatchObject([
+                    {
+                        id: "call_search",
+                        function: { name: "mcp__pollinations__search" },
+                    },
+                    {
+                        id: "call_image",
+                        function: { name: "mcp__pollinations__image" },
+                    },
+                ]);
+                const toolResults = body.messages.filter(
+                    (message) => message.role === "tool",
+                );
+                expect(
+                    toolResults.map((message) => message.tool_call_id),
+                ).toEqual(["call_image", "call_search"]);
+                expect(toolResults[0].content).toContain(
+                    "https://media.test/image.png",
+                );
+                expect(toolResults[1].content).toContain("Search unavailable");
+                return Response.json({
+                    choices: [
+                        {
+                            message: {
+                                role: "assistant",
+                                content: "Remembered",
+                            },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 4,
+                        completion_tokens: 2,
+                        total_tokens: 6,
+                    },
+                });
+            },
+        );
+        vi.stubGlobal("fetch", fetchMock);
+        const response = await handlePromptAgentResponsesRequest(
+            request({
+                input: [...output, { role: "user", content: "Continue" }],
+            }),
+            new AbortController().signal,
+            RUNTIME,
+        );
+        expect(response.status).toBe(200);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(await response.json()).toMatchObject({
+            usage: { tool_call_counts: {} },
+        });
+    });
+
+    it("rejects dangling or duplicate execution results and omits unexecuted invalid attempts", () => {
+        const collected = collectOutput();
+        collected.onPart({
+            type: "tool-call",
+            toolCallId: "invalid",
+            toolName: "unknown",
+            input: {},
+            dynamic: true,
+            invalid: true,
+            error: new Error("Unknown tool"),
+        });
+        collected.onPart({
+            type: "tool-error",
+            toolCallId: "invalid",
+            toolName: "unknown",
+            input: {},
+            error: new Error("Unknown tool"),
+        });
+        expect(collected.items).toEqual([]);
+        const call = {
+            type: "tool-call" as const,
+            toolCallId: "valid",
+            toolName: "mcp__exa__search",
+            input: {},
+        };
+        collected.onPart(call);
+        expect(() => collected.finish("stop")).toThrow("has no result");
+        expect(() => collected.onPart(call)).toThrow("reused a tool call ID");
+        const result = {
+            type: "tool-result" as const,
+            toolCallId: "valid",
+            toolName: call.toolName,
+            input: {},
+            output: { content: [{ type: "text", text: "done" }] },
+        };
+        collected.onPart(result);
+        expect(() => collected.onPart(result)).toThrow("no matching call");
+        expect(collected.finish("stop")).toHaveLength(2);
+    });
+
     it("rejects state and unsupported parameters", async () => {
+        const fetchMock = vi.fn(async () =>
+            Response.json(
+                { error: { message: "Test upstream unavailable" } },
+                { status: 502 },
+            ),
+        );
+        vi.stubGlobal("fetch", fetchMock);
         expect(
             PromptAgentResponsesRequestSchema.safeParse({
                 model: crypto.randomUUID(),
@@ -521,21 +876,36 @@ describe("managed agent Responses runtime", () => {
             new AbortController().signal,
             RUNTIME,
         );
-        expect(withTools.status).not.toBe(400);
+        expect(withTools.status).toBe(502);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
 
         for (const [field, value] of [
             ["max_tool_calls", { max_tool_calls: 2 }],
-            ["reasoning", { reasoning: { effort: "low", summary: "auto" } }],
+            [
+                "reasoning.summary",
+                { reasoning: { effort: "low", summary: "auto" } },
+            ],
+            [
+                "reasoning.summary",
+                { reasoning: { effort: "low", summary: "concise" } },
+            ],
+            [
+                "reasoning.summary",
+                { reasoning: { effort: "low", summary: "detailed" } },
+            ],
         ] as const) {
-            const unsupported = await handlePromptAgentResponsesRequest(
-                request(value),
-                new AbortController().signal,
-                RUNTIME,
-            );
-            expect(unsupported.status).toBe(400);
-            await expect(unsupported.json()).resolves.toMatchObject({
-                error: { code: "unsupported_parameter", param: field },
-            });
+            for (const stream of [false, true]) {
+                const unsupported = await handlePromptAgentResponsesRequest(
+                    request({ ...value, stream }),
+                    new AbortController().signal,
+                    RUNTIME,
+                );
+                expect(unsupported.status).toBe(400);
+                await expect(unsupported.json()).resolves.toMatchObject({
+                    error: { code: "unsupported_parameter", param: field },
+                });
+            }
         }
+        expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 });

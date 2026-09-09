@@ -333,7 +333,7 @@ describe("generateTextPortkey", () => {
         expect(fetcher).toHaveBeenCalledOnce();
     });
 
-    it("rejects seed for a Responses-backed model", async () => {
+    it("still rejects stop for a Responses-backed model", async () => {
         const portkeyFetcher = vi.fn();
         const responsesFetcher = vi.spyOn(globalThis, "fetch");
 
@@ -343,7 +343,7 @@ describe("generateTextPortkey", () => {
                 [{ role: "user", content: "hello" }],
                 {
                     model: "gpt-5.6-luna",
-                    seed: 42,
+                    stop: ["END"],
                     modelConfig: azureModelConfig,
                 },
                 portkeyFetcher,
@@ -360,7 +360,10 @@ describe("generateTextPortkey", () => {
         expect(responsesFetcher).not.toHaveBeenCalled();
     });
 
-    it("routes an unseeded GPT-5.6 request through Azure Responses", async () => {
+    it.each([
+        "openai/gpt-5.6-luna",
+        "gpt-5.6-luna",
+    ])("strips sampling before routing %s through Responses", async (model) => {
         const portkeyFetcher = vi.fn();
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")
@@ -368,9 +371,21 @@ describe("generateTextPortkey", () => {
                 expect(String(input)).toBe(
                     "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
                 );
-                expect(JSON.parse(String(init?.body))).toMatchObject({
+                const body = JSON.parse(String(init?.body));
+                expect(body).toMatchObject({
                     model: "gpt-5.6-luna",
+                    max_output_tokens: 128,
                 });
+                for (const key of [
+                    "temperature",
+                    "top_p",
+                    "seed",
+                    "repetition_penalty",
+                    "max_tokens",
+                    "max_completion_tokens",
+                ]) {
+                    expect(body).not.toHaveProperty(key);
+                }
                 return Response.json({
                     id: "resp_1",
                     object: "response",
@@ -393,7 +408,12 @@ describe("generateTextPortkey", () => {
         const completion = await generateTextPortkey(
             [{ role: "user", content: "hello" }],
             {
-                model: "gpt-5.6-luna",
+                model,
+                temperature: 0.7,
+                top_p: 0.9,
+                seed: 42,
+                repetition_penalty: 1.1,
+                max_tokens: 128,
                 modelConfig: azureModelConfig,
             },
             portkeyFetcher,

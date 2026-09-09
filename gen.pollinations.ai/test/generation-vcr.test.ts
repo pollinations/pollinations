@@ -2243,12 +2243,14 @@ test("simple text forwards options through provider transforms once", async ({
     expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
     expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
         model: "gpt-5-nano",
-        seed: 42,
-        temperature: 1,
         max_completion_tokens: 16,
         reasoning_effort: "medium",
         messages: [{ role: "user", content: "vcr simple text" }],
     });
+    expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty("seed");
+    expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty(
+        "temperature",
+    );
     expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty("top_p");
     expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty(
         "presence_penalty",

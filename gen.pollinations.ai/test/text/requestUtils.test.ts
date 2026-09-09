@@ -148,9 +148,9 @@ describe("getSimpleTextRequestData", () => {
                 stream: false,
             },
         );
-        expect(() =>
+        expect(
             chatToResponsesRequest(request.messages, { ...request, seed: 0 }),
-        ).toThrow("seed is not supported");
+        ).not.toHaveProperty("seed");
     });
 
     it("leaves numeric normalization to the provider pipeline", () => {

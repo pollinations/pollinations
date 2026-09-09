@@ -362,7 +362,7 @@ export const CreateChatCompletionRequestSchema = z
         top_p: z.number().min(0).max(1).nullable().optional(),
         tools: z.array(ChatCompletionToolSchema).optional(),
         tool_choice: ChatCompletionToolChoiceOptionSchema.optional(),
-        parallel_tool_calls: z.boolean().optional().default(true),
+        parallel_tool_calls: z.boolean().optional(),
         user: z.string().optional(),
         prompt_cache_key: z.string().optional(),
         prompt_cache_options: PromptCacheOptionsSchema,

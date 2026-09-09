@@ -27,6 +27,7 @@ import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import type { Env } from "@/env.ts";
 import { generateImageOrVideoResponse } from "@/image/handler.ts";
+import { normalizedJsonBody } from "@/middleware/generation-cache.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
 
@@ -232,10 +233,20 @@ async function parseEditInput(c: Context): Promise<{
 
 // --- Exported handlers ---
 
-/** Normalize edit inputs once per request; only file-producing inputs identify the cache. */
-export const prepareOpenAIImageEdit = createMiddleware<Env>(async (c, next) => {
-    const { imageUrls, extra, response_format, ...input } =
-        await parseEditInput(c);
+type EditInput = Omit<
+    Awaited<ReturnType<typeof parseEditInput>>,
+    "response_format"
+>;
+
+/**
+ * Build the JSON edits body the coordinator replays. Every entry point
+ * (native edits, Chat, Responses) hashes this same normalized body, so
+ * identical edits share one cache key and one generation.
+ */
+export async function prepareImageEditRequest(
+    c: Context<Env>,
+    { imageUrls, extra, ...input }: EditInput,
+) {
     const body = {
         ...extra,
         ...input,
@@ -247,14 +258,23 @@ export const prepareOpenAIImageEdit = createMiddleware<Env>(async (c, next) => {
     };
     // Replay the JSON edits contract even when the caller uploaded multipart files.
     // Leave random seed selection to execution so retries without a seed still join.
-    c.set("generationRequestBody", JSON.stringify(body));
+    const identity = normalizedJsonBody(JSON.stringify(body));
+    c.set("generationRequestBody", identity);
+    c.set("generationCacheBody", identity);
     c.set("generationRequestContentType", "application/json");
+    if (c.var.track) c.var.track.streamRequested = false;
+    return body;
+}
+
+/** Normalize edit inputs once per request; only file-producing inputs identify the cache. */
+export const prepareOpenAIImageEdit = createMiddleware<Env>(async (c, next) => {
+    const { response_format, ...input } = await parseEditInput(c);
+    const body = await prepareImageEditRequest(c, input);
     c.req.addValidatedData("json", {
         ...body,
-        image: imageUrls,
+        image: input.imageUrls,
         response_format,
     });
-    if (c.var.track) c.var.track.streamRequested = false;
     await next();
 });
 

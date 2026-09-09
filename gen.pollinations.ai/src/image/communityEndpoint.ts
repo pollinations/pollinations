@@ -133,7 +133,7 @@ export async function callCommunityVideoEndpoint(
         }),
         "video",
     );
-    const durationSeconds = communityVideoSeconds(body);
+    const durationSeconds = communityVideoSeconds(body, safeParams.duration);
     const bytes = await firstCommunityVideoBytes(body, endpoint.baseUrl);
     const mimeType = bytes && detectVideoMimeType(bytes);
     if (!bytes || !mimeType) {

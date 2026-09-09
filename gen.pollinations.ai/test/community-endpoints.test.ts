@@ -1746,10 +1746,35 @@ describe("community endpoint helpers", () => {
             undefined,
             null,
             {},
+            { duration: null },
+        ])("falls back to requested duration when usage is missing: %j", async (usage) => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        data: [{ b64_json: TEST_MP4_BASE64 }],
+                        usage,
+                    }),
+                ),
+            );
+            await expect(
+                callCommunityVideoEndpoint(
+                    await videoEndpoint(),
+                    "a sprout",
+                    { duration: 5 },
+                    secret,
+                ),
+            ).resolves.toMatchObject({
+                durationSeconds: 5,
+                trackingData: { usage: { completionVideoSeconds: 5 } },
+            });
+        });
+
+        it.each([
             { duration: 0 },
             { duration: -1 },
             { duration: "5" },
-        ])("rejects missing or invalid usage %j even when duration was requested", async (usage) => {
+        ])("rejects invalid reported usage %j even when duration was requested", async (usage) => {
             vi.stubGlobal(
                 "fetch",
                 vi.fn(async () =>
@@ -5613,7 +5638,7 @@ fixtureTest.each(["video", "image", "v1/images/generations"])(
                 }
                 expect(body).toEqual(
                     isProbe
-                        ? { prompt: body.prompt }
+                        ? { prompt: body.prompt, duration: 5 }
                         : {
                               prompt: "green sprout",
                               ...(route !== "v1/images/generations"
@@ -5811,7 +5836,7 @@ fixtureTest.each(["video", "image", "v1/images/generations"])(
         const failedContext = createExecutionContext();
         const failedResponse = await worker.fetch(
             new Request(
-                `https://gen.pollinations.ai/video/missing%20usage?model=${encodeURIComponent(registered.modelId)}&duration=5`,
+                `https://gen.pollinations.ai/video/missing%20usage?model=${encodeURIComponent(registered.modelId)}`,
                 {
                     headers: { Authorization: `Bearer ${caller.key}` },
                 },

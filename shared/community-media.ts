@@ -12,19 +12,25 @@ export const MAX_COMMUNITY_MEDIA_RESPONSE_BYTES =
     Math.ceil((MAX_COMMUNITY_VIDEO_BYTES * 4) / 3) + 64 * 1024;
 
 const CommunityVideoUsageSchema = z.object({
-    usage: z.object({ duration: z.number().positive() }),
+    usage: z.object({ duration: z.number().positive().nullish() }).nullish(),
 });
 
-/** Provider-reported generated seconds, shared by registration and billing. */
-export function communityVideoSeconds(body: unknown): number {
+/** Prefer reported seconds; a validated request duration is the fallback. */
+export function communityVideoSeconds(
+    body: unknown,
+    requestedDuration?: number,
+): number {
     const result = CommunityVideoUsageSchema.safeParse(body);
-    if (!result.success) {
+    const duration = result.success
+        ? (result.data.usage?.duration ?? requestedDuration)
+        : undefined;
+    if (duration === undefined) {
         throw UpstreamError.fromProvider(502, {
             message:
-                "Community video endpoint must report generated seconds as a positive number in usage.duration",
+                "Community video endpoint returned invalid usage.duration or no billable duration; report generated seconds in usage.duration or supply a request duration",
         });
     }
-    return result.data.usage.duration;
+    return duration;
 }
 
 /**

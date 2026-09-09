@@ -351,6 +351,7 @@ export async function testCommunityVideoEndpoint({
     baseUrl,
     bearerToken,
 }: EndpointAuth): Promise<CommunityEndpointTestResult> {
+    const requestedDuration = 5;
     const body = await fetchJson(baseUrl, {
         method: "POST",
         headers: {
@@ -359,9 +360,10 @@ export async function testCommunityVideoEndpoint({
         },
         body: JSON.stringify({
             prompt: "A green sprout gently moving in the breeze.",
+            duration: requestedDuration,
         }),
     });
-    const duration = communityVideoSeconds(body);
+    const duration = communityVideoSeconds(body, requestedDuration);
     const video = await firstCommunityVideoBytes(body, baseUrl);
     if (!video || !detectVideoMimeType(video)) {
         throw new Error("Endpoint did not return a supported video");

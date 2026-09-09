@@ -47,7 +47,7 @@ Return one completed MP4 within 300 seconds as `b64_json` or a public `url`, wit
 }
 ```
 
-Pollinations sends no upstream model id and bills only the reported `usage.duration`, even when a duration was requested. It must be a positive number; missing or invalid usage fails the request. Registration tests generation without a duration. Inline and downloaded responses are limited to 20 MB. Do not return an async job id; polling must finish inside the publisher endpoint before it responds.
+Pollinations sends no upstream model id. Billing uses `usage.duration` when reported, otherwise the requested duration. Report a positive number of generated seconds to support requests without a duration. Invalid reported usage, or no duration from either source, fails the request. Inline and downloaded responses are limited to 20 MB. Do not return an async job id; polling must finish inside the publisher endpoint before it responds.
 
 Text-to-speech is synchronous and OpenAI-shaped. Pollinations calls your `/v1/audio/speech` with `{ model, input, voice, response_format }` and streams the returned binary audio back to the caller with its content type preserved. Registration sends a short sample and accepts any non-empty `audio/*` response. Billing charges the input text by character against your per-1M completion-audio price. Voice cloning, speech-to-speech, and timestamps are out of scope.
 
@@ -63,7 +63,7 @@ Public models appear in the model catalog and can be called by other Pollination
 
 - Text models use the token categories reported by the upstream endpoint.
 - Image models use per-token pricing when the registration test finds valid OpenAI image usage; otherwise they use a fixed price per generated image.
-- Video models are priced from reported generated duration in seconds.
+- Video models are priced from reported generated seconds, falling back to the requested duration when usage is missing.
 - Transcription models are priced from reported audio duration.
 - Embedding models use the prompt-token count reported by the upstream endpoint.
 - A zero price makes the public model free.

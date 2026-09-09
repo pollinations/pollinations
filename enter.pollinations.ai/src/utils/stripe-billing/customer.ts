@@ -2,7 +2,7 @@ import { user as userTable } from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type Stripe from "stripe";
-import { createStripeClient } from "../stripe.ts";
+import { createStripeClient, getStripeId } from "../stripe.ts";
 import {
     CUSTOMER_CREATE_IDEMPOTENCY_VERSION,
     METADATA_USER_ID,
@@ -75,12 +75,6 @@ export async function retrieveActiveCustomer(
         return null;
     }
     return customer;
-}
-
-export function getStripeId(
-    value: string | { id?: string } | null | undefined,
-) {
-    return typeof value === "string" ? value : (value?.id ?? null);
 }
 
 export async function getDefaultPaymentMethod(

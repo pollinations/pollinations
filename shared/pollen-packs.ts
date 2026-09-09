@@ -11,8 +11,8 @@ export type PollenPack = {
     taxCode: string;
 };
 
-const CHECKOUT_IMAGE_URL = `${PUBLIC_URLS.enter.production}/checkout/pollen-pack.png`;
-const POLLEN_TAX_CODE = "txcd_10103001";
+export const POLLEN_CHECKOUT_IMAGE_URL = `${PUBLIC_URLS.enter.production}/checkout/pollen-pack.png`;
+export const POLLEN_TAX_CODE = "txcd_10103001";
 const CHECKOUT_FEEDBACK_URL = "https://discord.gg/z5uMbEYK";
 export const SERVICE_FEE_RATE_BPS = 350;
 export const SERVICE_FEE_FIXED_CENTS = 30;
@@ -47,7 +47,7 @@ export const POLLEN_PACKS: ReadonlyArray<PollenPack> = BASE_POLLEN_PACKS.map(
         amountUsd,
         checkoutName: `🪷 ${formatPollenPackValue(amountUsd)} Pollen`,
         checkoutDescription: `Tiny bits of creative energy for pollinations.ai 🌱 Feedback: ${CHECKOUT_FEEDBACK_URL}`,
-        checkoutImageUrl: CHECKOUT_IMAGE_URL,
+        checkoutImageUrl: POLLEN_CHECKOUT_IMAGE_URL,
         taxCode: POLLEN_TAX_CODE,
     }),
 );
@@ -85,6 +85,19 @@ export const calculateServiceFeeCents = (packAmountCents: number): number => {
             SERVICE_FEE_FIXED_CENTS,
     );
 };
+
+export const createServiceFeeLineItem = (unitAmount: number) => ({
+    price_data: {
+        currency: "usd",
+        unit_amount: unitAmount,
+        tax_behavior: "exclusive" as const,
+        product_data: {
+            name: SERVICE_FEE_NAME,
+            tax_code: SERVICE_FEE_TAX_CODE,
+        },
+    },
+    quantity: 1,
+});
 
 export const formatUsdCents = (amountCents: number): string =>
     (amountCents / 100).toLocaleString("en-US", {

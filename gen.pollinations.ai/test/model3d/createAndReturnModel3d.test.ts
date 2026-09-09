@@ -1,4 +1,8 @@
-import { createExecutionContext, env } from "cloudflare:test";
+import {
+    createExecutionContext,
+    env,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { test as workerTest } from "@shared/test/fixtures/index.ts";
@@ -23,11 +27,14 @@ afterEach(() => {
 });
 
 async function fetchGen(input: RequestInfo | URL, init?: RequestInit) {
-    return worker.fetch(
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(
         new Request(input, init),
         withInlineGenerationCoordinator(env),
-        createExecutionContext(),
+        ctx,
     );
+    await waitOnExecutionContext(ctx);
+    return response;
 }
 
 function baseParams(

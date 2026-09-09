@@ -1,12 +1,9 @@
 import {
     CardIcon,
     ClockIcon,
-    CopyButton,
     ExternalLinkButton,
-    GlobeIcon,
     InfoTip,
     InlineLink,
-    MailIcon,
     SproutIcon,
     Surface,
     Tooltip,
@@ -25,7 +22,7 @@ import {
 import { Link } from "@tanstack/react-router";
 import type { FC, ReactNode } from "react";
 import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
-import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
+import { PaymentTrustFooter } from "./payment-trust-footer.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 
 type PollenBalanceProps = {
@@ -261,12 +258,16 @@ type BuyPollenPanelProps = {
     initialBillingState: BillingState | null;
     selectedPackAmount: number;
     onSelectedPackAmountChange: (amount: number) => void;
+    onBuyAsGift?: () => void;
+    redeemCard?: ReactNode;
 };
 
 export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     initialBillingState,
     selectedPackAmount,
     onSelectedPackAmountChange,
+    onBuyAsGift,
+    redeemCard,
 }) => {
     const selectedPackIndex = Math.max(
         0,
@@ -295,76 +296,69 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                                 selectedBadgeDetail={`incl. ${formatUsdCentsCompact(serviceFeeCents)} fee`}
                             />
                         </div>
-                        <Tooltip
-                            content={
-                                <span className="block">
-                                    Buy{" "}
-                                    <span className="font-semibold text-theme-text-strong">
-                                        {selectedPack.amountUsd} pollen
-                                    </span>{" "}
-                                    for{" "}
-                                    <span className="font-semibold text-theme-text-strong">
-                                        {chargeLabel}
-                                    </span>
-                                    <span className="mt-1 block text-theme-text-muted">
-                                        Tax calculated at checkout
-                                    </span>
-                                </span>
-                            }
-                            displayContents
+                        <div
+                            data-theme="accent"
+                            className="relative flex w-28 flex-col items-center self-start sm:shrink-0 sm:self-center"
                         >
-                            <ExternalLinkButton
-                                href={`/api/stripe/checkout/${selectedPack.packKey}`}
-                                target="_self"
-                                className="w-28 min-w-0 gap-1.5 self-start text-center shadow-none sm:shrink-0 sm:self-center"
+                            <Tooltip
+                                content={
+                                    <span className="block">
+                                        Buy{" "}
+                                        <span className="font-semibold text-theme-text-strong">
+                                            {selectedPack.amountUsd} pollen
+                                        </span>{" "}
+                                        for{" "}
+                                        <span className="font-semibold text-theme-text-strong">
+                                            {chargeLabel}
+                                        </span>
+                                        <span className="mt-1 block text-theme-text-muted">
+                                            Tax calculated at checkout
+                                        </span>
+                                    </span>
+                                }
+                                displayContents
                             >
-                                <span className="inline-flex items-center gap-1.5">
-                                    <WalletIcon className="h-4 w-4 shrink-0" />
-                                    Buy
-                                </span>
-                            </ExternalLinkButton>
-                        </Tooltip>
+                                <ExternalLinkButton
+                                    href={`/api/stripe/checkout/${selectedPack.packKey}`}
+                                    target="_self"
+                                    className="w-28 min-w-0 gap-1.5 text-center shadow-none"
+                                >
+                                    <span className="inline-flex items-center gap-1.5">
+                                        <WalletIcon className="h-4 w-4 shrink-0" />
+                                        Buy
+                                    </span>
+                                </ExternalLinkButton>
+                            </Tooltip>
+                            {onBuyAsGift && (
+                                <button
+                                    type="button"
+                                    onClick={onBuyAsGift}
+                                    className="absolute top-full left-1/2 mt-2 -translate-x-1/2 whitespace-nowrap text-xs font-semibold text-theme-text-muted underline decoration-theme-text-muted/40 underline-offset-2 transition-colors hover:text-theme-text-strong"
+                                >
+                                    Buy as a gift
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
             </Surface>
             <Surface>
                 <AutoTopUpPanel initialBillingState={initialBillingState} />
             </Surface>
-            <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                <PaymentTrustBadge className="mt-0 pt-0" />
+            {redeemCard}
+            <PaymentTrustFooter>
                 <p className="flex items-start gap-1.5">
                     <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
-                        Credits are instant, never expire, and follow our{" "}
+                        Credits are instant and expire after 12 months of
+                        account inactivity.{" "}
                         <InlineLink href={REFUND_POLICY_URL}>
                             Refund Policy
                         </InlineLink>
                         .
                     </span>
                 </p>
-                <p className="flex items-start gap-1.5">
-                    <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Prices exclude tax — VAT or sales tax is added at
-                        checkout.
-                    </span>
-                </p>
-                <p className="flex items-start gap-1.5">
-                    <MailIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Payment issue or missing pollen?{" "}
-                        <CopyButton
-                            value="billing@pollinations.ai"
-                            className="underline decoration-theme-text-soft/30 underline-offset-2 transition-colors hover:text-theme-text-soft"
-                        >
-                            {(copied) =>
-                                copied ? "Copied!" : "billing@pollinations.ai"
-                            }
-                        </CopyButton>{" "}
-                        — we reply same day.
-                    </span>
-                </p>
-            </div>
+            </PaymentTrustFooter>
         </>
     );
 };

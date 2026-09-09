@@ -428,6 +428,26 @@ export const deviceCode = sqliteTable("device_code", {
   index("idx_device_code_user_code").on(table.userCode),
 ]);
 
+export const pollenGiftCode = sqliteTable("pollen_gift_code", {
+  id: text("id").primaryKey(),
+  codeHash: text("code_hash").notNull().unique(),
+  pollenAmount: integer("pollen_amount").notNull(),
+  status: text("status", {
+    enum: ["pending", "active", "redeemed", "voided"],
+  }).default("pending").notNull(),
+  stripeCheckoutSessionId: text("stripe_checkout_session_id").unique(),
+  stripePaymentIntentId: text("stripe_payment_intent_id").unique(),
+  redeemerUserId: text("redeemer_user_id").references(() => user.id, {
+    onDelete: "set null",
+  }),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .defaultNow()
+    .notNull(),
+  redeemedAt: integer("redeemed_at", { mode: "timestamp_ms" }),
+}, (table) => [
+  index("idx_pollen_gift_code_redeemer_user_id").on(table.redeemerUserId),
+]);
+
 export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
   sessionId: text("session_id").primaryKey(),
   eventId: text("event_id").notNull(),

@@ -16,6 +16,21 @@ directory = "dist/client"
 not_found_handling = "single-page-application"
 run_worker_first = [ "/api/*", "/.well-known/*" ]
 
+[[ratelimits]]
+name = "GIFT_CHECKOUT_LIMITER"
+namespace_id = "1405300"
+simple = { limit = 5, period = 60 }
+
+[[ratelimits]]
+name = "GIFT_RECEIPT_LIMITER"
+namespace_id = "1405301"
+simple = { limit = 10, period = 60 }
+
+[[ratelimits]]
+name = "GIFT_REDEEM_LIMITER"
+namespace_id = "1405302"
+simple = { limit = 10, period = 60 }
+
 [[d1_databases]]
 binding = "DB"
 database_name = "development-pollinations-enter-db"
@@ -53,6 +68,21 @@ service = "pollinations-composio-mcp"
 
 [env.local.triggers]
 crons = []
+
+[[env.local.ratelimits]]
+name = "GIFT_CHECKOUT_LIMITER"
+namespace_id = "1405310"
+simple = { limit = 5, period = 60 }
+
+[[env.local.ratelimits]]
+name = "GIFT_RECEIPT_LIMITER"
+namespace_id = "1405311"
+simple = { limit = 10, period = 60 }
+
+[[env.local.ratelimits]]
+name = "GIFT_REDEEM_LIMITER"
+namespace_id = "1405312"
+simple = { limit = 10, period = 60 }
 
 [[env.local.d1_databases]]
 binding = "DB"
@@ -108,6 +138,21 @@ pattern = "enter.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
 
+[[env.production.ratelimits]]
+name = "GIFT_CHECKOUT_LIMITER"
+namespace_id = "1405320"
+simple = { limit = 5, period = 60 }
+
+[[env.production.ratelimits]]
+name = "GIFT_RECEIPT_LIMITER"
+namespace_id = "1405321"
+simple = { limit = 10, period = 60 }
+
+[[env.production.ratelimits]]
+name = "GIFT_REDEEM_LIMITER"
+namespace_id = "1405322"
+simple = { limit = 10, period = 60 }
+
 [[env.production.d1_databases]]
 remote = true
 binding = "DB"
@@ -156,6 +201,21 @@ pattern = "staging.enter.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
 
+[[env.staging.ratelimits]]
+name = "GIFT_CHECKOUT_LIMITER"
+namespace_id = "1405330"
+simple = { limit = 5, period = 60 }
+
+[[env.staging.ratelimits]]
+name = "GIFT_RECEIPT_LIMITER"
+namespace_id = "1405331"
+simple = { limit = 10, period = 60 }
+
+[[env.staging.ratelimits]]
+name = "GIFT_REDEEM_LIMITER"
+namespace_id = "1405332"
+simple = { limit = 10, period = 60 }
+
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "staging-pollinations-enter-db"
@@ -198,6 +258,21 @@ pattern = "dev.enter.myceli.ai"
 zone_name = "myceli.ai"
 custom_domain = true
 
+[[env.dev.ratelimits]]
+name = "GIFT_CHECKOUT_LIMITER"
+namespace_id = "1405340"
+simple = { limit = 5, period = 60 }
+
+[[env.dev.ratelimits]]
+name = "GIFT_RECEIPT_LIMITER"
+namespace_id = "1405341"
+simple = { limit = 10, period = 60 }
+
+[[env.dev.ratelimits]]
+name = "GIFT_REDEEM_LIMITER"
+namespace_id = "1405342"
+simple = { limit = 10, period = 60 }
+
 [[env.dev.d1_databases]]
 binding = "DB"
 database_name = "development-pollinations-enter-db"
@@ -233,6 +308,21 @@ STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 [[env.test.services]]
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp"
+
+[[env.test.ratelimits]]
+name = "GIFT_CHECKOUT_LIMITER"
+namespace_id = "1405350"
+simple = { limit = 5, period = 60 }
+
+[[env.test.ratelimits]]
+name = "GIFT_RECEIPT_LIMITER"
+namespace_id = "1405351"
+simple = { limit = 10, period = 60 }
+
+[[env.test.ratelimits]]
+name = "GIFT_REDEEM_LIMITER"
+namespace_id = "1405352"
+simple = { limit = 10, period = 60 }
 
 [[env.test.d1_databases]]
 binding = "DB"

@@ -4455,8 +4455,8 @@ fixtureTest(
 );
 
 fixtureTest(
-    "routes direct calls to a hidden community model",
-    async ({ apiKey }) => {
+    "routes canonical and aliased calls to a hidden community model with a canonical-only key",
+    async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `disabled-call-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
@@ -4487,6 +4487,10 @@ fixtureTest(
             hiddenBy: "monitor",
             createdAt: new Date(),
             updatedAt: new Date(),
+        });
+        const { key: apiKey } = await createTestApiKey({
+            allowedModels: [modelId],
+            user: { packBalance: 100 },
         });
 
         const fetchMock = vi.fn(async (input, init) => {

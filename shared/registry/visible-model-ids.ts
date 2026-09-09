@@ -1,5 +1,6 @@
 import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+import { HTTPException } from "hono/http-exception";
 import {
     communityModelId,
     effectiveCommunityEndpointVisibility,
@@ -11,6 +12,40 @@ import {
     isVisibleModelDefinition,
     resolveModelName,
 } from "./registry.ts";
+
+/** Key permissions store canonical IDs; aliases belong to generation requests. */
+export async function validateModelPermissionIds(
+    dbBinding: D1Database,
+    modelIds: readonly string[],
+): Promise<string[]> {
+    if (modelIds.length === 0) return [];
+    const canonicalIds = new Set<string>(
+        getModels().filter(
+            (id) => getRegistryModelDefinition(id).fallbackOnly !== true,
+        ),
+    );
+    const rows = await drizzle(dbBinding)
+        .select({
+            owner: schema.user.githubUsername,
+            name: schema.communityEndpoint.name,
+        })
+        .from(schema.communityEndpoint)
+        .innerJoin(
+            schema.user,
+            eq(schema.communityEndpoint.ownerUserId, schema.user.id),
+        );
+    for (const row of rows) {
+        if (row.owner) canonicalIds.add(communityModelId(row.owner, row.name));
+    }
+    for (const id of modelIds) {
+        if (!canonicalIds.has(id)) {
+            throw new HTTPException(400, {
+                message: `Model permission '${id}' is not a canonical model ID. Use IDs from /models; aliases are only accepted in generation requests.`,
+            });
+        }
+    }
+    return [...new Set(modelIds)];
+}
 
 export function canonicalizeModelPermissionIds(
     modelIds: readonly string[],

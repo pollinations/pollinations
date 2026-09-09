@@ -15,6 +15,7 @@ import { Route as RefundsRouteImport } from './routes/refunds'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ErrorRouteImport } from './routes/error'
 import { Route as DeviceRouteImport } from './routes/device'
+import { Route as BuyRouteImport } from './routes/buy'
 import { Route as AuthorizeRouteImport } from './routes/authorize'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as IndexRouteImport } from './routes/index'
@@ -55,6 +56,11 @@ const ErrorRoute = ErrorRouteImport.update({
 const DeviceRoute = DeviceRouteImport.update({
   id: '/device',
   path: '/device',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BuyRoute = BuyRouteImport.update({
+  id: '/buy',
+  path: '/buy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthorizeRoute = AuthorizeRouteImport.update({
@@ -115,6 +121,7 @@ const DashboardAccountRoute = DashboardAccountRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/authorize': typeof AuthorizeRoute
+  '/buy': typeof BuyRoute
   '/device': typeof DeviceRoute
   '/error': typeof ErrorRoute
   '/privacy': typeof PrivacyRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/authorize': typeof AuthorizeRoute
+  '/buy': typeof BuyRoute
   '/device': typeof DeviceRoute
   '/error': typeof ErrorRoute
   '/privacy': typeof PrivacyRoute
@@ -153,6 +161,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_dashboard': typeof DashboardRouteWithChildren
   '/authorize': typeof AuthorizeRoute
+  '/buy': typeof BuyRoute
   '/device': typeof DeviceRoute
   '/error': typeof ErrorRoute
   '/privacy': typeof PrivacyRoute
@@ -173,6 +182,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/authorize'
+    | '/buy'
     | '/device'
     | '/error'
     | '/privacy'
@@ -191,6 +201,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/authorize'
+    | '/buy'
     | '/device'
     | '/error'
     | '/privacy'
@@ -210,6 +221,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_dashboard'
     | '/authorize'
+    | '/buy'
     | '/device'
     | '/error'
     | '/privacy'
@@ -230,6 +242,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   AuthorizeRoute: typeof AuthorizeRoute
+  BuyRoute: typeof BuyRoute
   DeviceRoute: typeof DeviceRoute
   ErrorRoute: typeof ErrorRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -280,6 +293,13 @@ declare module '@tanstack/react-router' {
       path: '/device'
       fullPath: '/device'
       preLoaderRoute: typeof DeviceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/buy': {
+      id: '/buy'
+      path: '/buy'
+      fullPath: '/buy'
+      preLoaderRoute: typeof BuyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/authorize': {
@@ -392,6 +412,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRouteWithChildren,
   AuthorizeRoute: AuthorizeRoute,
+  BuyRoute: BuyRoute,
   DeviceRoute: DeviceRoute,
   ErrorRoute: ErrorRoute,
   PrivacyRoute: PrivacyRoute,

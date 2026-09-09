@@ -15,6 +15,7 @@ import {
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import {
+    communityVideoSeconds,
     decodeCommunityBase64,
     firstCommunityImageBytes,
     firstCommunityVideoBytes,
@@ -358,16 +359,16 @@ export async function testCommunityVideoEndpoint({
         },
         body: JSON.stringify({
             prompt: "A green sprout gently moving in the breeze.",
-            duration: 5,
         }),
     });
+    const duration = communityVideoSeconds(body);
     const video = await firstCommunityVideoBytes(body, baseUrl);
     if (!video || !detectVideoMimeType(video)) {
         throw new Error("Endpoint did not return a supported video");
     }
     return {
-        usage: { duration: 5 },
-        billableUsage: { completionVideoSeconds: 5 },
+        usage: { duration },
+        billableUsage: { completionVideoSeconds: duration },
     };
 }
 

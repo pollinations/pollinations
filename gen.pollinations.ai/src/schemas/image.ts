@@ -140,7 +140,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         }),
     duration: z.coerce.number().int().min(1).max(120).optional().meta({
         description:
-            "Video duration in seconds. Only applies to video models. `google/gemini-omni-1.1-flash`: 3-10s. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `minimax/minimax-h3-max-turbo`: 5, 10, or 15s. `wan`: 2-15s. `wan-3.0`: exactly 5s. `nova-reel`: 6-120s (multiples of 6).",
+            "Video duration in seconds. Only applies to video models. For community models, omission uses the provider's default; billing uses reported generated seconds. `google/gemini-omni-1.1-flash`: 3-10s. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `minimax/minimax-h3-max-turbo`: 5, 10, or 15s. `wan`: 2-15s. `wan-3.0`: exactly 5s. `nova-reel`: 6-120s (multiples of 6).",
     }),
     aspectRatio: z.string().optional().meta({
         description:

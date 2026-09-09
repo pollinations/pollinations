@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { normalizeCommunityAssetUrl } from "./community-endpoint-urls.ts";
 import { COMMUNITY_ENDPOINT_TIMEOUT_MS } from "./community-endpoints.ts";
 import { UpstreamError } from "./error.ts";
@@ -9,6 +10,22 @@ export const MAX_COMMUNITY_VIDEO_BYTES = 20 * 1024 * 1024;
 // small amount of room for the envelope while still bounding provider output.
 export const MAX_COMMUNITY_MEDIA_RESPONSE_BYTES =
     Math.ceil((MAX_COMMUNITY_VIDEO_BYTES * 4) / 3) + 64 * 1024;
+
+const CommunityVideoUsageSchema = z.object({
+    usage: z.object({ duration: z.number().positive() }),
+});
+
+/** Provider-reported generated seconds, shared by registration and billing. */
+export function communityVideoSeconds(body: unknown): number {
+    const result = CommunityVideoUsageSchema.safeParse(body);
+    if (!result.success) {
+        throw UpstreamError.fromProvider(502, {
+            message:
+                "Community video endpoint must report generated seconds as a positive number in usage.duration",
+        });
+    }
+    return result.data.usage.duration;
+}
 
 /**
  * Pull the first usable image out of an OpenAI images response: inline base64
@@ -55,8 +72,7 @@ export async function firstCommunityImageBytes(
 /**
  * Read one completed clip from the synchronous community video contract.
  * Publishers return OpenAI-images-style `data` with either `b64_json` or a
- * downloadable URL. Billing uses the duration accepted by Pollinations, not
- * publisher-provided metadata.
+ * downloadable URL.
  */
 export async function firstCommunityVideoBytes(
     body: unknown,

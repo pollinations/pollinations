@@ -1,0 +1,34 @@
+{
+  "pr_number": 14620,
+  "title": "feat: announce community namespace and validate canonical key IDs",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14620",
+  "merged_at": "2026-09-09T15:54:56Z",
+  "labels": [],
+  "pr_body_excerpt": "- Announces the September 11 switch to community/username/model for community models and agents.\n- Key create/update validates membership in the available canonical-ID set. No alias detection, lookup, normalization or silent filtering.\n- Preserves empty restrictions and other permission fields. Generation aliases are unchanged; rename PR #14621 migrates stored permissions in D1.\n- Focused key, migration and billing tests pass. No merge or deployment.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Community models get addresses",
+    "blurb": "Community models and agents are getting a proper garden path: community/username/model. API keys now check their model permissions against the canonical IDs, so the hive knows exactly which flowers are on the list.",
+    "summary": "Announced the September 11 move to canonical community/username/model IDs for community models and agents, while API key creation and updates now validate permissions against the available canonical-ID set without rewriting aliases or filtering empty restrictions.",
+    "impact": "Developers can prepare keys and integrations for the community/username/model namespace, with existing generation aliases unchanged and explicitly empty model restrictions preserved.",
+    "keywords": [
+      "community-models",
+      "canonical-ids",
+      "api-keys",
+      "permissions",
+      "model-registry",
+      "namespace"
+    ],
+    "visual_concept": "A cozy garden directory represents the new canonical community/username/model addresses: labeled signposts lead to small code-plants owned by different gardeners. Polli, wearing a tiny postal cap, checks a key-shaped permission list against the clearly labeled garden registry, emphasizing exact IDs without changing the familiar existing paths.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny postal cap as she compares a key-shaped permission card with garden signposts reading “community / username / model”; code-plants and pixel flowers grow beside the paths, with a friendly CRT monitor robot holding the registry. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text “CANONICAL PATHS”, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14620.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny postal cap as she compares a key-shaped permission card with garden signposts reading “community / username / model”; code-plants and pixel flowers grow beside the paths, with a friendly CRT monitor robot holding the registry. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text “CANONICAL PATHS”, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-09T15:56:06.154430+00:00"
+}

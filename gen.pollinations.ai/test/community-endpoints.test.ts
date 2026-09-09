@@ -703,10 +703,8 @@ describe("community endpoint helpers", () => {
             "provider/path/model-name",
         );
 
-        expect(modelId).toBe("voodoohop/provider/path/model-name");
-        expect(legacyModelId).toBe(
-            "community/voodoohop/provider/path/model-name",
-        );
+        expect(modelId).toBe("community/voodoohop/provider/path/model-name");
+        expect(legacyModelId).toBe("voodoohop/provider/path/model-name");
         expect(parseCommunityModelId(modelId)).toEqual({
             ownerGithubUsername: "voodoohop",
             modelName: "provider/path/model-name",
@@ -862,7 +860,7 @@ describe("community endpoint helpers", () => {
 
     it("uses the required community endpoint title", () => {
         const modelDefinition = communityModelDefinition({
-            modelId: "voodoohop/openai",
+            modelId: "community/voodoohop/openai",
             title: "OpenAI Community",
             description: "OpenAI via community endpoint",
             ...communityEndpointPrices({
@@ -872,7 +870,7 @@ describe("community endpoint helpers", () => {
         });
 
         expect(modelDefinition.title).toBe("OpenAI Community");
-        expect(modelDefinition.aliases).toEqual(["community/voodoohop/openai"]);
+        expect(modelDefinition.aliases).toEqual(["voodoohop/openai"]);
         expect(modelDefinition.description).toBe(
             "OpenAI via community endpoint",
         );
@@ -3661,7 +3659,10 @@ fixtureTest(
                     "primary-token",
                     env.BETTER_AUTH_SECRET,
                 ),
-                fallbacks: [fallbackModelId],
+                // Existing saved fallback IDs keep working through registry aliases.
+                fallbacks: [
+                    legacyCommunityModelId(ownerGithubUsername, fallbackName),
+                ],
                 promptTextPrice: 0,
                 completionTextPrice: 0,
                 createdAt: new Date(),
@@ -6489,7 +6490,7 @@ fixtureTest(
             unknown
         >;
         expect(created).toMatchObject({
-            modelId: `${ownerGithubUsername}/my-test-model`,
+            modelId: communityModelId(ownerGithubUsername, "my-test-model"),
             name: "my-test-model",
             api: "chat_completions",
             url: "https://api.example.com/v1/chat/completions",
@@ -6679,7 +6680,11 @@ fixtureTest(
         });
         const pendingRegistryEntry = (
             await getCommunityModelRegistryEntries(env)
-        ).find((entry) => entry.id === `${ownerGithubUsername}/my-test-model`);
+        ).find(
+            (entry) =>
+                entry.id ===
+                communityModelId(ownerGithubUsername, "my-test-model"),
+        );
         expect(pendingRegistryEntry?.info.pending_change).toMatchObject({
             paid_only: true,
             pricing: {
@@ -6772,7 +6777,11 @@ fixtureTest(
 
         const registryEntry = (
             await getCommunityModelRegistryEntries(env)
-        ).find((entry) => entry.id === `${ownerGithubUsername}/my-test-model`);
+        ).find(
+            (entry) =>
+                entry.id ===
+                communityModelId(ownerGithubUsername, "my-test-model"),
+        );
         expect(registryEntry?.info).toMatchObject({
             publisher: "Example AI",
             brand_url: "https://example.com/",

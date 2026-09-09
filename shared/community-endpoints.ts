@@ -18,7 +18,7 @@ import {
 } from "./registry/usage-headers.ts";
 import type { SafetyFeature } from "./schemas/safety.ts";
 
-export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
+export const COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
 export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 3 * 60 * 60 * 1000;
 export const COMMUNITY_ENDPOINT_MODALITIES = [
@@ -857,17 +857,14 @@ export function communityModelId(
     ownerGithubUsername: string,
     modelName: string,
 ): string {
-    return `${ownerGithubUsername}/${modelName}`;
+    return `${COMMUNITY_MODEL_PREFIX}${ownerGithubUsername}/${modelName}`;
 }
 
 export function legacyCommunityModelId(
     ownerGithubUsername: string,
     modelName: string,
 ): string {
-    return `${LEGACY_COMMUNITY_MODEL_PREFIX}${communityModelId(
-        ownerGithubUsername,
-        modelName,
-    )}`;
+    return `${ownerGithubUsername}/${modelName}`;
 }
 
 export function normalizeCommunityEndpointBearerToken(value: string): string {
@@ -903,8 +900,8 @@ export function isCommunityEndpointOwnerAllowed(
 export function parseCommunityModelId(
     model: string,
 ): CommunityModelParts | null {
-    const value = model.startsWith(LEGACY_COMMUNITY_MODEL_PREFIX)
-        ? model.slice(LEGACY_COMMUNITY_MODEL_PREFIX.length).trim()
+    const value = model.startsWith(COMMUNITY_MODEL_PREFIX)
+        ? model.slice(COMMUNITY_MODEL_PREFIX.length).trim()
         : model.trim();
     const separator = value.indexOf("/");
     if (separator <= 0) return null;

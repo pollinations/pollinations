@@ -1,5 +1,34 @@
 # Pollinations Model Changelog
 
+## 2026-09-09
+
+### Added
+- `openai/gpt-6-astra` (OpenAI, text) — image input, tool calling, and reasoning.
+- `qwen/qwen3.8-flash` (Qwen, text) — text, image, and video input with tool calling and reasoning.
+- `qwen/qwen3.8-max-0902` (Qwen, text) — text, image, and video input with tool calling and reasoning.
+- `google/gemini-3.8-flash` (Google, text) — text, image, audio, and video input; tool calling and web search.
+- `openai/gpt-image-2.5-flare` (OpenAI, image) — image generation and reference-image editing.
+- `openai/gpt-image-2.5-sunburst` (OpenAI, image) — image generation and reference-image editing.
+- `microsoft/mai-image-2.5-flash` (Microsoft, image) — image generation and single-reference editing.
+- `minimax/minimax-h3-max-turbo` (MiniMax, video) — video with audio output and start/end-frame controls.
+
+### Changed
+- `MarcosFRG/nemotron-3.5-lightning` — now paid-only; price cut ~50%.
+- `NamanSoni78/deepseek-v4-pro-0813` — price +40%.
+- `MarcosFRG/gemma-4-26b-a4b` — price +35%.
+- `MarcosFRG/flux-2-klein-4b` — price +60%.
+- `NamanSoni78/kimi-k3` — price cut ~70%.
+- `MarcosFRG/lucid-origin` — price cut ~30%.
+- `AkshayCoder48/code-pair` — added web search.
+- `AkshayCoder48/researcher` — added web search.
+- `AkshayCoder48/free-clips` — added web search.
+- `AkshayCoder48/transcriber` — added web search.
+- `AkshayCoder48/free-voice` — added web search.
+- `AkshayCoder48/prompt-to-art` — added web search.
+- `morriszdweck/osaii-swarm` — added web search.
+- `MarcosFRG/metraxai` — added web search.
+- Public model IDs migrated from legacy short names to provider-qualified names across text, image, video, audio, and embedding endpoints.
+
 ## 2026-09-02
 
 ### Added

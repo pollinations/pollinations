@@ -1,0 +1,8 @@
+{
+  "platform": "discord",
+  "scope": "models_weekly",
+  "date": "2026-09-09",
+  "previous_date": "2026-09-02",
+  "generated_at": "2026-09-09T14:12:22.669045+00:00",
+  "text": "<@&1424461167883194418> Model updates — 2026-09-09\n\n### 🆕 New\n- 🧠 **GPT-6 Astra** (OpenAI) — vision input, tools + reasoning\n- 🧠 **Qwen3.8 Flash** (Qwen) — image/video input, tools + reasoning\n- 🧠 **Gemini 3.8 Flash** (Google) — multimodal input + web search\n- 🎨 **GPT Image 2.5 Flare** (OpenAI) — image generation and editing\n- 🎨 **GPT Image 2.5 Sunburst** (OpenAI) — image generation and editing\n- 🎨 **MAI Image 2.5 Flash** (Microsoft) — single-reference editing\n- 🎬 **MiniMax H3 Max Turbo** (MiniMax) — audio output + start/end frames\n\n### ⬇️ Price cuts\n- 🎨 Image: MarcosFRG/lucid-origin (~30% off)\n- 🧠 Text: NamanSoni78/kimi-k3 (~70% off)\n\n### ⬆️ Price increases\n- 🎨 Image: MarcosFRG/flux-2-klein-4b (~60% more)\n- 🧠 Text: NamanSoni78/deepseek-v4-pro-0813 (~40% more) · MarcosFRG/gemma-4-26b-a4b (~35% more)\n\n### 🔒 Going paid-only\n- MarcosFRG/nemotron-3.5-lightning\n\n### ✨ Capability updates\n- `AkshayCoder48/code-pair`, `researcher`, `free-clips`, `transcriber`, `free-voice`, `prompt-to-art` — web search added\n- `morriszdweck/osaii-swarm`, `MarcosFRG/metraxai` — web search added\n\nLegacy short model IDs have moved to provider-qualified IDs across public endpoints.\n\nExplore at https://gen.pollinations.ai/docs"
+}

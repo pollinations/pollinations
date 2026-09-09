@@ -1,0 +1,34 @@
+{
+  "pr_number": 14666,
+  "title": "fix(polli-cli): refresh harness configs",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14666",
+  "merged_at": "2026-09-09T23:35:02Z",
+  "labels": [],
+  "pr_body_excerpt": "- Use canonical model IDs in every harness config\n- Support OpenCode JSONC configs without overwriting invalid files\n- Align Pi auth config with current Pi and release CLI 0.1.13",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Harnesses, freshly combed",
+    "blurb": "Polli CLI 0.1.13 tidies up its harness configs: canonical model IDs, current Pi auth, and OpenCode JSONC that keeps its hands off broken files. Configuration gardening, with fewer mysterious weeds.",
+    "summary": "Released polli-cli 0.1.13 with canonical model IDs across DSH, OpenClaw, Pi, and Prime harnesses, updated Pi authentication settings, and OpenCode JSONC support that avoids overwriting invalid config files.",
+    "impact": "CLI users get harness configurations aligned with current integrations, while existing invalid OpenCode JSONC files remain safely untouched instead of being replaced.",
+    "keywords": [
+      "polli-cli",
+      "harnesses",
+      "opencode",
+      "pi",
+      "model-ids",
+      "configuration"
+    ],
+    "visual_concept": "Depict Polli as a careful garden mechanic tending several tiny retro terminal harnesses labeled DSH, OpenClaw, Pi, and Prime, with neat canonical model-ID tags growing from code-plants. A CRT monitor robot can hold a slightly cracked OpenCode JSONC scroll protected inside a glass case, representing the CLI preserving invalid files rather than overwriting them.",
+    "image_prompt": "A cozy pixel art garden-workshop where the cute pixel art bee mascot has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings; wearing a tiny tool belt, she carefully retunes four small retro terminal harnesses while canonical model-ID tags sprout from flower pots. A chunky CRT-monitor robot protects a cracked scroll labeled \"JSONC\" beside lime green (#ecf874) glowing code-plants and soft mint, lavender, peach, and warm cream surroundings; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14666.jpg",
+    "prompt": "A cozy pixel art garden-workshop where the cute pixel art bee mascot has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings; wearing a tiny tool belt, she carefully retunes four small retro terminal harnesses while canonical model-ID tags sprout from flower pots. A chunky CRT-monitor robot protects a cracked scroll labeled \"JSONC\" beside lime green (#ecf874) glowing code-plants and soft mint, lavender, peach, and warm cream surroundings; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-09T23:36:00.388058+00:00"
+}

@@ -33,7 +33,7 @@ const PINNED_NEWS: Highlight[] = [
             "Community models and agents will be listed as community/username/model instead of username/model.",
         details: [
             "Both IDs will keep working in generation requests. No changes to models, prices or providers.",
-            "Key permissions use the current canonical IDs. Existing permissions will be migrated automatically when the new IDs go live.",
+            "Keys store canonical IDs, even if you enter an alias. Existing permissions will be migrated automatically when the new IDs go live.",
             "If your app matches saved IDs against the catalog, check aliases too. You can already use the community/ form.",
         ],
     },

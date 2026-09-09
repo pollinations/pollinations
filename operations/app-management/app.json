@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🖼️",
+    "name": "PolliArena",
+    "url": "https://polli-arena.cloudbr.eu.org",
+    "description": "Community-driven model benchmark and blind comparison arena for Pollinations image models with native BYOP (Connect User Wallets). Features: - ⚔️ Blind Battle Arena: Pit two secretly randomized models",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "samucastudent",
+    "githubUserId": "190228319",
+    "repositoryUrl": "https://github.com/samucastudent/polli-arena",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-08",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14590",
+    "approvedDate": "2026-09-09",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🖼️",
     "name": "Nectar MCP",
     "url": "https://github.com/pinkpixel-dev/nectar-mcp",
     "description": "Nectar is a stdio MCP server for Pollinations image, video, and audio generation. It gives MCP clients a focused set of creative media tools. Generate and edit images, create videos, and generate spee",

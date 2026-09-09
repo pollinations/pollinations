@@ -54,6 +54,23 @@ const MODEL3D_BASE_SERVICES = {
         maxReferenceImages: 1,
         resolutions: ["low", "medium", "high"],
     },
+    "nvidia/asset-harvester": {
+        aliases: ["asset-harvester"],
+        publisher: "NVIDIA",
+        provider: "inferenceport",
+        category: "3d",
+        addedDate: new Date("2026-09-07").getTime(),
+        priceMultiplier: 1,
+        flatRate: true,
+        cost: {
+            completionImageTokens: 0.07,
+        },
+        title: "NVIDIA Asset Harvester",
+        description: "Image-to-3D Gaussian Splat (PLY)",
+        inputModalities: ["image"],
+        outputModalities: ["3d"],
+        maxReferenceImages: 1,
+    },
     "hyper3d/rodin-2.5": {
         aliases: ["rodin", "hyper3d-rodin"],
         provider: "fal",

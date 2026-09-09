@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { SAFETY_FEATURES } from "../schemas/safety.ts";
+import { getChatParameterSupport } from "./parameter-support.ts";
 import { publicPriceInfo, toFixedPoint } from "./public-pricing";
 import {
     type BillingAdjustmentRule,
@@ -101,6 +102,18 @@ export const ModelInfoSchema = z.object({
     max_reference_images: z.number().int().positive().optional(),
     max_reference_videos: z.number().int().positive().optional(),
     capabilities: z.array(ModelCapabilitySchema),
+    supported_parameters: z
+        .array(z.string())
+        .optional()
+        .describe(
+            "Controls accepted and forwarded by the Pollinations Chat route (`/v1/chat/completions`) for this model, verified against the route's transforms. Omitted when unknown — absence does not imply rejection. Not applicable to the native `/v1/responses` API.",
+        ),
+    default_parameters: z
+        .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
+        .optional()
+        .describe(
+            "Values Pollinations applies when a Chat caller omits the control. Not applicable to the native `/v1/responses` API.",
+        ),
     tools: z.boolean().optional(),
     reasoning: z.boolean().optional(),
     context_length: z.number().optional(),
@@ -218,6 +231,9 @@ export function modelInfoFromDefinition(
         max_reference_images: service.maxReferenceImages,
         max_reference_videos: service.maxReferenceVideos,
         capabilities: getCapabilities(service),
+        supported_parameters:
+            getChatParameterSupport(name)?.supportedParameters,
+        default_parameters: getChatParameterSupport(name)?.defaultParameters,
         tools: service.tools,
         reasoning: service.reasoning,
         context_length: service.contextLength,

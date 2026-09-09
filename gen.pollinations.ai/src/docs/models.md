@@ -42,6 +42,36 @@ Supported media models also advertise both endpoints and return generated-file
 links as assistant text. Reference-required models return their normal missing-input
 error; use their native endpoint until attachments are supported here.
 
+### Chat parameter support
+
+`/models`, `/text/models`, and the OpenAI-compatible `/v1/models` endpoints
+expose two optional fields on official Chat models whose support is verified
+against the Pollinations Chat route:
+
+| Field | Meaning |
+|-------|---------|
+| `supported_parameters` | Controls accepted and forwarded by `/v1/chat/completions` for this model |
+| `default_parameters` | Values Pollinations applies when a Chat caller omits the control |
+
+Verified models today: `openai/gpt-5.4`, `openai/gpt-oss-20b`, and
+`anthropic/claude-sonnet-4.6`. Their routes differ (Azure OpenAI, OVHcloud,
+Bedrock), so their controls differ too:
+
+- `openai/gpt-5.4` routes through a transform that drops sampling controls
+  (`temperature`, `top_p`, penalties, `seed`) before dispatch. The request
+  schema still accepts them, but they are silently ignored — so they are not
+  listed.
+- `openai/gpt-oss-20b` passes standard Chat sampling controls through.
+- `anthropic/claude-sonnet-4.6` accepts `temperature` and `top_p` under a
+  condition: they are mutually exclusive, and `temperature` wins.
+  `reasoning_effort` maps onto adaptive thinking.
+
+Both fields describe the Pollinations Chat route only — they do not describe
+the native `/v1/responses` API. Models without an entry (including all
+community models) omit both fields; unknown support is never invented.
+Controls outside `supported_parameters` are not guaranteed: the request
+schema may accept them while the route ignores them.
+
 ## Community Models
 
 Community models use an `owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `community=true` to return only community models or `community=false` to exclude them.

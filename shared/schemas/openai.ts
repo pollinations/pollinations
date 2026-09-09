@@ -742,6 +742,18 @@ export const OpenAIModelSchema = z
         base_model: z.string().optional(),
         pricing: z.record(z.string(), z.string()).optional(),
         capabilities: z.array(z.string()).optional(),
+        supported_parameters: z
+            .array(z.string())
+            .optional()
+            .describe(
+                "Controls accepted and forwarded by the Pollinations Chat route (`/v1/chat/completions`). Omitted when unknown. Not applicable to the native `/v1/responses` API.",
+            ),
+        default_parameters: z
+            .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
+            .optional()
+            .describe(
+                "Values Pollinations applies when a Chat caller omits the control. Not applicable to the native `/v1/responses` API.",
+            ),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),

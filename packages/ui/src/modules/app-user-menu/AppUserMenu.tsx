@@ -25,9 +25,10 @@ export type AppUserMenuLabels = {
 };
 
 export type AppUserMenuProps = {
-    dashboardHref: string;
+    dashboardHref?: string;
+    onTopUpKey?: () => void;
     labels?: Partial<AppUserMenuLabels>;
-    /** Match a large rectangular site action instead of the default pill. */
+    /** Logged-out CTA style. The connected account always uses a pill. */
     triggerVariant?: "pill" | "action";
 };
 
@@ -45,12 +46,14 @@ export function AppUserMenu({
     dashboardHref,
     labels: labelOverrides,
     triggerVariant = "pill",
+    onTopUpKey,
 }: AppUserMenuProps) {
     return (
         <AppUserMenuContent
             dashboardHref={dashboardHref}
             labels={labelOverrides}
             triggerVariant={triggerVariant}
+            onTopUpKey={onTopUpKey}
         />
     );
 }
@@ -59,8 +62,9 @@ function AppUserMenuContent({
     dashboardHref,
     labels: labelOverrides,
     triggerVariant,
-}: Required<Pick<AppUserMenuProps, "dashboardHref" | "triggerVariant">> &
-    Pick<AppUserMenuProps, "labels">) {
+    onTopUpKey,
+}: Required<Pick<AppUserMenuProps, "triggerVariant">> &
+    Pick<AppUserMenuProps, "dashboardHref" | "labels" | "onTopUpKey">) {
     const labels = { ...defaultLabels, ...labelOverrides };
     const { logout } = useAuthActions();
 
@@ -94,12 +98,7 @@ function AppUserMenuContent({
                             type="button"
                             data-theme="accent"
                             aria-label={labels.appUserMenu}
-                            className={cn(
-                                "polli-control polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:bg-theme-bg-active polli:text-theme-text-base polli:transition-colors polli:hover:bg-theme-bg-hover",
-                                triggerVariant === "action"
-                                    ? `${actionTriggerClass} polli:pl-2 polli:pr-4`
-                                    : "polli:rounded-full polli:py-1 polli:pl-1 polli:pr-3",
-                            )}
+                            className="polli-control polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:bg-theme-bg-active polli:py-1 polli:pl-1 polli:pr-3 polli:text-theme-text-base polli:transition-colors polli:hover:bg-theme-bg-hover"
                         >
                             <UserAvatar
                                 size="md"
@@ -121,16 +120,29 @@ function AppUserMenuContent({
                             data-theme="accent"
                             className="polli:flex polli:flex-col"
                         >
-                            <DropdownItem
-                                as="a"
-                                href={dashboardHref}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={close}
-                            >
-                                <KeyIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
-                                {labels.topUpAccount}
-                            </DropdownItem>
+                            {onTopUpKey && (
+                                <DropdownItem
+                                    onClick={() => {
+                                        close();
+                                        onTopUpKey();
+                                    }}
+                                >
+                                    <KeyIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
+                                    Add Pollen
+                                </DropdownItem>
+                            )}
+                            {dashboardHref && (
+                                <DropdownItem
+                                    as="a"
+                                    href={dashboardHref}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={close}
+                                >
+                                    <KeyIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
+                                    {labels.topUpAccount}
+                                </DropdownItem>
+                            )}
                             <DropdownItem
                                 type="button"
                                 className="polli:justify-start polli:text-left"

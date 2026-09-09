@@ -64,9 +64,20 @@ type AgentFields = Pick<
     "systemPrompt" | "baseModel" | "requiredSafetyFeatures" | "mcpServers"
 >;
 
-export type AgentFormState = AgentFields;
+export type AgentFormState = AgentFields & {
+    type: "prompt_agent" | "code_agent";
+    repository: string;
+    directory: string;
+};
 
-export type AgentPayload = AgentFields;
+export type AgentPayload =
+    | AgentFields
+    | {
+          type: "code_agent";
+          repository: string;
+          directory: string;
+          requiredSafetyFeatures: SafetyFeature[];
+      };
 
 export type CommunityProviderProfile = {
     name: string | null;
@@ -313,10 +324,13 @@ export const emptyForm: EndpointFormState = {
 };
 
 export const emptyAgentForm: AgentFormState = {
+    type: "prompt_agent",
     systemPrompt: "",
     baseModel: "",
     requiredSafetyFeatures: [],
     mcpServers: [],
+    repository: "",
+    directory: "",
 };
 
 export const idleAction: ActionState = { status: "idle" };
@@ -534,6 +548,18 @@ export function observedUsageValue(
 }
 
 export function toAgentPayload(form: AgentFormState): AgentPayload {
+    if (form.type === "code_agent") {
+        const repository = form.repository.trim();
+        if (!repository) {
+            throw new Error("GitHub repository is required for a code agent");
+        }
+        return {
+            type: "code_agent",
+            repository,
+            directory: form.directory.trim(),
+            requiredSafetyFeatures: form.requiredSafetyFeatures,
+        };
+    }
     const systemPrompt = form.systemPrompt.trim();
     if (!systemPrompt) {
         throw new Error("System prompt is required for a prompt agent");

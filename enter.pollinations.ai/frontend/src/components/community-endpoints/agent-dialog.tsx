@@ -1,9 +1,14 @@
 import {
     Alert,
     Button,
+    ButtonGroup,
+    CheckIcon,
     Dialog,
     DialogTitle,
+    FieldStack,
+    Input,
     ScrollArea,
+    TabButton,
 } from "@pollinations/ui";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -57,14 +62,14 @@ export function AgentDialog({
     useEffect(() => {
         setForm({
             ...agentListingToForm(open ? endpoint : undefined),
-            ...(open && agent
-                ? {
-                      systemPrompt: agent.systemPrompt,
-                      baseModel: agent.baseModel,
-                      requiredSafetyFeatures: agent.requiredSafetyFeatures,
-                      mcpServers: agent.mcpServers,
-                  }
-                : emptyAgentForm),
+            ...emptyAgentForm,
+            ...(open &&
+                agent && {
+                    systemPrompt: agent.systemPrompt,
+                    baseModel: agent.baseModel,
+                    requiredSafetyFeatures: agent.requiredSafetyFeatures,
+                    mcpServers: agent.mcpServers,
+                }),
         });
         setError(null);
         setIsSubmitting(false);
@@ -93,12 +98,15 @@ export function AgentDialog({
         }
     }
 
+    const hasRuntimeConfiguration =
+        form.type === "code_agent"
+            ? form.repository.trim() !== ""
+            : form.systemPrompt.trim() !== "" && form.baseModel.trim() !== "";
     const canSubmit =
         !isSubmitting &&
         form.name.trim() !== "" &&
         form.title.trim() !== "" &&
-        form.systemPrompt.trim() !== "" &&
-        form.baseModel.trim() !== "";
+        hasRuntimeConfiguration;
     const submitLabel = endpoint
         ? "Save Agent"
         : form.visibility === "public"
@@ -134,6 +142,51 @@ export function AgentDialog({
                 <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2">
                     {error && <Alert intent="danger">{error}</Alert>}
 
+                    {!agent && (
+                        <FieldStack
+                            label="Agent type"
+                            helper="Use a prompt and model, or deploy code from GitHub."
+                            alignLabelRow
+                        >
+                            <ButtonGroup aria-label="Agent type">
+                                <TabButton
+                                    active={form.type === "prompt_agent"}
+                                    disabled={isSubmitting}
+                                    onClick={() =>
+                                        setForm((current) => ({
+                                            ...current,
+                                            type: "prompt_agent",
+                                        }))
+                                    }
+                                    size="sm"
+                                    className="min-w-28 gap-1.5"
+                                >
+                                    {form.type === "prompt_agent" && (
+                                        <CheckIcon className="h-3.5 w-3.5" />
+                                    )}
+                                    Prompt agent
+                                </TabButton>
+                                <TabButton
+                                    active={form.type === "code_agent"}
+                                    disabled={isSubmitting}
+                                    onClick={() =>
+                                        setForm((current) => ({
+                                            ...current,
+                                            type: "code_agent",
+                                        }))
+                                    }
+                                    size="sm"
+                                    className="min-w-28 gap-1.5"
+                                >
+                                    {form.type === "code_agent" && (
+                                        <CheckIcon className="h-3.5 w-3.5" />
+                                    )}
+                                    Code agent
+                                </TabButton>
+                            </ButtonGroup>
+                        </FieldStack>
+                    )}
+
                     <ModelListingFields
                         form={form}
                         modality="text"
@@ -160,12 +213,61 @@ export function AgentDialog({
                         }
                     />
 
-                    <div className="border-t border-divider pt-4">
-                        <PromptAgentFields
-                            form={form}
-                            disabled={isSubmitting}
-                            onChange={updateAgentForm}
-                        />
+                    <div className="space-y-4 border-t border-divider pt-4">
+                        {form.type === "code_agent" ? (
+                            <>
+                                <FieldStack
+                                    label="GitHub repository"
+                                    helper="Public repository containing agent.js."
+                                    alignLabelRow
+                                >
+                                    <Input
+                                        name="code-agent-repository"
+                                        type="url"
+                                        value={form.repository}
+                                        placeholder="https://github.com/your-name/your-agents"
+                                        autoComplete="off"
+                                        autoCapitalize="none"
+                                        spellCheck={false}
+                                        required
+                                        disabled={isSubmitting}
+                                        onChange={(event) =>
+                                            setForm((current) => ({
+                                                ...current,
+                                                repository: event.target.value,
+                                            }))
+                                        }
+                                    />
+                                </FieldStack>
+                                <FieldStack
+                                    label="Directory"
+                                    helper="Optional folder containing agent.js. Leave empty for the repository root."
+                                    alignLabelRow
+                                >
+                                    <Input
+                                        name="code-agent-directory"
+                                        value={form.directory}
+                                        placeholder="agents/research"
+                                        autoComplete="off"
+                                        autoCapitalize="none"
+                                        spellCheck={false}
+                                        disabled={isSubmitting}
+                                        onChange={(event) =>
+                                            setForm((current) => ({
+                                                ...current,
+                                                directory: event.target.value,
+                                            }))
+                                        }
+                                    />
+                                </FieldStack>
+                            </>
+                        ) : (
+                            <PromptAgentFields
+                                form={form}
+                                disabled={isSubmitting}
+                                onChange={updateAgentForm}
+                            />
+                        )}
                     </div>
                 </ScrollArea>
                 <div className="flex shrink-0 justify-end gap-2 border-t border-divider p-6 pt-4">

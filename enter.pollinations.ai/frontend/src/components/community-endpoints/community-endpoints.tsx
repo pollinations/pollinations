@@ -450,8 +450,8 @@ export function CommunityEndpoints({
                                     Create your first agent
                                 </p>
                                 <p className="text-sm text-theme-text-muted">
-                                    Build a managed agent with a system prompt,
-                                    model, and tools.
+                                    Build from a prompt and model, or deploy
+                                    agent.js from GitHub.
                                 </p>
                             </Surface>
                         ) : (

@@ -4,7 +4,10 @@ import {
     ModelInfoSchema,
     modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
-import { getVisibleTextModels } from "@shared/registry/registry.ts";
+import {
+    getRegistryModelDefinition,
+    getVisibleTextModels,
+} from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { describe, expect, it } from "vitest";
 
@@ -23,7 +26,10 @@ const DOCUMENTED_MODELS = [
 ] as const;
 
 function textModelInfo(name: string) {
-    return modelInfoFromDefinition(name, TEXT_SERVICES[name]);
+    return modelInfoFromDefinition(
+        name,
+        TEXT_SERVICES[name as keyof typeof TEXT_SERVICES],
+    );
 }
 
 describe("Chat parameter registry fields", () => {
@@ -34,7 +40,7 @@ describe("Chat parameter registry fields", () => {
         expect(info.supported_parameters?.length).toBeGreaterThan(0);
         expect(info.default_parameters).toBeDefined();
 
-        const names = info.supported_parameters?.map((p) => p.name);
+        const names = info.supported_parameters?.map((p) => p.name) ?? [];
         expect(new Set(names).size).toBe(names.length);
 
         // Every advertised default must map to an advertised parameter.
@@ -48,7 +54,7 @@ describe("Chat parameter registry fields", () => {
 
     it("gpt-5.4-nano omits parameters the gateway strips", () => {
         const info = textModelInfo("openai/gpt-5.4-nano");
-        const names = info.supported_parameters?.map((p) => p.name);
+        const names = info.supported_parameters?.map((p) => p.name) ?? [];
         // parameterProcessor strips these for /^gpt-5/ models — listing them
         // would describe controls that are silently ignored.
         expect(names).not.toContain("top_p");
@@ -100,7 +106,7 @@ describe("Chat parameter registry fields", () => {
     it("models without verified parameter metadata omit both fields", () => {
         // Text models without verified parameter data must omit both fields.
         const noMetadata = getVisibleTextModels().filter(
-            (name) => !TEXT_SERVICES[name]?.supportedParameters,
+            (name) => !getRegistryModelDefinition(name).supportedParameters,
         );
         expect(noMetadata.length).toBeGreaterThan(0);
         const bare = textModelInfo(noMetadata[0]);
@@ -113,7 +119,7 @@ describe("Chat parameter registry fields", () => {
         const imageKey = imageKeys[0];
         const imageInfo = modelInfoFromDefinition(
             imageKey,
-            IMAGE_SERVICES[imageKey],
+            IMAGE_SERVICES[imageKey as keyof typeof IMAGE_SERVICES],
         );
         expect(imageInfo.supported_parameters).toBeUndefined();
         expect(imageInfo.default_parameters).toBeUndefined();

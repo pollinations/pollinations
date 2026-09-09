@@ -60,6 +60,7 @@ class TransportTests(unittest.TestCase):
         path, headers, _, _ = self.server.requests[0]
         self.assertEqual(path, "/image/models")
         self.assertEqual(headers["Authorization"], "Bearer sk_test")
+        self.assertEqual(headers["User-Agent"], "Pollinations-GIMP/1.0")
 
     def test_generate_and_edit_payloads(self):
         model = {"name": "owner/new", "resolutions": ["1K"], "input_modalities": ["image"]}

@@ -1,6 +1,9 @@
 """Pollinations transport and BYOP device flow; Python standard library only."""
 import base64
 import json
+import os
+import ssl
+import sys
 import time
 import urllib.error
 import urllib.parse
@@ -8,6 +11,14 @@ import urllib.request
 
 ENTER = "https://enter.pollinations.ai"
 GEN = "https://gen.pollinations.ai"
+USER_AGENT = "Pollinations-GIMP/1.0"
+
+if (
+    sys.platform == "darwin"
+    and not ssl.get_default_verify_paths().cafile
+    and os.path.isfile("/etc/ssl/cert.pem")
+):
+    os.environ.setdefault("SSL_CERT_FILE", "/etc/ssl/cert.pem")
 
 
 class ApiError(Exception):
@@ -23,7 +34,7 @@ class AuthError(ApiError):
 
 
 def request_json(url, payload=None, token=None, timeout=30):
-    headers = {"Accept": "application/json"}
+    headers = {"Accept": "application/json", "User-Agent": USER_AGENT}
     data = None
     if payload is not None:
         headers["Content-Type"] = "application/json"

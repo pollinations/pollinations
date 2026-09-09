@@ -37,10 +37,8 @@ describe("writeExifMetadata", () => {
         );
         expect(result.trackingData.providerEvidence).toEqual({
             providerResponseId: "gen-private",
-            providerModelReported: "upstream-model",
             providerUpstreamReported: "xAI",
             providerReportedCostUsd: 0.123,
-            providerCostSource: "openrouter.usage.cost",
         });
         const exif = load(result.buffer.toString("binary"));
         const metadata = JSON.parse(

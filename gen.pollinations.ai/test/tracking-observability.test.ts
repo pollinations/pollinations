@@ -620,9 +620,7 @@ describe("tracking observability", () => {
         expect(events).toHaveLength(1);
         expect(events[0]).toMatchObject({
             providerReportedCostUsd: 0.02,
-            providerCostSource: "openrouter.usage.cost",
             providerResponseId: "gen-unbilled-cost",
-            providerModelReported: "provider-gemini",
             executionRouteId: `${model}:openrouter:vertex-global`,
             modelExecuted: model,
             hasCostEstimate: hasUsage,
@@ -705,10 +703,8 @@ describe("tracking observability", () => {
             modelProviderUsed: "openrouter",
             executionRouteId: `${model}:openrouter`,
             providerResponseId: "gen-image",
-            providerModelReported: "grok-upstream",
             providerUpstreamReported: "xAI",
             providerReportedCostUsd: 0.123,
-            providerCostSource: "openrouter.usage.cost",
             hasCostEstimate: true,
             isBilledUsage: true,
         });
@@ -3286,7 +3282,6 @@ describe("trackResponse provider accounting evidence", () => {
                 }),
             ).toMatchObject({
                 providerReportedCostUsd: 0.2,
-                providerCostSource: "openrouter.usage.cost",
                 providerUpstreamReported: "Google Vertex",
             });
         }
@@ -3365,11 +3360,9 @@ describe("trackResponse provider accounting evidence", () => {
             modelUsed: model,
             executionRouteId: `${model}:openrouter:vertex-global`,
             providerResponseId: "gen-provider-123",
-            providerModelReported: "google/gemini-3.7-flash-upstream",
             providerUpstreamReported: "Google Vertex",
             hasCostEstimate: true,
             providerReportedCostUsd: 0.42,
-            providerCostSource: "openrouter.usage.cost",
         });
         expect(tracking.cost).toEqual(missing.cost);
         expect(tracking.price).toEqual(missing.price);
@@ -3385,7 +3378,6 @@ describe("trackResponse provider accounting evidence", () => {
             candidateFixture(model),
         );
         expect(tracking.providerReportedCostUsd).toBe(0);
-        expect(tracking.providerCostSource).toBe("openrouter.usage.cost");
     });
 
     it.each([
@@ -3401,7 +3393,6 @@ describe("trackResponse provider accounting evidence", () => {
             candidateFixture(model),
         );
         expect(tracking.providerReportedCostUsd).toBeUndefined();
-        expect(tracking.providerCostSource).toBeUndefined();
         expect(tracking.isBilledUsage).toBe(true);
     });
 
@@ -3465,7 +3456,6 @@ describe("trackResponse provider accounting evidence", () => {
         );
         expect(tracking.providerReportedCostUsd).toBe(0.4);
         expect(tracking.providerResponseId).toBe("gen-stream-123");
-        expect(tracking.providerModelReported).toBe("provider-model");
         expect(tracking.isBilledUsage).toBe(finishReason === "stop");
     });
 
@@ -3498,7 +3488,6 @@ describe("trackResponse provider accounting evidence", () => {
         );
         expect(tracking).toMatchObject({
             providerResponseId: "resp-provider-123",
-            providerModelReported: "upstream-responses-model",
             providerReportedCostUsd: 0.2,
         });
     });

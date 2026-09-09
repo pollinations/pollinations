@@ -15,9 +15,7 @@ SQL >
         model_provider_used AS provider,
         model_executed,
         execution_route_id,
-        provider_model_reported,
         provider_upstream_reported,
-        provider_cost_source,
         has_cost_estimate,
         total_cost AS event_metered_cost_usd,
         provider_reported_cost_usd AS reported_cost_usd,
@@ -36,9 +34,7 @@ SQL >
         provider,
         model_executed,
         execution_route_id,
-        provider_model_reported,
         provider_upstream_reported,
-        provider_cost_source,
         count() AS attempts,
         countIf(is_final) AS final_outcomes,
         countIf(response_status >= 400) AS failed_attempts,
@@ -56,7 +52,7 @@ SQL >
         countIf(has_cost_estimate AND isNotNull(reported_cost_usd) AND provider != 'community') AS comparable_cost_attempts,
         if(countIf(has_cost_estimate AND isNotNull(reported_cost_usd) AND provider != 'community') = 0, NULL, sumIf(reported_cost_usd - event_metered_cost_usd, has_cost_estimate AND isNotNull(reported_cost_usd) AND provider != 'community')) AS comparable_cost_gap_usd
     FROM executions
-    GROUP BY model_requested, provider, model_executed, execution_route_id, provider_model_reported, provider_upstream_reported, provider_cost_source
+    GROUP BY model_requested, provider, model_executed, execution_route_id, provider_upstream_reported
     ORDER BY provider, model_requested, execution_route_id
 
 TYPE ENDPOINT

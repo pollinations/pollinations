@@ -101,7 +101,6 @@ describe("OpenRouter Grok Imagine Pro", () => {
         expect(result.trackingData).toEqual({
             providerEvidence: {
                 providerReportedCostUsd: 0.05,
-                providerCostSource: "openrouter.usage.cost",
             },
             actualModel: "x-ai/grok-imagine-image-quality",
             usage: { completionImageTokens: 1 },
@@ -217,7 +216,6 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
         expect(result.trackingData).toEqual({
             providerEvidence: {
                 providerReportedCostUsd: 0.05,
-                providerCostSource: "openrouter.usage.cost",
             },
             actualModel: "x-ai/grok-imagine-image-2.0",
             usage: {
@@ -379,7 +377,6 @@ describe("OpenRouter Gemini image", () => {
         expect(result.trackingData).toEqual({
             providerEvidence: {
                 providerReportedCostUsd: 0.0387027,
-                providerCostSource: "openrouter.usage.cost",
             },
             actualModel: "google/gemini-2.5-flash-image",
             usage: {
@@ -433,7 +430,6 @@ describe("OpenRouter Gemini image", () => {
         expect(result.trackingData).toEqual({
             providerEvidence: {
                 providerReportedCostUsd: 0.151254,
-                providerCostSource: "openrouter.usage.cost",
             },
             actualModel: "google/gemini-3.1-flash-image",
             usage: {
@@ -515,7 +511,6 @@ describe("OpenRouter Gemini image", () => {
         expect(result.trackingData).toEqual({
             providerEvidence: {
                 providerReportedCostUsd: 0.0336135,
-                providerCostSource: "openrouter.usage.cost",
             },
             actualModel: "google/gemini-3.1-flash-lite-image",
             usage: {
@@ -569,7 +564,6 @@ describe("OpenRouter Gemini image", () => {
         expect(result.trackingData).toEqual({
             providerEvidence: {
                 providerReportedCostUsd: 0.240124,
-                providerCostSource: "openrouter.usage.cost",
             },
             actualModel: "google/gemini-3-pro-image",
             usage: {
@@ -781,7 +775,6 @@ describe("OpenRouter Seedream 4.5 Pro", () => {
         expect(result.trackingData).toEqual({
             providerEvidence: {
                 providerReportedCostUsd: 0.04,
-                providerCostSource: "openrouter.usage.cost",
             },
             actualModel: "bytedance/seedream-4.5",
             usage: {
@@ -942,7 +935,6 @@ describe("OpenRouter Recraft vector", () => {
         expect(result.trackingData).toEqual({
             providerEvidence: {
                 providerReportedCostUsd: 0.08,
-                providerCostSource: "openrouter.usage.cost",
             },
             actualModel: "recraft/recraft-v4.1-vector",
             usage: { completionImageTokens: 1 },

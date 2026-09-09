@@ -3,10 +3,8 @@ import type { TinybirdEvent } from "@shared/schemas/generation-event.ts";
 export type ProviderUsageEvidence = Pick<
     TinybirdEvent,
     | "providerResponseId"
-    | "providerModelReported"
     | "providerUpstreamReported"
     | "providerReportedCostUsd"
-    | "providerCostSource"
 >;
 
 /** Provider response evidence, never an input to the caller's Pollen price. */
@@ -30,9 +28,6 @@ export function providerUsageEvidence(
                 : envelope;
         if (typeof response.id === "string" && response.id) {
             evidence.providerResponseId = response.id;
-        }
-        if (typeof response.model === "string" && response.model) {
-            evidence.providerModelReported = response.model;
         }
         if (
             provider === "openrouter" &&
@@ -59,7 +54,6 @@ export function providerUsageEvidence(
             typeof cost === "number" && Number.isFinite(cost) && cost >= 0;
         if (valid) {
             evidence.providerReportedCostUsd = cost;
-            evidence.providerCostSource = "openrouter.usage.cost";
         }
     }
     return evidence;

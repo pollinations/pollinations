@@ -1198,10 +1198,8 @@ function createTrackingEvent({
         modelExecuted: responseTracking.modelExecuted,
         executionRouteId: responseTracking.executionRouteId,
         providerResponseId: responseTracking.providerResponseId,
-        providerModelReported: responseTracking.providerModelReported,
         providerUpstreamReported: responseTracking.providerUpstreamReported,
         providerReportedCostUsd: responseTracking.providerReportedCostUsd,
-        providerCostSource: responseTracking.providerCostSource,
         hasCostEstimate: responseTracking.hasCostEstimate ?? false,
         modelProviderUsed:
             responseTracking.modelProviderUsed ?? requestTracking.modelProvider,

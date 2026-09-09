@@ -243,6 +243,37 @@ async function creditCheckoutSessionOnce({
                 )
                 WHERE id = ?`,
             ).bind(creditsToAdd, userId),
+            ...(env.STRIPE_MODE === "sandbox" &&
+            session.metadata?.appTopUpId &&
+            session.metadata.appPurchaseKeyId &&
+            session.metadata.appPurchaseClientId
+                ? [
+                      env.DB.prepare(`UPDATE app_key_top_up SET completed_at = ?
+                          WHERE id = ? AND user_id = ? AND key_id = ? AND client_key_id = ?
+                          AND checkout_pack = ? AND checkout_session_id = ? AND completed_at IS NULL`).bind(
+                          createdAt,
+                          session.metadata.appTopUpId,
+                          userId,
+                          session.metadata.appPurchaseKeyId,
+                          session.metadata.appPurchaseClientId,
+                          creditsToAdd,
+                          session.id,
+                      ),
+                      env.DB.prepare(
+                          `UPDATE apikey SET pollen_balance = ROUND(pollen_balance +
+                              (SELECT amount FROM app_key_top_up WHERE id = ?), ${POLLEN_BILLING_PRECISION})
+                 WHERE id = ? AND user_id = ? AND byop_client_key_id = ?
+                 AND enabled = 1 AND (expires_at IS NULL OR expires_at > ?)
+                 AND pollen_balance IS NOT NULL AND changes() = 1`,
+                      ).bind(
+                          session.metadata.appTopUpId,
+                          session.metadata.appPurchaseKeyId,
+                          userId,
+                          session.metadata.appPurchaseClientId,
+                          Math.floor(Date.now() / 1000),
+                      ),
+                  ]
+                : []),
         ]);
 
         if ((updateResult.meta.changes ?? 0) !== 1) {

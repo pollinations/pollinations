@@ -17,14 +17,259 @@ import {
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
+import {
+    getAppPurchase,
+    requireSandboxPurchase,
+} from "../../src/utils/app-purchase.ts";
 import { STRIPE_NEW_CARD_GATE_METADATA } from "../../src/utils/stripe-card-gate.ts";
-import { test } from "../fixtures.ts";
+import { createApiKeyViaApi, test } from "../fixtures.ts";
 import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
 
 const base = "http://localhost:3000/api/stripe";
 const stripeWebhookUrl = "http://localhost:3000/api/webhooks/stripe";
 const stripePmcId = "pmc_1SrYT96O03AauPe8ijLy6sZU";
 const checkoutAmounts = POLLEN_PACKS.map((pack) => `/checkout/${pack.packKey}`);
+
+async function startAppTopUp(
+    sessionToken: string,
+    key: { id: string; key: string },
+    balance: number,
+) {
+    const client = await createApiKeyViaApi(sessionToken, {
+        name: "Play sandbox",
+        type: "publishable",
+    });
+    const user = await env.DB.prepare("SELECT user_id FROM apikey WHERE id = ?")
+        .bind(key.id)
+        .first<{ user_id: string }>();
+    if (!user) throw new Error("Missing test user");
+    await env.DB.batch([
+        env.DB.prepare("UPDATE apikey SET metadata = ? WHERE id = ?").bind(
+            JSON.stringify({ redirectUris: ["http://localhost/play"] }),
+            client.id,
+        ),
+        env.DB.prepare(
+            "UPDATE apikey SET byop_client_key_id = ?, pollen_balance = 5 WHERE id = ?",
+        ).bind(client.id, key.id),
+        env.DB.prepare(
+            "UPDATE user SET pack_balance = ?, tier_balance = 0 WHERE id = ?",
+        ).bind(balance, user.user_id),
+    ]);
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/app-purchases",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key.key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                amount: 20,
+                returnTo: "http://localhost:5173/play",
+            }),
+        },
+    );
+    expect(response.status).toBe(200);
+    const { url } = (await response.json()) as { url: string };
+    const id = new URL(url).searchParams.get("purchase");
+    if (!id) throw new Error("Missing top-up id");
+    return { id, userId: user.user_id, clientId: client.id };
+}
+
+function confirmTopUp(
+    id: string,
+    sessionToken: string,
+    origin = new URL(env.BETTER_AUTH_URL).origin,
+) {
+    return SELF.fetch(`http://localhost:3000/api/app-purchases/intent/${id}`, {
+        method: "POST",
+        headers: {
+            Cookie: `better-auth.session_token=${sessionToken}`,
+            Origin: origin,
+        },
+    });
+}
+
+test.for([
+    25, 50,
+])("app key top-up uses existing balance %s exactly once", async (balance, {
+    sessionToken,
+    budgetedApiKey,
+}) => {
+    const { id, userId } = await startAppTopUp(
+        sessionToken,
+        budgetedApiKey,
+        balance,
+    );
+    const responses = await Promise.all([
+        confirmTopUp(id, sessionToken),
+        confirmTopUp(id, sessionToken),
+    ]);
+    for (const response of responses) expect(response.status).toBe(200);
+    const result = await getAppPurchase(env, id, userId);
+    expect(result).toMatchObject({
+        allowance: 25,
+        balance,
+        checkoutPack: null,
+    });
+    expect(result.completedAt).not.toBeNull();
+    // Replaying after the key has spent Pollen must not replenish it again.
+    await env.DB.prepare("UPDATE apikey SET pollen_balance = 4 WHERE id = ?")
+        .bind(budgetedApiKey.id)
+        .run();
+    expect((await confirmTopUp(id, sessionToken)).status).toBe(200);
+    expect((await getAppPurchase(env, id, userId)).allowance).toBe(4);
+});
+
+test("app key top-up requires owner session, same-origin confirmation, and sandbox", async ({
+    sessionToken,
+    budgetedApiKey,
+}) => {
+    const { id } = await startAppTopUp(sessionToken, budgetedApiKey, 50);
+    expect(
+        (await confirmTopUp(id, sessionToken, "https://attacker.example"))
+            .status,
+    ).toBe(403);
+    const bearer = await SELF.fetch(
+        `http://localhost:3000/api/app-purchases/intent/${id}`,
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${budgetedApiKey.key}`,
+                Origin: new URL(env.BETTER_AUTH_URL).origin,
+            },
+        },
+    );
+    expect(bearer.status).toBe(401);
+    await expect(getAppPurchase(env, id, "another-user")).rejects.toMatchObject(
+        { status: 404 },
+    );
+    expect(() =>
+        requireSandboxPurchase({ ...env, ENVIRONMENT: "production" }),
+    ).toThrow();
+    expect(() =>
+        requireSandboxPurchase({ ...env, STRIPE_MODE: "live" }),
+    ).toThrow();
+});
+
+test("app key top-up rejects an expired request and an unregistered return URL", async ({
+    sessionToken,
+    budgetedApiKey,
+}) => {
+    const { id, userId } = await startAppTopUp(
+        sessionToken,
+        budgetedApiKey,
+        50,
+    );
+    const invalid = await SELF.fetch(
+        "http://localhost:3000/api/app-purchases",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${budgetedApiKey.key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                amount: 20,
+                returnTo:
+                    "https://pollinations-ai-website-v2.elliot-b6e.workers.dev/play",
+            }),
+        },
+    );
+    expect(invalid.status).toBe(400);
+    await env.DB.prepare(
+        "UPDATE app_key_top_up SET created_at = 0 WHERE id = ?",
+    )
+        .bind(id)
+        .run();
+    await expect(getAppPurchase(env, id, userId)).rejects.toMatchObject({
+        status: 410,
+    });
+});
+
+test.for([
+    false,
+    true,
+])("app key top-up settles only paid checkout, disabled key=%s", async (disabled, {
+    sessionToken,
+    budgetedApiKey,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const { id, userId, clientId } = await startAppTopUp(
+        sessionToken,
+        budgetedApiKey,
+        20,
+    );
+    expect((await confirmTopUp(id, sessionToken)).status).toBe(200);
+    expect(await getAppPurchase(env, id, userId)).toMatchObject({
+        allowance: 5,
+        balance: 20,
+        checkoutPack: 10,
+        completedAt: null,
+    });
+    const checkout = await SELF.fetch(`${base}/checkout/p10?purchase=${id}`, {
+        headers: { Cookie: `better-auth.session_token=${sessionToken}` },
+    });
+    expect(checkout.status).toBe(200);
+    const topUp = await getAppPurchase(env, id, userId);
+    const sessionId = topUp.checkoutSessionId;
+    expect(sessionId).toBeTruthy();
+    const object = {
+        id: sessionId,
+        object: "checkout.session",
+        payment_status: "unpaid",
+        amount_subtotal: 1000,
+        amount_total: 1000,
+        currency: "usd",
+        metadata: {
+            userId,
+            packKey: "p10",
+            appTopUpId: id,
+            appPurchaseKeyId: budgetedApiKey.id,
+            appPurchaseClientId: clientId,
+        },
+    };
+    expect(
+        (
+            await postSignedStripeWebhook({
+                id: `evt_unpaid_${id}`,
+                type: "checkout.session.completed",
+                livemode: false,
+                data: { object },
+            })
+        ).status,
+    ).toBe(200);
+    expect((await getAppPurchase(env, id, userId)).allowance).toBe(5);
+    if (disabled)
+        await env.DB.prepare("UPDATE apikey SET enabled = 0 WHERE id = ?")
+            .bind(budgetedApiKey.id)
+            .run();
+    const paid = {
+        id: `evt_paid_${id}`,
+        type: "checkout.session.async_payment_succeeded",
+        livemode: false,
+        data: { object: { ...object, payment_status: "paid" } },
+    };
+    const replies = await Promise.all([
+        postSignedStripeWebhook(paid),
+        postSignedStripeWebhook(paid),
+    ]);
+    for (const reply of replies) expect(reply.status).toBe(200);
+    const wallet = await env.DB.prepare(
+        "SELECT pack_balance FROM user WHERE id = ?",
+    )
+        .bind(userId)
+        .first<{ pack_balance: number }>();
+    const key = await env.DB.prepare(
+        "SELECT pollen_balance FROM apikey WHERE id = ?",
+    )
+        .bind(budgetedApiKey.id)
+        .first<{ pollen_balance: number }>();
+    expect(wallet?.pack_balance).toBe(30);
+    // The requested allowance increase is 20, even though only a 10-Pollen pack was needed.
+    expect(key?.pollen_balance).toBe(disabled ? 5 : 25);
+});
 
 function signStripeWebhookPayload(payload: string): string {
     const timestamp = Math.floor(Date.now() / 1000);

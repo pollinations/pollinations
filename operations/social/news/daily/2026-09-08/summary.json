@@ -1,0 +1,71 @@
+{
+  "date": "2026-09-08",
+  "period_start": "2026-09-08",
+  "period_end": "2026-09-08",
+  "title": "Account activity became something you can actually inspect",
+  "summary": "A solid infrastructure day: clearer account activity, durable media links, tougher model routing, and fewer ways for provider metadata to become folklore.\n\nUsage and Earnings now have independent date navigation, filters, metrics, CSV exports, and chart-bar selection. New sortable breakdown tables show Paid and Quest Pollen, request counts, totals, and the apps or models behind activity, without making the mobile view perform interpretive dance.\n\nImages, edits, video, audio, speech, and 3D output now flow through the Media service with stable public links, shared storage, immutable caching, and consistent URL or base64 responses. Older cached files can also be recovered on demand and promoted into the current cache without regenerating them.\n\nAdded GPT Image 2.5 Flare and Sunburst for generation and editing, including native quality settings, custom dimensions, and transparent PNG output. Routing and health checks also got sturdier: more fallbacks for text, embeddings, Veo, and Grok video; smarter provider-failure detection; canonical provider labels; and clearer image-edit test results in the model dashboard.",
+  "pr_count": 15,
+  "prs": [
+    {
+      "number": 12790,
+      "date": "2026-09-08"
+    },
+    {
+      "number": 13998,
+      "date": "2026-09-08"
+    },
+    {
+      "number": 14356,
+      "date": "2026-09-08"
+    },
+    {
+      "number": 14519,
+      "date": "2026-09-08"
+    },
+    {
+      "number": 14566,
+      "date": "2026-09-08"
+    },
+    {
+      "number": 14577,
+      "date": "2026-09-08"
+    },
+    {
+      "number": 14584,
+      "date": "2026-09-08"
+    },
+    {
+      "number": 14587,
+      "date": "2026-09-08"
+    },
+    {
+      "number": 14589,
+      "date": "2026-09-08"
+    },
+    {
+      "number": 14594,
+      "date": "2026-09-08"
+    },
+    {
+      "number": 14597,
+      "date": "2026-09-08"
+    },
+    {
+      "number": 14601,
+      "date": "2026-09-08"
+    },
+    {
+      "number": 14606,
+      "date": "2026-09-08"
+    },
+    {
+      "number": 14608,
+      "date": "2026-09-08"
+    },
+    {
+      "number": 14610,
+      "date": "2026-09-08"
+    }
+  ],
+  "generated_at": "2026-09-09T06:30:18.567186+00:00"
+}

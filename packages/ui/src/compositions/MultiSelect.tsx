@@ -20,6 +20,8 @@ export type MultiSelectProps = {
     disabledTooltip?: string;
     align?: "start" | "end";
     label?: string;
+    /** Fill the available width, allowing the trigger label to truncate. */
+    fullWidth?: boolean;
 };
 
 const TRIGGER_BASE =
@@ -41,6 +43,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     disabledTooltip,
     align = "start",
     label,
+    fullWidth = false,
 }) => {
     const isAllSelected = selected.length === 0;
 
@@ -71,13 +74,21 @@ export const MultiSelect: FC<MultiSelectProps> = ({
 
     if (disabled) {
         return (
-            <div className="polli:flex polli:items-center polli:gap-2">
+            <div
+                className={cn(
+                    "polli:flex polli:items-center polli:gap-2",
+                    fullWidth && "polli:w-full polli:min-w-0",
+                )}
+            >
                 {labelNode}
                 <Tooltip
                     triggerAs="span"
                     content={disabledTooltip || "No items available"}
                     align="center"
-                    className="polli:inline-flex"
+                    className={cn(
+                        "polli:inline-flex",
+                        fullWidth && "polli:min-w-0 polli:flex-1",
+                    )}
                 >
                     <button
                         type="button"
@@ -85,6 +96,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                         aria-label={label || placeholder}
                         className={cn(
                             TRIGGER_BASE,
+                            fullWidth && "polli:w-full polli:min-w-0",
                             "polli:cursor-not-allowed polli:bg-theme-bg-active polli:opacity-50",
                         )}
                     >
@@ -102,7 +114,12 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     }
 
     return (
-        <div className="polli:flex polli:items-center polli:gap-2">
+        <div
+            className={cn(
+                "polli:flex polli:items-center polli:gap-2",
+                fullWidth && "polli:w-full polli:min-w-0",
+            )}
+        >
             {labelNode}
             <Dropdown
                 align={align}
@@ -113,6 +130,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                         aria-label={label || placeholder}
                         className={cn(
                             TRIGGER_BASE,
+                            fullWidth && "polli:w-full polli:min-w-0",
                             open
                                 ? "polli:bg-theme-bg-hover"
                                 : "polli:bg-theme-bg-active polli:hover:bg-theme-bg-hover",

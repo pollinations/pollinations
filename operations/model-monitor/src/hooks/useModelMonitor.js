@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { mergeModelHealth, normalizeCatalogModel } from "../model-data.js";
 
 const MODEL_HEALTH_URL = "https://gen.pollinations.ai/v1/models/status";
 const MODEL_CATALOG_URL = "https://gen.pollinations.ai/models";
@@ -20,37 +21,6 @@ const POLL_INTERVALS = {
     "60m": 60000, // 1 minute for stable 60m view
     "5m": 60000, // Match the model status gateway cache
 };
-
-function resolveDisplayType(model) {
-    if (model.category) return model.category;
-    const out = model.output_modalities;
-    if (out?.includes("video")) return "video";
-    if (out?.includes("embedding")) return "embedding";
-    if (out?.includes("audio")) return "audio";
-    if (out?.includes("image")) return "image";
-    if (out?.includes("text")) return "text";
-    return "unknown";
-}
-
-const IMAGE_EVENT_TYPES = ["video", "3d"];
-function eventTypeForDisplayType(type) {
-    return IMAGE_EVENT_TYPES.includes(type) ? "image" : type;
-}
-
-function normalizeCatalogModel(model) {
-    const name = model.name || model.id;
-    if (!name) return null;
-    const type = resolveDisplayType(model);
-    return {
-        ...model,
-        name,
-        aliases: model.aliases || [],
-        community: model.community === true,
-        type,
-        endpointType: eventTypeForDisplayType(type),
-        catalogStatus: "visible",
-    };
-}
 
 export function useModelMonitor(aggregationWindow = "60m") {
     const pollInterval =
@@ -125,93 +95,10 @@ export function useModelMonitor(aggregationWindow = "60m") {
         }
     }, [aggregationWindow]);
 
-    const modelStats = healthStats.filter((s) => s.model !== "undefined");
-
-    const catalogModelsByName = useMemo(
-        () =>
-            models.reduce((acc, model) => {
-                if (!acc[model.name]) acc[model.name] = [];
-                acc[model.name].push(model);
-                return acc;
-            }, {}),
-        [models],
+    const allModels = useMemo(
+        () => mergeModelHealth(models, healthStats, endpointStatus.catalog),
+        [models, healthStats, endpointStatus.catalog],
     );
-
-    // Merge models with health stats.
-    // Use endpointType (original API endpoint) for Tinybird matching since
-    // Tinybird reports e.g. generate.image for video models served from /image/models.
-    const mergedModels = models.map((model) => {
-        const statsType = model.endpointType || model.type;
-        const stats =
-            modelStats.find(
-                (s) =>
-                    s.model === model.name &&
-                    s.event_type === `generate.${statsType}`,
-            ) ?? null;
-        return {
-            ...model,
-            provider: model.provider || stats?.provider,
-            stats,
-        };
-    });
-
-    // Add models from health stats that aren't in the visible model list (but not "undefined")
-    const unmatchedStats = modelStats.filter(
-        (s) =>
-            !models.some(
-                (m) =>
-                    m.name === s.model &&
-                    `generate.${m.endpointType || m.type}` === s.event_type,
-            ),
-    );
-    const extraModels = unmatchedStats.map((s) => {
-        const statsType = s.event_type?.replace("generate.", "") || "unknown";
-        const stats = s;
-        const sameNameMatches = catalogModelsByName[s.model] || [];
-
-        let modelMeta;
-        if (endpointStatus.catalog === false) {
-            modelMeta = {
-                name: s.model || "(unknown)",
-                community: s.provider === "community",
-                type: statsType,
-                endpointType: statsType,
-                provider: s.provider,
-                description: "Unknown model while live catalog is unavailable",
-                catalogStatus: "catalog-unavailable",
-            };
-        } else if (sameNameMatches.length > 0) {
-            const registeredTypes = [
-                ...new Set(sameNameMatches.map((m) => m.type)),
-            ].sort();
-            modelMeta = {
-                name: s.model || "(unknown)",
-                community: sameNameMatches.some((m) => m.community),
-                type: statsType,
-                endpointType: statsType,
-                provider: s.provider,
-                description: `Unexpected ${statsType} traffic; registered as ${registeredTypes.join("/")}`,
-                catalogStatus: "anomaly",
-            };
-        } else {
-            modelMeta = {
-                name: s.model || "(unknown)",
-                community: s.provider === "community",
-                type: statsType,
-                endpointType: statsType,
-                provider: s.provider,
-                description: "Unregistered model",
-                catalogStatus: "unregistered",
-            };
-        }
-
-        return {
-            ...modelMeta,
-            stats,
-        };
-    });
-
-    const allModels = [...mergedModels, ...extraModels];
 
     const refresh = useCallback(() => {
         fetchModels();

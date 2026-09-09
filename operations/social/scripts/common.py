@@ -287,6 +287,7 @@ def call_pollinations_api(
     user_prompt: str,
     token: str,
     temperature: float = 0.7,
+    response_format: Optional[Dict] = None,
 ) -> Optional[str]:
     """Call pollinations.ai API with retry logic and exponential backoff
 
@@ -295,6 +296,7 @@ def call_pollinations_api(
         user_prompt: User prompt for the AI
         token: pollinations.ai API token
         temperature: Temperature for generation (default 0.7)
+        response_format: Optional OpenAI-compatible response format
 
     Returns:
         Response content or None if failed
@@ -315,6 +317,8 @@ def call_pollinations_api(
             ],
             "temperature": temperature
         }
+        if response_format is not None:
+            payload["response_format"] = response_format
 
         if attempt > 0:
             backoff_delay = INITIAL_RETRY_DELAY * (2 ** attempt)
@@ -333,6 +337,10 @@ def call_pollinations_api(
                 try:
                     result = response.json()
                     content = result['choices'][0]['message']['content']
+                    print(
+                        f"  Text response: cache={response.headers.get('X-Cache', 'unknown')}, "
+                        f"finish_reason={result['choices'][0].get('finish_reason')}, chars={len(content)}"
+                    )
                     return content
                 except (KeyError, IndexError, json.JSONDecodeError) as e:
                     last_error = f"Error parsing API response: {e}"

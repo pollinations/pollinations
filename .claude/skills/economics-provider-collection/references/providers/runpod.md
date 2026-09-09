@@ -47,7 +47,8 @@ Known traps:
 - The historical GraphQL API is not enough for month ledger evidence; it mostly exposes live balance/current spend.
 - Do not recreate the retired month-open balance cache or top-up-reset state.
   GraphQL balance and hourly spend are snapshots, not completed-month costs.
-- Grant waterfall matters. A $2,500 credit code was redeemed in March 2026; usage burns credit until exhausted.
+- Reconstruct grant funding from the verified redemption and usage dates;
+  usage burns eligible credit until exhausted.
 - Purchased GPU compute credits are our cash/prepaid balance, not grant. Do not classify purchased credits as free grant usage.
 - Invoice PDFs should outrank older roster assumptions when grant/payment status conflicts.
 - Monthly billing rows preserve deleted resource IDs but do not expose deleted

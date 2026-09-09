@@ -38,7 +38,9 @@ describe("transcribeWithAzure", () => {
         expect(form.get("temperature")).toBe("0.2");
         expect(form.get("file")).toBeInstanceOf(File);
 
-        expect(response.headers.get("x-model-used")).toBe("gpt-transcribe");
+        expect(response.headers.get("x-model-used")).toBe(
+            "openai/gpt-transcribe",
+        );
         expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("60");
         await expect(response.json()).resolves.toEqual({
             text: "hello from Azure",

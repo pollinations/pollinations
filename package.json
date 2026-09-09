@@ -5,6 +5,7 @@
     "shared",
     "enter.pollinations.ai",
     "gen.pollinations.ai",
+    "packages/auth",
     "packages/sdk",
     "packages/ui",
     "apps/react",
@@ -29,6 +30,6 @@
     "@better-auth/core": "1.6.30",
     "drizzle-orm": "0.45.2",
     "wrangler": "^4.59.1",
-    "zod": "^4.3.5"
+    "zod": "4.5.4"
   }
 }

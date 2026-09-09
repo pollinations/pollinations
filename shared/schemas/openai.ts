@@ -757,9 +757,13 @@ export const GetModelsResponseSchema = z
 // OpenAI Images API Schemas
 
 // Shared fields between image generation and editing requests
-const imageModelField = z.string().optional().default("flux").meta({
-    description: "The model to use for image generation",
-});
+const imageModelField = z
+    .string()
+    .optional()
+    .default("black-forest-labs/flux.1-schnell")
+    .meta({
+        description: "The model to use for image generation",
+    });
 const imageNField = z
     .number()
     .int()
@@ -792,6 +796,14 @@ const imageResolutionField = z
         description:
             "Output resolution for resolution-priced image and video models (Pollinations extension)",
     });
+const imageResponseFormatField = z
+    .enum(["url", "b64_json"])
+    .optional()
+    .default("b64_json")
+    .meta({
+        description:
+            'Return format. "url" returns a stored media.pollinations.ai URL, "b64_json" returns base64-encoded image data',
+    });
 
 export const CreateImageRequestSchema = z
     .object({
@@ -802,14 +814,7 @@ export const CreateImageRequestSchema = z
         n: imageNField,
         size: imageSizeField,
         quality: imageQualityField,
-        response_format: z
-            .enum(["url", "b64_json"])
-            .optional()
-            .default("b64_json")
-            .meta({
-                description:
-                    'Return format. "url" returns a pollinations.ai URL, "b64_json" returns base64-encoded image data',
-            }),
+        response_format: imageResponseFormatField,
         user: z.string().optional().meta({
             description: "End-user identifier for abuse tracking",
         }),
@@ -838,7 +843,8 @@ const ImageDataSchema = z.object({
     url: z.string().optional(),
     b64_json: z.string().optional(),
     media_type: z.string().optional().meta({
-        description: "MIME type for non-raster output such as image/svg+xml",
+        description:
+            "MIME type, included for URL responses and non-raster output",
     }),
     revised_prompt: z.string().optional(),
 });
@@ -888,6 +894,7 @@ export const CreateImageEditRequestSchema = z
         n: imageNField,
         size: imageEditSizeField,
         quality: imageQualityField,
+        response_format: imageResponseFormatField,
         resolution: imageResolutionField,
         safe: SafeSchema,
     })

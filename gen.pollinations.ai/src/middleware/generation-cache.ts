@@ -32,8 +32,11 @@ export type GenerationCacheVariables = {
     generationRequestContentType?: string;
     /** Canonical body identity used by body-aware cache adapters. */
     generationCacheBody?: string;
-    /** Executor callback used to await durable cache materialization. */
-    registerGenerationCacheWrite?: (promise: Promise<void>) => void;
+    /** The detached executor writes to the identity chosen by its caller. */
+    generationExecution?: {
+        cacheKey: string;
+        registerCacheWrite: (promise: Promise<void>) => void;
+    };
 };
 
 export type GenerationCacheEnv = {
@@ -228,6 +231,7 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
             if (coordinate) {
                 throw new HTTPException(503, {
                     message: "Generation cache is temporarily unavailable",
+                    cause: error,
                 });
             }
         }
@@ -255,7 +259,10 @@ export function createGenerationExecutionCache(
 ) {
     return createMiddleware<GenerationCacheEnv>(async (c, next) => {
         const log = c.get("log").getChild(adapter.label);
-        const cacheKey = await adapter.getKey(c);
+        const execution = c.var.generationExecution;
+        if (!execution)
+            throw new Error("Generation execution context is missing");
+        const cacheKey = execution.cacheKey;
 
         try {
             const cached = await lookup(c, adapter, cacheKey);
@@ -264,6 +271,7 @@ export function createGenerationExecutionCache(
             log.error("Error retrieving cached response: {error}", { error });
             throw new HTTPException(503, {
                 message: "Generation cache is temporarily unavailable",
+                cause: error,
             });
         }
 
@@ -273,8 +281,6 @@ export function createGenerationExecutionCache(
         const cacheWrite = capture(c, adapter, cacheKey);
         if (!cacheWrite) return;
 
-        const register = c.var.registerGenerationCacheWrite;
-        if (!register) throw new Error("Generation cache registrar is missing");
-        register(cacheWrite);
+        execution.registerCacheWrite(cacheWrite);
     });
 }

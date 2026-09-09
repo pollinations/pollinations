@@ -21,7 +21,7 @@ const GROK_VIDEO_15_MODEL = "x-ai/grok-imagine-video-1.5";
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_DELAY_MS = 30000;
 const HAPPYHORSE_POLL_TIMEOUT_MS = 5 * 60 * 1000;
-const GROK_POLL_TIMEOUT_MS = 3 * 60 * 1000;
+const GROK_15_POLL_TIMEOUT_MS = 3 * 60 * 1000;
 const HAPPYHORSE_ASPECT_RATIOS = [
     "16:9",
     "9:16",
@@ -114,13 +114,13 @@ export async function callHappyHorseAPI(
         mimeType: "video/mp4",
         durationSeconds: duration,
         trackingData: {
-            actualModel: "happyhorse-1.1",
+            actualModel: "alibaba/happyhorse-1.1",
             usage: { completionVideoSeconds: duration },
         },
     };
 }
 
-function resolveGrokDuration(duration?: number): number {
+export function resolveGrokDuration(duration?: number): number {
     const requested = duration || 5;
     if (!Number.isInteger(requested)) {
         throw UpstreamError.fromProvider(400, {
@@ -131,7 +131,9 @@ function resolveGrokDuration(duration?: number): number {
     return Math.min(Math.max(requested, 1), 15);
 }
 
-function resolveGrokAspectRatio(safeParams: ImageParams): string | undefined {
+export function resolveGrokAspectRatio(
+    safeParams: ImageParams,
+): string | undefined {
     if (
         !safeParams.dimensionsExplicit &&
         safeParams.aspectRatio &&
@@ -147,7 +149,7 @@ export async function callOpenRouterGrokVideoAPI(
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
     const duration = resolveGrokDuration(safeParams.duration);
-    const isVersion15 = safeParams.model === "grok-imagine-video-1.5";
+    const isVersion15 = safeParams.model === "x-ai/grok-imagine-video-1.5";
     const resolution = isVersion15 ? (safeParams.resolution ?? "720p") : "720p";
     const requestBody: Record<string, unknown> = {
         model: isVersion15 ? GROK_VIDEO_15_MODEL : GROK_VIDEO_MODEL,
@@ -171,7 +173,8 @@ export async function callOpenRouterGrokVideoAPI(
 
     const { buffer, providerCost } = await generateOpenRouterVideo(
         requestBody,
-        GROK_POLL_TIMEOUT_MS,
+        // Base Grok's 15-second clips can complete after the old 3-minute cutoff.
+        isVersion15 ? GROK_15_POLL_TIMEOUT_MS : 5 * 60 * 1000,
     );
 
     logOps("Grok Video Pro generation complete", {

@@ -916,7 +916,7 @@ describe("community endpoint helpers", () => {
         );
     });
 
-    it("projects a provider profile onto the community model brand", () => {
+    it("projects a provider profile onto the community model publisher", () => {
         const modelDefinition = communityModelDefinition({
             modelId: "voodoohop/openai",
             title: "OpenAI Fast",
@@ -926,7 +926,7 @@ describe("community endpoint helpers", () => {
             ...communityEndpointPrices({}),
         });
 
-        expect(modelDefinition.brand).toBe("Example AI");
+        expect(modelDefinition.publisher).toBe("Example AI");
         expect(modelDefinition.brandUrl).toBe("https://example.com/");
     });
 
@@ -1548,7 +1548,7 @@ describe("community endpoint helpers", () => {
             };
         }
 
-        it("calls the configured URL and bills the requested duration", async () => {
+        it("forwards the requested duration but bills provider-reported seconds", async () => {
             const fetchMock = vi.fn(async (input, init) => {
                 const request = new Request(input, init);
                 expect(request.url).toBe(
@@ -1570,6 +1570,7 @@ describe("community endpoint helpers", () => {
                 });
                 return Response.json({
                     data: [{ b64_json: TEST_MP4_BASE64 }],
+                    usage: { duration: 3.5 },
                 });
             });
             vi.stubGlobal("fetch", fetchMock);
@@ -1591,9 +1592,9 @@ describe("community endpoint helpers", () => {
             );
 
             expect(result.mimeType).toBe("video/mp4");
-            expect(result.durationSeconds).toBe(4);
+            expect(result.durationSeconds).toBe(3.5);
             expect(result.trackingData.usage).toEqual({
-                completionVideoSeconds: 4,
+                completionVideoSeconds: 3.5,
             });
             expect(Array.from(result.buffer)).toEqual(TEST_MP4_BYTES);
         });
@@ -1612,6 +1613,7 @@ describe("community endpoint helpers", () => {
                                 url: "https://api.example.com/assets/clip.mp4",
                             },
                         ],
+                        usage: { duration: 3 },
                     });
                 }
                 expect(request.url).toBe(
@@ -1646,6 +1648,7 @@ describe("community endpoint helpers", () => {
                                 url: "https://api.example.com/assets/clip.mp4",
                             },
                         ],
+                        usage: { duration: 3 },
                     });
                 }
                 return new Response(
@@ -1679,6 +1682,7 @@ describe("community endpoint helpers", () => {
                 vi.fn(async () =>
                     Response.json({
                         data: [{ b64_json: TEST_INVALID_IMAGE_BASE64 }],
+                        usage: { duration: 2 },
                     }),
                 ),
             );
@@ -1699,6 +1703,7 @@ describe("community endpoint helpers", () => {
                 vi.fn(async () =>
                     Response.json({
                         data: [{ b64_json: TEST_BARE_MP4_BASE64 }],
+                        usage: { duration: 2 },
                     }),
                 ),
             );
@@ -1713,8 +1718,14 @@ describe("community endpoint helpers", () => {
             ).rejects.toMatchObject({ status: 502 });
         });
 
-        it("requires a request duration before calling the endpoint", async () => {
-            const fetchMock = vi.fn();
+        it("leaves an omitted duration to the provider and bills its usage", async () => {
+            const fetchMock = vi.fn(async (_input, init) => {
+                expect(JSON.parse(init.body)).toEqual({ prompt: "a sprout" });
+                return Response.json({
+                    data: [{ b64_json: TEST_MP4_BASE64 }],
+                    usage: { duration: 6.25 },
+                });
+            });
             vi.stubGlobal("fetch", fetchMock);
 
             await expect(
@@ -1724,8 +1735,66 @@ describe("community endpoint helpers", () => {
                     {},
                     secret,
                 ),
-            ).rejects.toMatchObject({ status: 400 });
-            expect(fetchMock).not.toHaveBeenCalled();
+            ).resolves.toMatchObject({
+                durationSeconds: 6.25,
+                trackingData: { usage: { completionVideoSeconds: 6.25 } },
+            });
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        });
+
+        it.each([
+            undefined,
+            null,
+            {},
+            { duration: null },
+        ])("falls back to requested duration when usage is missing: %j", async (usage) => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        data: [{ b64_json: TEST_MP4_BASE64 }],
+                        usage,
+                    }),
+                ),
+            );
+            await expect(
+                callCommunityVideoEndpoint(
+                    await videoEndpoint(),
+                    "a sprout",
+                    { duration: 5 },
+                    secret,
+                ),
+            ).resolves.toMatchObject({
+                durationSeconds: 5,
+                trackingData: { usage: { completionVideoSeconds: 5 } },
+            });
+        });
+
+        it.each([
+            { duration: 0 },
+            { duration: -1 },
+            { duration: "5" },
+        ])("rejects invalid reported usage %j even when duration was requested", async (usage) => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        data: [{ b64_json: TEST_MP4_BASE64 }],
+                        usage,
+                    }),
+                ),
+            );
+            await expect(
+                callCommunityVideoEndpoint(
+                    await videoEndpoint(),
+                    "a sprout",
+                    { duration: 5 },
+                    secret,
+                ),
+            ).rejects.toMatchObject({
+                status: 502,
+                message: expect.stringContaining("usage.duration"),
+            });
         });
 
         it("preserves upstream video failures", async () => {
@@ -3215,9 +3284,9 @@ fixtureTest.each(
         });
         const balanceBefore = await getUserBalance(db, caller.userId);
         const expectedInnerPrice = calculateUsageBilling({
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             usage: { promptTextTokens: 10, completionTextTokens: 5 },
-            servedBy: getRegistryModelDefinition("openai-fast"),
+            servedBy: getRegistryModelDefinition("openai/gpt-5-nano"),
         }).price.totalPrice;
         const expectedMcpPrice = 0.007;
         const tinybirdEvents: Record<string, unknown>[] = [];
@@ -5301,6 +5370,33 @@ fixtureTest(
             },
         });
 
+        // Changing the response format does not create another edit, even
+        // for multipart requests without an explicit seed or authentication.
+        editFormData.set("response_format", "url");
+        const cachedEditResponse = await fetchGen(
+            new Request("https://gen.pollinations.ai/v1/images/edits", {
+                method: "POST",
+                body: editFormData,
+            }),
+        );
+        expect(cachedEditResponse.status).toBe(200);
+        expect(cachedEditResponse.headers.get("x-cache")).toBe("HIT");
+        const cachedEdit = await cachedEditResponse.json<{
+            data: Array<{ url: string }>;
+            usage: { total_tokens: number };
+        }>();
+        expect(cachedEdit.usage.total_tokens).toBe(1);
+        expect(cachedEdit.data[0].url).toMatch(
+            /^https:\/\/media\.pollinations\.ai\/[a-f0-9]{64}$/,
+        );
+        const storedEdit = await env.MEDIA.get(
+            new URL(cachedEdit.data[0].url).pathname.slice(1),
+        );
+        if (!storedEdit) throw new Error("Edited image was not stored");
+        expect(
+            Array.from(new Uint8Array(await storedEdit.arrayBuffer())),
+        ).toEqual(TEST_PNG_BYTES);
+
         const simpleEditResponse = await fetchGen(
             new Request(
                 `https://gen.pollinations.ai/image/turn%20it%20red?model=${encodeURIComponent(
@@ -5339,9 +5435,10 @@ fixtureTest(
         await expect(urlImageResponse.json()).resolves.toMatchObject({
             data: [
                 {
-                    url: expect.stringContaining(
-                        `/image/blue%20flower?model=${encodeURIComponent(registered.modelId)}`,
+                    url: expect.stringMatching(
+                        /^https:\/\/media\.pollinations\.ai\/[a-f0-9]{64}$/,
                     ),
+                    media_type: "image/png",
                 },
             ],
         });
@@ -5488,9 +5585,9 @@ fixtureTest(
     },
 );
 
-fixtureTest(
-    "registers, catalogs, and serves a billed community video model",
-    async () => {
+fixtureTest.each(["video", "image", "v1/images/generations"])(
+    "registers and bills provider-default video duration through /%s",
+    async (route) => {
         const ownerGithubUsername = `video-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `clip-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
@@ -5528,9 +5625,14 @@ fixtureTest(
                 );
                 const body = (await request.json()) as {
                     prompt: string;
-                    duration: number;
+                    duration?: number;
                     reference_images?: string[];
                 };
+                if (body.prompt === "missing usage") {
+                    return Response.json({
+                        data: [{ b64_json: TEST_MP4_BASE64 }],
+                    });
+                }
                 const isProbe =
                     body.prompt ===
                     "A green sprout gently moving in the breeze.";
@@ -5544,14 +5646,18 @@ fixtureTest(
                         ? { prompt: body.prompt, duration: 5 }
                         : {
                               prompt: "green sprout",
-                              duration: 4,
-                              reference_images: [
-                                  "https://media.example.com/style.jpg",
-                              ],
+                              ...(route !== "v1/images/generations"
+                                  ? {
+                                        reference_images: [
+                                            "https://media.example.com/style.jpg",
+                                        ],
+                                    }
+                                  : {}),
                           },
                 );
                 return Response.json({
                     data: [{ b64_json: TEST_MP4_BASE64 }],
+                    usage: { duration: 4.5 },
                 });
             }
             if (isBillingFetch(request)) {
@@ -5581,8 +5687,8 @@ fixtureTest(
         expect(probeResponse.status).toBe(200);
         await expect(probeResponse.json()).resolves.toMatchObject({
             message: "Endpoint responded with playable video",
-            usage: { duration: 5 },
-            billableUsage: { completionVideoSeconds: 5 },
+            usage: { duration: 4.5 },
+            billableUsage: { completionVideoSeconds: 4.5 },
         });
 
         const registerResponse = await fetchEnterApi(
@@ -5621,11 +5727,26 @@ fixtureTest(
         });
         const balanceBefore = await getUserBalance(db, caller.userId);
         const coordinatedEnv = withInlineGenerationCoordinator(env);
+        const isPost = route === "v1/images/generations";
         const generationRequest = () =>
-            new Request(
-                `https://gen.pollinations.ai/video/green%20sprout?model=${encodeURIComponent(registered.modelId)}&duration=4&reference_images=${encodeURIComponent("https://media.example.com/style.jpg")}`,
-                { headers: { Authorization: `Bearer ${caller.key}` } },
-            );
+            isPost
+                ? new Request(`https://gen.pollinations.ai/${route}`, {
+                      method: "POST",
+                      headers: {
+                          Authorization: `Bearer ${caller.key}`,
+                          "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({
+                          model: registered.modelId,
+                          prompt: "green sprout",
+                          seed: 42,
+                          response_format: "b64_json",
+                      }),
+                  })
+                : new Request(
+                      `https://gen.pollinations.ai/${route}/green%20sprout?model=${encodeURIComponent(registered.modelId)}&reference_images=${encodeURIComponent("https://media.example.com/style.jpg")}`,
+                      { headers: { Authorization: `Bearer ${caller.key}` } },
+                  );
         const disconnectedContext = createExecutionContext();
         const abort = new AbortController();
         const disconnected = Promise.resolve(
@@ -5635,7 +5756,14 @@ fixtureTest(
                 disconnectedContext,
             ),
         ).catch(() => null);
-        await generationStarted;
+        await Promise.race([
+            generationStarted,
+            disconnected.then((response) => {
+                throw new Error(
+                    `Generation returned before reaching the provider: ${response?.status}`,
+                );
+            }),
+        ]);
         abort.abort();
 
         const rejoinedContext = createExecutionContext();
@@ -5649,16 +5777,24 @@ fixtureTest(
         expect(generationResponse.status).toBe(200);
         expect(generationResponse.headers.get("x-cache")).toBe("HIT");
         expect(generationResponse.headers.get("content-type")).toBe(
-            "video/mp4",
+            isPost ? "application/json" : "video/mp4",
         );
         expect(
             generationResponse.headers.get(
                 USAGE_TYPE_HEADERS.completionVideoSeconds,
             ),
-        ).toBe("4");
-        expect(
-            Array.from(new Uint8Array(await generationResponse.arrayBuffer())),
-        ).toEqual(TEST_MP4_BYTES);
+        ).toBe("4.5");
+        if (isPost) {
+            await expect(generationResponse.json()).resolves.toMatchObject({
+                data: [{ b64_json: TEST_MP4_BASE64 }],
+            });
+        } else {
+            expect(
+                Array.from(
+                    new Uint8Array(await generationResponse.arrayBuffer()),
+                ),
+            ).toEqual(TEST_MP4_BYTES);
+        }
         const disconnectedResponse = await disconnected;
         if (disconnectedResponse) {
             await disconnectedResponse.arrayBuffer();
@@ -5676,16 +5812,22 @@ fixtureTest(
         );
         expect(cachedResponse.status).toBe(200);
         expect(cachedResponse.headers.get("x-cache")).toBe("HIT");
-        expect(
-            Array.from(new Uint8Array(await cachedResponse.arrayBuffer())),
-        ).toEqual(TEST_MP4_BYTES);
+        if (isPost) {
+            await expect(cachedResponse.json()).resolves.toMatchObject({
+                data: [{ b64_json: TEST_MP4_BASE64 }],
+            });
+        } else {
+            expect(
+                Array.from(new Uint8Array(await cachedResponse.arrayBuffer())),
+            ).toEqual(TEST_MP4_BYTES);
+        }
         await waitOnExecutionContext(cachedContext);
 
         expect(generationCalls).toBe(1);
         const balanceAfter = await getUserBalance(db, caller.userId);
         expect(
             balanceBefore.tierBalance - balanceAfter.tierBalance,
-        ).toBeCloseTo(0.32, 10);
+        ).toBeCloseTo(0.36, 10);
         await vi.waitFor(() =>
             expect(
                 ingestedEvents.filter(
@@ -5695,6 +5837,29 @@ fixtureTest(
                 ),
             ).toHaveLength(1),
         );
+
+        const failedContext = createExecutionContext();
+        const failedResponse = await worker.fetch(
+            new Request(
+                `https://gen.pollinations.ai/video/missing%20usage?model=${encodeURIComponent(registered.modelId)}`,
+                {
+                    headers: { Authorization: `Bearer ${caller.key}` },
+                },
+            ),
+            coordinatedEnv,
+            failedContext,
+        );
+        expect(failedResponse.status).toBe(502);
+        expect(await failedResponse.text()).toContain("usage.duration");
+        await waitOnExecutionContext(failedContext);
+        expect(await getUserBalance(db, caller.userId)).toEqual(balanceAfter);
+        expect(
+            ingestedEvents.filter(
+                (event) =>
+                    event.modelUsed === registered.modelId &&
+                    event.isBilledUsage === true,
+            ),
+        ).toHaveLength(1);
 
         const invalidDurationResponse = await fetchGen(
             new Request(
@@ -6605,7 +6770,7 @@ fixtureTest(
             await getCommunityModelRegistryEntries(env)
         ).find((entry) => entry.id === `${ownerGithubUsername}/my-test-model`);
         expect(registryEntry?.info).toMatchObject({
-            brand: "Example AI",
+            publisher: "Example AI",
             brand_url: "https://example.com/",
         });
         expect(registryEntry?.communityEndpoint.perUserRpm).toBe(0.5);
@@ -6929,7 +7094,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     );
     const promptAgent = {
         systemPrompt: "You are a terse SQL tutor.",
-        baseModel: "openai-fast",
+        baseModel: "openai/gpt-5-nano",
         requiredSafetyFeatures: ["sexual"],
         mcpServers: ["pollinations"],
     };
@@ -6958,7 +7123,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     };
     expect(agent).toMatchObject({
         systemPrompt: "You are a terse SQL tutor.",
-        baseModel: "openai-fast",
+        baseModel: "openai/gpt-5-nano",
         mcpServers: ["pollinations"],
     });
     expect(agent).not.toHaveProperty("apiKeyId");
@@ -7868,7 +8033,9 @@ fixtureTest(
             updatedAt: new Date(),
         });
 
-        const source = getRegistryModelDefinition("qwen-coder");
+        const source = getRegistryModelDefinition(
+            "qwen/qwen3-coder-30b-a3b-instruct",
+        );
         const previousFallbacks = source.fallbacks;
         try {
             source.fallbacks = [fallbackModelId];

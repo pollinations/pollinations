@@ -237,7 +237,7 @@ const COMMUNITY_TRANSCRIPTION_PRICE_FIELD = {
     rawUsagePaths: ["duration"],
 } as const;
 
-// Community video endpoints are billed from the duration Pollinations sends.
+// Video bills reported generated seconds, falling back to requested duration.
 const COMMUNITY_VIDEO_PRICE_FIELD = {
     key: "completionVideoPrice",
     usageType: "completionVideoSeconds",
@@ -1004,7 +1004,7 @@ export function communityModelDefinition(
         aliases,
         provider: "community",
         perUserRpm: endpoint.perUserRpm,
-        brand: providerName || "Community",
+        publisher: providerName || "Community",
         brandUrl: providerName && providerUrl ? providerUrl : undefined,
         category: spec.category,
         cost: communityPriceDefinition(endpoint, modality, imagePricing),

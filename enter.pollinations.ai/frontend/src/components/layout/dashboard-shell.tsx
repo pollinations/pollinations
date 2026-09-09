@@ -34,7 +34,12 @@ import type {
     RefObject,
 } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
+import {
+    QUEST_STATUS_UPDATED_EVENT,
+    questNavLabel,
+} from "../quests/quest-nav-status.ts";
 import {
     DASHBOARD_NAV_ITEMS,
     type DashboardPage,
@@ -63,6 +68,7 @@ type DashboardShellProps = PropsWithChildren<{
     accountArea?: ReactNode;
     walletArea?: ReactNode;
     showFooterLinks?: boolean;
+    showQuestStatus?: boolean;
 }>;
 
 type BrandLink = {
@@ -146,6 +152,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     accountArea,
     walletArea,
     showFooterLinks = true,
+    showQuestStatus = false,
     children,
 }) => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -161,6 +168,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         location.pathname === "/account"
             ? "Account"
             : (activeNavItem?.label ?? "Dashboard");
+    const questStatus = useQuestNavStatus(showQuestStatus);
 
     useDashboardShellBodyClass();
     useScrollLock(isDrawerOpen);
@@ -298,6 +306,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             supportLinks={supportLinks}
             accountArea={effectiveAccountArea}
             walletArea={walletArea}
+            questStatus={questStatus}
             showFooterLinks={showFooterLinks}
             onNavigate={closeDrawer}
         />
@@ -371,6 +380,54 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     );
 };
 
+function useQuestNavStatus(enabled: boolean): string | null {
+    const [label, setLabel] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!enabled) {
+            setLabel(null);
+            return;
+        }
+
+        let cancelled = false;
+        let requestId = 0;
+        const refresh = async () => {
+            const currentRequest = ++requestId;
+            try {
+                const [catalogResponse, rewardsResponse] = await Promise.all([
+                    apiClient.quests.catalog.$get(),
+                    apiClient.quests.rewards.$get(),
+                ]);
+                if (!catalogResponse.ok || !rewardsResponse.ok) {
+                    throw new Error("Quest status unavailable");
+                }
+                const [catalog, rewards] = await Promise.all([
+                    catalogResponse.json(),
+                    rewardsResponse.json(),
+                ]);
+                if (!cancelled && currentRequest === requestId) {
+                    setLabel(questNavLabel(catalog.quests, rewards.rewards));
+                }
+            } catch {
+                if (!cancelled && currentRequest === requestId) setLabel(null);
+            }
+        };
+        const handleUpdate = () => void refresh();
+
+        void refresh();
+        window.addEventListener(QUEST_STATUS_UPDATED_EVENT, handleUpdate);
+        return () => {
+            cancelled = true;
+            window.removeEventListener(
+                QUEST_STATUS_UPDATED_EVENT,
+                handleUpdate,
+            );
+        };
+    }, [enabled]);
+
+    return label;
+}
+
 function useDashboardShellBodyClass(): void {
     useEffect(() => {
         document.documentElement.classList.add("polli-ui-shell");
@@ -389,6 +446,7 @@ type DashboardRailProps = {
     supportLinks: readonly SupportLink[];
     accountArea?: ReactNode;
     walletArea?: ReactNode;
+    questStatus: string | null;
     showFooterLinks: boolean;
     onNavigate: () => void;
 };
@@ -400,6 +458,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
     supportLinks,
     accountArea,
     walletArea,
+    questStatus,
     showFooterLinks,
     onNavigate,
 }) => (
@@ -433,13 +492,14 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         onClick={onNavigate}
                     >
                         {item.label}
-                        {(item.id === "my-models" || item.id === "quests") && (
+                        {(item.id === "my-models" ||
+                            (item.id === "quests" && questStatus)) && (
                             <Chip
                                 intent="neutral"
                                 size="sm"
                                 className="ml-auto bg-transparent text-theme-text-soft"
                             >
-                                {item.id === "quests" ? "3 new!" : "New!"}
+                                {item.id === "quests" ? questStatus : "New!"}
                             </Chip>
                         )}
                     </NavItem>

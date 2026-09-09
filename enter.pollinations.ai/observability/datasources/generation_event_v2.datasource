@@ -59,8 +59,9 @@ SCHEMA >
 `execution_route_id` Nullable(String) `json:$.executionRouteId` DEFAULT NULL,
 `provider_response_id` Nullable(String) `json:$.providerResponseId` DEFAULT NULL,
 `provider_upstream_reported` Nullable(String) `json:$.providerUpstreamReported` DEFAULT NULL,
--- A measured zero is distinct from a missing report. total_cost remains our
--- configured-rate estimate; provider-reported charges never set Pollen prices.
+-- OpenRouter usage.cost: the account charge in USD. NULL means no report;
+-- a reported zero is a measured zero. total_cost remains our configured-rate
+-- estimate; provider-reported charges never set Pollen prices.
 `provider_reported_cost_usd` Nullable(Float64) `json:$.providerReportedCostUsd` DEFAULT NULL,
 `has_cost_estimate` Nullable(Bool) `json:$.hasCostEstimate` DEFAULT NULL,
 `cost_variant`              LowCardinality(String) `json:$.costVariant` DEFAULT 'undefined',

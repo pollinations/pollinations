@@ -200,6 +200,8 @@ export const track = (eventType: EventType) =>
         // Get model from resolveModel middleware
         const modelInfo = c.var.model;
         const requestTracking = await trackRequest(modelInfo, c.req);
+        requestTracking.modelRequested =
+            c.var.generationExecution?.originalModel ?? modelInfo.requested;
 
         const rawIp = getRealClientIp(c);
         const clientIp =
@@ -256,7 +258,8 @@ export const track = (eventType: EventType) =>
             const event = createTrackingEvent({
                 id: generateRandomId(),
                 requestId: c.get("requestId"),
-                requestPath: getRoutePath(c),
+                requestPath:
+                    c.var.generationExecution?.originalPath ?? getRoutePath(c),
                 environment: c.env.ENVIRONMENT,
                 eventType,
                 ipSubnet,

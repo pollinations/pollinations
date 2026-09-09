@@ -120,14 +120,6 @@ async function readJsonBody(c: ImageContext): Promise<Record<string, unknown>> {
     }
 }
 
-function decodePrompt(rawPrompt: string): string {
-    try {
-        return decodeURIComponent(rawPrompt);
-    } catch {
-        return rawPrompt;
-    }
-}
-
 function parseImageParams(
     c: ImageContext,
     body: Record<string, unknown>,
@@ -403,7 +395,7 @@ export async function generateImageOrVideoResponse(
     body: Record<string, unknown> = {},
 ): Promise<Response> {
     syncImageEnvironment(c.env);
-    const originalPrompt = decodePrompt(prompt || "random_prompt");
+    const originalPrompt = prompt || "random_prompt";
     const parsedParams = parseImageParams(c, body);
     const definition = c.var.model.definition;
     const safeParams =

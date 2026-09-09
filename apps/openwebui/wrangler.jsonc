@@ -69,7 +69,7 @@
         // No production MCP connection in the staging instance.
         "MCP_URL": "",
         "API_TYPE": "responses",
-        "MODEL_IDS": ["openai", "gemini"],
+        "MODEL_IDS": [],
         "OAUTH_CLIENT_ID": "pk_sF4w5mlijzIgoCeh"
       }
     }

@@ -74,9 +74,10 @@ def request_json(url, payload=None, token=None, timeout=30):
 
 
 def begin_authorization(app_key):
-    if not app_key or not app_key.startswith("pk_"):
-        raise ApiError("The publisher must configure POLLINATIONS_GIMP_APP_KEY with a registered App Key before connecting.")
-    code = request_json(ENTER + "/api/device/code", {"client_id": app_key})
+    if app_key and not app_key.startswith("pk_"):
+        raise ApiError("POLLINATIONS_GIMP_APP_KEY must be a publishable pk_ key.")
+    payload = {"client_id": app_key} if app_key else {}
+    code = request_json(ENTER + "/api/device/code", payload)
     if not isinstance(code, dict) or not all(code.get(k) for k in ("device_code", "user_code", "verification_uri", "expires_in")):
         raise ApiError("Invalid device authorization response.")
     code["deadline"] = time.monotonic() + float(code["expires_in"])

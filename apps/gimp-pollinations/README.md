@@ -28,13 +28,10 @@ folder shown inside GIMP's preferences. Manual installation: put
 `pollinations-gimp` folder in that plug-ins directory; make the entry script
 executable on Unix. Restart GIMP.
 
-## Publisher configuration and account connection
+## Account connection
 
-The publisher registers an **App Key** at
-[Pollinations Keys](https://enter.pollinations.ai/keys) and sets
-`POLLINATIONS_GIMP_APP_KEY` to that `pk_` key in the environment used to launch
-GIMP. No invented or contributor-owned default key is bundled. This public
-integration identifier is sent as `client_id` for attribution.
+No App Key is required. Publishers can optionally set
+`POLLINATIONS_GIMP_APP_KEY` to a publishable `pk_` key for attribution.
 
 1. Choose **Filters > Pollinations > Connect Account**. The browser opens the
    device approval page. The dialog also shows the URL and user code.

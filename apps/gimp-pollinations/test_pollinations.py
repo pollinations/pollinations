@@ -114,6 +114,11 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(api.poll_authorization(code, threading.Event()), "sk_authorized")
         self.assertEqual(self.server.requests[1][2], {"device_code": "private-code"})
 
+    def test_device_code_does_not_require_app_attribution(self):
+        self.reply({"device_code": "code", "user_code": "user", "verification_uri": "/device", "expires_in": 60})
+        api.begin_authorization("")
+        self.assertEqual(self.server.requests[0][2], {})
+
     def test_poll_pending_slow_down_and_denied(self):
         self.reply({"error": "authorization_pending"}, 400)
         self.reply({"error": "slow_down"}, 400)

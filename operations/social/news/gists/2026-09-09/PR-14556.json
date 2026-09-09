@@ -1,0 +1,35 @@
+{
+  "pr_number": 14556,
+  "title": "Add NVIDIA Asset Harvester to 3D Models Registry",
+  "author": "sharktide",
+  "url": "https://github.com/pollinations/pollinations/pull/14556",
+  "merged_at": "2026-09-09T01:13:31Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `nvidia/asset-harvester` (alias `asset-harvester`) through InferencePort’s existing 3D client: one image in, Gaussian-splat PLY out. Existing `/3d` routes; no fallback or Pollinations-operated GPU.\n- Charges **0.07 Pollen per generation**, multiplier 1, Quest Pollen allowed. Corrected from 0.25 using the [live provider catalog](https://api.inferenceport.ai/v1/models) and actual 0.07-credit receipts on September 9; prose provider docs are stale.\n- Live provider smoke returned a 5.2 MB PLY with 92,826 splats. Local Gen live smoke passed in 63 seconds: valid finite PLY data, correct MIME/filename, identical cache hit, one upstream submission, one 0.07 Quest-Pollen debit, and one matching emitted billing event. Telemetry was captured locally, not queried from Tinybird.\n- Verification: 24 focused 3D tests, 44 pricing/catalog tests, Gen/Enter typechecks, SDK/UI builds and Biome pass. Updated against main. No production deployment performed.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One photo, many splats",
+    "blurb": "The 3D garden grew a new branch: NVIDIA Asset Harvester turns a single image into a Gaussian-splat PLY. Polli checked the jar: 92,826 tiny splats, all accounted for.",
+    "summary": "Added NVIDIA Asset Harvester to the existing /3d registry as nvidia/asset-harvester (alias asset-harvester), converting one input image into a Gaussian-splat PLY for 0.07 Pollen per generation.",
+    "impact": "Developers can now call the existing /3d routes to generate downloadable Gaussian-splat PLY assets with Asset Harvester, including Quest-Pollen payment support and normal caching.",
+    "keywords": [
+      "3d",
+      "asset-harvester",
+      "nvidia",
+      "gaussian-splats",
+      "ply",
+      "inferenceport",
+      "pollen"
+    ],
+    "visual_concept": "Depict Asset Harvester as a cozy pixel-art workshop where a single framed image is fed into a friendly retro 3D machine and emerges as a sparkling cloud of tiny Gaussian-splat dots inside a labeled PLY jar. Polli wears tiny safety goggles and inspects the splats with warm amusement, surrounded by code-plants and flowers; a small CRT robot can hold the original image and excitedly compare it with the finished 3D object.",
+    "image_prompt": "Cozy pixel art scene in a warm garden workshop: Polli, the cute yellow-and-brown striped bee with pink blush, light blue wings, and tiny safety goggles, feeds one framed picture into a chunky retro 3D machine glowing prominently lime green (#ecf874), while a cloud of soft pastel Gaussian-splat pixels pours into a jar labeled \"PLY\"; a cheerful CRT monitor robot holds the source image beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14556.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden workshop: Polli, the cute yellow-and-brown striped bee with pink blush, light blue wings, and tiny safety goggles, feeds one framed picture into a chunky retro 3D machine glowing prominently lime green (#ecf874), while a cloud of soft pastel Gaussian-splat pixels pours into a jar labeled \"PLY\"; a cheerful CRT monitor robot holds the source image beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-09T01:14:27.242136+00:00"
+}

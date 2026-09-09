@@ -1,0 +1,35 @@
+{
+  "pr_number": 14618,
+  "title": "feat: serve media models through Responses and Chat",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14618",
+  "merged_at": "2026-09-09T06:39:11Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds prompt-only image, video, audio and 3D generation to `/v1/responses` and `/v1/chat/completions` for models with supported native routes. Prices, providers and access rules stay unchanged.\n- Reuses native generation, durable coordination, caching and billing. Builds Responses output once and uses the existing Chat converter; preserves the original route and model alias in logs.\n- Returns Markdown embeds/links plus plain public URLs. Streaming emits events after generation finishes; media does not invent text-token usage.\n- Sets Open WebUI background tasks to `openai/gpt-5-nano` and enables full staging model discovery. Updates Scalar docs, fixes double URL-decoding, and returns 400 for malformed Unicode or dot-only prompts. Reference-required models remain available and return their normal missing-input error.\n- Verified: 1,981 Gen tests passed, 6 skipped; typecheck and Biome passed. Live staging passed all four modalities, JSON/SSE, cache sharing, disconnect/rejoin and the input-error checks with correct billing. Community speech remains native-only; duration-less community video needs provider usage. Attachments/settings stay on native endpoints.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Media joins the chat",
+    "blurb": "The chat endpoints learned to make things, not just discuss them. Ask for an image, video, audio clip, or 3D asset and the hive returns a tidy public link instead of pretending it was all text.",
+    "summary": "Prompt-only image, video, audio, and 3D models with native routes can now run through both `/v1/responses` and `/v1/chat/completions`, returning Markdown embeds and public URLs while reusing native generation, caching, coordination, and billing.",
+    "impact": "Developers can use OpenAI-compatible Responses or Chat requests for all four supported media modalities, receive JSON or post-generation SSE output with shareable media URLs, and keep the same providers, prices, access rules, and cache behavior as native endpoints.",
+    "keywords": [
+      "responses-api",
+      "chat-completions",
+      "media-generation",
+      "images",
+      "video",
+      "audio",
+      "3d"
+    ],
+    "visual_concept": "A cozy retro terminal represents the OpenAI-compatible Responses and Chat endpoints, with four distinct generated outputs emerging from one prompt: a framed landscape image, tiny film reel, musical note/audio waveform, and a small spinning 3D cube. Polli, wearing little developer headphones, lovingly connects the terminal to these media sprouts; the monitor robot can hold a Markdown-style card with simple image and link symbols, while flowers and code-vines show that the existing native generation garden is feeding the new routes.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee mascot with dark brown horizontal stripes, small black legs and antennae, black oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded translucent light-blue wings, wearing tiny developer headphones as she tends a retro terminal glowing prominently lime green (#ecf874); the terminal sends one prompt into four friendly code-plants that bloom into a picture frame, film reel, music note waveform, and little 3D cube, while a chunky CRT monitor robot holds a Markdown card with an image icon and public-link symbol. Cozy 8-bit pixel art aesthetic, soft pastel mint-lavender-peach gradients, warm lighting, subtle CRT glow and scanlines, retro gaming vibes like Stardew Valley or A Short Hike, with pixel flowers and vines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14618.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee mascot with dark brown horizontal stripes, small black legs and antennae, black oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded translucent light-blue wings, wearing tiny developer headphones as she tends a retro terminal glowing prominently lime green (#ecf874); the terminal sends one prompt into four friendly code-plants that bloom into a picture frame, film reel, music note waveform, and little 3D cube, while a chunky CRT monitor robot holds a Markdown card with an image icon and public-link symbol. Cozy 8-bit pixel art aesthetic, soft pastel mint-lavender-peach gradients, warm lighting, subtle CRT glow and scanlines, retro gaming vibes like Stardew Valley or A Short Hike, with pixel flowers and vines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-09T06:40:11.470379+00:00"
+}

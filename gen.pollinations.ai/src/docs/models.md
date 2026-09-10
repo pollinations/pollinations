@@ -44,15 +44,13 @@ error; use their native endpoint until attachments are supported here.
 
 ### Chat parameters
 
-Official Chat models include:
+Official Chat models include `supported_parameters`: verified generation
+controls honored through `/v1/chat/completions` on the model's primary route.
 
-- `supported_parameters`: verified generation controls honored through `/v1/chat/completions` on the model's primary route.
-- `default_parameters`: scalar values Pollinations supplies when callers omit them, not upstream defaults.
-
-These fields describe Pollinations' Chat behavior, not upstream defaults or the
-native `/v1/responses` API. Unverified controls are omitted; inclusion does not
-mean every value or combination is supported. Provider fallback routes can
-have different controls and defaults. Community models omit both fields.
+This field describes Pollinations' Chat behavior, not the native
+`/v1/responses` API. Unverified controls are omitted; inclusion does not mean
+every value or combination is supported. Provider fallback routes can have
+different controls. Community models omit this field.
 For example,
 `openai/gpt-5.4` omits sampling controls because its Chat transform removes
 them, while `openai/gpt-oss-20b` forwards `temperature` and `top_p`.

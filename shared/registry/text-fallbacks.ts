@@ -284,7 +284,6 @@ export const TEXT_FALLBACKS = {
     "anthropic/claude-opus-4.7": {
         "anthropic/claude-opus-4.7:openrouter:vertex-global": {
             supportedParameters: CHAT_PARAMETERS.openRouterOpus,
-            defaultParameters: { stream: false },
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
         },
@@ -362,7 +361,6 @@ export const TEXT_FALLBACKS = {
     "anthropic/claude-haiku-4.5": {
         "anthropic/claude-haiku-4.5:openrouter:vertex-global": {
             supportedParameters: CHAT_PARAMETERS.openRouterHaiku,
-            defaultParameters: { stream: false },
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
         },
@@ -370,7 +368,6 @@ export const TEXT_FALLBACKS = {
     "anthropic/claude-fable-5": {
         "anthropic/claude-fable-5:openrouter:vertex-global": {
             supportedParameters: CHAT_PARAMETERS.openRouterOpus,
-            defaultParameters: { stream: false },
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
         },
@@ -402,7 +399,6 @@ export const TEXT_FALLBACKS = {
     },
     "mistralai/mistral-small-4": {
         "mistralai/mistral-small-4:openrouter:mistral-eu": {
-            defaultParameters: { stream: false },
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
@@ -482,7 +478,6 @@ export const TEXT_FALLBACKS = {
     "z-ai/glm-5.3": {
         "z-ai/glm-5.3:openrouter:friendli": {
             supportedParameters: CHAT_PARAMETERS.openRouterGlm53,
-            defaultParameters: { stream: false },
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {

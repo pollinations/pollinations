@@ -41,7 +41,7 @@ function skewedDbBinding(): CloudflareBindings["DB"] {
 }
 
 describe("getGenerationModelRegistry", () => {
-    it("declares unique Chat controls and explicit defaults for every configured route", async () => {
+    it("declares unique Chat controls for every configured route", async () => {
         const registry = await getGenerationModelRegistry(env);
         for (const model of availableModels) {
             const info = registry.resolve(model.name)?.info;
@@ -61,20 +61,6 @@ describe("getGenerationModelRegistry", () => {
             ]) {
                 expect(parameters, model.name).not.toContain(internal);
             }
-            const defaults = model.config({ model: model.name })
-                .defaultOptions as Record<string, unknown> | undefined;
-            expect(info?.default_parameters, model.name).toEqual({
-                stream: false,
-                ...Object.fromEntries(
-                    Object.entries(defaults ?? {}).filter(
-                        ([key, value]) =>
-                            parameters.includes(key) &&
-                            ["string", "number", "boolean"].includes(
-                                typeof value,
-                            ),
-                    ),
-                ),
-            });
         }
     });
 

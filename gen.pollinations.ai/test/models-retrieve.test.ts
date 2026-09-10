@@ -80,7 +80,7 @@ test("retrieve matches the list entry exactly (shared mapper)", async () => {
     expect(retrieved).toEqual(listed);
 });
 
-test("exposes verified Chat parameter contracts across rich listings", async () => {
+test("exposes supported Chat parameters across rich listings", async () => {
     const responses = await Promise.all([
         fetchWorker("/models"),
         fetchWorker("/text/models"),
@@ -99,9 +99,9 @@ test("exposes verified Chat parameter contracts across rich listings", async () 
             expect(model.supported_parameters, String(model.name)).toEqual(
                 expect.any(Array),
             );
-            expect(model.default_parameters, String(model.name)).toMatchObject({
-                stream: false,
-            });
+            expect(model, String(model.name)).not.toHaveProperty(
+                "default_parameters",
+            );
         }
         const byName = (name: string) =>
             models.find((model) => model.name === name);
@@ -110,14 +110,12 @@ test("exposes verified Chat parameter contracts across rich listings", async () 
                 "temperature",
                 "top_p",
             ]),
-            default_parameters: { stream: false },
         });
         expect(byName("openai/gpt-oss-20b")).toMatchObject({
             supported_parameters: expect.arrayContaining([
                 "temperature",
                 "top_p",
             ]),
-            default_parameters: { stream: false },
         });
         expect(byName("anthropic/claude-sonnet-4.6")).toMatchObject({
             supported_parameters: expect.arrayContaining([
@@ -125,25 +123,26 @@ test("exposes verified Chat parameter contracts across rich listings", async () 
                 "top_p",
                 "reasoning_effort",
             ]),
-            default_parameters: { max_tokens: 64000, stream: false },
         });
     }
 });
 
-test("keeps Chat parameter metadata identical for aliases and list entries", async () => {
+test("keeps supported Chat parameters identical for aliases and list entries", async () => {
     const listResponse = await fetchWorker("/v1/models");
     expect(listResponse.status).toBe(200);
     const list = (await listResponse.json()) as {
         data: Record<string, unknown>[];
     };
     const listed = list.data.find((model) => model.id === "openai/gpt-5.4");
+    expect(listed).toBeDefined();
+    expect(listed).not.toHaveProperty("default_parameters");
 
     const aliasResponse = await fetchWorker("/v1/models/gpt-5.4");
     expect(aliasResponse.status).toBe(200);
     const alias = (await aliasResponse.json()) as Record<string, unknown>;
     expect(alias.id).toBe("openai/gpt-5.4");
     expect(alias.supported_parameters).toEqual(listed?.supported_parameters);
-    expect(alias.default_parameters).toEqual(listed?.default_parameters);
+    expect(alias).not.toHaveProperty("default_parameters");
 });
 
 test("advertises direct Responses support through supported_endpoints", async () => {

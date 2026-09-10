@@ -4,7 +4,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { eq, getTableColumns } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { alias } from "drizzle-orm/sqlite-core";
-import { byopClientAllowsMarkup } from "../billing/markup.ts";
+import { byopClientAllowsMarkup, resolveMarkupPct } from "../billing/markup.ts";
 import * as schema from "../db/better-auth.ts";
 import {
     AGENT_RUN_TOKEN_PREFIX,
@@ -29,6 +29,8 @@ export interface AuthenticatedApiKey {
     byopClientUserId?: string | null;
     /** True when deduction will add BYOP markup. Set at auth so preflight matches. */
     byopMarkupApplies?: boolean;
+    /** Resolved BYOP markup percentage (default 25%, range 10-50%). */
+    byopMarkupPct?: number;
     rawKey?: string;
 }
 
@@ -343,6 +345,22 @@ async function loadActiveApiKeyAuthResult(opts: {
                 },
                 row.user.id,
             ),
+            byopMarkupPct: byopClientAllowsMarkup(
+                {
+                    userId: row.byopClientUserId,
+                    prefix: row.byopClientPrefix,
+                    enabled: row.byopClientEnabled,
+                    expiresAt: row.byopClientExpiresAt,
+                    metadata: row.byopClientMetadata,
+                },
+                row.user.id,
+            )
+                ? resolveMarkupPct(
+                      typeof row.byopClientMetadata === "string"
+                          ? JSON.parse(row.byopClientMetadata)
+                          : (row.byopClientMetadata ?? {}),
+                  )
+                : undefined,
             rawKey: opts.rawApiKey,
         },
         rawApiKey: opts.rawApiKey,

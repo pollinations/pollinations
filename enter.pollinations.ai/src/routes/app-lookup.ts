@@ -2,6 +2,7 @@ import {
     getRedirectUris,
     parseMetadata,
 } from "@shared/auth/api-key-metadata.ts";
+import { resolveMarkupPct } from "@shared/billing/markup.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { eq } from "drizzle-orm";
@@ -31,6 +32,8 @@ async function resolveAttribution(
         appName: keyRow.name,
         redirectUris,
         earningsEnabled: meta.earningsEnabled === true,
+        markupPct:
+            meta.earningsEnabled === true ? resolveMarkupPct(meta) : undefined,
     };
 }
 

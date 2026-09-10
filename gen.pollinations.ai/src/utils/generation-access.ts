@@ -40,6 +40,7 @@ export async function checkBalance(
             model.definition,
         ),
         Boolean(auth.apiKey?.byopMarkupApplies),
+        auth.apiKey?.byopMarkupPct,
     );
     const apiKeyBudget = auth.apiKey?.pollenBalance;
     const requiredBudget = Math.max(0, estimatedCost);

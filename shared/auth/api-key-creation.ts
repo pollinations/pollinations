@@ -20,6 +20,7 @@ export type CallerMetadata = {
     requestedClientId?: string;
     description?: string;
     earningsEnabled?: boolean;
+    markupPct?: number;
 };
 
 type CreateApiKeyForUserInput = {
@@ -124,6 +125,9 @@ function pickCallerMetadata(
         out.description = metadata.description;
     if (isPublishable) {
         out.earningsEnabled = metadata?.earningsEnabled === true;
+        if (typeof metadata?.markupPct === "number") {
+            out.markupPct = Math.max(0.1, Math.min(0.5, metadata.markupPct));
+        }
     }
     return out;
 }

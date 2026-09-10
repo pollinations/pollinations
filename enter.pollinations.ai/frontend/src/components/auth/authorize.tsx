@@ -52,6 +52,7 @@ type Attribution = {
     appName?: string;
     redirectUris?: string[];
     earningsEnabled?: boolean;
+    markupPct?: number;
 };
 
 async function readAttribution(response: Response): Promise<Attribution> {
@@ -757,7 +758,11 @@ export function Authorize() {
                                         <span>
                                             Earn{" "}
                                             <span className="font-semibold">
-                                                20%
+                                                {Math.round(
+                                                    (attribution.markupPct ??
+                                                        0.25) * 100,
+                                                )}
+                                                %
                                             </span>{" "}
                                             of the pollen you spend in-app.
                                         </span>

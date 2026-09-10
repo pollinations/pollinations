@@ -33,13 +33,22 @@ export function isAppKey(apiKey: ApiKey): boolean {
 // to a visible field get silently dropped.
 export function shouldPostKeyMetadata(
     apiKey: ApiKey,
-    next: { redirectUris: string[]; earningsEnabled: boolean },
+    next: {
+        redirectUris: string[];
+        earningsEnabled: boolean;
+        markupPct?: number;
+    },
 ): boolean {
     if (!isPublishableKey(apiKey)) return false;
     const initialUris = readRedirectUris(apiKey.metadata);
+    const initialMarkupPct =
+        typeof apiKey.metadata?.markupPct === "number"
+            ? apiKey.metadata.markupPct
+            : 0.25;
     return (
         next.redirectUris.length !== initialUris.length ||
         next.redirectUris.some((v, i) => v !== initialUris[i]) ||
-        next.earningsEnabled !== (apiKey.metadata?.earningsEnabled === true)
+        next.earningsEnabled !== (apiKey.metadata?.earningsEnabled === true) ||
+        (next.earningsEnabled && next.markupPct !== initialMarkupPct)
     );
 }

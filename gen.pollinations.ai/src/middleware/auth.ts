@@ -23,6 +23,8 @@ type ModelVariables = {
 
 export type AuthVariables = {
     auth: {
+        /** Set only after x402 verification; a rate-limit identity, not a user. */
+        paymentPayer?: string;
         user?: AuthUser;
         apiKey?: AuthenticatedApiKey;
         requireUser: () => AuthUser;

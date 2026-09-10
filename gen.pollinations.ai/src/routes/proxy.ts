@@ -669,6 +669,7 @@ export const proxyRoutes = new Hono<Env>()
                 "Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.",
                 "",
                 "Successful text JSON responses contain usage. Text streams contain a usage chunk before `[DONE]`; missing text-provider usage fails the response.",
+                "Anonymous text-only calls can pay per request with x402, including streaming. Send a non-empty `Idempotency-Key` and an explicit `max_tokens` cap from 1 to 4096.",
                 "",
                 mediaResponseDescription,
             ].join("\n"),

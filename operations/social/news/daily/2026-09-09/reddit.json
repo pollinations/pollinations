@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-09",
+  "period_start": "2026-09-09",
+  "period_end": "2026-09-09",
+  "generated_at": "2026-09-10T06:30:26.477455+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-09/images/reddit.jpg"
+    }
+  ],
+  "title": "Media models now work through Chat and Responses",
+  "text": "23 PRs merged today. The main API change is that media models can now be served through both Chat and Responses, and those paths now accept image parts for media work. This should remove some of the special-case routing people had to carry around when an app mixed text with image, audio, or video generation.\n\nA few adjacent changes matter more than their diff size suggests:\n\n- Generated media URLs and durable generation-cache identity are now reused across MCP and replay paths. A generation should remain the same thing after the request has left the room.\n- Sampling compatibility is declared per chat model rather than inferred from model-name folklore.\n- Hosted agents now use paired function items; Perplexity Sonar gained OpenRouter fallbacks plus a stream-framing repair; InferencePort status checks retry server errors.\n- The SDK has `embeddings()` for `/v1/embeddings`.\n- Leaked API keys found by GitHub secret scanning can now be revoked automatically.\n\nOn the pixel/splat side, the registry gained NVIDIA Asset Harvester, GIMP 3 generation/editing with BYOP landed, and PolliArena was added to image tooling. Community-video billing now follows reported usage, and polli-cli refreshes its harness configs.\n\nDocs were regenerated and the README was updated alongside the API changes. Code and current docs: https://github.com/pollinations/pollinations and https://pollinations.ai/docs\n\nStill worth testing: clients that assume media only exists behind dedicated endpoints, and agents that serialize function-call histories themselves."
+}

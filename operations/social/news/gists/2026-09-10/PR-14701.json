@@ -1,0 +1,34 @@
+{
+  "pr_number": 14701,
+  "title": "fix: switch weekly comparison between revenue and signups",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14701",
+  "merged_at": "2026-09-10T18:23:36Z",
+  "labels": [],
+  "pr_body_excerpt": " - Adds Revenue / Signups buttons to the weekly comparison, with revenue selected by default.\n- Shows only this week and last week on one axis; preserves full previous-week and partial current-week data.\n- Keeps the chart below the main KPIs and shows signup freshness only in the signup view.\n- Verified 31 tests, production build, Biome, and browser switching including keyboard and missing-data states.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Two weeks, two lenses",
+    "blurb": "The KPI garden gained a small switch: revenue by default, signups when you want to inspect the sprouts. Both weeks now share one sensible axis, which is apparently harder than it sounds.",
+    "summary": "Updated the internal KPI weekly comparison chart with Revenue and Signups views, defaulting to revenue while comparing full previous-week data against the current partial week on a shared axis.",
+    "impact": "Dashboard operators can switch between revenue and signup trends without losing the complete prior-week baseline, and signup freshness appears only when viewing signups.",
+    "keywords": [
+      "kpi",
+      "dashboard",
+      "revenue",
+      "signups",
+      "weekly-comparison",
+      "chart"
+    ],
+    "visual_concept": "An internal analytics dashboard represented as a cozy retro terminal with a simple two-button Revenue/Signups toggle and two adjacent weekly bar-chart plants on one shared measuring ruler. Polli, wearing tiny analyst glasses and holding a clipboard, points to the revenue view while small flowers and vines grow around the monitor.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink cheek blush, analyst glasses, and a tiny clipboard, tending a retro CRT KPI monitor with chunky Revenue and Signups toggle buttons; the Revenue button is selected and two weeks of chart-plants rise beside one shared ruler. Lime green (#ecf874) glows prominently among warm cream, mint, lavender, and peach garden vines; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-10/PR-14701.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink cheek blush, analyst glasses, and a tiny clipboard, tending a retro CRT KPI monitor with chunky Revenue and Signups toggle buttons; the Revenue button is selected and two weeks of chart-plants rise beside one shared ruler. Lime green (#ecf874) glows prominently among warm cream, mint, lavender, and peach garden vines; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, emotionally warm."
+  },
+  "generated_at": "2026-09-10T18:24:36.649586+00:00"
+}

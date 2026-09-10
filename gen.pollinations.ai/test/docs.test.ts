@@ -240,9 +240,7 @@ describe("docs routes", () => {
         expect(integrations?.tags).not.toContain("Community Agents");
         expect(resources?.tags).toContain("Community Agents");
         expect(resources?.tags).not.toContain("Publish an Agent");
-        expect(schema.tags.map((tag) => tag.name)).toContain(
-            "Connect User Wallets",
-        );
+        expect(schema.tags.map((tag) => tag.name)).toContain("Pollen Connect");
         expect(schema.tags.map((tag) => tag.name)).toContain("Publish a Model");
         expect(schema.tags.map((tag) => tag.name)).toContain(
             "Community Models",
@@ -400,6 +398,7 @@ describe("docs routes", () => {
         expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
         expect(html).toContain("window.location.hash === '#tag/byop'");
         expect(html).toContain("#tag/connect-user-wallets");
+        expect(html).toContain("#tag/pollen-connect");
     });
 
     it("serves the OpenAPI schema as YAML when ?format=yaml", async () => {
@@ -478,7 +477,7 @@ describe("docs routes", () => {
         );
         expect(walletRes.status).toBe(301);
         expect(walletRes.headers.get("Location")).toBe(
-            "/docs#tag/connect-user-wallets",
+            "/docs#tag/pollen-connect",
         );
 
         const missingRes = await worker.fetch(
@@ -512,7 +511,7 @@ describe("docs routes", () => {
         expect(realtimeSection).toContain("`GET /realtime`");
         expect(realtimeSection).toContain("`GET /v1/realtime`");
         expect(apiBody).not.toContain("/v1/audio/transcriptions/realtime");
-        expect(apiBody).not.toContain("## Connect User Wallets");
+        expect(apiBody).not.toContain("## Pollen Connect");
 
         const byopRes = await worker.fetch(
             new Request(
@@ -522,7 +521,7 @@ describe("docs routes", () => {
             ctx,
         );
         expect(byopRes.status).toBe(200);
-        expect(await byopRes.text()).toContain("## Connect User Wallets");
+        expect(await byopRes.text()).toContain("## Pollen Connect");
 
         const modelsRes = await worker.fetch(
             new Request(

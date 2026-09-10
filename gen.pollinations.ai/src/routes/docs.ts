@@ -59,7 +59,7 @@ type OpenApiSchema = Record<string, unknown>;
 const DOC_TAGS = {
     quickStart: "Quick Start",
     authentication: "Authentication",
-    userWallets: "Connect User Wallets",
+    userWallets: "Pollen Connect",
     publishModel: "Publish a Model",
     communityModels: "Community Models",
     publishAgent: "Publish an Agent",
@@ -87,6 +87,7 @@ const LEGACY_DOC_TAGS: Record<string, string> = {
     "🚀 Quick Start": DOC_TAGS.quickStart,
     "🔐 Authentication": DOC_TAGS.authentication,
     "🌸 BYOP": DOC_TAGS.userWallets,
+    "Connect User Wallets": DOC_TAGS.userWallets,
     "🧩 Community Models": DOC_TAGS.communityModels,
     "🤖 Community Agents": DOC_TAGS.communityAgents,
     "🖥 CLI": DOC_TAGS.cli,
@@ -326,7 +327,7 @@ const GEN_API_DOCS = [
     PUBLIC_STATS_DOCS,
 ].join("\n\n");
 
-const USER_WALLETS_SECTION = `## Connect User Wallets\n\n${USER_WALLETS_DOCS}`;
+const USER_WALLETS_SECTION = `## Pollen Connect\n\n${USER_WALLETS_DOCS}`;
 const PUBLISH_MODEL_SECTION = `## Publish a Model\n\n${PUBLISH_MODEL_DOCS}`;
 const PUBLISH_AGENT_SECTION = `## Publish an Agent\n\n${PUBLISH_AGENT_DOCS}`;
 const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
@@ -355,7 +356,7 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
 
 // Scalar tag anchors for the retired /docs/guides/:id pages.
 const GUIDE_REDIRECT_TAGS: Record<string, string> = {
-    byop: "connect-user-wallets",
+    byop: "pollen-connect",
     models: "publish-a-model",
     "community-models": "publish-a-model",
     agents: "publish-an-agent",
@@ -379,8 +380,8 @@ function pollinationsHeaderHtml(): string {
 <script>
 (function () {
   function normalizeLegacyHash() {
-    if (window.location.hash === '#tag/byop') {
-      window.history.replaceState(null, '', window.location.pathname + window.location.search + '#tag/connect-user-wallets');
+    if (window.location.hash === '#tag/byop' || window.location.hash === '#tag/connect-user-wallets') {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search + '#tag/pollen-connect');
     }
   }
   normalizeLegacyHash();

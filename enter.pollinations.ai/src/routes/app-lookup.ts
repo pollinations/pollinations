@@ -2,6 +2,7 @@ import {
     getRedirectUris,
     parseMetadata,
 } from "@shared/auth/api-key-metadata.ts";
+import { isUserBanned } from "@shared/auth/ban.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { eq } from "drizzle-orm";
@@ -22,6 +23,7 @@ async function resolveAttribution(
         where: eq(schema.user.id, keyRow.referenceId),
     });
     const redirectUris = getRedirectUris(meta);
+    if (!user || isUserBanned(user)) return { found: false as const };
     return {
         found: true as const,
         clientId: keyRow.id,

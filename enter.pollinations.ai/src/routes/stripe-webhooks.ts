@@ -7,11 +7,19 @@ import { Hono } from "hono";
 import type Stripe from "stripe";
 import type { Env } from "../env.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
+import { getStripeId } from "../utils/stripe-billing/customer.ts";
 import {
     creditAutoTopUpInvoice,
     markAutoTopUpInvoiceFailed,
 } from "../utils/stripe-billing/index.ts";
-import { recordStripeCardFingerprintAttempt } from "../utils/stripe-card-gate.ts";
+import {
+    getStripeNewCardGateStatus,
+    recordStripeCardFingerprintAttempt,
+} from "../utils/stripe-card-gate.ts";
+import {
+    banFraudAccount,
+    expireOpenStripeCheckoutSessions,
+} from "../utils/stripe-fraud-ban.ts";
 
 interface StripeEventData {
     eventType: string;
@@ -123,6 +131,20 @@ async function recordFailedCardFingerprintFromCharge({
             cardFingerprint: snapshot.cardFingerprint,
             createdAt: event.created ? event.created * 1000 : Date.now(),
         });
+        const gate = await getStripeNewCardGateStatus(
+            env.DB,
+            userId,
+            event.created ? event.created * 1000 : Date.now(),
+        );
+        if (!gate.shouldBanAccount) return;
+        await banFraudAccount(env.DB, userId);
+        const customerId = getStripeId(charge.customer);
+        if (customerId) {
+            await expireOpenStripeCheckoutSessions(
+                createStripeClient(env),
+                customerId,
+            );
+        }
     } catch (err) {
         console.error(
             `Failed to record Stripe failed-card fingerprint for event ${event.id}:`,

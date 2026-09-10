@@ -1,3 +1,103 @@
+test("eight failed cards ban the account and expire its open checkouts", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+
+    const customer = mockCustomer("cus_test_card_gate");
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.checkoutSessions.push({
+        id: "cs_fraud",
+        object: "checkout.session",
+        mode: "payment",
+        customer: customer.id,
+        status: "open",
+        url: "https://checkout.stripe.test/fraud",
+    });
+    for (const fingerprint of [
+        "fp_gate_1",
+        "fp_gate_2",
+        "fp_gate_3",
+        "fp_gate_4",
+        "fp_gate_5",
+        "fp_gate_6",
+        "fp_gate_7",
+        "fp_gate_8",
+    ]) {
+        const paymentIntentId = `pi_${fingerprint}`;
+        mocks.stripe.state.paymentIntents.push({
+            id: paymentIntentId,
+            object: "payment_intent",
+            status: "requires_payment_method",
+            amount: 1000,
+            currency: "usd",
+            metadata: { userId },
+            payment_method_types: ["card"],
+            receipt_email: "buyer@example.com",
+            latest_charge: {
+                id: `ch_${fingerprint}`,
+                object: "charge",
+                amount: 1000,
+                currency: "usd",
+                status: "failed",
+                customer: "cus_test_card_gate",
+                payment_intent: paymentIntentId,
+                metadata: { userId },
+                billing_details: { email: "buyer@example.com" },
+                payment_method_details: {
+                    type: "card",
+                    card: {
+                        fingerprint,
+                        brand: "visa",
+                        country: "US",
+                        network: "visa",
+                    },
+                },
+                outcome: { risk_level: "elevated", risk_score: 61 },
+            },
+        });
+
+        const response = await postSignedStripeWebhook(
+            createCardPaymentFailedEvent({
+                eventId: `evt_${fingerprint}`,
+                paymentIntentId,
+                userId,
+            }),
+        );
+        expect(response.status).toBe(200);
+    }
+
+    await expect
+        .poll(async () => {
+            const [row] = await drizzle(env.DB)
+                .select()
+                .from(userTable)
+                .where(eq(userTable.id, userId));
+            return row.banned;
+        })
+        .toBe(true);
+    const [user] = await drizzle(env.DB)
+        .select()
+        .from(userTable)
+        .where(eq(userTable.id, userId));
+    expect(user.banned).toBe(true);
+    expect(user.autoTopUpEnabled).toBe(false);
+    await expect
+        .poll(() => mocks.stripe.state.checkoutSessions[0].status)
+        .toBe("expired");
+    expect(
+        (
+            await SELF.fetch(`${base}/checkout/p10`, {
+                headers: {
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                redirect: "manual",
+            })
+        ).status,
+    ).toBe(401);
+});
+
 import { env, SELF } from "cloudflare:test";
 import { createHmac } from "node:crypto";
 import {

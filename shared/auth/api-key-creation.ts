@@ -5,6 +5,7 @@ import * as schema from "../db/better-auth.ts";
 import { validateModelPermissionIds } from "../registry/visible-model-ids.ts";
 import { getRedirectUris, parseMetadata } from "./api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "./authorize-config.ts";
+import { isUserBanned } from "./ban.ts";
 import {
     isAllowedRedirectUrl,
     redirectUriMatchesAllowlist,
@@ -162,6 +163,10 @@ async function validateClientRedirectBinding(
     if (!clientKey || clientKey.prefix !== "pk") {
         rejectInvalidClientId();
     }
+    const owner = await db.query.user.findFirst({
+        where: eq(schema.user.id, clientKey.referenceId),
+    });
+    if (!owner || isUserBanned(owner)) rejectInvalidClientId();
     const attribution = {
         clientId: clientKey.id,
     };

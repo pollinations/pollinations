@@ -55,11 +55,20 @@ def fetch_cached_json(url, path, cache_timeout, headers=None):
             )
 
 
+def _cache_filename(key):
+    # Scope the cache file to the key: different keys can see different
+    # catalogs, so they must never share one file.
+    if not key:
+        return CACHE_FILENAME
+    digest = hashlib.sha256(key.encode("utf-8")).hexdigest()[:16]
+    return "pollinations_models_{}.json".format(digest)
+
+
 def get_pollinations_models(skip_cache=False, key=None):
     headers = {"Authorization": f"Bearer {key}"} if key else None
     payload = fetch_cached_json(
         url=MODELS_URL,
-        path=llm.user_dir() / CACHE_FILENAME,
+        path=llm.user_dir() / _cache_filename(key),
         cache_timeout=0 if skip_cache else CACHE_TIMEOUT,
         headers=headers,
     )

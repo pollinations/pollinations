@@ -1,5 +1,5 @@
-import { ExternalLinkIcon, Tooltip } from "@pollinations/ui";
 import { config } from "@frontend/config.ts";
+import { ExternalLinkIcon, Tooltip } from "@pollinations/ui";
 
 /**
  * Open WebUI signs in with Pollinations OAuth and fetches its model list with

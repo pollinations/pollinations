@@ -1,4 +1,5 @@
 export {
+    AccountIdentity,
     AccountMenu,
     type AccountMenuProps,
 } from "./compositions/AccountMenu.tsx";
@@ -59,6 +60,12 @@ export {
     periodBucketKeyToDate,
 } from "./lib/period.ts";
 export { useScrollLock } from "./lib/use-scroll-lock.ts";
+export {
+    type AppAccountState,
+    AppUserMenuView,
+    type AppUserMenuViewProps,
+    PollinationsConnectionPanel,
+} from "./modules/app-user-menu/AppUserMenuView.tsx";
 export { Button, type ButtonProps } from "./primitives/Button.tsx";
 export {
     ButtonGroup,

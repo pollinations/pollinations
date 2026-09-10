@@ -657,14 +657,14 @@ const profileResponseSchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "User's display name (only returned when the key has `account:profile` or `account:keys`)",
+            "User's display name (only returned when the key has `account:profile`)",
         ),
     email: z
         .email()
         .nullable()
         .optional()
         .describe(
-            "User's email address (only returned when the key has `account:profile` or `account:keys`)",
+            "User's email address (only returned when the key has `account:profile`)",
         ),
 });
 

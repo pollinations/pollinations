@@ -19,6 +19,9 @@ type AuthorizeDefaultsInput = {
     permissions?: string[] | null;
 };
 
+// Shared by server validation and its local preview case.
+export const INVALID_AUTHORIZATION_CLIENT_MESSAGE = "Invalid client_id";
+
 export const DEFAULT_CONSENT_BUDGET = 5;
 export const DEFAULT_CONSENT_EXPIRY_DAYS = 7;
 
@@ -45,6 +48,35 @@ export function expiryDaysToExpiresIn(
  * front-door check and the server's CreateCodeSchema.
  */
 export const PKCE_S256_CHALLENGE_REGEX = /^[A-Za-z0-9_-]{43}$/;
+
+/** Request validity is independent of whether we can identify the app. */
+export function getAuthorizeRequestError(request: {
+    redirectUrl?: string;
+    appKey?: string;
+    responseType?: string;
+    codeChallenge?: string;
+    codeChallengeMethod?: string;
+}): string | null {
+    if (!request.redirectUrl) return "No redirect URL provided";
+    try {
+        new URL(request.redirectUrl);
+    } catch {
+        return "Invalid redirect URL format";
+    }
+    if (request.responseType && request.responseType !== "code")
+        return 'Unsupported response_type — only "code" is supported.';
+    if (request.responseType === "code") {
+        if (!request.appKey)
+            return "client_id is required for the authorization code flow";
+        if (!request.codeChallenge)
+            return "PKCE code_challenge is required for the authorization code flow";
+        if (request.codeChallengeMethod !== "S256")
+            return "code_challenge_method=S256 is required (only S256 is supported)";
+        if (!PKCE_S256_CHALLENGE_REGEX.test(request.codeChallenge))
+            return "code_challenge must be a 43-character base64url S256 challenge";
+    }
+    return null;
+}
 
 /**
  * Account permissions the user can grant at the consent screen. Every scope is
@@ -90,4 +122,13 @@ export function getAuthorizeInitialPermissions({
         expiryDays: expiry ?? DEFAULT_CONSENT_EXPIRY_DAYS,
         accountPermissions: sanitizeAuthorizeAccountPermissions(permissions),
     };
+}
+
+/** Disabling generation grants no spending allowance; keep the draft budget in
+ * the form so toggling generation back on can restore it. */
+export function getAuthorizePollenBudget(
+    allowedModels: readonly string[] | null,
+    pollenBudget: number | null,
+): number | null {
+    return allowedModels?.length === 0 ? 0 : pollenBudget;
 }

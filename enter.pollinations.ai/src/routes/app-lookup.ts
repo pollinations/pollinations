@@ -61,7 +61,7 @@ const AppLookupQuerySchema = z.object({
         .string()
         .optional()
         .describe(
-            "OAuth redirect URI. When provided alongside client_id, validated against the key's registered allowlist; mismatches return { found: false } so attribution and a minted key cannot be delivered to a redirect the app didn't register (RFC 6749 §3.1.2).",
+            "OAuth redirect URI. Validated against the key's registered allowlist. Mismatches return found: false and redirect_uri_mismatch, with the verified app's display name and developer for the error screen. This does not authorize the redirect (RFC 6749 §3.1.2).",
         ),
 });
 
@@ -95,18 +95,21 @@ export const appLookupRoutes = new Hono<Env>().get(
                 where: eq(schema.apikey.id, result.key.id),
             });
             if (keyRow) {
-                // Bind client_id to redirect_uri before delivering attribution.
-                // Without this, a stolen client_id could be paired with any
-                // redirect: the consent screen would brand the legitimate app
-                // (confused-deputy) and the minted sk_ would land at the
-                // attacker's URL. RFC 6749 §3.1.2 / RFC 8252 §7.3.
+                // Reject unregistered redirects even when the app key is valid.
+                // Public display details identify the failed request; they never
+                // make it eligible for consent or key issuance.
                 if (redirectUri) {
                     const meta = parseMetadata(keyRow.metadata);
                     const allowlist = getRedirectUris(meta);
                     if (!redirectUriMatchesAllowlist(redirectUri, allowlist)) {
+                        const { appName, githubUsername, redirectUris } =
+                            await resolveAttribution(db, keyRow);
                         return c.json({
                             found: false as const,
                             error: "redirect_uri_mismatch" as const,
+                            appName,
+                            githubUsername,
+                            redirectUris,
                         });
                     }
                 }

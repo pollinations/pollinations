@@ -1,9 +1,15 @@
-import { normalizeAllowedModelSelection } from "@frontend/components/keys/model-selection.ts";
+import {
+    normalizeAllowedModelSelection,
+    setConsentModelGroup,
+    toggleConsentModel,
+} from "@frontend/components/keys/model-selection.ts";
 import {
     DEFAULT_CONSENT_BUDGET,
     DEFAULT_CONSENT_EXPIRY_DAYS,
     expiryDaysToExpiresIn,
     getAuthorizeInitialPermissions,
+    getAuthorizePollenBudget,
+    getAuthorizeRequestError,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
 import { describe, expect, it } from "vitest";
@@ -153,5 +159,103 @@ describe("sanitizeAuthorizeAccountPermissions", () => {
         expect(
             sanitizeAuthorizeAccountPermissions(["admin", "offline_access"]),
         ).toBeNull();
+    });
+});
+
+describe("toggleConsentModel", () => {
+    it("keeps a finite request finite when its last model is reselected", () => {
+        const requested = ["a", "b"];
+        const reduced = toggleConsentModel(requested, requested, "b");
+        expect(reduced).toEqual(["a"]);
+        expect(toggleConsentModel(reduced, requested, "b")).toEqual(requested);
+    });
+
+    it("turns unrestricted access into an explicit list when a model is removed", () => {
+        expect(toggleConsentModel(null, ["a", "b"], "a")).toEqual(["b"]);
+    });
+
+    it("keeps an empty selection instead of treating it as unrestricted", () => {
+        expect(toggleConsentModel(["a"], ["a"], "a")).toEqual([]);
+    });
+
+    it("does not add models outside the requested set", () => {
+        expect(toggleConsentModel(["a"], ["a", "b"], "c")).toEqual(["a"]);
+    });
+});
+
+describe("generation spending allowance", () => {
+    it("grants zero budget when generation is disabled, even for an unlimited draft", () => {
+        expect(getAuthorizePollenBudget([], 5)).toBe(0);
+        expect(getAuthorizePollenBudget([], null)).toBe(0);
+    });
+
+    it("preserves the chosen budget when generation is enabled", () => {
+        expect(getAuthorizePollenBudget(null, 5)).toBe(5);
+        expect(getAuthorizePollenBudget(["a"], 2)).toBe(2);
+        expect(getAuthorizePollenBudget(["a"], null)).toBeNull();
+    });
+});
+
+describe("filtered model selection", () => {
+    it("clears visible results while preserving hidden selections", () => {
+        expect(
+            setConsentModelGroup(
+                null,
+                ["text", "image", "community"],
+                ["community"],
+                false,
+            ),
+        ).toEqual(["text", "image"]);
+        expect(
+            setConsentModelGroup(
+                ["text", "community"],
+                ["text", "image", "community"],
+                ["text"],
+                false,
+            ),
+        ).toEqual(["community"]);
+    });
+    it("selects visible results without adding unrequested or hidden models", () => {
+        expect(
+            setConsentModelGroup(
+                [],
+                ["text", "image"],
+                ["image", "unrequested"],
+                true,
+            ),
+        ).toEqual(["image"]);
+        expect(
+            setConsentModelGroup(["text"], ["text", "image"], ["image"], true),
+        ).toEqual(["text", "image"]);
+    });
+});
+
+describe("getAuthorizeRequestError", () => {
+    const valid = {
+        redirectUrl: "https://app.example/callback",
+        appKey: "app-client",
+        responseType: "code",
+        codeChallenge: "a".repeat(43),
+        codeChallengeMethod: "S256",
+    };
+    it("accepts complete OAuth and legacy BYOP requests", () => {
+        expect(getAuthorizeRequestError(valid)).toBeNull();
+        expect(
+            getAuthorizeRequestError({ redirectUrl: valid.redirectUrl }),
+        ).toBeNull();
+    });
+    it.each([
+        [{ redirectUrl: undefined }, "No redirect URL"],
+        [{ redirectUrl: "not-a-url" }, "Invalid redirect URL"],
+        [{ responseType: "token" }, "Unsupported response_type"],
+        [{ appKey: undefined }, "client_id is required"],
+        [{ codeChallenge: undefined }, "PKCE code_challenge is required"],
+        [{ codeChallengeMethod: "plain" }, "code_challenge_method=S256"],
+        [{ codeChallenge: "short" }, "43-character base64url"],
+        [{ codeChallenge: "+".repeat(43) }, "43-character base64url"],
+    ])("blocks malformed requests independently of app identity: %j", (patch, message) => {
+        expect(getAuthorizeRequestError({ ...valid, ...patch })).toContain(
+            message,
+        );
     });
 });

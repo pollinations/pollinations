@@ -1,4 +1,5 @@
 import { env, SELF } from "cloudflare:test";
+import { INVALID_AUTHORIZATION_CLIENT_MESSAGE } from "@shared/auth/authorize-config.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -359,6 +360,79 @@ describe("API Key Management", () => {
                 .toBe(true);
         });
 
+        test("rejects approval when the app key was revoked after lookup", async ({
+            sessionToken,
+        }) => {
+            const headers = {
+                "Content-Type": "application/json",
+                Origin: "http://localhost:3000",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            };
+            const created = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify({
+                        name: "revoked-app",
+                        type: "publishable",
+                        metadata: {
+                            redirectUris: ["https://app.example/callback"],
+                        },
+                    }),
+                },
+            );
+            expect(created.status).toBe(200);
+            const appKey = (await created.json()) as {
+                id: string;
+                key: string;
+            };
+            const lookup = await SELF.fetch(
+                `http://localhost:3000/api/app-lookup?${new URLSearchParams({ client_id: appKey.key, redirect_uri: "https://app.example/callback" })}`,
+            );
+            expect(lookup.status).toBe(200);
+            expect(await lookup.json()).toMatchObject({ found: true });
+            const revoked = await SELF.fetch(
+                "http://localhost:3000/api/auth/api-key/delete",
+                {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify({ keyId: appKey.id }),
+                },
+            );
+            expect(revoked.status).toBe(200);
+            const approval = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify({
+                        name: "approval-after-revocation",
+                        type: "secret",
+                        metadata: {
+                            requestedClientId: appKey.key,
+                            redirectUri: "https://app.example/callback",
+                        },
+                    }),
+                },
+            );
+            expect(approval.status).toBe(400);
+            expect(await approval.json()).toMatchObject({
+                success: false,
+                status: 400,
+                error: {
+                    code: "BAD_REQUEST",
+                    message: INVALID_AUTHORIZATION_CLIENT_MESSAGE,
+                },
+            });
+            const db = drizzle(env.DB, { schema });
+            expect(
+                await db.query.apikey.findFirst({
+                    where: eq(schema.apikey.name, "approval-after-revocation"),
+                }),
+            ).toBeUndefined();
+        });
+
         test("rejects redirect-auth key creation when client_id redirect_uri mismatches", async ({
             sessionToken,
         }) => {
@@ -715,7 +789,8 @@ describe("API Key Management", () => {
                 `http://localhost:3000/api/app-lookup?client_id=${encodeURIComponent(appKey.key)}`,
             );
             expect(deviceStyleLookup.status).toBe(200);
-            expect(await deviceStyleLookup.json()).toMatchObject({
+            const appIdentity = await deviceStyleLookup.json();
+            expect(appIdentity).toMatchObject({
                 found: true,
             });
 
@@ -726,6 +801,8 @@ describe("API Key Management", () => {
             expect(await redirectLookup.json()).toMatchObject({
                 found: false,
                 error: "redirect_uri_mismatch",
+                appName: appIdentity.appName,
+                githubUsername: appIdentity.githubUsername,
             });
         });
 
@@ -775,6 +852,7 @@ describe("API Key Management", () => {
             expect(await wrongPath.json()).toMatchObject({
                 found: false,
                 error: "redirect_uri_mismatch",
+                appName: "query-bound-app",
             });
         });
 

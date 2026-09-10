@@ -4,7 +4,10 @@ import { HTTPException } from "hono/http-exception";
 import * as schema from "../db/better-auth.ts";
 import { canonicalizeModelPermissionIds } from "../registry/visible-model-ids.ts";
 import { getRedirectUris, parseMetadata } from "./api-key-metadata.ts";
-import { sanitizeAuthorizeAccountPermissions } from "./authorize-config.ts";
+import {
+    INVALID_AUTHORIZATION_CLIENT_MESSAGE,
+    sanitizeAuthorizeAccountPermissions,
+} from "./authorize-config.ts";
 import {
     isAllowedRedirectUrl,
     redirectUriMatchesAllowlist,
@@ -101,7 +104,7 @@ function cleanRedirectUris(redirectUris: string[]): string[] {
 
 function rejectInvalidClientId(): never {
     throw new HTTPException(400, {
-        message: "Invalid client_id",
+        message: INVALID_AUTHORIZATION_CLIENT_MESSAGE,
     });
 }
 

@@ -44,17 +44,23 @@ error; use their native endpoint until attachments are supported here.
 
 ### Chat parameters
 
-Verified official Chat models may include:
+Official Chat models include:
 
-- `supported_parameters`: controls honored through `/v1/chat/completions`.
-- `default_parameters`: values Pollinations supplies when callers omit them.
+- `supported_parameters`: verified generation controls honored through `/v1/chat/completions` on the model's primary route.
+- `default_parameters`: scalar values Pollinations supplies when callers omit them, not upstream defaults.
 
 These fields describe Pollinations' Chat behavior, not upstream defaults or the
-native `/v1/responses` API. Unverified models omit both fields. For example,
+native `/v1/responses` API. Unverified controls are omitted; inclusion does not
+mean every value or combination is supported. Provider fallback routes can
+have different controls and defaults. Community models omit both fields.
+For example,
 `openai/gpt-5.4` omits sampling controls because its Chat transform removes
 them, while `openai/gpt-oss-20b` forwards `temperature` and `top_p`.
 On `anthropic/claude-sonnet-4.6`, those two controls are mutually exclusive
 (`temperature` wins), and both are disabled when `reasoning_effort` is enabled.
+Newer Claude and Gemini models may omit sampling controls entirely. On
+Sonnet 4.6, `response_format` supports `json_schema`, not `json_object`.
+Reasoning effort levels and forced-tool restrictions remain model-specific.
 
 ## Community Models
 

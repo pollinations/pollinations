@@ -18,6 +18,7 @@ import {
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 import { TEXT_FALLBACKS } from "./text-fallbacks";
+import { CHAT_PARAMETERS } from "./text-parameters";
 
 // Voices available for openai-audio model - exported for schema validation
 export const AUDIO_VOICES = [
@@ -41,6 +42,8 @@ export type TextModelName = keyof typeof TEXT_SERVICES;
 
 const TEXT_BASE_SERVICES = {
     "openai/gpt-5.4-nano": {
+        supportedParameters: CHAT_PARAMETERS.azureGpt,
+        defaultParameters: { stream: false },
         aliases: ["gpt-5.4-nano", "openai"],
         provider: "azure",
         publisher: "OpenAI",
@@ -63,6 +66,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "openai/gpt-5-nano": {
+        supportedParameters: CHAT_PARAMETERS.azureGpt,
+        defaultParameters: { stream: false },
         aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07", "openai-fast"],
         provider: "azure",
         publisher: "OpenAI",
@@ -85,6 +90,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "openai/gpt-oss-20b": {
+        supportedParameters: CHAT_PARAMETERS.ovhGptOss,
+        defaultParameters: { stream: false },
         aliases: ["gpt-oss-20b", "ovh-reasoning", "gpt-oss"],
         provider: "ovhcloud",
         publisher: "OpenAI",
@@ -102,23 +109,12 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
-        supportedParameters: [
-            "max_completion_tokens",
-            "max_tokens",
-            "reasoning_effort",
-            "response_format",
-            "stop",
-            "stream",
-            "temperature",
-            "tool_choice",
-            "tools",
-            "top_p",
-        ],
-        defaultParameters: { stream: false },
         contextLength: 131072,
         isSpecialized: false,
     },
     "openai/gpt-5.4": {
+        supportedParameters: CHAT_PARAMETERS.azureGpt54,
+        defaultParameters: { stream: false },
         aliases: [
             "gpt-5.4-reasoning",
             "gpt-5.2",
@@ -165,22 +161,12 @@ const TEXT_BASE_SERVICES = {
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
         reasoning: true,
-        // omitOpenAISampling removes sampling controls on this Chat route.
-        supportedParameters: [
-            "max_completion_tokens",
-            "max_tokens",
-            "reasoning_effort",
-            "response_format",
-            "stop",
-            "stream",
-            "tool_choice",
-            "tools",
-        ],
-        defaultParameters: { stream: false },
         contextLength: 1050000,
         isSpecialized: false,
     },
     "openai/gpt-5.4-mini": {
+        supportedParameters: CHAT_PARAMETERS.azureGptMini,
+        defaultParameters: { stream: false },
         aliases: ["gpt-5-mini", "openai-mini", "gpt-5.4-mini"],
         provider: "azure",
         publisher: "OpenAI",
@@ -203,6 +189,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "openai/gpt-5.5": {
+        supportedParameters: CHAT_PARAMETERS.azureGpt,
+        defaultParameters: { stream: false },
         aliases: [
             "gpt-5.5",
             "gpt-5.5-reasoning",
@@ -251,6 +239,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "openai/gpt-5.6-sol": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        defaultParameters: { stream: false },
         aliases: ["chatgpt-sol", "chatgpt-5.6-sol", "gpt-5.6-sol"],
         provider: "azure",
         publisher: "OpenAI",
@@ -296,6 +286,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "openai/gpt-5.6-terra": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        defaultParameters: { stream: false },
         aliases: ["chatgpt-terra", "chatgpt-5.6-terra", "gpt-5.6-terra"],
         provider: "azure",
         publisher: "OpenAI",
@@ -338,6 +330,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "openai/gpt-5.6-luna": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        defaultParameters: { stream: false },
         aliases: ["chatgpt-luna", "chatgpt-5.6-luna", "gpt-5.6-luna"],
         provider: "azure",
         publisher: "OpenAI",
@@ -380,6 +374,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "openai/gpt-6-astra": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        defaultParameters: { stream: false },
         aliases: [],
         provider: "azure",
         publisher: "OpenAI",
@@ -423,6 +419,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "inception/mercury-2": {
+        supportedParameters: CHAT_PARAMETERS.mercury,
+        defaultParameters: { stream: false },
         aliases: ["mercury-2", "inception", "inception-mercury", "mercury"],
         provider: "openrouter",
         publisher: "Inception",
@@ -445,6 +443,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "inception/mercury-2.5-preview": {
+        supportedParameters: CHAT_PARAMETERS.mercury25,
+        defaultParameters: { max_tokens: 64000, stream: false },
         aliases: [],
         provider: "openrouter",
         publisher: "Inception",
@@ -469,6 +469,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "cohere/command-a-plus": {
+        supportedParameters: CHAT_PARAMETERS.azureOpenModels,
+        defaultParameters: { stream: false },
         aliases: [
             "cohere-command-a-plus",
             "command-a-plus-05-2026",
@@ -495,6 +497,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3-coder-30b-a3b-instruct": {
+        supportedParameters: CHAT_PARAMETERS.ovhQwenCoder,
+        defaultParameters: { stream: false },
         aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct", "qwen-coder"],
         provider: "ovhcloud",
         publisher: "Qwen",
@@ -516,6 +520,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "mistralai/mistral-small-3.2": {
+        supportedParameters: CHAT_PARAMETERS.openRouterMistralSmall32,
+        defaultParameters: { stream: false },
         aliases: [
             "mistral-small-3.1",
             "mistral-small-2503",
@@ -542,6 +548,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "mistralai/mistral-small-4": {
+        supportedParameters: CHAT_PARAMETERS.mistralSmall4,
+        defaultParameters: { max_tokens: 64000, stream: false },
         aliases: [
             "mistral-4",
             "mistral-small",
@@ -575,6 +583,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "openai/gpt-audio-mini": {
+        supportedParameters: CHAT_PARAMETERS.azureAudio,
+        defaultParameters: { stream: false },
         aliases: [
             "gpt-audio-mini",
             "gpt-audio-mini-2025-12-15",
@@ -604,6 +614,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "openai/gpt-audio-1.5": {
+        supportedParameters: CHAT_PARAMETERS.azureAudio,
+        defaultParameters: { stream: false },
         aliases: [
             "gpt-audio",
             "gpt-audio-1.5",
@@ -634,6 +646,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3-flash-preview": {
+        supportedParameters: CHAT_PARAMETERS.gemini3,
+        defaultParameters: { stream: false },
         aliases: ["gemini-3-flash-preview", "gemini-3-flash"],
         provider: "openrouter",
         publisher: "Google",
@@ -667,6 +681,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3.7-flash": {
+        supportedParameters: CHAT_PARAMETERS.gemini35,
+        defaultParameters: { stream: false },
         aliases: ["gemini-3.6-flash", "gemini-3.5-flash", "gemini"],
         provider: "openrouter",
         publisher: "Google",
@@ -704,6 +720,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3.8-flash": {
+        supportedParameters: CHAT_PARAMETERS.gemini35,
+        defaultParameters: { stream: false },
         aliases: [],
         provider: "openrouter",
         publisher: "Google",
@@ -739,6 +757,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3.5-flash-lite": {
+        supportedParameters: CHAT_PARAMETERS.gemini35,
+        defaultParameters: { stream: false },
         aliases: [
             "gemini-flash-lite-3.1",
             "gemini-3.1-flash-lite",
@@ -779,6 +799,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-2.5-flash-lite": {
+        supportedParameters: CHAT_PARAMETERS.gemini25,
+        defaultParameters: { stream: false },
         aliases: ["gemini-2.5-flash-lite", "gemini-fast"],
         provider: "openrouter",
         publisher: "Google",
@@ -812,6 +834,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4-flash": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        defaultParameters: { stream: false },
         aliases: [
             "deepseek-v4",
             "deepseek-v4-flash",
@@ -841,6 +865,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4-flash-vision-exp": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        defaultParameters: { stream: false },
         aliases: [],
         provider: "fireworks",
         publisher: "DeepSeek",
@@ -867,6 +893,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemma-4-26b-a4b-it": {
+        supportedParameters: CHAT_PARAMETERS.openRouterGemma,
+        defaultParameters: { stream: false },
         aliases: [
             "gemma-4",
             "gemma-4-26b",
@@ -897,6 +925,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemma-4-31b-it": {
+        supportedParameters: CHAT_PARAMETERS.openRouterGemma,
+        defaultParameters: { stream: false },
         aliases: ["gemma-large", "gemma-4-31b-it", "gemma-4-31b"],
         provider: "openrouter",
         addedDate: new Date("2026-07-18").getTime(),
@@ -921,6 +951,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4-pro": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        defaultParameters: { stream: false },
         aliases: ["deepseek-v4-pro", "deepseek-pro"],
         provider: "fireworks",
         publisher: "DeepSeek",
@@ -942,6 +974,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "x-ai/grok-4.20": {
+        supportedParameters: CHAT_PARAMETERS.azureGrokReasoning,
+        defaultParameters: { stream: false },
         aliases: [
             "grok-fast",
             "grok-4-1-fast",
@@ -977,6 +1011,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "x-ai/grok-4.3": {
+        supportedParameters: CHAT_PARAMETERS.azureGrokReasoning,
+        defaultParameters: { stream: false },
         aliases: ["grok-4.3", "grok-4-3", "grok-reasoning", "grok-large"],
         provider: "azure",
         publisher: "xAI",
@@ -1002,6 +1038,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "x-ai/grok-4.6": {
+        supportedParameters: CHAT_PARAMETERS.azureGrok46,
+        defaultParameters: { stream: false },
         aliases: ["grok-4.5", "grok-4-5", "grok-4.6"],
         provider: "azure",
         publisher: "xAI",
@@ -1029,6 +1067,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-2.5-flash-lite:search": {
+        supportedParameters: CHAT_PARAMETERS.vertexGeminiSearch,
+        defaultParameters: { stream: false },
         aliases: [
             "gemini-2.5-flash-search",
             "gemini-2.5-flash-lite-search",
@@ -1070,6 +1110,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "pollinations/midijourney": {
+        supportedParameters: CHAT_PARAMETERS.azureGptMini,
+        defaultParameters: { stream: false },
         aliases: ["midijourney"],
         provider: "azure",
         publisher: "Pollinations",
@@ -1089,6 +1131,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: true,
     },
     "pollinations/midijourney-large": {
+        supportedParameters: CHAT_PARAMETERS.azureGpt,
+        defaultParameters: { stream: false },
         aliases: ["midijourney-large"],
         provider: "azure",
         publisher: "Pollinations",
@@ -1128,6 +1172,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: true,
     },
     "anthropic/claude-haiku-4.5": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeSampling,
+        defaultParameters: { stream: false, max_tokens: 64000 },
         aliases: ["claude-haiku-4.5", "claude-haiku", "claude-fast"],
         provider: "aws",
         publisher: "Anthropic",
@@ -1153,6 +1199,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "anthropic/claude-sonnet-4.6": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeSampling,
+        defaultParameters: { stream: false, max_tokens: 64000 },
         aliases: ["claude-sonnet-4.6", "claude-sonnet", "claude"],
         provider: "aws",
         publisher: "Anthropic",
@@ -1174,23 +1222,12 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
-        // Sampling is disabled while reasoning is enabled; otherwise
-        // temperature and top_p are mutually exclusive (temperature wins).
-        supportedParameters: [
-            "max_completion_tokens",
-            "max_tokens",
-            "reasoning_effort",
-            "stream",
-            "temperature",
-            "tool_choice",
-            "tools",
-            "top_p",
-        ],
-        defaultParameters: { max_tokens: 64000, stream: false },
         contextLength: 1000000, // Bedrock global Claude Sonnet 4.6 context window.
         isSpecialized: false,
     },
     "anthropic/claude-sonnet-5": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoSampling,
+        defaultParameters: { stream: false, max_tokens: 64000 },
         aliases: ["sonnet-5", "claude-sonnet-5"],
         provider: "aws",
         publisher: "Anthropic",
@@ -1216,6 +1253,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "anthropic/claude-opus-4.6": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeSampling,
+        defaultParameters: { stream: false, max_tokens: 128000 },
         aliases: ["claude-opus-4.5", "claude-opus-4.6"],
         provider: "aws",
         publisher: "Anthropic",
@@ -1241,6 +1280,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "anthropic/claude-opus-4.7": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoSampling,
+        defaultParameters: { stream: false, max_tokens: 128000 },
         aliases: ["claude-opus-4.7"],
         provider: "aws",
         publisher: "Anthropic",
@@ -1266,6 +1307,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "anthropic/claude-opus-5": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoSampling,
+        defaultParameters: { stream: false, max_tokens: 128000 },
         aliases: [
             "claude-opus-5",
             "claude-opus-4.8",
@@ -1296,6 +1339,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "anthropic/claude-fable-5": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoSampling,
+        defaultParameters: { stream: false, max_tokens: 128000 },
         aliases: ["claude-fable-5"],
         provider: "aws",
         publisher: "Anthropic",
@@ -1321,6 +1366,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "anthropic/claude-fable-5.1": {
+        supportedParameters: CHAT_PARAMETERS.bedrockFable51,
+        defaultParameters: { stream: false, max_tokens: 128000 },
         aliases: [],
         provider: "aws",
         publisher: "Anthropic",
@@ -1347,6 +1394,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "perplexity/sonar": {
+        supportedParameters: CHAT_PARAMETERS.sonar,
+        defaultParameters: { stream: false },
         aliases: [
             "sonar",
             "perplexity-high",
@@ -1377,6 +1426,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "perplexity/sonar-pro": {
+        supportedParameters: CHAT_PARAMETERS.sonar,
+        defaultParameters: { stream: false },
         aliases: ["sonar-pro", "perplexity-pro", "perplexity"],
         provider: "perplexity",
         publisher: "Perplexity",
@@ -1400,6 +1451,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "perplexity/sonar-reasoning-pro": {
+        supportedParameters: CHAT_PARAMETERS.sonar,
+        defaultParameters: { stream: false },
         aliases: [
             "sonar-reasoning",
             "sonar-reasoning-pro",
@@ -1428,6 +1481,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "moonshotai/kimi-k2.6": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        defaultParameters: { stream: false },
         aliases: [
             "kimi-k2.6",
             "kimi-k2p6",
@@ -1459,6 +1514,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "moonshotai/kimi-k2.7-code": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        defaultParameters: { stream: false },
         aliases: ["kimi-k2.7-code", "kimi-k2.7", "kimi-k2p7", "kimi-code"],
         provider: "fireworks",
         publisher: "Moonshot AI",
@@ -1486,6 +1543,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "moonshotai/kimi-k3": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        defaultParameters: { stream: false },
         aliases: ["kimi-k3"],
         provider: "fireworks",
         publisher: "Moonshot AI",
@@ -1510,6 +1569,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "poolside/laguna-s-2.1": {
+        supportedParameters: CHAT_PARAMETERS.laguna,
+        defaultParameters: { stream: false },
         aliases: [
             "laguna-s-2.1",
             "laguna-s2.1",
@@ -1539,6 +1600,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "meituan/longcat-2.0": {
+        supportedParameters: CHAT_PARAMETERS.longcat,
+        defaultParameters: { stream: false },
         aliases: ["longcat-2.0", "longcat-2", "longcat"],
         provider: "openrouter",
         publisher: "Meituan",
@@ -1563,6 +1626,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "thinkingmachines/inkling-small": {
+        supportedParameters: CHAT_PARAMETERS.inklingSmall,
+        defaultParameters: { stream: false },
         aliases: ["inkling-small", "inkling-small-20260730", "inkling"],
         provider: "openrouter",
         publisher: "Thinking Machines",
@@ -1589,6 +1654,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "thinkingmachines/inkling": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        defaultParameters: { stream: false },
         aliases: [],
         provider: "fireworks",
         publisher: "Thinking Machines",
@@ -1615,6 +1682,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "nvidia/nemotron-3-ultra": {
+        supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+        defaultParameters: { stream: false },
         aliases: [
             "nemotron-3-ultra",
             "nvidia-nemotron-3-ultra",
@@ -1645,6 +1714,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "nvidia/nemotron-3.5-lightning": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        defaultParameters: { stream: false },
         aliases: ["nemotron-3.5-lightning"],
         provider: "fireworks",
         publisher: "NVIDIA",
@@ -1670,6 +1741,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "xiaomi/mimo-v2.5": {
+        supportedParameters: CHAT_PARAMETERS.mimo,
+        defaultParameters: { stream: false },
         aliases: ["mimo", "mimo-2.5", "mimo-v2.5"],
         provider: "openrouter",
         publisher: "Xiaomi",
@@ -1693,6 +1766,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "xiaomi/mimo-v2.5-pro": {
+        supportedParameters: CHAT_PARAMETERS.mimo,
+        defaultParameters: { stream: false },
         aliases: ["mimo-pro", "mimo-2.5-pro", "mimo-v2.5-pro"],
         provider: "openrouter",
         publisher: "Xiaomi",
@@ -1716,6 +1791,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3.1-pro-preview": {
+        supportedParameters: CHAT_PARAMETERS.gemini3,
+        defaultParameters: { stream: false },
         aliases: ["gemini-3.1-pro", "gemini-2.5-pro", "gemini-large"],
         provider: "openrouter",
         publisher: "Google",
@@ -1777,6 +1854,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "amazon/nova-micro-v1": {
+        supportedParameters: CHAT_PARAMETERS.nova,
+        defaultParameters: { stream: false },
         aliases: ["amazon-nova-micro", "nova-micro", "nova-fast"],
         provider: "aws",
         publisher: "Amazon",
@@ -1801,6 +1880,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "amazon/nova-2-lite-v1": {
+        supportedParameters: CHAT_PARAMETERS.nova,
+        defaultParameters: { stream: false },
         aliases: ["nova-2-lite", "amazon-nova-2-lite", "nova-2", "nova"],
         provider: "aws",
         publisher: "Amazon",
@@ -1827,6 +1908,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "z-ai/glm-5.2": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        defaultParameters: { stream: false },
         aliases: ["glm-5.2", "glm-5p2", "glm"],
         provider: "fireworks",
         publisher: "Z.ai",
@@ -1849,6 +1932,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "z-ai/glm-5.3": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        defaultParameters: { max_tokens: 64000, stream: false },
         aliases: ["glm-5.3"],
         provider: "fireworks",
         publisher: "Z.ai",
@@ -1873,6 +1958,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "z-ai/glm-5.3-flash": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        defaultParameters: { max_tokens: 64000, stream: false },
         aliases: [],
         provider: "fireworks",
         publisher: "Z.ai",
@@ -1899,6 +1986,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "meta/llama-3.3-70b-instruct": {
+        supportedParameters: CHAT_PARAMETERS.azureOpenModels,
+        defaultParameters: { stream: false },
         aliases: [
             "llama-3.3",
             "llama-3.3-70b",
@@ -1924,6 +2013,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "meta/llama-4-maverick": {
+        supportedParameters: CHAT_PARAMETERS.azureOpenModels,
+        defaultParameters: { stream: false },
         aliases: [
             "llama-4",
             "llama-4-maverick",
@@ -1951,6 +2042,8 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
     },
     "meta/llama-4-scout": {
+        supportedParameters: CHAT_PARAMETERS.openRouterMistralSmall32,
+        defaultParameters: { stream: false },
         aliases: [
             "llama-4-scout",
             "llama-scout-17b",
@@ -1981,6 +2074,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "minimax/minimax-m2.7": {
+        supportedParameters: CHAT_PARAMETERS.openRouterMinimax27,
+        defaultParameters: { stream: false },
         aliases: [
             "minimax-m2p7",
             "minimax-m2.5",
@@ -2008,6 +2103,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "minimax/minimax-m3": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        defaultParameters: { stream: false },
         aliases: ["minimax-m3", "minimax3", "minimax-3", "minimax"],
         provider: "fireworks",
         publisher: "MiniMax",
@@ -2034,6 +2131,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "meta/muse-glimmer-30b": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        defaultParameters: { stream: false },
         aliases: ["muse-glimmer"],
         provider: "fireworks",
         publisher: "Meta",
@@ -2060,6 +2159,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "meta/muse-spark-1.2": {
+        supportedParameters: CHAT_PARAMETERS.museSpark,
+        defaultParameters: { stream: false },
         aliases: [
             "muse-spark-1.1",
             "muse-spark",
@@ -2088,6 +2189,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "mistralai/mistral-large-3": {
+        supportedParameters: CHAT_PARAMETERS.azureOpenModels,
+        defaultParameters: { stream: false },
         aliases: ["mistral-large-3", "mistral-large"],
         provider: "azure",
         publisher: "Mistral",
@@ -2110,6 +2213,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3-coder-next": {
+        supportedParameters: CHAT_PARAMETERS.qwenCoderNext,
+        defaultParameters: { stream: false },
         aliases: ["qwen3-coder-next", "qwen-coder-large"],
         provider: "openrouter",
         publisher: "Qwen",
@@ -2133,6 +2238,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.7-plus": {
+        supportedParameters: CHAT_PARAMETERS.qwen37,
+        defaultParameters: { max_tokens: 64000, stream: false },
         aliases: [
             "qwen3.7",
             "qwen3.7-plus",
@@ -2186,6 +2293,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.7-max": {
+        supportedParameters: CHAT_PARAMETERS.qwen37,
+        defaultParameters: { max_tokens: 64000, stream: false },
         aliases: ["qwen-max", "qwen3p7-max", "qwen3.7-max"],
         provider: "openrouter",
         publisher: "Qwen",
@@ -2210,6 +2319,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.8-2.4t-a95b": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        defaultParameters: { stream: false },
         aliases: ["qwen3.8-2.4t-a95b"],
         provider: "fireworks",
         publisher: "Qwen",
@@ -2234,6 +2345,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.8-27b": {
+        supportedParameters: CHAT_PARAMETERS.qwen38,
+        defaultParameters: { max_tokens: 64000, stream: false },
         aliases: ["qwen3.8-27b"],
         provider: "openrouter",
         publisher: "Qwen",
@@ -2263,6 +2376,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.8-max": {
+        supportedParameters: CHAT_PARAMETERS.qwen38Max,
+        defaultParameters: { max_tokens: 64000, stream: false },
         aliases: ["qwen3.8-max"],
         provider: "openrouter",
         publisher: "Qwen",
@@ -2291,6 +2406,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.8-max-0902": {
+        supportedParameters: CHAT_PARAMETERS.alibabaQwenReasoning,
+        defaultParameters: { max_tokens: 64000, stream: false },
         aliases: [],
         provider: "alibaba",
         publisher: "Qwen",
@@ -2321,6 +2438,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.8-flash": {
+        supportedParameters: CHAT_PARAMETERS.qwen38Max,
+        defaultParameters: { max_tokens: 64000, stream: false },
         aliases: [],
         provider: "openrouter",
         publisher: "Qwen",
@@ -2352,6 +2471,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.7-flash": {
+        supportedParameters: CHAT_PARAMETERS.openRouterQwen37Flash,
+        defaultParameters: { max_tokens: 64000, stream: false },
         aliases: ["qwen3.7-flash"],
         provider: "openrouter",
         publisher: "Qwen",
@@ -2421,6 +2542,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3-vl-30b-a3b-instruct": {
+        supportedParameters: CHAT_PARAMETERS.qwenVl,
+        defaultParameters: { stream: false },
         aliases: [
             "qwen3-vl",
             "qwen3-vl-30b-a3b-instruct",
@@ -2450,6 +2573,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3-vl-235b-a22b-thinking": {
+        supportedParameters: CHAT_PARAMETERS.alibabaQwenVl,
+        defaultParameters: { stream: false },
         aliases: [
             "qwen3-vl-pro",
             "qwen3-vl-235b",
@@ -2481,6 +2606,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "stepfun/step-3.7-flash": {
+        supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+        defaultParameters: { stream: false },
         aliases: [
             "stepfun-flash",
             "step-3.7-flash",
@@ -2513,6 +2640,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "stepfun/step-3.5-flash": {
+        supportedParameters: CHAT_PARAMETERS.step35,
+        defaultParameters: { stream: false },
         aliases: ["stepfun-3.5-flash", "step-flash-3.5", "step-3.5-flash"],
         provider: "openrouter",
         publisher: "StepFun",
@@ -2536,6 +2665,8 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3guard-gen-8b": {
+        supportedParameters: CHAT_PARAMETERS.qwenGuard,
+        defaultParameters: { stream: false },
         aliases: ["qwen3guard-gen-8b", "qwen-safety"],
         provider: "ovhcloud",
         publisher: "Qwen",

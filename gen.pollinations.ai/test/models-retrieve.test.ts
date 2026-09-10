@@ -93,6 +93,16 @@ test("exposes verified Chat parameter contracts across rich listings", async () 
     );
 
     for (const models of listings) {
+        for (const model of models.filter(
+            (m) => m.category === "text" && !m.community,
+        )) {
+            expect(model.supported_parameters, String(model.name)).toEqual(
+                expect.any(Array),
+            );
+            expect(model.default_parameters, String(model.name)).toMatchObject({
+                stream: false,
+            });
+        }
         const byName = (name: string) =>
             models.find((model) => model.name === name);
         expect(byName("openai/gpt-5.4")).toMatchObject({

@@ -41,6 +41,83 @@ function skewedDbBinding(): CloudflareBindings["DB"] {
 }
 
 describe("getGenerationModelRegistry", () => {
+    it("declares unique Chat controls and explicit defaults for every configured route", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        for (const model of availableModels) {
+            const info = registry.resolve(model.name)?.info;
+            const parameters = info?.supported_parameters ?? [];
+            expect(parameters.length, model.name).toBeGreaterThan(0);
+            expect(new Set(parameters).size, model.name).toBe(
+                parameters.length,
+            );
+            for (const internal of [
+                "model",
+                "messages",
+                "stream_options",
+                "thinking",
+                "thinking_budget",
+                "safe",
+                "provider",
+            ]) {
+                expect(parameters, model.name).not.toContain(internal);
+            }
+            const defaults = model.config({ model: model.name })
+                .defaultOptions as Record<string, unknown> | undefined;
+            expect(info?.default_parameters, model.name).toEqual({
+                stream: false,
+                ...Object.fromEntries(
+                    Object.entries(defaults ?? {}).filter(
+                        ([key, value]) =>
+                            parameters.includes(key) &&
+                            ["string", "number", "boolean"].includes(
+                                typeof value,
+                            ),
+                    ),
+                ),
+            });
+        }
+    });
+
+    it("keeps provider-specific controls separate instead of inheriting unsupported ones", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        for (const [id, parameter, supported] of [
+            ["openai/gpt-5.4", "temperature", false],
+            ["openai/gpt-5.4", "parallel_tool_calls", true],
+            ["openai/gpt-5.4-mini", "parallel_tool_calls", false],
+            ["openai/gpt-6-astra", "verbosity", false],
+            ["openai/gpt-oss-20b", "top_p", true],
+            ["openai/gpt-audio-mini", "stream", true],
+            ["openai/gpt-audio-1.5", "max_completion_tokens", true],
+            ["x-ai/grok-4.3", "max_tokens", true],
+            ["anthropic/claude-sonnet-4.6", "response_format", true],
+            ["anthropic/claude-sonnet-5", "temperature", false],
+            ["anthropic/claude-sonnet-5", "response_format", false],
+            ["anthropic/claude-fable-5.1", "tool_choice", false],
+            ["google/gemini-3.7-flash", "temperature", false],
+            ["google/gemini-3.7-flash", "stop", true],
+            [
+                "google/gemini-3.7-flash:openrouter:ai-studio-priority",
+                "stop",
+                false,
+            ],
+            ["nvidia/nemotron-3.5-lightning", "top_k", true],
+            ["nvidia/nemotron-3-ultra", "top_k", true],
+            ["qwen/qwen3-coder-30b-a3b-instruct", "top_k", false],
+            ["qwen/qwen3-vl-235b-a22b-thinking", "response_format", false],
+            ["perplexity/sonar", "search_domain_filter", true],
+            [
+                "perplexity/sonar:openrouter:perplexity",
+                "search_domain_filter",
+                false,
+            ],
+        ] as const) {
+            const parameters = registry.resolve(id)?.info.supported_parameters;
+            expect(parameters?.includes(parameter), `${id}: ${parameter}`).toBe(
+                supported,
+            );
+        }
+    });
+
     it("advertises every configured direct Responses model", async () => {
         const registry = await getGenerationModelRegistry(env);
         const configured = availableModels

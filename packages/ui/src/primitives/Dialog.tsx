@@ -14,6 +14,7 @@ const sizeClasses = {
 export type DialogProps = {
     open: boolean;
     onOpenChange?: (open: boolean) => void;
+    closeOnInteractOutside?: boolean;
     trigger?: ReactNode;
     triggerAsChild?: boolean;
     triggerClassName?: string;
@@ -30,6 +31,7 @@ export type DialogProps = {
 export const Dialog: FC<DialogProps> = ({
     open,
     onOpenChange,
+    closeOnInteractOutside,
     trigger,
     triggerAsChild = false,
     triggerClassName,
@@ -47,6 +49,7 @@ export const Dialog: FC<DialogProps> = ({
     return (
         <ArkDialog.Root
             open={open}
+            closeOnInteractOutside={closeOnInteractOutside}
             initialFocusEl={() => contentRef.current}
             onOpenChange={(details) => onOpenChange?.(details.open)}
         >

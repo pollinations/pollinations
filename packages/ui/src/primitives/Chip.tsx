@@ -9,6 +9,7 @@ type ChipIntent =
     | "alpha"
     | "neutral"
     | "success"
+    | "info"
     | "warning"
     | "danger";
 
@@ -27,6 +28,7 @@ const intentClasses: Record<ChipIntent, string> = {
     success:
         "polli:bg-intent-success-bg-bright/15 polli:text-intent-success-text",
     warning: "polli:bg-intent-warning-bg-light polli:text-intent-warning-text",
+    info: "polli:bg-intent-info-bg-light polli:text-intent-info-text",
     danger: "polli:bg-intent-danger-bg-light polli:text-intent-danger-text",
 };
 

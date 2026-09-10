@@ -28,6 +28,7 @@ export type IconButtonProps = {
     intent?: IconButtonIntent;
     variant?: IconButtonVariant;
     pressed?: boolean;
+    disabled?: boolean;
     title?: string;
     tooltip?: ReactNode;
     tooltipAlign?: "start" | "center";
@@ -49,6 +50,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
             intent,
             variant = "tile",
             pressed,
+            disabled,
             title,
             tooltip,
             tooltipAlign,
@@ -65,11 +67,12 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
                 ref={ref}
                 type="button"
                 onClick={onClick}
+                disabled={disabled}
                 aria-label={title}
                 aria-pressed={pressed}
                 data-intent={intent}
                 className={cn(
-                    "polli-control polli:inline-flex polli:cursor-pointer polli:items-center polli:justify-center polli:transition-colors",
+                    "polli-control polli:disabled:cursor-not-allowed polli:disabled:opacity-50 polli:inline-flex polli:cursor-pointer polli:items-center polli:justify-center polli:transition-colors",
                     sizeClasses[size],
                     intent ? intentClasses[intent] : variantClasses[variant],
                     className,

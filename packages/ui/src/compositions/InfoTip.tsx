@@ -10,10 +10,8 @@ type InfoTipProps = {
 /**
  * Small "i" badge that opens a tooltip on hover, click, or focus.
  *
- * The badge and popup follow the page theme. The popup uses the universal
- * recipe via `<Tooltip>` (`bg-theme-bg-pale` + `border-theme-border` +
- * normal inherited-safe typography, viewport-clamped). Cursor on the badge is
- * `cursor-help`.
+ * Quiet neutral badge and shared, viewport-clamped tooltip popup.
+ * The help cursor indicates that more information is available.
  */
 export const InfoTip: FC<InfoTipProps> = ({
     text,
@@ -21,7 +19,7 @@ export const InfoTip: FC<InfoTipProps> = ({
     label = "More info",
 }) => (
     <Tooltip content={content ?? text} ariaLabel={label} className="polli:ml-1">
-        <span className="polli:inline-flex polli:h-4 polli:w-4 polli:items-center polli:justify-center polli:rounded-full polli:border polli:border-theme-border polli:bg-theme-bg-active polli:font-bold polli:text-[10px] polli:leading-none polli:text-theme-text-strong polli:transition-colors polli:hover:bg-theme-bg-hover">
+        <span className="polli:inline-flex polli:h-4 polli:w-4 polli:items-center polli:justify-center polli:rounded-full polli:bg-surface-menu polli:font-bold polli:text-[10px] polli:leading-none polli:text-theme-text-muted polli:transition-colors polli:hover:text-theme-text-strong">
             i
         </span>
     </Tooltip>

@@ -39,6 +39,8 @@
     --polli-color-surface-opaque:      oklch(0.996 0.004 85);
     --polli-color-surface-translucent: oklch(0.996 0.004 85 / 0.8);
     --polli-color-surface-white: var(--polli-color-surface-translucent);
+    /* Menus remain distinct over both themed containers and neutral cards. */
+    --polli-color-surface-menu:       oklch(0.96 0.008 85);
 
     /* Neutral text (theme-independent, warm low-chroma) */
     --polli-color-text-strong:         oklch(0.25 0.02 80);
@@ -93,7 +95,7 @@
     --polli-color-bg-active:       oklch(calc(0.876 + var(--polli-nudge)) 0.135 var(--polli-hue));
     --polli-color-bg-hover:        oklch(calc(0.826 + var(--polli-nudge)) 0.165 var(--polli-hue));
     --polli-color-border:          var(--polli-color-bg-hover);
-    --polli-color-scrollbar-thumb: oklch(calc(0.728 + var(--polli-nudge)) 0.17 var(--polli-hue) / 0.7);
+    --polli-color-scrollbar-thumb: oklch(calc(0.728 + var(--polli-nudge)) 0.17 var(--polli-hue) / 0.45);
     --polli-color-text-soft:       oklch(0.47 0.13 var(--polli-hue));
 }
 
@@ -196,6 +198,7 @@
 
     /* Level 2 — Well + neutral card surfaces (raised above the desk) */
     --polli-color-surface-opaque:      oklch(0.278 0.005 80);
+    --polli-color-surface-menu:        oklch(0.34 0.006 80);
     --polli-color-surface-translucent: oklch(0.278 0.005 80 / 0.8);
     --polli-color-surface-white: var(--polli-color-surface-translucent);
 
@@ -282,7 +285,7 @@
     --polli-color-bg-active:       oklch(calc(0.496 + var(--polli-nudge)) 0.145 var(--polli-hue));
     --polli-color-bg-hover:        oklch(calc(0.571 + var(--polli-nudge)) 0.16 var(--polli-hue));
     --polli-color-border:          var(--polli-color-bg-hover);
-    --polli-color-scrollbar-thumb: oklch(calc(0.62 + var(--polli-nudge)) 0.15 var(--polli-hue) / 0.7);
+    --polli-color-scrollbar-thumb: oklch(calc(0.62 + var(--polli-nudge)) 0.15 var(--polli-hue) / 0.45);
     --polli-color-text-soft:       oklch(0.83 0.135 var(--polli-hue));
 }
 
@@ -361,6 +364,7 @@
     --color-switch-track-invalid:    var(--polli-color-switch-track-invalid);
 
     --color-surface-opaque:      var(--polli-color-surface-opaque);
+    --color-surface-menu:        var(--polli-color-surface-menu);
     --color-surface-translucent: var(--polli-color-surface-translucent);
     --color-surface-white:       var(--polli-color-surface-translucent);
 }

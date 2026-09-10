@@ -44,6 +44,7 @@ function authValue(
         apiKey: "sk_test",
         isLoggedIn: true,
         isHydrated: true,
+        retryConnection: null,
         error: null,
         login: vi.fn(),
         logout: vi.fn(),
@@ -102,6 +103,49 @@ describe("account hooks", () => {
         expect(read<UseAccountKeyValue>(latest).data).toBeNull();
         expect(read<UseAccountKeyValue>(latest).isLoading).toBe(false);
         expect(read<UseAccountKeyValue>(latest).error).toBeNull();
+    });
+
+    it("exposes a temporary account failure and recovers on refresh without disconnecting", async () => {
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(
+                jsonResponse(
+                    {
+                        error: {
+                            code: "UNAVAILABLE",
+                            message: "Temporarily unavailable",
+                        },
+                    },
+                    { status: 503 },
+                ),
+            )
+            .mockResolvedValueOnce(jsonResponse({ pollenBudget: 5 }));
+        const logout = vi.fn();
+        const value = authValue({ logout });
+        let key: UseAccountKeyValue | null = null;
+        function Probe() {
+            key = useAccountKey();
+            return null;
+        }
+        let renderer: ReactTestRenderer;
+        await act(async () => {
+            renderer = create(
+                <AuthContext.Provider value={value}>
+                    <Probe />
+                </AuthContext.Provider>,
+            );
+        });
+        await waitFor(() => !!key?.error);
+        expect(read<UseAccountKeyValue>(key).data).toBeNull();
+        expect(logout).not.toHaveBeenCalled();
+        await act(async () => {
+            await read<UseAccountKeyValue>(key).refresh();
+        });
+        expect(read<UseAccountKeyValue>(key).error).toBeNull();
+        expect(read<UseAccountKeyValue>(key).data?.pollenBudget).toBe(5);
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(logout).not.toHaveBeenCalled();
+        await act(async () => renderer.unmount());
     });
 
     it("logs out when an account hook receives 401", async () => {

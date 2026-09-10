@@ -186,6 +186,243 @@ describe("PolliProvider", () => {
         expect(auth.current?.isHydrated).toBe(true);
     });
 
+    it.each([
+        ["?code=code&state=wrong", "verifier", "Invalid OAuth state"],
+        ["?code=code&state=expected", null, "Missing PKCE verifier"],
+        ["?error=access_denied&state=expected", "verifier", "access_denied"],
+        ["?code=code&state=expected", "verifier", "Code expired"],
+    ])("exposes callback failure without claiming a connection: %s", async (query, verifier, expected) => {
+        stubWindow(`https://app.example/${query}`);
+        vi.spyOn(console, "warn").mockImplementation(() => {});
+        const storage = memoryStorage({
+            "polli:pk_test:oauth_state": "expected",
+            ...(verifier ? { "polli:pk_test:oauth_verifier": verifier } : {}),
+        });
+        const fetchMock = vi.fn<typeof fetch>(async () =>
+            Response.json(
+                { error: "invalid_grant", error_description: "Code expired" },
+                { status: 400 },
+            ),
+        );
+        vi.stubGlobal("fetch", fetchMock);
+        const auth: { current: ReturnType<typeof useAuth> | null } = {
+            current: null,
+        };
+        function GrabAuth() {
+            auth.current = useAuth();
+            return null;
+        }
+        await act(async () => {
+            create(
+                <PolliProvider appKey="pk_test" storage={storage}>
+                    <GrabAuth />
+                </PolliProvider>,
+            );
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+        expect(auth.current?.error?.message).toBe(expected);
+        expect(auth.current?.isLoggedIn).toBe(false);
+        expect(auth.current?.isHydrated).toBe(true);
+        expect(fetchMock).toHaveBeenCalledTimes(
+            expected === "Code expired" ? 1 : 0,
+        );
+        expect(storage.getItem("polli:pk_test:token")).toBeNull();
+    });
+
+    it("checks a stored key once before reporting a connected account", async () => {
+        stubWindow("https://app.example/");
+        const storage = memoryStorage({ "polli:pk_test:token": "sk_stored" });
+        let complete: (response: Response) => void = () => {};
+        const fetchMock = vi.fn<typeof fetch>(
+            () =>
+                new Promise((resolve) => {
+                    complete = resolve;
+                }),
+        );
+        vi.stubGlobal("fetch", fetchMock);
+        const auth: { current: ReturnType<typeof useAuth> | null } = {
+            current: null,
+        };
+        function Probe() {
+            auth.current = useAuth();
+            return null;
+        }
+        await act(async () => {
+            create(
+                <StrictMode>
+                    <PolliProvider
+                        appKey="pk_test"
+                        storage={storage}
+                        apiBaseUrl="https://enter.example/api/"
+                    >
+                        <Probe />
+                    </PolliProvider>
+                </StrictMode>,
+            );
+        });
+        expect(auth.current?.isHydrated).toBe(false);
+        expect(auth.current?.isLoggedIn).toBe(false);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(fetchMock).toHaveBeenCalledWith(
+            "https://enter.example/api/account/key",
+            { headers: { Authorization: "Bearer sk_stored" } },
+        );
+        await act(async () => {
+            complete(Response.json({ valid: true }));
+        });
+        expect(auth.current?.isHydrated).toBe(true);
+        expect(auth.current?.isLoggedIn).toBe(true);
+        expect(storage.getItem("polli:pk_test:token")).toBe("sk_stored");
+    });
+
+    it.each([
+        ["expired", 401],
+        ["revoked", 401],
+        ["unavailable", 503],
+        ["forbidden", 403],
+        ["network", 0],
+    ] as const)("recovers from a %s stored key check without mistaking outages for revocation", async (_reason, status) => {
+        stubWindow("https://app.example/");
+        const storage = memoryStorage({ "polli:pk_test:token": "sk_stored" });
+        vi.stubGlobal(
+            "fetch",
+            vi.fn<typeof fetch>(async () => {
+                if (!status) throw new TypeError("Network unavailable");
+                return Response.json(
+                    { error: { message: _reason } },
+                    { status },
+                );
+            }),
+        );
+        const auth: { current: ReturnType<typeof useAuth> | null } = {
+            current: null,
+        };
+        function Probe() {
+            auth.current = useAuth();
+            return null;
+        }
+        await act(async () => {
+            create(
+                <PolliProvider appKey="pk_test" storage={storage}>
+                    <Probe />
+                </PolliProvider>,
+            );
+        });
+        expect(auth.current?.isHydrated).toBe(true);
+        expect(auth.current?.isLoggedIn).toBe(false);
+        expect(storage.getItem("polli:pk_test:token")).toBe(
+            status === 401 ? null : "sk_stored",
+        );
+        if (status === 401) expect(auth.current?.error).toBeNull();
+        else expect(auth.current?.error).toBeInstanceOf(Error);
+    });
+
+    it.each([
+        null,
+        "sk_new",
+    ])("does not overwrite a later key change (%s) when validation completes", async (nextKey) => {
+        stubWindow("https://app.example/");
+        const storage = memoryStorage({ "polli:pk_test:token": "sk_stored" });
+        let complete: (response: Response) => void = () => {};
+        vi.stubGlobal(
+            "fetch",
+            vi.fn<typeof fetch>(
+                () =>
+                    new Promise((resolve) => {
+                        complete = resolve;
+                    }),
+            ),
+        );
+        const auth: { current: ReturnType<typeof useAuth> | null } = {
+            current: null,
+        };
+        function Probe() {
+            auth.current = useAuth();
+            return null;
+        }
+        await act(async () => {
+            create(
+                <PolliProvider appKey="pk_test" storage={storage}>
+                    <Probe />
+                </PolliProvider>,
+            );
+        });
+        await act(async () => {
+            auth.current?.setApiKey(nextKey);
+        });
+        await act(async () => {
+            complete(Response.json({ valid: true }));
+        });
+        expect(auth.current?.apiKey).toBe(nextKey);
+        expect(auth.current?.isHydrated).toBe(true);
+        expect(storage.getItem("polli:pk_test:token")).toBe(nextKey);
+    });
+
+    it("retries a temporary key-check failure with the same key, without restarting OAuth", async () => {
+        const win = stubWindow("https://app.example/");
+        const storage = memoryStorage({ "polli:pk_test:token": "sk_stored" });
+        let complete: (response: Response) => void = () => {};
+        const fetchMock = vi
+            .fn<typeof fetch>()
+            .mockResolvedValueOnce(
+                Response.json(
+                    { error: { message: "Unavailable" } },
+                    { status: 503 },
+                ),
+            )
+            .mockImplementation(
+                () =>
+                    new Promise((resolve) => {
+                        complete = resolve;
+                    }),
+            );
+        vi.stubGlobal("fetch", fetchMock);
+        const auth: { current: ReturnType<typeof useAuth> | null } = {
+            current: null,
+        };
+        function Probe() {
+            auth.current = useAuth();
+            return null;
+        }
+        await act(async () => {
+            create(
+                <PolliProvider appKey="pk_test" storage={storage}>
+                    <Probe />
+                </PolliProvider>,
+            );
+        });
+        expect(auth.current?.retryConnection).toBeTypeOf("function");
+        expect(storage.snapshot()).toEqual({
+            "polli:pk_test:token": "sk_stored",
+        });
+        const retry = auth.current?.retryConnection;
+        await act(async () => {
+            retry?.();
+            retry?.();
+        });
+        expect(auth.current?.isHydrated).toBe(false);
+        expect(auth.current?.error).toBeNull();
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        await act(async () => {
+            complete(Response.json({ valid: true }));
+        });
+        expect(auth.current?.isLoggedIn).toBe(true);
+        expect(auth.current?.retryConnection).toBeNull();
+        expect(auth.current?.error).toBeNull();
+        expect(storage.snapshot()).toEqual({
+            "polli:pk_test:token": "sk_stored",
+        });
+        expect((win.location as { href: string }).href).toBe(
+            "https://app.example/",
+        );
+        for (const [url, options] of fetchMock.mock.calls) {
+            expect(url).toBe("https://enter.pollinations.ai/api/account/key");
+            expect(options?.headers).toEqual({
+                Authorization: "Bearer sk_stored",
+            });
+        }
+    });
+
     it("persists keys set by the host app", async () => {
         stubWindow("https://app.example/");
         const storage = memoryStorage();

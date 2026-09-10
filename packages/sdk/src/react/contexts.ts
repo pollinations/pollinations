@@ -26,6 +26,8 @@ export interface AuthorizeRequest {
 
 export interface AuthActionsValue {
     login: (request?: AuthorizeRequest) => void;
+    /** Available after a temporary stored-key validation failure; retries without signing in. */
+    retryConnection: (() => void) | null;
     logout: () => void;
     setApiKey: (apiKey: string | null) => void;
     /** Resolved enter URL, useful for top-up / dashboard links. */

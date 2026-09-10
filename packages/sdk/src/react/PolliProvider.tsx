@@ -6,7 +6,8 @@ import {
     useRef,
     useState,
 } from "react";
-import type { AccountPermission } from "../types.js";
+import { pollinationsErrorFromResponse } from "../error-response.js";
+import { type AccountPermission, PollinationsError } from "../types.js";
 import {
     AuthContext,
     type AuthContextValue,
@@ -229,6 +230,8 @@ export function PolliProvider({
     // the same callback twice when it replays effects in development.
     const hydrationStarted = useRef(false);
     const loginStarted = useRef(false);
+    const keyRevision = useRef(0);
+    const keyCheckPending = useRef(false);
 
     const defaultPermissions = useMemo<readonly AccountPermission[]>(
         () => permissions ?? [],
@@ -239,6 +242,7 @@ export function PolliProvider({
     const [apiKey, setApiKey] = useState<string | null>(null);
     const [isHydrated, setIsHydrated] = useState(false);
     const [error, setError] = useState<Error | null>(null);
+    const [keyCheckFailed, setKeyCheckFailed] = useState(false);
 
     useEffect(() => {
         warnAuthSetup(appKey, currentRedirectUrl());
@@ -246,6 +250,7 @@ export function PolliProvider({
 
     const updateApiKey = useCallback(
         (nextApiKey: string | null) => {
+            keyRevision.current++;
             if (nextApiKey) {
                 storage.setItem(storageKey, nextApiKey);
             } else {
@@ -253,8 +258,58 @@ export function PolliProvider({
             }
             setApiKey(nextApiKey);
             setError(null);
+            setKeyCheckFailed(false);
+            setIsHydrated(true);
         },
         [storage, storageKey],
+    );
+
+    const checkStoredKey = useCallback(
+        (clearError = true) => {
+            if (keyCheckPending.current) return;
+            const storedKey = storage.getItem(storageKey);
+            if (!storedKey) {
+                updateApiKey(null);
+                return;
+            }
+            keyCheckPending.current = true;
+            const revision = keyRevision.current;
+            if (clearError) setError(null);
+            setKeyCheckFailed(false);
+            setIsHydrated(false);
+            void fetch(
+                `${resolvedApiBaseUrl.replace(/\/+$/, "")}/account/key`,
+                {
+                    headers: { Authorization: `Bearer ${storedKey}` },
+                },
+            )
+                .then(async (response) => {
+                    if (!response.ok)
+                        throw await pollinationsErrorFromResponse(response);
+                    if (keyRevision.current === revision) setApiKey(storedKey);
+                })
+                .catch((cause) => {
+                    if (keyRevision.current !== revision) return;
+                    if (
+                        cause instanceof PollinationsError &&
+                        cause.status === 401
+                    ) {
+                        storage.removeItem(storageKey);
+                    } else {
+                        setKeyCheckFailed(true);
+                        setError(
+                            cause instanceof Error
+                                ? cause
+                                : new Error("Could not check app connection"),
+                        );
+                    }
+                })
+                .finally(() => {
+                    keyCheckPending.current = false;
+                    if (keyRevision.current === revision) setIsHydrated(true);
+                });
+        },
+        [storage, storageKey, resolvedApiBaseUrl, updateApiKey],
     );
 
     // Hydrate the stored key or exchange an OAuth callback code.
@@ -294,7 +349,10 @@ export function PolliProvider({
 
         const storedKey = storage.getItem(storageKey);
         if (!result.code) {
-            if (storedKey) setApiKey(storedKey);
+            if (storedKey) {
+                checkStoredKey(false);
+                return;
+            }
             setIsHydrated(true);
             return;
         }
@@ -328,6 +386,7 @@ export function PolliProvider({
     }, [
         appKey,
         enterUrl,
+        checkStoredKey,
         returnPathStorageKey,
         stateStorageKey,
         storage,
@@ -406,6 +465,7 @@ export function PolliProvider({
             isHydrated,
             error,
             login,
+            retryConnection: keyCheckFailed ? () => checkStoredKey() : null,
             logout,
             setApiKey: updateApiKey,
             enterUrl,
@@ -416,6 +476,8 @@ export function PolliProvider({
             isHydrated,
             error,
             login,
+            keyCheckFailed,
+            checkStoredKey,
             logout,
             updateApiKey,
             enterUrl,

@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "✍️",
+    "name": "StoryCraft AI",
+    "url": "https://khushalkks.github.io/pollinations",
+    "description": "StoryCraft AI is an interactive digital storybook and scene illustrator powered directly by Pollinations.ai Text and Image Generation APIs. It uses text.pollinations.ai to generate multi-chapter narra",
+    "language": "en",
+    "category": "writing",
+    "platform": "web",
+    "githubUsername": "khushalkks",
+    "githubUserId": "171438081",
+    "repositoryUrl": "https://github.com/khushalkks/pollinations",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-09",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14655",
+    "approvedDate": "2026-09-10",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "PolliArena",
     "url": "https://polli-arena.cloudbr.eu.org",

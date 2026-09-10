@@ -7,7 +7,7 @@ import httpx
 import llm
 import pytest
 from llm_pollinations import (
-    CACHE_FILENAME,
+    _cache_filename,
     get_pollinations_models,
     is_chat_model,
     register_models,
@@ -140,7 +140,7 @@ def test_catalog_uses_cache_and_falls_back_to_stale_file(
     assert calls[0]["headers"] == {"Authorization": "Bearer sk-test"}
 
     # Make the cache stale, then break the network: stale file must win.
-    cache_file = tmp_path / CACHE_FILENAME
+        cache_file = tmp_path / _cache_filename("sk-test")
     old_mtime = time.time() - 7200
     os.utime(cache_file, (old_mtime, old_mtime))
 
@@ -149,6 +149,21 @@ def test_catalog_uses_cache_and_falls_back_to_stale_file(
 
     monkeypatch.setattr(httpx, "get", failing_get)
     assert get_pollinations_models(key="sk-test") == PAYLOAD["data"]
+
+def test_cache_is_scoped_to_each_key(monkeypatch, tmp_path):
+    monkeypatch.setattr(llm, "user_dir", lambda: tmp_path)
+    calls = []
+    _stub_catalog(monkeypatch, PAYLOAD, calls=calls)
+
+    get_pollinations_models(key="sk-one")
+    get_pollinations_models(key="sk-two")
+    get_pollinations_models(key="sk-one")
+
+    assert len(calls) == 2  # one download per key, then cache hits
+    assert calls[0]["headers"] == {"Authorization": "Bearer sk-one"}
+    assert calls[1]["headers"] == {"Authorization": "Bearer sk-two"}
+    assert _cache_filename("sk-one") != _cache_filename("sk-two")
+    assert _cache_filename("sk-one").endswith(".json")
 
 
 def test_pyproject_registers_llm_entry_point():

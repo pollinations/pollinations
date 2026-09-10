@@ -1,5 +1,6 @@
 import {
     createExecutionContext,
+    env,
     waitOnExecutionContext,
 } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
@@ -358,6 +359,7 @@ describe("OpenAI image cache", () => {
                 MEDIA: new MediaUpload(ctx, {
                     MEDIA_BUCKET: bucket,
                     MAX_FILE_SIZE: "104857600",
+                    DB: env.DB,
                 }),
             } as unknown as CloudflareBindings,
             ctx,

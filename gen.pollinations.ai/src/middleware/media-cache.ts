@@ -2,11 +2,14 @@
 
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
+import type { Context } from "hono";
 import { generateCacheKey } from "@/utils/media-cache.ts";
+import type { AuthVariables } from "./auth.ts";
 import {
     createGenerationCache,
     createGenerationExecutionCache,
     type GenerationCacheAdapter,
+    type GenerationCacheEnv,
     hashGenerationCacheIdentity,
 } from "./generation-cache.ts";
 import { withLegacyMediaCache } from "./legacy-media-cache.ts";
@@ -34,6 +37,25 @@ const CACHED_HEADERS = new Set([
     "x-tts-voice",
     "x-voice-changer-voice",
 ]);
+
+// Best-effort: record the current request's user against a generation's
+// media id so it shows up in their private list (GET /media/mine), without
+// making the response wait on it. Runs on both a fresh write and a cache
+// hit — a hit means someone else's request already produced this exact
+// file, and the current requester should still see it in their own list.
+// Anonymous requests (no authenticated user) are not linked to anything.
+function linkCurrentUserToMedia(c: Context<GenerationCacheEnv>, id: string) {
+    const userId = (c.var as typeof c.var & Partial<AuthVariables>).auth?.user
+        ?.id;
+    if (!userId) return;
+    c.executionCtx.waitUntil(
+        c.env.MEDIA.linkToUser(id, userId).catch((error) => {
+            c.get("log")
+                .getChild("media-cache")
+                .error("Error linking media to user: {error}", { error });
+        }),
+    );
+}
 
 function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
     return withLegacyMediaCache({
@@ -68,6 +90,7 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
             if (!response) return null;
             response.headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
             response.headers.set("X-Cache", "HIT");
+            linkCurrentUserToMedia(c, cacheKey);
             return response;
         },
         shouldCache(response) {
@@ -89,9 +112,17 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
                     stored.headers.delete(name);
                 }
             }
+            const write = c.env.MEDIA.put(cacheKey, stored);
+            // Link only after the blob actually exists — chained off `write`
+            // rather than run alongside it, so a fresh write can't race
+            // linkToUser's R2 head() against the still-in-flight put. Any
+            // link failure is swallowed here (already logged internally by
+            // linkCurrentUserToMedia) so it never affects `write`'s own
+            // resolution, which the caller uses to report caching errors.
+            write.then(() => linkCurrentUserToMedia(c, cacheKey)).catch(() => {});
             return {
                 response,
-                write: c.env.MEDIA.put(cacheKey, stored),
+                write,
             };
         },
     });

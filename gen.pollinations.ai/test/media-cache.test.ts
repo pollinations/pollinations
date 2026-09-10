@@ -1,5 +1,6 @@
 import {
     createExecutionContext,
+    env,
     waitOnExecutionContext,
 } from "cloudflare:test";
 import type { Logger } from "@logtape/logtape";
@@ -73,6 +74,7 @@ function createMediaCacheEnv(
         MEDIA: new MediaUpload(mediaCtx, {
             MEDIA_BUCKET: bucket,
             MAX_FILE_SIZE: "104857600",
+            DB: env.DB,
         }),
         mediaCtx,
     } as unknown as CloudflareBindings;

@@ -4,7 +4,7 @@
 import {
     BeakerIcon,
     CloudUploadIcon,
-    LockIcon,
+    KeyIcon,
     NewspaperIcon,
     SparkleIcon,
     TrendUpIcon,
@@ -26,7 +26,7 @@ export const DASHBOARD_NAV_ITEMS = [
         label: "My Models",
         icon: CloudUploadIcon,
     },
-    { id: "keys", to: "/keys", label: "Keys", icon: LockIcon },
+    { id: "keys", to: "/keys", label: "API keys", icon: KeyIcon },
     { id: "pollen", to: "/pollen", label: "Pollen", icon: WalletIcon },
     {
         id: "activity",

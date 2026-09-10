@@ -1,4 +1,10 @@
-import { Button, GitHubIcon, InlineLink } from "@pollinations/ui";
+import { Button, Heading, InlineLink } from "@pollinations/ui";
+import {
+    AuthFlowLayout,
+    AuthModalLoading,
+    ErrorBanner,
+    GitHubSignInButton,
+} from "@pollinations/ui/auth";
 import { Await, createFileRoute, Outlet } from "@tanstack/react-router";
 import { useState } from "react";
 import { apiClient } from "../api.ts";
@@ -87,6 +93,29 @@ export const Route = createFileRoute("/_dashboard")({
             earnings,
         };
     },
+    pendingComponent: () => (
+        <AuthModalLoading
+            title="Your account"
+            message="Loading your account…"
+        />
+    ),
+    errorComponent: () => (
+        <AuthFlowLayout
+            dialog={{ label: "Your account" }}
+            actions={
+                <Button onClick={() => window.location.reload()}>
+                    Try again
+                </Button>
+            }
+        >
+            <Heading as="h1" size="section">
+                Your account
+            </Heading>
+            <ErrorBanner>
+                We couldn’t load your account. Please try again.
+            </ErrorBanner>
+        </AuthFlowLayout>
+    ),
     component: DashboardLayout,
 });
 
@@ -145,16 +174,14 @@ export function SignedOutAccountArea({
 
     return (
         <div className="flex flex-col gap-2">
-            <Button
-                as="button"
-                data-theme="accent"
+            <GitHubSignInButton
                 onClick={() => void signIn()}
-                disabled={isSigningIn}
-                className="w-full justify-center gap-2 text-center"
-            >
-                <GitHubIcon className="h-4 w-4 shrink-0" />
-                {isSigningIn ? "Signing in..." : "Sign in with GitHub"}
-            </Button>
+                isSigningIn={isSigningIn}
+                className="w-full"
+            />
+            <p className="text-center text-xs text-theme-text-soft">
+                New here? Continuing creates your Pollinations account.
+            </p>
             <p className="px-1 text-center text-micro font-normal leading-[1.35] text-theme-text-muted">
                 By continuing, you agree to the{" "}
                 <InlineLink
@@ -173,7 +200,12 @@ export function SignedOutAccountArea({
                 .
             </p>
             {error && (
-                <p className="px-2 text-xs text-intent-danger-text">{error}</p>
+                <p
+                    role="alert"
+                    className="px-2 text-xs text-intent-danger-text"
+                >
+                    {error}
+                </p>
             )}
         </div>
     );

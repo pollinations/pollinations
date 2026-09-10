@@ -15,7 +15,7 @@ import {
 import {
     formatPollen,
     WalletBalanceCard,
-    WalletKindIcon,
+    WalletBalanceRow,
 } from "@pollinations/ui/wallet";
 import {
     calculateServiceFeeCents,
@@ -221,38 +221,30 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
 
     return (
         <div data-theme="accent" className="px-3 py-1 flex flex-col gap-1">
-            <div className="flex items-center justify-between gap-2">
-                <span className="flex items-center gap-1.5 text-xs font-bold text-theme-text-soft">
-                    <WalletKindIcon kind="paid" />
-                    Paid
-                </span>
-                <span className="flex items-baseline gap-1.5">
-                    <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">
-                        {formatPollen(displayPaidBalance)}
-                    </span>
-                    {paidWeek > 0 && (
+            <WalletBalanceRow
+                kind="paid"
+                label="Paid"
+                value={formatPollen(displayPaidBalance)}
+                extra={
+                    paidWeek > 0 && (
                         <span className="text-micro font-bold tabular-nums text-intent-success-text">
                             +{formatPollen(paidWeek)}
                         </span>
-                    )}
-                </span>
-            </div>
-            <div className="flex items-center justify-between gap-2">
-                <span className="flex items-center gap-1.5 text-xs font-bold text-theme-text-soft">
-                    <WalletKindIcon kind="tier" />
-                    Quest
-                </span>
-                <span className="flex items-baseline gap-1.5">
-                    <span className="text-sm font-bold tabular-nums text-theme-text-soft leading-none">
-                        {formatPollen(displayTierBalance)}
-                    </span>
-                    {tierWeek > 0 && (
+                    )
+                }
+            />
+            <WalletBalanceRow
+                kind="tier"
+                label="Quest"
+                value={formatPollen(displayTierBalance)}
+                extra={
+                    tierWeek > 0 && (
                         <span className="text-micro font-bold tabular-nums text-intent-success-text">
                             +{formatPollen(tierWeek)}
                         </span>
-                    )}
-                </span>
-            </div>
+                    )
+                }
+            />
         </div>
     );
 };

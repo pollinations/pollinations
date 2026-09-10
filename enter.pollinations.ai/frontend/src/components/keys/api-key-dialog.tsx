@@ -208,15 +208,14 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 use after consent.
                             </li>
                             <li>
-                                We return a scoped API key in the URL fragment.
+                                Connect with OAuth + PKCE or a simple redirect
+                                to receive a scoped API key.
                             </li>
                             <li>
                                 Use that key for API requests paid with the
                                 user&apos;s Pollen.{" "}
                                 <InlineLink
-                                    href={genDocsUrl(
-                                        "#tag/connect-user-wallets",
-                                    )}
+                                    href={genDocsUrl("#tag/pollen-connect")}
                                 >
                                     Read the guide
                                 </InlineLink>
@@ -274,9 +273,9 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             For browsers, create an App Key on this dashboard
                             and use{" "}
                             <InlineLink
-                                href={genDocsUrl("#tag/connect-user-wallets")}
+                                href={genDocsUrl("#tag/pollen-connect")}
                             >
-                                Connect User Wallets
+                                Pollen Connect
                             </InlineLink>
                             — do not mint a raw <code>pk_</code> via the CLI.
                         </p>

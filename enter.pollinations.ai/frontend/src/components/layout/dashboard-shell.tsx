@@ -241,8 +241,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             ),
         },
         {
-            label: "Connect User Wallets",
-            href: `${genDocsUrl()}#tag/connect-user-wallets`,
+            label: "Pollen Connect",
+            href: `${genDocsUrl()}#tag/pollen-connect`,
             icon: (
                 <WalletIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
             ),
@@ -646,7 +646,7 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
                         className="h-4 w-4 shrink-0"
                         aria-hidden="true"
                     />
-                    <span>Sign Out</span>
+                    <span>Sign out</span>
                 </button>
             </>
         )}

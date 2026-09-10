@@ -313,9 +313,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 Turn on earnings to receive a share of pollen
                                 users spend in your app.{" "}
                                 <InlineLink
-                                    href={genDocsUrl(
-                                        "#tag/connect-user-wallets",
-                                    )}
+                                    href={genDocsUrl("#tag/pollen-connect")}
                                 >
                                     Read the guide
                                 </InlineLink>

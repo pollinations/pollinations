@@ -7,6 +7,9 @@ name: CI / llm-pollinations
       - "packages/llm-pollinations/**"
       - ".github/workflows/ci-llm-pollinations.yml"
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Test llm-pollinations

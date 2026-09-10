@@ -3,8 +3,9 @@ import os
 import time
 
 import httpx
-import llm_pollinations as plugin
 import pytest
+
+import llm_pollinations as plugin
 
 
 def model(model_id="openai/test", **values):
@@ -74,6 +75,8 @@ def test_authentication_failure_does_not_use_stale_cache(tmp_path, monkeypatch):
 
 def test_registration_filters_namespaces_and_maps_capabilities(monkeypatch):
     catalog = [
+        model("bad-endpoints", supported_endpoints=True),
+        model("bad-modalities", input_modalities=1),
         model(
             "openai/test",
             input_modalities=["text", "image"],

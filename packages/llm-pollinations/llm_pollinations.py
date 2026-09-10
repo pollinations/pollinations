@@ -63,8 +63,13 @@ def fetch_models(key):
 
 
 def _is_chat_model(model):
-    return model.get("category") == "text" and "/v1/chat/completions" in (
-        model.get("supported_endpoints") or []
+    supported_endpoints = model.get("supported_endpoints")
+    input_modalities = model.get("input_modalities")
+    return (
+        model.get("category") == "text"
+        and isinstance(supported_endpoints, list)
+        and "/v1/chat/completions" in supported_endpoints
+        and isinstance(input_modalities, list)
     )
 
 
@@ -100,7 +105,7 @@ def register_models(register):
             "model_id": f"pollinations/{model_name}",
             "model_name": model_name,
             "api_base": API_BASE,
-            "vision": "image" in (model.get("input_modalities") or []),
+            "vision": "image" in model["input_modalities"],
             "supports_tools": model.get("tools") is True,
             "reasoning": model.get("reasoning") is True,
         }

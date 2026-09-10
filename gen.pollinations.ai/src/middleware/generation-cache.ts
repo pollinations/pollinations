@@ -65,7 +65,8 @@ export type GenerationCacheAdapter = {
     ) => { response: Response; write: Promise<void> };
 };
 
-function normalizedJsonBody(body: string): string {
+/** One stable identity per JSON body: key order and the `key` credential do not matter. */
+export function normalizedJsonBody(body: string): string {
     try {
         const parsed = JSON.parse(body);
         if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {

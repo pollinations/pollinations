@@ -21,7 +21,7 @@ import type {
 const ID = "pi";
 const LABEL = "Pi";
 const PROVIDER = "pollinations";
-const DEFAULT_MODEL = "deepseek";
+const DEFAULT_MODEL = "deepseek/deepseek-v4-flash";
 
 export const piAgentDir = (ctx: HarnessContext): string => {
     const configured = ctx.env.PI_CODING_AGENT_DIR;
@@ -66,8 +66,6 @@ const readKey = (ctx: HarnessContext): string | null => {
 const providerConfig = (models: HarnessModel[]) => ({
     baseUrl: `${BASE_URL}/v1`,
     api: "openai-completions",
-    // Pi validates custom providers before resolving their auth.json entry.
-    apiKey: PROVIDER,
     compat: {
         supportsStore: false,
         supportsDeveloperRole: false,
@@ -175,7 +173,9 @@ const result = (ctx: HarnessContext): HarnessResult => {
     const provider = providers?.[PROVIDER] as
         | Record<string, unknown>
         | undefined;
-    const hasProvider = provider?.apiKey === PROVIDER;
+    const hasProvider =
+        provider?.baseUrl === `${BASE_URL}/v1` &&
+        provider?.api === "openai-completions";
 
     const authEntry = authData[PROVIDER] as Record<string, unknown> | undefined;
     const hasKey =

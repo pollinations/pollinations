@@ -1,6 +1,6 @@
+import type { AgentOutputItem } from "@shared/agents/output.ts";
 import OpenAI from "openai";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AgentOutputItem } from "../../../src/text/agents/output.ts";
 import {
     handlePromptAgentResponsesRequest,
     PromptAgentResponsesRequestSchema,

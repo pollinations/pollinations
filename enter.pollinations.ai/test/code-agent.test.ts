@@ -1,3 +1,4 @@
+import { runtimeModule, sdkModules } from "virtual:code-agent-sdk";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createWorker as createComposioWorker } from "../../apps/composio-mcp/worker.js";
 import {
@@ -7,7 +8,6 @@ import {
     resolveCodeAgentRepository,
 } from "../src/services/code-agent.ts";
 import createCodeAgentWorker from "../src/services/code-agent-runtime.js";
-import runtimeModule from "../src/services/code-agent-runtime.js?raw";
 
 const deploymentEnv = {
     ENVIRONMENT: "test",
@@ -18,6 +18,215 @@ const deploymentEnv = {
 };
 
 afterEach(() => vi.unstubAllGlobals());
+
+describe("code agent AI SDK", () => {
+    const runtimeEnv = {
+        POLLINATIONS_BASE_URL: "https://staging.gen.pollinations.ai",
+    };
+    const request = (body: unknown) =>
+        new Request("https://agent.test/v1/responses", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: "Bearer caller-key",
+            },
+            body: JSON.stringify(body),
+        });
+
+    it("uses the staging model with caller settings and no exposed credential", async () => {
+        const fetchMock = vi.fn(async (url, init) => {
+            expect(String(url)).toBe(
+                "https://staging.gen.pollinations.ai/v1/chat/completions",
+            );
+            expect(new Headers(init.headers).has("authorization")).toBe(false);
+            expect(JSON.parse(init.body)).toMatchObject({
+                model: "test-model",
+                max_tokens: 123,
+                temperature: 0,
+                messages: [
+                    { role: "system", content: "Answer briefly." },
+                    { role: "user", content: "Hello" },
+                ],
+            });
+            return Response.json({
+                id: "completion",
+                object: "chat.completion",
+                created: 1,
+                model: "test-model",
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "Hello!" },
+                        finish_reason: "stop",
+                    },
+                ],
+                usage: {
+                    prompt_tokens: 4,
+                    completion_tokens: 2,
+                    total_tokens: 6,
+                },
+            });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+        const worker = createCodeAgentWorker(({ model, respond }) =>
+            respond({
+                model: model("test-model"),
+                instructions: "Answer briefly.",
+                temperature: 1,
+            }),
+        );
+        const response = await worker.fetch(
+            request({
+                model: "example/agent",
+                input: "Hello",
+                max_output_tokens: 123,
+                temperature: 0,
+            }),
+            runtimeEnv,
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toMatchObject({
+            model: "example/agent",
+            status: "completed",
+            output: [
+                {
+                    type: "message",
+                    content: [{ type: "output_text", text: "Hello!" }],
+                },
+            ],
+            usage: { input_tokens: 4, output_tokens: 2, total_tokens: 6 },
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+        undefined,
+        { prompt_tokens: 1, completion_tokens: -1, total_tokens: 0 },
+    ])("rejects invalid upstream usage without retrying", async (usage) => {
+        const fetchMock = vi.fn(async () =>
+            Response.json({
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "Hello" },
+                        finish_reason: "stop",
+                    },
+                ],
+                usage,
+            }),
+        );
+        vi.stubGlobal("fetch", fetchMock);
+        const worker = createCodeAgentWorker(({ model, respond }) =>
+            respond({ model: model("test-model") }),
+        );
+        const response = await worker.fetch(
+            request({ input: "Hello" }),
+            runtimeEnv,
+        );
+        expect(response.status).toBe(502);
+        expect(await response.json()).toHaveProperty("error");
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("validates the external Responses request before invoking a model", async () => {
+        const fetchMock = vi.fn();
+        vi.stubGlobal("fetch", fetchMock);
+        const worker = createCodeAgentWorker(({ model, respond }) =>
+            respond({ model: model("test-model") }),
+        );
+        const response = await worker.fetch(
+            request({ input: "Hello", max_output_tokens: -1 }),
+            runtimeEnv,
+        );
+        expect(response.status).toBe(400);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("caps executed MCP calls and reports only actual executions", async () => {
+        let modelCalls = 0;
+        let mcpCalls = 0;
+        vi.stubGlobal("fetch", async (url, init) => {
+            const body = JSON.parse(init.body);
+            if (String(url).endsWith("/mcp/pollinations")) {
+                if (body.method === "tools/list")
+                    return Response.json({
+                        jsonrpc: "2.0",
+                        id: body.id,
+                        result: {
+                            tools: [
+                                {
+                                    name: "echo",
+                                    inputSchema: {
+                                        type: "object",
+                                        properties: {},
+                                    },
+                                },
+                            ],
+                        },
+                    });
+                mcpCalls++;
+                return Response.json({
+                    jsonrpc: "2.0",
+                    id: body.id,
+                    result: { content: [{ type: "text", text: "ok" }] },
+                });
+            }
+            modelCalls++;
+            return Response.json({
+                choices: [
+                    {
+                        index: 0,
+                        message:
+                            modelCalls === 1
+                                ? {
+                                      role: "assistant",
+                                      content: null,
+                                      tool_calls: Array.from(
+                                          { length: 17 },
+                                          (_, i) => ({
+                                              id: `call-${i}`,
+                                              type: "function",
+                                              function: {
+                                                  name: "mcp__pollinations__echo",
+                                                  arguments: "{}",
+                                              },
+                                          }),
+                                      ),
+                                  }
+                                : { role: "assistant", content: "Finished." },
+                        finish_reason: modelCalls === 1 ? "tool_calls" : "stop",
+                    },
+                ],
+                usage: {
+                    prompt_tokens: 4,
+                    completion_tokens: 2,
+                    total_tokens: 6,
+                },
+            });
+        });
+        const worker = createCodeAgentWorker(async ({ model, mcp, respond }) =>
+            respond({
+                model: model("test-model"),
+                tools: await mcp.tools("pollinations"),
+            }),
+        );
+        const response = await worker.fetch(
+            request({ input: "Run tools" }),
+            runtimeEnv,
+        );
+        expect(response.status).toBe(200);
+        const body = await response.json();
+        expect(body.usage.tool_call_counts).toEqual({ mcp_call: 16 });
+        expect(body.usage.total_tokens).toBe(12);
+        expect(mcpCalls).toBe(16);
+        expect(modelCalls).toBe(2);
+        const results = body.output.filter(
+            (item) => item.type === "function_call_output",
+        );
+        expect(results).toHaveLength(17);
+        expect(JSON.parse(results[16].output)).toMatchObject({ isError: true });
+    });
+});
 
 describe("code agent deployment", () => {
     it("uploads the platform wrapper and owner source", async () => {
@@ -56,6 +265,9 @@ export default async ({ request }: AgentContext) => new Response(request.url);`;
         expect(await (form.get("runtime.mjs") as Blob).text()).toBe(
             runtimeModule,
         );
+        for (const [name, source] of Object.entries(sdkModules)) {
+            expect(await (form.get(name) as Blob).text()).toBe(source);
+        }
         expect(await (form.get("index.mjs") as Blob).text()).toContain(
             'import createCodeAgentWorker from "./runtime.mjs"',
         );

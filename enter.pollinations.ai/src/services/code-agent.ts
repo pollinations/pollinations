@@ -1,7 +1,7 @@
+import { runtimeModule, sdkModules } from "virtual:code-agent-sdk";
 import { HTTPException } from "hono/http-exception";
 import { transform } from "sucrase";
 import { z } from "zod";
-import runtimeModule from "./code-agent-runtime.js?raw";
 import { type GitHubApiEnv, githubApiHeaders } from "./github-api.ts";
 
 type CodeAgentDeploymentEnv = {
@@ -199,6 +199,13 @@ export async function deployCodeAgent(
         new Blob([runtimeModule], { type: "application/javascript+module" }),
         "runtime.mjs",
     );
+    for (const [name, source] of Object.entries(sdkModules)) {
+        form.set(
+            name,
+            new Blob([source], { type: "application/javascript+module" }),
+            name,
+        );
+    }
     form.set(
         "agent.mjs",
         new Blob([transpileCodeAgent(source)], {

@@ -216,23 +216,13 @@ async function syncCodeAgent(c: Context<Env>, id: string) {
     );
     const { deployedCommitSha } = repository;
     const listing = codeAgentListingFields(repository);
-    const metadataChanged =
-        listing.title !== row.title ||
-        listing.description !== row.description ||
-        repository.repository !== config.repository;
-    if (deployedCommitSha === config.deployedCommitSha && !metadataChanged) {
-        return {
-            updated: false,
-            deployedCommitSha,
-        };
-    }
-    if (deployedCommitSha !== config.deployedCommitSha) {
-        const source = await loadCodeAgentSource(
-            repository.repository,
-            deployedCommitSha,
-        );
-        await deployCodeAgent(c.env, id, source);
-    }
+    // Explicit sync also refreshes the platform runtime and pinned SDK when
+    // the owner's source commit has not changed.
+    const source = await loadCodeAgentSource(
+        repository.repository,
+        deployedCommitSha,
+    );
+    await deployCodeAgent(c.env, id, source);
     await db
         .update(schema.communityEndpoint)
         .set({
@@ -605,7 +595,7 @@ export const publicAgentSyncRoutes = new Hono<Env>().post(
         tags: ["🤖 Community Agents"],
         summary: "Sync Code Agent",
         description:
-            "Deploy the latest `agent.ts` revision from a code agent's configured public GitHub repository. The repository binding cannot be changed through this unauthenticated trigger.",
+            "Deploy the latest `agent.ts` revision and refresh the bundled runtime, even when the source commit is unchanged. The repository binding cannot be changed through this unauthenticated trigger, which is limited to once every 30 seconds.",
         responses: {
             200: {
                 description: "Agent synchronized",

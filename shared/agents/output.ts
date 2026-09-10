@@ -3,9 +3,10 @@ import {
     type FunctionCall,
     FunctionCallOutputSchema,
     FunctionCallSchema,
-} from "./functionItems.ts";
-import { safeMcpOutput } from "./mcp.ts";
-import type { AgentPart } from "./runtime.ts";
+    parseFunctionName,
+} from "./function-items.ts";
+import { safeMcpOutput } from "./mcp-output.ts";
+import type { AgentPart } from "./types.ts";
 
 const MessageSchema = z.object({
     type: z.literal("message"),
@@ -166,7 +167,9 @@ export function collectOutput(
                               },
                           ],
                       }
-                    : safeMcpOutput(part.output);
+                    : parseFunctionName(call.name)
+                      ? safeMcpOutput(part.output)
+                      : (part.output ?? null);
             const item = FunctionCallOutputSchema.parse({
                 type: "function_call_output",
                 id: `fco_${crypto.randomUUID()}`,

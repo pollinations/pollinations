@@ -1,14 +1,12 @@
-import { z } from "zod";
+import type { z } from "zod";
 import {
     ResponseFunctionCallOutputSchema,
     ResponseFunctionCallSchema,
-} from "../responses/functionItems.ts";
+} from "../schemas/response-function-items.ts";
 
 export const FunctionCallSchema = ResponseFunctionCallSchema.required({
     id: true,
     status: true,
-}).extend({
-    name: z.string().regex(/^mcp__(.+?)__(.+)$/),
 });
 
 export const FunctionCallOutputSchema =

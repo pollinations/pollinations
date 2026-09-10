@@ -1,3 +1,5 @@
+import { createCodeAgentAI } from "./code-agent-ai.ts";
+
 function jsonError(message) {
     return Response.json({ error: { message } }, { status: 500 });
 }
@@ -37,15 +39,21 @@ function createAgentContext(request, baseUrl) {
     const safeRequest = new Request(request, { headers });
     const origin = new URL(baseUrl);
     const pollinations = (path, init = {}) => {
-        const url = new URL(path, origin);
+        const url = new URL(path instanceof Request ? path.url : path, origin);
         if (url.origin !== origin.origin) {
             throw new Error(
                 "pollinations() only accepts Pollinations API URLs",
             );
         }
-        return fetch(url, init);
+        const signal =
+            init.signal ??
+            (path instanceof Request ? path.signal : request.signal);
+        return fetch(path instanceof Request ? path : url, {
+            ...init,
+            signal: AbortSignal.any([request.signal, signal]),
+        });
     };
-    const sendMcp = async (server, message, sessionHeaders = {}) => {
+    const sendMcp = async (server, message, sessionHeaders = {}, signal) => {
         const response = await pollinations(
             `/mcp/${encodeURIComponent(server)}`,
             {
@@ -56,6 +64,7 @@ function createAgentContext(request, baseUrl) {
                     ...sessionHeaders,
                 },
                 body: JSON.stringify({ jsonrpc: "2.0", ...message }),
+                signal,
             },
         );
         if (!response.ok) {
@@ -93,7 +102,7 @@ function createAgentContext(request, baseUrl) {
         await initialized.body?.cancel();
         return sessionHeaders;
     };
-    const requestMcp = async (server, method, params = {}) => {
+    const requestMcp = async (server, method, params = {}, signal) => {
         if (typeof server !== "string") {
             throw new Error("MCP requires a server name");
         }
@@ -107,23 +116,34 @@ function createAgentContext(request, baseUrl) {
             server,
             { id, method, params },
             sessionHeaders,
+            signal,
         );
         return readMcpResult(response, id);
     };
-    const mcp = async (server, tool, args = {}) => {
+    const mcp = async (server, tool, args = {}, signal) => {
         if (typeof server !== "string" || typeof tool !== "string") {
             throw new Error("mcp() requires a server and tool name");
         }
-        return requestMcp(server, "tools/call", {
-            name: tool,
-            arguments: args,
-        });
+        return requestMcp(
+            server,
+            "tools/call",
+            {
+                name: tool,
+                arguments: args,
+            },
+            signal,
+        );
     };
     mcp.listTools = async (server) => {
         const result = await requestMcp(server, "tools/list");
         return result.tools;
     };
-    return { request: safeRequest, pollinations, mcp };
+    return {
+        request: safeRequest,
+        pollinations,
+        mcp,
+        ...createCodeAgentAI(safeRequest, baseUrl, pollinations, mcp),
+    };
 }
 
 export default function createCodeAgentWorker(agent) {

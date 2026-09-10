@@ -45,18 +45,24 @@ The `composio` server uses each caller's connections from **Account → MCP Conn
 
 A code agent uses a public GitHub repository as its source of truth. Put one self-contained `agent.ts` at the repository root. Pollinations removes TypeScript syntax when deploying it; type errors do not block deployment, and plain JavaScript is valid in the same file. The repository name becomes the model ID and title, and its description becomes the catalog description. Repository visibility and agent visibility are independent: a private agent is owner-only even though its source repository is public.
 
+The runtime bundles the actual Vercel AI SDK: `ai` version `7.0.66` and `@ai-sdk/openai-compatible` version `3.0.30`. Import their standard exports directly; repository `package.json` files and arbitrary npm dependencies are not installed.
+
 ```ts
-export default async function ({ request, pollinations, mcp }) {
-    const { input } = await request.json();
-    return pollinations("/v1/responses", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ model: "openai-fast", input }),
+import { stepCountIs } from "ai";
+
+export default async function ({ model, respond, mcp }) {
+    return respond({
+        model: model("openai-fast"),
+        instructions: "Answer the user, using tools when needed.",
+        tools: await mcp.tools("pollinations"),
+        stopWhen: stepCountIs(4),
     });
 }
 ```
 
-The function receives the incoming Responses request. `pollinations(path, init)` calls Pollinations APIs. Discover tool names and input schemas with `await mcp.listTools("pollinations")`, then call a tool with `await mcp("pollinations", "generateImage", { prompt: "..." })`. Both helpers use the caller's Pollen and permissions; the code never receives a reusable API key.
+`model(id)` creates an SDK language model already connected to Pollinations; select IDs from [the model catalog](https://gen.pollinations.ai/v1/models). `respond(config)` runs the SDK tool loop and returns Responses JSON or SSE, including tool results and usage. It accepts SDK agent settings such as `instructions`, `tools`, and `stopWhen`, defaults to eight steps, and does not retry model requests. `mcp.tools(server)` provides executable SDK tools, limited to sixteen calls per request.
+
+The callback also receives `request`, `pollinations(path, init)`, `mcp.listTools(server)`, and `mcp(server, tool, arguments)` for direct request and tool handling. It must return a `Response`; ordinary Worker APIs, including timers and streams, remain available. Platform model and MCP helpers use the caller's Pollen and permissions without exposing a reusable API key. `respond` does not emit the Vercel UI protocol or introduce a separate endpoint.
 
 Example `code-agent.json`:
 
@@ -75,7 +81,7 @@ To deploy the newest default-branch revision after a push, add this step to a Gi
 - run: curl --fail --retry 2 --retry-delay 30 -X POST https://gen.pollinations.ai/account/agents/AGENT_ID/sync
 ```
 
-The sync route needs no secret and cannot change which repository is deployed.
+The sync route needs no secret and cannot change which repository is deployed. It redeploys the current commit with the latest bundled runtime even when the source is unchanged, and is limited to once every 30 seconds.
 
 ## Create with the CLI
 

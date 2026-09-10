@@ -32,12 +32,12 @@ describe("tgpt harness", () => {
         expect(configureTgpt(ctx, "sk_test_key")).toMatchObject({
             harness: "tgpt",
             configured: true,
-            model: "openai",
+            model: "openai/gpt-5.4-nano",
         });
         expect(parseEnv(read())).toMatchObject({
             AI_PROVIDER: "pollinations",
-            POLLINATIONS_API_KEY: "sk_test_key",
-            POLLINATIONS_MODEL: "openai",
+            AI_API_KEY: "sk_test_key",
+            POLLINATIONS_MODEL: "openai/gpt-5.4-nano",
         });
         expect(statSync(configFile()).mode & 0o777).toBe(0o600);
     });
@@ -46,13 +46,14 @@ describe("tgpt harness", () => {
         mkdirSync(join(home, ".config", "tgpt"), { recursive: true });
         writeFileSync(
             configFile(),
-            "OTHER_KEY=keep\nAI_PROVIDER=groq\nPOLLINATIONS_MODEL=old\n",
+            "OTHER_KEY=keep\nAI_PROVIDER=groq\nAI_API_KEY=old-provider-key\nPOLLINATIONS_API_KEY=older-pollinations-key\nPOLLINATIONS_MODEL=old\n",
         );
         configureTgpt(ctx, "sk_test_key", "deepseek");
         expect(parseEnv(read())).toMatchObject({
             OTHER_KEY: "keep",
             AI_PROVIDER: "pollinations",
-            POLLINATIONS_API_KEY: "sk_test_key",
+            AI_API_KEY: "sk_test_key",
+            POLLINATIONS_API_KEY: "older-pollinations-key",
             POLLINATIONS_MODEL: "deepseek",
         });
     });
@@ -76,5 +77,18 @@ describe("tgpt harness", () => {
     it("stops before configuration when tgpt is unavailable", async () => {
         await expect(tgpt.on(ctx, {})).rejects.toThrow("tgpt was not found");
         expect(existsSync(configFile())).toBe(false);
+    });
+
+    it("keeps a different provider selected after on", () => {
+        configureTgpt(ctx, "sk_test_key");
+        writeFileSync(
+            configFile(),
+            read().replace(
+                'AI_PROVIDER="pollinations"',
+                'AI_PROVIDER="ollama"',
+            ),
+        );
+        expect(disableTgpt(ctx).outcome).toBe("stripped");
+        expect(parseEnv(read())).toEqual({ AI_PROVIDER: "ollama" });
     });
 });

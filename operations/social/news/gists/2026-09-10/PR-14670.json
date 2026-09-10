@@ -1,0 +1,34 @@
+{
+  "pr_number": 14670,
+  "title": "feat(polli-cli): add Bloom harness",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14670",
+  "merged_at": "2026-09-10T13:51:31Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n- Adds `polli harness bloom on|status|off`.\n- Creates a dedicated key in Bloom's existing `.env` configuration while preserving unrelated values.\n- Documents installation and the reversible setup.\n\n## Test plan\n- [x] `npm test` (110 tests)\n- [x] `npm run build`\n- [x] Clean Bloom 0.1.3 install, version, and help\n- [x] Authenticated Bloom text request returned `BLOOM_OK`\n\nUpstream startup issue fixed in [Bloom #1](https://github.com/Ilm-Alan/bloom-cli/issues/1).",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Bloom gets a hive key",
+    "blurb": "Polli CLI can now set up Bloom with one reversible command. It tucks a dedicated Pollinations key into Bloom’s existing .env without trampling the rest of the garden.",
+    "summary": "Added `polli harness bloom on|status|off`, which configures a dedicated Pollinations key in Bloom CLI’s existing `.env` while preserving unrelated configuration and provides documented reversible setup.",
+    "impact": "Bloom 0.1.3 users can enable, inspect, or remove Pollinations-backed text access from the Polli CLI, with their existing `.env` values left intact.",
+    "keywords": [
+      "polli-cli",
+      "bloom",
+      "harness",
+      "cli",
+      "authentication",
+      "environment-config"
+    ],
+    "visual_concept": "Depict Bloom as a small flowering command-line garden: a retro terminal opens a `.env` seed packet and carefully plants a glowing dedicated API key beside already-grown configuration flowers. Polli, wearing a tiny gardener tool belt, checks that each neighboring plant remains undisturbed; subtle `ON`, `STATUS`, and `OFF` signposts make the reversible harness commands visible.",
+    "image_prompt": "A cozy pixel art garden-shed terminal scene where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blush, a small smile, light blue translucent wings, and a tiny gardener tool belt, carefully plants a glowing Pollinations API-key seed into a retro computer’s `.env` flower pot while existing code-flowers remain happily untouched; small pixel signposts read “ON”, “STATUS”, and “OFF”. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-10/PR-14670.jpg",
+    "prompt": "A cozy pixel art garden-shed terminal scene where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blush, a small smile, light blue translucent wings, and a tiny gardener tool belt, carefully plants a glowing Pollinations API-key seed into a retro computer’s `.env` flower pot while existing code-flowers remain happily untouched; small pixel signposts read “ON”, “STATUS”, and “OFF”. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-10T13:52:51.949650+00:00"
+}

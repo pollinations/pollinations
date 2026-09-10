@@ -23,7 +23,7 @@ const MESSAGE =
     "[Top up](https://enter.pollinations.ai/pollen?ref=agent_low_balance_topup) or " +
     "[complete a quest](https://enter.pollinations.ai/quests?ref=agent_low_balance_quests), then try again.";
 
-/** Must wrap tracking and caching: both finish handling the original 402 first. */
+/** Wrap tracking and caching so they capture the original 402 before formatting. */
 export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
     await next();
 
@@ -52,9 +52,20 @@ export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
     )
         return;
 
-    // Hono keeps previous headers when replacing c.res. Set these on it first.
-    c.res.headers.set("Cache-Control", "private, no-store");
-    c.res.headers.delete("content-length");
+    // Hono preserves the old headers on replacement; update and pass them along.
+    const headers = c.res.headers;
+    headers.set("Cache-Control", "private, no-store");
+    headers.delete("content-length");
+    if (
+        !request.stream &&
+        !isResponses &&
+        c.req.path !== "/v1/chat/completions"
+    ) {
+        headers.set("Content-Type", "text/plain; charset=utf-8");
+        c.res = new Response(MESSAGE, { headers });
+        return;
+    }
+
     const model = c.var.model.requested ?? c.var.model.resolved;
     const response = createTextResponse(model, MESSAGE, {
         input_tokens: 0,
@@ -63,14 +74,14 @@ export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
     });
 
     if (request.stream) {
-        c.res.headers.set("Content-Type", "text/event-stream; charset=utf-8");
+        headers.set("Content-Type", "text/event-stream; charset=utf-8");
         const stream = textResponseStream(response);
         c.res = new Response(
             isResponses ? stream : responsesToChatStream(stream, model),
-            { headers: c.res.headers },
+            { headers },
         );
-    } else if (c.req.path === "/v1/chat/completions" || isResponses) {
-        c.res.headers.set("Content-Type", "application/json; charset=utf-8");
+    } else {
+        headers.set("Content-Type", "application/json; charset=utf-8");
         c.res = Response.json(
             isResponses
                 ? response
@@ -79,10 +90,7 @@ export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
                       model,
                       new URL(c.req.url),
                   ),
-            { headers: c.res.headers },
+            { headers },
         );
-    } else {
-        c.res.headers.set("Content-Type", "text/plain; charset=utf-8");
-        c.res = new Response(MESSAGE, { headers: c.res.headers });
     }
 });

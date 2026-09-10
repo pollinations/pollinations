@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [✍️ YouTube Transcription AI by MrPaloma](https://www.mrpaloma.com/trascrivere-video-youtube-pollinations) | A lightweight, free web app that turns any YouTube video transcript into structured summaries, English translations, and AI-generated concept covers powered by Pollinations.ai. The YouTube Transcript | [@rapidbuildlabai](https://github.com/rapidbuildlabai) |
 | [🖼️ Men's Fashion Pins](https://fashionpins4u.blogspot.com/p/mens-fashion-pins.html) | Create attractive images of men's fashion for pinterest using pollinations. this app is using gpt-image-2 model. | [@hindi-status](https://github.com/hindi-status) |
 | [✍️ StoryCraft AI](https://khushalkks.github.io/pollinations) | StoryCraft AI is an interactive digital storybook and scene illustrator powered directly by Pollinations.ai Text and Image Generation APIs. It uses text.pollinations.ai to generate multi-chapter narra | [@khushalkks](https://github.com/khushalkks) |
 | [🖼️ PolliArena](https://polli-arena.cloudbr.eu.org) | Community-driven model benchmark and blind comparison arena for Pollinations image models with native BYOP (Connect User Wallets). Features: - ⚔️ Blind Battle Arena: Pit two secretly randomized models | [@samucastudent](https://github.com/samucastudent) |
@@ -37,7 +38,6 @@
 | [📚 AI Homework Solver](https://zizoisu.github.io/ai-homework-solver) | A web-based homework solver that integrates with Pollinations AI. Supports multiple question types including MCQ, short answer, true/false, and fill-in-the-blank questions. Features a hybrid model wit | [@zizoisu](https://github.com/zizoisu) |
 | [🖼️ ¿Y si…? — Alternate History Scene Generator](https://jecxolab.github.io/y-si-historia) | Type a historical "what if" and get the scene illustrated. Built for the Spanish-language history channel El Efecto Historia. Uses the Pollinations image API with four visual presets (epic oil paintin | [@jecxolab](https://github.com/jecxolab) |
 | [💬 Genie AI](https://play.google.com/store/apps/details?id=com.genie.aiassistant) | Genie AI Companion is a powerful multi-modal AI super app designed to bring everything you need into one place. You can chat and get live answers from the internet, analyze and summarize docs, recogni | [@lankafoaz](https://github.com/lankafoaz) |
-| [🖼️ AI Story & Image Studio](https://adventuretreehouse.com) | A minimal interactive studio that generates short stories and matching illustrations simultaneously using Pollinations text and image APIs with seamless PKCE OAuth authentication. | [@tlandcoder](https://github.com/tlandcoder) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

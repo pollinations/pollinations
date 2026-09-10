@@ -139,8 +139,8 @@ def test_catalog_uses_cache_and_falls_back_to_stale_file(
     assert calls[0]["url"] == "https://gen.pollinations.ai/v1/models"
     assert calls[0]["headers"] == {"Authorization": "Bearer sk-test"}
 
-    # Make the cache stale, then break the network: stale file must win.
-        cache_file = tmp_path / _cache_filename("sk-test")
+    # Make the cache stale, then break the network: stale file must win.   
+    cache_file = tmp_path / _cache_filename("sk-test")
     old_mtime = time.time() - 7200
     os.utime(cache_file, (old_mtime, old_mtime))
 

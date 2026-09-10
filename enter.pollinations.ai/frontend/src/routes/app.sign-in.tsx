@@ -1,8 +1,15 @@
-import { Heading, Text } from "@pollinations/ui";
-import { AuthModal, AuthModalHeader } from "@pollinations/ui/auth";
+import { Heading, LockIcon, MailIcon, ScrollArea } from "@pollinations/ui";
+import {
+    AuthAccessItem,
+    AuthAccessSummary,
+    AuthInfoCard,
+    AuthModal,
+    AuthModalHeader,
+} from "@pollinations/ui/auth";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
+import { AppAttribution } from "../components/auth/app-attribution.tsx";
 import { oauthSignInCallback } from "../lib/oauth-sign-in.ts";
 import { SignedOutAccountArea } from "./_dashboard.tsx";
 
@@ -32,15 +39,48 @@ function AppSignIn() {
         };
     }, [client_id]);
     return (
-        <AuthModal dialog={{ labelledBy: "app-title" }}>
-            <AuthModalHeader />
-            <div className="flex flex-col gap-5 px-6 pb-6 pt-4">
-                <div className="flex flex-col gap-2">
-                    <Heading id="app-title">{name}</Heading>
-                    <Text tone="soft">
-                        Sign in with your Pollinations admin account.
-                    </Text>
+        <AuthModal
+            dialog={{ labelledBy: "app-title" }}
+            contentClassName="flex flex-col"
+        >
+            <AuthModalHeader logoOnly />
+            <ScrollArea className="min-h-0 px-6 py-2 space-y-4 overscroll-contain">
+                <div>
+                    <Heading
+                        as="h1"
+                        size="section"
+                        id="app-title"
+                        className="py-3"
+                    >
+                        Sign in to pollinations.ai
+                    </Heading>
+                    <p className="mb-3 font-body text-xs font-semibold tracking-wide text-theme-text-soft">
+                        To access:
+                    </p>
+                    <AuthInfoCard title={null}>
+                        <AppAttribution
+                            attribution={{ appName: name }}
+                            isDeviceMode={false}
+                            redirectHostname=""
+                        />
+                    </AuthInfoCard>
+                    <AuthAccessSummary title="Required for sign-in">
+                        <AuthAccessItem
+                            checked
+                            icon={<MailIcon className="h-4 w-4" />}
+                        >
+                            Name, email and picture.
+                        </AuthAccessItem>
+                        <AuthAccessItem
+                            checked
+                            icon={<LockIcon className="h-4 w-4" />}
+                        >
+                            Admin access.
+                        </AuthAccessItem>
+                    </AuthAccessSummary>
                 </div>
+            </ScrollArea>
+            <div className="shrink-0 px-6 py-4">
                 <SignedOutAccountArea
                     callbackURL={
                         typeof window === "undefined"

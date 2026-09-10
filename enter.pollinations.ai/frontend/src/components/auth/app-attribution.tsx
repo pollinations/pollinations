@@ -1,4 +1,4 @@
-import { InfoTip } from "@pollinations/ui";
+import { Heading } from "@pollinations/ui";
 
 type Attribution = {
     appName?: string;
@@ -7,30 +7,40 @@ type Attribution = {
 };
 
 type AppAttributionProps = {
+    titleId?: string;
     attribution: Attribution | null;
     isDeviceMode: boolean;
     userCode?: string;
     redirectHostname: string;
+    detailsOnly?: boolean;
 };
 
 export function AppAttribution({
+    titleId,
     attribution,
     isDeviceMode,
     userCode,
     redirectHostname,
+    detailsOnly = false,
 }: AppAttributionProps) {
+    // A callback hostname identifies the destination, not the app. Keep it in
+    // the details row even when lookup has not supplied an app name.
     const displayName =
-        attribution?.appName ??
-        (isDeviceMode ? "A device" : redirectHostname || "An app");
-    const tipText = [
-        "Same as copy-pasting an API key into their app.",
-        "Only share with apps you trust.",
-    ].join("\n");
+        attribution?.appName ||
+        (isDeviceMode ? "Device connection" : "App connection");
     return (
         <>
-            <p className="text-theme-text-strong">
-                <span className="font-bold text-lg">{displayName}</span>
-            </p>
+            {titleId ? (
+                <Heading as="h1" size="section" id={titleId}>
+                    {displayName}
+                </Heading>
+            ) : (
+                (!detailsOnly || attribution?.appName) && (
+                    <p className="font-body font-semibold text-theme-text-strong">
+                        {displayName}
+                    </p>
+                )
+            )}
             {attribution?.githubUsername && (
                 <p className="text-sm text-theme-text-base mt-1">
                     by{" "}
@@ -44,8 +54,11 @@ export function AppAttribution({
                     </a>
                 </p>
             )}
-            {!isDeviceMode && attribution?.appName && redirectHostname && (
+            {!isDeviceMode && redirectHostname && (
                 <p className="text-xs text-theme-text-base font-mono mt-1">
+                    {detailsOnly && (
+                        <span className="font-body">Destination: </span>
+                    )}
                     {redirectHostname}
                 </p>
             )}
@@ -54,10 +67,6 @@ export function AppAttribution({
                     Code: {userCode}
                 </p>
             )}
-            <p className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mt-3">
-                To access your Pollinations account{" "}
-                <InfoTip text={tipText} label="API key sharing warning" />
-            </p>
         </>
     );
 }

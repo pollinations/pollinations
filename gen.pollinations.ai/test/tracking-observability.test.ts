@@ -53,17 +53,12 @@ import {
     track,
     trackResponse,
 } from "@/middleware/track.ts";
-import { syncImageEnv } from "../src/image/env.ts";
-import { callOpenRouterGrokImagineProAPI } from "../src/image/models/openRouterImageModel.ts";
-import { ImageParamsSchema } from "../src/image/params.ts";
-import { buildTrackingHeaders } from "../src/image/utils/trackingHeaders.ts";
 import worker from "../src/index.ts";
 import {
     type GenerationModelEntry,
     resetGenerationModelRegistryCache,
 } from "../src/model-registry.ts";
 import { requireChatStreamUsage } from "../src/text/chat/usage.ts";
-import { getProviderReportedCostUsd } from "../src/utils/provider-cost.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 afterEach(() => {
@@ -198,7 +193,6 @@ function createTrackedResponseApp(
     eventType: "generate.image" | "generate.text" | "generate.audio",
     result: Response | Error,
     model: ModelName = "openai/gpt-5.4-nano",
-    providerReportedCostUsd?: number,
 ) {
     const app = new Hono<Env>();
 
@@ -221,8 +215,7 @@ function createTrackedResponseApp(
         });
         await next();
     });
-    app.all("/upstream", track(eventType), (c) => {
-        c.var.track.setProviderReportedCost(providerReportedCostUsd);
+    app.all("/upstream", track(eventType), () => {
         if (result instanceof Error) throw result;
         return result.clone();
     });
@@ -544,7 +537,7 @@ describe("tracking observability", () => {
     it.each([
         true,
         false,
-    ])("emits provider charges without debiting Pollen when failed text has valid usage: %s", async (hasUsage) => {
+    ])("records estimated cost without debiting Pollen when failed text has valid usage: %s", async (hasUsage) => {
         const events: TinybirdEvent[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -581,7 +574,6 @@ describe("tracking observability", () => {
                                   total_tokens: 110,
                               }
                             : {}),
-                        cost: 0.02,
                     },
                 },
                 {
@@ -616,93 +608,18 @@ describe("tracking observability", () => {
         await waitOnExecutionContext(ctx);
         expect(events).toHaveLength(1);
         expect(events[0]).toMatchObject({
-            providerReportedCostUsd: 0.02,
             modelUsed: model,
             hasCostEstimate: hasUsage,
             totalPrice: 0,
             isBilledUsage: false,
             isFinal: true,
         });
+        if (hasUsage) expect(events[0].totalCost).toBeGreaterThan(0);
+        else expect(events[0].totalCost).toBe(0);
         expect(await getUserBalance(drizzle(env.DB), trackingUser.id)).toEqual(
             before,
         );
         expect(consumePollen).toHaveBeenCalledWith(0);
-    });
-
-    it.each([
-        0, 0.123,
-    ])("carries an image charge of %s through binary settlement without exposing it in headers", async (reportedCost) => {
-        const events: TinybirdEvent[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                const request = new Request(input, init);
-                if (request.url === "https://openrouter.ai/api/v1/images") {
-                    return Response.json({
-                        id: "gen-image",
-                        model: "grok-upstream",
-                        provider: "xAI",
-                        data: [{ b64_json: "AQID" }],
-                        usage: { cost: reportedCost },
-                    });
-                }
-                if (request.url.includes("name=generation_event_v2"))
-                    events.push((await request.json()) as TinybirdEvent);
-                return new Response("ok");
-            },
-        );
-        syncImageEnv(
-            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
-            ["OPENROUTER_API_KEY"],
-        );
-        const model = "x-ai/grok-imagine-image-quality";
-        const result = await callOpenRouterGrokImagineProAPI(
-            "test",
-            ImageParamsSchema.parse({ model }),
-        );
-        const headers = {
-            "content-type": "image/png",
-            ...buildTrackingHeaders(model, result.trackingData),
-        };
-        expect(
-            Object.keys(headers).some((key) =>
-                /provider|cost|response-id/.test(key),
-            ),
-        ).toBe(false);
-        const consumePollen = vi.fn(async (_amount: number) => {});
-        const ctx = createExecutionContext();
-        const response = await createTrackedResponseApp(
-            consumePollen,
-            "generate.image",
-            new Response(new Uint8Array(result.buffer), { headers }),
-            model,
-            result.trackingData.providerReportedCostUsd,
-        ).fetch(
-            new Request("https://gen.pollinations.ai/upstream"),
-            {
-                DB: env.DB,
-                ENVIRONMENT: "test",
-                LOG_LEVEL: "debug",
-                LOG_FORMAT: "text",
-                BETTER_AUTH_SECRET: "test_secret",
-                TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event_v2",
-                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
-            } as CloudflareBindings,
-            ctx,
-        );
-        await waitOnExecutionContext(ctx);
-        expect(new Uint8Array(await response.arrayBuffer())).toEqual(
-            new Uint8Array([1, 2, 3]),
-        );
-        expect(events).toHaveLength(1);
-        expect(events[0]).toMatchObject({
-            modelUsed: model,
-            modelProviderUsed: "openrouter",
-            providerReportedCostUsd: reportedCost,
-            hasCostEstimate: true,
-            isBilledUsage: true,
-        });
-        expect(events[0].totalPrice).toBe(0.05);
     });
 
     it("tracks provider work but not coalesced cache hits", async () => {
@@ -3258,24 +3175,7 @@ describe("reduceAdjustmentsToEventFields", () => {
     });
 });
 
-describe("trackResponse provider accounting evidence", () => {
-    it("keeps a valid report when a later event carries an invalid cost", () => {
-        for (const cost of [null, "0.3", -1, NaN, Infinity]) {
-            expect(
-                getProviderReportedCostUsd("openrouter", {
-                    streamEvents: [
-                        {
-                            id: "gen-valid",
-                            provider: "Google Vertex",
-                            usage: { cost: 0.2 },
-                        },
-                        { usage: { cost } },
-                    ],
-                }),
-            ).toBe(0.2);
-        }
-    });
-
+describe("trackResponse model identity and cost estimates", () => {
     it("treats validated zero usage as a complete estimate", async () => {
         const tracking = await trackResponse(
             "generate.text",
@@ -3302,12 +3202,11 @@ describe("trackResponse provider accounting evidence", () => {
         total_tokens: 1050,
     };
 
-    function response(cost: unknown) {
+    function response() {
         return Response.json(
             {
                 id: "gen-provider-123",
                 model: "google/gemini-3.7-flash-upstream",
-                provider: "Google Vertex",
                 choices: [
                     {
                         index: 0,
@@ -3315,11 +3214,7 @@ describe("trackResponse provider accounting evidence", () => {
                         finish_reason: "stop",
                     },
                 ],
-                usage: {
-                    ...usage,
-                    cost,
-                    cost_details: { upstream_inference_cost: 99 },
-                },
+                usage,
             },
             {
                 headers: {
@@ -3331,42 +3226,18 @@ describe("trackResponse provider accounting evidence", () => {
         );
     }
 
-    it("preserves provider charge independently of Pollen billing", async () => {
-        const tracking = await trackResponse(
-            "generate.text",
-            requestTrackingFixture(false, model),
-            response(0.42),
-            candidateFixture(model),
-        );
-        const missing = await trackResponse(
-            "generate.text",
-            requestTrackingFixture(false, model),
-            response(undefined),
-            candidateFixture(model),
-        );
-        expect(tracking).toMatchObject({
-            modelUsed: model,
-            hasCostEstimate: true,
-            providerReportedCostUsd: 0.42,
-        });
-        expect(tracking.cost).toEqual(missing.cost);
-        expect(tracking.price).toEqual(missing.price);
-        expect(tracking.price?.totalPrice).not.toBe(0.42);
-        expect(missing.providerReportedCostUsd).toBeUndefined();
-    });
-
     it("keeps a public model stable across provider routes and records cross-model fallbacks", async () => {
         const route = `${model}:openrouter:ai-studio-priority` as const;
         const sameModel = await trackResponse(
             "generate.text",
             requestTrackingFixture(false, model),
-            response(0.42),
+            response(),
             candidateFixture(route),
         );
         const differentModel = await trackResponse(
             "generate.text",
             requestTrackingFixture(),
-            response(0.42),
+            response(),
             candidateFixture(route),
         );
         for (const tracking of [sameModel, differentModel]) {
@@ -3378,121 +3249,5 @@ describe("trackResponse provider accounting evidence", () => {
         }
         // A fallback still charges the customer's original quote.
         expect(differentModel.price).not.toEqual(sameModel.price);
-    });
-
-    it("retains a measured zero", async () => {
-        const tracking = await trackResponse(
-            "generate.text",
-            requestTrackingFixture(false, model),
-            response(0),
-            candidateFixture(model),
-        );
-        expect(tracking.providerReportedCostUsd).toBe(0);
-    });
-
-    it.each([
-        null,
-        "0.42",
-        -1,
-        { request_cost: 0.42 },
-    ])("does not interpret malformed or another provider's cost shape as a charge: %j", async (cost) => {
-        const tracking = await trackResponse(
-            "generate.text",
-            requestTrackingFixture(false, model),
-            response(cost),
-            candidateFixture(model),
-        );
-        expect(tracking.providerReportedCostUsd).toBeUndefined();
-        expect(tracking.isBilledUsage).toBe(true);
-    });
-
-    it("uses the serving provider's cost protocol after fallback", async () => {
-        const tracking = await trackResponse(
-            "generate.text",
-            requestTrackingFixture(),
-            response(0.42),
-            candidateFixture(model),
-        );
-        expect(tracking.fallbackUsed).toBe(true);
-        expect(tracking.modelProviderUsed).toBe("openrouter");
-        expect(tracking.providerReportedCostUsd).toBe(0.42);
-    });
-
-    it("does not treat an arbitrary community usage.cost as our supplier charge", async () => {
-        const endpoint = createCommunityEndpoint("owner");
-        const tracking = await trackResponse(
-            "generate.text",
-            requestTrackingFixture(),
-            response(0.42),
-            {
-                id: endpoint.modelId,
-                definition: communityModelDefinition(endpoint),
-                communityEndpoint: endpoint,
-            },
-        );
-        expect(tracking.modelUsed).toBe(endpoint.modelId);
-        expect(tracking.providerReportedCostUsd).toBeUndefined();
-    });
-
-    it.each([
-        "stop",
-        "error",
-    ])("retains the last valid stream charge even when finish_reason is %s", async (finishReason) => {
-        const events = [
-            { id: "gen-stream-123", model: "provider-model", choices: [] },
-            { choices: [], usage: { ...usage, cost: 0.1 } },
-            {
-                choices: [{ index: 0, delta: {}, finish_reason: finishReason }],
-                usage: { ...usage, cost: 0.4 },
-            },
-        ];
-        const stream = `${events
-            .map((event) => `data: ${JSON.stringify(event)}\n\n`)
-            .join("")}data: [DONE]\n\n`;
-        const tracking = await trackResponse(
-            "generate.text",
-            requestTrackingFixture(true, model),
-            new Response(stream, {
-                headers: {
-                    "content-type": "text/event-stream",
-                    "x-model-used": model,
-                },
-            }),
-            candidateFixture(model),
-        );
-        expect(tracking.providerReportedCostUsd).toBe(0.4);
-        expect(tracking.isBilledUsage).toBe(finishReason === "stop");
-    });
-
-    it("preserves a Responses API terminal reported cost", async () => {
-        const event = {
-            type: "response.completed",
-            response: {
-                id: "resp-provider-123",
-                model: "upstream-responses-model",
-                status: "completed",
-                output: [],
-                usage: {
-                    input_tokens: 1000,
-                    output_tokens: 50,
-                    total_tokens: 1050,
-                    cost: 0.2,
-                },
-            },
-        };
-        const tracking = await trackResponse(
-            "generate.text",
-            requestTrackingFixture(true, model),
-            new Response(`data: ${JSON.stringify(event)}\n\n`, {
-                headers: {
-                    "content-type": "text/event-stream",
-                    "x-model-used": model,
-                },
-            }),
-            candidateFixture(model),
-        );
-        expect(tracking).toMatchObject({
-            providerReportedCostUsd: 0.2,
-        });
     });
 });

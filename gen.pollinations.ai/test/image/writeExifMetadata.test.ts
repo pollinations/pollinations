@@ -1,8 +1,5 @@
 import { load, TagValues } from "piexif-ts";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { createAndReturnImageCached } from "../../src/image/createAndReturnImages.ts";
-import { syncImageEnv } from "../../src/image/env.ts";
-import { ImageParamsSchema } from "../../src/image/params.ts";
+import { describe, expect, it } from "vitest";
 import { writeExifMetadata } from "../../src/image/writeExifMetadata.ts";
 
 // 1x1 white JPEG (base64 encoded), minimum valid input piexif's segment parser accepts.
@@ -11,44 +8,7 @@ const MINIMAL_JPEG = Buffer.from(
     "base64",
 );
 
-afterEach(() => vi.restoreAllMocks());
-
 describe("writeExifMetadata", () => {
-    it("retains image accounting evidence internally but excludes it from downloadable EXIF", async () => {
-        syncImageEnv(
-            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
-            ["OPENROUTER_API_KEY"],
-        );
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            Response.json({
-                id: "gen-private",
-                model: "upstream-model",
-                provider: "xAI",
-                data: [{ b64_json: MINIMAL_JPEG.toString("base64") }],
-                usage: { cost: 0.123 },
-            }),
-        );
-        const model = "x-ai/grok-imagine-image-quality";
-        const result = await createAndReturnImageCached(
-            "test",
-            ImageParamsSchema.parse({ model }),
-            "test",
-            { tokenAuth: true, userId: "test-user" },
-        );
-        expect(result.trackingData.providerReportedCostUsd).toBe(0.123);
-        const exif = load(result.buffer.toString("binary"));
-        const metadata = JSON.parse(
-            exif.Exif?.[TagValues.ExifIFD.UserComment] as string,
-        );
-        expect(metadata.trackingData).toEqual({
-            actualModel: model,
-            usage: { completionImageTokens: 1 },
-        });
-        expect(metadata.trackingData).not.toHaveProperty(
-            "providerReportedCostUsd",
-        );
-    });
-
     it("writes Make and UserComment to a JPEG", async () => {
         const params = { model: "flux", prompt: "a cat", width: 512 };
         const maturity = { isMature: false, isChild: false };

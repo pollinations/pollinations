@@ -1016,11 +1016,6 @@ export async function createAndReturnImageCached(
 
         // Prepare metadata
         const { buffer: _buffer, ...maturity } = result;
-        // Provider accounting evidence is internal; EXIF is downloadable by callers.
-        const {
-            providerReportedCostUsd: _providerReportedCostUsd,
-            ...publicTrackingData
-        } = result.trackingData;
         const metadataObj = prepareMetadata(prompt, originalPrompt, safeParams);
 
         // Preserve vector output and PNG alpha; JPEG conversion flattens transparency.
@@ -1029,10 +1024,11 @@ export async function createAndReturnImageCached(
             (safeParams.transparent &&
                 detectMimeType(result.buffer) === "image/png")
                 ? result.buffer
-                : await processImageBuffer(result.buffer, metadataObj, {
-                      ...maturity,
-                      trackingData: publicTrackingData,
-                  });
+                : await processImageBuffer(
+                      result.buffer,
+                      metadataObj,
+                      maturity,
+                  );
 
         return {
             buffer: processedBuffer,

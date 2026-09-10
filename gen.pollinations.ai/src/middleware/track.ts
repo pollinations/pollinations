@@ -99,7 +99,6 @@ import {
 } from "@/text/responses/tracking.ts";
 import { generateRandomId, parseBooleanLike } from "@/util.ts";
 import { releaseApiKeyBudgetReservation } from "@/utils/generation-access.ts";
-import { getProviderReportedCostUsd } from "@/utils/provider-cost.ts";
 import {
     type FallbackAttempt,
     type FallbackCandidate,
@@ -133,7 +132,6 @@ type ResponseTrackingData = {
     isFinal?: boolean;
     modelUsed?: string;
     modelProviderUsed?: string;
-    providerReportedCostUsd?: number;
     usage?: Usage;
     cost?: UsageCost;
     hasCostEstimate?: boolean;
@@ -167,8 +165,6 @@ export type TrackVariables = {
         // Service layers register normalized request facts that affect
         // pricing. Consumed once at billing time by selectCostVariant.
         setPricingInput: (input: PricingInput) => void;
-        /** Reported cost from media JSON before it becomes a binary response. */
-        setProviderReportedCost: (cost: number | undefined) => void;
         /** Ordered upstream calls; one is marked when it settles the request. */
         attempts: FallbackAttempt[];
     };
@@ -207,7 +203,6 @@ export const track = (eventType: EventType) =>
 
         let responseOverride: Response | null = null;
         let pricingInput: PricingInput | undefined;
-        let mediaProviderReportedCostUsd: number | undefined;
         /** Filled by the fallback loop; this middleware turns it into rows. */
         const attempts: FallbackAttempt[] = [];
 
@@ -290,9 +285,6 @@ export const track = (eventType: EventType) =>
             setPricingInput: (input: PricingInput) => {
                 pricingInput = { ...pricingInput, ...input };
             },
-            setProviderReportedCost: (cost) => {
-                mediaProviderReportedCostUsd = cost;
-            },
             attempts,
         });
 
@@ -367,7 +359,6 @@ export const track = (eventType: EventType) =>
                     response,
                     finalCandidate,
                     pricingInput,
-                    mediaProviderReportedCostUsd,
                 );
                 if (responseTracking.cacheHit) {
                     await releaseApiKeyBudgetReservation(c.var, c.env);
@@ -673,7 +664,6 @@ export async function trackResponse(
     response: Response,
     candidate: FallbackCandidate,
     pricingInput?: PricingInput,
-    mediaProviderReportedCostUsd?: number,
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
@@ -684,9 +674,6 @@ export async function trackResponse(
     const cacheHit = response.headers.get("x-cache") === "HIT";
     const fallbackUsed =
         modelCalled !== resolvedModelRequested || parseFallbackUsed(response);
-    let providerReportedCostUsd = cacheHit
-        ? undefined
-        : mediaProviderReportedCostUsd;
     const notBilled = (
         extra?: Partial<ResponseTrackingData>,
     ): ResponseTrackingData => ({
@@ -696,7 +683,6 @@ export async function trackResponse(
         hasCostEstimate: false,
         fallbackUsed,
         modelProviderUsed,
-        providerReportedCostUsd,
         ...extra,
     });
 
@@ -749,12 +735,6 @@ export async function trackResponse(
     const billingInput = modelUsage?.pricingInput
         ? { ...pricingInput, ...modelUsage.pricingInput }
         : pricingInput;
-    if (eventType === "generate.text") {
-        providerReportedCostUsd = getProviderReportedCostUsd(
-            modelProviderUsed,
-            output,
-        );
-    }
     const finishError =
         eventType === "generate.text" ? finishReasonError(output) : undefined;
     if (finishError) {
@@ -780,7 +760,6 @@ export async function trackResponse(
             }),
             modelUsed,
             modelProviderUsed,
-            providerReportedCostUsd,
             usage,
             contentFilterResults,
             errorTracking: {
@@ -844,7 +823,6 @@ export async function trackResponse(
                 ...adjustmentOnlyBilling,
                 modelUsed,
                 modelProviderUsed,
-                providerReportedCostUsd,
                 usage: {},
                 contentFilterResults,
             };
@@ -885,7 +863,6 @@ export async function trackResponse(
         costVariant,
         modelUsed,
         modelProviderUsed,
-        providerReportedCostUsd,
         usage: modelUsage.usage,
         contentFilterResults,
     };
@@ -1183,7 +1160,6 @@ function createTrackingEvent({
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
-        providerReportedCostUsd: responseTracking.providerReportedCostUsd,
         hasCostEstimate: responseTracking.hasCostEstimate ?? false,
         modelProviderUsed:
             responseTracking.modelProviderUsed ?? requestTracking.modelProvider,

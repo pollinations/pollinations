@@ -6,7 +6,6 @@ import type { Usage } from "@shared/registry/registry.ts";
 import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
 
 export interface TrackingData {
-    providerReportedCostUsd?: number;
     actualModel?: string;
     usage: Usage & Record<string, unknown>; // Allow extra fields like totalTokenCount
 }

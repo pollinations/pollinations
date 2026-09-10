@@ -76,8 +76,6 @@ export type TinybirdEvent = {
     /** Public ID of the serving model, including when a fallback ran. */
     modelUsed?: string;
     modelProviderUsed?: string;
-    /** Absent means unknown; a reported zero is a measured zero. */
-    providerReportedCostUsd?: number;
     /** Whether totalCost uses validated usage; false for missing usage or fee-only estimates. */
     hasCostEstimate?: boolean;
     /** Named conditional pricing sheet selected for this billed request. */

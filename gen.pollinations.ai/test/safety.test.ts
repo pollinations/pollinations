@@ -787,7 +787,6 @@ describe("applySafetyToInput", { timeout: 30000 }, () => {
                     streamRequested: false,
                     overrideResponseTracking() {},
                     setPricingInput() {},
-                    setProviderReportedCost() {},
                     attempts: [],
                 });
                 c.set("model", {

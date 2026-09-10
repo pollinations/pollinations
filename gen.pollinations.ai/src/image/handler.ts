@@ -431,11 +431,6 @@ export async function generateImageOrVideoResponse(
             result,
             result.mimeType || detectMimeType(result.buffer),
         );
-        if ("providerReportedCostUsd" in result.trackingData) {
-            c.var.track?.setProviderReportedCost(
-                result.trackingData.providerReportedCostUsd,
-            );
-        }
         if (servedIndex > 0) {
             // Same shape text emits, so tracking has one fallback marker.
             headers.set(

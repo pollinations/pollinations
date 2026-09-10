@@ -121,6 +121,7 @@ interface MediaItemResponse {
     url: string;
     contentType: string;
     size: number | null;
+    source: "upload" | "generation";
     tags: string[];
     createdAt: string;
 }
@@ -134,6 +135,7 @@ function toItemResponse(
         url: mediaUrl(item.id),
         contentType: item.contentType,
         size: item.size,
+        source: item.source,
         tags: tagsByItem.get(item.id) ?? [],
         createdAt: item.createdAt.toISOString(),
     };
@@ -225,6 +227,9 @@ const MediaItemResponseSchema = z.object({
     url: z.string().describe("Public retrieval URL"),
     contentType: z.string(),
     size: z.number().int().nullable().describe("File size in bytes"),
+    source: z
+        .enum(["upload", "generation"])
+        .describe("Whether the item was uploaded or generated"),
     tags: z.array(z.string()),
     createdAt: z.string().describe("ISO-8601 timestamp"),
 });
@@ -695,7 +700,6 @@ api.get(
         summary: "List your private media",
         description:
             "List every upload and generation associated with you, tagged or not, newest first — including items you've never published. Tags still control what's *additionally* visible in a public gallery; this list is independent of that and requires your **secret (`sk_`)** API key. This does not change the visibility of existing retrieval URLs: an untagged item stays reachable by anyone who has (or guesses) its URL. **Alpha:** this endpoint is new and its API may still change.",
-        security: [],
         responses: {
             200: {
                 description: "Page of your media items",
@@ -878,7 +882,10 @@ api.delete(
             itemId: id,
         });
         if (!unlinked) {
-            return c.json({ error: "This item is not in your private list" }, 404);
+            return c.json(
+                { error: "This item is not in your private list" },
+                404,
+            );
         }
 
         console.log(
@@ -934,7 +941,7 @@ api.delete(
                 },
             },
             404: {
-                description: "No published media item with this id",
+                description: "No cataloged media item with this id",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -973,7 +980,7 @@ api.delete(
 
         const id = c.req.param("id");
         const db = getDb(c.env.DB);
-        // Only cataloged (published) items are deletable: an uncataloged id
+        // Only cataloged user uploads are deletable: an uncataloged id
         // has no owner record to authorize against, so it answers 404 just
         // like an unknown id.
         const owner = await catalogItemOwner(db, id);
@@ -1125,6 +1132,10 @@ app.get("/", (c) => {
             retrieve: "GET /:id",
             metadata: "GET /:id/metadata",
             listMedia: "GET /media?tag=<tag> (public tag gallery; no auth)",
+            listMyMedia:
+                "GET /media/mine (owner's secret sk_ API key required)",
+            unlinkMyMedia:
+                "DELETE /media/mine/:id (owner's secret sk_ API key required)",
             deleteMedia:
                 "DELETE /media/:id (owner's secret sk_ API key required)",
             docs: "GET /openapi.json",
@@ -1142,7 +1153,7 @@ app.get("/openapi.json", async (c, next) => {
                 title: "media.pollinations.ai",
                 version: "1.0.0",
                 description:
-                    "Media storage for Pollinations. Upload images, audio, and video and get back a unique id and URL. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public. Tagging an upload publishes it to that tag's public gallery; the gallery features (tags, listing, delete) are **alpha** — their API may still change.",
+                    "Media storage for Pollinations. Upload images, audio, and video and get back a unique id and URL. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public. Tagging publishes an upload to a public gallery; authenticated users can list their uploads and generations privately. The catalog features are **alpha** and may still change.",
             },
             servers: [{ url: `https://${DOMAIN}` }],
             components: {

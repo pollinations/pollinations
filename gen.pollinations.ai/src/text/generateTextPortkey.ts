@@ -100,9 +100,8 @@ export async function generateTextPortkey(
         );
     }
 
-    // These options belong to the Responses adapter, not generic providers.
+    // This internal transport belongs only to the Responses adapter.
     delete state.options.responsesFetcher;
-    delete state.options.parallel_tool_calls;
 
     const completion = await genericOpenAIClient(
         state.messages,

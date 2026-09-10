@@ -242,7 +242,11 @@ describe("generateTextPortkey", () => {
         );
     });
 
-    it("sets an owned request deadline below the public gateway limit", async () => {
+    it.each([
+        undefined,
+        false,
+        true,
+    ])("sets the request deadline and preserves explicit parallel_tool_calls (%s)", async (parallel_tool_calls) => {
         const fetcher = vi.fn(
             async (_input: RequestInfo | URL, init?: RequestInit) => {
                 const headers = new Headers(init?.headers);
@@ -250,9 +254,11 @@ describe("generateTextPortkey", () => {
                 expect(headers.get("x-portkey-strict-open-ai-compliance")).toBe(
                     "false",
                 );
-                expect(JSON.parse(String(init?.body))).not.toHaveProperty(
-                    "parallel_tool_calls",
-                );
+                const body = JSON.parse(String(init?.body));
+                expect(body.parallel_tool_calls).toBe(parallel_tool_calls);
+                if (parallel_tool_calls === undefined) {
+                    expect(body).not.toHaveProperty("parallel_tool_calls");
+                }
 
                 return Response.json({
                     model: "provider-model",
@@ -275,7 +281,7 @@ describe("generateTextPortkey", () => {
                     provider: "openai",
                     model: "provider-model",
                 },
-                parallel_tool_calls: false,
+                parallel_tool_calls,
                 portkeyGatewayUrl: "https://portkey.test",
             },
             fetcher,

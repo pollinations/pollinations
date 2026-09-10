@@ -1,6 +1,46 @@
 [
   {
     "emoji": "🖼️",
+    "name": "Men's Fashion Pins",
+    "url": "https://fashionpins4u.blogspot.com/p/mens-fashion-pins.html",
+    "description": "Create attractive images of men's fashion for pinterest using pollinations. this app is using gpt-image-2 model.",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "hindi-status",
+    "githubUserId": "57121339",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-10",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14676",
+    "approvedDate": "2026-09-10",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "✍️",
+    "name": "StoryCraft AI",
+    "url": "https://khushalkks.github.io/pollinations",
+    "description": "StoryCraft AI is an interactive digital storybook and scene illustrator powered directly by Pollinations.ai Text and Image Generation APIs. It uses text.pollinations.ai to generate multi-chapter narra",
+    "language": "en",
+    "category": "writing",
+    "platform": "web",
+    "githubUsername": "khushalkks",
+    "githubUserId": "171438081",
+    "repositoryUrl": "https://github.com/khushalkks/pollinations",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-09",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14655",
+    "approvedDate": "2026-09-10",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🖼️",
     "name": "PolliArena",
     "url": "https://polli-arena.cloudbr.eu.org",
     "description": "Community-driven model benchmark and blind comparison arena for Pollinations image models with native BYOP (Connect User Wallets). Features: - ⚔️ Blind Battle Arena: Pit two secretly randomized models",
@@ -10,14 +50,14 @@
     "githubUsername": "samucastudent",
     "githubUserId": "190228319",
     "repositoryUrl": "https://github.com/samucastudent/polli-arena",
-    "repositoryStars": null,
+    "repositoryStars": 1,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2026-09-08",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14590",
     "approvedDate": "2026-09-09",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 74
   },
   {
     "emoji": "🖼️",
@@ -50,14 +90,14 @@
     "githubUsername": "samucamg",
     "githubUserId": "21285687",
     "repositoryUrl": "https://github.com/samucamg/pollin-uptime",
-    "repositoryStars": null,
+    "repositoryStars": 1,
     "discordUsername": "samucatutoriais7350",
     "other": null,
     "submittedDate": "2026-09-03",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14411",
     "approvedDate": "2026-09-04",
     "byop": false,
-    "requests24h": 28
+    "requests24h": 351
   },
   {
     "emoji": "💬",
@@ -70,14 +110,14 @@
     "githubUsername": "voodoohop",
     "githubUserId": "5099901",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/openwebui",
-    "repositoryStars": 5040,
+    "repositoryStars": 5047,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2026-09-03",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14416",
     "approvedDate": "2026-09-03",
     "byop": false,
-    "requests24h": 631304
+    "requests24h": 543130
   },
   {
     "emoji": "📚",
@@ -97,7 +137,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14310",
     "approvedDate": "2026-09-03",
     "byop": false,
-    "requests24h": 25
+    "requests24h": 24
   },
   {
     "emoji": "🖼️",
@@ -117,7 +157,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14311",
     "approvedDate": "2026-09-02",
     "byop": false,
-    "requests24h": 0
+    "requests24h": 12
   },
   {
     "emoji": "💬",
@@ -137,7 +177,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14035",
     "approvedDate": "2026-09-02",
     "byop": false,
-    "requests24h": 15
+    "requests24h": 9
   },
   {
     "emoji": "🖼️",
@@ -177,7 +217,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/14077",
     "approvedDate": "2026-08-28",
     "byop": false,
-    "requests24h": 28
+    "requests24h": 150
   },
   {
     "emoji": "🖼️",
@@ -260,7 +300,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13997",
     "approvedDate": "2026-08-27",
     "byop": false,
-    "requests24h": 32,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/2426c94c-2a21-43dc-be1c-a5bf3ffe63f2"
   },
   {
@@ -281,7 +321,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13782",
     "approvedDate": "2026-08-26",
     "byop": false,
-    "requests24h": 12,
+    "requests24h": 9,
     "screenshotUrl": "https://media.pollinations.ai/62707afb-bb37-4f5c-832f-e66198a43d08"
   },
   {
@@ -302,7 +342,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13892",
     "approvedDate": "2026-08-26",
     "byop": false,
-    "requests24h": 18,
+    "requests24h": 19,
     "screenshotUrl": "https://media.pollinations.ai/9718f1e8-4c87-4245-807e-eb2621506adb"
   },
   {
@@ -407,7 +447,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13699",
     "approvedDate": "2026-08-23",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 6,
     "screenshotUrl": "https://media.pollinations.ai/39af2aad-365d-4fac-9d3f-723090be9d67"
   },
   {
@@ -533,7 +573,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13559",
     "approvedDate": "2026-08-20",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 469,
     "screenshotUrl": "https://media.pollinations.ai/c62a8f7c-1779-42b8-aacd-22ae20a5b3ad"
   },
   {
@@ -554,7 +594,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13549",
     "approvedDate": "2026-08-18",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 150,
     "screenshotUrl": "https://media.pollinations.ai/5903ec7b-6fa9-4298-a96d-238335f625b7"
   },
   {
@@ -596,7 +636,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13511",
     "approvedDate": "2026-08-18",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/ce8d2bd8-0a10-471f-890e-4d09674f5a3d"
   },
   {
@@ -638,7 +678,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13483",
     "approvedDate": "2026-08-17",
     "byop": false,
-    "requests24h": 451,
+    "requests24h": 36,
     "screenshotUrl": "https://media.pollinations.ai/b7020af4-30b0-449d-a415-5301a6404828"
   },
   {
@@ -659,7 +699,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13448",
     "approvedDate": "2026-08-16",
     "byop": false,
-    "requests24h": 88,
+    "requests24h": 111,
     "screenshotUrl": "https://media.pollinations.ai/4e3bbbc9-c8f5-4ec6-a42a-2566bcde7031"
   },
   {
@@ -680,7 +720,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13331",
     "approvedDate": "2026-08-15",
     "byop": false,
-    "requests24h": 6,
+    "requests24h": 5,
     "screenshotUrl": "https://media.pollinations.ai/4daa2bd5-0f4e-43c7-9a7c-9c1c135d5176"
   },
   {
@@ -785,7 +825,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11729",
     "approvedDate": "2026-08-13",
     "byop": false,
-    "requests24h": 5,
+    "requests24h": 10,
     "screenshotUrl": "https://media.pollinations.ai/8066c37d-d855-4aa1-b58f-26b7a96bfe98"
   },
   {
@@ -890,7 +930,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/13037",
     "approvedDate": "2026-08-09",
     "byop": false,
-    "requests24h": 94,
+    "requests24h": 85,
     "screenshotUrl": "https://media.pollinations.ai/2e3b778c-335d-433c-87cb-40d0ab82eb2f"
   },
   {
@@ -911,7 +951,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10900",
     "approvedDate": "2026-08-08",
     "byop": false,
-    "requests24h": 29,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/318bfb77-244d-4ae2-a9f1-26486715cb82"
   },
   {
@@ -953,7 +993,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11123",
     "approvedDate": "2026-08-08",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/959392eb-3147-4911-91dd-e3acbc380364"
   },
   {
@@ -974,7 +1014,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11153",
     "approvedDate": "2026-08-08",
     "byop": false,
-    "requests24h": 3,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/7c2533e0-8adf-46f4-8851-b4bf85c074b2"
   },
   {
@@ -1121,7 +1161,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11354",
     "approvedDate": "2026-08-08",
     "byop": false,
-    "requests24h": 36,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/64031642-8f78-4e46-87a8-4fc61f21b111"
   },
   {
@@ -1184,7 +1224,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11288",
     "approvedDate": "2026-08-08",
     "byop": false,
-    "requests24h": 15,
+    "requests24h": 13,
     "screenshotUrl": "https://media.pollinations.ai/bc6df011-2d96-4509-ac39-c5e0f65cd3ef"
   },
   {
@@ -1310,7 +1350,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12706",
     "approvedDate": "2026-08-06",
     "byop": false,
-    "requests24h": 12,
+    "requests24h": 6,
     "screenshotUrl": "https://media.pollinations.ai/aee70c45-c1b6-4deb-a14b-5d1f4f8a4d8f"
   },
   {
@@ -1478,7 +1518,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12905",
     "approvedDate": "2026-08-05",
     "byop": false,
-    "requests24h": 3,
+    "requests24h": 22,
     "screenshotUrl": "https://media.pollinations.ai/2a9c2ce0-9ac9-4058-b190-5ba419b347d4"
   },
   {
@@ -1520,7 +1560,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12701",
     "approvedDate": "2026-08-05",
     "byop": false,
-    "requests24h": 46,
+    "requests24h": 94,
     "screenshotUrl": "https://media.pollinations.ai/a3ac7e4e-925b-47d3-93e9-34c49cb0ae8c"
   },
   {
@@ -1667,7 +1707,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12742",
     "approvedDate": "2026-07-28",
     "byop": false,
-    "requests24h": 2223,
+    "requests24h": 821,
     "screenshotUrl": "https://media.pollinations.ai/5b6cafa5-7461-40db-adc9-2072d16387ba"
   },
   {
@@ -1688,7 +1728,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12765",
     "approvedDate": "2026-07-28",
     "byop": false,
-    "requests24h": 437,
+    "requests24h": 107,
     "screenshotUrl": "https://media.pollinations.ai/82614c3c-aef8-4784-97b4-3457aedd1a38"
   },
   {
@@ -1730,7 +1770,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12773",
     "approvedDate": "2026-07-28",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 51,
     "screenshotUrl": "https://media.pollinations.ai/d4fbed8f-2495-489b-8ef1-f903ff6549a0"
   },
   {
@@ -1772,7 +1812,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10355",
     "approvedDate": "2026-07-22",
     "byop": false,
-    "requests24h": 8,
+    "requests24h": 3,
     "screenshotUrl": "https://media.pollinations.ai/ebe81dec-193a-4a04-8016-72a470871c68"
   },
   {
@@ -2087,7 +2127,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11820",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 22,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/0b3e46f4-2d1a-4eac-8d21-eebc49b2d321"
   },
   {
@@ -2122,14 +2162,14 @@
     "githubUsername": "RaptorVampire",
     "githubUserId": "296319174",
     "repositoryUrl": "https://github.com/RaptorVampire/pollinations-image-lab",
-    "repositoryStars": 112,
+    "repositoryStars": 116,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2026-07-01",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12158",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 86,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/b7a2b241-ee93-4931-8f52-f8cf104582ae"
   },
   {
@@ -2297,7 +2337,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11799",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/d7f2233d-9453-4c11-9055-af1b2a3df507"
   },
   {
@@ -2318,7 +2358,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12152",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 9,
     "screenshotUrl": "https://media.pollinations.ai/1936592d-d5a9-4087-848c-c579d1ae1b58"
   },
   {
@@ -2339,7 +2379,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11827",
     "approvedDate": "2026-07-13",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 3,
     "screenshotUrl": "https://media.pollinations.ai/339c63d5-95ef-4d0b-920a-d309e6c6e569"
   },
   {
@@ -2361,7 +2401,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12240",
     "approvedDate": "2026-07-05",
     "byop": false,
-    "requests24h": 631304
+    "requests24h": 543130
   },
   {
     "emoji": "🖼️",
@@ -2381,7 +2421,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12115",
     "approvedDate": "2026-07-05",
     "byop": false,
-    "requests24h": 58,
+    "requests24h": 480,
     "screenshotUrl": "https://media.pollinations.ai/2a5a86f9-b9a7-4258-912f-5746ce5aa237"
   },
   {
@@ -2402,7 +2442,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12217",
     "approvedDate": "2026-07-05",
     "byop": false,
-    "requests24h": 58,
+    "requests24h": 480,
     "screenshotUrl": "https://media.pollinations.ai/d9935197-69f4-44b4-8c4a-b2d62dba6612"
   },
   {
@@ -2633,7 +2673,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/12013",
     "approvedDate": "2026-06-28",
     "byop": false,
-    "requests24h": 32,
+    "requests24h": 30,
     "screenshotUrl": "https://media.pollinations.ai/afd75137-5765-44da-b71c-1e3e375e16e5"
   },
   {
@@ -2654,7 +2694,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/11982",
     "approvedDate": "2026-06-28",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 90,
     "screenshotUrl": "https://media.pollinations.ai/853290d6-8631-43f6-8e48-ddbdd04cb736"
   },
   {
@@ -2843,7 +2883,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10468",
     "approvedDate": "2026-06-02",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 8,
     "screenshotUrl": "https://media.pollinations.ai/97380ee9-e49b-4188-addc-79891f47890a"
   },
   {
@@ -2864,7 +2904,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10234",
     "approvedDate": "2026-06-02",
     "byop": false,
-    "requests24h": 15,
+    "requests24h": 16,
     "screenshotUrl": "https://media.pollinations.ai/d1d4bce8-e6d0-4b38-bd0f-c6877b321b05"
   },
   {
@@ -2927,7 +2967,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10380",
     "approvedDate": "2026-06-02",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 10,
     "screenshotUrl": "https://media.pollinations.ai/7229399e-ed74-4e98-8271-5d429c927c20"
   },
   {
@@ -3053,7 +3093,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10487",
     "approvedDate": "2026-06-01",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/bcdf9453-1a26-43a9-a02a-200cff2b6096"
   },
   {
@@ -3074,7 +3114,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10507",
     "approvedDate": "2026-06-01",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/4bc7a1b1-f075-4ae0-903a-e12527f1cbf9"
   },
   {
@@ -3095,7 +3135,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10484",
     "approvedDate": "2026-06-01",
     "byop": false,
-    "requests24h": 221,
+    "requests24h": 176,
     "screenshotUrl": "https://media.pollinations.ai/dbd7e6df-313f-4093-a1c2-4a688eb90401"
   },
   {
@@ -3200,7 +3240,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10697",
     "approvedDate": "2026-06-01",
     "byop": false,
-    "requests24h": 107,
+    "requests24h": 1490,
     "screenshotUrl": "https://media.pollinations.ai/6147ad0d-2388-4eda-b9cf-f040c39fb0dd"
   },
   {
@@ -3242,7 +3282,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10703",
     "approvedDate": "2026-06-01",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/bcdf9453-1a26-43a9-a02a-200cff2b6096"
   },
   {
@@ -3326,7 +3366,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10101",
     "approvedDate": "2026-05-30",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/5faa4e70-a9f8-4208-b5e3-a2f6fd0fef5f"
   },
   {
@@ -3620,7 +3660,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10015",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/c60287d0-1547-4bf2-ba12-64d9c21629a4"
   },
   {
@@ -3662,7 +3702,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9995",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 1004,
+    "requests24h": 492,
     "screenshotUrl": "https://media.pollinations.ai/67adf1a9-fb34-4251-a209-42ee2b0ffc1f"
   },
   {
@@ -3683,7 +3723,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9994",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 16,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/c3f69469-e409-4e27-bedd-764e37c42628"
   },
   {
@@ -3767,7 +3807,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9987",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 10,
+    "requests24h": 109,
     "screenshotUrl": "https://media.pollinations.ai/7f20cb3c-3c53-48d1-96c1-ef86908a77e1"
   },
   {
@@ -3809,7 +3849,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9956",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 32,
+    "requests24h": 30,
     "screenshotUrl": "https://media.pollinations.ai/9552a085-255a-4647-b4ab-4f82c1f9b83e"
   },
   {
@@ -3851,7 +3891,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9949",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 52,
+    "requests24h": 37,
     "screenshotUrl": "https://media.pollinations.ai/84af02b1-1819-4c4f-a5f5-be68ea07f9db"
   },
   {
@@ -3935,7 +3975,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9196",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 212,
+    "requests24h": 307,
     "screenshotUrl": "https://media.pollinations.ai/d5475b43-a3b7-4fc8-b454-72908c4b02e8"
   },
   {
@@ -3956,7 +3996,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9118",
     "approvedDate": "2026-05-17",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/18d9510c-6016-47cf-bb22-3f9fec64d3b0"
   },
   {
@@ -3998,7 +4038,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9012",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 4,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/406a02b0-e265-4f81-83bf-46423ca77c96"
   },
   {
@@ -4145,7 +4185,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10568",
     "approvedDate": "2026-05-17",
     "byop": false,
-    "requests24h": 41,
+    "requests24h": 42,
     "screenshotUrl": "https://media.pollinations.ai/08124785-7171-4564-a8f8-0eb76ab9ed0c"
   },
   {
@@ -4187,7 +4227,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10958",
     "approvedDate": "2026-05-16",
     "byop": false,
-    "requests24h": 108,
+    "requests24h": 106,
     "screenshotUrl": "https://media.pollinations.ai/26f9d4b5-9a8a-45da-89a3-d6ea1e30e70b"
   },
   {
@@ -4208,7 +4248,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10993",
     "approvedDate": "2026-05-16",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/e4f48491-bd63-4e45-8f3f-ddc94cecf09c"
   },
   {
@@ -4250,7 +4290,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10682",
     "approvedDate": "2026-05-16",
     "byop": false,
-    "requests24h": 629,
+    "requests24h": 86,
     "screenshotUrl": "https://media.pollinations.ai/b2cf7b2c-58e5-40a0-9d37-22248eab6d84"
   },
   {
@@ -4271,7 +4311,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10563",
     "approvedDate": "2026-05-15",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/facd03b0-fc39-4eaa-9729-0dd78296286d"
   },
   {
@@ -4355,7 +4395,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10016",
     "approvedDate": "2026-05-10",
     "byop": false,
-    "requests24h": 38,
+    "requests24h": 289,
     "screenshotUrl": "https://media.pollinations.ai/c810a54c-6af1-42cf-b586-6538c117e3bf"
   },
   {
@@ -4439,7 +4479,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10349",
     "approvedDate": "2026-05-10",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/bcdf9453-1a26-43a9-a02a-200cff2b6096"
   },
   {
@@ -4565,7 +4605,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8932",
     "approvedDate": "2026-05-10",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/bd00bfc8-7a02-4b3c-b050-3c2442b22120"
   },
   {
@@ -4607,7 +4647,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9169",
     "approvedDate": "2026-05-10",
     "byop": false,
-    "requests24h": 139,
+    "requests24h": 76,
     "screenshotUrl": "https://media.pollinations.ai/d0fa6dce-1a5e-4ae7-8fd3-3bc0af9ec46c"
   },
   {
@@ -4628,7 +4668,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10709",
     "approvedDate": "2026-05-10",
     "byop": false,
-    "requests24h": 103,
+    "requests24h": 222,
     "screenshotUrl": "https://media.pollinations.ai/25cdd0c2-5ed9-4e82-a598-de01bb007326"
   },
   {
@@ -4649,7 +4689,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10710",
     "approvedDate": "2026-05-10",
     "byop": false,
-    "requests24h": 31,
+    "requests24h": 13,
     "screenshotUrl": "https://media.pollinations.ai/05bd9ed0-0ac9-416c-a40b-587850361039"
   },
   {
@@ -4670,7 +4710,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10711",
     "approvedDate": "2026-05-10",
     "byop": false,
-    "requests24h": 103,
+    "requests24h": 222,
     "screenshotUrl": "https://media.pollinations.ai/7cc3fafd-dde8-48f6-91a4-04e1c6c47008"
   },
   {
@@ -4775,7 +4815,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10746",
     "approvedDate": "2026-05-09",
     "byop": false,
-    "requests24h": 578,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/ceae69ad-95a2-4c6c-bfc6-5188f1f88e5f"
   },
   {
@@ -4922,7 +4962,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10670",
     "approvedDate": "2026-05-05",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 5,
     "screenshotUrl": "https://media.pollinations.ai/f66ce806-23df-4a1b-aa2b-1d0347820f8d"
   },
   {
@@ -5006,7 +5046,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10390",
     "approvedDate": "2026-04-29",
     "byop": false,
-    "requests24h": 140,
+    "requests24h": 135,
     "screenshotUrl": "https://media.pollinations.ai/c0ebdadc-2f46-418f-8835-042fc8c60ef8"
   },
   {
@@ -5048,7 +5088,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10464",
     "approvedDate": "2026-04-27",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/89634a57-5705-4a63-9313-e3de212a1be4"
   },
   {
@@ -5111,7 +5151,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10464",
     "approvedDate": "2026-04-27",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/89634a57-5705-4a63-9313-e3de212a1be4"
   },
   {
@@ -5237,7 +5277,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9999",
     "approvedDate": "2026-04-20",
     "byop": false,
-    "requests24h": 1004,
+    "requests24h": 492,
     "screenshotUrl": "https://media.pollinations.ai/b7f15460-d2a1-4089-8767-c0ae8de389ac"
   },
   {
@@ -5258,7 +5298,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10340",
     "approvedDate": "2026-04-19",
     "byop": false,
-    "requests24h": 12,
+    "requests24h": 7,
     "screenshotUrl": "https://media.pollinations.ai/8a1ae5e5-2740-411c-9b12-55ec869e4f78"
   },
   {
@@ -5321,7 +5361,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10332",
     "approvedDate": "2026-04-19",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 42,
     "screenshotUrl": "https://media.pollinations.ai/ae8c55a3-24f8-46bd-81ed-efe08e6098c7"
   },
   {
@@ -5384,7 +5424,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4604",
     "approvedDate": "2026-04-18",
     "byop": false,
-    "requests24h": 4,
+    "requests24h": 6,
     "screenshotUrl": "https://media.pollinations.ai/ae17f81c-17b2-4676-a291-7baad08c56b4"
   },
   {
@@ -5426,7 +5466,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10288",
     "approvedDate": "2026-04-17",
     "byop": false,
-    "requests24h": 281,
+    "requests24h": 31,
     "screenshotUrl": "https://media.pollinations.ai/8b770cfb-b4e9-4d43-a67d-69110e79d1db"
   },
   {
@@ -5447,7 +5487,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/10273",
     "approvedDate": "2026-04-17",
     "byop": false,
-    "requests24h": 325,
+    "requests24h": 327,
     "screenshotUrl": "https://media.pollinations.ai/37f4aa10-f7b6-47ea-8f4c-34f5a128921c"
   },
   {
@@ -5489,7 +5529,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2186",
     "approvedDate": "2025-05-31",
     "byop": false,
-    "requests24h": 38,
+    "requests24h": 34,
     "screenshotUrl": "https://media.pollinations.ai/eca74344-6120-4e92-bc5d-aef087713f63"
   },
   {
@@ -5510,7 +5550,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8490",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 297,
+    "requests24h": 201,
     "screenshotUrl": "https://media.pollinations.ai/2816e11e-1142-4b77-8cf0-aba45562933f"
   },
   {
@@ -5671,7 +5711,7 @@
     "githubUsername": "OvertliDS",
     "githubUserId": "188361908",
     "repositoryUrl": "https://github.com/OvertliDS/overtli-studio-suite",
-    "repositoryStars": 16,
+    "repositoryStars": 17,
     "discordUsername": "onmygrizzy21721",
     "other": null,
     "submittedDate": "2026-04-10",
@@ -5762,7 +5802,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9212",
     "approvedDate": "2026-04-09",
     "byop": true,
-    "requests24h": 2,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/6515e15b-d96f-4a26-8974-56a6643f55ca"
   },
   {
@@ -5909,7 +5949,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9103",
     "approvedDate": "2026-04-09",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/2e5e45c4-2eec-4dd7-aa79-1c00604207f0"
   },
   {
@@ -6028,7 +6068,7 @@
     "githubUsername": "SidhuK",
     "githubUserId": "22849795",
     "repositoryUrl": "https://github.com/SidhuK/WardenApp",
-    "repositoryStars": 335,
+    "repositoryStars": 336,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2026-03-17",
@@ -6056,7 +6096,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9972",
     "approvedDate": "2026-04-05",
     "byop": false,
-    "requests24h": 2832,
+    "requests24h": 3481,
     "screenshotUrl": "https://media.pollinations.ai/2caa7efb-bc90-4a57-85e8-b87fa67eecd1"
   },
   {
@@ -6182,7 +6222,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9822",
     "approvedDate": "2026-04-02",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 15,
     "screenshotUrl": "https://media.pollinations.ai/b16cbd75-4473-400c-97b3-10e28bf7e1ec"
   },
   {
@@ -6203,7 +6243,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9841",
     "approvedDate": "2026-04-02",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 74,
     "screenshotUrl": "https://media.pollinations.ai/c7ec7d9d-8722-4d31-80f0-54c2240eb57d"
   },
   {
@@ -6224,7 +6264,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9801",
     "approvedDate": "2026-04-02",
     "byop": false,
-    "requests24h": 45,
+    "requests24h": 17,
     "screenshotUrl": "https://media.pollinations.ai/c0f15332-24da-4686-9617-ca8941b025ac"
   },
   {
@@ -6245,7 +6285,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9791",
     "approvedDate": "2026-04-01",
     "byop": false,
-    "requests24h": 5,
+    "requests24h": 10,
     "screenshotUrl": "https://media.pollinations.ai/ca53c551-28ae-4a00-b6e1-18789286e582"
   },
   {
@@ -6288,7 +6328,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9782",
     "approvedDate": "2026-03-31",
     "byop": false,
-    "requests24h": 22
+    "requests24h": 213
   },
   {
     "emoji": "📝",
@@ -6372,7 +6412,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9782",
     "approvedDate": "2026-03-31",
     "byop": false,
-    "requests24h": 22
+    "requests24h": 213
   },
   {
     "emoji": "📚",
@@ -6413,7 +6453,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9766",
     "approvedDate": "2026-03-31",
     "byop": false,
-    "requests24h": 8,
+    "requests24h": 17,
     "screenshotUrl": "https://media.pollinations.ai/a5a1c06c-cb6d-48f3-b801-280b71885705"
   },
   {
@@ -6455,7 +6495,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9759",
     "approvedDate": "2026-03-31",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/a01f1798-8902-46de-8ad3-ef24c43c95de"
   },
   {
@@ -6476,7 +6516,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9758",
     "approvedDate": "2026-03-31",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/72f9b109-b0d8-4ecd-bd3b-42bab5707b61"
   },
   {
@@ -6539,7 +6579,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9305",
     "approvedDate": "2026-03-30",
     "byop": false,
-    "requests24h": 84,
+    "requests24h": 35,
     "screenshotUrl": "https://media.pollinations.ai/a93eee25-a5ab-483e-ba35-d391e4fc1326"
   },
   {
@@ -6560,7 +6600,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9299",
     "approvedDate": "2026-03-30",
     "byop": false,
-    "requests24h": 118,
+    "requests24h": 3,
     "screenshotUrl": "https://media.pollinations.ai/f16fd966-b3f2-43ed-abb4-21d718ce2cdd"
   },
   {
@@ -6602,7 +6642,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9472",
     "approvedDate": "2026-03-30",
     "byop": false,
-    "requests24h": 21,
+    "requests24h": 28,
     "screenshotUrl": "https://media.pollinations.ai/e21cde7c-2e0d-4bad-a04c-d661e23a597d"
   },
   {
@@ -6623,7 +6663,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9730",
     "approvedDate": "2026-03-30",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 5,
     "screenshotUrl": "https://media.pollinations.ai/62110b0f-b09e-48e4-8d12-edfb413af9c1"
   },
   {
@@ -6707,7 +6747,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9720",
     "approvedDate": "2026-03-29",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/be6b130e-9bcc-4664-a7b1-206f8c61d5c3"
   },
   {
@@ -6728,7 +6768,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9719",
     "approvedDate": "2026-03-29",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 6,
     "screenshotUrl": "https://media.pollinations.ai/e5695d6e-5ee4-404e-976a-3943da4c1b95"
   },
   {
@@ -6812,7 +6852,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9261",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 82,
+    "requests24h": 33,
     "screenshotUrl": "https://media.pollinations.ai/22b3d4c5-7b0e-4b79-8452-49343478579b"
   },
   {
@@ -6854,7 +6894,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9327",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 951,
+    "requests24h": 27,
     "screenshotUrl": "https://media.pollinations.ai/21852067-eb4a-490b-987d-c611d6019d8f"
   },
   {
@@ -7022,7 +7062,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9656",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 11,
+    "requests24h": 13,
     "screenshotUrl": "https://media.pollinations.ai/30b85416-0921-4de1-bf3e-7479226af7ca"
   },
   {
@@ -7085,7 +7125,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9648",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/eb29cd45-715c-437d-bc92-ce79aeacaca4"
   },
   {
@@ -7127,7 +7167,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9639",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 22,
+    "requests24h": 20,
     "screenshotUrl": "https://media.pollinations.ai/a8d0bd73-3cd1-4b87-b0f5-1c488e93f8ac"
   },
   {
@@ -7148,7 +7188,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9631",
     "approvedDate": "2026-03-28",
     "byop": false,
-    "requests24h": 32,
+    "requests24h": 9,
     "screenshotUrl": "https://media.pollinations.ai/33fb0bf2-db5c-4643-82f2-f2eb1783a338"
   },
   {
@@ -7295,7 +7335,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9596",
     "approvedDate": "2026-03-26",
     "byop": false,
-    "requests24h": 282,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/e0afc3d3-5d81-44bb-b65f-7cb0e8456d56"
   },
   {
@@ -7317,7 +7357,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9451",
     "approvedDate": "2026-03-25",
     "byop": false,
-    "requests24h": 2223
+    "requests24h": 821
   },
   {
     "emoji": "⚡",
@@ -7526,7 +7566,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9511",
     "approvedDate": "2026-03-24",
     "byop": false,
-    "requests24h": 28,
+    "requests24h": 351,
     "screenshotUrl": "https://media.pollinations.ai/e71ef244-afee-41ad-b52f-171b7fd18b25"
   },
   {
@@ -7547,7 +7587,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9475",
     "approvedDate": "2026-03-23",
     "byop": false,
-    "requests24h": 24,
+    "requests24h": 19,
     "screenshotUrl": "https://media.pollinations.ai/bbec8cea-059c-41d7-a4b2-b4dd7c757df7"
   },
   {
@@ -7568,7 +7608,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9435",
     "approvedDate": "2026-03-23",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/8f8396f3-c3e0-4320-97fc-8404175e4df4"
   },
   {
@@ -7610,7 +7650,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9449",
     "approvedDate": "2026-03-23",
     "byop": false,
-    "requests24h": 59,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/077e0af8-e635-466a-a439-0e71e9c07949"
   },
   {
@@ -7631,7 +7671,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9411",
     "approvedDate": "2026-03-22",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/070e2db6-63ff-49d0-a012-d250d70a9a34"
   },
   {
@@ -7652,7 +7692,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9416",
     "approvedDate": "2026-03-22",
     "byop": false,
-    "requests24h": 212,
+    "requests24h": 307,
     "screenshotUrl": "https://media.pollinations.ai/d5475b43-a3b7-4fc8-b454-72908c4b02e8"
   },
   {
@@ -7841,7 +7881,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9315",
     "approvedDate": "2026-03-20",
     "byop": false,
-    "requests24h": 4,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/fce65fb8-bf00-4a59-91bb-5407b0272317"
   },
   {
@@ -7883,7 +7923,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8136",
     "approvedDate": "2026-03-20",
     "byop": false,
-    "requests24h": 13,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/5cc086aa-939f-44c1-b423-a8a2ecfafbbc"
   },
   {
@@ -8030,7 +8070,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8707",
     "approvedDate": "2026-03-18",
     "byop": false,
-    "requests24h": 742,
+    "requests24h": 926,
     "screenshotUrl": "https://media.pollinations.ai/3929d329-3559-4f1a-a756-08a294ed1d15"
   },
   {
@@ -8051,7 +8091,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9059",
     "approvedDate": "2026-03-18",
     "byop": false,
-    "requests24h": 18,
+    "requests24h": 21,
     "screenshotUrl": "https://media.pollinations.ai/a2575060-1cc6-4046-8707-75a95905e79f"
   },
   {
@@ -8093,7 +8133,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8878",
     "approvedDate": "2026-03-18",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/b1998f70-1b33-4dbc-bd65-93e2a39dbff7"
   },
   {
@@ -8240,7 +8280,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9058",
     "approvedDate": "2026-03-15",
     "byop": false,
-    "requests24h": 18,
+    "requests24h": 21,
     "screenshotUrl": "https://media.pollinations.ai/4dbb7ac0-dbb7-48d0-b4a5-d1223c186b08"
   },
   {
@@ -8282,7 +8322,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/9085",
     "approvedDate": "2026-03-13",
     "byop": false,
-    "requests24h": 75,
+    "requests24h": 429,
     "screenshotUrl": "https://media.pollinations.ai/c9e70534-b01b-4182-b7b0-c28bbfe13310"
   },
   {
@@ -8303,7 +8343,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8888",
     "approvedDate": "2026-03-07",
     "byop": true,
-    "requests24h": 4,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/f947e704-7789-4bbc-a44f-82701c28f668"
   },
   {
@@ -8366,7 +8406,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8530",
     "approvedDate": "2026-02-24",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/72f52eb7-83e3-4c63-a59f-7fd9a5df84f6"
   },
   {
@@ -8429,7 +8469,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8590",
     "approvedDate": "2026-02-25",
     "byop": true,
-    "requests24h": 6,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/71583878-8251-47d9-8dba-636aab608932"
   },
   {
@@ -8513,7 +8553,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8761",
     "approvedDate": "2026-03-02",
     "byop": false,
-    "requests24h": 9,
+    "requests24h": 11,
     "screenshotUrl": "https://media.pollinations.ai/cc5b7b86-bbaf-42a2-b8fa-06c54c649e37"
   },
   {
@@ -8555,7 +8595,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8768",
     "approvedDate": "2026-03-02",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/31bdc1e1-12a6-470d-817f-375733043bb3"
   },
   {
@@ -8681,7 +8721,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7576",
     "approvedDate": "2026-03-02",
     "byop": false,
-    "requests24h": 17,
+    "requests24h": 58,
     "screenshotUrl": "https://media.pollinations.ai/31cba991-8632-47b1-b6e3-8732771ca348"
   },
   {
@@ -8702,7 +8742,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7642",
     "approvedDate": "2026-03-02",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 8,
     "screenshotUrl": "https://media.pollinations.ai/3791038a-8eb7-4791-bfb8-46ddf4e73e7d"
   },
   {
@@ -8870,7 +8910,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7744",
     "approvedDate": "2026-03-02",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/87884896-60a3-40bd-be88-398d9bafc162"
   },
   {
@@ -8933,7 +8973,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8665",
     "approvedDate": "2026-03-01",
     "byop": false,
-    "requests24h": 704,
+    "requests24h": 2155,
     "screenshotUrl": "https://media.pollinations.ai/8b5379bc-46cc-414d-9cbe-72a405e01c52"
   },
   {
@@ -8954,7 +8994,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8521",
     "approvedDate": "2026-03-01",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 5,
     "screenshotUrl": "https://media.pollinations.ai/bfc0ccff-70d4-4820-b2ee-75f3c92e36c2"
   },
   {
@@ -8996,7 +9036,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8318",
     "approvedDate": "2026-03-01",
     "byop": false,
-    "requests24h": 3,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/da615233-c6f1-46ed-ad66-7c7e77fec2df"
   },
   {
@@ -9059,7 +9099,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8630",
     "approvedDate": "2026-03-01",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/bb4d415c-5552-44cf-a5b1-08d3f56a3742"
   },
   {
@@ -9101,7 +9141,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8218",
     "approvedDate": "2026-03-01",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 15,
     "screenshotUrl": "https://media.pollinations.ai/985226be-46de-4b50-acc5-f10ff8e105c5"
   },
   {
@@ -9206,7 +9246,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8285",
     "approvedDate": "2026-03-01",
     "byop": false,
-    "requests24h": 13,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/8936b940-b7d6-4332-929a-afbabff8bfa5"
   },
   {
@@ -9332,7 +9372,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8475",
     "approvedDate": "2026-02-24",
     "byop": false,
-    "requests24h": 32,
+    "requests24h": 30,
     "screenshotUrl": "https://media.pollinations.ai/8ca9f837-5583-4e43-a989-79c318f48704"
   },
   {
@@ -9584,7 +9624,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7273",
     "approvedDate": "2026-02-24",
     "byop": false,
-    "requests24h": 19,
+    "requests24h": 27,
     "screenshotUrl": "https://media.pollinations.ai/0542a7fa-ab81-4aff-82e6-4af16ebac205"
   },
   {
@@ -9668,7 +9708,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8312",
     "approvedDate": "2026-02-23",
     "byop": false,
-    "requests24h": 140,
+    "requests24h": 31,
     "screenshotUrl": "https://media.pollinations.ai/fdf7b499-6e57-4223-be9e-0f8892356665"
   },
   {
@@ -9731,7 +9771,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7911",
     "approvedDate": "2026-02-23",
     "byop": false,
-    "requests24h": 62,
+    "requests24h": 42,
     "screenshotUrl": "https://media.pollinations.ai/082ae314-d41c-477d-bf94-129c14bf9a4a"
   },
   {
@@ -9773,7 +9813,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7247",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 20,
+    "requests24h": 8,
     "screenshotUrl": "https://media.pollinations.ai/f98b87b0-cd34-4266-8fab-49bdc91e34b1"
   },
   {
@@ -9857,7 +9897,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7626",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 11,
     "screenshotUrl": "https://media.pollinations.ai/a16c2856-b0ef-4d54-9b35-80575f09dbed"
   },
   {
@@ -9920,7 +9960,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7663",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 217,
     "screenshotUrl": "https://media.pollinations.ai/3b6386f9-2e65-4ace-b60b-3673da8a2279"
   },
   {
@@ -9941,7 +9981,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7679",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 6,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/40951f7b-1e8b-43d5-9815-53407184450f"
   },
   {
@@ -9983,7 +10023,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7698",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 206,
+    "requests24h": 224,
     "screenshotUrl": "https://media.pollinations.ai/ad09128d-d596-4d78-9c5d-25b90c1a0abe"
   },
   {
@@ -10025,7 +10065,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7848",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 34,
+    "requests24h": 42,
     "screenshotUrl": "https://media.pollinations.ai/e501c6d0-37c0-4595-95de-826ee99e2c50"
   },
   {
@@ -10067,7 +10107,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7908",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 25,
+    "requests24h": 40,
     "screenshotUrl": "https://media.pollinations.ai/e278cc23-9a7f-4c76-aff7-f7554f503f21"
   },
   {
@@ -10088,7 +10128,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7918",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 3,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/36b6be16-2286-4b5b-bcaa-99fdebcbe2ee"
   },
   {
@@ -10151,7 +10191,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8049",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 60,
+    "requests24h": 33,
     "screenshotUrl": "https://media.pollinations.ai/864714cf-3373-47e6-87e3-08fc324d0a9a"
   },
   {
@@ -10361,7 +10401,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7249",
     "approvedDate": "2026-02-22",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/189d31f9-929e-4f57-abc8-b231b778b259"
   },
   {
@@ -10445,7 +10485,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7327",
     "approvedDate": "2026-02-21",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 6,
     "screenshotUrl": "https://media.pollinations.ai/44232d04-d2e0-40bf-a457-7ee92b4e150c"
   },
   {
@@ -10550,7 +10590,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7882",
     "approvedDate": "2026-02-16",
     "byop": true,
-    "requests24h": 4,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/540c8694-6249-4323-a540-a0894c74320e"
   },
   {
@@ -10592,7 +10632,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8093",
     "approvedDate": "2026-02-16",
     "byop": false,
-    "requests24h": 133,
+    "requests24h": 63,
     "screenshotUrl": "https://media.pollinations.ai/6c5c5425-9ed1-4aca-b72c-70ca0f7caf5c"
   },
   {
@@ -10613,7 +10653,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8191",
     "approvedDate": "2026-02-16",
     "byop": false,
-    "requests24h": 242,
+    "requests24h": 166,
     "screenshotUrl": "https://media.pollinations.ai/a0c89634-b454-4b9b-96bf-41f222f7bcce"
   },
   {
@@ -10655,7 +10695,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7871",
     "approvedDate": "2026-02-16",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/c35f8ec9-5174-4853-9e3e-1965e11f6c57"
   },
   {
@@ -10669,14 +10709,14 @@
     "githubUsername": "fkom13",
     "githubUserId": "188256078",
     "repositoryUrl": "https://github.com/fkom13/opencode-pollinations-plugin",
-    "repositoryStars": 20,
+    "repositoryStars": 22,
     "discordUsername": "Eric Nolo",
     "other": null,
     "submittedDate": "2026-01-28",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7726",
     "approvedDate": "2026-02-16",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/49af64ca-fac1-4169-a2df-839d01883248"
   },
   {
@@ -10690,7 +10730,7 @@
     "githubUsername": "sligter",
     "githubUserId": "23713984",
     "repositoryUrl": "https://github.com/sligter/LandPPT",
-    "repositoryStars": 3588,
+    "repositoryStars": 3590,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2026-01-17",
@@ -10781,7 +10821,7 @@
     "issueUrl": null,
     "approvedDate": "2026-02-16",
     "byop": true,
-    "requests24h": 3,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/c73b6b0c-e595-4228-a92c-d0c5b8c4b02c"
   },
   {
@@ -10823,7 +10863,7 @@
     "issueUrl": null,
     "approvedDate": "2026-02-16",
     "byop": true,
-    "requests24h": 8,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/a86c1c4b-14e6-430b-9a0f-8e0ee6da062d"
   },
   {
@@ -10865,7 +10905,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8002",
     "approvedDate": "2026-02-16",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/9bcc479a-9519-4dd8-9689-5f353d9be742"
   },
   {
@@ -10886,7 +10926,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7276",
     "approvedDate": "2026-02-16",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/42a52c07-74ad-4886-a123-dfba0b5ca77b"
   },
   {
@@ -10907,7 +10947,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7267",
     "approvedDate": "2026-02-16",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/2e3fadca-73a4-419a-9fdc-6e6b40123e8a"
   },
   {
@@ -10928,7 +10968,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7732",
     "approvedDate": "2026-02-16",
     "byop": true,
-    "requests24h": 40,
+    "requests24h": 47,
     "screenshotUrl": "https://media.pollinations.ai/5014f61d-958e-4687-b5ab-8a4e9ca5d5cb"
   },
   {
@@ -10971,7 +11011,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/8287",
     "approvedDate": "2026-02-15",
     "byop": false,
-    "requests24h": 64811
+    "requests24h": 58627
   },
   {
     "emoji": "🛡️",
@@ -11005,7 +11045,7 @@
     "githubUsername": "pollinations",
     "githubUserId": "86964862",
     "repositoryUrl": "https://github.com/pollinations/pollinations",
-    "repositoryStars": 5040,
+    "repositoryStars": 5047,
     "discordUsername": null,
     "other": "[openclaw.ai](https://openclaw.ai)",
     "submittedDate": "2026-02-14",
@@ -11054,7 +11094,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7290",
     "approvedDate": null,
     "byop": false,
-    "requests24h": 4183,
+    "requests24h": 5978,
     "screenshotUrl": "https://media.pollinations.ai/17f87fdf-bbd9-4b07-85c9-eaabb212fcdc"
   },
   {
@@ -11159,7 +11199,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6985",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 115,
+    "requests24h": 9,
     "screenshotUrl": "https://media.pollinations.ai/f4e849d4-dc3d-4a8f-a13b-2e2a7b8cf49c"
   },
   {
@@ -11201,7 +11241,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7109",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 6,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/bfbf62ed-cdc1-48a8-85ba-e65c4605e7cc"
   },
   {
@@ -11264,7 +11304,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7058",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 4,
+    "requests24h": 45,
     "screenshotUrl": "https://media.pollinations.ai/5b34bcef-ccb0-401c-8ce2-8b96e3f7750e"
   },
   {
@@ -11432,7 +11472,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6664",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/b125e798-60db-4f7d-81a1-0b083d1d8857"
   },
   {
@@ -11537,7 +11577,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7064",
     "approvedDate": "2026-01-12",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/a2a50c55-a244-4450-862d-ed89c94b963d"
   },
   {
@@ -11600,7 +11640,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7041",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 80,
+    "requests24h": 71,
     "screenshotUrl": "https://media.pollinations.ai/808e0534-d4b7-48de-a1b0-2747fdad274c"
   },
   {
@@ -11747,7 +11787,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6920",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 10,
+    "requests24h": 59,
     "screenshotUrl": "https://media.pollinations.ai/36a9e3b2-ba8f-409a-9770-0df7e20ebc70"
   },
   {
@@ -11789,7 +11829,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6917",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/1786d822-cb1a-425f-bba5-e3ec9e030dc1"
   },
   {
@@ -11852,7 +11892,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6882",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 18,
+    "requests24h": 42,
     "screenshotUrl": "https://media.pollinations.ai/8fd0ca3d-3126-43f3-826f-a181e0f00d29"
   },
   {
@@ -11894,7 +11934,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6856",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 322,
+    "requests24h": 215,
     "screenshotUrl": "https://media.pollinations.ai/93e68642-a5a7-41cd-a819-46ac941b09e2"
   },
   {
@@ -11936,7 +11976,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7192",
     "approvedDate": "2026-01-13",
     "byop": false,
-    "requests24h": 440,
+    "requests24h": 59,
     "screenshotUrl": "https://media.pollinations.ai/207b2b12-aacc-430e-b96d-190b1c998aa1"
   },
   {
@@ -12020,7 +12060,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7208",
     "approvedDate": "2026-01-13",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/9fbb9edc-a0a0-499b-8a62-c2f7d3d3855d"
   },
   {
@@ -12041,7 +12081,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7088",
     "approvedDate": "2026-01-12",
     "byop": false,
-    "requests24h": 6,
+    "requests24h": 3,
     "screenshotUrl": "https://media.pollinations.ai/b739105f-598d-4f79-ba83-6d8c99f8d0b7"
   },
   {
@@ -12062,7 +12102,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7076",
     "approvedDate": "2026-01-10",
     "byop": false,
-    "requests24h": 203,
+    "requests24h": 195,
     "screenshotUrl": "https://media.pollinations.ai/c57c9033-1183-4d49-b516-fb92a686ada2"
   },
   {
@@ -12104,7 +12144,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6980",
     "approvedDate": "2026-01-09",
     "byop": false,
-    "requests24h": 6,
+    "requests24h": 3,
     "screenshotUrl": "https://media.pollinations.ai/3eb10cc1-1020-4d80-adcc-815b5a3004a0"
   },
   {
@@ -12125,7 +12165,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6959",
     "approvedDate": "2026-01-09",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/efe16876-d689-45f4-abf9-950159673178"
   },
   {
@@ -12230,7 +12270,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6505",
     "approvedDate": "2026-01-04",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 9,
     "screenshotUrl": "https://media.pollinations.ai/d3957f87-67f0-4894-8dc0-17921cdf0428"
   },
   {
@@ -12335,7 +12375,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6762",
     "approvedDate": "2026-01-03",
     "byop": false,
-    "requests24h": 56,
+    "requests24h": 35,
     "screenshotUrl": "https://media.pollinations.ai/b830dd53-9dce-4300-a623-60cb334e22a7"
   },
   {
@@ -12356,7 +12396,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/7595",
     "approvedDate": "2026-01-03",
     "byop": true,
-    "requests24h": 97,
+    "requests24h": 13,
     "screenshotUrl": "https://media.pollinations.ai/073d4e53-a0d7-4b9f-bc9d-dcd86e11d293"
   },
   {
@@ -12461,7 +12501,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5826",
     "approvedDate": "2025-12-09",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/806a94ca-6389-4edc-9f4f-c40ba3d3b5b1"
   },
   {
@@ -12482,7 +12522,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6714",
     "approvedDate": "2026-01-02",
     "byop": false,
-    "requests24h": 19,
+    "requests24h": 11,
     "screenshotUrl": "https://media.pollinations.ai/fc877222-edd8-48a7-a54d-9febd0dbea80"
   },
   {
@@ -12524,7 +12564,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6711",
     "approvedDate": "2026-01-02",
     "byop": false,
-    "requests24h": 1919,
+    "requests24h": 1801,
     "screenshotUrl": "https://media.pollinations.ai/4288fcde-57e7-4390-b28e-33ac78229d7b"
   },
   {
@@ -12671,7 +12711,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6653",
     "approvedDate": "2025-12-31",
     "byop": false,
-    "requests24h": 3,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/cfe044f6-fb9d-4cff-b9fb-24572f9c57c0"
   },
   {
@@ -12713,7 +12753,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6647",
     "approvedDate": "2025-12-31",
     "byop": false,
-    "requests24h": 76,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/ac9c3202-6e30-4f63-b1dd-6960fa20cfb8"
   },
   {
@@ -12902,7 +12942,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6635",
     "approvedDate": "2025-12-30",
     "byop": false,
-    "requests24h": 19,
+    "requests24h": 32,
     "screenshotUrl": "https://media.pollinations.ai/48e5d4ab-1426-41e1-ab76-0acdae4821ce"
   },
   {
@@ -12923,7 +12963,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6551",
     "approvedDate": "2025-12-29",
     "byop": false,
-    "requests24h": 57,
+    "requests24h": 68,
     "screenshotUrl": "https://media.pollinations.ai/cb8dde72-a779-40a6-92d7-4a8afe35aa03"
   },
   {
@@ -12986,7 +13026,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6510",
     "approvedDate": "2025-12-28",
     "byop": false,
-    "requests24h": 3,
+    "requests24h": 13,
     "screenshotUrl": "https://media.pollinations.ai/27920ee6-d1ec-4db1-94f8-53756ed9ac64"
   },
   {
@@ -13028,7 +13068,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6504",
     "approvedDate": "2025-12-27",
     "byop": false,
-    "requests24h": 124,
+    "requests24h": 280,
     "screenshotUrl": "https://media.pollinations.ai/3713bbb7-2707-4ca5-8afb-fe12ac39470b"
   },
   {
@@ -13070,7 +13110,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6780",
     "approvedDate": "2025-12-27",
     "byop": false,
-    "requests24h": 328,
+    "requests24h": 951,
     "screenshotUrl": "https://media.pollinations.ai/e475f0d0-a562-45af-89ae-2b1b05c9a713"
   },
   {
@@ -13175,7 +13215,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6407",
     "approvedDate": "2025-12-24",
     "byop": false,
-    "requests24h": 21,
+    "requests24h": 4,
     "screenshotUrl": "https://media.pollinations.ai/89191bca-e2fa-40fc-aa6d-3ef2e9e00560"
   },
   {
@@ -13238,7 +13278,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6421",
     "approvedDate": "2025-12-24",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/4aa41441-fc7c-4974-a70b-5601da1208ef"
   },
   {
@@ -13259,7 +13299,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6438",
     "approvedDate": "2025-12-24",
     "byop": false,
-    "requests24h": 50,
+    "requests24h": 62,
     "screenshotUrl": "https://media.pollinations.ai/3bf2027a-7abe-4d1d-aacf-ce50f35a0dd6"
   },
   {
@@ -13280,7 +13320,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6424",
     "approvedDate": "2025-12-24",
     "byop": true,
-    "requests24h": 40,
+    "requests24h": 47,
     "screenshotUrl": "https://media.pollinations.ai/86198728-ff3c-4157-9acb-6074c2d86178"
   },
   {
@@ -13301,7 +13341,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6352",
     "approvedDate": "2025-12-22",
     "byop": false,
-    "requests24h": 58,
+    "requests24h": 83,
     "screenshotUrl": "https://media.pollinations.ai/fc30ed4b-dc15-4934-bf9b-e890eede8d8a"
   },
   {
@@ -13364,7 +13404,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6331",
     "approvedDate": "2025-12-22",
     "byop": true,
-    "requests24h": 40,
+    "requests24h": 47,
     "screenshotUrl": "https://media.pollinations.ai/f043f7fc-a465-473d-b106-5f250a1ec597"
   },
   {
@@ -13427,7 +13467,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6227",
     "approvedDate": "2025-12-20",
     "byop": false,
-    "requests24h": 1,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/655913bd-f0e4-4798-95b9-dd4a58b83f70"
   },
   {
@@ -13448,7 +13488,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5660",
     "approvedDate": "2025-12-20",
     "byop": false,
-    "requests24h": 704,
+    "requests24h": 2155,
     "screenshotUrl": "https://media.pollinations.ai/d1609b17-46f2-40d2-a22e-c4984f1db0cf"
   },
   {
@@ -13532,7 +13572,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6100",
     "approvedDate": "2025-12-16",
     "byop": false,
-    "requests24h": 780,
+    "requests24h": 111,
     "screenshotUrl": "https://media.pollinations.ai/6822822c-f92b-451f-a078-741391957aad"
   },
   {
@@ -13637,7 +13677,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5965",
     "approvedDate": "2025-12-13",
     "byop": false,
-    "requests24h": 4,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/340c124e-1791-4786-b17a-38189827bc0c"
   },
   {
@@ -13679,7 +13719,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4914",
     "approvedDate": "2025-12-13",
     "byop": false,
-    "requests24h": 106,
+    "requests24h": 133,
     "screenshotUrl": "https://media.pollinations.ai/7f997220-5f6a-4eb2-96cf-c8c55bda287e"
   },
   {
@@ -13700,7 +13740,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5373",
     "approvedDate": "2025-12-13",
     "byop": false,
-    "requests24h": 5,
+    "requests24h": 8,
     "screenshotUrl": "https://media.pollinations.ai/ea338ed0-0a86-4929-9008-989d9325a915"
   },
   {
@@ -13847,7 +13887,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4930",
     "approvedDate": "2025-12-13",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/63cef618-5f05-410b-9a2a-4096aef295fd"
   },
   {
@@ -13910,7 +13950,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5658",
     "approvedDate": "2025-12-04",
     "byop": false,
-    "requests24h": 50,
+    "requests24h": 55,
     "screenshotUrl": "https://media.pollinations.ai/5bd8d0be-e588-4ce6-8076-20e94a8a8408"
   },
   {
@@ -13952,7 +13992,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5662",
     "approvedDate": "2025-12-04",
     "byop": false,
-    "requests24h": 3,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/fa2f9a7d-c7cd-42bd-a81f-0cd349c11c1e"
   },
   {
@@ -13973,7 +14013,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5640",
     "approvedDate": "2025-12-04",
     "byop": false,
-    "requests24h": 45,
+    "requests24h": 56,
     "screenshotUrl": "https://media.pollinations.ai/640310ef-1c69-4903-9f40-a6fbfbdaab47"
   },
   {
@@ -14078,7 +14118,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5588",
     "approvedDate": "2025-12-03",
     "byop": false,
-    "requests24h": 111,
+    "requests24h": 437,
     "screenshotUrl": "https://media.pollinations.ai/78a3fe4a-fa5c-45a3-91c3-56b8b04a01f1"
   },
   {
@@ -14141,7 +14181,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5628",
     "approvedDate": "2025-12-03",
     "byop": false,
-    "requests24h": 264,
+    "requests24h": 159,
     "screenshotUrl": "https://media.pollinations.ai/5fefba7e-5c52-40a7-a805-7cd4470c7792"
   },
   {
@@ -14204,7 +14244,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/5490",
     "approvedDate": "2025-11-30",
     "byop": false,
-    "requests24h": 39,
+    "requests24h": 48,
     "screenshotUrl": "https://media.pollinations.ai/1056f386-9978-40d2-b914-52f0927fb2f3"
   },
   {
@@ -14330,7 +14370,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4832",
     "approvedDate": "2025-10-28",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/7854897c-2446-48d6-b30d-3174fc296318"
   },
   {
@@ -14351,7 +14391,7 @@
     "issueUrl": null,
     "approvedDate": "2025-10-26",
     "byop": false,
-    "requests24h": 631304,
+    "requests24h": 543130,
     "screenshotUrl": "https://media.pollinations.ai/c0a95e1b-1525-4f34-9f16-24094c73b5d1"
   },
   {
@@ -14498,7 +14538,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4718",
     "approvedDate": "2025-10-22",
     "byop": false,
-    "requests24h": 780,
+    "requests24h": 111,
     "screenshotUrl": "https://media.pollinations.ai/6ca1c4ac-5623-4192-92ba-f6a3e7bb13d0"
   },
   {
@@ -14603,7 +14643,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4587",
     "approvedDate": "2025-10-16",
     "byop": false,
-    "requests24h": 20,
+    "requests24h": 8,
     "screenshotUrl": "https://media.pollinations.ai/420f5f87-2f9e-410e-b724-12a509ffebd3"
   },
   {
@@ -14624,7 +14664,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4586",
     "approvedDate": "2025-10-16",
     "byop": false,
-    "requests24h": 1139,
+    "requests24h": 1308,
     "screenshotUrl": "https://media.pollinations.ai/e5ac195c-cdf1-44ab-81cf-4d74faca1ae5"
   },
   {
@@ -14764,7 +14804,7 @@
     "githubUsername": "AdityaTel89",
     "githubUserId": "101270144",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/map-to-isometric",
-    "repositoryStars": 5040,
+    "repositoryStars": 5047,
     "discordUsername": null,
     "other": null,
     "submittedDate": null,
@@ -14785,7 +14825,7 @@
     "githubUsername": "prateekverma145",
     "githubUserId": "148776148",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/product-packaging-designer",
-    "repositoryStars": 5040,
+    "repositoryStars": 5047,
     "discordUsername": null,
     "other": null,
     "submittedDate": null,
@@ -14827,7 +14867,7 @@
     "githubUsername": "anmolsah",
     "githubUserId": "113588714",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/virtual-makeup",
-    "repositoryStars": 5040,
+    "repositoryStars": 5047,
     "discordUsername": null,
     "other": null,
     "submittedDate": null,
@@ -14848,7 +14888,7 @@
     "githubUsername": "codevector-2003",
     "githubUserId": "197366900",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/ai-dungeon-master",
-    "repositoryStars": 5040,
+    "repositoryStars": 5047,
     "discordUsername": null,
     "other": null,
     "submittedDate": null,
@@ -14897,7 +14937,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4287",
     "approvedDate": "2025-10-02",
     "byop": false,
-    "requests24h": 264,
+    "requests24h": 159,
     "screenshotUrl": "https://media.pollinations.ai/b7b24296-6c2a-4a48-ba58-615c6a723c59"
   },
   {
@@ -14912,14 +14952,14 @@
     "githubUsername": "voodoohop",
     "githubUserId": "5099901",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/sirius-cybernetics-elevator-challenge",
-    "repositoryStars": 5040,
+    "repositoryStars": 5047,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-06-04",
     "issueUrl": null,
     "approvedDate": "2025-10-02",
     "byop": false,
-    "requests24h": 631304
+    "requests24h": 543130
   },
   {
     "emoji": "😼",
@@ -14933,14 +14973,14 @@
     "githubUsername": "voodoohop",
     "githubUserId": "5099901",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/catgpt",
-    "repositoryStars": 5040,
+    "repositoryStars": 5047,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-06-05",
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2284",
     "approvedDate": "2025-10-01",
     "byop": false,
-    "requests24h": 631304
+    "requests24h": 543130
   },
   {
     "emoji": "�",
@@ -15002,7 +15042,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/4102",
     "approvedDate": "2025-09-21",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/bbe3169b-28c9-4c8a-9e0b-6ef5ad4e8a22"
   },
   {
@@ -15254,7 +15294,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/3589",
     "approvedDate": "2025-08-11",
     "byop": false,
-    "requests24h": 47,
+    "requests24h": 49,
     "screenshotUrl": "https://media.pollinations.ai/ded5e7ff-fed4-47b6-b296-d0441f5b32bf"
   },
   {
@@ -15275,7 +15315,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2041",
     "approvedDate": "2025-08-08",
     "byop": false,
-    "requests24h": 6,
+    "requests24h": 5,
     "screenshotUrl": "https://media.pollinations.ai/dc297e1f-2316-402f-a466-6dd8e4500692"
   },
   {
@@ -15296,7 +15336,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/3400",
     "approvedDate": "2025-08-05",
     "byop": false,
-    "requests24h": 2,
+    "requests24h": 0,
     "screenshotUrl": "https://media.pollinations.ai/ce2f4472-0635-4d69-b0fc-1df1d04c6a19"
   },
   {
@@ -15485,7 +15525,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1294",
     "approvedDate": "2025-07-15",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/cf4c599d-ff84-4534-975f-c81de1525a14"
   },
   {
@@ -15674,7 +15714,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2961",
     "approvedDate": "2025-07-12",
     "byop": false,
-    "requests24h": 32,
+    "requests24h": 30,
     "screenshotUrl": "https://media.pollinations.ai/eb0e7d0a-449c-4782-8166-c5d4b308ca14"
   },
   {
@@ -15758,7 +15798,7 @@
     "issueUrl": null,
     "approvedDate": "2025-07-05",
     "byop": false,
-    "requests24h": 24,
+    "requests24h": 19,
     "screenshotUrl": "https://media.pollinations.ai/ab42ed5e-562b-4f3b-9165-73940ce86589"
   },
   {
@@ -15842,7 +15882,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2362",
     "approvedDate": "2025-06-13",
     "byop": false,
-    "requests24h": 24,
+    "requests24h": 19,
     "screenshotUrl": "https://media.pollinations.ai/c94aeea7-bb91-41f4-96c6-1042eb5292ab"
   },
   {
@@ -15926,7 +15966,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2224",
     "approvedDate": "2025-06-03",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/3d09f8a8-bca8-4485-9ea5-b7bf5da77f24"
   },
   {
@@ -15989,7 +16029,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2164",
     "approvedDate": "2025-05-30",
     "byop": false,
-    "requests24h": 46207,
+    "requests24h": 47276,
     "screenshotUrl": "https://media.pollinations.ai/fa88ffc4-d331-4c88-b84e-3b49d680c2e0"
   },
   {
@@ -16010,7 +16050,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2146",
     "approvedDate": "2025-05-30",
     "byop": false,
-    "requests24h": 206,
+    "requests24h": 224,
     "screenshotUrl": "https://media.pollinations.ai/d41c06e3-ee9b-4a72-ac24-48e60a227367"
   },
   {
@@ -16157,7 +16197,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1998",
     "approvedDate": "2025-05-19",
     "byop": false,
-    "requests24h": 268,
+    "requests24h": 146,
     "screenshotUrl": "https://media.pollinations.ai/804998cd-180a-46dc-a30c-516ba8118615"
   },
   {
@@ -16234,7 +16274,7 @@
     "githubUsername": "aandrew-me",
     "githubUserId": "66430340",
     "repositoryUrl": "https://github.com/aandrew-me/tgpt",
-    "repositoryStars": 3255,
+    "repositoryStars": 3256,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-12-28",
@@ -16262,7 +16302,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1971",
     "approvedDate": "2025-05-13",
     "byop": false,
-    "requests24h": 10,
+    "requests24h": 9,
     "screenshotUrl": "https://media.pollinations.ai/4c0795eb-a6e0-484c-9f56-59e1212db6fd"
   },
   {
@@ -16276,7 +16316,7 @@
     "githubUsername": "harry0703",
     "githubUserId": "4928832",
     "repositoryUrl": "https://github.com/harry0703/MoneyPrinterTurbo",
-    "repositoryStars": 121651,
+    "repositoryStars": 122033,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-05-29",
@@ -16535,7 +16575,7 @@
     "issueUrl": null,
     "approvedDate": "2025-04-30",
     "byop": false,
-    "requests24h": 56,
+    "requests24h": 35,
     "screenshotUrl": "https://media.pollinations.ai/21242ef2-e36b-4f85-8ade-40f2c0c191a5"
   },
   {
@@ -16556,7 +16596,7 @@
     "issueUrl": null,
     "approvedDate": "2025-04-30",
     "byop": false,
-    "requests24h": 56,
+    "requests24h": 35,
     "screenshotUrl": "https://media.pollinations.ai/3892c9ac-7e2f-4f60-aed7-d26ec9de2365"
   },
   {
@@ -16612,7 +16652,7 @@
     "githubUsername": "aidevs",
     "githubUserId": "19439409",
     "repositoryUrl": "https://github.com/vercel/ai/tree/main/examples/ai-image-generator",
-    "repositoryStars": 26649,
+    "repositoryStars": 26659,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-06-04",
@@ -16661,7 +16701,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1730",
     "approvedDate": "2025-04-20",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 9,
     "screenshotUrl": "https://media.pollinations.ai/4108cef5-ec21-4c2f-a96e-d6b61142de44"
   },
   {
@@ -16724,7 +16764,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1045",
     "approvedDate": "2025-04-15",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/c40c18b6-985f-45a8-a134-04e337ec0181"
   },
   {
@@ -16745,7 +16785,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1680",
     "approvedDate": "2025-04-15",
     "byop": false,
-    "requests24h": 631304,
+    "requests24h": 543130,
     "screenshotUrl": "https://media.pollinations.ai/cdf20f1c-84f7-432c-9499-44bde583dc9d"
   },
   {
@@ -16766,7 +16806,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1685",
     "approvedDate": "2025-04-15",
     "byop": false,
-    "requests24h": 46,
+    "requests24h": 94,
     "screenshotUrl": "https://media.pollinations.ai/2077c109-b940-44d7-9b7d-693c5e6f8a55"
   },
   {
@@ -16787,7 +16827,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/920",
     "approvedDate": "2025-04-15",
     "byop": true,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/3386bf04-0114-46f5-8a9f-66ce4a742fef"
   },
   {
@@ -16892,7 +16932,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1467",
     "approvedDate": "2025-03-28",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 2,
     "screenshotUrl": "https://media.pollinations.ai/985d3389-1be9-4048-ae32-9924d610a767"
   },
   {
@@ -17102,7 +17142,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/1349",
     "approvedDate": "2025-03-14",
     "byop": false,
-    "requests24h": 80,
+    "requests24h": 71,
     "screenshotUrl": "https://media.pollinations.ai/de0f6cf6-aaea-475b-944d-1a8149cf841d"
   },
   {
@@ -17207,7 +17247,7 @@
     "issueUrl": null,
     "approvedDate": "2025-03-01",
     "byop": true,
-    "requests24h": 40,
+    "requests24h": 47,
     "screenshotUrl": "https://media.pollinations.ai/fc0bf140-28ba-4d8d-901a-cbc9f50cb72f"
   },
   {
@@ -17221,7 +17261,7 @@
     "githubUsername": "lobehub",
     "githubUserId": "131470832",
     "repositoryUrl": "https://github.com/lobehub/lobehub",
-    "repositoryStars": 82335,
+    "repositoryStars": 82365,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-06-04",
@@ -17417,7 +17457,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/2268",
     "approvedDate": "2024-12-18",
     "byop": false,
-    "requests24h": 36,
+    "requests24h": 53,
     "screenshotUrl": "https://media.pollinations.ai/d4e0f497-3b41-4ea3-8f2d-2d95eef818a7"
   },
   {
@@ -17536,7 +17576,7 @@
     "githubUsername": "QwenLM",
     "githubUserId": "141221163",
     "repositoryUrl": "https://github.com/QwenLM/Qwen-Agent",
-    "repositoryStars": 17078,
+    "repositoryStars": 17082,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-03-25",
@@ -17557,7 +17597,7 @@
     "githubUsername": "SillyTavern",
     "githubUserId": "134869877",
     "repositoryUrl": "https://github.com/SillyTavern/SillyTavern",
-    "repositoryStars": 33166,
+    "repositoryStars": 33194,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-05-29",
@@ -17606,7 +17646,7 @@
     "issueUrl": null,
     "approvedDate": null,
     "byop": false,
-    "requests24h": 15,
+    "requests24h": 16,
     "screenshotUrl": "https://media.pollinations.ai/0691f900-175a-4775-af42-ebe16822fe7b"
   },
   {
@@ -17648,7 +17688,7 @@
     "issueUrl": "https://github.com/pollinations/pollinations/issues/6670",
     "approvedDate": "2025-12-31",
     "byop": false,
-    "requests24h": 0,
+    "requests24h": 1,
     "screenshotUrl": "https://media.pollinations.ai/b125e798-60db-4f7d-81a1-0b083d1d8857"
   },
   {
@@ -17662,7 +17702,7 @@
     "githubUsername": "pollinations-test",
     "githubUserId": "151645294",
     "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/packages/sdk",
-    "repositoryStars": 5040,
+    "repositoryStars": 5047,
     "discordUsername": null,
     "other": null,
     "submittedDate": "2025-06-04",

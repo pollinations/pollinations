@@ -1,0 +1,14 @@
+.connect-screen-window { display: flex; flex-direction: column; width: 100%; height: 100%; overflow: hidden; }
+.connect-window-bar { flex: none; display: flex; align-items: center; gap: 6px; height: 38px; padding: 0 12px; background: var(--polli-color-surface-menu); color: var(--polli-color-text-base); font: 12px/1.3 var(--polli-font-body); white-space: nowrap; }
+.connect-window-bar strong { font-weight: 600; }
+.connect-window-owner { color: var(--polli-color-text-muted); overflow: hidden; text-overflow: ellipsis; }
+.connect-window-content { flex: 1; min-height: 0; overflow: hidden; }
+.connect-terminal-window { background: #10151c; color: #e6edf3; }
+.connect-terminal-window .connect-window-bar { background: #252c36; color: #e6edf3; }
+.connect-terminal-window .connect-window-owner { color: #b1bac4; }
+.connect-terminal-output { height: 100%; padding: 24px; text-align: left; font: 13px/1.6 ui-monospace, monospace; overflow: auto; }
+.connect-terminal-output pre { margin: 0; white-space: pre-wrap; font: inherit; }
+.connect-terminal-output .connect-terminal-link, .connect-terminal-output .connect-terminal-link:hover { display: inline; width: auto; padding: 0; background: transparent; color: #79c0ff; font: inherit; text-decoration: underline; border-radius: 0; overflow-wrap: anywhere; white-space: normal; text-align: left; }
+
+.connect-terminal-device { display: flex; align-items: center; justify-content: center; height: 100%; padding: 16px; background: var(--polli-color-app-bg); }
+.connect-terminal-device .connect-terminal-window { height: auto; min-height: 300px; max-width: 680px; border-radius: 8px; box-shadow: 0 8px 24px #0003; }

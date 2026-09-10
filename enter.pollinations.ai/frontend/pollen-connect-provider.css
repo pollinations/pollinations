@@ -1,0 +1,41 @@
+.connect-provider-screen { width: 100%; height: 100%; min-height: 0; overflow: auto; padding: 32px 24px; font: 14px/1.5 Arial, sans-serif; text-align: left; }
+#root > .connect-provider-screen { min-height: 100dvh; }
+.connect-provider-brand { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 8px 0 32px; font-size: 30px; font-weight: 600; }
+.connect-provider-brand img, .connect-provider-brand svg { flex: none; }
+.connect-provider-content { width: 100%; max-width: 420px; margin: 0 auto; }
+.connect-provider-github { background: #0d1117; color: #f0f6fc; --provider-surface: #161b22; --provider-muted: #b1bac4; --provider-accent: #238636; --provider-button-text: #fff; }
+.connect-provider-stripe { background: #f6f8fc; color: #30313d; --provider-surface: #fff; --provider-muted: #596171; --provider-accent: #635bff; --provider-button-text: #fff; }
+.connect-stripe-wordmark { color: #635bff; font-size: 48px; font-weight: 800; letter-spacing: -3px; }
+.connect-provider-screen .canvas-illustration { height: auto; padding: 0; background: transparent; color: inherit; font: inherit; text-align: left; align-items: stretch; }
+.connect-provider-screen .canvas-illustration h3 { font: 500 24px/1.3 Arial, sans-serif; text-align: center; }
+.connect-provider-screen .canvas-illustration p { color: var(--provider-muted); }
+.connect-provider-screen .canvas-illustration .mock-field,
+.connect-provider-screen .canvas-illustration .mock-permissions { background: var(--provider-surface); border: 1px solid color-mix(in srgb, currentColor 18%, transparent); border-radius: 6px; }
+.connect-provider-screen .canvas-illustration .external-button,
+.connect-provider-screen .canvas-illustration .external-button:hover,
+.connect-provider-screen .provider-pay,
+.connect-provider-screen .provider-pay:hover { background: var(--provider-accent); color: var(--provider-button-text); border-radius: 6px; font-family: Arial, sans-serif; font-weight: 600; }
+.connect-provider-screen .journey-quiet,
+.connect-provider-screen .journey-quiet:hover,
+.connect-provider-screen .provider-cancel,
+.connect-provider-screen .provider-cancel:hover { background: transparent; color: inherit; font-family: Arial, sans-serif; }
+.connect-provider-screen .provider-checkout-card { background: var(--provider-surface); color: inherit; padding: 24px; border-radius: 10px; box-shadow: 0 6px 24px #30313d12; }
+.provider-checkout-card h1 { font: 600 22px/1.3 Arial, sans-serif; }
+.provider-checkout-summary { padding: 16px 0; color: var(--provider-muted); }
+.provider-checkout-summary strong { color: #30313d; font-size: 20px; }
+.provider-checkout-actions { display: flex; flex-direction: column-reverse; gap: 8px; margin-top: 24px; }
+
+body.polli-ui-body:has(#root > .connect-provider-screen) { max-width: none; padding: 0; }
+.provider-checkout-actions > button { width: 100%; }
+
+/* Neutral developer-app context around the shared SDK button and account menu. */
+.connect-developer-app {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 24px;
+    background: #dbeafe;
+}
+.dark .connect-developer-app { background: #172e50; }

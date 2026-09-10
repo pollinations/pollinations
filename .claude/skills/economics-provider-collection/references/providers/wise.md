@@ -19,7 +19,7 @@ Primary evidence sources:
 - Dashboard/export: Wise Activities export; per-balance statement CSVs
   (Balances → statement) — complete settled truth incl. fees and running
   balance, and the workaround while the statement API's SCA key is unregistered.
-- Local files: Wise CSV/JSON/screenshots already placed in `data/inbox/`.
+- Local files: Wise CSV/JSON/screenshots already placed in `<collection-dir>/evidence/`.
 - Transaction context: `economics_bank_ledger`.
 
 Credentials are SOPS-encrypted in `secrets/env.json` as `WISE_API_TOKEN`,
@@ -43,7 +43,7 @@ Collection steps:
 3. For cash-now verification, list `STANDARD` balances and convert each balance
    to the chosen reporting currency with an explicit dated FX source. Do not
    persist the snapshot and do not include Jars unless the user asks.
-4. Save raw API/export JSON, CSV, or screenshots to `data/inbox/` when the
+4. Save raw API/export JSON, CSV, or screenshots to `<collection-dir>/evidence/` when the
    result will become durable evidence.
 5. Use this skill when exported transaction
    evidence needs to become an entry.

@@ -96,7 +96,7 @@ class AIConfig:
     token: str
 
     def model_for(self, task: str) -> str:
-        """Model override for a specific task (web_search, data_viz), else the default."""
+        """Model override for a specific task, else the default."""
         return self.task_models.get(task, self.model)
 
     @property

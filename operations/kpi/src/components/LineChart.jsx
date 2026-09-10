@@ -133,6 +133,8 @@ export function LineChart({
     format = "number",
     dualAxis = false,
     action,
+    xLabel = (row) => weekLabel(row.week),
+    xAxisUnit = "week",
 }) {
     const [ref, width] = useElementWidth();
     const [hover, setHover] = useState(null);
@@ -262,7 +264,7 @@ export function LineChart({
                         width={width}
                         height={HEIGHT}
                         role="img"
-                        aria-label={`${title}: ${series.map((item) => item.label).join(", ")} by week`}
+                        aria-label={`${title}: ${series.map((item) => item.label).join(", ")} by ${xAxisUnit}`}
                         onPointerLeave={() => setHover(null)}
                         onPointerMove={(event) => {
                             const bounds =
@@ -321,7 +323,7 @@ export function LineChart({
                                     textAnchor="middle"
                                     className="fill-theme-text-muted text-[10px] tabular-nums"
                                 >
-                                    {weekLabel(row.week)}
+                                    {xLabel(row)}
                                 </text>
                             ) : null,
                         )}
@@ -393,7 +395,7 @@ export function LineChart({
                         }}
                     >
                         <Text as="div" size="micro" tone="muted" weight="bold">
-                            {weekLabel(points[hover].week)}
+                            {xLabel(points[hover])}
                         </Text>
                         {series.map((item, index) => (
                             <div

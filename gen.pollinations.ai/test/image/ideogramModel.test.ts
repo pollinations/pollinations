@@ -47,7 +47,7 @@ function mockReplicateFetch(requests: ReplicateRequest[]) {
 }
 
 const baseParams: ImageParams = {
-    model: "ideogram-v4-balanced",
+    model: "ideogram-ai/ideogram-v4-balanced",
     width: 2048,
     height: 2048,
     dimensionsExplicit: false,
@@ -83,7 +83,7 @@ describe("ideogramReplicateModel - routing & billing", () => {
 
         const result = await callIdeogramTurboAPI("a sign reading OPEN", {
             ...baseParams,
-            model: "ideogram-v4-turbo",
+            model: "ideogram-ai/ideogram-v4-turbo",
         });
 
         expect(requests).toHaveLength(1);
@@ -91,7 +91,9 @@ describe("ideogramReplicateModel - routing & billing", () => {
             "https://api.replicate.com/v1/models/ideogram-ai/ideogram-v4-turbo/predictions",
         );
         expect(inputOf(requests[0]).prompt).toBe("a sign reading OPEN");
-        expect(result.trackingData?.actualModel).toBe("ideogram-v4-turbo");
+        expect(result.trackingData?.actualModel).toBe(
+            "ideogram-ai/ideogram-v4-turbo",
+        );
         expect(result.trackingData?.usage?.completionImageTokens).toBe(1);
     });
 
@@ -109,7 +111,7 @@ describe("ideogramReplicateModel - routing & billing", () => {
         mockReplicateFetch(requests);
         await callIdeogramQualityAPI("x", {
             ...baseParams,
-            model: "ideogram-v4-quality",
+            model: "ideogram-ai/ideogram-v4-quality",
         });
         expect(requests[0].url).toBe(
             "https://api.replicate.com/v1/models/ideogram-ai/ideogram-v4-quality/predictions",

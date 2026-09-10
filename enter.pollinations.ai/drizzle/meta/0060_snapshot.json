@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "e159cc99-2f50-40e8-806b-c9a3130147e9",
+  "id": "a40da44b-b536-4ec3-854e-3f6b17aa8bf0",
   "prevId": "07a530e0-43ca-4118-a9af-2bdb67d62fcb",
   "tables": {
     "account": {
@@ -137,6 +137,14 @@
           "primaryKey": true,
           "notNull": true,
           "autoincrement": false
+        },
+        "config_id": {
+          "name": "config_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'default'"
         },
         "name": {
           "name": "name",
@@ -317,6 +325,13 @@
           "name": "idx_apikey_user_id",
           "columns": [
             "user_id"
+          ],
+          "isUnique": false
+        },
+        "idx_apikey_config_id": {
+          "name": "idx_apikey_config_id",
+          "columns": [
+            "config_id"
           ],
           "isUnique": false
         },
@@ -1384,13 +1399,6 @@
         },
         "stripe_customer_id": {
           "name": "stripe_customer_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "stripe_payment_restriction": {
-          "name": "stripe_payment_restriction",
           "type": "text",
           "primaryKey": false,
           "notNull": false,

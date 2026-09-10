@@ -1,0 +1,143 @@
+name: Repo / Ask Polli
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+  issues:
+    types: [opened, assigned]
+
+jobs:
+  authorize:
+    if: |
+      (
+        contains(fromJSON('[5099901,36901823,158852059,74301576]'), github.event.sender.id) ||
+        (
+          contains(fromJSON('[34513273,204561696,182555207,189873015,228371309]'), github.event.sender.id) &&
+          (
+            github.event_name == 'pull_request_review_comment' ||
+            github.event_name == 'pull_request_review' ||
+            (github.event_name == 'issue_comment' && github.event.issue.pull_request)
+          )
+        )
+      ) &&
+      github.triggering_actor == github.actor && github.event.sender.login == github.actor &&
+      (
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '!askpolli')) ||
+        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '!askpolli')) ||
+        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '!askpolli')) ||
+        (github.event_name == 'issues' && (contains(github.event.issue.body, '!askpolli') || contains(github.event.issue.title, '!askpolli')))
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+      actions: read
+    outputs:
+      authorized: ${{ steps.authorization.outputs.authorized }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - id: authorization
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_JSON: ${{ toJSON(github.event) }}
+          ACTOR: ${{ github.actor }}
+          TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+        run: |
+          node --input-type=module <<'NODE' >> "$GITHUB_OUTPUT"
+          import { authorizePolli } from "./.github/scripts/polli-authorization.mjs";
+          const event = JSON.parse(process.env.EVENT_JSON);
+          const authorized = authorizePolli({
+            eventName: process.env.EVENT_NAME,
+            event,
+            actor: process.env.ACTOR,
+            triggeringActor: process.env.TRIGGERING_ACTOR,
+            mode: "read",
+          });
+          process.stdout.write(`authorized=${authorized}\n`);
+          NODE
+
+  answer:
+    needs: authorize
+    if: needs.authorize.outputs.authorized == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+      actions: read
+    outputs:
+      answer: ${{ steps.review.outputs.answer }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - id: review
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_EVENT_JSON: ${{ toJSON(github.event) }}
+          POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
+        run: |
+          answer="$(node .github/scripts/askpolli-run.mjs)"
+          printf 'answer=%s\n' "$answer" >> "$GITHUB_OUTPUT"
+
+  publish:
+    needs: answer
+    if: needs.answer.outputs.answer != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ANSWER: ${{ needs.answer.outputs.answer }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile } from "node:fs/promises";
+          const answer = JSON.parse(process.env.ANSWER);
+          const event = JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH, "utf8"));
+          const issueNumber = event.issue?.number || event.pull_request?.number;
+          const keys = Object.keys(answer).sort();
+          if (
+            keys.length !== 2 ||
+            keys[0] !== "answer" ||
+            keys[1] !== "version" ||
+            answer.version !== 1 ||
+            typeof answer.answer !== "string" ||
+            !answer.answer.trim() ||
+            answer.answer.length > 6_000 ||
+            !Number.isInteger(issueNumber)
+          ) {
+            throw new Error("Invalid read-only answer artifact.");
+          }
+          const response = await fetch(
+            `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/issues/${issueNumber}/comments`,
+            {
+              method: "POST",
+              headers: {
+                Accept: "application/vnd.github+json",
+                Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+                "Content-Type": "application/json",
+                "X-GitHub-Api-Version": "2022-11-28",
+              },
+              body: JSON.stringify({ body: answer.answer }),
+              signal: AbortSignal.timeout(30_000),
+            },
+          );
+          if (!response.ok) throw new Error(`Publishing answer failed with ${response.status}.`);
+          NODE

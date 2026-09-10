@@ -18,7 +18,7 @@ function pngDataUri(width: number, height: number): string {
 
 function makeParams(overrides: Partial<ImageParams> = {}): ImageParams {
     return {
-        model: "gpt-image-2",
+        model: "openai/gpt-image-2",
         width: 1024,
         height: 1024,
         dimensionsExplicit: false,

@@ -24,7 +24,7 @@ GITHUB_TOOLS = [
 Actions:
 - get: Get issue (issue_number, include_comments)
 - get_history: Get edit history - title changes and body edits (issue_number, edit_index=N for full diff of specific edit)
-- search: General issue search with filters (keywords, state, labels)
+- search: Search issues (keywords or native GitHub query; state, labels)
 - search_user: User's issues by discord username (discord_username, state)
 - find_similar: Find potential DUPLICATES before creating new issue (keywords, limit)
 - list_labels / list_milestones: List available
@@ -47,16 +47,60 @@ Actions:
                 "properties": {
                     "action": {
                         "type": "string",
-                        "enum": ["get", "search", "search_user", "find_similar", "create", "comment", "edit", "edit_comment", "delete_comment", "close", "reopen", "label", "unlabel", "assign", "unassign", "milestone", "lock", "link", "get_history", "get_parent", "get_sub_issues", "create_sub_issue", "add_sub_issue", "remove_sub_issue", "list_labels", "list_milestones", "subscribe", "unsubscribe", "unsubscribe_all", "list_subscriptions"],
+                        "enum": [
+                            "get",
+                            "search",
+                            "search_user",
+                            "find_similar",
+                            "create",
+                            "comment",
+                            "edit",
+                            "edit_comment",
+                            "delete_comment",
+                            "close",
+                            "reopen",
+                            "label",
+                            "unlabel",
+                            "assign",
+                            "unassign",
+                            "milestone",
+                            "lock",
+                            "link",
+                            "get_history",
+                            "get_parent",
+                            "get_sub_issues",
+                            "create_sub_issue",
+                            "add_sub_issue",
+                            "remove_sub_issue",
+                            "list_labels",
+                            "list_milestones",
+                            "subscribe",
+                            "unsubscribe",
+                            "unsubscribe_all",
+                            "list_subscriptions",
+                        ],
                         "description": "Issue operation to perform.",
                     },
                     "issue_number": {
                         "type": "integer",
                         "description": "Issue number (for get, close, comment, edit, label, assign, etc.)",
                     },
+                    "cursor": {
+                        "type": "string",
+                        "description": "Returned next_cursor for native-query search, labels, or milestones; keep the same filters.",
+                    },
+                    "edit_index": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "For get_history: fetched edit index, zero is most recent.",
+                    },
                     "keywords": {
                         "type": "string",
                         "description": "Search terms (for search, find_similar)",
+                    },
+                    "query": {
+                        "type": "string",
+                        "description": "For search: native GitHub qualifiers, e.g. is:closed label:bug. Repository-scoped; no implicit open filter.",
                     },
                     "state": {
                         "type": "string",
@@ -246,6 +290,16 @@ Read-only — mutations are blocked.""",
                         "type": "string",
                         "description": "Plain English fallback — describe what data you need",
                     },
+                    "author": {
+                        "type": "string",
+                        "description": "GitHub author login for issue/PR retrieval in request mode; use this field rather than only mentioning an author in request text.",
+                    },
+                    "page": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 10,
+                        "description": "REST page number (default 1); limit sets the page size.",
+                    },
                     "include_body": {
                         "type": "boolean",
                         "description": "Include full body text in results (for request mode)",
@@ -268,7 +322,7 @@ Read-only — mutations are blocked.""",
 Actions:
 - get: Get PR details (pr_number)
 - get_history: Get edit history - title changes and body edits (pr_number, edit_index=N for full diff of specific edit)
-- list: List PRs (state, limit, base)
+- list: List PRs (state, limit, base, author or native GitHub query)
 - get_files/get_diff/get_checks/get_commits: PR details (pr_number)
 - get_threads/get_review_comments: Review discussions (pr_number)
 - get_file_at_ref: Get file content at branch/commit (file_path, ref)
@@ -292,12 +346,60 @@ Actions:
                 "properties": {
                     "action": {
                         "type": "string",
-                        "enum": ["get", "list", "get_files", "get_diff", "get_checks", "get_commits", "get_threads", "get_review_comments", "get_file_at_ref", "get_history", "review", "request_review", "remove_reviewer", "approve", "request_changes", "merge", "update", "close", "reopen", "create", "convert_to_draft", "ready_for_review", "update_branch", "comment", "inline_comment", "suggest", "resolve_thread", "unresolve_thread", "enable_auto_merge", "disable_auto_merge"],
+                        "enum": [
+                            "get",
+                            "list",
+                            "get_files",
+                            "get_diff",
+                            "get_checks",
+                            "get_commits",
+                            "get_threads",
+                            "get_review_comments",
+                            "get_file_at_ref",
+                            "get_history",
+                            "review",
+                            "request_review",
+                            "remove_reviewer",
+                            "approve",
+                            "request_changes",
+                            "merge",
+                            "update",
+                            "close",
+                            "reopen",
+                            "create",
+                            "convert_to_draft",
+                            "ready_for_review",
+                            "update_branch",
+                            "comment",
+                            "inline_comment",
+                            "suggest",
+                            "resolve_thread",
+                            "unresolve_thread",
+                            "enable_auto_merge",
+                            "disable_auto_merge",
+                        ],
                         "description": "PR operation to perform.",
                     },
                     "pr_number": {
                         "type": "integer",
                         "description": "PR number (for most actions)",
+                    },
+                    "author": {
+                        "type": "string",
+                        "description": "GitHub author login filter for list.",
+                    },
+                    "query": {
+                        "type": "string",
+                        "description": "For list: native GitHub qualifiers, e.g. is:merged author:login review:approved. Repository-scoped; no implicit open filter.",
+                    },
+                    "cursor": {
+                        "type": "string",
+                        "description": "Returned next_cursor for native-query list; keep the same query and filters.",
+                    },
+                    "edit_index": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Get the full diff for a fetched history entry (0 is most recent).",
                     },
                     "state": {
                         "type": "string",
@@ -417,6 +519,8 @@ Finding things:
 - tree   — directory layout, to explore an unfamiliar area before drilling in.
 
 Following relationships (symbol graph — pass the symbol name as `query`):
+- symbols — resolve matching symbols with stable IDs, qualified names, signatures, ranges,
+            repository revision, and freshness before traversing ambiguous names.
 - callers — functions that call this symbol. More precise than grep: it distinguishes a
             real call from an import or a comment mentioning the name.
 - callees — functions this symbol calls. Use to understand what something depends on.
@@ -443,6 +547,7 @@ impact("atomicDeductUserBalance") to see the blast radius.""",
                         "read",
                         "list",
                         "tree",
+                        "symbols",
                         "callers",
                         "callees",
                         "impact",
@@ -745,7 +850,7 @@ EXAMPLES:
 - "messages mentioning @user" → mentions="<@123>" (NOT user_id — that means author)
 - "who pinged everyone" → mention_everyone=true
 
-Security: Results filtered to channels the user can access.""",
+Security: Results are filtered to channels the caller can read, including message history. HTTP callers use public scope only; private threads are never exposed. Explicit unavailable channel names fail instead of widening to the guild. Message-search pagination uses offset; an empty indexed result does not prove that a message does not exist.""",
         "parameters": {
             "type": "object",
             "properties": {
@@ -768,33 +873,33 @@ Security: Results filtered to channels the user can access.""",
                     "description": "Search text (required for messages). Mentions auto-parsed.",
                 },
                 "channel_id": {
-                    "type": "integer",
-                    "description": "Filter to specific channel",
+                    "type": "string",
+                    "description": "Discord channel snowflake or <#mention>",
                 },
                 "channel_name": {
                     "type": "string",
                     "description": "Find channel by name (alternative to channel_id)",
                 },
                 "user_id": {
-                    "type": "integer",
-                    "description": "Filter by author or look up member",
+                    "type": "string",
+                    "description": "Discord user snowflake or @mention; filters message author or member lookup",
                 },
-                "role_id": {"type": "integer", "description": "Filter members by role"},
+                "role_id": {"type": "string", "description": "Discord role snowflake or @role mention"},
                 "role_name": {
                     "type": "string",
                     "description": "Find role by name",
                 },
                 "message_id": {
-                    "type": "integer",
-                    "description": "Target message for context action",
+                    "type": "string",
+                    "description": "Target message snowflake for context action",
                 },
                 "thread_id": {
-                    "type": "integer",
-                    "description": "Target thread for thread_history",
+                    "type": "string",
+                    "description": "Target thread snowflake for thread_history",
                 },
                 "channel_type": {
                     "type": "string",
-                    "enum": ["text", "voice", "forum", "category", "news", "stage"],
+                    "enum": ["text", "voice", "forum", "media", "category", "news", "stage"],
                     "description": "Filter channels by type",
                 },
                 "has": {
@@ -804,16 +909,19 @@ Security: Results filtered to channels the user can access.""",
                 },
                 "before": {
                     "type": "string",
-                    "description": "Messages before this date/snowflake ID",
+                    "pattern": "^[0-9]+$",
+                    "description": "Messages before this message snowflake",
                 },
                 "after": {
                     "type": "string",
-                    "description": "Messages after this date/snowflake ID",
+                    "pattern": "^[0-9]+$",
+                    "description": "Messages after this message snowflake",
                 },
                 "top_n": {
                     "type": "integer",
-                    "enum": list(range(1, 101)),
-                    "description": "Required result count. Choose the smallest sufficient value; normally 3-10, up to 100 when independently justified.",
+                    "minimum": 1,
+                    "maximum": 25,
+                    "description": "Required result count. Choose the smallest sufficient value; normally 3-10, maximum 25.",
                 },
                 "sort_by": {
                     "type": "string",
@@ -853,7 +961,9 @@ Security: Results filtered to channels the user can access.""",
                 },
                 "offset": {
                     "type": "integer",
-                    "description": "Pagination offset for targeted follow-up retrieval",
+                    "minimum": 0,
+                    "maximum": 9975,
+                    "description": "Discord search offset for targeted follow-up retrieval",
                 },
                 "include_archived": {
                     "type": "boolean",
@@ -878,12 +988,14 @@ RENDER_VISUAL_TOOL = {
     "type": "function",
     "function": {
         "name": "render_visual",
-        "description": """Render data as an image attached to your reply, instead of writing a markdown table or describing a chart in text.
+        "description": """Create a premium, editorial-quality visual as a high-resolution image attachment. Treat every visual as a finished deliverable: elegant composition, dramatic but truthful hierarchy, descriptive title, precise labels, generous spacing, restrained accessible color, and no clutter.
 
-Types: table, bar, horizontal_bar (long category names), line, area, scatter, pie/donut (≤8 slices), heatmap, histogram, diagram.
+Choose the form autonomously by the data's job: bar for magnitude/ranking, horizontal_bar for long labels, line/area for change over time, scatter for relationships, histogram for distributions, heatmap for a matrix, pie/donut only for ≤8 meaningful parts of a whole, table for exact lookup, and diagram for systems/flows. Never use dual axes, rainbow scales, decorative 3D effects, or color alone to carry meaning. Aggregate excess detail without hiding the conclusion. Keep accompanying prose brief.
+
+Types: table, bar, horizontal_bar, line, area, scatter, pie/donut (≤8 slices), heatmap, histogram, diagram.
 `diagram` is Mermaid — flowchart, sequenceDiagram, classDiagram, stateDiagram, erDiagram, journey, gantt, pie, quadrantChart, requirementDiagram, gitGraph, mindmap, timeline, sankey, xychart, block, packet, kanban, architecture, radar, treemap, C4Context.
 
-For a diagram you usually do not need this tool: a ```mermaid fence in your reply is rendered inline automatically. Use `type: "diagram"` only for a standalone attachment.
+Discord does not render Mermaid fences. Always use `type: "diagram"` when the user asks for a diagram or flowchart; the tool returns an attached image.
 
 Data shape:
 - table:   {"headers": ["A","B"], "rows": [["1","2"], ...]}
@@ -919,9 +1031,7 @@ Callable multiple times per turn; each call attaches one image (Discord caps at 
                     "description": "Title shown above the visual. Keep under 60 chars.",
                 },
                 "data": {
-                    "description": (
-                        "Structured data for tables/charts; Mermaid source (a string) for diagram."
-                    ),
+                    "description": ("Structured data for tables/charts; Mermaid source (a string) for diagram."),
                 },
                 "options": {
                     "type": "object",

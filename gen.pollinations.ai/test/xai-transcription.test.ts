@@ -50,7 +50,9 @@ describe("transcribeWithXai", () => {
             "diarize",
             "file",
         ]);
-        expect(response.headers.get("x-model-used")).toBe("grok-transcribe");
+        expect(response.headers.get("x-model-used")).toBe(
+            "x-ai/grok-transcribe",
+        );
         expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe(
             "3.25",
         );

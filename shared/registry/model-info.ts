@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ModelHealthSchema } from "../schemas/health.ts";
 import { SAFETY_FEATURES } from "../schemas/safety.ts";
 import { publicPriceInfo, toFixedPoint } from "./public-pricing";
 import {
@@ -119,6 +120,7 @@ export const ModelInfoSchema = z.object({
     alpha: z.boolean().optional(),
     flat_rate: z.boolean().optional(),
     added_date: z.number().optional(),
+    health: ModelHealthSchema.optional(),
 });
 
 export type ModelInfo = z.infer<typeof ModelInfoSchema>;

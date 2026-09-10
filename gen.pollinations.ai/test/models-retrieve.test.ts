@@ -152,3 +152,38 @@ test("applies the same 404 rule to aliases of hidden models", async ({
     });
     expect(response.status).toBe(404);
 });
+
+test("returns health metadata on /v1/models and filters by official/reliable params and header", async () => {
+    const listResponse = await fetchWorker("/v1/models");
+    expect(listResponse.status).toBe(200);
+    const listJson = (await listResponse.json()) as {
+        data: Record<string, unknown>[];
+    };
+    expect(Array.isArray(listJson.data)).toBe(true);
+    if (listJson.data.length > 0) {
+        const first = listJson.data[0];
+        expect(first.health).toBeDefined();
+        expect(first.health).toHaveProperty("success_rate");
+        expect(first.health).toHaveProperty("sample_count");
+        expect(first.health).toHaveProperty("window_minutes");
+        expect(first.health).toHaveProperty("freshness");
+    }
+
+    // Filter official=true
+    const officialResponse = await fetchWorker("/v1/models?official=true");
+    expect(officialResponse.status).toBe(200);
+    const officialJson = (await officialResponse.json()) as {
+        data: Record<string, unknown>[];
+    };
+    expect(officialJson.data.every((m) => m.community === false)).toBe(true);
+
+    // Filter via header x-pollinations-model-filter: official
+    const headerResponse = await fetchWorker("/v1/models", {
+        headers: { "x-pollinations-model-filter": "official" },
+    });
+    expect(headerResponse.status).toBe(200);
+    const headerJson = (await headerResponse.json()) as {
+        data: Record<string, unknown>[];
+    };
+    expect(headerJson.data.every((m) => m.community === false)).toBe(true);
+});

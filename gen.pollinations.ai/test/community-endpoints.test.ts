@@ -7622,7 +7622,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
             }
             if (
                 url ===
-                `https://raw.githubusercontent.com/example/agents/${commit}/agent.js`
+                `https://raw.githubusercontent.com/example/agents/${commit}/agent.ts`
             ) {
                 return new Response(source);
             }

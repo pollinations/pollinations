@@ -458,7 +458,7 @@ export function CommunityEndpoints({
                                 </p>
                                 <p className="text-sm text-theme-text-muted">
                                     Build from a prompt and model, or deploy
-                                    agent.js from GitHub.
+                                    agent.ts from GitHub.
                                 </p>
                             </Surface>
                         ) : (

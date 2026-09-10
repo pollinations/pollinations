@@ -15,7 +15,7 @@ export function CodeAgentFields({
     return (
         <FieldStack
             label="GitHub repository"
-            helper="Public repository with agent.js at its root."
+            helper="Public repository with agent.ts at its root."
             alignLabelRow
         >
             <Input

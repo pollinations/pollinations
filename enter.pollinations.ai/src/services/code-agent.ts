@@ -1,4 +1,5 @@
 import { HTTPException } from "hono/http-exception";
+import { transform } from "sucrase";
 import { z } from "zod";
 import { type GitHubApiEnv, githubApiHeaders } from "./github-api.ts";
 
@@ -159,18 +160,18 @@ export async function resolveCodeAgentRepository(
     };
 }
 
-/** Load agent.js from an already resolved, immutable GitHub revision. */
+/** Load agent.ts from an already resolved, immutable GitHub revision. */
 export async function loadCodeAgentSource(
     repository: string,
     commitSha: string,
 ): Promise<string> {
     const { owner, name } = githubRepositoryParts(repository);
     const sourceResponse = await fetch(
-        `${GITHUB_RAW}/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/${commitSha}/agent.js`,
+        `${GITHUB_RAW}/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/${commitSha}/agent.ts`,
     );
     if (sourceResponse.status === 404) {
         throw new HTTPException(400, {
-            message: "agent.js was not found at the repository root",
+            message: "agent.ts was not found at the repository root",
         });
     }
     if (!sourceResponse.ok) {
@@ -181,19 +182,32 @@ export async function loadCodeAgentSource(
     const contentLength = Number(sourceResponse.headers.get("content-length"));
     if (Number.isFinite(contentLength) && contentLength > MAX_SOURCE_BYTES) {
         throw new HTTPException(400, {
-            message: "agent.js must be at most 64 KiB",
+            message: "agent.ts must be at most 64 KiB",
         });
     }
     const source = (await sourceResponse.text()).trim();
     if (!source) {
-        throw new HTTPException(400, { message: "agent.js must not be empty" });
+        throw new HTTPException(400, { message: "agent.ts must not be empty" });
     }
     if (new TextEncoder().encode(source).byteLength > MAX_SOURCE_BYTES) {
         throw new HTTPException(400, {
-            message: "agent.js must be at most 64 KiB",
+            message: "agent.ts must be at most 64 KiB",
         });
     }
     return source;
+}
+
+function transpileCodeAgent(source: string) {
+    try {
+        return transform(source, {
+            transforms: ["typescript"],
+            disableESTransforms: true,
+        }).code;
+    } catch {
+        throw new HTTPException(400, {
+            message: "agent.ts contains invalid TypeScript",
+        });
+    }
 }
 
 function deploymentConfig(env: CodeAgentDeploymentEnv) {
@@ -251,7 +265,9 @@ export async function deployCodeAgent(
     );
     form.set(
         "agent.mjs",
-        new Blob([source], { type: "application/javascript+module" }),
+        new Blob([transpileCodeAgent(source)], {
+            type: "application/javascript+module",
+        }),
         "agent.mjs",
     );
     const response = await fetch(scriptUrl(env, namespace, id), {

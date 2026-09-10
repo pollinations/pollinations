@@ -666,7 +666,7 @@ const GitHubRepositorySchema = z
 export const CodeAgentInputSchema = z
     .object({
         repository: GitHubRepositorySchema.describe(
-            "Public GitHub repository containing agent.js at its root.",
+            "Public GitHub repository containing agent.ts at its root.",
         ),
     })
     .strict();

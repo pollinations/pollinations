@@ -1,6 +1,6 @@
 # Publish an Agent
 
-Publishing an agent creates a reusable text model that Pollinations runs for you. A prompt agent combines instructions, a base model, and optional MCP tools. A code agent deploys one self-contained `agent.js` file from a public GitHub repository.
+Publishing an agent creates a reusable text model that Pollinations runs for you. A prompt agent combines instructions, a base model, and optional MCP tools. A code agent deploys one self-contained `agent.ts` file from a public GitHub repository.
 
 This is different from hosting your own OpenAI-compatible model endpoint. It is also different from [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md), which lets an app ask its users to pay for their own generations.
 
@@ -43,9 +43,9 @@ The `composio` server uses each caller's connections from **Account → MCP Conn
 
 ## Code agent configuration
 
-A code agent uses a public GitHub repository as its source of truth. Put one self-contained `agent.js` at the repository root. The repository name becomes the model ID and title, and its description becomes the catalog description. Repository visibility and agent visibility are independent: a private agent is owner-only even though its source repository is public.
+A code agent uses a public GitHub repository as its source of truth. Put one self-contained `agent.ts` at the repository root. Pollinations removes TypeScript syntax when deploying it; type errors do not block deployment, and plain JavaScript is valid in the same file. The repository name becomes the model ID and title, and its description becomes the catalog description. Repository visibility and agent visibility are independent: a private agent is owner-only even though its source repository is public.
 
-```js
+```ts
 export default async function ({ request, pollinations, mcp }) {
     const { input } = await request.json();
     return pollinations("/v1/responses", {

@@ -21,8 +21,8 @@ describe("code agent deployment", () => {
         const fetchMock = vi.fn(async () => Response.json({ success: true }));
         vi.stubGlobal("fetch", fetchMock);
 
-        const source =
-            "export default async ({ request }) => new Response(request.url);";
+        const source = `type AgentContext = { request: Request };
+export default async ({ request }: AgentContext) => new Response(request.url);`;
         await deployCodeAgent(deploymentEnv, "agent-id", source);
 
         const [url, init] = fetchMock.mock.calls[0];
@@ -47,7 +47,9 @@ describe("code agent deployment", () => {
                 },
             ],
         });
-        expect(await (form.get("agent.mjs") as Blob).text()).toBe(source);
+        const deployedSource = await (form.get("agent.mjs") as Blob).text();
+        expect(deployedSource).toContain("export default async");
+        expect(deployedSource).not.toContain("AgentContext");
         const wrapper = await (form.get("index.mjs") as Blob).text();
         expect(wrapper).toContain('headers.delete("authorization")');
         expect(wrapper).toContain("return fetch(url, init)");
@@ -59,7 +61,7 @@ describe("code agent deployment", () => {
         expect(wrapper).toContain("request: safeRequest, pollinations, mcp");
     });
 
-    it("loads agent.js from an immutable public GitHub revision", async () => {
+    it("loads agent.ts from an immutable public GitHub revision", async () => {
         const source = "export default () => new Response('ok');";
         const commit = "a".repeat(40);
         const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
@@ -77,7 +79,7 @@ describe("code agent deployment", () => {
             }
             if (
                 url ===
-                `https://raw.githubusercontent.com/example/agents/${commit}/agent.js`
+                `https://raw.githubusercontent.com/example/agents/${commit}/agent.ts`
             ) {
                 return new Response(source);
             }
@@ -140,6 +142,23 @@ describe("code agent deployment", () => {
                 "export default () => new Response();",
             ),
         ).rejects.toMatchObject({ status: 503 });
+    });
+
+    it("rejects invalid TypeScript before upload", async () => {
+        const fetchMock = vi.fn();
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            deployCodeAgent(
+                deploymentEnv,
+                "agent-id",
+                "export default function (: string) {}",
+            ),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: "agent.ts contains invalid TypeScript",
+        });
+        expect(fetchMock).not.toHaveBeenCalled();
     });
 
     it("treats an already absent Worker as deleted", async () => {

@@ -375,7 +375,7 @@ export const agentsRoutes = new Hono<Env>()
             tags: ["🤖 Community Agents"],
             summary: "Create Agent",
             description:
-                "Create a prompt agent or deploy `agent.js` from a public GitHub repository. Code-agent identity comes from the repository, and public visibility requires community publisher access. Code agents export a default function accepting `{ request, pollinations, mcp }` and return an OpenAI Responses-compatible Response. API keys require `account:keys`.",
+                "Create a prompt agent or deploy `agent.ts` from a public GitHub repository. Code-agent identity comes from the repository, and public visibility requires community publisher access. Code agents export a default function accepting `{ request, pollinations, mcp }` and return an OpenAI Responses-compatible Response. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Created agent",
@@ -631,7 +631,7 @@ export const publicAgentSyncRoutes = new Hono<Env>().post(
         tags: ["🤖 Community Agents"],
         summary: "Sync Code Agent",
         description:
-            "Deploy the latest `agent.js` revision from a code agent's configured public GitHub repository. The repository binding cannot be changed through this unauthenticated trigger.",
+            "Deploy the latest `agent.ts` revision from a code agent's configured public GitHub repository. The repository binding cannot be changed through this unauthenticated trigger.",
         responses: {
             200: {
                 description: "Agent synchronized",

@@ -24,6 +24,7 @@ type PollenPackSliderProps = {
     label?: string;
     selectedBadgeLabel?: string;
     selectedBadgeDetail?: string;
+    showSelectedBadge?: boolean;
     disabled?: boolean;
 };
 
@@ -34,6 +35,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
     label = "Select amount",
     selectedBadgeLabel,
     selectedBadgeDetail,
+    showSelectedBadge = true,
     disabled = false,
 }) => {
     const selectedIndex = Math.max(
@@ -110,7 +112,7 @@ export const PollenPackSlider: FC<PollenPackSliderProps> = ({
                                             </span>
                                         )}
                                     </span>
-                                    {isSelected && (
+                                    {isSelected && showSelectedBadge && (
                                         <span
                                             className={cn(
                                                 "absolute top-full mt-1 inline-flex flex-col whitespace-nowrap",

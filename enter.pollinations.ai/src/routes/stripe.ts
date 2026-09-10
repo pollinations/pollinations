@@ -26,6 +26,33 @@ import {
     stripeNewCardGateMetadata,
 } from "../utils/stripe-card-gate.ts";
 
+function getCheckoutReturnUrl(
+    baseUrl: string,
+    packKey: string,
+    returnTo?: string,
+): URL {
+    const fallbackUrl = new URL("/pollen", baseUrl);
+    fallbackUrl.searchParams.set("pack", packKey);
+
+    if (!returnTo?.startsWith("/") || returnTo.startsWith("//")) {
+        return fallbackUrl;
+    }
+
+    const requestedUrl = new URL(returnTo, baseUrl);
+    if (
+        requestedUrl.origin !== new URL(baseUrl).origin ||
+        requestedUrl.pathname !== "/authorize"
+    ) {
+        return fallbackUrl;
+    }
+
+    requestedUrl.hash = "";
+    requestedUrl.searchParams.delete("stripe_success");
+    requestedUrl.searchParams.delete("stripe_canceled");
+    requestedUrl.searchParams.delete("session_id");
+    return requestedUrl;
+}
+
 /**
  * Stripe pack configuration
  * Checkout keeps pack pricing USD-native and lets Stripe Adaptive Pricing
@@ -69,12 +96,20 @@ export const stripeRoutes = new Hono<Env>()
         // Create Stripe client
         const stripe = createStripeClient(c.env);
 
-        // Return checkout sessions to the Pollen page for this environment.
+        // Dashboard checkouts return to Pollen. The authorize screen can ask
+        // to resume its exact same-origin consent URL after Checkout.
         const baseUrl =
             c.env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
-        const pollenUrl = new URL("/pollen", baseUrl);
-        pollenUrl.searchParams.set("pack", pack.packKey);
-        const pollenReturnUrl = pollenUrl.toString();
+        const checkoutReturnUrl = getCheckoutReturnUrl(
+            baseUrl,
+            pack.packKey,
+            c.req.query("return_to"),
+        );
+        const successUrl = new URL(checkoutReturnUrl);
+        successUrl.searchParams.set("stripe_success", "true");
+        successUrl.searchParams.set("session_id", "{CHECKOUT_SESSION_ID}");
+        const cancelUrl = new URL(checkoutReturnUrl);
+        cancelUrl.searchParams.set("stripe_canceled", "true");
 
         // Resolve cohort from buyer IP for analytics. Checkout stays USD-native
         // and does not call FX at runtime.
@@ -171,8 +206,13 @@ export const stripeRoutes = new Hono<Env>()
                     },
                 },
                 metadata: packMetadata,
-                success_url: `${pollenReturnUrl}&stripe_success=true&session_id={CHECKOUT_SESSION_ID}`,
-                cancel_url: `${pollenReturnUrl}&stripe_canceled=true`,
+                success_url: successUrl
+                    .toString()
+                    .replace(
+                        "%7BCHECKOUT_SESSION_ID%7D",
+                        "{CHECKOUT_SESSION_ID}",
+                    ),
+                cancel_url: cancelUrl.toString(),
             });
 
             // Redirect to Stripe Checkout (will use checkout.pollinations.ai custom domain)

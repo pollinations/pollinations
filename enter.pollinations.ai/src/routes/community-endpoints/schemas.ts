@@ -444,6 +444,12 @@ export const CommunityEndpointTestResponseSchema = z
             .describe(
                 "Image tests only: input types detected from generation and edit probes.",
             ),
+        responsesSupported: z
+            .boolean()
+            .optional()
+            .describe(
+                "Text endpoints with api=chat_completions only: whether the upstream also supports /v1/responses, detected by an automatic probe.",
+            ),
     })
     .passthrough();
 export const CommunityEndpointDeleteResponseSchema = z.object({

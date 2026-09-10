@@ -3,8 +3,6 @@ import { getTinybirdDatasourceIngestUrl } from "@shared/events.ts";
 import { Hono } from "hono";
 import type { Env } from "../env.ts";
 
-const IMAGE_REF = "image";
-
 async function trackReferral(
     env: CloudflareBindings,
     ref: string,
@@ -38,7 +36,11 @@ async function trackReferral(
 export const referralRoutes = new Hono<Env>().post("/", (c) => {
     const ref = c.req.query("ref");
 
-    if (ref === IMAGE_REF) {
+    if (
+        ref === "image" ||
+        ref === "balance_topup" ||
+        ref === "balance_quests"
+    ) {
         c.executionCtx.waitUntil(
             trackReferral(c.env, ref, c.get("log")).catch((error) =>
                 c.get("log").warn("Referral event ingest failed: {error}", {

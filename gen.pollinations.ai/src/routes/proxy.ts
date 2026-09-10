@@ -23,6 +23,7 @@ import {
     mediaResponseDescription,
 } from "../media/response-output.ts";
 import { mediaResponses } from "../media/responses.ts";
+import { textBalanceNotice } from "../middleware/text-balance-notice.ts";
 import {
     formatOpenAIImageResponse,
     handleImageGeneration,
@@ -207,7 +208,7 @@ const chatCompletionHandlers = factory.createHandlers(
     validator("json", CreateChatCompletionRequestSchema),
     mediaResponses("chat/completions"),
     resolveModel("generate.text"),
-    track("generate.text"),
+    every(textBalanceNotice, track("generate.text")),
     textCache,
     every(generationAccess, deduplicateGeneration),
     apiKeyBudgetReservation,
@@ -219,7 +220,7 @@ const responsesHandlers = factory.createHandlers(
     validator("json", CreateResponseRequestSchema),
     mediaResponses("responses"),
     resolveModel("generate.text"),
-    track("generate.text"),
+    every(textBalanceNotice, track("generate.text")),
     textCache,
     every(generationAccess, deduplicateGeneration),
     apiKeyBudgetReservation,
@@ -668,6 +669,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.",
                 "",
+                "When the balance notice feature is enabled, insufficient wallet balance returns an unbilled assistant message with HTTP 200. JSON output modes retain HTTP 402. Balance notices are never cached.",
                 "Successful text JSON responses contain usage. Text streams contain a usage chunk before `[DONE]`; missing text-provider usage fails the response.",
                 "",
                 mediaResponseDescription,
@@ -714,6 +716,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Response storage, previous response IDs, conversations, background execution, and encrypted or referenced state are not supported. Direct providers may accept caller-supplied function tools; managed prompt agents ignore these definitions and use only their configured MCP tools. Completed MCP output items can be replayed as history without executing them again.",
                 "",
+                "When the balance notice feature is enabled, insufficient wallet balance returns an unbilled assistant message with HTTP 200. JSON output modes retain HTTP 402. Balance notices are never cached.",
                 "Successful text JSON responses and terminal streaming events contain usage; missing text-provider usage fails the response.",
                 "",
                 mediaResponseDescription,
@@ -797,6 +800,7 @@ export const proxyRoutes = new Hono<Env>()
                 "Generate text from an OpenAI-style messages array and return the assistant content directly.",
                 "",
                 "Use `/v1/chat/completions` when you need the full OpenAI-compatible JSON response.",
+                "When the balance notice feature is enabled, insufficient wallet balance returns an unbilled message with HTTP 200. JSON output modes retain HTTP 402. Balance notices are never cached.",
             ].join("\n"),
             responses: {
                 200: {
@@ -809,7 +813,7 @@ export const proxyRoutes = new Hono<Env>()
         textBodyLimit,
         validator("json", CreateChatCompletionRequestSchema),
         resolveModel("generate.text"),
-        track("generate.text"),
+        every(textBalanceNotice, track("generate.text")),
         textCache,
         generationAccess,
         deduplicateGeneration,
@@ -823,6 +827,7 @@ export const proxyRoutes = new Hono<Env>()
             summary: "Simple Text Generation",
             description: [
                 "Generate text from a prompt via a simple GET request. Returns plain text.",
+                "When the balance notice feature is enabled, insufficient wallet balance returns an unbilled message with HTTP 200. `json=true` retains HTTP 402. Balance notices are never cached.",
                 "",
                 "This is a simplified alternative to the OpenAI-compatible `/v1/chat/completions` endpoint — ideal for quick prototyping or simple integrations.",
             ].join("\n"),
@@ -849,7 +854,7 @@ export const proxyRoutes = new Hono<Env>()
         ),
         validator("query", GenerateTextRequestQueryParamsSchema),
         resolveModel("generate.text"),
-        track("generate.text"),
+        every(textBalanceNotice, track("generate.text")),
         textCache,
         generationAccess,
         deduplicateGeneration,

@@ -1,10 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createWorker as createComposioWorker } from "../../apps/composio-mcp/worker.js";
 import {
     deleteCodeAgent,
     deployCodeAgent,
     loadCodeAgentSource,
     resolveCodeAgentRepository,
 } from "../src/services/code-agent.ts";
+import createCodeAgentWorker from "../src/services/code-agent-runtime.js";
+import runtimeModule from "../src/services/code-agent-runtime.js?raw";
 
 const deploymentEnv = {
     ENVIRONMENT: "test",
@@ -50,15 +53,12 @@ export default async ({ request }: AgentContext) => new Response(request.url);`;
         const deployedSource = await (form.get("agent.mjs") as Blob).text();
         expect(deployedSource).toContain("export default async");
         expect(deployedSource).not.toContain("AgentContext");
-        const wrapper = await (form.get("index.mjs") as Blob).text();
-        expect(wrapper).toContain('headers.delete("authorization")');
-        expect(wrapper).toContain("return fetch(url, init)");
-        expect(wrapper).toContain(
-            'accept: "application/json, text/event-stream"',
+        expect(await (form.get("runtime.mjs") as Blob).text()).toBe(
+            runtimeModule,
         );
-        expect(wrapper).toContain('line.startsWith("data:")');
-        expect(wrapper).toContain('method: "tools/call"');
-        expect(wrapper).toContain("request: safeRequest, pollinations, mcp");
+        expect(await (form.get("index.mjs") as Blob).text()).toContain(
+            'import createCodeAgentWorker from "./runtime.mjs"',
+        );
     });
 
     it("loads agent.ts from an immutable public GitHub revision", async () => {
@@ -169,5 +169,212 @@ export default async ({ request }: AgentContext) => new Response(request.url);`;
         await expect(
             deleteCodeAgent(deploymentEnv, "agent-id"),
         ).resolves.toBeUndefined();
+    });
+});
+
+describe("code agent runtime", () => {
+    const runtimeEnv = { POLLINATIONS_BASE_URL: "https://gen.pollinations.ai" };
+
+    it("strips caller credentials and passes through the agent response", async () => {
+        const upstream = new Response("streamed result");
+        const fetchMock = vi.fn(async () => upstream);
+        vi.stubGlobal("fetch", fetchMock);
+        const worker = createCodeAgentWorker(
+            async ({ request, pollinations }) => {
+                expect(request.headers.get("authorization")).toBeNull();
+                expect(request.headers.get("cookie")).toBeNull();
+                expect(await request.json()).toEqual({ input: "hello" });
+                return pollinations("/v1/responses", {
+                    method: "POST",
+                    body: "{}",
+                });
+            },
+        );
+
+        const response = await worker.fetch(
+            new Request("https://code-agent-runtime.invalid/v1/responses", {
+                method: "POST",
+                headers: {
+                    authorization: "Bearer caller-key",
+                    cookie: "session=caller",
+                },
+                body: JSON.stringify({ input: "hello" }),
+            }),
+            runtimeEnv,
+        );
+
+        expect(response).toBe(upstream);
+        expect(String(fetchMock.mock.calls[0][0])).toBe(
+            "https://gen.pollinations.ai/v1/responses",
+        );
+    });
+
+    it.each([
+        "json",
+        "sse",
+    ])("reads a stateless MCP %s result", async (format) => {
+        const result = { content: [{ type: "text", text: "model list" }] };
+        const fetchMock = vi.fn(async (_url, init) => {
+            const message = JSON.parse(init.body);
+            expect(message.method).toBe("tools/call");
+            expect(message.params).toEqual({
+                name: "listModels",
+                arguments: {},
+            });
+            if (format === "json") {
+                return Response.json({
+                    jsonrpc: "2.0",
+                    id: message.id,
+                    result,
+                });
+            }
+            return new Response(
+                [
+                    ": keepalive",
+                    "",
+                    'data: {"jsonrpc":"2.0","method":"notifications/progress","params":{"progress":1}}',
+                    "",
+                    'data: {"jsonrpc":"2.0","id":"another-call","result":{}}',
+                    "",
+                    "event: message",
+                    'data: {"jsonrpc":"2.0",',
+                    `data: "id":"${message.id}",`,
+                    `data: "result":${JSON.stringify(result)}}`,
+                    "",
+                    "data: [DONE]",
+                    "",
+                ].join("\r\n"),
+                { headers: { "content-type": "text/event-stream" } },
+            );
+        });
+        vi.stubGlobal("fetch", fetchMock);
+        const worker = createCodeAgentWorker(async ({ mcp }) =>
+            Response.json(await mcp("pollinations", "listModels")),
+        );
+
+        const response = await worker.fetch(
+            new Request("https://agent.test"),
+            runtimeEnv,
+        );
+        await expect(response.json()).resolves.toEqual(result);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("initializes Composio once per invocation and reuses its session", async () => {
+        let createdSessions = 0;
+        const methods: string[] = [];
+        const composio = createComposioWorker({
+            fetchImpl: async (url, init) => {
+                if (String(url).startsWith("https://backend.composio.dev/")) {
+                    if (init.method === "POST") createdSessions++;
+                    return Response.json({
+                        session_id: "router-session",
+                        mcp: { url: "https://composio.test/mcp" },
+                        config: { user_id: "test-caller" },
+                    });
+                }
+                const message = await new Response(init.body).json();
+                methods.push(message.method);
+                if (message.method === "initialize") {
+                    return Response.json(
+                        {
+                            jsonrpc: "2.0",
+                            id: message.id,
+                            result: { protocolVersion: "2025-06-18" },
+                        },
+                        { headers: { "mcp-session-id": "transport-session" } },
+                    );
+                }
+                expect(new Headers(init.headers).get("mcp-session-id")).toBe(
+                    "transport-session",
+                );
+                expect(
+                    new Headers(init.headers).get("mcp-protocol-version"),
+                ).toBe("2025-06-18");
+                if (message.method === "notifications/initialized") {
+                    return new Response(null, { status: 202 });
+                }
+                return Response.json({
+                    jsonrpc: "2.0",
+                    id: message.id,
+                    result: {
+                        content: [{ type: "text", text: "connected tools" }],
+                    },
+                });
+            },
+        });
+        vi.stubGlobal("fetch", async (url, init) => {
+            expect(String(url)).toBe(
+                "https://gen.pollinations.ai/mcp/composio",
+            );
+            const headers = new Headers(init.headers);
+            headers.set("x-pollinations-user-id", "test-caller");
+            return composio.fetch(
+                new Request("https://mcp.internal/", { ...init, headers }),
+                { COMPOSIO_API_KEY: "test-key" },
+            );
+        });
+        const worker = createCodeAgentWorker(async ({ mcp }) =>
+            Response.json(
+                await Promise.all([
+                    mcp("composio", "COMPOSIO_SEARCH_TOOLS", { queries: [] }),
+                    mcp("composio", "COMPOSIO_SEARCH_TOOLS", { queries: [] }),
+                ]),
+            ),
+        );
+
+        for (let invocation = 0; invocation < 2; invocation++) {
+            const response = await worker.fetch(
+                new Request("https://agent.test"),
+                runtimeEnv,
+            );
+            expect(response.status).toBe(200);
+            await expect(response.json()).resolves.toEqual([
+                { content: [{ type: "text", text: "connected tools" }] },
+                { content: [{ type: "text", text: "connected tools" }] },
+            ]);
+        }
+        expect(createdSessions).toBe(2);
+        expect(methods).toEqual([
+            "initialize",
+            "notifications/initialized",
+            "tools/call",
+            "tools/call",
+            "initialize",
+            "notifications/initialized",
+            "tools/call",
+            "tools/call",
+        ]);
+    });
+
+    it.each([
+        "http",
+        "rpc",
+        "missing-result",
+    ])("returns a generic failure for MCP %s errors", async (failure) => {
+        vi.stubGlobal("fetch", async (_url, init) => {
+            if (failure === "http")
+                return new Response("upstream detail", { status: 503 });
+            const message = JSON.parse(init.body);
+            return Response.json({
+                jsonrpc: "2.0",
+                id: message.id,
+                ...(failure === "rpc"
+                    ? { error: { message: "upstream detail" } }
+                    : {}),
+            });
+        });
+        const worker = createCodeAgentWorker(async ({ mcp }) =>
+            Response.json(await mcp("pollinations", "listModels")),
+        );
+
+        const response = await worker.fetch(
+            new Request("https://agent.test"),
+            runtimeEnv,
+        );
+        expect(response.status).toBe(500);
+        await expect(response.json()).resolves.toEqual({
+            error: { message: "Code agent execution failed" },
+        });
     });
 });

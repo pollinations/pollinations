@@ -755,7 +755,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Update My Model",
             description:
-                "Update a community model owned by the authenticated account. Changing visibility to public requires an allowlisted account and takes effect after 3 hours; public models may be free or priced. API keys require `account:keys`.",
+                "Update a community model owned by the authenticated account. Code-agent names, titles, and descriptions come from GitHub; an empty description is ignored. Changing visibility to public requires an allowlisted account and takes effect after 3 hours; public models may be free or priced. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Updated community model",
@@ -815,7 +815,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
             let pendingAt = pendingReady ? null : endpoint.pendingAt;
             if (input.name !== undefined) update.name = input.name;
             if (input.title !== undefined) update.title = input.title;
-            if (input.description !== undefined) {
+            if (
+                endpoint.type !== "code_agent" &&
+                input.description !== undefined
+            ) {
                 update.description = input.description || null;
             }
             if (input.requiredSafetyFeatures !== undefined) {

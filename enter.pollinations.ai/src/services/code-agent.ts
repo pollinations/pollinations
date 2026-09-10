@@ -1,6 +1,7 @@
 import { HTTPException } from "hono/http-exception";
 import { transform } from "sucrase";
 import { z } from "zod";
+import runtimeModule from "./code-agent-runtime.js?raw";
 import { type GitHubApiEnv, githubApiHeaders } from "./github-api.ts";
 
 type CodeAgentDeploymentEnv = {
@@ -11,79 +12,9 @@ type CodeAgentDeploymentEnv = {
 };
 
 const MAIN_MODULE = `
-function jsonError(message) {
-  return Response.json({ error: { message } }, { status: 500 });
-}
-
-async function readMcpResponse(response) {
-  const text = await response.text();
-  if (!response.headers.get("content-type")?.includes("text/event-stream")) {
-    return JSON.parse(text);
-  }
-  for (const line of text.split(/\\r?\\n/)) {
-    if (!line.startsWith("data:")) continue;
-    const data = line.slice(5).trim();
-    if (data && data !== "[DONE]") return JSON.parse(data);
-  }
-  throw new Error("MCP tool call returned no result");
-}
-
-export default {
-  async fetch(request, env) {
-    const headers = new Headers(request.headers);
-    headers.delete("authorization");
-    headers.delete("cookie");
-    const safeRequest = new Request(request, { headers });
-    const baseUrl = new URL(env.POLLINATIONS_BASE_URL);
-    const pollinations = (path, init = {}) => {
-      const url = new URL(path, baseUrl);
-      if (url.origin !== baseUrl.origin) {
-        throw new Error("pollinations() only accepts Pollinations API URLs");
-      }
-      return fetch(url, init);
-    };
-    const mcp = async (server, tool, args = {}) => {
-      if (typeof server !== "string" || typeof tool !== "string") {
-        throw new Error("mcp() requires a server and tool name");
-      }
-      const response = await pollinations(\`/mcp/\${encodeURIComponent(server)}\`, {
-        method: "POST",
-        headers: {
-          accept: "application/json, text/event-stream",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: crypto.randomUUID(),
-          method: "tools/call",
-          params: { name: tool, arguments: args },
-        }),
-      });
-      if (!response.ok) {
-        throw new Error(\`MCP tool call failed (\${response.status})\`);
-      }
-      const body = await readMcpResponse(response);
-      if (body.error) {
-        throw new Error(body.error.message || "MCP tool call failed");
-      }
-      return body.result;
-    };
-
-    try {
-      const { default: agent } = await import("./agent.mjs");
-      if (typeof agent !== "function") {
-        return jsonError("Code agent must export a default function");
-      }
-      const response = await agent({ request: safeRequest, pollinations, mcp });
-      return response instanceof Response
-        ? response
-        : jsonError("Code agent must return a Response");
-    } catch {
-      console.error("Code agent execution failed");
-      return jsonError("Code agent execution failed");
-    }
-  },
-};
+import agent from "./agent.mjs";
+import createCodeAgentWorker from "./runtime.mjs";
+export default createCodeAgentWorker(agent);
 `.trim();
 
 const GITHUB_API = "https://api.github.com";
@@ -262,6 +193,11 @@ export async function deployCodeAgent(
         "index.mjs",
         new Blob([MAIN_MODULE], { type: "application/javascript+module" }),
         "index.mjs",
+    );
+    form.set(
+        "runtime.mjs",
+        new Blob([runtimeModule], { type: "application/javascript+module" }),
+        "runtime.mjs",
     );
     form.set(
         "agent.mjs",

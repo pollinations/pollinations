@@ -17,70 +17,36 @@ import { PromptAgentFields } from "./prompt-agent-fields.tsx";
 import { SafetyFeatureSelector } from "./safety-feature-selector.tsx";
 import {
     type AgentFormState,
-    type AgentListingDetailsPayload,
-    type AgentPayload,
-    agentListingToForm,
-    type CodeAgentCommunityEndpoint,
-    emptyAgentForm,
+    agentToForm,
     type ManagedAgent,
-    type ModelListingFormState,
-    type PromptAgentCommunityEndpoint,
-    toAgentListingPayload,
-    toAgentPayload,
 } from "./types.ts";
-
-type AgentDialogFormState = AgentFormState & ModelListingFormState;
 
 type AgentDialogProps = {
     agent?: ManagedAgent;
-    endpoint?: PromptAgentCommunityEndpoint | CodeAgentCommunityEndpoint;
     canPublish: boolean;
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onSubmit: (
-        agent: AgentPayload,
-        listing: AgentListingDetailsPayload,
-    ) => Promise<void>;
+    onSubmit: (form: AgentFormState) => Promise<void>;
     trigger?: ReactNode;
 };
 
 export function AgentDialog({
     agent,
-    endpoint,
     canPublish,
     open,
     onOpenChange,
     onSubmit,
     trigger,
 }: AgentDialogProps) {
-    const [form, setForm] = useState<AgentDialogFormState>(() => ({
-        ...agentListingToForm(),
-        ...emptyAgentForm,
-    }));
+    const [form, setForm] = useState(() => agentToForm(agent));
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        setForm({
-            ...agentListingToForm(open ? endpoint : undefined),
-            ...emptyAgentForm,
-            ...(open &&
-                agent?.type === "prompt_agent" && {
-                    systemPrompt: agent.systemPrompt,
-                    baseModel: agent.baseModel,
-                    requiredSafetyFeatures: agent.requiredSafetyFeatures,
-                    mcpServers: agent.mcpServers,
-                }),
-            ...(open &&
-                agent?.type === "code_agent" && {
-                    type: "code_agent" as const,
-                    repository: agent.repository,
-                    requiredSafetyFeatures: agent.requiredSafetyFeatures,
-                }),
-        });
+        setForm(agentToForm(open ? agent : undefined));
         setError(null);
         setIsSubmitting(false);
-    }, [open, agent, endpoint]);
+    }, [open, agent]);
 
     function updateAgentForm(
         key: keyof AgentFormState,
@@ -94,7 +60,7 @@ export function AgentDialog({
         setIsSubmitting(true);
         setError(null);
         try {
-            await onSubmit(toAgentPayload(form), toAgentListingPayload(form));
+            await onSubmit(form);
             onOpenChange(false);
         } catch (thrown) {
             setError(
@@ -114,7 +80,7 @@ export function AgentDialog({
         (form.type === "code_agent" ||
             (form.name.trim() !== "" && form.title.trim() !== "")) &&
         hasRuntimeConfiguration;
-    const submitLabel = endpoint
+    const submitLabel = agent
         ? "Save Agent"
         : form.visibility === "public"
           ? "Publish Agent"

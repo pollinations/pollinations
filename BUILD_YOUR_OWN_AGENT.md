@@ -88,7 +88,7 @@ npx @pollinations/cli agents create \
   --title "Research Assistant"
 ```
 
-The callable model ID is `<your-github-username>/research-assistant`. Code agents derive this name from GitHub instead of accepting `--name`, `--title`, or `--description`. Add `--visibility public` to publish after your account has community publisher access. Managed agents are always text-only and free: they cannot set prices, fallbacks, or a per-user request limit.
+The callable model ID is `<your-github-username>/research-assistant`. Code agents derive their name, title, and description from GitHub; these cannot be overridden through either management API. An empty `description` is accepted and ignored. Add `--visibility public` to publish after your account has community publisher access. Managed agents are always text-only and free: they cannot set prices, fallbacks, or a per-user request limit.
 
 ## Call an agent
 

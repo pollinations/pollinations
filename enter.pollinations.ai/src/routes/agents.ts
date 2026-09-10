@@ -31,7 +31,10 @@ import {
     serializePromptAgentConfig,
 } from "../services/prompt-agent.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
-import { RequiredSafetyFeaturesSchema } from "./community-endpoints/schemas.ts";
+import {
+    CodeAgentUpdateSchema,
+    RequiredSafetyFeaturesSchema,
+} from "./community-endpoints/schemas.ts";
 
 const ListingFieldsSchema = z.object({
     name: z
@@ -72,6 +75,7 @@ const CreatePromptAgentSchema = PromptAgentInputSchema.extend({
 }).strict();
 const CreateCodeAgentSchema = CodeAgentInputSchema.extend({
     type: z.literal("code_agent"),
+    description: CodeAgentUpdateSchema.shape.description,
     visibility: ListingFieldsSchema.shape.visibility
         .optional()
         .default("private"),
@@ -84,12 +88,6 @@ const CreateAgentSchema = z.union([
 const UpdatePromptAgentSchema = PromptAgentInputSchema.extend(
     UpdateListingFieldsSchema.shape,
 ).strict();
-const UpdateCodeAgentSchema = z
-    .object({
-        visibility: ListingFieldsSchema.shape.visibility.optional(),
-        requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional(),
-    })
-    .strict();
 const UpdateAgentEnvelopeSchema = z
     .object({
         ...UpdateListingFieldsSchema.shape,
@@ -501,74 +499,50 @@ export const agentsRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB, { schema });
             const id = c.req.param("id");
             const stored = await requireOwnedAgent(db, id, user.id);
-            let name = stored.name;
-            let title = stored.title;
-            let description = stored.description;
-            let visibility = stored.visibility;
-            let requiredSafetyFeatures = stored.requiredSafetyFeatures;
-            let nextPayload: string;
-            if (stored.type === "code_agent") {
-                const update = UpdateCodeAgentSchema.safeParse(input);
-                const config = parseListingPayload(
-                    "code_agent",
-                    stored.payload,
-                );
-                if (!update.success) {
-                    throw new HTTPException(400, {
-                        message: update.error.issues[0]?.message,
-                    });
-                }
-                if (!config) {
-                    throw new Error(`Agent ${id} has invalid configuration`);
-                }
-                visibility = update.data.visibility ?? visibility;
-                requiredSafetyFeatures =
-                    update.data.requiredSafetyFeatures ??
-                    requiredSafetyFeatures;
-                nextPayload = stored.payload;
-            } else {
-                const update = UpdatePromptAgentSchema.safeParse(input);
-                const config = parseListingPayload(
-                    "prompt_agent",
-                    stored.payload,
-                );
-                if (!update.success) {
-                    throw new HTTPException(400, {
-                        message: update.error.issues[0]?.message,
-                    });
-                }
-                if (!config) {
-                    throw new Error(`Agent ${id} has invalid configuration`);
-                }
-                name = update.data.name ?? name;
-                title = update.data.title ?? title;
-                description =
-                    update.data.description === undefined
-                        ? description
-                        : update.data.description || null;
-                visibility = update.data.visibility ?? visibility;
-                requiredSafetyFeatures =
-                    update.data.requiredSafetyFeatures ??
-                    requiredSafetyFeatures;
-                nextPayload = serializePromptAgentConfig({
-                    systemPrompt:
-                        update.data.systemPrompt ?? config.systemPrompt,
-                    baseModel: update.data.baseModel ?? config.baseModel,
-                    mcpServers: update.data.mcpServers ?? config.mcpServers,
+            const parsed = (
+                stored.type === "code_agent"
+                    ? CodeAgentUpdateSchema
+                    : UpdatePromptAgentSchema
+            ).safeParse(input);
+            if (!parsed.success) {
+                throw new HTTPException(400, {
+                    message: parsed.error.issues[0]?.message,
                 });
             }
-            await requireAgentWriteAccess(db, user.id, name, visibility, id);
+            if (!parseListingPayload(stored.type, stored.payload)) {
+                throw new Error(`Agent ${id} has invalid configuration`);
+            }
+            const data = parsed.data;
+            const update: Partial<
+                typeof schema.communityEndpoint.$inferInsert
+            > = {
+                visibility: data.visibility,
+                requiredSafetyFeatures: data.requiredSafetyFeatures,
+                updatedAt: new Date(),
+            };
+            if ("systemPrompt" in data) {
+                update.name = data.name;
+                update.title = data.title;
+                update.description =
+                    data.description === undefined
+                        ? undefined
+                        : data.description || null;
+                update.payload = serializePromptAgentConfig({
+                    systemPrompt: data.systemPrompt,
+                    baseModel: data.baseModel,
+                    mcpServers: data.mcpServers,
+                });
+            }
+            await requireAgentWriteAccess(
+                db,
+                user.id,
+                update.name ?? stored.name,
+                update.visibility ?? stored.visibility,
+                id,
+            );
             const [row] = await db
                 .update(schema.communityEndpoint)
-                .set({
-                    name,
-                    title,
-                    description,
-                    visibility,
-                    requiredSafetyFeatures,
-                    payload: nextPayload,
-                    updatedAt: new Date(),
-                })
+                .set(update)
                 .where(
                     and(
                         eq(schema.communityEndpoint.id, id),

@@ -150,11 +150,10 @@ const create = new Command("create")
     )
     .option("--name <name>", "Prompt-agent callable model name")
     .option("--title <title>", "Prompt-agent catalog title")
-    .option("--description <text>", "Agent description", "")
+    .option("--description <text>", "Prompt-agent description")
     .option(
         "--visibility <visibility>",
         "Agent visibility: private (default) or public",
-        "private",
     )
     .action(async (opts) => {
         const key = requireKey();

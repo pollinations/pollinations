@@ -222,6 +222,18 @@ const ProxyUpdateSchema = z
     .superRefine(validateEndpointUpdate);
 export type ProxyUpdateInput = z.infer<typeof ProxyUpdateSchema>;
 const PromptAgentUpdateSchema = z.object(CommonUpdateFieldsSchema).strict();
+export const CodeAgentUpdateSchema = z
+    .object({
+        description: z
+            .literal("")
+            .optional()
+            .describe(
+                "An empty value is ignored; the description comes from GitHub.",
+            ),
+        visibility: VisibilitySchema.optional(),
+        requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional(),
+    })
+    .strict();
 const EndpointAgentUpdateSchema = z
     .object({
         ...CommonUpdateFieldsSchema,
@@ -238,7 +250,9 @@ export const UpdateEndpointSchema = ProxyUpdateSchema;
 const UPDATE_SCHEMA_BY_TYPE = {
     proxy: ProxyUpdateSchema,
     prompt_agent: PromptAgentUpdateSchema,
-    code_agent: PromptAgentUpdateSchema,
+    code_agent: CodeAgentUpdateSchema.extend({
+        hidden: CommonUpdateFieldsSchema.hidden,
+    }),
     endpoint_agent: EndpointAgentUpdateSchema,
 } as const;
 

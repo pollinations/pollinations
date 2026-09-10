@@ -7596,7 +7596,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         "__Secure-better-auth.session_token",
     );
     let commit = "a".repeat(40);
-    let repositoryDescription = "Example code agents";
+    let repositoryDescription: string | null = "Example code agents";
     let source = `export default async ({ request, pollinations, mcp }) => {
         const input = await request.json();
         await mcp("pollinations", "listModels", {});
@@ -7645,6 +7645,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
             body: JSON.stringify({
                 type: "code_agent",
                 repository: "https://github.com/example/agents.git",
+                description: "",
             }),
         }),
         enterEnv,
@@ -7713,17 +7714,114 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         managedAgentId: agent.id,
     });
 
-    const updatedSource = "export default async () => new Response('updated');";
-    const updateResponse = await fetchEnterApi(
+    for (const [method, path] of [
+        ["PATCH", `/api/account/agents/${agent.id}`],
+        ["POST", `/api/account/my-models/${agent.id}/update`],
+    ]) {
+        for (const body of [
+            { name: "renamed-agent" },
+            { title: "Updated Code Agent" },
+            { description: "Locally edited description" },
+        ]) {
+            const updateResponse = await fetchEnterApi(
+                enterApi,
+                new Request(`https://enter.test${path}`, {
+                    method,
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: cookie,
+                    },
+                    body: JSON.stringify(body),
+                }),
+                enterEnv,
+            );
+            expect(updateResponse.status).toBe(400);
+        }
+
+        for (const body of [
+            { description: "" },
+            { requiredSafetyFeatures: ["violence"] },
+            { visibility: "private" },
+        ]) {
+            const updateResponse = await fetchEnterApi(
+                enterApi,
+                new Request(`https://enter.test${path}`, {
+                    method,
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: cookie,
+                    },
+                    body: JSON.stringify(body),
+                }),
+                enterEnv,
+            );
+            expect(updateResponse.status).toBe(200);
+            await expect(updateResponse.json()).resolves.toMatchObject({
+                id: agent.id,
+                name: stored.name,
+                title: stored.title,
+                description: stored.description,
+                visibility: "private",
+                ...(body.requiredSafetyFeatures && {
+                    requiredSafetyFeatures: body.requiredSafetyFeatures,
+                }),
+            });
+            const [updated] = await db
+                .select()
+                .from(communityEndpointTable)
+                .where(eq(communityEndpointTable.id, agent.id));
+            expect(updated).toMatchObject({
+                name: stored.name,
+                title: stored.title,
+                description: stored.description,
+                payload: stored.payload,
+                baseUrl: stored.baseUrl,
+                upstreamModel: stored.upstreamModel,
+                visibility: "private",
+            });
+        }
+    }
+    const hideResponse = await fetchEnterApi(
+        enterApi,
+        new Request(
+            `https://enter.test/api/account/my-models/${agent.id}/update`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Cookie: cookie },
+                body: JSON.stringify({ hidden: true, description: "" }),
+            },
+        ),
+        enterEnv,
+    );
+    expect(hideResponse.status).toBe(200);
+    await expect(hideResponse.json()).resolves.toMatchObject({
+        hidden: true,
+        description: stored.description,
+    });
+    const noOpResponse = await fetchEnterApi(
         enterApi,
         new Request(`https://enter.test/api/account/agents/${agent.id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json", Cookie: cookie },
-            body: JSON.stringify({ title: "Updated Code Agent" }),
+            body: "{}",
         }),
         enterEnv,
     );
-    expect(updateResponse.status).toBe(400);
+    expect(noOpResponse.status).toBe(200);
+    const [afterNoOp] = await db
+        .select()
+        .from(communityEndpointTable)
+        .where(eq(communityEndpointTable.id, agent.id));
+    expect(afterNoOp).toMatchObject({
+        name: stored.name,
+        title: stored.title,
+        description: stored.description,
+        payload: stored.payload,
+        requiredSafetyFeatures: ["violence"],
+        hiddenAt: expect.any(Date),
+        hiddenReason: "Hidden by owner",
+        hiddenBy: "owner",
+    });
     expect(deploymentFetch).toHaveBeenCalledTimes(4);
 
     const publishResponse = await fetchEnterApi(
@@ -7739,7 +7837,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
 
     commit = "b".repeat(40);
     repositoryDescription = "Updated on GitHub";
-    source = updatedSource;
+    source = "export default async () => new Response('updated');";
     const syncResponse = await fetchEnterApi(
         enterApi,
         new Request(`https://enter.test/api/account/agents/${agent.id}/sync`, {
@@ -7800,6 +7898,30 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
     expect(deleteResponse.status).toBe(200);
     expect(deploymentFetch).toHaveBeenCalledTimes(11);
     expect(deploymentFetch.mock.calls[10][1]?.method).toBe("DELETE");
+
+    repositoryDescription = null;
+    const createWithoutDescriptionResponse = await fetchEnterApi(
+        enterApi,
+        new Request("https://enter.test/api/account/agents", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Cookie: cookie },
+            body: JSON.stringify({
+                type: "code_agent",
+                repository: "https://github.com/example/agents",
+            }),
+        }),
+        enterEnv,
+    );
+    expect(createWithoutDescriptionResponse.status).toBe(200);
+    await expect(
+        createWithoutDescriptionResponse.json(),
+    ).resolves.toMatchObject({
+        type: "code_agent",
+        name: "agents",
+        description: null,
+        repository: "https://github.com/example/agents",
+        deployedCommitSha: commit,
+    });
 });
 
 fixtureTest("validates community fallback targets on write", async () => {

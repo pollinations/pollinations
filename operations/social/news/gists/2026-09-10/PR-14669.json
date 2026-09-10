@@ -1,0 +1,36 @@
+{
+  "pr_number": 14669,
+  "title": "Add StoryCraft AI to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14669",
+  "merged_at": "2026-09-10T00:42:25Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [StoryCraft AI](https://khushalkks.github.io/pollinations) to writing\n- StoryCraft AI is an interactive digital storybook and scene illustrator powered directly by Pollinations.ai Text and Image Generation APIs. It uses text.pollinations.ai to generate multi-chapter narra\n\nFixes #14655",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A Book Sprouts Wings",
+    "blurb": "StoryCraft AI has landed in the writing garden: an interactive storybook that grows chapters and illustrated scenes from a prompt. Bring an idea; the little library does the rest of the buzzing.",
+    "summary": "Added StoryCraft AI to the writing app collection, an interactive digital storybook that uses text.pollinations.ai for multi-chapter narratives and Pollinations image generation for scene illustrations.",
+    "impact": "Users can now open StoryCraft AI to turn an idea into a multi-chapter illustrated story directly with Pollinations Text and Image APIs.",
+    "keywords": [
+      "StoryCraft AI",
+      "writing",
+      "storybooks",
+      "text generation",
+      "image generation",
+      "community app"
+    ],
+    "visual_concept": "Depict StoryCraft AI as a cozy magical digital storybook: its open pages contain a growing multi-chapter tale and tiny illustrated landscapes. Polli, wearing a writer's beret and holding a quill, helps story-vines emerge from the pages while a friendly CRT monitor robot presents a newly generated scene; flowers and code-plants connect the book to the Pollinations APIs.",
+    "image_prompt": "Cozy pixel art scene of an open magical digital storybook on a warm cream desk, with illustrated chapter pages blooming into tiny pastel forests and castles while code-plants sprout around it; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny writer's beret and using a quill to add a chapter as a chunky CRT-monitor robot holds up a freshly illustrated scene. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"STORYCRAFT\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-10/PR-14669.jpg",
+    "prompt": "Cozy pixel art scene of an open magical digital storybook on a warm cream desk, with illustrated chapter pages blooming into tiny pastel forests and castles while code-plants sprout around it; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny writer's beret and using a quill to add a chapter as a chunky CRT-monitor robot holds up a freshly illustrated scene. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"STORYCRAFT\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-10T00:43:26.978787+00:00",
+  "app_name": "StoryCraft AI",
+  "app_url": "https://khushalkks.github.io/pollinations"
+}

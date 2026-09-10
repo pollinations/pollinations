@@ -1,0 +1,15 @@
+{
+    "extends": "./src/tsconfig.json",
+    "include": [
+        "pollen-connect-*.ts",
+        "pollen-connect-*.tsx",
+        "../worker-runtime.d.ts",
+        "../worker-bindings.d.ts",
+        "src/**/*.ts",
+        "src/**/*.tsx"
+    ],
+    "compilerOptions": {
+        "noUnusedLocals": true,
+        "noUnusedParameters": true
+    }
+}

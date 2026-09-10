@@ -357,7 +357,7 @@ async function loadActiveApiKeyAuthResult(opts: {
             )
                 ? resolveMarkupPct(
                       typeof row.byopClientMetadata === "string"
-                          ? JSON.parse(row.byopClientMetadata)
+                          ? parseMetadata(row.byopClientMetadata)
                           : (row.byopClientMetadata ?? {}),
                   )
                 : undefined,

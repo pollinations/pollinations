@@ -1,6 +1,7 @@
 import { getLogger } from "@logtape/logtape";
 import { and, eq, gt, isNull, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
+import { parseMetadata } from "../auth/api-key-metadata.ts";
 import {
     COMMUNITY_MODEL_REWARD_RATE,
     type CommunityEndpointRuntime,
@@ -121,7 +122,7 @@ export async function resolveDevMarkup(
 
     const meta =
         typeof clientRow.metadata === "string"
-            ? JSON.parse(clientRow.metadata)
+            ? parseMetadata(clientRow.metadata)
             : (clientRow.metadata ?? {});
     const markupRate = resolveMarkupPct(meta);
     const credit = computeDevCredit(baselinePrice, markupRate);

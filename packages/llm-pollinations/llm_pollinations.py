@@ -29,7 +29,7 @@ def fetch_cached_json(url, path, cache_timeout, headers=None):
         # Check if it's more than the cache_timeout old
         if time.time() - mod_time < cache_timeout:
             # If not, load the file
-            with open(path) as file:
+              with open(path, "r") as file:
                 return json.load(file)
 
     # Try to download the data

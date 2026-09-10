@@ -38,11 +38,7 @@ const defaultLabels: AppUserMenuLabels = {
     retryConnection: "Try again",
 };
 
-export type AppAccountState =
-    | "loading"
-    | "profile-error"
-    | "key-error"
-    | "account-error";
+export type AppAccountState = "loading" | "account-error";
 
 type AccountResourceState = {
     data: unknown;
@@ -56,18 +52,10 @@ export function appAccountState(
     key: AccountResourceState,
 ): AppAccountState | undefined {
     if (profile.isLoading || key.isLoading) return "loading";
-    if (profile.error && key.error) return "account-error";
-    if (profile.error) return "profile-error";
-    if (key.error) return "key-error";
+    if (profile.error || key.error) return "account-error";
     if (!profile.data || !key.data) return "loading";
     return undefined;
 }
-
-const accountMessages = {
-    "profile-error": "Couldn’t load your account profile.",
-    "key-error": "Couldn’t load your app connection details.",
-    "account-error": "Couldn’t load your account details.",
-};
 
 /** Optional connection UI; the host app owns placement and can use SDK hooks instead. */
 export function PollinationsConnectionPanel({
@@ -89,6 +77,20 @@ export function PollinationsConnectionPanel({
     className?: string;
     onRetry?: (() => void) | null;
 }) {
+    const loadingLabel = pending
+        ? (labels?.checkingConnection ?? defaultLabels.checkingConnection)
+        : accountState === "loading"
+          ? "Loading account…"
+          : undefined;
+    const accountError = accountState === "account-error";
+    const retry = accountError ? onRetryAccount : onRetry;
+    const message = accountError
+        ? "Couldn’t load your account details."
+        : onRetry
+          ? (labels?.connectionCheckError ?? defaultLabels.connectionCheckError)
+          : error
+            ? (labels?.connectionError ?? defaultLabels.connectionError)
+            : undefined;
     return (
         <Surface
             data-theme="accent"
@@ -97,35 +99,17 @@ export function PollinationsConnectionPanel({
                 className,
             )}
         >
-            {!pending && accountState && accountState !== "loading" && (
+            {!loadingLabel && message && (
                 <p role="alert" className="polli:w-full polli:text-sm">
-                    {accountMessages[accountState]}
+                    {message}
                 </p>
             )}
-            {!pending && !accountState && (error || onRetry) && (
-                <p role="alert" className="polli:w-full polli:text-sm">
-                    {onRetry
-                        ? (labels?.connectionCheckError ??
-                          defaultLabels.connectionCheckError)
-                        : (labels?.connectionError ??
-                          defaultLabels.connectionError)}
-                </p>
-            )}
-            {accountState === "loading" && !pending ? (
+            {loadingLabel ? (
                 <PollinationsSignInButton isPending>
-                    Loading account…
+                    {loadingLabel}
                 </PollinationsSignInButton>
-            ) : accountState && !pending ? (
-                <PollinationsSignInButton onClick={onRetryAccount}>
-                    {labels?.retryConnection ?? defaultLabels.retryConnection}
-                </PollinationsSignInButton>
-            ) : pending ? (
-                <PollinationsSignInButton isPending>
-                    {labels?.checkingConnection ??
-                        defaultLabels.checkingConnection}
-                </PollinationsSignInButton>
-            ) : onRetry ? (
-                <PollinationsSignInButton onClick={onRetry}>
+            ) : accountError || retry ? (
+                <PollinationsSignInButton onClick={retry ?? undefined}>
                     {labels?.retryConnection ?? defaultLabels.retryConnection}
                 </PollinationsSignInButton>
             ) : (

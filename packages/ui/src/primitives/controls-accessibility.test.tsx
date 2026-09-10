@@ -83,13 +83,13 @@ describe("shared control accessibility", () => {
         const empty = { data: null, error: null, isLoading: false };
         expect(appAccountState(ready, ready)).toBeUndefined();
         expect(appAccountState(empty, ready)).toBe("loading");
-        for (const [profile, key, expected] of [
-            [failed, ready, "profile-error"],
-            [ready, failed, "key-error"],
-            [failed, failed, "account-error"],
+        for (const [profile, key] of [
+            [failed, ready],
+            [ready, failed],
+            [failed, failed],
         ] as const) {
             const state = appAccountState(profile, key);
-            expect(state).toBe(expected);
+            expect(state).toBe("account-error");
             const markup = renderToStaticMarkup(
                 <PollinationsConnectionPanel
                     accountState={state}
@@ -99,6 +99,7 @@ describe("shared control accessibility", () => {
                 </PollinationsConnectionPanel>,
             );
             expect(markup).toContain('role="alert"');
+            expect(markup).toContain("Couldn’t load your account details.");
             expect(markup).toContain("Try again");
             expect(markup).not.toContain("Connected menu");
         }

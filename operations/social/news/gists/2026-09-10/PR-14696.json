@@ -1,0 +1,34 @@
+{
+  "pr_number": 14696,
+  "title": "feat: compare full weeks of revenue and signups",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14696",
+  "merged_at": "2026-09-10T17:56:09Z",
+  "labels": [],
+  "pr_body_excerpt": "- Shows the full previous Monday–Sunday alongside the current week through today, below the main KPI table.\n- Adds daily signups on a count axis beside revenue on a dollar axis; colors identify metrics and dashed lines identify last week.\n- Extends the existing registrations pipe with daily grouping and a snapshot timestamp; future and unavailable values stay blank.\n- Validated with 31 dashboard tests, the production build, a browser preview, staging query execution, and read-only production SQL confirming daily signup totals match the existing weekly totals.\n\nRollout: the Tinybird query must be promoted in staging and deployed/promoted in production before the daily signup endpoint is available. Existing weekly registration consumers retain their default response.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The dashboard reads the week",
+    "blurb": "The KPI garden now puts this week beside the last complete Monday–Sunday bloom. Revenue and signup sprouts get their own axes, because forcing unlike numbers into one pot was always a little strange.",
+    "summary": "The internal KPI dashboard now compares the current week through today with the full previous Monday–Sunday week, charting daily revenue and daily signup counts with grouped registration data and a snapshot timestamp.",
+    "impact": "Operators can distinguish revenue from signup volume at a glance via separate dollar and count axes, while dashed prior-week lines and blank future or unavailable days keep the comparison honest.",
+    "keywords": [
+      "kpi-dashboard",
+      "revenue",
+      "signups",
+      "observability",
+      "tinybird",
+      "analytics"
+    ],
+    "visual_concept": "A cozy internal analytics garden: Polli, wearing tiny analyst glasses, compares two adjacent weekly flower beds—one complete Monday–Sunday bed and one growing current-week bed. A retro CRT shows a clear two-axis chart with solid and dashed lines; small code-plants and calendar tiles represent daily grouped revenue and registrations.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny analyst glasses, tending two side-by-side calendar flower beds beside a glowing retro CRT dashboard: solid pastel chart lines show the current week and dashed lines show last week, with revenue coins and signup sprouts on separate axes. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, code-plants and tiny flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-10/PR-14696.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny analyst glasses, tending two side-by-side calendar flower beds beside a glowing retro CRT dashboard: solid pastel chart lines show the current week and dashed lines show last week, with revenue coins and signup sprouts on separate axes. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, code-plants and tiny flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-10T17:57:20.485447+00:00"
+}

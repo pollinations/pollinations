@@ -93,3 +93,31 @@ export const WalletBalanceCard: FC<WalletBalanceCardProps> = ({
         )}
     </div>
 );
+
+/** Compact balance row shared by the Enter drawer and account shortcuts. */
+export function WalletBalanceRow({
+    kind,
+    label,
+    value,
+    extra,
+}: {
+    kind: WalletBalanceKind;
+    label?: ReactNode;
+    value: ReactNode;
+    extra?: ReactNode;
+}) {
+    return (
+        <span className="polli:flex polli:items-center polli:justify-between polli:gap-2 polli:text-theme-text-soft">
+            <span className="polli:flex polli:items-center polli:gap-1.5 polli:text-xs polli:font-bold">
+                <WalletKindIcon kind={kind} />
+                {label}
+            </span>
+            <span className="polli:flex polli:items-baseline polli:gap-1.5">
+                <span className="polli:text-sm polli:font-bold polli:tabular-nums polli:leading-none">
+                    {value}
+                </span>
+                {extra}
+            </span>
+        </span>
+    );
+}

@@ -5,7 +5,7 @@ import { formatPollen } from "./format-pollen.ts";
 
 export type BalanceProps = { className?: string };
 
-/** Renders the logged-in user's pollen balance. `null` until loaded. */
+/** Shows the balance visible to this app: remaining budget for budgeted keys. */
 export function Balance({ className }: BalanceProps = {}) {
     const { isLoggedIn } = useAuthState();
     const { data: balance } = useAccountBalance({ enabled: isLoggedIn });
@@ -13,6 +13,7 @@ export function Balance({ className }: BalanceProps = {}) {
     return (
         <Chip
             data-polli="balance"
+            title="Pollen balance visible to this app"
             className={cn("polli:tabular-nums", className)}
         >
             {formatPollen(balance.balance)} pollen

@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "Men's Fashion Pins",
+    "url": "https://fashionpins4u.blogspot.com/p/mens-fashion-pins.html",
+    "description": "Create attractive images of men's fashion for pinterest using pollinations. this app is using gpt-image-2 model.",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "hindi-status",
+    "githubUserId": "57121339",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-10",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14676",
+    "approvedDate": "2026-09-10",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "✍️",
     "name": "StoryCraft AI",
     "url": "https://khushalkks.github.io/pollinations",

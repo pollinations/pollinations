@@ -1,0 +1,35 @@
+{
+  "pr_number": 14684,
+  "title": "fix: reduce memory used by inline reference images",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14684",
+  "merged_at": "2026-09-10T14:15:06Z",
+  "labels": [],
+  "pr_body_excerpt": "- Reuses already-valid base64 reference images instead of decoding and encoding them again; helps Seedream uploads that exhausted coordinator memory.\n- Preserves existing image limits, validation, MIME normalization, provider payloads, prices, and retry behavior.\n- Tests 22 MB uploads through the real local coordinator: abort/rejoin, URL/base64 responses, one provider call, one debit/event, and matching cached output.\n- Verification: 86 focused tests, typecheck, staging build, and 11,440 old/new behavior comparisons. Local helper benchmark reduced peak process memory by about 45 MiB.\n- Production memory recovery is not yet proven: the local full-path test passes with the old helper too. No deployment or real AI generations performed.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Less churn in the hive",
+    "blurb": "Reference images now take the scenic route exactly once. Valid base64 uploads are reused as-is, leaving the coordinator with roughly 45 MiB more breathing room in the local benchmark.",
+    "summary": "The image coordinator now reuses already-valid base64 reference images instead of decoding and re-encoding them, preserving existing validation, MIME normalization, provider payloads, pricing, retries, and image limits while reducing local peak memory by about 45 MiB for large uploads.",
+    "impact": "Large reference-image requests, including 22 MB Seedream uploads, can move through the coordinator with substantially less duplicate memory use while retaining the same responses, caching, provider call count, and billing events.",
+    "keywords": [
+      "images",
+      "base64",
+      "reference-images",
+      "Seedream",
+      "memory",
+      "coordinator",
+      "reliability"
+    ],
+    "visual_concept": "Depict a cozy image-processing garden where a single large base64 picture-scroll is carefully routed directly from a lime-green terminal to a flowering provider mailbox instead of being copied through bulky duplicate stacks. Polli, wearing a tiny librarian visor, notices the efficient path while a CRT monitor robot happily watches the coordinator's memory jar stay comfortably low; use vines and code-plants to make data flow feel organic.",
+    "image_prompt": "A cozy pixel art garden-hackerspace where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears a tiny librarian visor and guides one large base64 picture-scroll directly from a lime green (#ecf874) CRT coordinator terminal into a flowering upload mailbox, while duplicate scroll piles fade away; a cheerful chunky monitor robot tends code-plants beside a relaxed memory jar. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text: \"REUSE\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-10/PR-14684.jpg",
+    "prompt": "A cozy pixel art garden-hackerspace where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears a tiny librarian visor and guides one large base64 picture-scroll directly from a lime green (#ecf874) CRT coordinator terminal into a flowering upload mailbox, while duplicate scroll piles fade away; a cheerful chunky monitor robot tends code-plants beside a relaxed memory jar. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text: \"REUSE\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-10T14:16:09.818933+00:00"
+}

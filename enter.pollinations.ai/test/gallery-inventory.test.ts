@@ -69,7 +69,7 @@ describe("Complete managed screen inventory", () => {
         ).toEqual([]);
     });
 
-    it("keeps external provider and developer demo screens out of the gallery", () => {
+    it("includes only managed screens and the explicit GitHub handoff in the gallery", () => {
         const managedIds = new Set(
             sources
                 .filter(
@@ -79,7 +79,10 @@ describe("Complete managed screen inventory", () => {
                 .map((entry) => entry.id),
         );
         for (const entry of allGallery)
-            expect(managedIds.has(entry.id.replace(/-errors$/, ""))).toBe(true);
+            expect(
+                entry.id === "github-handoff" ||
+                    managedIds.has(entry.id.replace(/-errors$/, "")),
+            ).toBe(true);
         for (const { id } of entrances) {
             const entries = galleryScreensForFlow(id);
             expect(new Set(entries.map((entry) => entry.id)).size).toBe(
@@ -173,7 +176,7 @@ it("shows every Enter error route state separately in every login flow and map",
                 map.edges.some(
                     (edge) =>
                         edge.from ===
-                            (id === "app" ? "github-authorize" : "loading") &&
+                            (id === "app" ? "github-handoff" : "loading") &&
                         edge.to === error.id,
                 ),
             ).toBe(true);
@@ -199,7 +202,7 @@ it("routes failed Enter login to its real error page before completing any journ
             const before = {
                 ...startJourney(),
                 world,
-                node: "github-authorize",
+                node: world === "app" ? "github-handoff" : "github-authorize",
             };
             const edge = journeyOptions(before).find(
                 (edge) => edge.to === "loading",
@@ -424,9 +427,7 @@ it("groups configuration controls without hiding loading, success, or error stat
                 if (
                     card.variants?.some(
                         (variant) =>
-                            variant.params?.result ||
-                            variant.params?.session ||
-                            variant.params?.app_loading,
+                            variant.params?.result || variant.params?.session,
                     )
                 )
                     expect(card.variants).toHaveLength(1);
@@ -438,14 +439,14 @@ it("groups configuration controls without hiding loading, success, or error stat
         1,
     );
     expect(app.find((entry) => entry.id === "consent")?.variants?.length).toBe(
-        1,
+        2,
     );
     expect(
         app.some((entry) => entry.title === "Allow access · Connecting"),
     ).toBe(true);
     expect(
         app.some((entry) => entry.title === "Allow access · Checking app"),
-    ).toBe(true);
+    ).toBe(false);
     expect(
         app
             .flatMap((entry) => entry.variants ?? [])
@@ -511,9 +512,7 @@ it("groups matching request errors while preserving identity, phase, and recover
 it("uses exactly the same Apps Login cards and variant URLs in Map, Screens and Journey", () => {
     const cards = galleryCardsForFlow("app", "main");
     const map = getFlowFocus("app", "main");
-    const managed = [...appLoginScreens.values()].filter(
-        (entry) => entry.owner === "Pollinations" || entry.maintained,
-    );
+    const managed = [...appLoginScreens.values()];
     const urls = (entries: typeof cards) =>
         [
             ...new Set(
@@ -638,7 +637,7 @@ it("models parallel app lookup and local validation without inventing mandatory 
     expect(
         map.edges.some(
             (edge) =>
-                edge.from === "github-authorize" &&
+                edge.from === "github-handoff" &&
                 edge.to === "account-deactivated",
         ),
     ).toBe(true);
@@ -681,7 +680,7 @@ it("bookends Apps Login with the existing reusable app components", () => {
         maintained: true,
     });
     expect(cards[0].variants).toBeUndefined();
-    expect(cards.at(-1)?.variants).toHaveLength(8);
+    expect(cards.at(-1)?.variants).toHaveLength(6);
     for (const id of ["app-connect", "app-connected"]) {
         const card = cards.find((card) => card.id === id);
         expect(appLoginScreens.get(id)).toEqual(card);
@@ -841,18 +840,24 @@ it("keeps account-detail failures on the return panel and retries account loadin
         signedIn: true,
         connected: true,
     };
-    for (const accountDetailsError of [
-        "profile-error",
-        "key-error",
-        "account-error",
-    ] as const) {
-        expect(
-            appLoginAutomaticDestination(connected, {
-                ...defaultJourneySettings,
-                accountDetailsError,
-            }),
-        ).toBe("app-account-error");
-    }
+    expect(
+        appLoginAutomaticDestination(connected, {
+            ...defaultJourneySettings,
+            accountDetailsError: true,
+        }),
+    ).toBe("app-account-error");
+    expect(
+        cards
+            .at(-1)
+            ?.variants?.filter((variant) =>
+                variant.params?.app_account?.endsWith("error"),
+            ),
+    ).toEqual([
+        {
+            label: "Account details unavailable",
+            params: { app_account: "account-error" },
+        },
+    ]);
     const error = { ...connected, node: "app-account-error" };
     const retry = journeyOptions(error).find(
         (edge) => edge.label === "Try again",
@@ -888,4 +893,72 @@ it("keeps session and protocol consistent for every blocked-request preview", ()
     expect(appLoginPreviewScreen(callback, 0, "oauth", true)).toBe(
         "add-pollen-connect",
     );
+});
+
+it("keeps app lookup reviewable inside its screen and explicit as a map check", () => {
+    const cards = galleryCardsForFlow("app", "main");
+    for (const [cardId, checkId] of [
+        ["sign-in--0", "app-sign-in-checking"],
+        ["consent", "app-checking"],
+    ]) {
+        const card = cards.find((entry) => entry.id === cardId);
+        const state = appLoginScreens.get(checkId);
+        if (!card?.variants || !state)
+            throw new Error(`Missing lookup state: ${checkId}`);
+        const index = card.variants.findIndex(
+            (variant) => variant.params?.app_loading === "1",
+        );
+        expect(index).toBeGreaterThan(0);
+        expect(canvasScreenUrl(card, index)).toBe(canvasScreenUrl(state));
+        const check = getFlowFocus("app", "main").nodes.find(
+            (node) => node.id === checkId,
+        );
+        expect(check).toMatchObject({
+            kind: "decision",
+            label: "App verified?",
+        });
+        expect(check?.screen).toBeUndefined();
+    }
+    expect(
+        cards.filter((entry) => entry.title.endsWith("· Checking app")),
+    ).toHaveLength(0);
+    const device = galleryCardsForFlow("device", "main");
+    const pending = device.find((entry) =>
+        entry.variants?.some(
+            (variant) => variant.params?.session === "loading",
+        ),
+    );
+    expect(pending?.screen).toBe("device-signed-out");
+    expect(pending?.title).toBe("Sign in to Pollinations · Checking account");
+});
+
+it("uses one external GitHub handoff without simulating provider-internal steps", () => {
+    const cards = galleryCardsForFlow("app", "main");
+    const provider = cards.filter((entry) => entry.owner === "GitHub");
+    expect(provider).toMatchObject([
+        { id: "github-handoff", title: "Continue on GitHub" },
+    ]);
+    const map = getFlowFocus("app", "main");
+    expect(
+        map.nodes.filter((node) => node.id.startsWith("github-")),
+    ).toMatchObject([{ id: "github-handoff" }]);
+    const signing = { ...startJourney(), node: "app-signing-in" };
+    expect(appLoginAutomaticDestination(signing, defaultJourneySettings)).toBe(
+        "github-handoff",
+    );
+    const handoff = { ...signing, node: "github-handoff" };
+    const complete = journeyOptions(handoff).find(
+        (edge) => edge.to === "loading",
+    );
+    if (!complete) throw new Error("Missing provider return");
+    for (const githubSignedIn of [false, true])
+        for (const githubApproved of [false, true]) {
+            expect(
+                journeyAdvance(handoff, complete, {
+                    ...defaultJourneySettings,
+                    githubSignedIn,
+                    githubApproved,
+                }),
+            ).toMatchObject({ node: "loading", signedIn: true });
+        }
 });

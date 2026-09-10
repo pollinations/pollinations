@@ -31,6 +31,7 @@ import { addPollenAmounts } from "./pollen-connect-add-pollen-data";
 
 const screens = canvasGroups.flatMap((group) => group.screens);
 const productActions: Record<string, Record<string, string>> = {
+    "github-handoff": { "Return to Pollinations": "loading" },
     "github-signup": {
         "Continue after signup": "github-authorize",
         Cancel: "github-login",
@@ -202,10 +203,7 @@ export function Journey({
     if (state.node === "enter-connected" && past.at(-1)?.signedIn === false)
         overrides.drawer = "open";
     if (state.node === "app-account-error")
-        overrides.app_account =
-            settings.accountDetailsError === "none"
-                ? "profile-error"
-                : settings.accountDetailsError;
+        overrides.app_account = "account-error";
     if (state.node === "app-callback-error" && state.scenario === "key-check")
         overrides.app_callback = "check-error";
     if (state.scenario) overrides.topup_case = state.scenario;
@@ -977,46 +975,22 @@ export function Journey({
                                                 )}
                                             {group === "App & payment" &&
                                                 state.world === "app" && (
-                                                    <label className="journey-switch-row">
-                                                        <span>
-                                                            Account details
-                                                        </span>
-                                                        <select
-                                                            aria-label="Account details"
-                                                            value={
-                                                                settings.accountDetailsError
-                                                            }
-                                                            onChange={(event) =>
-                                                                setSettings(
-                                                                    (
-                                                                        current,
-                                                                    ) => ({
-                                                                        ...current,
-                                                                        accountDetailsError:
-                                                                            event
-                                                                                .target
-                                                                                .value as JourneySettings["accountDetailsError"],
-                                                                    }),
-                                                                )
-                                                            }
-                                                        >
-                                                            <option value="none">
-                                                                Available
-                                                            </option>
-                                                            <option value="profile-error">
-                                                                Profile
-                                                                unavailable
-                                                            </option>
-                                                            <option value="key-error">
-                                                                Connection
-                                                                details
-                                                                unavailable
-                                                            </option>
-                                                            <option value="account-error">
-                                                                Both unavailable
-                                                            </option>
-                                                        </select>
-                                                    </label>
+                                                    <FlowSwitch
+                                                        label="Account details unavailable"
+                                                        checked={
+                                                            settings.accountDetailsError
+                                                        }
+                                                        onChange={(
+                                                            accountDetailsError,
+                                                        ) =>
+                                                            setSettings(
+                                                                (current) => ({
+                                                                    ...current,
+                                                                    accountDetailsError,
+                                                                }),
+                                                            )
+                                                        }
+                                                    />
                                                 )}
                                             {group === "App & payment" &&
                                                 state.world === "app" && (
@@ -1199,7 +1173,17 @@ export function Journey({
                                             {switches
                                                 .filter(
                                                     (item) =>
-                                                        item.group === group,
+                                                        item.group === group &&
+                                                        !(
+                                                            state.world ===
+                                                                "app" &&
+                                                            [
+                                                                "Signed in to GitHub",
+                                                                "GitHub access approved",
+                                                            ].includes(
+                                                                item.label,
+                                                            )
+                                                        ),
                                                 )
                                                 .map((item) => (
                                                     <FlowSwitch

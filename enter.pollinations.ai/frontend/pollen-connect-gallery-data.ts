@@ -17,6 +17,7 @@ export const galleryFlowScreens: Record<JourneyEntrance, readonly string[]> = {
     app: [
         "app-connect",
         "sign-in",
+        "github-handoff",
         "connection-link",
         "loading",
         ...loginErrorIds,
@@ -133,6 +134,7 @@ export function galleryScreensForFlow(
                 variants: [
                     "Device",
                     "Device with app",
+                    "Checking account",
                     "Signing in",
                     "Sign-in failed",
                 ].flatMap((label) => {
@@ -214,7 +216,7 @@ export function galleryPagesForFlow(
     });
 }
 
-function isConfiguration(entry: CanvasScreen, variant: ScreenVariant) {
+function isInlineVariant(entry: CanvasScreen, variant: ScreenVariant) {
     const params = variant.params ?? {};
     return (
         ["consent", "add-pollen-amount", "key-edit", "sign-in"].includes(
@@ -223,7 +225,7 @@ function isConfiguration(entry: CanvasScreen, variant: ScreenVariant) {
         !variant.error &&
         !params.result &&
         !params.session &&
-        !params.app_loading &&
+        (!params.app_loading || ["sign-in", "consent"].includes(entry.id)) &&
         (!params.topup_case || params.topup_case === "covered") &&
         (!variant.screen ||
             variant.screen === entry.screen ||
@@ -231,9 +233,8 @@ function isConfiguration(entry: CanvasScreen, variant: ScreenVariant) {
     );
 }
 
-// Group only matching layouts at the same point in the flow. Loading and
-// submission failures stay separate; a verified identity must not be conflated
-// with the hostname fallback used before attribution succeeds.
+// Group matching layouts at the same point in the flow. App lookup is a busy
+// state of sign-in or consent; submission failures remain separate.
 function errorGroup(
     entry: CanvasScreen,
     variant: ScreenVariant,
@@ -269,11 +270,11 @@ export function galleryCardsForFlow(
             (entry.id === "app-connected" && section !== "topup")
         )
             return [entry];
-        const configurations = entry.variants.filter((variant) =>
-            isConfiguration(entry, variant),
+        const inlineVariants = entry.variants.filter((variant) =>
+            isInlineVariant(entry, variant),
         );
         const first = entry.variants.findIndex((variant) =>
-            isConfiguration(entry, variant),
+            isInlineVariant(entry, variant),
         );
         const errorGroups = new Map<string, ScreenVariant[]>();
         for (const variant of entry.variants) {
@@ -300,11 +301,20 @@ export function galleryCardsForFlow(
                     : [];
             }
             if (
-                (configurations.length > 1 || entry.id === "consent") &&
-                isConfiguration(entry, variant)
+                (inlineVariants.length > 1 || entry.id === "consent") &&
+                isInlineVariant(entry, variant)
             )
                 return index === first
-                    ? [{ ...entry, variants: configurations }]
+                    ? [
+                          {
+                              ...entry,
+                              id:
+                                  entry.id === "sign-in"
+                                      ? `${entry.id}--${first}`
+                                      : entry.id,
+                              variants: inlineVariants,
+                          },
+                      ]
                     : [];
             const page = pages.get(`${entry.id}--${index}`);
             return page ? [page] : [];

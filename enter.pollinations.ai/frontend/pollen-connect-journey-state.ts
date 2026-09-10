@@ -36,11 +36,7 @@ export type JourneySettings = {
     slowAppLookup: boolean;
     appConnectionError: "none" | "start" | "callback";
     storedKeyStatus: "valid" | "invalid" | "unavailable";
-    accountDetailsError:
-        | "none"
-        | "profile-error"
-        | "key-error"
-        | "account-error";
+    accountDetailsError: boolean;
     appReturnPage: boolean;
     loginResult: "ready" | keyof typeof loginErrors;
 };
@@ -54,7 +50,7 @@ export const defaultJourneySettings: JourneySettings = {
     slowAppLookup: false,
     appConnectionError: "none",
     storedKeyStatus: "valid",
-    accountDetailsError: "none",
+    accountDetailsError: false,
     appReturnPage: true,
     loginResult: "ready",
 };
@@ -441,7 +437,7 @@ export function journeyStep(state: JourneyState, edge: FlowEdge): JourneyState {
     if (
         state.world === "app" &&
         edge.to === "loading" &&
-        ["github-approval", "github-authorize"].includes(edge.from)
+        edge.from === "github-handoff"
     ) {
         next.signedIn = true;
     }
@@ -535,7 +531,7 @@ export function journeyAdvance(
     if (
         state.world === "app" &&
         edge.to === "loading" &&
-        ["github-approval", "github-authorize"].includes(edge.from) &&
+        edge.from === "github-handoff" &&
         settings.loginResult !== "ready"
     ) {
         const failure = journeyOptions(state).find(
@@ -550,34 +546,15 @@ export function journeyAdvance(
     }
     let next = journeyStep(state, edge);
     if (state.world === "app") {
-        for (let i = 0; i < 4; i++) {
-            const destination =
-                next.node === "github-session"
-                    ? settings.githubSignedIn
-                        ? "github-approval"
-                        : "github-login"
-                    : next.node === "github-approval"
-                      ? settings.githubApproved
-                          ? settings.loginResult === "ready"
-                              ? "loading"
-                              : loginErrors[settings.loginResult].id
-                          : "github-authorize"
-                      : next.node === "cancelled"
-                        ? next.method === "oauth"
-                            ? "app-callback-error"
-                            : "app-connect"
-                        : undefined;
-            if (!destination) return next;
-            const route = journeyOptions(next).find(
-                (option) => option.to === destination,
-            );
-            if (!route)
-                throw new Error(
-                    `Missing Apps Login route: ${next.node} → ${destination}`,
-                );
-            next = journeyStep(next, route);
-        }
-        return next;
+        if (next.node !== "cancelled") return next;
+        const destination =
+            next.method === "oauth" ? "app-callback-error" : "app-connect";
+        const route = journeyOptions(next).find(
+            (option) => option.to === destination,
+        );
+        if (!route)
+            throw new Error(`Missing app cancellation route: ${destination}`);
+        return journeyStep(next, route);
     }
     if (
         settings.errors &&

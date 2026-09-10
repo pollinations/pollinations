@@ -81,6 +81,20 @@ function Canvas({
                   ...screenOptions[optionsKey],
               }
             : {};
+    const statusTabs = selected?.variants && selected.variants.length > 1 && (
+        <fieldset aria-label="Screen status">
+            {selected.variants.map((example, index) => (
+                <TabButton
+                    key={`${index}-${example.label}`}
+                    size="sm"
+                    active={variant === index}
+                    onClick={() => setVariant(index)}
+                >
+                    {example.label}
+                </TabButton>
+            ))}
+        </fieldset>
+    );
     const navigationOrder = useRef(screens);
     const visitedVariants = useRef(new Map<string, number>());
     const handlePreviewKey = useCallback(
@@ -589,6 +603,7 @@ function Canvas({
                                 </ScrollArea>
                             ) : consentControls ? (
                                 <ScrollArea className="canvas-inspector-statuses">
+                                    {statusTabs}
                                     <ConsentPreviewControls
                                         values={previewOptions}
                                         onChange={(patch) =>
@@ -602,31 +617,11 @@ function Canvas({
                                         }
                                     />
                                 </ScrollArea>
-                            ) : (
-                                selected.variants &&
-                                selected.variants.length > 1 && (
-                                    <ScrollArea className="canvas-inspector-statuses">
-                                        <fieldset aria-label="Screen status">
-                                            {selected.variants.map(
-                                                (example, index) => (
-                                                    <TabButton
-                                                        key={`${index}-${example.label}`}
-                                                        size="sm"
-                                                        active={
-                                                            variant === index
-                                                        }
-                                                        onClick={() =>
-                                                            setVariant(index)
-                                                        }
-                                                    >
-                                                        {example.label}
-                                                    </TabButton>
-                                                ),
-                                            )}
-                                        </fieldset>
-                                    </ScrollArea>
-                                )
-                            )}
+                            ) : statusTabs ? (
+                                <ScrollArea className="canvas-inspector-statuses">
+                                    {statusTabs}
+                                </ScrollArea>
+                            ) : null}
                             <IconButton
                                 title="Close screen preview"
                                 tooltip={false}

@@ -176,8 +176,9 @@ describe("focused flow navigation", () => {
             const focus = getFlowFocus(id);
             for (const shared of [
                 "sign-in",
-                "github-login",
-                "github-authorize",
+                ...(id === "app"
+                    ? ["github-handoff"]
+                    : ["github-login", "github-authorize"]),
                 "error",
             ])
                 expect(focus.nodeIds.has(shared)).toBe(true);
@@ -480,8 +481,7 @@ describe("Connect lab journey", () => {
         state = go(state, "app-sign-in-checking");
         state = go(state, "sign-in");
         state = go(state, "app-signing-in");
-        state = go(state, "github-session");
-        state = go(state, "github-approval");
+        state = go(state, "github-handoff");
         state = go(state, "loading");
         expect(state).toMatchObject({ node: "loading", signedIn: true });
         state = go(state, "app-checking");
@@ -854,24 +854,14 @@ describe("automatic journey routing", () => {
             signedIn: false,
         });
     });
-    it("uses one provider handoff for GitHub signup and resumes authorization", () => {
-        const login = {
+    it("returns from the external GitHub handoff without modeling provider pages", () => {
+        const handoff = {
             ...startJourney(),
-            node: "github-login",
+            node: "github-handoff",
             paid: 0,
             quest: 0,
         };
-        const signup = advance(login, "github-signup");
-        expect(advance(signup, "github-login")).toMatchObject({
-            node: "github-login",
-            signedIn: false,
-        });
-        const approval = advance(signup, "github-authorize");
-        expect(approval).toMatchObject({
-            node: "github-authorize",
-            signedIn: false,
-        });
-        expect(advance(approval, "loading")).toMatchObject({
+        expect(advance(handoff, "loading")).toMatchObject({
             node: "consent",
             signedIn: true,
             connected: false,
@@ -879,6 +869,11 @@ describe("automatic journey routing", () => {
             quest: 0,
         });
         for (const removed of [
+            "github-login",
+            "github-signup",
+            "github-authorize",
+            "github-session",
+            "github-approval",
             "google-account",
             "github-profile",
             "email-verify",
@@ -903,34 +898,25 @@ describe("automatic journey routing", () => {
             signedIn: true,
         });
     });
-    it("skips GitHub UI when its session and approval are already present", () => {
+    it("leaves provider session and approval decisions to GitHub", () => {
         const signIn = { ...startJourney(), node: "sign-in" };
-        expect(advance(signIn, "app-signing-in")).toMatchObject({
-            node: "consent",
-            signedIn: true,
-        });
-    });
-    it("shows only the GitHub steps that are needed", () => {
-        const signIn = { ...startJourney(), node: "sign-in" };
-        const settings = {
-            ...defaultJourneySettings,
-            githubSignedIn: false,
-            githubApproved: false,
-        };
-        const login = advance(signIn, "app-signing-in", settings);
-        expect(login.node).toBe("github-login");
-        const approval = advance(login, "github-approval", settings);
-        expect(approval.node).toBe("github-authorize");
-        expect(advance(approval, "loading", settings)).toMatchObject({
-            node: "consent",
-            signedIn: true,
-        });
-        expect(
-            advance(signIn, "app-signing-in", {
-                ...settings,
-                githubSignedIn: true,
-            }).node,
-        ).toBe("github-authorize");
+        for (const githubSignedIn of [false, true])
+            for (const githubApproved of [false, true]) {
+                const settings = {
+                    ...defaultJourneySettings,
+                    githubSignedIn,
+                    githubApproved,
+                };
+                const handoff = advance(signIn, "app-signing-in", settings);
+                expect(handoff).toMatchObject({
+                    node: "github-handoff",
+                    signedIn: false,
+                });
+                expect(advance(handoff, "loading", settings)).toMatchObject({
+                    node: "consent",
+                    signedIn: true,
+                });
+            }
     });
     it("takes admin identity sign-in straight through GitHub", () => {
         const admin = { ...startJourney("admin"), node: "identity" };

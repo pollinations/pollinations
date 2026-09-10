@@ -84,11 +84,6 @@ export const appReturnVariants: ScreenVariant[] = [
         params: { app_callback: "check-error" },
     },
     { label: "Loading account", params: { app_account: "loading" } },
-    { label: "Profile unavailable", params: { app_account: "profile-error" } },
-    {
-        label: "Connection details unavailable",
-        params: { app_account: "key-error" },
-    },
     {
         label: "Account details unavailable",
         params: { app_account: "account-error" },
@@ -127,6 +122,11 @@ export const canvasGroups: { title: string; screens: CanvasScreen[] }[] = [
                     { label: "Simple BYOP", screen: "direct-signed-out" },
                     { label: "New account", params: { persona: "new" } },
                     { label: "Device", screen: "device-signed-out" },
+                    {
+                        label: "Checking account",
+                        screen: "device-signed-out",
+                        params: { session: "loading" },
+                    },
                     {
                         label: "Device with app",
                         screen: "device-signed-out",
@@ -320,10 +320,6 @@ export const canvasGroups: { title: string; screens: CanvasScreen[] }[] = [
                         params: { user_code: "ABCD-EFGH", verify: "waiting" },
                     },
                     {
-                        label: "Checking account",
-                        params: { session: "loading" },
-                    },
-                    {
                         label: "Expired code",
                         screen: "device-error",
                         error: true,
@@ -362,6 +358,12 @@ export const canvasGroups: { title: string; screens: CanvasScreen[] }[] = [
     {
         title: "Sign-in providers",
         screens: [
+            {
+                id: "github-handoff",
+                title: "Continue on GitHub",
+                owner: "GitHub",
+                illustration: "github-handoff",
+            },
             {
                 id: "github-login",
                 title: "GitHub sign-in",

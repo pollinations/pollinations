@@ -1,6 +1,9 @@
 import { type CanvasScreen, canvasGroups } from "./pollen-connect-canvas-data";
 import type { FlowEdge, FlowNode } from "./pollen-connect-diagram";
-import { galleryCardsForFlow } from "./pollen-connect-gallery-data";
+import {
+    galleryCardsForFlow,
+    galleryPagesForFlow,
+} from "./pollen-connect-gallery-data";
 import type {
     JourneySettings,
     JourneyState,
@@ -25,22 +28,6 @@ const bindings: [string, (entry: CanvasScreen) => boolean, number, number][] = [
     ["blocked", (e) => e.id.startsWith("connection-link"), 2, 2],
     ["loading", (e) => e.id.startsWith("loading"), 1, 0],
     ["consent", (e) => e.id === "consent", 6, 0],
-    [
-        "app-checking",
-        (e) =>
-            e.id.startsWith("consent--") &&
-            e.variants?.[0].params?.app_loading === "1",
-        2,
-        1,
-    ],
-    [
-        "app-sign-in-checking",
-        (e) =>
-            e.id.startsWith("sign-in--") &&
-            e.variants?.[0].params?.app_loading === "1",
-        2,
-        0,
-    ],
     [
         "app-connecting",
         (e) =>
@@ -76,12 +63,25 @@ export const appLoginScreens = new Map<string, CanvasScreen>(
         return [id, matches[0]];
     }),
 );
+// App lookup changes the current screen's busy state, not the user's task.
+// Journey renders that exact variant; Map shows the validation as a decision.
+const appChecks = [
+    { id: "app-sign-in-checking", screen: "oauth-signed-out", row: 0 },
+    { id: "app-checking", screen: "oauth", row: 1 },
+];
+for (const check of appChecks) {
+    const entry = galleryPagesForFlow("app", "main").find(
+        (entry) =>
+            entry.screen === check.screen &&
+            entry.variants?.[0].params?.app_loading === "1",
+    );
+    if (!entry) throw new Error(`Missing app lookup state: ${check.id}`);
+    appLoginScreens.set(check.id, entry);
+}
 const external: [string, number, number][] = [
     ["app-connect", 0, 0],
     ["app-connected", 9, 0],
-    ["github-login", 5, 0],
-    ["github-authorize", 5, 1],
-    ["github-signup", 5, 3],
+    ["github-handoff", 5, 0],
 ];
 for (const [id] of external) {
     const entry =
@@ -94,12 +94,7 @@ for (const [id] of external) {
 const panelStates: [string, string[], number, number][] = [
     ["app-callback", ["waiting"], 8, 0],
     ["app-callback-error", ["error", "check-error"], 9, 1],
-    [
-        "app-account-error",
-        ["profile-error", "key-error", "account-error"],
-        10,
-        1,
-    ],
+    ["app-account-error", ["account-error"], 10, 1],
 ];
 const panel = appLoginScreens.get("app-connected");
 if (!panel) throw new Error("Missing connection panel");
@@ -119,6 +114,16 @@ for (const [id, states] of panelStates) {
     });
 }
 export const appLoginNodes: FlowNode[] = [
+    ...appChecks.map(
+        ({ id, row }): FlowNode => ({
+            id,
+            kind: "decision",
+            label: "App verified?",
+            note: row === 0 ? "Before sign-in" : "Before approval",
+            x: 840,
+            y: 100 + row * 740,
+        }),
+    ),
     ...panelStates.map(([id, , column, row]) => ({
         id,
         screen: appLoginScreens.get(id)?.id,
@@ -153,20 +158,6 @@ export const appLoginNodes: FlowNode[] = [
         label: "Open app · Stored key?",
         x: 100,
         y: 760,
-    },
-    {
-        id: "github-session",
-        kind: "decision",
-        label: "GitHub session?",
-        x: 1950,
-        y: 660,
-    },
-    {
-        id: "github-approval",
-        kind: "decision",
-        label: "GitHub approval?",
-        x: 2320,
-        y: 660,
     },
     {
         id: "cancelled",
@@ -238,14 +229,12 @@ export const appLoginEdges: FlowEdge[] = [
         label: "Invalid request or app lookup failure",
         alternate: true,
     },
-    ...["github-approval", "github-authorize"].flatMap((from) =>
-        Object.values(loginErrors).map((error) => ({
-            from,
-            to: error.id,
-            label: error.title,
-            alternate: true,
-        })),
-    ),
+    ...Object.values(loginErrors).map((error) => ({
+        from: "github-handoff",
+        to: error.id,
+        label: error.title,
+        alternate: true,
+    })),
     { from: "app-sign-in-checking", to: "sign-in", label: "App verified" },
     {
         from: "app-sign-in-checking",
@@ -257,7 +246,7 @@ export const appLoginEdges: FlowEdge[] = [
     { from: "login-failed", to: "sign-in", label: "Try again" },
     { from: "blocked", to: "app-connect", label: "Back to app" },
     { from: "sign-in", to: "cancelled", label: "Back to app", alternate: true },
-    { from: "app-signing-in", to: "github-session", label: "Open GitHub" },
+    { from: "app-signing-in", to: "github-handoff", label: "Open GitHub" },
     {
         from: "app-signing-in",
         to: "error",
@@ -266,29 +255,8 @@ export const appLoginEdges: FlowEdge[] = [
     },
     { from: "error", to: "app-signing-in", label: "Try again" },
     { from: "error", to: "cancelled", label: "Back to app", alternate: true },
-    { from: "github-session", to: "github-login", label: "Signed out" },
-    { from: "github-session", to: "github-approval", label: "Signed in" },
-    { from: "github-login", to: "github-approval", label: "Signed in" },
-    { from: "github-login", to: "github-signup", label: "New GitHub account" },
-    {
-        from: "github-approval",
-        to: "github-authorize",
-        label: "Approval needed",
-    },
-    { from: "github-approval", to: "loading", label: "Already approved" },
-    { from: "github-authorize", to: "loading", label: "Authorized" },
+    { from: "github-handoff", to: "loading", label: "Return to Pollinations" },
 
-    {
-        from: "github-signup",
-        to: "github-authorize",
-        label: "Continue after signup",
-    },
-    {
-        from: "github-signup",
-        to: "github-login",
-        label: "Cancel",
-        alternate: true,
-    },
     { from: "app-checking", to: "consent", label: "App verified" },
     {
         from: "app-checking",
@@ -395,8 +363,7 @@ export function appLoginAutomaticDestination(
 ): string | undefined {
     switch (state.node) {
         case "app-connected":
-            return settings.accountDetailsError &&
-                settings.accountDetailsError !== "none"
+            return settings.accountDetailsError
                 ? "app-account-error"
                 : undefined;
         case "loading": {
@@ -428,7 +395,7 @@ export function appLoginAutomaticDestination(
                   ? "consent"
                   : "sign-in";
         case "app-signing-in":
-            return settings.errors ? "error" : "github-session";
+            return settings.errors ? "error" : "github-handoff";
         case "app-connecting":
             return settings.errors
                 ? "app-connection-failed"

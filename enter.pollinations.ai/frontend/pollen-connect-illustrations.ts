@@ -1,4 +1,6 @@
 export const illustrations: Record<string, string> = {
+    "github-handoff":
+        '<h3>Continue on GitHub</h3><p>GitHub handles sign-in, account creation and any required approval.</p><p>You return to Pollinations when finished.</p><div class="external-button">Return to Pollinations</div>',
     "github-login":
         '<div class="symbol">GH</div><h3>Sign in to GitHub</h3><div class="mock-form"><label>Username or email address</label><div class="mock-field">Your GitHub login</div><label>Password / other sign-in method</label><div class="mock-field">Sign in on GitHub</div></div><div class="external-button">Sign in</div><p>New to GitHub? Create an account.</p>',
     "github-signup":

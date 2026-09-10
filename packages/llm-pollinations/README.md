@@ -22,7 +22,10 @@ Or export it (the plugin also reads `POLLINATIONS_API_KEY`):
 export POLLINATIONS_API_KEY="sk_..."
 ```
 
-Prefer a dedicated key? Create one with the [Polli CLI](../polli-cli) and paste it into `llm keys set pollinations`.
+Prefer a dedicated key? Create one with the [Polli CLI](../polli-cli) and paste it into `llm keys set pollinations`:
+
+```bash
+polli keys create --name llm --budget 100
 
 ## Usage
 
@@ -52,7 +55,7 @@ model = llm.get_model("pollinations/openai")
 print(model.prompt("Say hello").text())
 ```
 
-Model capabilities (image input, tool calling, reasoning) come from the catalog, so a model only advertises what Pollinations actually supports. The catalog is cached for 30 minutes with a stale-cache fallback when offline.
+Model capabilities (image input, tool calling, reasoning) come from the catalog, so a model only advertises what Pollinations actually supports. The catalog is cached per key for 30 minutes, with a stale-cache fallback when offline.
 
 ## Development
 

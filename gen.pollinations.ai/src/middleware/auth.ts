@@ -1,5 +1,6 @@
 import type { AgentRunClaims } from "@shared/auth/agent-run-token.ts";
 import {
+    AccountRestrictedError,
     type AuthenticatedApiKey,
     type AuthUser,
     authenticateApiKeyRequest,
@@ -110,6 +111,7 @@ export const auth = () =>
             });
         } catch (error) {
             if (
+                error instanceof AccountRestrictedError ||
                 error instanceof BannedAccountError ||
                 error instanceof StagingAccessDeniedError
             ) {

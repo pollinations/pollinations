@@ -21,6 +21,7 @@ import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { checkQuestsForUser } from "../services/quest-checker.ts";
 import { ACCOUNT_SETUP_QUEST_GROUP } from "../services/quests/index.ts";
+import { assertAccountCanCreate } from "../utils/stripe-payment-restriction.ts";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
@@ -223,6 +224,7 @@ export const apiKeysRoutes = new Hono<Env>()
         validator("json", CreateApiKeySchema),
         async (c) => {
             const user = c.var.auth.requireUser();
+            assertAccountCanCreate(user);
             const input = c.req.valid("json");
             const createdVia =
                 typeof input.metadata?.redirectUri === "string" ||

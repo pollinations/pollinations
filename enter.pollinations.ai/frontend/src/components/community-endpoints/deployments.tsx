@@ -9,7 +9,15 @@ import {
     publicCommunityFallbackOptions,
 } from "./types.ts";
 
-export function Deployments({ canPublish }: { canPublish: boolean }) {
+type DeploymentsProps = {
+    canPublish: boolean;
+    creationDisabled?: boolean;
+};
+
+export function Deployments({
+    canPublish,
+    creationDisabled = false,
+}: DeploymentsProps) {
     const [fallbackOptions, setFallbackOptions] = useState<
         FallbackModelOption[]
     >([]);
@@ -34,6 +42,7 @@ export function Deployments({ canPublish }: { canPublish: boolean }) {
     return (
         <CommunityEndpoints
             canPublish={canPublish}
+            creationDisabled={creationDisabled}
             fallbackOptions={fallbackOptions}
             onChange={loadFallbackOptions}
         />

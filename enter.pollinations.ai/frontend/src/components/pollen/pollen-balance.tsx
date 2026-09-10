@@ -23,7 +23,7 @@ import {
     POLLEN_PACKS,
 } from "@shared/pollen-packs.ts";
 import { Link } from "@tanstack/react-router";
-import type { FC, ReactNode } from "react";
+import type { FC, MouseEvent, ReactNode } from "react";
 import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
@@ -259,12 +259,14 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
 
 type BuyPollenPanelProps = {
     initialBillingState: BillingState | null;
+    accountRestricted: boolean;
     selectedPackAmount: number;
     onSelectedPackAmountChange: (amount: number) => void;
 };
 
 export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     initialBillingState,
+    accountRestricted,
     selectedPackAmount,
     onSelectedPackAmountChange,
 }) => {
@@ -316,6 +318,15 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             <ExternalLinkButton
                                 href={`/api/stripe/checkout/${selectedPack.packKey}`}
                                 target="_self"
+                                disabled={accountRestricted}
+                                aria-disabled={accountRestricted}
+                                onClick={
+                                    accountRestricted
+                                        ? (
+                                              event: MouseEvent<HTMLAnchorElement>,
+                                          ) => event.preventDefault()
+                                        : undefined
+                                }
                                 className="w-28 min-w-0 gap-1.5 self-start text-center shadow-none sm:shrink-0 sm:self-center"
                             >
                                 <span className="inline-flex items-center gap-1.5">
@@ -328,7 +339,10 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 )}
             </Surface>
             <Surface>
-                <AutoTopUpPanel initialBillingState={initialBillingState} />
+                <AutoTopUpPanel
+                    initialBillingState={initialBillingState}
+                    accountRestricted={accountRestricted}
+                />
             </Surface>
             <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                 <PaymentTrustBadge className="mt-0 pt-0" />

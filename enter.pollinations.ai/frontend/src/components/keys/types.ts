@@ -22,6 +22,7 @@ export interface ApiKeyUpdateParams {
 
 export interface ApiKeyManagerProps {
     apiKeys: ApiKey[];
+    creationDisabled?: boolean;
     onCreate: (formData: CreateApiKey) => Promise<CreateApiKeyResponse>;
     onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onDelete: (id: string) => Promise<void>;

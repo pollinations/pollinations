@@ -29,6 +29,7 @@ import type { ApiKey, ApiKeyManagerProps } from "./types.ts";
 
 export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     apiKeys,
+    creationDisabled = false,
     onCreate,
     onUpdate,
     onDelete,
@@ -235,6 +236,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <ApiKeyDialog
                             onSubmit={onCreate}
                             onComplete={() => {}}
+                            triggerDisabled={creationDisabled}
                             triggerLabel={
                                 <span className="inline-flex items-center gap-1.5">
                                     <KeyIcon className="h-4 w-4" />
@@ -274,6 +276,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <ApiKeyDialog
                             onSubmit={onCreate}
                             onComplete={() => {}}
+                            triggerDisabled={creationDisabled}
                             triggerLabel={
                                 <span className="inline-flex items-center gap-1.5">
                                     <AppIcon className="h-4 w-4" />

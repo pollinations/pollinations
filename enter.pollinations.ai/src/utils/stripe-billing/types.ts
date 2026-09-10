@@ -4,6 +4,7 @@ export type UserStripeBillingRow = {
     email: string;
     packBalance: number | null;
     stripeCustomerId: string | null;
+    stripePaymentRestriction: string | null;
     autoTopUpEnabled: boolean;
     autoTopUpAmountUsd: number | null;
 };
@@ -41,6 +42,7 @@ export type AutoTopUpIssue =
       };
 
 export type BillingOverview = {
+    accountRestricted: boolean;
     autoTopUp: {
         enabled: boolean;
         thresholdPollen: number;

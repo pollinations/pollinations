@@ -1,5 +1,5 @@
 import { env, SELF } from "cloudflare:test";
-import { apikey } from "@shared/db/better-auth.ts";
+import { apikey, user as userTable } from "@shared/db/better-auth.ts";
 import { getAudioModelsInfo } from "@shared/registry/model-info.ts";
 import {
     getRegistryModelDefinition,
@@ -23,6 +23,23 @@ import { type AuthEnv, authFromSnapshot } from "../src/middleware/auth.ts";
 async function fetchWorker(path: string, init: RequestInit = {}) {
     return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
 }
+
+test("restricted accounts cannot use existing API keys", async () => {
+    const { key, userId } = await createTestApiKey();
+    await drizzle(env.DB)
+        .update(userTable)
+        .set({ stripePaymentRestriction: new Date().toISOString() })
+        .where(eq(userTable.id, userId));
+
+    const response = await fetchWorker("/v1/models", {
+        headers: { Authorization: `Bearer ${key}` },
+    });
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+        error: { message: "Account restricted." },
+    });
+});
 
 test("catalog metadata exposes publisher rather than author or brand", async () => {
     const response = await fetchWorker("/models");
@@ -228,7 +245,6 @@ test("restored auth allows old and future names without expanding account or com
         "owner/custom",
     ]);
 });
-
 test("filters OpenAI-compatible model list by API key permissions", async ({
     restrictedApiKey,
 }) => {

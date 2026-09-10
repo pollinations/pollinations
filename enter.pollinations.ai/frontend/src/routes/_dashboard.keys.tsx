@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_dashboard/keys")({
 
 function KeysPage() {
     const router = useRouter();
-    const { apiKeys } = DashboardRoute.useLoaderData();
+    const { apiKeys, user } = DashboardRoute.useLoaderData();
 
     async function handleCreateApiKey(
         formState: CreateApiKey,
@@ -99,6 +99,7 @@ function KeysPage() {
     return (
         <ApiKeyList
             apiKeys={apiKeys}
+            creationDisabled={Boolean(user?.stripePaymentRestriction)}
             onCreate={handleCreateApiKey}
             onUpdate={handleUpdateApiKey}
             onDelete={handleDeleteApiKey}

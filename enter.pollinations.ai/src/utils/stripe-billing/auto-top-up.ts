@@ -14,6 +14,7 @@ import {
 } from "@shared/pollen-packs.ts";
 import type Stripe from "stripe";
 import { createStripeClient } from "../stripe.ts";
+import { ACCOUNT_RESTRICTED_MESSAGE } from "../stripe-payment-restriction.ts";
 import { isBillingDetailsComplete } from "./billing-details.ts";
 import { getBillingOverview } from "./billing-overview.ts";
 import {
@@ -45,7 +46,7 @@ export async function updateAutoTopUpSettings(
     input: AutoTopUpInput,
 ): Promise<
     | { ok: true; overview: BillingOverview }
-    | { ok: false; status: 400; error: string }
+    | { ok: false; status: 400 | 403; error: string }
 > {
     if (!input.enabled) {
         await env.DB.prepare(
@@ -105,14 +106,24 @@ export async function updateAutoTopUpSettings(
         };
     }
 
-    await env.DB.prepare(
+    // Do not enable auto top-up if the account became restricted during the
+    // Stripe calls above.
+    const result = await env.DB.prepare(
         `UPDATE user
             SET auto_top_up_enabled = 1,
                 auto_top_up_amount_usd = ?
-            WHERE id = ?`,
+            WHERE id = ?
+                AND stripe_payment_restriction IS NULL`,
     )
         .bind(packAmountUsd, userId)
         .run();
+    if ((result.meta.changes ?? 0) === 0) {
+        return {
+            ok: false,
+            status: 403,
+            error: ACCOUNT_RESTRICTED_MESSAGE,
+        };
+    }
 
     return { ok: true, overview: await getBillingOverview(env, userId) };
 }
@@ -581,6 +592,7 @@ async function claimAutoTopUpAttempt(
                 FROM user
                 WHERE id = ?
                     AND auto_top_up_enabled = 1
+                    AND stripe_payment_restriction IS NULL
                     AND auto_top_up_amount_usd IS NOT NULL
                     AND COALESCE(pack_balance, 0) <= ?
             )

@@ -35,6 +35,7 @@ import {
     testCommunityTranscriptionEndpoint,
     testCommunityVideoEndpoint,
 } from "../services/community-endpoint-openai.ts";
+import { assertAccountCanCreate } from "../utils/stripe-payment-restriction.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 import {
     type FallbackPrimary,
@@ -464,6 +465,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         validator("json", CreateEndpointAgentSchema),
         async (c) => {
             const user = c.var.auth.requireUser();
+            assertAccountCanCreate(user);
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
             requireAccountPermission(c.var.auth.apiKey, "keys");
@@ -534,6 +536,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
         validator("json", CreateEndpointSchema),
         async (c) => {
             const user = c.var.auth.requireUser();
+            assertAccountCanCreate(user);
             const input = c.req.valid("json");
             const db = drizzle(c.env.DB, { schema });
             requireAccountPermission(c.var.auth.apiKey, "keys");

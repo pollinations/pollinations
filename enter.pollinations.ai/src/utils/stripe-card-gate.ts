@@ -1,4 +1,6 @@
 export const STRIPE_NEW_CARD_LIMIT = 4;
+export const STRIPE_PAYMENT_RESTRICTION_CARD_LIMIT = 8;
+export const STRIPE_FAILED_CARD_ATTEMPT_LIMIT = 50;
 export const STRIPE_NEW_CARD_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export const STRIPE_NEW_CARD_GATE_METADATA = {
@@ -9,6 +11,7 @@ export const STRIPE_NEW_CARD_GATE_METADATA = {
 
 export type StripeNewCardGateStatus = {
     gate: "ok" | "locked";
+    shouldRestrictPayments: boolean;
     distinctFailedCardCount24h: number;
     limit: number;
 };
@@ -28,6 +31,7 @@ export async function getStripeNewCardGateStatus(
     if (!userId) {
         return {
             gate: "ok",
+            shouldRestrictPayments: false,
             distinctFailedCardCount24h: 0,
             limit: STRIPE_NEW_CARD_LIMIT,
         };
@@ -36,21 +40,32 @@ export async function getStripeNewCardGateStatus(
     const windowStart = now - STRIPE_NEW_CARD_WINDOW_MS;
     const row = await db
         .prepare(
-            `SELECT COUNT(DISTINCT card_fingerprint) AS count
+            `SELECT
+                COUNT(DISTINCT card_fingerprint) AS distinct_count,
+                COUNT(*) AS attempt_count
             FROM stripe_card_fingerprint_attempt
             WHERE user_id = ?
-                AND created_at >= ?`,
+                AND created_at >= ?
+                AND created_at <= ?`,
         )
-        .bind(userId, windowStart)
-        .first<{ count: number | null }>();
+        .bind(userId, windowStart, now)
+        .first<{
+            distinct_count: number | null;
+            attempt_count: number | null;
+        }>();
 
-    const distinctFailedCardCount24h = Number(row?.count ?? 0);
+    const distinctFailedCardCount24h = Number(row?.distinct_count ?? 0);
+    const failedCardAttemptCount24h = Number(row?.attempt_count ?? 0);
 
     return {
         gate:
             distinctFailedCardCount24h >= STRIPE_NEW_CARD_LIMIT
                 ? "locked"
                 : "ok",
+        shouldRestrictPayments:
+            distinctFailedCardCount24h >=
+                STRIPE_PAYMENT_RESTRICTION_CARD_LIMIT ||
+            failedCardAttemptCount24h >= STRIPE_FAILED_CARD_ATTEMPT_LIMIT,
         distinctFailedCardCount24h,
         limit: STRIPE_NEW_CARD_LIMIT,
     };
@@ -71,12 +86,12 @@ export function stripeNewCardGateMetadata(
 export async function recordStripeCardFingerprintAttempt(
     db: D1Database,
     input: StripeCardFingerprintAttemptInput,
-): Promise<boolean> {
+): Promise<void> {
     if (!input.eventId || !input.userId || !input.cardFingerprint) {
-        return false;
+        return;
     }
 
-    const result = await db
+    await db
         .prepare(
             `INSERT OR IGNORE INTO stripe_card_fingerprint_attempt (
                 event_id,
@@ -92,6 +107,4 @@ export async function recordStripeCardFingerprintAttempt(
             input.createdAt ?? Date.now(),
         )
         .run();
-
-    return (result.meta.changes ?? 0) > 0;
 }

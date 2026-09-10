@@ -32,14 +32,19 @@ export async function getBillingOverview(
     const billingDetailsComplete = customer
         ? isBillingDetailsComplete(customer, paymentMethod)
         : false;
+    const accountRestricted = user.stripePaymentRestriction !== null;
     const autoTopUpEnabled =
-        user.autoTopUpEnabled && !!paymentMethod && billingDetailsComplete;
+        !accountRestricted &&
+        user.autoTopUpEnabled &&
+        !!paymentMethod &&
+        billingDetailsComplete;
 
     const lastIssue = await getLastAutoTopUpIssue(env.DB, stripe, userId);
     const packAmountUsd =
         user.autoTopUpAmountUsd ?? DEFAULT_AUTO_TOP_UP_AMOUNT_USD;
 
     return {
+        accountRestricted,
         autoTopUp: {
             enabled: autoTopUpEnabled,
             thresholdPollen: AUTO_TOP_UP_THRESHOLD_POLLEN,

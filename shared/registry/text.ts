@@ -10,6 +10,7 @@ import {
     withVertexCacheStorage,
 } from "./gemini-billing";
 import { mergeFallbacks } from "./merge-fallbacks";
+import { getModelChatParameters } from "./model-parameters";
 import {
     PERPLEXITY_PRO_BILLING,
     PERPLEXITY_REASONING_BILLING,
@@ -39,6 +40,18 @@ export const AUDIO_VOICES = [
 export const DEFAULT_TEXT_MODEL = "openai/gpt-5.4-nano" as const;
 export type TextModelName = keyof typeof TEXT_SERVICES;
 
+// Verified Chat controls for listings. Profiles live in
+// ./model-parameters and mirror the generation pipeline transforms
+// (e.g. sampling stripped upstream, reasoning mapped), so listings
+// describe what Pollinations honors rather than upstream docs.
+const chatParameters = (id: string) => {
+    const profile = getModelChatParameters(id);
+    return {
+        supportedParameters: profile?.supported,
+        defaultParameters: profile?.defaults,
+    };
+};
+
 const TEXT_BASE_SERVICES = {
     "openai/gpt-5.4-nano": {
         aliases: ["gpt-5.4-nano", "openai"],
@@ -61,6 +74,7 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         contextLength: 400000,
         isSpecialized: false,
+        ...chatParameters("openai/gpt-5.4-nano"),
     },
     "openai/gpt-5-nano": {
         aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07", "openai-fast"],
@@ -814,6 +828,7 @@ const TEXT_BASE_SERVICES = {
         reasoning: true,
         contextLength: 1048576,
         isSpecialized: false,
+        ...chatParameters("deepseek/deepseek-v4-flash"),
     },
     "deepseek/deepseek-v4-flash-vision-exp": {
         aliases: [],
@@ -1151,6 +1166,7 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         contextLength: 1000000, // Bedrock global Claude Sonnet 4.6 context window.
         isSpecialized: false,
+        ...chatParameters("anthropic/claude-sonnet-4.6"),
     },
     "anthropic/claude-sonnet-5": {
         aliases: ["sonnet-5", "claude-sonnet-5"],

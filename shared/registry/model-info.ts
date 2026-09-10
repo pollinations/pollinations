@@ -119,6 +119,8 @@ export const ModelInfoSchema = z.object({
     alpha: z.boolean().optional(),
     flat_rate: z.boolean().optional(),
     added_date: z.number().optional(),
+    supported_parameters: z.array(z.string()).optional(),
+    default_parameters: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type ModelInfo = z.infer<typeof ModelInfoSchema>;
@@ -221,6 +223,8 @@ export function modelInfoFromDefinition(
         tools: service.tools,
         reasoning: service.reasoning,
         context_length: service.contextLength,
+        supported_parameters: service.supportedParameters,
+        default_parameters: service.defaultParameters,
         voices: service.voices,
         is_specialized: service.isSpecialized,
         paid_only: service.paidOnly,

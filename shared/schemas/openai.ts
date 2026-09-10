@@ -746,6 +746,14 @@ export const OpenAIModelSchema = z
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),
         per_user_rpm: z.number().positive().nullable().optional(),
+        supported_parameters: z.array(z.string()).optional().meta({
+            description:
+                "Chat controls this model honors through Pollinations. Only present for models verified against the generation pipeline.",
+        }),
+        default_parameters: z.record(z.string(), z.unknown()).optional().meta({
+            description:
+                "Gateway defaults applied when the caller omits the control.",
+        }),
     })
     .meta({
         description: "OpenAI-compatible model object with capability metadata",

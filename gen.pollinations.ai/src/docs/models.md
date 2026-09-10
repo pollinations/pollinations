@@ -32,6 +32,31 @@ Rich model endpoints include `capabilities` for agentic/model traits:
 Modalities, video frame controls, voices, and context length remain separate
 structured fields.
 
+### Supported parameters
+
+Models verified against the generation pipeline expose
+`supported_parameters` (the Chat controls they honor) and
+`default_parameters` (gateway defaults applied when omitted):
+
+```bash
+curl "https://gen.pollinations.ai/v1/models/openai" | jq '{id, supported_parameters, default_parameters}'
+```
+
+```json
+{
+  "id": "openai",
+  "supported_parameters": ["messages", "model", "logit_bias", "..."],
+  "default_parameters": {"logprobs": false, "stream": false}
+}
+```
+
+Only verified models carry these fields — anything else omits them rather
+than guessing. Verified means checked against the request transforms, not
+upstream provider docs: sampling knobs stripped upstream never appear, and
+controls the gateway translates (like `reasoning_effort` on Claude) are
+listed as supported with the mapping noted. These describe Chat Completions
+(and the `GET /text` surface); the native Responses API may differ.
+
 Use `supported_endpoints` to discover which public API routes accept each
 model. `/v1/responses` identifies built-in models with a configured native
 Responses route, community text models and endpoint agents whose owner supplied

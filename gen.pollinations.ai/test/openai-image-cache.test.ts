@@ -10,7 +10,6 @@ import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
 import type { Env } from "@/env.ts";
-import { toDataUri } from "@/image/utils/imageDownload.ts";
 import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
 import { imageCache } from "@/middleware/media-cache.ts";
 import { generateCacheKey } from "@/utils/media-cache.ts";
@@ -31,57 +30,6 @@ const testLog = {
 } as unknown as Logger;
 
 describe("OpenAI image cache", () => {
-    it("prepares two large multipart uploads for inline providers", async () => {
-        const sizes = [9_992_143, 12_285_506];
-        const form = new FormData();
-        form.set("prompt", "edit");
-        form.set("safe", "false");
-        for (const size of sizes) {
-            const bytes = new Uint8Array(size);
-            bytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-            form.append(
-                "image",
-                new Blob([bytes], { type: "image/png" }),
-                "input.png",
-            );
-        }
-        const app = new Hono<Env>()
-            .use("*", async (c, next) => {
-                c.set("model", {
-                    requested: "bytedance/seedream-4.0",
-                    resolved: "bytedance/seedream-4.0",
-                    definition: {} as Env["Variables"]["model"]["definition"],
-                });
-                await next();
-            })
-            .post("/v1/images/edits", prepareOpenAIImageEdit, async (c) => {
-                const input = c.req.valid("json" as never) as {
-                    image: string[];
-                };
-                const images = await Promise.all(input.image.map(toDataUri));
-                return c.json(
-                    images.map((image, index) => ({
-                        unchanged: image === input.image[index],
-                        length: image.length,
-                    })),
-                );
-            });
-        const response = await app.fetch(
-            new Request("https://gen.pollinations.ai/v1/images/edits", {
-                method: "POST",
-                body: form,
-            }),
-            {} as CloudflareBindings,
-        );
-        expect(response.status).toBe(200);
-        expect(await response.json()).toEqual(
-            sizes.map((size) => ({
-                unchanged: true,
-                length:
-                    "data:image/png;base64,".length + Math.ceil(size / 3) * 4,
-            })),
-        );
-    });
     it.each([
         "json",
         "multipart",

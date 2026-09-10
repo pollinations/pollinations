@@ -36,19 +36,15 @@ export async function getStripeNewCardGateStatus(
     const windowStart = now - STRIPE_NEW_CARD_WINDOW_MS;
     const row = await db
         .prepare(
-            `SELECT
-                COUNT(DISTINCT card_fingerprint) AS distinct_count
+            `SELECT COUNT(DISTINCT card_fingerprint) AS count
             FROM stripe_card_fingerprint_attempt
             WHERE user_id = ?
-                AND created_at >= ?
-                AND created_at <= ?`,
+                AND created_at >= ?`,
         )
-        .bind(userId, windowStart, now)
-        .first<{
-            distinct_count: number | null;
-        }>();
+        .bind(userId, windowStart)
+        .first<{ count: number | null }>();
 
-    const distinctFailedCardCount24h = Number(row?.distinct_count ?? 0);
+    const distinctFailedCardCount24h = Number(row?.count ?? 0);
 
     return {
         gate:
@@ -96,5 +92,6 @@ export async function recordStripeCardFingerprintAttempt(
             input.createdAt ?? Date.now(),
         )
         .run();
+
     return (result.meta.changes ?? 0) > 0;
 }

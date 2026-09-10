@@ -1,5 +1,8 @@
 import type Stripe from "stripe";
 
+/** Only use with application-authored messages, never provider/file contents. */
+export class FraudCheckError extends Error {}
+
 export const FRAUD_BAN_THRESHOLD = 0.75;
 // Manually settled account: never automatically ban it.
 export const FRAUD_BAN_EXCLUDED_USER_ID = "GcN1eNVQXW58eLIppqxlgvI6a1w9Scic";
@@ -15,7 +18,7 @@ export function cappedFraudScore(payments: Iterable<FraudPayment>): number {
     const charges = new Map<string, Set<Signal>>();
     for (const payment of payments) {
         if (!/^(ch|py)_.+/.test(payment.chargeId))
-            throw new Error("Missing Stripe charge identity");
+            throw new FraudCheckError("Missing Stripe charge identity");
         const flags = charges.get(payment.chargeId) ?? new Set<Signal>();
         for (const signal of SIGNALS) if (payment[signal]) flags.add(signal);
         charges.set(payment.chargeId, flags);
@@ -82,7 +85,8 @@ export async function collectStripeFraudScores(
         limit: 100,
         created: { lte: until },
     })) {
-        if (!charge.livemode) throw new Error("Expected live Stripe charges");
+        if (!charge.livemode)
+            throw new FraudCheckError("Expected live Stripe charges");
         const customerId =
             typeof charge.customer === "string"
                 ? charge.customer
@@ -120,14 +124,16 @@ export async function collectStripeFraudScores(
         const payment = payments.get(
             typeof value === "string" ? value : value.id,
         );
-        if (!payment) throw new Error("Incomplete Stripe charge coverage");
+        if (!payment)
+            throw new FraudCheckError("Incomplete Stripe charge coverage");
         return payment.payment;
     }
     for await (const dispute of stripe.disputes.list({
         limit: 100,
         created: { lte: until },
     })) {
-        if (!dispute.livemode) throw new Error("Expected live Stripe disputes");
+        if (!dispute.livemode)
+            throw new FraudCheckError("Expected live Stripe disputes");
         if (dispute.reason === "fraudulent")
             paymentFor(dispute.charge).fd = true;
     }
@@ -135,7 +141,8 @@ export async function collectStripeFraudScores(
         limit: 100,
         created: { lte: until },
     })) {
-        if (!warning.livemode) throw new Error("Expected live Stripe warnings");
+        if (!warning.livemode)
+            throw new FraudCheckError("Expected live Stripe warnings");
         paymentFor(warning.charge).ew = true;
     }
     // Never expire another account's checkout on an ambiguously shared customer.

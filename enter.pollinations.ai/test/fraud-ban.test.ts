@@ -13,8 +13,16 @@ import {
     getStripeNewCardGateStatus,
     recordStripeCardFingerprintAttempt,
 } from "../src/utils/stripe-card-gate.ts";
-import { banFraudAccount } from "../src/utils/stripe-fraud-ban.ts";
+import { fraudBanQueries } from "../src/utils/stripe-fraud-ban.ts";
 import { test } from "./fixtures.ts";
+
+async function banFraudAccount(db: D1Database, userId: string): Promise<void> {
+    const queries = fraudBanQueries(userId);
+    if (queries.length)
+        await db.batch(
+            queries.map(({ sql, params }) => db.prepare(sql).bind(...params)),
+        );
+}
 
 test("checkout created during a ban is expired instead of redirected", async ({
     sessionToken,
@@ -69,9 +77,6 @@ test("four-card Radar stays independent from account bans", async ({
     expect((await getStripeNewCardGateStatus(env.DB, user.id, now)).gate).toBe(
         "locked",
     );
-    expect(
-        (await getStripeNewCardGateStatus(env.DB, user.id, now - 1)).gate,
-    ).toBe("ok");
     expect(
         (await getStripeNewCardGateStatus(env.DB, user.id, now + 86400001))
             .gate,

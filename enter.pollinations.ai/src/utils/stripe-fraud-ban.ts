@@ -3,6 +3,7 @@ import {
     collectStripeFraudScores,
     FRAUD_BAN_EXCLUDED_USER_ID,
     FRAUD_BAN_THRESHOLD,
+    FraudCheckError,
     type FraudUser,
 } from "./stripe-fraud-score.ts";
 
@@ -22,7 +23,7 @@ export async function runFraudBanCheck(
 ) {
     const account = await stripe.accounts.retrieve();
     if (account.id !== "acct_1SrY3q7rcjS3l7tr")
-        throw new Error("Unexpected Stripe account");
+        throw new FraudCheckError("Unexpected Stripe account");
     const users: FraudUser[] = [];
     let cursor = "";
     for (;;) {
@@ -31,7 +32,7 @@ export async function runFraudBanCheck(
             params: [cursor],
         });
         if (!Array.isArray(page?.results))
-            throw new Error("Invalid D1 user page");
+            throw new FraudCheckError("Invalid D1 user page");
         const rows = page.results as FraudUser[];
         if (
             rows.some(
@@ -41,14 +42,16 @@ export async function runFraudBanCheck(
                         typeof user.stripe_customer_id !== "string"),
             )
         )
-            throw new Error("Invalid D1 user identity");
+            throw new FraudCheckError("Invalid D1 user identity");
         users.push(...rows);
         if (rows.length < 5000) break;
         const next = rows.at(-1)?.id;
-        if (!next || next <= cursor) throw new Error("Invalid D1 pagination");
+        if (!next || next <= cursor)
+            throw new FraudCheckError("Invalid D1 pagination");
         cursor = next;
     }
-    if (!users.length) throw new Error("No D1 users; refusing to continue");
+    if (!users.length)
+        throw new FraudCheckError("No D1 users; refusing to continue");
     const result = await collectStripeFraudScores(stripe, users);
     const excluded = new Set([FRAUD_BAN_EXCLUDED_USER_ID, ...excludedUserIds]);
     const candidates = users.filter(
@@ -92,17 +95,6 @@ export function fraudBanQueries(userId: string) {
         "UPDATE user SET auto_top_up_enabled = 0 WHERE id = ?",
         "DELETE FROM session WHERE user_id = ?",
     ].map((sql) => ({ sql, params: [userId] }));
-}
-
-export async function banFraudAccount(
-    db: D1Database,
-    userId: string,
-): Promise<void> {
-    const queries = fraudBanQueries(userId);
-    if (queries.length)
-        await db.batch(
-            queries.map(({ sql, params }) => db.prepare(sql).bind(...params)),
-        );
 }
 
 /**

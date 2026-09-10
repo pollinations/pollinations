@@ -676,6 +676,7 @@ const CodeAgentDirectorySchema = z
                         part !== "" &&
                         part !== "." &&
                         part !== ".." &&
+                        part.length <= 120 &&
                         /^[A-Za-z0-9._-]+$/.test(part),
                 ),
         "Directory must be a relative GitHub repository path",

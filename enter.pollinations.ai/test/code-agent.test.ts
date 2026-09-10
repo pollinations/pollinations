@@ -3,7 +3,7 @@ import {
     deleteCodeAgent,
     deployCodeAgent,
     loadCodeAgentSource,
-    resolveCodeAgentCommit,
+    resolveCodeAgentRepository,
 } from "../src/services/code-agent.ts";
 
 const deploymentEnv = {
@@ -64,6 +64,14 @@ describe("code agent deployment", () => {
         const commit = "a".repeat(40);
         const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
             const url = String(input);
+            if (url.endsWith("/repos/example/agents")) {
+                return Response.json({
+                    name: "agents",
+                    full_name: "example/agents",
+                    description: "Example agents",
+                    private: false,
+                });
+            }
             if (url.endsWith("/repos/example/agents/commits/HEAD")) {
                 return Response.json({ sha: commit });
             }
@@ -77,20 +85,49 @@ describe("code agent deployment", () => {
         });
         vi.stubGlobal("fetch", fetchMock);
 
-        const deployedCommitSha = await resolveCodeAgentCommit(
+        const repository = await resolveCodeAgentRepository(
             deploymentEnv,
             "https://github.com/example/agents",
         );
+        expect(repository).toEqual({
+            repository: "https://github.com/example/agents",
+            name: "agents",
+            description: "Example agents",
+            deployedCommitSha: commit,
+        });
         await expect(
             loadCodeAgentSource(
-                "https://github.com/example/agents",
+                repository.repository,
                 "tools/image",
-                deployedCommitSha,
+                repository.deployedCommitSha,
             ),
         ).resolves.toBe(source);
         expect(fetchMock.mock.calls[0]?.[1]?.headers).toMatchObject({
             Authorization: "token mock_github_auth_token",
         });
+    });
+
+    it("rejects a private GitHub repository", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL) =>
+                String(input).endsWith("/commits/HEAD")
+                    ? Response.json({ sha: "a".repeat(40) })
+                    : Response.json({
+                          name: "private-agent",
+                          full_name: "example/private-agent",
+                          description: null,
+                          private: true,
+                      }),
+            ),
+        );
+
+        await expect(
+            resolveCodeAgentRepository(
+                deploymentEnv,
+                "https://github.com/example/private-agent",
+            ),
+        ).rejects.toMatchObject({ status: 400 });
     });
 
     it("fails closed when deployment is not configured", async () => {

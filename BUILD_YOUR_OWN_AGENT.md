@@ -11,7 +11,7 @@ This is different from hosting your own OpenAI-compatible model endpoint. It is 
 3. Configure a prompt and base model, or enter a public GitHub repository and optional directory.
 4. Save it. The dashboard creates the agent configuration and registers its callable model name.
 
-A linked GitHub username is required to create an agent. Private agents are visible and callable only by their owner. Code agents and public listings require [community publisher access](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml).
+A linked GitHub username is required to create an agent. Private agents are visible and callable only by their owner. Public listings require [community publisher access](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml).
 
 ## Prompt agent configuration
 
@@ -43,7 +43,7 @@ The `composio` server uses each caller's connections from **Account → MCP Conn
 
 ## Code agent configuration
 
-A code agent uses a public GitHub repository as its source of truth. Put a self-contained `agent.js` at the repository root, or set `directory` when a repository contains multiple agents. Repository visibility and agent visibility are independent: a private agent is owner-only even though its source repository is public.
+A code agent uses a public GitHub repository as its source of truth. Put a self-contained `agent.js` at the repository root, or set `directory` when a repository contains multiple agents. The repository name becomes the model ID and title; when `directory` is set, its final segment is used instead. The repository description becomes the catalog description. Repository visibility and agent visibility are independent: a private agent is owner-only even though its source repository is public.
 
 ```js
 export default async function ({ request, pollinations, mcp }) {
@@ -68,7 +68,7 @@ Example `code-agent.json`:
 }
 ```
 
-Create it with the same CLI command, using `code-agent.json`. The API stores the repository, directory, and deployed commit SHA—not the source code. The repository binding is fixed after creation.
+Create it with `npx @pollinations/cli agents create --config code-agent.json`. Add `--visibility public` to publish after your account has community publisher access. The API stores the GitHub-derived listing fields, repository, directory, and deployed commit SHA—not the source code. The repository binding and model ID are fixed after creation; syncing refreshes the code, title, and description.
 
 To deploy the newest default-branch revision after a push, add this step to a GitHub Action (replace `AGENT_ID`):
 
@@ -80,7 +80,7 @@ The sync route needs no secret and cannot change which repository is deployed.
 
 ## Create with the CLI
 
-Create the agent and its callable model listing in one command:
+Create a prompt agent and its callable model listing in one command:
 
 ```bash
 npx @pollinations/cli agents create \
@@ -89,7 +89,7 @@ npx @pollinations/cli agents create \
   --title "Research Assistant"
 ```
 
-The callable model ID is `<your-github-username>/research-assistant`. Add `--visibility public` to publish it after your account has community publisher access. Managed agents are always text-only and free: they cannot set prices, fallbacks, or a per-user request limit.
+The callable model ID is `<your-github-username>/research-assistant`. Code agents derive this name from GitHub instead of accepting `--name`, `--title`, or `--description`. Add `--visibility public` to publish after your account has community publisher access. Managed agents are always text-only and free: they cannot set prices, fallbacks, or a per-user request limit.
 
 ## Call an agent
 
@@ -132,6 +132,6 @@ npx @pollinations/cli agents sync <agent-id>
 npx @pollinations/cli agents delete <agent-id>
 ```
 
-Deleting an agent also deletes its model listing. Prompt-agent updates can change its runtime configuration and listing. Code-agent updates can change listing fields; `sync` deploys new code.
+Deleting an agent also deletes its model listing. Prompt-agent updates can change its runtime configuration and listing. Code-agent updates can change visibility and safety policy; `sync` deploys new code and refreshes GitHub metadata.
 
 The Account API exposes the same operations under `/account/agents`. API keys need the `account:keys` permission. See the [Community Agents API reference](https://gen.pollinations.ai/docs#tag/community-agents) for request and response schemas.

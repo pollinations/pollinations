@@ -188,10 +188,11 @@ Prices only apply to `--visibility public` models. A private model is owner-only
 polli agents list
 polli agents get <id>
 polli agents create --config agent.json --name my-agent --title "My Agent"
+polli agents create --config code-agent.json
 polli agents update <id> --config agent.json
 polli agents delete <id>
 ```
-The config file contains `systemPrompt`, `baseModel`, and optional `mcpServers`; create also requires `--name` and `--title` for the callable model listing. Use server IDs from the MCP catalog. Updates replace the complete agent configuration.
+Prompt-agent config contains `systemPrompt`, `baseModel`, and optional `mcpServers`; create also requires `--name` and `--title`. Code-agent config contains `type: "code_agent"`, a public GitHub `repository`, and an optional `directory`; its model ID, title, and description come from GitHub. Use server IDs from the MCP catalog. Prompt-agent updates replace the complete runtime configuration.
 
 Creating an agent also creates its callable model listing. Managed agents are text-only and free, with no fallbacks or per-user RPM. Deleting the agent also deletes its model listing. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md).
 

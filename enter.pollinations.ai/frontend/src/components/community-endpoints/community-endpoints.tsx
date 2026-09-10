@@ -115,7 +115,10 @@ export function CommunityEndpoints({
         listing: AgentListingDetailsPayload,
     ): Promise<void> {
         const response = await apiClient.account.agents.$post({
-            json: { ...payload, ...listing },
+            json:
+                "type" in payload && payload.type === "code_agent"
+                    ? { ...payload, visibility: listing.visibility }
+                    : { ...payload, ...listing },
         });
         if (!response.ok) throw new Error(await readError(response));
         await loadEndpoints();
@@ -132,7 +135,7 @@ export function CommunityEndpoints({
             json:
                 editingAgent.type === "code_agent"
                     ? {
-                          ...listing,
+                          visibility: listing.visibility,
                           requiredSafetyFeatures:
                               payload.requiredSafetyFeatures,
                       }
@@ -454,9 +457,8 @@ export function CommunityEndpoints({
                                     Create your first agent
                                 </p>
                                 <p className="text-sm text-theme-text-muted">
-                                    {canPublish
-                                        ? "Build from a prompt and model, or deploy agent.js from GitHub."
-                                        : "Build from a prompt and model."}
+                                    Build from a prompt and model, or deploy
+                                    agent.js from GitHub.
                                 </p>
                             </Surface>
                         ) : (
@@ -467,10 +469,9 @@ export function CommunityEndpoints({
                         <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                             <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                Private prompt agents do not need approval. Code
-                                agents and public agents require publishing
-                                access. Request it through the{" "}
-                                {publisherAccessRequestLink}.
+                                Private agents do not need approval. Public
+                                agents require publishing access. Request it
+                                through the {publisherAccessRequestLink}.
                             </span>
                         </p>
                     )}

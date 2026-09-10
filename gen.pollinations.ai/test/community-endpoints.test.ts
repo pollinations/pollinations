@@ -7576,58 +7576,10 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     ).resolves.toEqual([]);
 });
 
-fixtureTest(
-    "restricts code agent deployment to approved publishers",
-    async () => {
-        const ownerUserId = await createTestUser({
-            githubId: COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID,
-            githubUsername: `owner-${crypto.randomUUID().slice(0, 8)}`,
-        });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-        const cookie = (await signedSessionCookie(sessionToken)).replace(
-            "better-auth.session_token",
-            "__Secure-better-auth.session_token",
-        );
-        const deploymentFetch = vi.fn();
-        vi.stubGlobal("fetch", deploymentFetch);
-        const deniedOwnerEnv = {
-            ...env,
-            BETTER_AUTH_URL: "https://enter.test",
-        };
-
-        const response = await fetchEnterApi(
-            await createEnterFrontendApi(),
-            new Request("https://enter.test/api/account/agents", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", Cookie: cookie },
-                body: JSON.stringify({
-                    type: "code_agent",
-                    name: `code-${crypto.randomUUID().slice(0, 8)}`,
-                    title: "Private Code Agent",
-                    repository: "https://github.com/example/agents",
-                }),
-            }),
-            deniedOwnerEnv,
-        );
-
-        expect(response.status).toBe(403);
-        expect(deploymentFetch).not.toHaveBeenCalled();
-    },
-);
-
 fixtureTest("creates, updates, lists, and deletes code agents", async () => {
     const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
-    const modelName = `code-${crypto.randomUUID().slice(0, 8)}`;
     const ownerUserId = await createTestUser({
-        githubId: nextAllowedGithubId(),
+        githubId: COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID,
         githubUsername: ownerGithubUsername,
     });
     const sessionToken = `session-${crypto.randomUUID()}`;
@@ -7646,6 +7598,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         "__Secure-better-auth.session_token",
     );
     let commit = "a".repeat(40);
+    let repositoryDescription = "Example code agents";
     let source = `export default async ({ request, pollinations, mcp }) => {
         const input = await request.json();
         await mcp("pollinations", "listModels", {});
@@ -7658,12 +7611,20 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
     const deploymentFetch = vi.fn(
         async (input: RequestInfo | URL, _init?: RequestInit) => {
             const url = String(input);
+            if (url.endsWith("/repos/example/agents")) {
+                return Response.json({
+                    name: "agents",
+                    full_name: "example/agents",
+                    description: repositoryDescription,
+                    private: false,
+                });
+            }
             if (url.endsWith("/repos/example/agents/commits/HEAD")) {
                 return Response.json({ sha: commit });
             }
             if (
                 url ===
-                `https://raw.githubusercontent.com/example/agents/${commit}/tools/image/agent.js`
+                `https://raw.githubusercontent.com/example/agents/${commit}/agent.js`
             ) {
                 return new Response(source);
             }
@@ -7685,10 +7646,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
             headers: { "Content-Type": "application/json", Cookie: cookie },
             body: JSON.stringify({
                 type: "code_agent",
-                name: modelName,
-                title: "Code Agent",
                 repository: "https://github.com/example/agents.git",
-                directory: "tools/image",
             }),
         }),
         enterEnv,
@@ -7703,12 +7661,15 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
     };
     expect(agent).toMatchObject({
         type: "code_agent",
+        name: "agents",
+        title: "agents",
+        description: "Example code agents",
         repository: "https://github.com/example/agents",
-        directory: "tools/image",
+        directory: "",
         deployedCommitSha: commit,
         visibility: "private",
     });
-    expect(deploymentFetch).toHaveBeenCalledTimes(3);
+    expect(deploymentFetch).toHaveBeenCalledTimes(4);
 
     const [stored] = await db
         .select()
@@ -7721,7 +7682,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
     });
     expect(JSON.parse(stored.payload)).toEqual({
         repository: "https://github.com/example/agents",
-        directory: "tools/image",
+        directory: "",
         deployedCommitSha: commit,
     });
 
@@ -7767,18 +7728,22 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         }),
         enterEnv,
     );
-    expect(updateResponse.status, await updateResponse.clone().text()).toBe(
-        200,
+    expect(updateResponse.status).toBe(400);
+    expect(deploymentFetch).toHaveBeenCalledTimes(4);
+
+    const publishResponse = await fetchEnterApi(
+        enterApi,
+        new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", Cookie: cookie },
+            body: JSON.stringify({ visibility: "public" }),
+        }),
+        enterEnv,
     );
-    await expect(updateResponse.json()).resolves.toMatchObject({
-        type: "code_agent",
-        title: "Updated Code Agent",
-        repository: "https://github.com/example/agents",
-        deployedCommitSha: commit,
-    });
-    expect(deploymentFetch).toHaveBeenCalledTimes(3);
+    expect(publishResponse.status).toBe(403);
 
     commit = "b".repeat(40);
+    repositoryDescription = "Updated on GitHub";
     source = updatedSource;
     const syncResponse = await fetchEnterApi(
         enterApi,
@@ -7792,7 +7757,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         updated: true,
         deployedCommitSha: commit,
     });
-    expect(deploymentFetch).toHaveBeenCalledTimes(6);
+    expect(deploymentFetch).toHaveBeenCalledTimes(8);
 
     await enterEnv.KV.delete(`code-agent-sync:throttle:${agent.id}`);
     const unchangedSyncResponse = await fetchEnterApi(
@@ -7807,7 +7772,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         updated: false,
         deployedCommitSha: commit,
     });
-    expect(deploymentFetch).toHaveBeenCalledTimes(7);
+    expect(deploymentFetch).toHaveBeenCalledTimes(10);
 
     const listResponse = await fetchEnterApi(
         enterApi,
@@ -7823,8 +7788,9 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
                 id: agent.id,
                 type: "code_agent",
                 repository: "https://github.com/example/agents",
-                directory: "tools/image",
+                directory: "",
                 deployedCommitSha: commit,
+                description: "Updated on GitHub",
             }),
         ],
     });
@@ -7838,8 +7804,8 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         enterEnv,
     );
     expect(deleteResponse.status).toBe(200);
-    expect(deploymentFetch).toHaveBeenCalledTimes(8);
-    expect(deploymentFetch.mock.calls[7][1]?.method).toBe("DELETE");
+    expect(deploymentFetch).toHaveBeenCalledTimes(11);
+    expect(deploymentFetch.mock.calls[10][1]?.method).toBe("DELETE");
 });
 
 fixtureTest("validates community fallback targets on write", async () => {

@@ -23,7 +23,7 @@ import {
     deleteCodeAgent,
     deployCodeAgent,
     loadCodeAgentSource,
-    resolveCodeAgentCommit,
+    resolveCodeAgentRepository,
 } from "../services/code-agent.ts";
 import {
     BuiltinMcpServerIdSchema,
@@ -71,8 +71,11 @@ const CreatePromptAgentSchema = PromptAgentInputSchema.extend({
     type: z.literal("prompt_agent").optional().default("prompt_agent"),
 }).strict();
 const CreateCodeAgentSchema = CodeAgentInputSchema.extend({
-    ...CreateListingFieldsSchema.shape,
     type: z.literal("code_agent"),
+    visibility: ListingFieldsSchema.shape.visibility
+        .optional()
+        .default("private"),
+    requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional().default([]),
 }).strict();
 const CreateAgentSchema = z.union([
     CreateCodeAgentSchema,
@@ -81,7 +84,12 @@ const CreateAgentSchema = z.union([
 const UpdatePromptAgentSchema = PromptAgentInputSchema.extend(
     UpdateListingFieldsSchema.shape,
 ).strict();
-const UpdateCodeAgentSchema = UpdateListingFieldsSchema.strict();
+const UpdateCodeAgentSchema = z
+    .object({
+        visibility: ListingFieldsSchema.shape.visibility.optional(),
+        requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional(),
+    })
+    .strict();
 const UpdateAgentEnvelopeSchema = z
     .object({
         ...UpdateListingFieldsSchema.shape,
@@ -162,6 +170,21 @@ async function requireOwnedAgent(db: Db, id: string, ownerUserId: string) {
 
 const CODE_AGENT_SYNC_THROTTLE_SECONDS = 30;
 
+function codeAgentListingFields(
+    repository: { name: string; description: string | null },
+    directory: string,
+) {
+    const sourceName = directory.split("/").at(-1) || repository.name;
+    return {
+        name: sourceName.toLowerCase(),
+        title: sourceName.slice(0, COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH),
+        description:
+            repository.description
+                ?.trim()
+                .slice(0, COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH) || null,
+    };
+}
+
 async function syncCodeAgent(c: Context<Env>, id: string) {
     const db = drizzle(c.env.DB, { schema });
     const row = await db.query.communityEndpoint.findFirst({
@@ -190,27 +213,38 @@ async function syncCodeAgent(c: Context<Env>, id: string) {
         { expirationTtl: 60 },
     );
 
-    const deployedCommitSha = await resolveCodeAgentCommit(
+    const repository = await resolveCodeAgentRepository(
         c.env,
         config.repository,
     );
-    if (deployedCommitSha === config.deployedCommitSha) {
+    const { deployedCommitSha } = repository;
+    const listing = codeAgentListingFields(repository, config.directory);
+    const metadataChanged =
+        listing.title !== row.title ||
+        listing.description !== row.description ||
+        repository.repository !== config.repository;
+    if (deployedCommitSha === config.deployedCommitSha && !metadataChanged) {
         return {
             updated: false,
             deployedCommitSha,
         };
     }
-    const source = await loadCodeAgentSource(
-        config.repository,
-        config.directory,
-        deployedCommitSha,
-    );
-    await deployCodeAgent(c.env, id, source);
+    if (deployedCommitSha !== config.deployedCommitSha) {
+        const source = await loadCodeAgentSource(
+            repository.repository,
+            config.directory,
+            deployedCommitSha,
+        );
+        await deployCodeAgent(c.env, id, source);
+    }
     await db
         .update(schema.communityEndpoint)
         .set({
+            title: listing.title,
+            description: listing.description,
             payload: JSON.stringify({
                 ...config,
+                repository: repository.repository,
                 deployedCommitSha,
             }),
             updatedAt: new Date(),
@@ -262,7 +296,6 @@ async function requireAgentWriteAccess(
             message: "Community model name is already registered",
         });
     }
-    return owner;
 }
 
 export const agentsRoutes = new Hono<Env>()
@@ -344,7 +377,7 @@ export const agentsRoutes = new Hono<Env>()
             tags: ["🤖 Community Agents"],
             summary: "Create Agent",
             description:
-                "Create a prompt agent or, with community publisher access, deploy `agent.js` from a public GitHub repository. Code agents export a default function accepting `{ request, pollinations, mcp }` and return an OpenAI Responses-compatible Response. API keys require `account:keys`.",
+                "Create a prompt agent or deploy `agent.js` from a public GitHub repository. Code-agent identity comes from the repository, and public visibility requires community publisher access. Code agents export a default function accepting `{ request, pollinations, mcp }` and return an OpenAI Responses-compatible Response. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Created agent",
@@ -365,40 +398,49 @@ export const agentsRoutes = new Hono<Env>()
             const input = c.req.valid("json");
             requireAccountPermission(c.var.auth.apiKey, "keys");
             const db = drizzle(c.env.DB, { schema });
-            const owner = await requireAgentWriteAccess(
-                db,
-                user.id,
-                input.name,
-                input.visibility,
-            );
-            if (
-                input.type === "code_agent" &&
-                !isCommunityEndpointOwnerAllowed(owner)
-            ) {
-                throw new HTTPException(403, {
-                    message:
-                        "Code agent deployment requires community publishing approval",
-                });
-            }
             const id = crypto.randomUUID();
             let payload: string;
+            let listing: {
+                name: string;
+                title: string;
+                description: string | null;
+            };
             if (input.type === "code_agent") {
-                const deployedCommitSha = await resolveCodeAgentCommit(
+                const repository = await resolveCodeAgentRepository(
                     c.env,
                     input.repository,
                 );
+                const { deployedCommitSha } = repository;
+                listing = codeAgentListingFields(repository, input.directory);
+                await requireAgentWriteAccess(
+                    db,
+                    user.id,
+                    listing.name,
+                    input.visibility,
+                );
                 const source = await loadCodeAgentSource(
-                    input.repository,
+                    repository.repository,
                     input.directory,
                     deployedCommitSha,
                 );
                 await deployCodeAgent(c.env, id, source);
                 payload = JSON.stringify({
-                    repository: input.repository,
+                    repository: repository.repository,
                     directory: input.directory,
                     deployedCommitSha,
                 });
             } else {
+                listing = {
+                    name: input.name,
+                    title: input.title,
+                    description: input.description || null,
+                };
+                await requireAgentWriteAccess(
+                    db,
+                    user.id,
+                    listing.name,
+                    input.visibility,
+                );
                 payload = serializePromptAgentConfig(input);
             }
             let row: AgentRow;
@@ -408,9 +450,9 @@ export const agentsRoutes = new Hono<Env>()
                     .values({
                         id,
                         ownerUserId: user.id,
-                        name: input.name,
-                        title: input.title,
-                        description: input.description || null,
+                        name: listing.name,
+                        title: listing.title,
+                        description: listing.description,
                         type: input.type,
                         baseUrl:
                             input.type === "code_agent"
@@ -439,7 +481,7 @@ export const agentsRoutes = new Hono<Env>()
             tags: ["🤖 Community Agents"],
             summary: "Update Agent",
             description:
-                "Update a prompt agent's configuration or a code agent's listing fields. A code agent's repository and directory are fixed after creation. API keys require `account:keys`.",
+                "Update a prompt agent's configuration or a code agent's visibility and safety policy. A code agent's identity, repository, and directory are fixed after creation. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Updated agent",
@@ -463,9 +505,11 @@ export const agentsRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB, { schema });
             const id = c.req.param("id");
             const stored = await requireOwnedAgent(db, id, user.id);
-            const name = input.name ?? stored.name;
-            const visibility = input.visibility ?? stored.visibility;
-            await requireAgentWriteAccess(db, user.id, name, visibility, id);
+            let name = stored.name;
+            let title = stored.title;
+            let description = stored.description;
+            let visibility = stored.visibility;
+            let requiredSafetyFeatures = stored.requiredSafetyFeatures;
             let nextPayload: string;
             if (stored.type === "code_agent") {
                 const update = UpdateCodeAgentSchema.safeParse(input);
@@ -481,6 +525,10 @@ export const agentsRoutes = new Hono<Env>()
                 if (!config) {
                     throw new Error(`Agent ${id} has invalid configuration`);
                 }
+                visibility = update.data.visibility ?? visibility;
+                requiredSafetyFeatures =
+                    update.data.requiredSafetyFeatures ??
+                    requiredSafetyFeatures;
                 nextPayload = stored.payload;
             } else {
                 const update = UpdatePromptAgentSchema.safeParse(input);
@@ -496,6 +544,16 @@ export const agentsRoutes = new Hono<Env>()
                 if (!config) {
                     throw new Error(`Agent ${id} has invalid configuration`);
                 }
+                name = update.data.name ?? name;
+                title = update.data.title ?? title;
+                description =
+                    update.data.description === undefined
+                        ? description
+                        : update.data.description || null;
+                visibility = update.data.visibility ?? visibility;
+                requiredSafetyFeatures =
+                    update.data.requiredSafetyFeatures ??
+                    requiredSafetyFeatures;
                 nextPayload = serializePromptAgentConfig({
                     systemPrompt:
                         update.data.systemPrompt ?? config.systemPrompt,
@@ -503,19 +561,15 @@ export const agentsRoutes = new Hono<Env>()
                     mcpServers: update.data.mcpServers ?? config.mcpServers,
                 });
             }
+            await requireAgentWriteAccess(db, user.id, name, visibility, id);
             const [row] = await db
                 .update(schema.communityEndpoint)
                 .set({
                     name,
-                    title: input.title ?? stored.title,
-                    description:
-                        input.description === undefined
-                            ? stored.description
-                            : input.description || null,
+                    title,
+                    description,
                     visibility,
-                    requiredSafetyFeatures:
-                        input.requiredSafetyFeatures ??
-                        stored.requiredSafetyFeatures,
+                    requiredSafetyFeatures,
                     payload: nextPayload,
                     updatedAt: new Date(),
                 })

@@ -149,8 +149,8 @@ const create = new Command("create")
         "--config <file>",
         "JSON agent config file sent directly to the API",
     )
-    .requiredOption("--name <name>", "Callable model name")
-    .requiredOption("--title <title>", "Display title shown in the catalog")
+    .option("--name <name>", "Prompt-agent callable model name")
+    .option("--title <title>", "Prompt-agent catalog title")
     .option("--description <text>", "Agent description", "")
     .option(
         "--visibility <visibility>",

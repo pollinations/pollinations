@@ -91,21 +91,50 @@ const MAX_SOURCE_BYTES = 65_536;
 const GitHubCommitSchema = z.object({
     sha: z.string().regex(/^[0-9a-f]{40}$/),
 });
+const GitHubRepositorySchema = z.object({
+    name: z.string().min(1),
+    full_name: z.string().regex(/^[^/]+\/[^/]+$/),
+    description: z.string().nullable(),
+    private: z.boolean(),
+});
 
 function githubRepositoryParts(repository: string) {
     const [, owner, name] = new URL(repository).pathname.split("/");
     return { owner, name };
 }
 
-export async function resolveCodeAgentCommit(
+export async function resolveCodeAgentRepository(
     env: GitHubApiEnv,
     repository: string,
-): Promise<string> {
+) {
     const { owner, name } = githubRepositoryParts(repository);
-    const commitResponse = await fetch(
-        `${GITHUB_API}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/commits/HEAD`,
-        { headers: await githubApiHeaders(env) },
-    );
+    const headers = await githubApiHeaders(env);
+    const repositoryUrl = `${GITHUB_API}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`;
+    const [response, commitResponse] = await Promise.all([
+        fetch(repositoryUrl, { headers }),
+        fetch(`${repositoryUrl}/commits/HEAD`, { headers }),
+    ]);
+    if (response.status === 404) {
+        throw new HTTPException(400, {
+            message: "Code agent repository must exist and be public",
+        });
+    }
+    if (!response.ok) {
+        throw new HTTPException(502, {
+            message: `GitHub repository lookup failed (${response.status})`,
+        });
+    }
+    const parsed = GitHubRepositorySchema.safeParse(await response.json());
+    if (!parsed.success) {
+        throw new HTTPException(502, {
+            message: "GitHub returned invalid repository metadata",
+        });
+    }
+    if (parsed.data.private) {
+        throw new HTTPException(400, {
+            message: "Code agent repository must exist and be public",
+        });
+    }
     if (commitResponse.status === 404 || commitResponse.status === 409) {
         throw new HTTPException(400, {
             message: "Code agent repository must exist and be public",
@@ -122,7 +151,12 @@ export async function resolveCodeAgentCommit(
             message: "GitHub returned an invalid repository revision",
         });
     }
-    return commit.data.sha;
+    return {
+        repository: `https://github.com/${parsed.data.full_name}`,
+        name: parsed.data.name,
+        description: parsed.data.description,
+        deployedCommitSha: commit.data.sha,
+    };
 }
 
 /** Load agent.js from an already resolved, immutable GitHub revision. */

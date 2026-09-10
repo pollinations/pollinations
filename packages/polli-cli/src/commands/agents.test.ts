@@ -34,4 +34,22 @@ describe("agentBody", () => {
             visibility: "private",
         });
     });
+
+    it("creates a code agent from GitHub without listing fields", () => {
+        const directory = mkdtempSync(join(tmpdir(), "polli-code-agent-"));
+        const config = join(directory, "code-agent.json");
+        writeFileSync(
+            config,
+            JSON.stringify({
+                type: "code_agent",
+                repository: "https://github.com/example/agent",
+            }),
+        );
+
+        expect(agentBody(config, { visibility: "private" })).toEqual({
+            type: "code_agent",
+            repository: "https://github.com/example/agent",
+            visibility: "private",
+        });
+    });
 });

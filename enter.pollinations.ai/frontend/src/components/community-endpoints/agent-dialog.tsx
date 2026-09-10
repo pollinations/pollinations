@@ -112,8 +112,8 @@ export function AgentDialog({
             : form.systemPrompt.trim() !== "" && form.baseModel.trim() !== "";
     const canSubmit =
         !isSubmitting &&
-        form.name.trim() !== "" &&
-        form.title.trim() !== "" &&
+        (form.type === "code_agent" ||
+            (form.name.trim() !== "" && form.title.trim() !== "")) &&
         hasRuntimeConfiguration;
     const submitLabel = endpoint
         ? "Save Agent"
@@ -154,9 +154,7 @@ export function AgentDialog({
                         <FieldStack
                             label="Agent type"
                             helper={
-                                canPublish
-                                    ? "Use a prompt and model, or deploy code from GitHub."
-                                    : "Use a prompt and model. Code deployment requires publishing access."
+                                "Use a prompt and model, or deploy code from GitHub."
                             }
                             alignLabelRow
                         >
@@ -178,25 +176,23 @@ export function AgentDialog({
                                     )}
                                     Prompt agent
                                 </TabButton>
-                                {canPublish && (
-                                    <TabButton
-                                        active={form.type === "code_agent"}
-                                        disabled={isSubmitting}
-                                        onClick={() =>
-                                            setForm((current) => ({
-                                                ...current,
-                                                type: "code_agent",
-                                            }))
-                                        }
-                                        size="sm"
-                                        className="min-w-28 gap-1.5"
-                                    >
-                                        {form.type === "code_agent" && (
-                                            <CheckIcon className="h-3.5 w-3.5" />
-                                        )}
-                                        Code agent
-                                    </TabButton>
-                                )}
+                                <TabButton
+                                    active={form.type === "code_agent"}
+                                    disabled={isSubmitting}
+                                    onClick={() =>
+                                        setForm((current) => ({
+                                            ...current,
+                                            type: "code_agent",
+                                        }))
+                                    }
+                                    size="sm"
+                                    className="min-w-28 gap-1.5"
+                                >
+                                    {form.type === "code_agent" && (
+                                        <CheckIcon className="h-3.5 w-3.5" />
+                                    )}
+                                    Code agent
+                                </TabButton>
                             </ButtonGroup>
                         </FieldStack>
                     )}
@@ -207,6 +203,7 @@ export function AgentDialog({
                         canPublish={canPublish}
                         isAgent
                         allowPerUserRpm={false}
+                        hideIdentity={form.type === "code_agent"}
                         required
                         onChange={(key, value) =>
                             setForm((current) => ({
@@ -215,6 +212,14 @@ export function AgentDialog({
                             }))
                         }
                     />
+
+                    {form.type === "code_agent" && (
+                        <p className="text-sm text-theme-text-muted">
+                            The repository or directory name becomes the model
+                            ID and title. The repository description becomes the
+                            catalog description.
+                        </p>
+                    )}
 
                     <SafetyFeatureSelector
                         value={form.requiredSafetyFeatures}

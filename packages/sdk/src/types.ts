@@ -1022,8 +1022,6 @@ export interface ModelInfo {
     maxInputChars?: number;
     context_length?: number;
     supported_endpoints?: string[];
-    supported_parameters?: string[];
-    default_parameters?: Record<string, unknown>;
     supportsSystemMessages?: boolean;
     is_specialized?: boolean;
     paid_only?: boolean;

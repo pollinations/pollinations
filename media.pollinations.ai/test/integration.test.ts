@@ -37,6 +37,7 @@ interface MediaItemResponse {
     url: string;
     contentType: string;
     size: number | null;
+    source: "upload" | "generation";
     tags: string[];
     createdAt: string;
 }
@@ -271,6 +272,54 @@ describe("media.pollinations.ai", () => {
             contentType,
         });
         expect((await env.MEDIA_BUCKET.list()).objects).toHaveLength(1);
+        await waitOnExecutionContext(ctx);
+    });
+
+    it("links a shared generation to each requester and unlinks it per user", async () => {
+        const id = "f".repeat(64);
+        const ctx = createExecutionContext();
+        const storage = new MediaUpload(ctx, env);
+        await storage.put(
+            id,
+            new Response(TINY_PNG, {
+                headers: { "Content-Type": "image/png" },
+            }),
+        );
+        await storage.linkToUser(id, "user_alice");
+        await storage.linkToUser(id, "user_bob");
+
+        const listIds = async (key: string) => {
+            const response = await SELF.fetch(
+                "https://media.pollinations.ai/media/mine",
+                { headers: { Authorization: `Bearer ${key}` } },
+            );
+            expect(response.status).toBe(200);
+            return ((await response.json()) as MediaPageResponse).items;
+        };
+
+        expect(await listIds("sk_alice")).toContainEqual(
+            expect.objectContaining({ id, source: "generation" }),
+        );
+        expect(await listIds("sk_bob")).toContainEqual(
+            expect.objectContaining({ id, source: "generation" }),
+        );
+
+        const unlink = await SELF.fetch(
+            `https://media.pollinations.ai/media/mine/${id}`,
+            {
+                method: "DELETE",
+                headers: { Authorization: "Bearer sk_alice" },
+            },
+        );
+        expect(unlink.status).toBe(200);
+        expect(
+            (await listIds("sk_alice")).map((item) => item.id),
+        ).not.toContain(id);
+        expect((await listIds("sk_bob")).map((item) => item.id)).toContain(id);
+
+        const media = await SELF.fetch(`https://media.pollinations.ai/${id}`);
+        expect(media.status).toBe(200);
+        await media.arrayBuffer();
         await waitOnExecutionContext(ctx);
     });
 
@@ -993,7 +1042,7 @@ describe("media.pollinations.ai", () => {
         expect(upperGallery.items.map((i) => i.url)).toContain(upload.url);
     });
 
-    it("untagged upload is not cataloged: unlisted but retrievable", async () => {
+    it("keeps an untagged upload private but cataloged for its owner", async () => {
         const { status, body } = await uploadViaForm("pk_alice", {
             fileName: "untagged.png",
             bytes: variant(2),
@@ -1002,14 +1051,41 @@ describe("media.pollinations.ai", () => {
         const upload = body as UploadResponse;
         expect(upload.tags).toBeUndefined();
 
-        // No catalog row at all — untagged means unpublished, not "cataloged
-        // but hidden".
+        // Untagged means unpublished, but user-owned uploads remain cataloged
+        // for the authenticated private list.
         const db = drizzle(env.DB);
         const rows = await db
             .select({ id: mediaItem.id })
             .from(mediaItem)
             .where(eq(mediaItem.id, upload.id));
-        expect(rows).toHaveLength(0);
+        expect(rows).toHaveLength(1);
+
+        const publishableRes = await SELF.fetch(
+            "https://media.pollinations.ai/media/mine",
+            { headers: { Authorization: "Bearer pk_alice" } },
+        );
+        expect(publishableRes.status).toBe(403);
+
+        const mineRes = await SELF.fetch(
+            "https://media.pollinations.ai/media/mine",
+            { headers: { Authorization: "Bearer sk_alice" } },
+        );
+        expect(mineRes.status).toBe(200);
+        const mine = (await mineRes.json()) as MediaPageResponse;
+        expect(mine.items).toContainEqual(
+            expect.objectContaining({
+                id: upload.id,
+                source: "upload",
+                tags: [],
+            }),
+        );
+
+        const bobRes = await SELF.fetch(
+            "https://media.pollinations.ai/media/mine",
+            { headers: { Authorization: "Bearer sk_bob" } },
+        );
+        const bob = (await bobRes.json()) as MediaPageResponse;
+        expect(bob.items.map((item) => item.id)).not.toContain(upload.id);
 
         const galleryRes = await SELF.fetch(
             "https://media.pollinations.ai/media?tag=some-other-tag",
@@ -1474,7 +1550,7 @@ describe("media.pollinations.ai", () => {
             await getRes.arrayBuffer();
         });
 
-        it("unknown and uncataloged (untagged) ids answer 404", async () => {
+        it("returns 404 for unknown ids and deletes untagged uploads", async () => {
             const unknown = await SELF.fetch(
                 `https://media.pollinations.ai/media/${crypto.randomUUID()}`,
                 {
@@ -1484,8 +1560,8 @@ describe("media.pollinations.ai", () => {
             );
             expect(unknown.status).toBe(404);
 
-            // An untagged upload was never published: no catalog row, no
-            // owner record to authorize a delete against → 404, blob stays.
+            // Untagged uploads are private-list items with a real owner and can
+            // be deleted without ever appearing in a public gallery.
             const { status, body } = await uploadViaForm("pk_alice", {
                 fileName: "delete-untagged.png",
                 bytes: variant(42),
@@ -1500,13 +1576,12 @@ describe("media.pollinations.ai", () => {
                     headers: { Authorization: "Bearer sk_alice" },
                 },
             );
-            expect(res.status).toBe(404);
+            expect(res.status).toBe(200);
 
             const getRes = await SELF.fetch(
                 `https://media.pollinations.ai/${upload.id}`,
             );
-            expect(getRes.status).toBe(200);
-            await getRes.arrayBuffer();
+            expect(getRes.status).toBe(404);
         });
     });
 
@@ -1519,6 +1594,7 @@ describe("media.pollinations.ai", () => {
             appKeyId: null,
             contentType: "image/png",
             size: 67,
+            source: "upload" as const,
             createdAt: new Date(now + i),
         }));
         // Insert in slices — a single 101-row VALUES would itself blow the

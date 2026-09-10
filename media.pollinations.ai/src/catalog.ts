@@ -10,7 +10,11 @@
 // build. Writes are awaited inline (no waitUntil): a D1 failure surfaces as
 // a 500 rather than silently dropping catalog data.
 
-import { mediaItem, mediaTag, mediaUserLink } from "@shared/db/media-catalog.ts";
+import {
+    mediaItem,
+    mediaTag,
+    mediaUserLink,
+} from "@shared/db/media-catalog.ts";
 import type { SQL } from "drizzle-orm";
 import { and, desc, eq, inArray, lt, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -182,6 +186,7 @@ export interface CatalogItem {
     id: string;
     contentType: string;
     size: number | null;
+    source: "upload" | "generation";
     createdAt: Date;
 }
 
@@ -258,6 +263,7 @@ export async function listMedia(
             id: mediaItem.id,
             contentType: mediaItem.contentType,
             size: mediaItem.size,
+            source: mediaItem.source,
             createdAt: mediaItem.createdAt,
         })
         .from(mediaItem)
@@ -296,6 +302,7 @@ export async function listUserMedia(
             id: mediaItem.id,
             contentType: mediaItem.contentType,
             size: mediaItem.size,
+            source: mediaItem.source,
             createdAt: mediaUserLink.createdAt,
         })
         .from(mediaUserLink)

@@ -78,6 +78,54 @@ function parseMinutes(value: string | undefined): number | null {
     return minutes;
 }
 
+export type ModelHealthFetch = {
+    data: ModelHealthResponse;
+    timestamp: number;
+    stale: boolean;
+};
+
+// Health window shared by /v1/models/status and the model listing health
+// enrichment, so both surfaces describe the same data.
+export const MODEL_HEALTH_WINDOW_MINUTES = DEFAULT_MINUTES;
+
+// Fetch the cached Tinybird model health rows. Returns null when the fetch
+// fails and no stale cache exists. Shared by /v1/models/status and the model
+// listing health enrichment.
+export async function fetchModelHealthData(
+    minutes: number = DEFAULT_MINUTES,
+): Promise<ModelHealthFetch | null> {
+    const now = Date.now();
+    const cached = cache.get(minutes);
+    if (cached && now - cached.timestamp < CACHE_TTL_MS) {
+        log("Returning cached model health response for %d minutes", minutes);
+        setCacheEntry(minutes, cached);
+        return { data: cached.data, timestamp: cached.timestamp, stale: false };
+    }
+    try {
+        const url = new URL("/v0/pipes/model_health.json", TINYBIRD_HOST);
+        url.searchParams.set("token", TINYBIRD_PUBLIC_TOKEN);
+        url.searchParams.set("minutes", String(minutes));
+        log("Fetching model health from Tinybird: %s", url.toString());
+        const response = await fetch(url.toString());
+        if (!response.ok) {
+            throw new Error(`Tinybird responded with ${response.status}`);
+        }
+        const tinybirdData = (await response.json()) as ModelHealthResponse;
+        const timestamp = Date.now();
+        setCacheEntry(minutes, { data: tinybirdData, timestamp });
+        return { data: tinybirdData, timestamp, stale: false };
+    } catch (error) {
+        log("Error fetching model health: %O", error);
+        const stale = cache.get(minutes);
+        if (stale) {
+            log("Falling back to stale cache for %d minutes", minutes);
+            setCacheEntry(minutes, stale);
+            return { data: stale.data, timestamp: stale.timestamp, stale: true };
+        }
+        return null;
+    }
+}
+
 export const modelStatusRoutes = new Hono<Env>().get(
     "/v1/models/status",
     describeRoute({
@@ -144,51 +192,17 @@ export const modelStatusRoutes = new Hono<Env>().get(
             );
         }
 
-        const now = Date.now();
-        const cached = cache.get(minutes);
-        if (cached && now - cached.timestamp < CACHE_TTL_MS) {
-            log(
-                "Returning cached model health response for %d minutes",
-                minutes,
-            );
-            setCacheEntry(minutes, cached);
-            c.header(
-                DATA_TIMESTAMP_HEADER,
-                new Date(cached.timestamp).toISOString(),
-            );
-            return c.json(cached.data);
-        }
-
-        try {
-            const url = new URL("/v0/pipes/model_health.json", TINYBIRD_HOST);
-            url.searchParams.set("token", TINYBIRD_PUBLIC_TOKEN);
-            url.searchParams.set("minutes", String(minutes));
-            log("Fetching model health from Tinybird: %s", url.toString());
-
-            const response = await fetch(url.toString());
-            if (!response.ok) {
-                throw new Error(`Tinybird responded with ${response.status}`);
-            }
-
-            const tinybirdData = (await response.json()) as ModelHealthResponse;
-            const timestamp = Date.now();
-            setCacheEntry(minutes, { data: tinybirdData, timestamp });
-            c.header(DATA_TIMESTAMP_HEADER, new Date(timestamp).toISOString());
-            return c.json(tinybirdData);
-        } catch (error) {
-            log("Error fetching model health: %O", error);
-            const stale = cache.get(minutes);
-            if (stale) {
-                log("Falling back to stale cache for %d minutes", minutes);
-                setCacheEntry(minutes, stale);
-                c.header(
-                    DATA_TIMESTAMP_HEADER,
-                    new Date(stale.timestamp).toISOString(),
-                );
-                c.header(STALE_HEADER, "true");
-                return c.json(stale.data);
-            }
+        const result = await fetchModelHealthData(minutes);
+        if (!result) {
             return c.json({ error: "Failed to fetch model health data" }, 502);
         }
+        c.header(
+            DATA_TIMESTAMP_HEADER,
+            new Date(result.timestamp).toISOString(),
+        );
+        if (result.stale) {
+            c.header(STALE_HEADER, "true");
+        }
+        return c.json(result.data);
     },
 );

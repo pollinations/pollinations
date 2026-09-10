@@ -23,6 +23,7 @@ import {
     mediaResponseDescription,
 } from "../media/response-output.ts";
 import { mediaResponses } from "../media/responses.ts";
+import { fetchModelHealthData } from "./model-status.ts";
 import {
     formatOpenAIImageResponse,
     handleImageGeneration,
@@ -85,6 +86,7 @@ import {
 import {
     type ModelListQueryParams,
     ModelListQueryParamsSchema,
+    RELIABLE_SUCCESS_RATE_THRESHOLD,
 } from "@/schemas/models.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
@@ -250,15 +252,87 @@ function hasPaidBalance(c: any): boolean | undefined {
 }
 
 // Optionally filter entries by the validated `?community` query parameter.
-function filterEntriesByCommunityParam(
+// Filter by model source. `official` keeps built-in (non-community) entries,
+// `community` keeps community entries. Omitted keeps everything.
+export function filterBySource(
     entries: GenerationModelEntry[],
-    communityParam: string | undefined,
+    source: "official" | "community" | undefined,
 ): GenerationModelEntry[] {
-    if (communityParam === undefined) return entries;
-    const wantCommunity = communityParam === "true" || communityParam === "1";
+    if (source === undefined) return entries;
+    const wantCommunity = source === "community";
     return entries.filter(
         (entry) => (entry.communityEndpoint !== undefined) === wantCommunity,
     );
+}
+
+// Optional header fallback for clients whose fixed base URLs cannot carry
+// query strings. The query parameter wins when both are present.
+function parseModelSourceHeader(
+    value: string | undefined,
+): "official" | "community" | undefined {
+    return value === "official" || value === "community" ? value : undefined;
+}
+
+// Minimal health metadata for one model. Fallback rescues end in 2xx and
+// count as successes; caller-side 4xx failures are excluded from the
+// denominator. Missing rows or an empty window mean unknown.
+export function healthFor(
+    info: GenerationModelEntry["info"],
+    rows: Array<{
+        model: string;
+        event_type: string;
+        total_requests: number;
+        status_2xx: number;
+        errors_4xx: number;
+        fallback_rescues: number;
+    }>,
+    options: { timestamp: number; minutes: number },
+) {
+    const row = rows.find((candidate) => candidate.model === info.name);
+    if (!row) return undefined;
+    const attempts = row.total_requests - row.errors_4xx;
+    if (attempts <= 0) return undefined;
+    return {
+        success_rate: Math.min(
+            1,
+            (row.status_2xx + row.fallback_rescues) / attempts,
+        ),
+        samples: row.total_requests,
+        window_minutes: options.minutes,
+        as_of: new Date(options.timestamp).toISOString(),
+    };
+}
+
+// Experimental (alpha) status stays separate from reliability; this check
+// only looks at the health window.
+export function isReliable(info: GenerationModelEntry["info"]): boolean {
+    return (
+        info.health !== undefined &&
+        info.health.success_rate >= RELIABLE_SUCCESS_RATE_THRESHOLD
+    );
+}
+
+// Attach minimal health metadata (success rate, samples, window, freshness)
+// to listing entries. Missing or unavailable health data means unknown:
+// entries without health rows stay untouched.
+function attachHealth(
+    entries: GenerationModelEntry[],
+    healthData: Awaited<ReturnType<typeof fetchModelHealthData>>,
+): GenerationModelEntry[] {
+    if (!healthData) return entries;
+    return entries.map((entry) => {
+        const health = healthFor(
+            entry.info,
+            healthData.data.data,
+            {
+                timestamp: healthData.timestamp,
+                minutes: MODEL_HEALTH_WINDOW_MINUTES,
+            },
+        );
+        return health
+            ? { ...entry, info: { ...entry.info, health } }
+            : entry;
+    });
 }
 
 // Factory for model-list endpoints: validates the community query parameter,
@@ -272,20 +346,38 @@ const modelsListHandler = (
     [
         validator("query", ModelListQueryParamsSchema),
         async (c: Context<Env>) => {
-            const { community } = c.req.valid(
+            const { source: querySource, reliable } = c.req.valid(
                 "query" as never,
             ) as ModelListQueryParams;
+            // The query parameter wins over the optional header so clients
+            // with fixed base URLs can still opt into source filtering.
+            const source =
+                querySource ??
+                parseModelSourceHeader(
+                    c.req.header("X-Pollinations-Model-Source"),
+                );
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
+            const entries = filterBySource(
+                filterEntriesByPermissions(
+                    await getEntries(c),
+                    allowedModels,
+                    paidBalance,
+                ),
+                source,
+            );
+            // Missing or unavailable health data means unknown: listings stay
+            // valid without the health field.
+            const healthData = await fetchModelHealthData().catch(
+                () => undefined,
+            );
+            const infos = attachHealth(entries, healthData).map(
+                (entry) => entry.info,
+            );
             return c.json(
-                filterEntriesByCommunityParam(
-                    filterEntriesByPermissions(
-                        await getEntries(c),
-                        allowedModels,
-                        paidBalance,
-                    ),
-                    community,
-                ).map((entry) => entry.info),
+                reliable === "true" || reliable === "1"
+                    ? infos.filter(isReliable)
+                    : infos,
             );
         },
     ] as const;
@@ -360,6 +452,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         ...(entry.info.per_user_rpm !== undefined && {
             per_user_rpm: entry.info.per_user_rpm,
         }),
+        ...(entry.info.health && { health: entry.info.health }),
     };
 }
 
@@ -403,7 +496,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models (OpenAI-compatible)",
             description:
-                'Returns available models in the OpenAI-compatible format (`{object: "list", data: [...]}`), with Pollinations pricing and capability extensions. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` for richer metadata. When authenticated: the owner\'s private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.',
+                'Returns available models in the OpenAI-compatible format (`{object: "list", data: [...]}`), with Pollinations pricing and capability extensions. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` for richer metadata. When authenticated: the owner\'s private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` for official-only or `?source=community` for community-only listings; `?reliable=true` keeps only models with proven health (success rate of at least 0.9 in the health window).',
             responses: {
                 200: {
                     description: "Success",
@@ -418,18 +511,30 @@ export const proxyRoutes = new Hono<Env>()
         }),
         validator("query", ModelListQueryParamsSchema),
         async (c) => {
-            const { community } = c.req.valid(
+            const { source: querySource, reliable } = c.req.valid(
                 "query" as never,
             ) as ModelListQueryParams;
+            const source =
+                querySource ??
+                parseModelSourceHeader(
+                    c.req.header("X-Pollinations-Model-Source"),
+                );
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
-            const modelEntries = filterEntriesByCommunityParam(
+            const entries = filterBySource(
                 filterEntriesByPermissions(
                     await getVisibleModelEntries(c),
                     allowedModels,
                     paidBalance,
                 ),
-                community,
+                source,
+            );
+            const healthData = await fetchModelHealthData().catch(
+                () => undefined,
+            );
+            const reliableOnly = reliable === "true" || reliable === "1";
+            const modelEntries = attachHealth(entries, healthData).filter(
+                (entry) => (reliableOnly ? isReliable(entry.info) : true),
             );
             return c.json({
                 object: "list" as const,
@@ -468,16 +573,22 @@ export const proxyRoutes = new Hono<Env>()
                 });
             }
             // Same permission and paid-only semantics as the list endpoint.
-            const [entry] = filterEntriesByPermissions(
+            const [matched] = filterEntriesByPermissions(
                 [visible],
                 c.var.auth?.apiKey?.permissions?.models,
                 hasPaidBalance(c),
             );
-            if (!entry) {
+            if (!matched) {
                 throw new HTTPException(404, {
                     message: `Model '${modelId}' not found`,
                 });
             }
+            // Health metadata flows into individual lookups from the same
+            // cached window as the list endpoints.
+            const healthData = await fetchModelHealthData().catch(
+                () => undefined,
+            );
+            const [entry] = attachHealth([matched], healthData);
             return c.json(toOpenAIModelEntry(entry));
         },
     )
@@ -487,7 +598,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models",
             description:
-                "Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+                "Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` for official-only or `?source=community` for community-only listings; `?reliable=true` keeps only models with proven health (success rate of at least 0.9 in the health window).",
             responses: {
                 200: {
                     description: "Success",
@@ -508,7 +619,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List 3D Models",
             description:
-                "Returns all available 3D model generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+                "Returns all available 3D model generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` for official-only or `?source=community` for community-only listings; `?reliable=true` keeps only models with proven health (success rate of at least 0.9 in the health window).",
             responses: {
                 200: {
                     description: "Success",
@@ -529,7 +640,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Image & Video Models",
             description:
-                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `output_modalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `output_modalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` for official-only or `?source=community` for community-only listings; `?reliable=true` keeps only models with proven health (success rate of at least 0.9 in the health window).",
             responses: {
                 200: {
                     description: "Success",
@@ -550,7 +661,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Video Models",
             description:
-                "Returns all available video generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+                "Returns all available video generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` for official-only or `?source=community` for community-only listings; `?reliable=true` keeps only models with proven health (success rate of at least 0.9 in the health window).",
             responses: {
                 200: {
                     description: "Success",
@@ -571,7 +682,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Text Models (Detailed)",
             description:
-                "Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+                "Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` for official-only or `?source=community` for community-only listings; `?reliable=true` keeps only models with proven health (success rate of at least 0.9 in the health window).",
             responses: {
                 200: {
                     description: "Success",
@@ -594,7 +705,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Audio Models",
             description:
-                "Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+                "Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` for official-only or `?source=community` for community-only listings; `?reliable=true` keeps only models with proven health (success rate of at least 0.9 in the health window).",
             responses: {
                 200: {
                     description: "Success",
@@ -617,7 +728,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🔢 Embeddings"],
             summary: "List Embedding Models",
             description:
-                "Returns available embedding models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+                "Returns available embedding models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` for official-only or `?source=community` for community-only listings; `?reliable=true` keeps only models with proven health (success rate of at least 0.9 in the health window).",
             responses: {
                 200: {
                     description: "Success",

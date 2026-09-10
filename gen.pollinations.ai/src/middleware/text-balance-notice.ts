@@ -10,6 +10,7 @@ import {
     textResponseStream,
 } from "../media/response-output.ts";
 import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
+import { requestsJson } from "../text/requestUtils.ts";
 import {
     responsesToChatCompletion,
     responsesToChatStream,
@@ -45,11 +46,12 @@ export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
     const format = isResponses
         ? request.text?.format?.type
         : request.response_format?.type;
-    if (
-        request.json === true ||
-        format === "json_object" ||
-        format === "json_schema"
-    )
+    // Match chat normalization: an explicit response_format overrides aliases.
+    const jsonAlias =
+        !isResponses &&
+        !request.response_format &&
+        requestsJson(request.json, request.jsonMode);
+    if (jsonAlias || format === "json_object" || format === "json_schema")
         return;
 
     // Hono preserves the old headers on replacement; update and pass them along.

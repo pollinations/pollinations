@@ -1,0 +1,103 @@
+{
+  "date": "2026-09-09",
+  "period_start": "2026-09-09",
+  "period_end": "2026-09-09",
+  "title": "Every media model can now speak Chat and Responses",
+  "summary": "A broad interoperability day: media now fits inside Chat and Responses, creative tools gained new doors, and the API surface got sturdier around the edges.\n\nImages, video, audio, and 3D models with native routes now work through OpenAI-compatible Chat and Responses, returning shareable public URLs and Markdown embeds. Those endpoints also accept image attachments for edits and video start frames, while hosted agents now return replayable paired function-call items instead of making clients redo completed server-tool work.\n\nGIMP 3 gained a BYOP plugin for generating and editing layers without touching the original, while NVIDIA Asset Harvester joined the 3D registry to turn one image into a downloadable Gaussian-splat PLY. PolliArena adds blind image-model battles for finding personal favorites, and 3D jobs now patiently survive transient provider status errors rather than submitting a second generation.\n\nMCP clients now receive reusable public links for images, audio, video, and 3D without the download-and-reupload ceremony. Image edits avoid duplicate safety checks, durable background jobs retain their original cache identity, and community video requests can use provider-reported generated duration when available.",
+  "pr_count": 23,
+  "prs": [
+    {
+      "number": 13667,
+      "date": "2026-09-09"
+    },
+    {
+      "number": 13764,
+      "date": "2026-09-09"
+    },
+    {
+      "number": 14450,
+      "date": "2026-09-09"
+    },
+    {
+      "number": 14527,
+      "date": "2026-09-09"
+    },
+    {
+      "number": 14556,
+      "date": "2026-09-09"
+    },
+    {
+      "number": 14569,
+      "date": "2026-09-09"
+    },
+    {
+      "number": 14585,
+      "date": "2026-09-09"
+    },
+    {
+      "number": 14611,
+      "date": "2026-09-09"
+    },
+    {
+      "number": 14612,
+      "date": "2026-09-09"
+    },
+    {
+      "number": 14615,
+      "date": "2026-09-09"
+    },
+    {
+      "number": 14617,
+      "date": "2026-09-09"
+    },
+    {
+      "number": 14618,
+      "date": "2026-09-09"
+    },
+    {
+      "number": 14620,
+      "date": "2026-09-09"
+    },
+    {
+      "number": 14624,
+      "date": "2026-09-09"
+    },
+    {
+      "number": 14626,
+      "date": "2026-09-09"
+    },
+    {
+      "number": 14631,
+      "date": "2026-09-09"
+    },
+    {
+      "number": 14634,
+      "date": "2026-09-09"
+    },
+    {
+      "number": 14639,
+      "date": "2026-09-09"
+    },
+    {
+      "number": 14642,
+      "date": "2026-09-09"
+    },
+    {
+      "number": 14648,
+      "date": "2026-09-09"
+    },
+    {
+      "number": 14657,
+      "date": "2026-09-09"
+    },
+    {
+      "number": 14659,
+      "date": "2026-09-09"
+    },
+    {
+      "number": 14666,
+      "date": "2026-09-09"
+    }
+  ],
+  "generated_at": "2026-09-10T06:30:26.477455+00:00"
+}

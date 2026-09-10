@@ -260,9 +260,51 @@ describe("code agent runtime", () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
-    it("initializes Composio once per invocation and reuses its session", async () => {
+    it("discovers raw MCP tool definitions without calling them", async () => {
+        const tools = [
+            {
+                name: "generateImage",
+                description: "Generate an image",
+                inputSchema: {
+                    type: "object",
+                    properties: { prompt: { type: "string" } },
+                    required: ["prompt"],
+                },
+                annotations: { title: "Image generator" },
+            },
+        ];
+        const fetchMock = vi.fn(async (url, init) => {
+            expect(String(url)).toBe(
+                "https://gen.pollinations.ai/mcp/pollinations",
+            );
+            const message = JSON.parse(init.body);
+            expect(message.method).toBe("tools/list");
+            expect(message.params).toEqual({});
+            return Response.json({
+                jsonrpc: "2.0",
+                id: message.id,
+                result: { tools },
+            });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+        const worker = createCodeAgentWorker(async ({ mcp }) =>
+            Response.json(await mcp.listTools("pollinations")),
+        );
+
+        const response = await worker.fetch(
+            new Request("https://agent.test"),
+            runtimeEnv,
+        );
+        await expect(response.json()).resolves.toEqual(tools);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("shares one Composio session for discovery and calls per invocation", async () => {
         let createdSessions = 0;
         const methods: string[] = [];
+        const tools = [
+            { name: "COMPOSIO_SEARCH_TOOLS", inputSchema: { type: "object" } },
+        ];
         const composio = createComposioWorker({
             fetchImpl: async (url, init) => {
                 if (String(url).startsWith("https://backend.composio.dev/")) {
@@ -294,6 +336,13 @@ describe("code agent runtime", () => {
                 if (message.method === "notifications/initialized") {
                     return new Response(null, { status: 202 });
                 }
+                if (message.method === "tools/list") {
+                    return Response.json({
+                        jsonrpc: "2.0",
+                        id: message.id,
+                        result: { tools },
+                    });
+                }
                 return Response.json({
                     jsonrpc: "2.0",
                     id: message.id,
@@ -317,6 +366,7 @@ describe("code agent runtime", () => {
         const worker = createCodeAgentWorker(async ({ mcp }) =>
             Response.json(
                 await Promise.all([
+                    mcp.listTools("composio"),
                     mcp("composio", "COMPOSIO_SEARCH_TOOLS", { queries: [] }),
                     mcp("composio", "COMPOSIO_SEARCH_TOOLS", { queries: [] }),
                 ]),
@@ -330,6 +380,7 @@ describe("code agent runtime", () => {
             );
             expect(response.status).toBe(200);
             await expect(response.json()).resolves.toEqual([
+                tools,
                 { content: [{ type: "text", text: "connected tools" }] },
                 { content: [{ type: "text", text: "connected tools" }] },
             ]);
@@ -338,10 +389,12 @@ describe("code agent runtime", () => {
         expect(methods).toEqual([
             "initialize",
             "notifications/initialized",
+            "tools/list",
             "tools/call",
             "tools/call",
             "initialize",
             "notifications/initialized",
+            "tools/list",
             "tools/call",
             "tools/call",
         ]);

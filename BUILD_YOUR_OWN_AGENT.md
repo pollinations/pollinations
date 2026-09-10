@@ -56,7 +56,7 @@ export default async function ({ request, pollinations, mcp }) {
 }
 ```
 
-The function receives the incoming Responses request. `pollinations(path, init)` calls Pollinations APIs. Call a hosted MCP tool with `await mcp("pollinations", "generateImage", { prompt: "..." })`. Both helpers use the caller's Pollen and permissions; the code never receives a reusable API key.
+The function receives the incoming Responses request. `pollinations(path, init)` calls Pollinations APIs. Discover tool names and input schemas with `await mcp.listTools("pollinations")`, then call a tool with `await mcp("pollinations", "generateImage", { prompt: "..." })`. Both helpers use the caller's Pollen and permissions; the code never receives a reusable API key.
 
 Example `code-agent.json`:
 

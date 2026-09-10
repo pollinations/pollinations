@@ -93,9 +93,9 @@ function createAgentContext(request, baseUrl) {
         await initialized.body?.cancel();
         return sessionHeaders;
     };
-    const mcp = async (server, tool, args = {}) => {
-        if (typeof server !== "string" || typeof tool !== "string") {
-            throw new Error("mcp() requires a server and tool name");
+    const requestMcp = async (server, method, params = {}) => {
+        if (typeof server !== "string") {
+            throw new Error("MCP requires a server name");
         }
         let sessionHeaders = {};
         if (server === "composio") {
@@ -105,14 +105,23 @@ function createAgentContext(request, baseUrl) {
         const id = crypto.randomUUID();
         const response = await sendMcp(
             server,
-            {
-                id,
-                method: "tools/call",
-                params: { name: tool, arguments: args },
-            },
+            { id, method, params },
             sessionHeaders,
         );
         return readMcpResult(response, id);
+    };
+    const mcp = async (server, tool, args = {}) => {
+        if (typeof server !== "string" || typeof tool !== "string") {
+            throw new Error("mcp() requires a server and tool name");
+        }
+        return requestMcp(server, "tools/call", {
+            name: tool,
+            arguments: args,
+        });
+    };
+    mcp.listTools = async (server) => {
+        const result = await requestMcp(server, "tools/list");
+        return result.tools;
     };
     return { request: safeRequest, pollinations, mcp };
 }

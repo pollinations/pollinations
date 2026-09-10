@@ -2,7 +2,6 @@ import { Button, Heading, Input } from "@pollinations/ui";
 import {
     AuthFlowLayout,
     AuthInfoCard,
-    AuthModalLoading,
     ErrorBanner,
     GitHubSignInButton,
 } from "@pollinations/ui/auth";
@@ -150,18 +149,17 @@ export function Device({ prefilledCode }: DeviceProps) {
         verifyAndRedirect(normalizedCode);
     }
 
-    if (isPending) {
-        return <AuthModalLoading title="Enter device code" />;
-    }
-
-    if (!user) {
+    if (isPending || !user) {
         return (
             <AuthFlowLayout
                 dialog={{ labelledBy: "device-sign-in-title" }}
                 actions={
                     <GitHubSignInButton
                         onClick={signIn}
-                        isSigningIn={isSigningIn}
+                        isSigningIn={isPending || isSigningIn}
+                        pendingLabel={
+                            isPending ? "Checking account…" : undefined
+                        }
                         retry={!!signInError}
                         className="w-full"
                     />

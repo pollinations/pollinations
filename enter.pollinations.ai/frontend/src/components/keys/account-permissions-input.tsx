@@ -43,13 +43,13 @@ export const ACCOUNT_PERMISSIONS: readonly AccountPermissionOption[] = [
     {
         id: "usage",
         label: "Usage",
-        tooltip: "account balance and usage",
+        tooltip: "account-wide balance, usage, earnings and quest status",
     },
     {
         id: "keys",
         label: "Account Admin",
         shortLabel: "Admin",
-        tooltip: "keys, agents, and models",
+        tooltip: "API keys, agents, models and connected apps",
     },
 ];
 
@@ -228,13 +228,10 @@ export const AccountPermissionsInput: FC<AccountPermissionsInputProps> = ({
                     onToggle={() => setModelsExpanded((v) => !v)}
                     disabled={disabled}
                     ariaLabel="Toggle model list"
-                    // Border only on the wrapper so the expanded panel stays
-                    // transparent (chips read on the neutral dialog surface, not
-                    // a themed fill). Highlight the header only when ≥1 model is
-                    // selected — same as the Profile/Usage/Keys rows.
+                    // Keep the selected header consistent with permission rows.
                     wrapperClassName="border-theme-border"
                     triggerClassName={
-                        selectedCount > 0 ? "bg-theme-bg-active" : undefined
+                        selectedCount > 0 ? "bg-theme-bg-subtle" : undefined
                     }
                     hoverClassName={
                         selectedCount > 0
@@ -346,7 +343,12 @@ const ModelChip: FC<{
         onClick={onClick}
         disabled={disabled}
         size="sm"
-        className="polli:shrink-0"
+        className={cn(
+            "polli:shrink-0 polli:border",
+            selected
+                ? "polli:bg-theme-bg-subtle polli:border-theme-border"
+                : "polli:bg-transparent polli:border-transparent polli:hover:bg-theme-bg-subtle",
+        )}
     >
         {officialName}
         {showApiName && (

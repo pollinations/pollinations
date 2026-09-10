@@ -14,9 +14,9 @@ type PermissionUiThemeConfig = {
 // `theme-*` tokens resolve to it AND flip correctly in dark mode.
 export const PERMISSION_UI_THEME: PermissionUiThemeConfig = {
     row: {
-        selectedClasses: "border-theme-border bg-theme-bg-active",
+        selectedClasses: "border-theme-border bg-theme-bg-subtle",
         selectedHoverClasses:
-            "hover:bg-theme-bg-hover hover:border-theme-border",
+            "hover:bg-theme-bg-subtle hover:border-theme-border",
         rowHoverClasses: "hover:bg-theme-bg-pale hover:border-theme-border",
         focusRingClasses:
             "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-theme-border",

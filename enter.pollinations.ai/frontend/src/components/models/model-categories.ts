@@ -17,7 +17,11 @@ export type ModelCategoryLabel =
     | "Community Text"
     | "Community Image"
     | "Community Agents";
-export type ModelCategoryModel = { id: string; label: string };
+export type ModelCategoryModel = {
+    id: string;
+    label: string;
+    paidOnly?: boolean;
+};
 export type ModelCategoryGroup = {
     category: ModelDisplayCategory;
     label: ModelCategoryLabel;
@@ -115,6 +119,7 @@ export function getModelCategoriesFromCatalog(
                 return {
                     id,
                     label: getCatalogDisplayName(model, id),
+                    ...(model.paid_only === true ? { paidOnly: true } : {}),
                 };
             })
             .filter((model) => model.id)
@@ -145,4 +150,59 @@ export function computeCategoryModalities(
         )
         .map(({ modality }) => modality);
     return [...new Set(modalities)];
+}
+
+export function getSelectedModelCounts(
+    selectedIds: string[] | null,
+    requestedIds: string[],
+    categories: ModelCategoryGroup[],
+): { modality: string; label: string; count: number }[] {
+    const selected = new Set(
+        requestedIds.filter(
+            (id) => selectedIds === null || selectedIds.includes(id),
+        ),
+    );
+    const counts = new Map<
+        string,
+        { modality: string; label: string; count: number }
+    >();
+    for (const group of categories) {
+        const category =
+            group.modality === "images"
+                ? "image"
+                : group.modality === "embeddings"
+                  ? "embedding"
+                  : group.modality;
+        for (const { id } of group.models) {
+            if (!selected.delete(id)) continue;
+            const summary = counts.get(group.modality) ?? {
+                modality: group.modality,
+                label: CATEGORY_LABELS[category],
+                count: 0,
+            };
+            summary.count += 1;
+            counts.set(group.modality, summary);
+        }
+    }
+    if (selected.size)
+        counts.set("other", {
+            modality: "other",
+            label: "Other",
+            count: selected.size,
+        });
+    return [...counts.values()];
+}
+
+/** Unknown or mixed requirements must never be described as paid-only. */
+export function areSelectedModelsPaidOnly(
+    selectedIds: string[] | null,
+    models: ModelCategoryModel[],
+): boolean {
+    const selected = selectedIds ?? models.map(({ id }) => id);
+    return (
+        selected.length > 0 &&
+        selected.every(
+            (id) => models.find((model) => model.id === id)?.paidOnly === true,
+        )
+    );
 }

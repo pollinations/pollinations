@@ -8,12 +8,10 @@ import {
     Dropdown,
     DropdownItem,
     EditableCombobox,
-    EditableComboboxToken,
     ExternalLinkButton,
     GitHubIcon,
     InlineLink,
     McpIcon,
-    SearchIcon,
     Section,
     SparklesIcon,
     TabButton,
@@ -40,6 +38,10 @@ import {
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
 import {
+    MODEL_FILTER_LABELS,
+    ModelFilterTokens,
+} from "./model-filter-tokens.tsx";
+import {
     ensureModelQuerySource,
     getExplicitModelQuerySource,
     getModelQueryDraftFilter,
@@ -49,7 +51,6 @@ import {
     getModelQueryVisibleSearch,
     MODEL_QUERY_FILTER_KEYS,
     type ModelQueryDraftFilter,
-    type ModelQueryFilter,
     type ModelQueryFilterKey,
     type ModelQueryFilterToken,
     matchesModelQuery,
@@ -235,66 +236,6 @@ const isSourceSuggestion = (option: string): boolean =>
         .slice(option.lastIndexOf(" ") + 1)
         .toLowerCase()
         .startsWith("source:");
-
-const MODEL_FILTER_LABELS: Record<ModelQueryFilter["key"], string> = {
-    access: "Access",
-    source: "Source",
-    publisher: "Publisher",
-    id: "ID",
-    type: "Type",
-    capability: "Capability",
-};
-
-const formatFilterValue = (filter: ModelQueryFilter): string =>
-    filter.key === "id" || filter.key === "publisher"
-        ? filter.value
-        : filter.value.replaceAll("-", " ");
-
-type ModelFilterTokensProps = {
-    tokens: ModelQueryFilterToken[];
-    draft?: ModelQueryDraftFilter;
-    pendingRemovalIndex?: number;
-    onEdit: (token: ModelQueryFilterToken) => void;
-};
-
-const ModelFilterTokens: FC<ModelFilterTokensProps> = ({
-    tokens,
-    draft,
-    pendingRemovalIndex,
-    onEdit,
-}) => {
-    if (tokens.length === 0 && !draft) {
-        return (
-            <SearchIcon className="pointer-events-none ml-1 mr-0.5 h-4 w-4 shrink-0 text-theme-text-muted" />
-        );
-    }
-
-    return (
-        <>
-            {tokens.map((token) => {
-                const label = MODEL_FILTER_LABELS[token.filter.key];
-                const value = formatFilterValue(token.filter);
-                return (
-                    <EditableComboboxToken
-                        key={`${token.index}:${token.token}`}
-                        label={label}
-                        value={value}
-                        highlighted={pendingRemovalIndex === token.index}
-                        aria-label={`Change ${label} filter: ${value}`}
-                        onClick={() => onEdit(token)}
-                    />
-                );
-            })}
-            {draft && (
-                <div className="flex h-7 max-w-full shrink-0 items-center text-xs">
-                    <span className="py-1 pl-1.5 pr-1 text-theme-text-muted">
-                        {MODEL_FILTER_LABELS[draft.key]}:
-                    </span>
-                </div>
-            )}
-        </>
-    );
-};
 
 export const Models: FC = () => {
     const navigate = useNavigate({ from: "/models" });

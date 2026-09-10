@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+    areSelectedModelsPaidOnly,
     computeCategoryModalities,
     getModelCategoriesFromCatalog,
+    getSelectedModelCounts,
 } from "../frontend/src/components/models/model-categories.ts";
 import { validateModelSearch } from "../frontend/src/components/models/model-search.ts";
 
@@ -179,5 +181,57 @@ describe("model categories", () => {
         expect(
             validateModelSearch({ agentQ: " capability:agent ", mcpQ: "  " }),
         ).toMatchObject({ agentQ: "capability:agent", mcpQ: undefined });
+    });
+});
+
+describe("paid model consent warning", () => {
+    const models = getModelCategoriesFromCatalog([
+        { name: "paid-a", category: "text", paid_only: true },
+        { name: "paid-b", category: "image", paid_only: true },
+        { name: "quest", category: "text", paid_only: false },
+    ]).flatMap(({ models }) => models);
+
+    it("requires every selected model to be confirmed paid-only", () => {
+        expect(areSelectedModelsPaidOnly(["paid-a", "paid-b"], models)).toBe(
+            true,
+        );
+        expect(areSelectedModelsPaidOnly(["paid-a", "quest"], models)).toBe(
+            false,
+        );
+        expect(areSelectedModelsPaidOnly(null, models)).toBe(false);
+    });
+
+    it("does not warn for disabled generation or unknown model metadata", () => {
+        expect(areSelectedModelsPaidOnly([], models)).toBe(false);
+        expect(areSelectedModelsPaidOnly(["paid-a", "unknown"], models)).toBe(
+            false,
+        );
+        expect(areSelectedModelsPaidOnly(null, [])).toBe(false);
+    });
+});
+
+describe("selected capability counts", () => {
+    const categories = getModelCategoriesFromCatalog(catalog);
+    const requested = catalog.map(({ name }) => name);
+    it("combines official and community models by capability", () => {
+        expect(getSelectedModelCounts(null, requested, categories)).toEqual([
+            { modality: "text", label: "Text", count: 3 },
+            { modality: "images", label: "Image", count: 2 },
+        ]);
+    });
+    it("counts only requested and selected models, without duplicates", () => {
+        expect(
+            getSelectedModelCounts(
+                ["official-text", "official-image"],
+                ["official-text", "official-text"],
+                categories,
+            ),
+        ).toEqual([{ modality: "text", label: "Text", count: 1 }]);
+        expect(getSelectedModelCounts([], requested, categories)).toEqual([]);
+    });
+    it("keeps unlisted selected models visible without guessing a capability", () => {
+        expect(getSelectedModelCounts(null, ["unlisted"], categories)).toEqual([
+            { modality: "other", label: "Other", count: 1 },
+        ]);
     });
 });

@@ -2505,10 +2505,10 @@ test("flux falls back to DeepInfra when the Vast pool is empty", async ({
         modelRequested: "flux",
         resolvedModelRequested: "black-forest-labs/flux.1-schnell",
         modelUsed: "black-forest-labs/flux.1-schnell",
-        executionRouteId: "black-forest-labs/flux.1-schnell:vast",
         modelProviderUsed: "vast",
         responseStatus: 503,
         isFinal: false,
+        hasCostEstimate: false,
         isBilledUsage: false,
     });
     expect(mocks.tinybird.state.events[1]).toMatchObject({
@@ -2516,7 +2516,6 @@ test("flux falls back to DeepInfra when the Vast pool is empty", async ({
         modelRequested: "flux",
         resolvedModelRequested: "black-forest-labs/flux.1-schnell",
         modelUsed: "black-forest-labs/flux.1-schnell",
-        executionRouteId: "black-forest-labs/flux.1-schnell:deepinfra",
         modelProviderUsed: "deepinfra",
         responseStatus: 200,
         fallbackUsed: true,
@@ -2673,14 +2672,13 @@ test("gpt-image-2 falls back to OpenAI direct on an Azure 429", async ({
     expect(mocks.tinybird.state.events).toHaveLength(2);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelUsed: "openai/gpt-image-2",
-        executionRouteId: "openai/gpt-image-2:azure",
         modelProviderUsed: "azure",
         responseStatus: 502,
         isFinal: false,
+        hasCostEstimate: false,
     });
     expect(mocks.tinybird.state.events[1]).toMatchObject({
         modelUsed: "openai/gpt-image-2",
-        executionRouteId: "openai/gpt-image-2:openai",
         modelProviderUsed: "openai",
         responseStatus: 200,
         fallbackUsed: true,
@@ -2715,6 +2713,7 @@ test("gpt-image-2 tries its fallback when the reference image host is over capac
         // Failed-attempt telemetry maps the image host's 429 to a gateway failure.
         responseStatus: 502,
         isFinal: false,
+        hasCostEstimate: false,
         isBilledUsage: false,
     });
     expect(mocks.tinybird.state.events[1]).toMatchObject({
@@ -2747,7 +2746,6 @@ test("gpt-image-2 does not duplicate an ambiguous Azure timeout", async ({
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelUsed: "openai/gpt-image-2",
-        executionRouteId: "openai/gpt-image-2:azure",
         modelProviderUsed: "azure",
         responseStatus: 502,
         isFinal: true,

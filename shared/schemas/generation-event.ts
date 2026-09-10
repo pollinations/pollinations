@@ -69,17 +69,13 @@ export type TinybirdEvent = {
     referrerDomain?: string;
 
     // Model
+    /** Caller input, which may be an alias. */
     modelRequested?: string | null;
+    /** Canonical public model requested, before fallback. */
     resolvedModelRequested?: string;
     /** Public ID of the serving model, including when a fallback ran. */
     modelUsed?: string;
     modelProviderUsed?: string;
-    /** Stable configured route, or the immutable community endpoint ID. */
-    executionRouteId?: string;
-    /** Provider's reference for matching a generation to its reported charge. */
-    providerResponseId?: string;
-    /** Actual upstream reported by the gateway; independent of configured route pins. */
-    providerUpstreamReported?: string;
     /** Absent means unknown; a reported zero is a measured zero. */
     providerReportedCostUsd?: number;
     /** Whether totalCost uses validated usage; false for missing usage or fee-only estimates. */

@@ -19,7 +19,6 @@ export type FallbackDefinition = Partial<
         | "fallbackOnly"
         | "hidden"
         | "provider"
-        | "routeId"
         | "publicModelId"
     >
 > & { provider: string };
@@ -81,7 +80,6 @@ export function mergeFallbacks<
             merged[routeId] = {
                 ...inherited,
                 ...overrides,
-                routeId,
                 publicModelId: parentId,
                 aliases: [],
                 hidden: true,

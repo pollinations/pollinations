@@ -16,7 +16,6 @@ import {
     type BillingAdjustment,
     type CostDefinition,
     calculateUsageBilling,
-    getExecutionRouteId,
     getPriceDefinitionForModel,
     type ModelDefinition,
     type PriceDefinition,
@@ -779,10 +778,6 @@ function createRealtimeTrackingEvent(args: {
         modelRequested: args.tracking.modelRequested,
         resolvedModelRequested: args.tracking.resolvedModelRequested,
         modelUsed: args.tracking.resolvedModelRequested,
-        executionRouteId: getExecutionRouteId(
-            args.tracking.resolvedModelRequested,
-            args.tracking.modelDefinition,
-        ),
         hasCostEstimate: hasPositiveUsage(args.usage),
         modelProviderUsed: args.tracking.modelDefinition.provider,
         isBilledUsage: true,

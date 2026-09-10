@@ -1,21 +1,13 @@
-import type { TinybirdEvent } from "@shared/schemas/generation-event.ts";
-
-export type ProviderUsageEvidence = Pick<
-    TinybirdEvent,
-    | "providerResponseId"
-    | "providerUpstreamReported"
-    | "providerReportedCostUsd"
->;
-
-/** Provider response evidence, never an input to the caller's Pollen price. */
-export function providerUsageEvidence(
+/** Reported account charge, never an input to the caller's Pollen price. */
+export function getProviderReportedCostUsd(
     provider: string | undefined,
     output: unknown,
-): ProviderUsageEvidence {
-    if (!output || typeof output !== "object") return {};
+): number | undefined {
+    if (provider !== "openrouter" || !output || typeof output !== "object")
+        return undefined;
     const streamEvents = (output as { streamEvents?: unknown }).streamEvents;
     const events = Array.isArray(streamEvents) ? streamEvents : [output];
-    const evidence: ProviderUsageEvidence = {};
+    let reportedCost: number | undefined;
     for (const event of events) {
         if (!event || typeof event !== "object") continue;
         const envelope = event as Record<string, unknown>;
@@ -26,23 +18,8 @@ export function providerUsageEvidence(
             typeof envelope.response === "object"
                 ? (envelope.response as Record<string, unknown>)
                 : envelope;
-        if (typeof response.id === "string" && response.id) {
-            evidence.providerResponseId = response.id;
-        }
-        if (
-            provider === "openrouter" &&
-            typeof response.provider === "string" &&
-            response.provider
-        ) {
-            evidence.providerUpstreamReported = response.provider;
-        }
         const usage = response.usage;
-        if (
-            provider !== "openrouter" ||
-            !usage ||
-            typeof usage !== "object" ||
-            !("cost" in usage)
-        ) {
+        if (!usage || typeof usage !== "object" || !("cost" in usage)) {
             continue;
         }
         // OpenRouter usage.cost is the account charge in USD credits, not
@@ -53,8 +30,8 @@ export function providerUsageEvidence(
         const valid =
             typeof cost === "number" && Number.isFinite(cost) && cost >= 0;
         if (valid) {
-            evidence.providerReportedCostUsd = cost;
+            reportedCost = cost;
         }
     }
-    return evidence;
+    return reportedCost;
 }

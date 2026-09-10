@@ -6,14 +6,10 @@ import { mergeFallbacks } from "@shared/registry/merge-fallbacks.ts";
 import { MODEL3D_SERVICES } from "@shared/registry/model3d.ts";
 import {
     calculateUsageBilling,
-    getExecutionRouteId,
-    getModels,
-    getRegistryModelDefinition,
     getVisibleAudioModels,
     getVisibleImageModels,
     getVisibleTextModels,
     type ModelDefinition,
-    type ModelName,
 } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { TEXT_FALLBACKS } from "@shared/registry/text-fallbacks.ts";
@@ -168,90 +164,6 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
-    it("keeps OpenRouter route suffixes consistent with configured upstream pins", () => {
-        for (const [id, definition] of Object.entries(TEXT_SERVICES)) {
-            if (definition.provider !== "openrouter") continue;
-            const config = findModelByName(id)?.config();
-            const routing = (
-                config?.defaultOptions as
-                    | {
-                          provider?: {
-                              only?: string[];
-                              allow_fallbacks?: boolean;
-                          };
-                      }
-                    | undefined
-            )?.provider;
-            const suffix = getExecutionRouteId(id, definition).split(
-                ":openrouter",
-            )[1];
-            if (routing?.only) {
-                expect(routing.only, id).toHaveLength(1);
-                expect(routing.allow_fallbacks, id).toBe(false);
-                // Existing route IDs abbreviate Google's provider tags.
-                const pin = routing.only[0]
-                    .toLowerCase()
-                    .replace(/^google-/, "")
-                    .replaceAll("/", "-");
-                expect(suffix, id).toBe(`:${pin}`);
-            } else {
-                expect(suffix, id).toBe("");
-            }
-        }
-    });
-
-    it("assigns a distinct execution identity to every bundled route", () => {
-        const routes = new Set<string>();
-        for (const id of getModels()) {
-            const definition = getRegistryModelDefinition(id);
-            const routeId = getExecutionRouteId(id, definition);
-            expect(routes.has(routeId), `${id}: duplicate ${routeId}`).toBe(
-                false,
-            );
-            routes.add(routeId);
-            const publicId = definition.publicModelId ?? id;
-            // Bedrock is the existing route label for the canonical AWS supplier.
-            const providers =
-                definition.provider === "aws"
-                    ? ["aws", "bedrock"]
-                    : [definition.provider];
-            expect(
-                providers.some((provider) => {
-                    const prefix = `${publicId}:${provider}`;
-                    return (
-                        routeId === prefix || routeId.startsWith(`${prefix}:`)
-                    );
-                }),
-                `${id}: route identity must match its serving model and provider`,
-            ).toBe(true);
-            if (definition.fallbackOnly) {
-                expect(routeId).toBe(id);
-                expect(
-                    getRegistryModelDefinition(
-                        definition.publicModelId as ModelName,
-                    ),
-                ).toBeDefined();
-            }
-        }
-    });
-
-    it("keeps the public ID and route identities when providers change priority", () => {
-        const id = "x-ai/grok-imagine-video";
-        const primary = IMAGE_SERVICES[id];
-        const secondary = IMAGE_SERVICES["x-ai/grok-imagine-video:openrouter"];
-        const primaryRoute = getExecutionRouteId(id, primary);
-        const reordered = mergeFallbacks(
-            { [id]: { ...secondary, fallbackOnly: false, hidden: false } },
-            { [id]: { [primaryRoute]: { provider: primary.provider } } },
-        );
-        expect(getExecutionRouteId(id, reordered[id])).toBe(secondary.routeId);
-        expect(reordered[primaryRoute].routeId).toBe(primaryRoute);
-        expect(reordered[primaryRoute].publicModelId).toBe(id);
-        const newProvider = { ...primary, provider: "new-provider" };
-        expect(getExecutionRouteId(id, newProvider)).toBe(`${id}:new-provider`);
-        expect(newProvider).not.toHaveProperty("routeId");
-    });
-
     it.each([
         "sonar",
         "sonar-pro",
@@ -406,7 +318,6 @@ describe("static provider fallbacks", () => {
         for (const routeId of [studioId, vertexId] as const) {
             expectInheritedRoute(services, parentId, routeId);
             expect(services[routeId].provider).toBe("openrouter");
-            expect(services[routeId].routeId).toBe(routeId);
             expect(services[routeId].cost).toEqual(parent.cost);
         }
         expect(parent.fallbacks).toBeUndefined();

@@ -35,11 +35,7 @@ describe("writeExifMetadata", () => {
             "test",
             { tokenAuth: true, userId: "test-user" },
         );
-        expect(result.trackingData.providerEvidence).toEqual({
-            providerResponseId: "gen-private",
-            providerUpstreamReported: "xAI",
-            providerReportedCostUsd: 0.123,
-        });
+        expect(result.trackingData.providerReportedCostUsd).toBe(0.123);
         const exif = load(result.buffer.toString("binary"));
         const metadata = JSON.parse(
             exif.Exif?.[TagValues.ExifIFD.UserComment] as string,
@@ -48,7 +44,9 @@ describe("writeExifMetadata", () => {
             actualModel: model,
             usage: { completionImageTokens: 1 },
         });
-        expect(metadata.trackingData).not.toHaveProperty("providerEvidence");
+        expect(metadata.trackingData).not.toHaveProperty(
+            "providerReportedCostUsd",
+        );
     });
 
     it("writes Make and UserComment to a JPEG", async () => {

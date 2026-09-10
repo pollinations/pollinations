@@ -610,7 +610,6 @@ const AUDIO_BASE_SERVICES = {
         outputModalities: ["audio"],
     },
     "fish-audio/s2.1-pro": {
-        routeId: "fish-audio/s2.1-pro:openrouter:fish-audio",
         aliases: ["fish-audio-s2.1-pro"],
         provider: "openrouter",
         publisher: "Fish Audio",

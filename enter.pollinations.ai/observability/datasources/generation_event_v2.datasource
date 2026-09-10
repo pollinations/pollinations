@@ -53,15 +53,13 @@ SCHEMA >
 `resolved_model_requested`  LowCardinality(String) `json:$.resolvedModelRequested` DEFAULT 'undefined',
 `model_used`                LowCardinality(String) `json:$.modelUsed` DEFAULT 'undefined',
 `model_provider_used`       LowCardinality(String) `json:$.modelProviderUsed` DEFAULT 'undefined',
--- With execution_route_id, model_used is the serving public registry ID. Older
--- rows keep their original mixed model strings; never remap them through today's registry.
-`execution_route_id` Nullable(String) `json:$.executionRouteId` DEFAULT NULL,
-`provider_response_id` Nullable(String) `json:$.providerResponseId` DEFAULT NULL,
-`provider_upstream_reported` Nullable(String) `json:$.providerUpstreamReported` DEFAULT NULL,
 -- OpenRouter usage.cost: the account charge in USD. NULL means no report;
 -- a reported zero is a measured zero. total_cost remains our configured-rate
 -- estimate; provider-reported charges never set Pollen prices.
 `provider_reported_cost_usd` Nullable(Float64) `json:$.providerReportedCostUsd` DEFAULT NULL,
+-- Whether total_cost uses validated usage; false for missing usage or fee-only costs.
+-- New writers always set this flag and record canonical serving model_used.
+-- Older rows keep NULL and mixed model strings; never remap via today's registry.
 `has_cost_estimate` Nullable(Bool) `json:$.hasCostEstimate` DEFAULT NULL,
 `cost_variant`              LowCardinality(String) `json:$.costVariant` DEFAULT 'undefined',
 `fallback_used`             Bool                   `json:$.fallbackUsed` DEFAULT false,

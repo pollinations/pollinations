@@ -431,12 +431,9 @@ export async function generateImageOrVideoResponse(
             result,
             result.mimeType || detectMimeType(result.buffer),
         );
-        if (
-            "providerEvidence" in result.trackingData &&
-            result.trackingData.providerEvidence
-        ) {
-            c.var.track?.setProviderUsageEvidence(
-                result.trackingData.providerEvidence,
+        if ("providerReportedCostUsd" in result.trackingData) {
+            c.var.track?.setProviderReportedCost(
+                result.trackingData.providerReportedCostUsd,
             );
         }
         if (servedIndex > 0) {

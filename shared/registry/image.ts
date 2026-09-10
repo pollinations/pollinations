@@ -145,7 +145,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 1, // Azure MAI edit route takes one input image.
     },
     "google/gemini-2.5-flash-image": {
-        routeId: "google/gemini-2.5-flash-image:openrouter:vertex-global",
         aliases: ["nanobanana"],
         provider: "openrouter",
         publisher: "Google",
@@ -168,7 +167,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 3, // Pollinations cap for Gemini 2.5 Flash Image route.
     },
     "google/gemini-3.1-flash-image": {
-        routeId: "google/gemini-3.1-flash-image:openrouter:vertex-global",
         aliases: ["nanobanana2", "nanobanana-2"],
         provider: "openrouter",
         publisher: "Google",
@@ -191,7 +189,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 14, // Pollinations cap for Gemini 3.1 Flash Image route.
     },
     "google/gemini-3.1-flash-lite-image": {
-        routeId: "google/gemini-3.1-flash-lite-image:openrouter:vertex-global",
         aliases: ["nanobanana2lite", "nanobanana-lite", "nanobanana-2-lite"],
         provider: "openrouter",
         publisher: "Google",
@@ -214,7 +211,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 14, // Pollinations cap for Gemini 3.1 Flash-Lite Image route.
     },
     "google/gemini-3-pro-image": {
-        routeId: "google/gemini-3-pro-image:openrouter:ai-studio-global",
         aliases: ["nanobanana-pro"],
         provider: "openrouter",
         publisher: "Google",
@@ -292,7 +288,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 10, // Pollinations route cap from Replicate schema.
     },
     "bytedance/seedream-4.5": {
-        routeId: "bytedance/seedream-4.5:openrouter:seed",
         aliases: ["seedream-pro"],
         provider: "openrouter",
         publisher: "ByteDance",
@@ -1074,7 +1069,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 1, // OpenRouter image edit route forwards one input image.
     },
     "x-ai/grok-imagine-image-2.0": {
-        routeId: "x-ai/grok-imagine-image-2.0:openrouter:xai",
         aliases: ["grok-imagine-image-2.0"],
         provider: "openrouter",
         publisher: "xAI",
@@ -1133,7 +1127,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 3,
     },
     "recraft/recraft-v4.1-vector": {
-        routeId: "recraft/recraft-v4.1-vector:openrouter:recraft",
         aliases: [
             "recraft-vector",
             "recraft-svg",
@@ -1494,7 +1487,6 @@ const IMAGE_BASE_SERVICES = {
         defaultDuration: 5,
     },
     "amazon/nova-canvas-v1": {
-        routeId: "amazon/nova-canvas-v1:bedrock",
         aliases: ["amazon-nova-canvas", "nova-canvas"],
         provider: "aws",
         publisher: "Amazon",
@@ -1529,7 +1521,6 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 1, // Nova Canvas route forwards one input image.
     },
     "amazon/nova-reel-v1": {
-        routeId: "amazon/nova-reel-v1:bedrock",
         aliases: ["amazon-nova-reel", "nova-reel"],
         provider: "aws",
         publisher: "Amazon",

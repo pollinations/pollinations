@@ -63,10 +63,7 @@ import {
     resetGenerationModelRegistryCache,
 } from "../src/model-registry.ts";
 import { requireChatStreamUsage } from "../src/text/chat/usage.ts";
-import {
-    type ProviderUsageEvidence,
-    providerUsageEvidence,
-} from "../src/utils/provider-usage.ts";
+import { getProviderReportedCostUsd } from "../src/utils/provider-cost.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 afterEach(() => {
@@ -201,7 +198,7 @@ function createTrackedResponseApp(
     eventType: "generate.image" | "generate.text" | "generate.audio",
     result: Response | Error,
     model: ModelName = "openai/gpt-5.4-nano",
-    providerEvidence?: ProviderUsageEvidence,
+    providerReportedCostUsd?: number,
 ) {
     const app = new Hono<Env>();
 
@@ -225,8 +222,7 @@ function createTrackedResponseApp(
         await next();
     });
     app.all("/upstream", track(eventType), (c) => {
-        if (providerEvidence)
-            c.var.track.setProviderUsageEvidence(providerEvidence);
+        c.var.track.setProviderReportedCost(providerReportedCostUsd);
         if (result instanceof Error) throw result;
         return result.clone();
     });
@@ -529,8 +525,6 @@ describe("tracking observability", () => {
             modelRequested: "openai/gpt-5.4-nano",
             resolvedModelRequested: "openai/gpt-5.4-nano",
             modelUsed: "openai/gpt-5.4-nano",
-            executionRouteId: "openai/gpt-5.4-nano:azure",
-            providerResponseId: "chatcmpl_test",
             hasCostEstimate: true,
             modelProviderUsed: expect.any(String),
             userId: trackingUser.id,
@@ -623,8 +617,6 @@ describe("tracking observability", () => {
         expect(events).toHaveLength(1);
         expect(events[0]).toMatchObject({
             providerReportedCostUsd: 0.02,
-            providerResponseId: "gen-unbilled-cost",
-            executionRouteId: `${model}:openrouter:vertex-global`,
             modelUsed: model,
             hasCostEstimate: hasUsage,
             totalPrice: 0,
@@ -637,7 +629,9 @@ describe("tracking observability", () => {
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
-    it("carries image provider evidence through binary settlement without exposing it in headers", async () => {
+    it.each([
+        0, 0.123,
+    ])("carries an image charge of %s through binary settlement without exposing it in headers", async (reportedCost) => {
         const events: TinybirdEvent[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -648,7 +642,7 @@ describe("tracking observability", () => {
                         model: "grok-upstream",
                         provider: "xAI",
                         data: [{ b64_json: "AQID" }],
-                        usage: { cost: 0.123 },
+                        usage: { cost: reportedCost },
                     });
                 }
                 if (request.url.includes("name=generation_event_v2"))
@@ -681,7 +675,7 @@ describe("tracking observability", () => {
             "generate.image",
             new Response(new Uint8Array(result.buffer), { headers }),
             model,
-            result.trackingData.providerEvidence,
+            result.trackingData.providerReportedCostUsd,
         ).fetch(
             new Request("https://gen.pollinations.ai/upstream"),
             {
@@ -704,10 +698,7 @@ describe("tracking observability", () => {
         expect(events[0]).toMatchObject({
             modelUsed: model,
             modelProviderUsed: "openrouter",
-            executionRouteId: `${model}:openrouter`,
-            providerResponseId: "gen-image",
-            providerUpstreamReported: "xAI",
-            providerReportedCostUsd: 0.123,
+            providerReportedCostUsd: reportedCost,
             hasCostEstimate: true,
             isBilledUsage: true,
         });
@@ -3010,8 +3001,6 @@ describe("trackResponse modelUsed", () => {
         expect(tracking.isBilledUsage).toBe(false);
         expect(tracking.responseStatus).toBe(200);
         expect(tracking.modelUsed).toBeUndefined();
-        expect(tracking.executionRouteId).toBeUndefined();
-        expect(tracking.providerResponseId).toBeUndefined();
     });
 
     it("prices an Alibaba explicit-cache hit from response metadata", async () => {
@@ -3273,7 +3262,7 @@ describe("trackResponse provider accounting evidence", () => {
     it("keeps a valid report when a later event carries an invalid cost", () => {
         for (const cost of [null, "0.3", -1, NaN, Infinity]) {
             expect(
-                providerUsageEvidence("openrouter", {
+                getProviderReportedCostUsd("openrouter", {
                     streamEvents: [
                         {
                             id: "gen-valid",
@@ -3283,10 +3272,7 @@ describe("trackResponse provider accounting evidence", () => {
                         { usage: { cost } },
                     ],
                 }),
-            ).toMatchObject({
-                providerReportedCostUsd: 0.2,
-                providerUpstreamReported: "Google Vertex",
-            });
+            ).toBe(0.2);
         }
     });
 
@@ -3345,7 +3331,7 @@ describe("trackResponse provider accounting evidence", () => {
         );
     }
 
-    it("preserves provider charge and upstream identity independently of Pollen billing", async () => {
+    it("preserves provider charge independently of Pollen billing", async () => {
         const tracking = await trackResponse(
             "generate.text",
             requestTrackingFixture(false, model),
@@ -3360,9 +3346,6 @@ describe("trackResponse provider accounting evidence", () => {
         );
         expect(tracking).toMatchObject({
             modelUsed: model,
-            executionRouteId: `${model}:openrouter:vertex-global`,
-            providerResponseId: "gen-provider-123",
-            providerUpstreamReported: "Google Vertex",
             hasCostEstimate: true,
             providerReportedCostUsd: 0.42,
         });
@@ -3390,7 +3373,6 @@ describe("trackResponse provider accounting evidence", () => {
             expect(tracking).toMatchObject({
                 modelUsed: model,
                 modelProviderUsed: "openrouter",
-                executionRouteId: route,
                 fallbackUsed: true,
             });
         }
@@ -3434,9 +3416,6 @@ describe("trackResponse provider accounting evidence", () => {
         expect(tracking.fallbackUsed).toBe(true);
         expect(tracking.modelProviderUsed).toBe("openrouter");
         expect(tracking.providerReportedCostUsd).toBe(0.42);
-        expect(tracking.executionRouteId).toBe(
-            `${model}:openrouter:vertex-global`,
-        );
     });
 
     it("does not treat an arbitrary community usage.cost as our supplier charge", async () => {
@@ -3451,7 +3430,6 @@ describe("trackResponse provider accounting evidence", () => {
                 communityEndpoint: endpoint,
             },
         );
-        expect(tracking.executionRouteId).toBe(endpoint.id);
         expect(tracking.modelUsed).toBe(endpoint.modelId);
         expect(tracking.providerReportedCostUsd).toBeUndefined();
     });
@@ -3483,11 +3461,10 @@ describe("trackResponse provider accounting evidence", () => {
             candidateFixture(model),
         );
         expect(tracking.providerReportedCostUsd).toBe(0.4);
-        expect(tracking.providerResponseId).toBe("gen-stream-123");
         expect(tracking.isBilledUsage).toBe(finishReason === "stop");
     });
 
-    it("preserves a Responses API terminal response identity", async () => {
+    it("preserves a Responses API terminal reported cost", async () => {
         const event = {
             type: "response.completed",
             response: {
@@ -3515,7 +3492,6 @@ describe("trackResponse provider accounting evidence", () => {
             candidateFixture(model),
         );
         expect(tracking).toMatchObject({
-            providerResponseId: "resp-provider-123",
             providerReportedCostUsd: 0.2,
         });
     });

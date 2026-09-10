@@ -1,5 +1,3 @@
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
-import { getExecutionRouteId } from "@shared/registry/registry.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
 import {
@@ -100,9 +98,7 @@ describe("OpenRouter Grok Imagine Pro", () => {
         });
         expect(result.buffer).toEqual(Buffer.from([1, 2, 3]));
         expect(result.trackingData).toEqual({
-            providerEvidence: {
-                providerReportedCostUsd: 0.05,
-            },
+            providerReportedCostUsd: 0.05,
             actualModel: "x-ai/grok-imagine-image-quality",
             usage: { completionImageTokens: 1 },
         });
@@ -215,9 +211,7 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
             ],
         });
         expect(result.trackingData).toEqual({
-            providerEvidence: {
-                providerReportedCostUsd: 0.05,
-            },
+            providerReportedCostUsd: 0.05,
             actualModel: "x-ai/grok-imagine-image-2.0",
             usage: {
                 promptImageTokens: 3,
@@ -314,40 +308,6 @@ function mockGeminiFetch(
 }
 
 describe("OpenRouter Gemini image", () => {
-    it("matches every primary and fallback route ID to the pin sent upstream", async () => {
-        syncImageEnv(
-            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
-            ["OPENROUTER_API_KEY"],
-        );
-        const requests: Record<string, unknown>[] = [];
-        mockGeminiFetch(requests);
-        for (const [id, definition] of Object.entries(IMAGE_SERVICES)) {
-            if (
-                definition.provider !== "openrouter" ||
-                !id.startsWith("google/gemini-")
-            )
-                continue;
-            await callOpenRouterGeminiImageAPI("test", {
-                ...baseParams,
-                model: id as ImageParams["model"],
-            });
-            const routing = requests.at(-1)?.provider as {
-                only: string[];
-                allow_fallbacks: boolean;
-            };
-            expect(routing.only, id).toHaveLength(1);
-            expect(routing.allow_fallbacks, id).toBe(false);
-            const pin = routing.only[0]
-                .toLowerCase()
-                .replace(/^google-/, "")
-                .replaceAll("/", "-");
-            expect(
-                getExecutionRouteId(id, definition).split(":openrouter")[1],
-                id,
-            ).toBe(`:${pin}`);
-        }
-    });
-
     it("pins NanoBanana to Google Vertex with no fallback", async () => {
         syncImageEnv(
             { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
@@ -377,9 +337,7 @@ describe("OpenRouter Gemini image", () => {
             },
         ]);
         expect(result.trackingData).toEqual({
-            providerEvidence: {
-                providerReportedCostUsd: 0.0387027,
-            },
+            providerReportedCostUsd: 0.0387027,
             actualModel: "google/gemini-2.5-flash-image",
             usage: {
                 promptTextTokens: 9,
@@ -430,9 +388,7 @@ describe("OpenRouter Gemini image", () => {
             },
         ]);
         expect(result.trackingData).toEqual({
-            providerEvidence: {
-                providerReportedCostUsd: 0.151254,
-            },
+            providerReportedCostUsd: 0.151254,
             actualModel: "google/gemini-3.1-flash-image",
             usage: {
                 promptTextTokens: 12,
@@ -511,9 +467,7 @@ describe("OpenRouter Gemini image", () => {
             },
         ]);
         expect(result.trackingData).toEqual({
-            providerEvidence: {
-                providerReportedCostUsd: 0.0336135,
-            },
+            providerReportedCostUsd: 0.0336135,
             actualModel: "google/gemini-3.1-flash-lite-image",
             usage: {
                 promptTextTokens: 10,
@@ -564,9 +518,7 @@ describe("OpenRouter Gemini image", () => {
             },
         ]);
         expect(result.trackingData).toEqual({
-            providerEvidence: {
-                providerReportedCostUsd: 0.240124,
-            },
+            providerReportedCostUsd: 0.240124,
             actualModel: "google/gemini-3-pro-image",
             usage: {
                 promptTextTokens: 14,
@@ -775,9 +727,7 @@ describe("OpenRouter Seedream 4.5 Pro", () => {
         });
         expect(result.buffer).toEqual(PNG);
         expect(result.trackingData).toEqual({
-            providerEvidence: {
-                providerReportedCostUsd: 0.04,
-            },
+            providerReportedCostUsd: 0.04,
             actualModel: "bytedance/seedream-4.5",
             usage: {
                 completionImageTokens: 1,
@@ -935,9 +885,7 @@ describe("OpenRouter Recraft vector", () => {
         expect(result.buffer.toString()).toBe(svg);
         expect(result.mimeType).toBe("image/svg+xml");
         expect(result.trackingData).toEqual({
-            providerEvidence: {
-                providerReportedCostUsd: 0.08,
-            },
+            providerReportedCostUsd: 0.08,
             actualModel: "recraft/recraft-v4.1-vector",
             usage: { completionImageTokens: 1 },
         });

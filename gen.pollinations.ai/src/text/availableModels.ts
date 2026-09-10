@@ -516,12 +516,24 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["sonar"],
     },
     {
+        name: "perplexity/sonar:openrouter:perplexity",
+        config: portkeyConfig["perplexity/sonar"],
+    },
+    {
         name: "perplexity/sonar-pro",
         config: portkeyConfig["sonar-pro"],
     },
     {
+        name: "perplexity/sonar-pro:openrouter:perplexity",
+        config: portkeyConfig["perplexity/sonar-pro"],
+    },
+    {
         name: "perplexity/sonar-reasoning-pro",
         config: portkeyConfig["sonar-reasoning-pro"],
+    },
+    {
+        name: "perplexity/sonar-reasoning-pro:openrouter:perplexity",
+        config: portkeyConfig["perplexity/sonar-reasoning-pro"],
     },
     {
         name: "moonshotai/kimi-k2.6",

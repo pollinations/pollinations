@@ -30,15 +30,15 @@ export function processParameters(
     }
 
     if (config.supportsMaxCompletionTokens === true) {
-        if (updatedOptions.max_tokens !== undefined) {
+        if (updatedOptions.max_tokens != null) {
             log(
                 `Converting max_tokens (${updatedOptions.max_tokens}) to max_completion_tokens`,
             );
             updatedOptions.max_completion_tokens = updatedOptions.max_tokens;
             delete updatedOptions.max_tokens;
         }
-    } else if (updatedOptions.max_completion_tokens !== undefined) {
-        if (updatedOptions.max_tokens === undefined) {
+    } else if (updatedOptions.max_completion_tokens != null) {
+        if (updatedOptions.max_tokens == null) {
             updatedOptions.max_tokens = updatedOptions.max_completion_tokens;
         }
         delete updatedOptions.max_completion_tokens;

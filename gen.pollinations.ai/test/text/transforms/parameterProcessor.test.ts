@@ -1,6 +1,8 @@
+import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
 import { describe, expect, it } from "vitest";
 import { findModelByName } from "../../../src/text/availableModels.js";
 import { portkeyConfig } from "../../../src/text/configs/modelConfigs.js";
+import { getChatRequestData } from "../../../src/text/requestUtils.js";
 import { processParameters } from "../../../src/text/transforms/parameterProcessor.js";
 import {
     omitParameters,
@@ -13,6 +15,39 @@ const messages = [{ role: "user" as const, content: "hello" }];
 const modelDef = { name: "test-model" };
 
 describe("processParameters", () => {
+    it.each([
+        "anthropic/claude-sonnet-4.6",
+        "inception/mercury-2.5-preview",
+        "qwen/qwen3.8-flash",
+        "openai/gpt-5.4",
+        "openai/gpt-6-astra",
+    ])("honors caller token limits before defaults for %s", (model) => {
+        for (const [limits, expected] of [
+            [{ max_completion_tokens: 128 }, 128],
+            [{ max_tokens: 64 }, 64],
+            [{ max_tokens: 64, max_completion_tokens: 128 }, 64],
+            [{ max_tokens: null, max_completion_tokens: 128 }, 128],
+            [{ max_completion_tokens: 0 }, 0],
+        ] as const) {
+            const input = getChatRequestData(
+                CreateChatCompletionRequestSchema.parse({
+                    model,
+                    messages,
+                    ...limits,
+                }),
+            );
+            const original = structuredClone(input);
+            const resolved = resolveModelConfig(messages, input);
+            const { options } = processParameters(messages, resolved.options);
+            const field = resolved.options.modelConfig
+                ?.supportsMaxCompletionTokens
+                ? "max_completion_tokens"
+                : "max_tokens";
+            expect(options[field]).toBe(expected);
+            expect(input).toEqual(original);
+        }
+    });
+
     it("converts max_tokens to max_completion_tokens for Azure OpenAI models", () => {
         const result = processParameters(messages, {
             model: "gpt-5-nano",

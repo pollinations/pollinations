@@ -130,6 +130,7 @@ restores the backup.
 
 ```bash
 polli harness --help              # supported harnesses
+polli harness bloom on            # creates a dedicated key for Bloom CLI
 polli harness dsh on              # DeepSeek Harness → Pollinations (default model: deepseek)
 polli harness dsh on --model kimi
 polli harness dsh on --no-mcp     # skip MCP tool configuration
@@ -141,6 +142,7 @@ polli harness <harness> status
 polli harness <harness> off
 ```
 
+Bloom stores its dedicated key in `$BLOOM_HOME/.env` (default `~/.bloom/.env`).
 The DSH adapter configures the Pollinations provider, hosted Pollinations MCP,
 and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`). OpenCode uses
 its official plugin; OpenClaw uses `openclaw.json`, while Pi and Prime Agent use

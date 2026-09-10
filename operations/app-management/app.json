@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "✍️",
+    "name": "YouTube Transcription AI by MrPaloma",
+    "url": "https://www.mrpaloma.com/trascrivere-video-youtube-pollinations",
+    "description": "A lightweight, free web app that turns any YouTube video transcript into structured summaries, English translations, and AI-generated concept covers powered by Pollinations.ai. The YouTube Transcript ",
+    "language": "it",
+    "category": "writing",
+    "platform": "web",
+    "githubUsername": "rapidbuildlabai",
+    "githubUserId": "320916248",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-10",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14688",
+    "approvedDate": "2026-09-10",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "Men's Fashion Pins",
     "url": "https://fashionpins4u.blogspot.com/p/mens-fashion-pins.html",

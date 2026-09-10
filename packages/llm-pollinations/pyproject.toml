@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm-pollinations"
+version = "0.1.0"
+description = "LLM plugin providing access to Pollinations AI text models"
+readme = "README.md"
+authors = [
+    { name = "Pollinations AI", email = "hello@pollinations.ai" }
+]
+license = { text = "MIT" }
+dependencies = [
+    "llm>=0.18",
+    "httpx",
+]
+requires-python = ">=3.10"
+keywords = ["llm", "plugin", "pollinations", "ai", "openai"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[project.urls]
+Homepage = "https://pollinations.ai"
+Repository = "https://github.com/pollinations/pollinations"
+Documentation = "https://gen.pollinations.ai/docs"
+
+[project.entry-points.llm]
+pollinations = "llm_pollinations"
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-asyncio",
+]
+
+[tool.setuptools]
+py-modules = ["llm_pollinations"]

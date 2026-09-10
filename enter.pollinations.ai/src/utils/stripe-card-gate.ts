@@ -1,6 +1,4 @@
 export const STRIPE_NEW_CARD_LIMIT = 4;
-export const STRIPE_ACCOUNT_BAN_CARD_LIMIT = 8;
-export const STRIPE_FAILED_CARD_ATTEMPT_LIMIT = 50;
 export const STRIPE_NEW_CARD_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export const STRIPE_NEW_CARD_GATE_METADATA = {
@@ -11,7 +9,6 @@ export const STRIPE_NEW_CARD_GATE_METADATA = {
 
 export type StripeNewCardGateStatus = {
     gate: "ok" | "locked";
-    shouldBanAccount: boolean;
     distinctFailedCardCount24h: number;
     limit: number;
 };
@@ -31,7 +28,6 @@ export async function getStripeNewCardGateStatus(
     if (!userId) {
         return {
             gate: "ok",
-            shouldBanAccount: false,
             distinctFailedCardCount24h: 0,
             limit: STRIPE_NEW_CARD_LIMIT,
         };
@@ -41,8 +37,7 @@ export async function getStripeNewCardGateStatus(
     const row = await db
         .prepare(
             `SELECT
-                COUNT(DISTINCT card_fingerprint) AS distinct_count,
-                COUNT(*) AS attempt_count
+                COUNT(DISTINCT card_fingerprint) AS distinct_count
             FROM stripe_card_fingerprint_attempt
             WHERE user_id = ?
                 AND created_at >= ?
@@ -51,20 +46,15 @@ export async function getStripeNewCardGateStatus(
         .bind(userId, windowStart, now)
         .first<{
             distinct_count: number | null;
-            attempt_count: number | null;
         }>();
 
     const distinctFailedCardCount24h = Number(row?.distinct_count ?? 0);
-    const failedCardAttemptCount24h = Number(row?.attempt_count ?? 0);
 
     return {
         gate:
             distinctFailedCardCount24h >= STRIPE_NEW_CARD_LIMIT
                 ? "locked"
                 : "ok",
-        shouldBanAccount:
-            distinctFailedCardCount24h >= STRIPE_ACCOUNT_BAN_CARD_LIMIT ||
-            failedCardAttemptCount24h >= STRIPE_FAILED_CARD_ATTEMPT_LIMIT,
         distinctFailedCardCount24h,
         limit: STRIPE_NEW_CARD_LIMIT,
     };

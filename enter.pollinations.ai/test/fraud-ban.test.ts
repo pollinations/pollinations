@@ -46,7 +46,7 @@ test("ban page recognizes the installed library error code", () => {
     expect(isBannedLoginError("unknown")).toBe(false);
 });
 
-test("fraud thresholds keep four-card Radar and eight-card OR fifty-attempt bans", async ({
+test("four-card Radar stays independent from account bans", async ({
     sessionToken,
 }) => {
     expect(sessionToken).toBeTruthy();
@@ -64,25 +64,18 @@ test("fraud thresholds keep four-card Radar and eight-card OR fifty-attempt bans
         if (i === 3)
             expect(
                 await getStripeNewCardGateStatus(env.DB, user.id, now),
-            ).toMatchObject({ gate: "locked", shouldBanAccount: false });
-        if (i === 48)
-            expect(
-                (await getStripeNewCardGateStatus(env.DB, user.id, now))
-                    .shouldBanAccount,
-            ).toBe(false);
+            ).toMatchObject({ gate: "locked" });
     }
+    expect((await getStripeNewCardGateStatus(env.DB, user.id, now)).gate).toBe(
+        "locked",
+    );
     expect(
-        (await getStripeNewCardGateStatus(env.DB, user.id, now))
-            .shouldBanAccount,
-    ).toBe(true);
-    expect(
-        (await getStripeNewCardGateStatus(env.DB, user.id, now - 1))
-            .shouldBanAccount,
-    ).toBe(false);
+        (await getStripeNewCardGateStatus(env.DB, user.id, now - 1)).gate,
+    ).toBe("ok");
     expect(
         (await getStripeNewCardGateStatus(env.DB, user.id, now + 86400001))
-            .shouldBanAccount,
-    ).toBe(false);
+            .gate,
+    ).toBe("ok");
     await db.delete(schema.stripeCardFingerprintAttempt);
     for (let i = 0; i < 8; i++)
         await recordStripeCardFingerprintAttempt(env.DB, {
@@ -91,10 +84,10 @@ test("fraud thresholds keep four-card Radar and eight-card OR fifty-attempt bans
             cardFingerprint: `card_${i}`,
             createdAt: now,
         });
-    expect(
-        (await getStripeNewCardGateStatus(env.DB, user.id, now))
-            .shouldBanAccount,
-    ).toBe(true);
+    expect((await getStripeNewCardGateStatus(env.DB, user.id, now)).gate).toBe(
+        "locked",
+    );
+    expect((await db.query.user.findFirst())?.banned).not.toBe(true);
 });
 
 test("fraud ban revokes sessions, stops automatic payments, and rejects existing keys", async ({

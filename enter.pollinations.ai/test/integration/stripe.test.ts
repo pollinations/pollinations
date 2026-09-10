@@ -1,4 +1,4 @@
-test("eight failed cards ban the account and expire its open checkouts", async ({
+test("eight failed cards are recorded without a webhook account ban", async ({
     sessionToken,
     mocks,
 }) => {
@@ -70,22 +70,19 @@ test("eight failed cards ban the account and expire its open checkouts", async (
 
     await expect
         .poll(async () => {
-            const [row] = await drizzle(env.DB)
+            const rows = await drizzle(env.DB)
                 .select()
-                .from(userTable)
-                .where(eq(userTable.id, userId));
-            return row.banned;
+                .from(stripeCardFingerprintAttemptTable)
+                .where(eq(stripeCardFingerprintAttemptTable.userId, userId));
+            return rows.length;
         })
-        .toBe(true);
+        .toBe(8);
     const [user] = await drizzle(env.DB)
         .select()
         .from(userTable)
         .where(eq(userTable.id, userId));
-    expect(user.banned).toBe(true);
-    expect(user.autoTopUpEnabled).toBe(false);
-    await expect
-        .poll(() => mocks.stripe.state.checkoutSessions[0].status)
-        .toBe("expired");
+    expect(user.banned).not.toBe(true);
+    expect(mocks.stripe.state.checkoutSessions[0].status).toBe("open");
     expect(
         (
             await SELF.fetch(`${base}/checkout/p10`, {
@@ -95,7 +92,7 @@ test("eight failed cards ban the account and expire its open checkouts", async (
                 redirect: "manual",
             })
         ).status,
-    ).toBe(401);
+    ).toBe(302);
 });
 
 import { env, SELF } from "cloudflare:test";

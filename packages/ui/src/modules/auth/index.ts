@@ -1,4 +1,8 @@
 export {
+    AuthAccessItem,
+    AuthAccessSummary,
+    AuthActionFooter,
+    AuthFlowLayout,
     AuthInfoCard,
     type AuthInfoCardProps,
     AuthModal,
@@ -10,6 +14,11 @@ export {
 } from "./AuthModal.tsx";
 export { DashboardAccountMenu } from "./DashboardAccountMenu.tsx";
 export { DashboardSignIn } from "./DashboardSignIn.tsx";
+export { DeviceAuthorizationResult } from "./DeviceAuthorizationResult.tsx";
+export {
+    GitHubSignInButton,
+    type GitHubSignInButtonProps,
+} from "./GitHubSignInButton.tsx";
 export {
     PollinationsSignInButton,
     type PollinationsSignInButtonProps,

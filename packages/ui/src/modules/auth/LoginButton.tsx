@@ -1,22 +1,19 @@
 import { useAuthActions, useAuthState } from "@pollinations/sdk/react";
-import type { ReactNode } from "react";
-import { Button, type ButtonProps } from "../../primitives/Button.tsx";
+import {
+    PollinationsSignInButton,
+    type PollinationsSignInButtonProps,
+} from "./PollinationsSignInButton.tsx";
 
-export type LoginButtonProps = Omit<
-    ButtonProps<"button">,
-    "as" | "onClick" | "children"
-> & {
-    children: ReactNode;
-};
+export type LoginButtonProps = Omit<PollinationsSignInButtonProps, "onClick">;
 
-/** Button that kicks off the auth redirect. `null` when already logged in. */
+/** Starts Pollen Connect authorization; hidden when already connected. */
 export function LoginButton({ children, ...buttonProps }: LoginButtonProps) {
     const { isLoggedIn } = useAuthState();
     const { login } = useAuthActions();
     if (isLoggedIn) return null;
     return (
-        <Button {...buttonProps} onClick={() => login()}>
+        <PollinationsSignInButton {...buttonProps} onClick={() => login()}>
             {children}
-        </Button>
+        </PollinationsSignInButton>
     );
 }

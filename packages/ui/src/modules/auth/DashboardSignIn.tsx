@@ -1,7 +1,7 @@
 import { Alert } from "../../compositions/Alert.tsx";
 import { AppHeader } from "../../compositions/AppHeader.tsx";
 import { ColorModeToggle } from "../../primitives/ColorModeToggle.tsx";
-import { Heading } from "../../primitives/Typography.tsx";
+import { Heading, Text } from "../../primitives/Typography.tsx";
 import { PollinationsSignInButton } from "./PollinationsSignInButton.tsx";
 
 export function DashboardSignIn({
@@ -17,7 +17,6 @@ export function DashboardSignIn({
             : new URLSearchParams(window.location.search).get("auth_error");
     const messages: Record<string, string> = {
         admin_required: "This dashboard requires a Pollinations admin account.",
-        cancelled: "Sign-in was cancelled. You can try again.",
         invalid_state: "This sign-in link expired. Please try again.",
         unavailable: "Sign-in could not be completed. Please try again.",
     };
@@ -36,11 +35,17 @@ export function DashboardSignIn({
                     <Heading as="h2" size="subsection">
                         Sign in
                     </Heading>
+                    <Text tone="soft">
+                        Use your Pollinations admin account. You may be asked to
+                        continue with GitHub.
+                    </Text>
                     {message && <Alert>{message}</Alert>}
                     <PollinationsSignInButton
                         className="polli:w-full"
                         onClick={onSignIn}
-                    />
+                    >
+                        Sign in with Pollinations
+                    </PollinationsSignInButton>
                 </div>
             </main>
         </div>

@@ -1,0 +1,37 @@
+{
+  "pr_number": 14694,
+  "title": "Add YouTube Transcription AI by MrPaloma to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14694",
+  "merged_at": "2026-09-10T17:42:54Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [YouTube Transcription AI by MrPaloma](https://www.mrpaloma.com/trascrivere-video-youtube-pollinations) to writing\n- A lightweight, free web app that turns any YouTube video transcript into structured summaries, English translations, and AI-generated concept covers powered by Pollinations.ai. The YouTube Transcript \n\nFixes #14688",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Videos, distilled into pollen",
+    "blurb": "MrPaloma’s YouTube Transcription AI has landed in the writing garden. Feed it a YouTube transcript and it turns the long scroll into structured summaries, English translations, and concept-cover ideas.",
+    "summary": "Added MrPaloma’s lightweight free YouTube Transcription AI to the writing directory, using Pollinations.ai to turn YouTube video transcripts into structured summaries, English translations, and AI-generated concept covers.",
+    "impact": "People can now discover a ready-to-use web app for converting a YouTube transcript into organized notes, translated text, and visual concept ideas without leaving the Pollinations ecosystem.",
+    "keywords": [
+      "community-app",
+      "youtube",
+      "transcription",
+      "writing",
+      "translation",
+      "summaries",
+      "images"
+    ],
+    "visual_concept": "Depict MrPaloma’s YouTube transcription tool as a cozy retro writing desk: a small video window sends spoken-word waveform ribbons into a typewriter-like terminal, where they bloom into neatly stacked summary pages, a translation sheet, and a tiny concept-cover canvas. Polli, wearing little editor glasses, guides the ribbons into code-plants; the Monitor Robot can eagerly display a transcript-to-summary transformation. Use a recognizable but non-branded red play-button-like video tile sparingly, while making the transcription, writing, translation, and image-cover workflow the focus.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee with light blue wings, pink cheek blush, black oval eyes, antennae, and a tiny editor’s glasses, hovering beside a retro terminal as a small video tile sends waveform ribbons into transcript pages, an English translation sheet, and a blooming concept-cover canvas; a cheerful CRT Monitor Robot holds a page titled \"SUMMARY.\" Lime green (#ecf874) code-plants and soft mint, lavender, peach, and warm-cream gradients fill the desk garden, with subtle pixel-font text \"TRANSCRIBE\"; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-10/PR-14694.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee with light blue wings, pink cheek blush, black oval eyes, antennae, and a tiny editor’s glasses, hovering beside a retro terminal as a small video tile sends waveform ribbons into transcript pages, an English translation sheet, and a blooming concept-cover canvas; a cheerful CRT Monitor Robot holds a page titled \"SUMMARY.\" Lime green (#ecf874) code-plants and soft mint, lavender, peach, and warm-cream gradients fill the desk garden, with subtle pixel-font text \"TRANSCRIBE\"; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-10T17:44:06.113602+00:00",
+  "app_name": "YouTube Transcription AI by MrPaloma",
+  "app_url": "https://www.mrpaloma.com/trascrivere-video-youtube-pollinations"
+}

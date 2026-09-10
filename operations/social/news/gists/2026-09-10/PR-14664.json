@@ -1,0 +1,35 @@
+{
+  "pr_number": 14664,
+  "title": "fix: honor explicit chat limits and tool settings",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14664",
+  "merged_at": "2026-09-10T01:09:52Z",
+  "labels": [],
+  "pr_body_excerpt": "- Honor either caller token limit before model defaults. Preserve existing max_tokens precedence when both limits are explicit; handle nullable aliases correctly.\n- Forward explicit parallel_tool_calls without injecting true into every request. Keep intentional sampling restrictions and deprecated thinking-alias removal from #14585 and #12029.\n- Pin merged [gateway #12](https://github.com/pollinations/gateway/pull/12), commit 639928b0af4682e675b0cf0209b79694c01ea330, for Azure parallel tools, generic top_k and Claude effort/JSON schema. Its tree matches the live-tested branch exactly.\n- Verification: 227 focused tests, Gen typecheck, Biome and MCP tests pass; 590 limit checks across all 118 routes preserve defaults. Sixteen live probes through local Gen + gateway code reach real providers, covering Azure single/parallel/streaming tools, Claude 32-token output/schema/effort, nullable limits and Fireworks/DeepInfra top_k. Unsupported OVH top_k and invalid Claude inputs return provider 400s. These are not public auth/billing end-to-end tests. Full Enter/Gen CI passed before the pin-only update.\n- Addresses forwarding bugs found while reviewing #14599. Parameter metadata remains separate. No production deployment or credential changes.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The knobs now reach the hive",
+    "blurb": "Chat requests can finally keep their carefully chosen limits and tool settings all the way to the model. Polli checked the wiring; a few parameters had been taking scenic routes.",
+    "summary": "Fixed Gen chat parameter forwarding so explicit caller token limits take precedence over model defaults, explicit parallel_tool_calls is forwarded without forcing true, and the gateway is pinned to commit 639928b0 for Azure parallel tools, generic top_k, and Claude effort/JSON-schema support.",
+    "impact": "Developers can now reliably use nullable token-limit aliases, parallel or single tool calls, top_k where supported, and Claude output/schema/effort settings without defaults silently changing an explicit request.",
+    "keywords": [
+      "chat-api",
+      "token-limits",
+      "tool-calls",
+      "gateway",
+      "azure",
+      "claude",
+      "top-k"
+    ],
+    "visual_concept": "A cozy garden-workshop control panel represents chat request settings reaching their intended model routes: labeled token gauges, a tool-call switch left deliberately in its chosen position, and several gentle cables leading to small Azure, Claude, and generic model terminals. Polli, wearing a tiny electrician tool belt, carefully reconnects the wires while code-plants grow around the terminals; the monitor robot can inspect the now-correct settings.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace where Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny electrician tool belt while reconnecting a token-limit gauge and an intentional tool-call switch to glowing model terminals; code-plants and flowers grow beside the cables, and a chunky CRT monitor robot watches the settings arrive correctly. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"EXPLICIT\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-10/PR-14664.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace where Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny electrician tool belt while reconnecting a token-limit gauge and an intentional tool-call switch to glowing model terminals; code-plants and flowers grow beside the cables, and a chunky CRT monitor robot watches the settings arrive correctly. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"EXPLICIT\"."
+  },
+  "generated_at": "2026-09-10T01:10:53.395523+00:00"
+}

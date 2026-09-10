@@ -111,10 +111,9 @@ export function Authorize() {
 
     const [isAuthorizing, setIsAuthorizing] = useState(false);
     const [lookupAttempt, setLookupAttempt] = useState(0);
-    const [lookupFailed, setLookupFailed] = useState(false);
-    const [lookupPending, setLookupPending] = useState(
-        !!app_key && !isDeviceMode,
-    );
+    const [appLookupStatus, setAppLookupStatus] = useState<
+        "idle" | "pending" | "valid" | "invalid" | "unavailable"
+    >(app_key && !isDeviceMode ? "pending" : "idle");
     const {
         isSigningIn,
         error: signInError,
@@ -122,9 +121,6 @@ export function Authorize() {
     } = useGitHubSignIn(requestPath);
     const [error, setError] = useState<string | null>(null);
     const [attribution, setAttribution] = useState<Attribution | null>(null);
-    const [redirectValidationState, setRedirectValidationState] = useState<
-        "unchecked" | "valid" | "invalid"
-    >("unchecked");
     const [deviceOutcome, setDeviceOutcome] = useState<
         "pending" | "approved" | "denied"
     >("pending");
@@ -199,7 +195,7 @@ export function Authorize() {
     // Validation/lookup errors end the check even when no attribution arrived.
     const isAttributionPending = isDeviceMode
         ? !!app_key && !attribution && !error
-        : lookupPending;
+        : appLookupStatus === "pending";
     const requestValidationError = isDeviceMode
         ? null
         : getAuthorizeRequestError({
@@ -216,12 +212,12 @@ export function Authorize() {
         !isAttributionPending &&
         // The code flow only runs for registered clients with a validated
         // redirect — no hostname-only fallback like the legacy flow.
-        (isDeviceMode || !app_key || redirectValidationState === "valid");
+        (isDeviceMode || !app_key || appLookupStatus === "valid");
     const canRedirectOnDeny =
         parsedRedirectUrl !== null &&
         (isCodeFlow
-            ? redirectValidationState === "valid"
-            : !app_key || redirectValidationState === "valid");
+            ? appLookupStatus === "valid"
+            : !app_key || appLookupStatus === "valid");
     const exitLabel = isDeviceMode ? "Cancel" : "Back to app";
     const hasAppExit = !!returnTo || canRedirectOnDeny || isAttributionPending;
 
@@ -233,7 +229,7 @@ export function Authorize() {
         let active = true;
         rememberSignIn(requestPath);
         setReturnTo(null);
-        setRedirectValidationState("unchecked");
+        setAppLookupStatus("idle");
         if (isDeviceMode) {
             // device.tsx forwards the server-stored scope as `scope=` in the
             // URL, which flows into `urlScope` and preselects the
@@ -286,14 +282,11 @@ export function Authorize() {
         } else {
             const validationError = requestValidationError;
             setError(validationError);
-            setLookupFailed(false);
-            setLookupPending(!!app_key);
+            setAppLookupStatus(app_key ? "pending" : "idle");
             // Attribution is identified by client_id only. Without one, the
             // consent screen falls back to the hostname display.
             if (!app_key) {
-                setRedirectValidationState(
-                    validationError ? "invalid" : "valid",
-                );
+                setAppLookupStatus(validationError ? "invalid" : "valid");
                 return;
             }
 
@@ -309,7 +302,6 @@ export function Authorize() {
                 .then(readAttribution)
                 .then((data) => {
                     if (!active) return;
-                    setLookupPending(false);
                     const attr = data as Attribution;
                     setAttribution(attr);
                     setReturnTo(
@@ -320,14 +312,14 @@ export function Authorize() {
                         ),
                     );
                     if (validationError) {
-                        setRedirectValidationState("invalid");
+                        setAppLookupStatus("invalid");
                     } else if (attr.error === "redirect_uri_mismatch") {
-                        setRedirectValidationState("invalid");
+                        setAppLookupStatus("invalid");
                         setError(
                             "This redirect URL is not registered for this app. Authorization blocked.",
                         );
                     } else if (!attr.found) {
-                        setRedirectValidationState("invalid");
+                        setAppLookupStatus("invalid");
                         setError(
                             "This app key could not be verified. Authorization blocked.",
                         );
@@ -343,19 +335,17 @@ export function Authorize() {
                         // the query string); app-lookup applies the legacy
                         // flow's lenient rules, so re-check strictly here —
                         // same check POST /api/oauth/code enforces.
-                        setRedirectValidationState("invalid");
+                        setAppLookupStatus("invalid");
                         setError(
                             "This redirect URL is not registered for this app. Authorization blocked.",
                         );
                     } else {
-                        setRedirectValidationState("valid");
+                        setAppLookupStatus("valid");
                     }
                 })
                 .catch(() => {
                     if (!active) return;
-                    setLookupPending(false);
-                    setLookupFailed(true);
-                    setRedirectValidationState("invalid");
+                    setAppLookupStatus("unavailable");
                     setError(
                         validationError ??
                             "Could not verify this app key. Authorization blocked.",
@@ -606,7 +596,7 @@ export function Authorize() {
                 dialog={{ labelledBy: "connection-error-title" }}
                 account={accountHeader}
                 actions={
-                    lookupFailed && (
+                    appLookupStatus === "unavailable" && (
                         <Button
                             onClick={() =>
                                 setLookupAttempt((attempt) => attempt + 1)
@@ -651,7 +641,7 @@ export function Authorize() {
                     {error}
                     {!returnTo &&
                         !canRedirectOnDeny &&
-                        !lookupFailed &&
+                        appLookupStatus !== "unavailable" &&
                         !isAttributionPending && (
                             <p className="mt-2">
                                 Open this connection from the app.

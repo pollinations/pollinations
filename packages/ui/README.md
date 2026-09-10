@@ -181,6 +181,16 @@ For per-request usage data and other dynamic queries, call the opt-in hooks
 from `@pollinations/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
 `useAccountBalance`, etc.) directly.
 
+## Pollen Connect controls
+
+Use `PollinationsSignInButton` from `@pollinations/ui/auth` for the shared rectangular provider button. It displays the Pollinations logo alongside "Sign in with Pollinations". Supply an action; optional children customize the visible label and accessible name together. Keyboard focus and disabled states are built in.
+
+`LoginButton` from `@pollinations/ui/auth/sdk` starts OAuth with PKCE through `PolliProvider` and displays the logo with "Connect". `AppUserMenu` from `@pollinations/ui/app-user-menu/sdk` shows identity with the remaining app allowance beneath the name. At zero, “Limit reached” replaces the amount and Raise limit appears in the dropdown alongside Dashboard (the Pollen page) and Disconnect. It does not infer Paid or Quest balances. Disconnect clears the local key without signing out of Pollinations or revoking the key. The authorization screen uses one rounded Dashboard link with identity and Paid/Quest icon amounts beneath the name. A confirmed funding issue shows a colored Top up CTA above Budget; healthy balances show no CTA. Low thresholds remain the caller's responsibility.
+
+`GitHubSignInButton` from `@pollinations/ui/auth` identifies the GitHub authentication step with its logo and "Continue with GitHub". Pass `isSigningIn` for a disabled, accessible pending state. It does not itself grant an app permission to spend Pollen.
+
+See the [Pollen Connect guide](../../BRING_YOUR_OWN_POLLEN.md) for integration choices, account permissions, and connection lifetime.
+
 ## Source Layout
 
 - `src/primitives/*` contains generic, SDK-free building blocks.

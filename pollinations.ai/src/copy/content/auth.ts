@@ -24,7 +24,7 @@ export const AUTH_COPY = {
     defaultUsername: "User",
 
     // BYOP CTA
-    byopTitle: "🐝 Register your app for BYOP",
+    byopTitle: "🐝 Register your app for Pollen Connect",
     byopDescription: "🌼 Let your users bring their own Pollen.",
-    byopLink: "Learn about BYOP",
+    byopLink: "Learn about Pollen Connect",
 };

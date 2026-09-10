@@ -1,8 +1,70 @@
-# Connect User Wallets
+# Pollen Connect
 
-Connect User Wallets—also called BYOP (Bring Your Own Pollen)—lets your users authorize your app to spend their own Pollen on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
+Pollen Connect (previously called BYOP, Bring Your Own Pollen) lets your users authorize your app to spend their own Pollen on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
 
 Users stay in control of their balance, budgets, and revocation; your app never has to pay for their usage.
+
+## Choose an integration
+
+Pollen Connect supports both a lightweight direct redirect and OAuth. Both use the same authorization screen and issue a user key with the approved permissions, model access, budget, and expiry. Choose one method for your app; you do not need to implement both.
+
+| Method | How access reaches your app | When to use it |
+|--------|----------------------------|----------------|
+| [OAuth with PKCE](#oauth-code-flow) | Exchange a temporary code for the user key | Recommended for new web and mobile integrations; works in plain JavaScript without a backend |
+| [Direct redirect](#direct-redirect-simple-byop) | Read the user key from the callback URL fragment | A minimal integration with fewer steps; does not use PKCE |
+| [Device authorization](#device-flow) | Poll for access while the user approves in another browser | CLIs, bots, and headless apps |
+
+BYOP describes users bringing their own Pollen; it is not a synonym for the direct redirect method. The SDK already uses OAuth with PKCE for this user-pays model.
+
+### Sign-in and consent
+
+1. Your app opens Pollinations authorization.
+2. Signed-out users choose **Continue with GitHub**. GitHub sign-in creates a Pollinations account for new users and returns them to the authorization request. Existing Pollinations sessions skip this sign-in step.
+3. The user reviews the app identity, profile/account permissions, model access, spending budget, and expiry, then chooses **Allow access** or **Cancel**.
+4. Your app receives the approved credential using the selected method.
+
+`profile` allows reading the user's name and email; username and picture are already available to a connected app. `usage` allows reading the full account balance and usage. Generation is authorized through model access and spending limits, not an OAuth account scope: requesting only `profile` does **not** make this an identity-only login.
+
+### React quick start
+
+The SDK handles the OAuth redirect, PKCE, and callback. Use the shared UI package for the Pollinations logo button and connected identity:
+
+```tsx
+import { PolliProvider } from '@pollinations/sdk/react';
+import { AppUserMenu } from '@pollinations/ui/app-user-menu/sdk';
+import '@pollinations/ui/styles.css';
+
+export function App() {
+  return (
+    <PolliProvider
+      appKey="pk_yourkey"
+      permissions={['usage']}
+      storage="sessionStorage"
+    >
+      <AppUserMenu />
+    </PolliProvider>
+  );
+}
+```
+
+Register the page's exact callback URL on your App Key. The `usage` permission enables the account balance display; users can decline optional permissions. You can also use `LoginButton` from `@pollinations/ui/auth/sdk` or build your own interface with the SDK hooks.
+
+### Returning, signing out, and removing access
+
+- **Returning:** the app can reuse its saved, valid key without another authorization redirect. This is credential reuse, not a remembered approval that automatically issues new keys.
+- **New authorization:** visiting `/authorize` asks for approval again and creates another key when approved. There are no refresh tokens.
+- **Expired or revoked access:** authorize again. The SDK account hooks clear the local connection when an account request returns 401; custom integrations must handle invalid credentials too.
+- **Disconnect:** the account control forgets this app's locally stored key. It does not revoke it or sign the user out of Pollinations.
+- **Remove access:** visit [API keys](https://enter.pollinations.ai/keys), where users can edit or revoke keys. Revoke every key issued to an app to remove all its key-based access; there is currently no single app-wide revocation control here.
+- **Cancel:** declines this request and returns `access_denied`. It does not revoke earlier keys or approvals. Keep the app usable and offer a retry.
+
+### Wallet top-ups and developer earnings
+
+The shared app account menu shows the remaining allowance beneath the name. When the key allowance is exhausted, “Limit reached” replaces the amount and Raise limit appears in the dropdown. On the authorization screen, the Dashboard link shows identity and Paid/Quest balances. Funding CTAs appear above Budget only when there is a confirmed funding issue. Wallet funds and the app’s spending allowance are separate: topping up does not increase the key limit. Payment happens in the Pollinations purchase flow. Developer earnings are a markup on generation usage, described below; they are separate from buying Pollen.
+
+### Pollinations dashboard identity login
+
+KPI, Economics, and Observability use a separate identity OAuth service with PKCE and a backend admin check. These trusted internal clients currently skip consent and receive profile information and an admin role, without a delegated generation key. Their identity tokens and endpoints are not interchangeable with the wallet keys and endpoints in this guide. Identity client registration is not currently open to third-party developers.
 
 ## 🗝️ App Key
 
@@ -42,6 +104,8 @@ curl -X POST https://gen.pollinations.ai/account/keys \
   -H 'Content-Type: application/json' \
   -d '{"name":"my-app","type":"publishable","redirectUris":["https://myapp.com/callback"],"earningsEnabled":true}'
 ```
+
+<a id="oauth-code-flow"></a>
 
 ## ⚙️ Web Apps (OAuth Code Flow)
 
@@ -132,7 +196,7 @@ const res = await fetch('https://enter.pollinations.ai/api/oauth/token', {
 const { access_token } = await res.json();
 ```
 
-Keep the token in memory, or `sessionStorage` if a callback page must hand it back within the same tab. Never put it in `localStorage`, a URL, analytics, or logs.
+For custom browser integrations, prefer memory after the callback or `sessionStorage` for a connection limited to the current tab. The SDK defaults to `localStorage` for persistence across visits; explicitly set `storage="sessionStorage"` to limit that persistence. Both browser storage options are accessible to scripts on your origin. Keep credentials out of analytics, logs, and application URLs; clear a direct-redirect fragment immediately after reading it.
 
 ### 3. Call Pollinations
 
@@ -149,9 +213,11 @@ fetch('https://gen.pollinations.ai/v1/chat/completions', {
 Examples: [browser-only](https://github.com/pollinations/pollinations/tree/main/apps/oauth-client-demo) ·
 [existing user database](https://github.com/pollinations/pollinations/tree/main/apps/oauth-account-linking-demo)
 
-## ⚙️ Legacy Web Apps (Fragment Flow)
+<a id="️-legacy-web-apps-fragment-flow"></a>
 
-The older BYOP redirect flow is still supported. It returns the user-authorized key directly in the URL fragment and does not use PKCE.
+## Direct redirect (simple BYOP)
+
+The direct redirect is a supported lightweight method. It returns the user-authorized key directly in the URL fragment and does not use PKCE. OAuth is recommended for new integrations because it keeps that key out of the callback URL and binds the code exchange to the app that started it.
 
 ```text
 https://enter.pollinations.ai/authorize?redirect_uri=https://myapp.com/callback&client_id=pk_yourkey&scope=usage
@@ -163,28 +229,46 @@ User comes back with the key in the URL fragment:
 https://myapp.com/callback#api_key=sk_abc123xyz
 ```
 
-Fragment, not query param — never hits server logs. 🔒 If you passed `state`, it's echoed back: `#api_key=sk_...&state=...`. On denial the fragment is `#error=access_denied&state=...`.
+Browsers do not send the fragment in HTTP requests, but page scripts and browser history can still expose it. Validate `state` and remove the fragment immediately. If you passed `state`, it is echoed back: `#api_key=sk_...&state=...`. On denial the fragment is `#error=access_denied&state=...`.
 
 ### Code
 
+Include a status element on the callback page, such as `<p id="connection-status" role="status"></p>`.
+
 ```javascript
-// Send user to auth
-const params = new URLSearchParams({
-  redirect_uri: location.href,
-  client_id: 'pk_yourkey',
-});
-window.location.href = `https://enter.pollinations.ai/authorize?${params}`;
+// Run when the user chooses Connect.
+function connect() {
+  const state = crypto.randomUUID();
+  sessionStorage.setItem('pollen-connect-state', state);
+  const params = new URLSearchParams({
+    redirect_uri: 'https://myapp.com/callback',
+    client_id: 'pk_yourkey',
+    state,
+  });
+  window.location.assign(`https://enter.pollinations.ai/authorize?${params}`);
+}
 
-// Grab key from URL after redirect
-const apiKey = new URLSearchParams(location.hash.slice(1)).get('api_key');
-
-// Use their pollen
-fetch('https://gen.pollinations.ai/v1/chat/completions', {
-  method: 'POST',
-  headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-  body: JSON.stringify({ model: 'openai/gpt-5.4-nano', messages: [{ role: 'user', content: 'yo' }] })
-});
+// Run on your callback page, before loading third-party scripts.
+const result = new URLSearchParams(location.hash.slice(1));
+if (result.has('api_key') || result.has('error')) {
+  history.replaceState(null, '', location.pathname + location.search);
+  const expectedState = sessionStorage.getItem('pollen-connect-state');
+  sessionStorage.removeItem('pollen-connect-state');
+  if (!expectedState || result.get('state') !== expectedState) {
+    throw new Error('Connection could not be verified. Please connect again.');
+  }
+  if (result.has('error')) {
+    // Show a cancellation/error message and a Connect button in your app.
+    document.querySelector('#connection-status').textContent =
+      'Connection was not completed. You can try again.';
+  } else {
+    const apiKey = result.get('api_key');
+    // Keep the key in memory and use it as the Bearer token for API calls.
+  }
+}
 ```
+
+<a id="device-flow"></a>
 
 ## 🖥️ CLIs & Headless Apps (Device Flow)
 

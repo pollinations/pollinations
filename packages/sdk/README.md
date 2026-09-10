@@ -154,7 +154,7 @@ console.log(`Logged in as ${me.name} (${me.preferred_username})`);
 
 `authorizeDevice()` does NOT require an API key — it's how you get one.
 
-### React auth provider
+### Pollen Connect (React)
 
 React apps can use the `@pollinations/sdk/react` subpath for shared login
 state. The provider handles the OAuth authorization-code + PKCE flow and stores
@@ -195,6 +195,8 @@ Account hooks are intentionally separate from the provider: `useAccountProfile`,
 `useAccountBalance`, `useAccountKey`, and `useAccountKeyUsage` return the raw
 SDK response shapes plus `{ isLoading, error, refresh }`.
 
+The provider uses OAuth with PKCE and the shared Pollen Connect consent screen. Users can also connect through the [direct redirect or device flow](../../BRING_YOUR_OWN_POLLEN.md). `logout()` clears the saved key locally; it does not revoke access. Handle expired or revoked keys by asking users to connect again.
+
 #### SSR / Next.js App Router / RSC
 
 `PolliProvider` is **SSR-safe** but is a **client component** (it uses `useState` / `useEffect` and reads from `window.localStorage`):
@@ -223,7 +225,7 @@ SDK response shapes plus `{ isLoading, error, refresh }`.
 
 ### Managing API keys
 
-Programmatically create, list, and revoke keys for your account. Useful for BYOP ("bring your own pollen") flows, multi-tenant apps, and automation:
+Programmatically create, list, and revoke keys for your account. Useful for Pollen Connect (BYOP) flows, multi-tenant apps, and automation:
 
 ```javascript
 import { listKeys, createKey, revokeKey } from '@pollinations/sdk';

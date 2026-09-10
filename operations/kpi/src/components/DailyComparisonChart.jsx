@@ -1,4 +1,5 @@
-import { Text } from "@pollinations/ui";
+import { TabButton, Text } from "@pollinations/ui";
+import { useState } from "react";
 import { LineChart } from "./LineChart";
 
 const SERIES = [
@@ -6,49 +7,64 @@ const SERIES = [
         key: "currentRevenue",
         label: "Revenue · this week",
         format: "currency",
-        axis: 0,
         color: "var(--kpi-series-1)",
     },
     {
         key: "previousRevenue",
         label: "Revenue · last week",
         format: "currency",
-        axis: 0,
         color: "var(--kpi-series-1)",
         dashed: true,
     },
     {
         key: "currentSignups",
         label: "Signups · this week",
-        axis: 1,
         color: "var(--kpi-series-2)",
     },
     {
         key: "previousSignups",
         label: "Signups · last week",
-        axis: 1,
         color: "var(--kpi-series-2)",
         dashed: true,
     },
 ];
 
 export function DailyComparisonChart({ data, signupsSyncedAt }) {
+    const [metric, setMetric] = useState("Revenue");
+    const revenue = metric === "Revenue";
     return (
         <LineChart
-            title="Revenue & signups · this week vs last week"
+            title={`${metric} · this week vs last week`}
             data={data}
-            series={SERIES}
-            dualAxis
-            axisLabels={["Revenue ($)", "Signups"]}
+            series={revenue ? SERIES.slice(0, 2) : SERIES.slice(2)}
+            format={revenue ? "currency" : "number"}
             xLabel={(row) => row.day}
             xAxisUnit="day"
             action={
-                <Text as="span" size="micro" tone="muted">
-                    UTC · Today is partial
-                    {signupsSyncedAt
-                        ? ` · Signups as of ${signupsSyncedAt.slice(0, 16).replace("T", " ")} UTC`
-                        : " · Signups unavailable"}
-                </Text>
+                <div className="flex flex-wrap items-center gap-3">
+                    <Text as="span" size="micro" tone="muted">
+                        UTC · Today is partial
+                        {!revenue &&
+                            (signupsSyncedAt
+                                ? ` · Signups as of ${signupsSyncedAt.slice(0, 16).replace("T", " ")} UTC`
+                                : " · Signups unavailable")}
+                    </Text>
+                    <fieldset
+                        aria-label="Weekly comparison metric"
+                        className="flex gap-1"
+                    >
+                        {["Revenue", "Signups"].map((label) => (
+                            <TabButton
+                                key={label}
+                                size="xs"
+                                active={metric === label}
+                                onClick={() => setMetric(label)}
+                            >
+                                {label}
+                            </TabButton>
+                        ))}
+                    </fieldset>
+                </div>
             }
         />
     );

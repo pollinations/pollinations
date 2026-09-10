@@ -1,0 +1,35 @@
+{
+  "pr_number": 14677,
+  "title": "Add Men's Fashion Pins to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14677",
+  "merged_at": "2026-09-10T10:08:08Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Men's Fashion Pins](https://fashionpins4u.blogspot.com/p/mens-fashion-pins.html) to image\n- Create attractive images of men's fashion for pinterest using pollinations. this app is using gpt-image-2 model.\n\nFixes #14676",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Pins, petals, and pocket squares",
+    "blurb": "A new little fashion studio has landed in the garden. It uses gpt-image-2 to turn men's style ideas into Pinterest-ready images, because apparently the hive has opinions about tailoring now.",
+    "summary": "Added Men's Fashion Pins, a community app that uses the gpt-image-2 model to create attractive Pinterest images for men's fashion.",
+    "impact": "People can now use a dedicated Pollinations-powered app to quickly generate polished men's-fashion pin artwork for Pinterest.",
+    "keywords": [
+      "community app",
+      "men's fashion",
+      "Pinterest",
+      "image generation",
+      "gpt-image-2"
+    ],
+    "visual_concept": "Depict a cozy pixel-art fashion moodboard: a retro monitor displays a neat men's outfit pin with a blazer, shoes, and pocket square, while little pinned image cards grow among flowers. Polli, wearing a tiny tailor's beret and measuring tape, arranges the pins; the scene represents a community-built Pinterest image generator.",
+    "image_prompt": "Cozy pixel art fashion studio with a retro CRT monitor showing a Pinterest-style men's outfit moodboard of a blazer, shoes, and pocket square, surrounded by flower pots and code-plants sprouting tiny image pins in prominent lime green (#ecf874). The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tailor's beret and measuring tape while carefully pinning fashion cards beside the screen. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-10/PR-14677.jpg",
+    "prompt": "Cozy pixel art fashion studio with a retro CRT monitor showing a Pinterest-style men's outfit moodboard of a blazer, shoes, and pocket square, surrounded by flower pots and code-plants sprouting tiny image pins in prominent lime green (#ecf874). The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tailor's beret and measuring tape while carefully pinning fashion cards beside the screen. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-10T10:09:56.243609+00:00",
+  "app_name": "Men's Fashion Pins",
+  "app_url": "https://fashionpins4u.blogspot.com/p/mens-fashion-pins.html"
+}

@@ -10,7 +10,7 @@ const LABEL = "tgpt";
 const DEFAULT_MODEL = "openai/gpt-5.4-nano";
 const MANAGED_KEYS = [
     "AI_PROVIDER",
-    "AI_API_KEY",
+    "POLLINATIONS_API_KEY",
     "POLLINATIONS_MODEL",
 ] as const;
 
@@ -27,13 +27,17 @@ const readConfig = (ctx: HarnessContext) => {
 const writeConfig = (ctx: HarnessContext, apiKey: string, model: string) => {
     const lines = (readTextIfExists(configPath(ctx)) ?? "")
         .split("\n")
-        .filter((line) => !managedLine.test(line));
+        // tgpt prioritizes AI_API_KEY over its provider-specific key.
+        .filter(
+            (line) =>
+                !managedLine.test(line) && !/^\s*AI_API_KEY\s*=/u.test(line),
+        );
     const insertAt = lines.at(-1) === "" ? lines.length - 1 : lines.length;
     lines.splice(
         insertAt,
         0,
         'AI_PROVIDER="pollinations"',
-        `AI_API_KEY=${JSON.stringify(apiKey)}`,
+        `POLLINATIONS_API_KEY=${JSON.stringify(apiKey)}`,
         `POLLINATIONS_MODEL=${JSON.stringify(model)}`,
     );
     writeTextAtomic(configPath(ctx), lines.join("\n"), 0o600);
@@ -62,7 +66,7 @@ const result = (ctx: HarnessContext): HarnessResult => {
         label: LABEL,
         configured:
             config.AI_PROVIDER === "pollinations" &&
-            Boolean(config.AI_API_KEY) &&
+            Boolean(config.POLLINATIONS_API_KEY) &&
             Boolean(model),
         model,
         files: files(ctx),
@@ -97,7 +101,7 @@ export const tgpt: HarnessAdapter = {
                 "tgpt was not found. Install it first: https://github.com/aandrew-me/tgpt#installation",
             );
         }
-        const existingKey = readConfig(ctx).AI_API_KEY || null;
+        const existingKey = readConfig(ctx).POLLINATIONS_API_KEY || null;
         const apiKey = await resolveHarnessKey(
             { id: ID, label: LABEL, existingKey },
             { browser: options.browser },

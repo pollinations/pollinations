@@ -36,7 +36,7 @@ describe("tgpt harness", () => {
         });
         expect(parseEnv(read())).toMatchObject({
             AI_PROVIDER: "pollinations",
-            AI_API_KEY: "sk_test_key",
+            POLLINATIONS_API_KEY: "sk_test_key",
             POLLINATIONS_MODEL: "openai/gpt-5.4-nano",
         });
         expect(statSync(configFile()).mode & 0o777).toBe(0o600);
@@ -52,15 +52,16 @@ describe("tgpt harness", () => {
         expect(parseEnv(read())).toMatchObject({
             OTHER_KEY: "keep",
             AI_PROVIDER: "pollinations",
-            AI_API_KEY: "sk_test_key",
-            POLLINATIONS_API_KEY: "older-pollinations-key",
+            POLLINATIONS_API_KEY: "sk_test_key",
             POLLINATIONS_MODEL: "deepseek",
         });
+        expect(parseEnv(read()).AI_API_KEY).toBeUndefined();
     });
 
     it("restores the original file on off", () => {
         mkdirSync(join(home, ".config", "tgpt"), { recursive: true });
-        const original = "AI_PROVIDER=groq\nOTHER_KEY=keep\n";
+        const original =
+            "AI_PROVIDER=groq\nAI_API_KEY=old-provider-key\nOTHER_KEY=keep\n";
         writeFileSync(configFile(), original);
         configureTgpt(ctx, "sk_test_key");
         expect(disableTgpt(ctx).outcome).toBe("restored");

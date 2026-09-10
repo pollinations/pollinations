@@ -10,7 +10,7 @@ set -e
 # Vertex explicit context caching, and Perplexity LF/CRLF stream framing
 # PRs: https://github.com/pollinations/gateway/pull/5, https://github.com/pollinations/gateway/pull/8, https://github.com/pollinations/gateway/pull/11
 PORTKEY_REPO="https://github.com/pollinations/gateway.git"
-PORTKEY_COMMIT="${PORTKEY_COMMIT:-0847784b29c4f48ce89d052533ef751f19b47f8f}"  # Preserve explicit chat provider parameters
+PORTKEY_COMMIT="${PORTKEY_COMMIT:-639928b0af4682e675b0cf0209b79694c01ea330}"  # Preserve explicit chat provider parameters (#12)
 CLONE_DIR="/tmp/portkey-gateway-$$"
 ENVIRONMENT="${PORTKEY_ENV:-production}"
 PORTKEY_ACCOUNT_ID="${PORTKEY_ACCOUNT_ID:-b6ec751c0862027ba269faf7029b2501}"

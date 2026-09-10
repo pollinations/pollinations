@@ -256,7 +256,7 @@ describe("Pollinations OAuth", () => {
         expect(upstream).not.toHaveBeenCalled();
     });
 
-    it("reports a cancelled consent without exchanging a code", async () => {
+    it("returns a canceled sign-in to its destination without an error or token exchange", async () => {
         const upstream = vi.fn();
         const auth = createPollinationsAuth({ ...config, fetch: upstream });
         const { location, flow } = await begin(auth);
@@ -269,7 +269,7 @@ describe("Pollinations OAuth", () => {
 
         expect(response?.status).toBe(302);
         expect(response?.headers.get("Location")).toBe(
-            "https://kpi.pollinations.ai/?auth_error=cancelled",
+            "https://kpi.pollinations.ai/weekly?x=1&signed_out=1",
         );
         expect(response?.headers.get("Set-Cookie")).toContain("Max-Age=0");
         expect(upstream).not.toHaveBeenCalled();

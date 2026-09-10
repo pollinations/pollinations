@@ -10,6 +10,11 @@ export function useDashboardSession() {
 
     useEffect(() => {
         const controller = new AbortController();
+        // Start authentication on arrival, but never restart a canceled,
+        // failed or explicitly signed-out flow on a focus refresh.
+        const params = new URLSearchParams(window.location.search);
+        let redirectOnArrival =
+            !params.has("auth_error") && params.get("signed_out") !== "1";
         const refresh = () =>
             fetch("/auth/session", {
                 credentials: "same-origin",
@@ -23,10 +28,17 @@ export function useDashboardSession() {
                     const { user } = (await response.json()) as {
                         user: PollinationsUser | null;
                     };
-                    if (!controller.signal.aborted)
-                        setSession({ user, isPending: false, error: null });
+                    if (controller.signal.aborted) return;
+                    const startAuthentication = !user && redirectOnArrival;
+                    redirectOnArrival = false;
+                    if (startAuthentication) {
+                        signIn();
+                        return;
+                    }
+                    setSession({ user, isPending: false, error: null });
                 })
                 .catch((error) => {
+                    redirectOnArrival = false;
                     if (!controller.signal.aborted)
                         setSession((previous) =>
                             previous.user
@@ -59,6 +71,7 @@ export function signIn() {
     const url = new URL("/auth/login", window.location.origin);
     const destination = new URL(window.location.href);
     destination.searchParams.delete("auth_error");
+    destination.searchParams.delete("signed_out");
     url.searchParams.set(
         "return_to",
         destination.pathname + destination.search,
@@ -72,7 +85,7 @@ export async function signOut() {
         credentials: "same-origin",
     });
     if (!response.ok) throw new Error("Could not sign out. Please try again.");
-    window.location.assign("/");
+    window.location.assign("/?signed_out=1");
 }
 
 export async function dashboardFetch(

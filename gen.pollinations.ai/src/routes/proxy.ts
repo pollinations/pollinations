@@ -23,6 +23,7 @@ import {
     mediaResponseDescription,
 } from "../media/response-output.ts";
 import { mediaResponses } from "../media/responses.ts";
+import { fetchModelHealthMap } from "../utils/model-health.ts";
 import {
     formatOpenAIImageResponse,
     handleImageGeneration,
@@ -226,6 +227,79 @@ const responsesHandlers = factory.createHandlers(
     generateCreateResponse,
 );
 
+async function attachHealthToEntries(
+    entries: GenerationModelEntry[],
+): Promise<GenerationModelEntry[]> {
+    const healthMap = await fetchModelHealthMap();
+    return entries.map((entry) => {
+        const h = healthMap.get(entry.info.name) ?? {
+            success_rate: null,
+            sample_count: 0,
+            window_minutes: 60,
+            freshness: null,
+        };
+        return {
+            ...entry,
+            info: {
+                ...entry.info,
+                health: h,
+            },
+        };
+    });
+}
+
+function filterEntriesByFilterParams(
+    c: Context<Env>,
+    entries: GenerationModelEntry[],
+    query: ModelListQueryParams,
+): GenerationModelEntry[] {
+    const headerFilter = c.req.header("x-pollinations-model-filter");
+    const filterStr = query.filter || headerFilter;
+
+    let wantOfficial: boolean | undefined;
+    let wantReliable: boolean | undefined;
+    let wantCommunity: boolean | undefined;
+
+    if (query.community !== undefined) {
+        wantCommunity = query.community === "true" || query.community === "1";
+    }
+    if (query.official !== undefined) {
+        wantOfficial = query.official === "true" || query.official === "1";
+    }
+    if (query.reliable !== undefined) {
+        wantReliable = query.reliable === "true" || query.reliable === "1";
+    }
+
+    if (filterStr) {
+        const parts = filterStr.split(",").map((s) => s.trim().toLowerCase());
+        if (parts.includes("official")) wantOfficial = true;
+        if (parts.includes("reliable")) wantReliable = true;
+        if (parts.includes("community")) wantCommunity = true;
+    }
+
+    return entries.filter((entry) => {
+        if (wantOfficial === true && entry.info.community) return false;
+        if (wantOfficial === false && !entry.info.community) return false;
+
+        if (wantCommunity === true && !entry.info.community) return false;
+        if (wantCommunity === false && entry.info.community) return false;
+
+        if (wantReliable === true) {
+            const h = entry.info.health;
+            if (!h || h.success_rate === null || h.success_rate < 0.7) {
+                return false;
+            }
+        } else if (wantReliable === false) {
+            const h = entry.info.health;
+            if (h && h.success_rate !== null && h.success_rate >= 0.7) {
+                return false;
+            }
+        }
+
+        return true;
+    });
+}
+
 // Helper to filter models by API key permissions and paid balance.
 function filterEntriesByPermissions(
     entries: GenerationModelEntry[],
@@ -250,7 +324,7 @@ function hasPaidBalance(c: any): boolean | undefined {
 }
 
 // Optionally filter entries by the validated `?community` query parameter.
-function filterEntriesByCommunityParam(
+function _filterEntriesByCommunityParam(
     entries: GenerationModelEntry[],
     communityParam: string | undefined,
 ): GenerationModelEntry[] {
@@ -272,21 +346,25 @@ const modelsListHandler = (
     [
         validator("query", ModelListQueryParamsSchema),
         async (c: Context<Env>) => {
-            const { community } = c.req.valid(
+            const queryParams = c.req.valid(
                 "query" as never,
             ) as ModelListQueryParams;
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
-            return c.json(
-                filterEntriesByCommunityParam(
-                    filterEntriesByPermissions(
-                        await getEntries(c),
-                        allowedModels,
-                        paidBalance,
-                    ),
-                    community,
-                ).map((entry) => entry.info),
+            const entriesWithHealth = await attachHealthToEntries(
+                await getEntries(c),
             );
+            const filteredByPermissions = filterEntriesByPermissions(
+                entriesWithHealth,
+                allowedModels,
+                paidBalance,
+            );
+            const filtered = filterEntriesByFilterParams(
+                c,
+                filteredByPermissions,
+                queryParams,
+            );
+            return c.json(filtered.map((entry) => entry.info));
         },
     ] as const;
 
@@ -351,6 +429,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
             base_model: entry.info.base_model,
         }),
         pricing: entry.info.pricing,
+        health: entry.info.health,
         capabilities: entry.info.capabilities,
         ...(entry.info.tools && { tools: entry.info.tools }),
         ...(entry.info.reasoning && { reasoning: entry.info.reasoning }),
@@ -418,18 +497,23 @@ export const proxyRoutes = new Hono<Env>()
         }),
         validator("query", ModelListQueryParamsSchema),
         async (c) => {
-            const { community } = c.req.valid(
+            const queryParams = c.req.valid(
                 "query" as never,
             ) as ModelListQueryParams;
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
-            const modelEntries = filterEntriesByCommunityParam(
-                filterEntriesByPermissions(
-                    await getVisibleModelEntries(c),
-                    allowedModels,
-                    paidBalance,
-                ),
-                community,
+            const entriesWithHealth = await attachHealthToEntries(
+                await getVisibleModelEntries(c),
+            );
+            const filteredByPermissions = filterEntriesByPermissions(
+                entriesWithHealth,
+                allowedModels,
+                paidBalance,
+            );
+            const modelEntries = filterEntriesByFilterParams(
+                c,
+                filteredByPermissions,
+                queryParams,
             );
             return c.json({
                 object: "list" as const,
@@ -478,7 +562,8 @@ export const proxyRoutes = new Hono<Env>()
                     message: `Model '${modelId}' not found`,
                 });
             }
-            return c.json(toOpenAIModelEntry(entry));
+            const [withHealth] = await attachHealthToEntries([entry]);
+            return c.json(toOpenAIModelEntry(withHealth));
         },
     )
     .get(

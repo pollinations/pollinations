@@ -10,12 +10,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-    bloom,
-    bloomHome,
-    configureBloom,
-    disableBloom,
-} from "./bloom.js";
+import { bloom, bloomHome, configureBloom, disableBloom } from "./bloom.js";
 import type { HarnessContext } from "./types.js";
 
 let home: string;
@@ -37,9 +32,7 @@ describe("bloom harness", () => {
             harness: "bloom",
             configured: true,
         });
-        expect(read(envFile())).toBe(
-            'POLLINATIONS_API_KEY="sk_test_key"\n',
-        );
+        expect(read(envFile())).toBe('POLLINATIONS_API_KEY="sk_test_key"\n');
         expect(statSync(envFile()).mode & 0o777).toBe(0o600);
         expect(bloom.status(ctx).configured).toBe(true);
     });

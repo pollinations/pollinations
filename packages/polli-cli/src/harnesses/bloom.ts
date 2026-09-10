@@ -8,11 +8,7 @@ import {
 } from "./fs.js";
 import { resolveHarnessKey } from "./keys.js";
 import { applyWithSnapshot, restoreOrStrip } from "./snapshot.js";
-import type {
-    HarnessAdapter,
-    HarnessContext,
-    HarnessResult,
-} from "./types.js";
+import type { HarnessAdapter, HarnessContext, HarnessResult } from "./types.js";
 
 const ID = "bloom";
 const LABEL = "Bloom CLI";
@@ -80,7 +76,8 @@ export const bloom: HarnessAdapter = {
     id: ID,
     label: LABEL,
     description: "Create and configure a dedicated Pollinations key for Bloom",
-    restartHint: "Changes apply on the next Bloom session. Start Bloom with: bloom",
+    restartHint:
+        "Changes apply on the next Bloom session. Start Bloom with: bloom",
 
     async on(ctx, options) {
         if (!commandExists("bloom", ctx.env)) {

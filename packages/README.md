@@ -24,6 +24,12 @@ A terminal app for using Pollinations without writing any code. Type a prompt, g
 
 **Who it's for:** people comfortable in a terminal — humans testing things quickly, and AI agents driving workflows.
 
+### [llm-pollinations/](./llm-pollinations) — the `llm` CLI plugin
+
+Pollinations text models inside [Simon Willison's `llm`](https://llm.datasette.io/) as `pollinations/<model-id>`, read live from your `/v1/models` catalog. No hardcoded model list.
+
+**Who it's for:** anyone already using `llm` who wants Pollinations as one more provider.
+
 ### [n8n/](./n8n) — n8n tunnel setup
 
 A small set of helper scripts for exposing a self-hosted [n8n](https://n8n.io) automation instance through a Cloudflare tunnel. Not a Pollinations library — it's infrastructure used by the team to run automation workflows that talk to Pollinations.

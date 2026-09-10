@@ -425,9 +425,11 @@ export const track = (eventType: EventType) =>
                         shouldRunAutoTopUp = true;
                     }
                 } catch (error) {
+                    const requestId = c.get("requestId");
                     log.error(
-                        "Billing deduction failed after response; continuing tracking: {error}",
+                        "Billing deduction failed for request {requestId}; continuing tracking: {error}",
                         {
+                            requestId,
                             error:
                                 error instanceof Error
                                     ? error.message

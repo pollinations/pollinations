@@ -38,8 +38,8 @@ export const referralRoutes = new Hono<Env>().post("/", (c) => {
 
     if (
         ref === "image" ||
-        ref === "balance_topup" ||
-        ref === "balance_quests"
+        ref === "agent_low_balance_topup" ||
+        ref === "agent_low_balance_quests"
     ) {
         c.executionCtx.waitUntil(
             trackReferral(c.env, ref, c.get("log")).catch((error) =>

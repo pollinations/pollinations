@@ -20,8 +20,8 @@ export const TEXT_BALANCE_NOTICE_ENABLED = true;
 
 const MESSAGE =
     "Your Pollen balance is too low for this request. " +
-    "[Top up](https://enter.pollinations.ai/pollen?ref=balance_topup) or " +
-    "[complete a quest](https://enter.pollinations.ai/quests?ref=balance_quests), then try again.";
+    "[Top up](https://enter.pollinations.ai/pollen?ref=agent_low_balance_topup) or " +
+    "[complete a quest](https://enter.pollinations.ai/quests?ref=agent_low_balance_quests), then try again.";
 
 /** Must wrap tracking and caching: both finish handling the original 402 first. */
 export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {

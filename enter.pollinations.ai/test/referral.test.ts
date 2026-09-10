@@ -2,7 +2,11 @@ import { SELF } from "cloudflare:test";
 import { expect } from "vitest";
 import { test } from "./fixtures.ts";
 
-for (const ref of ["image", "balance_topup", "balance_quests"]) {
+for (const ref of [
+    "image",
+    "agent_low_balance_topup",
+    "agent_low_balance_quests",
+]) {
     test(`tracks the ${ref} referral`, async ({ mocks }) => {
         await mocks.enable("tinybird");
 

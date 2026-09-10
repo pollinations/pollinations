@@ -106,11 +106,14 @@ body { font: 14px/1.5 var(--polli-font-body); background: var(--polli-color-app-
 .screens-gallery { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; container-type: size; }
 .screens-gallery-scroll { display: flex; align-items: flex-start; gap: 24px; flex: 1; min-height: 0; position: relative; padding: 12px 28px 20px; }
 .screens-gallery-group { display: contents; }
-.screens-gallery-grid { --gallery-height: max(80px, calc(100cqh - 104px)); --gallery-width: min(calc(100cqw - 62px), calc(var(--gallery-height) * 1206 / 2622)); display: flex; flex: none; gap: 24px; }
+.screens-gallery-grid { --gallery-height: max(80px, calc(100cqh - 130px)); --gallery-width: min(calc(100cqw - 62px), calc(var(--gallery-height) * 1206 / 2622)); display: flex; flex: none; gap: 24px; }
 .screens-gallery-card, .screens-gallery-card:hover { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 12px; padding: 0; background: transparent; color: var(--polli-color-text-strong); box-shadow: none; filter: none; border-radius: 12px; min-width: 0; white-space: normal; text-align: left; }
 .screens-gallery-card:focus-visible { outline: 2px solid var(--polli-color-border); outline-offset: 6px; }
-.screens-gallery-caption { display: flex; align-items: center; justify-content: center; width: 100%; text-align: center; min-height: 42px; }
+.screens-gallery-caption { display: grid; grid-template-rows: 36px 28px; gap: 4px; align-items: center; justify-items: center; width: 100%; text-align: center; }
 .screens-gallery-caption strong { font-size: 14px; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.screens-gallery-options { display: grid; grid-template-columns: 24px minmax(0, 1fr) 24px; align-items: center; gap: 6px; min-width: 0; width: min(100%, 260px); height: 28px; }
+.screens-gallery-options button { flex-shrink: 0; font-size: 22px; }
+.screens-gallery-option-name { color: var(--polli-color-text-muted); font-size: 12px; line-height: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .screens-gallery-preview { display: block; width: var(--gallery-width); height: calc(var(--gallery-width) * 2622 / 1206); border-width: 3px; border-radius: 26px; pointer-events: none; box-shadow: var(--polli-shadow-well); }
 .screens-gallery-preview > .connect-screen-window { transform: scale(calc(var(--gallery-width) / 375px)); }
 .screens-gallery-desktop { --gallery-width: min(calc(100cqw - 62px), calc(var(--gallery-height) * 1.6)); }

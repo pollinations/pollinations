@@ -1,5 +1,5 @@
-import { Button, Chip, ScrollArea, useColorMode } from "@pollinations/ui";
-import { useEffect, useRef } from "react";
+import { Button, IconButton, ScrollArea, useColorMode } from "@pollinations/ui";
+import { useEffect, useRef, useState } from "react";
 import type { CanvasScreen } from "./pollen-connect-canvas-data";
 import { galleryCardsForFlow } from "./pollen-connect-gallery-data";
 import type { JourneySelection } from "./pollen-connect-journey-state";
@@ -22,6 +22,7 @@ export function ScreenGallery({
     const root = useRef<HTMLDivElement>(null);
     const selectionKey = `${entrance.world}:${entrance.section}`;
     const previousFlow = useRef(selectionKey);
+    const [variants, setVariants] = useState<Record<string, number>>({});
     useEffect(() => {
         if (previousFlow.current === selectionKey) return;
         previousFlow.current = selectionKey;
@@ -47,32 +48,77 @@ export function ScreenGallery({
                                 1,
                                 entry.variants?.length ?? 0,
                             );
+                            const key = `${selectionKey}:${entry.id}`;
+                            const variant = (variants[key] ?? 0) % optionCount;
+                            const changeVariant = (direction: number) =>
+                                setVariants((current) => ({
+                                    ...current,
+                                    [key]:
+                                        ((current[key] ?? 0) +
+                                            direction +
+                                            optionCount) %
+                                        optionCount,
+                                }));
                             return (
                                 <article
                                     key={entry.id}
                                     className="screens-gallery-item"
                                 >
-                                    <div className="screens-gallery-caption polli:gap-2">
+                                    <div className="screens-gallery-caption">
                                         <strong>{entry.title}</strong>
-                                        <Chip
-                                            intent="neutral"
-                                            size="sm"
-                                            aria-label={`${optionCount} ${optionCount === 1 ? "option" : "options"}`}
-                                        >
-                                            {optionCount}
-                                        </Chip>
+                                        <div className="screens-gallery-options">
+                                            {optionCount > 1 && (
+                                                <>
+                                                    <IconButton
+                                                        variant="ghost"
+                                                        title={`Previous option for ${entry.title}`}
+                                                        tooltip={false}
+                                                        onClick={() =>
+                                                            changeVariant(-1)
+                                                        }
+                                                    >
+                                                        <span aria-hidden="true">
+                                                            ‹
+                                                        </span>
+                                                    </IconButton>
+                                                    <span
+                                                        className="screens-gallery-option-name"
+                                                        aria-live="polite"
+                                                    >
+                                                        {
+                                                            entry.variants?.[
+                                                                variant
+                                                            ].label
+                                                        }
+                                                    </span>
+                                                    <IconButton
+                                                        variant="ghost"
+                                                        title={`Next option for ${entry.title}`}
+                                                        tooltip={false}
+                                                        onClick={() =>
+                                                            changeVariant(1)
+                                                        }
+                                                    >
+                                                        <span aria-hidden="true">
+                                                            ›
+                                                        </span>
+                                                    </IconButton>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                     <Button
                                         className="screens-gallery-card"
                                         aria-label={`Inspect ${entry.title}`}
                                         onClick={() =>
-                                            onSelect(entry, 0, pages)
+                                            onSelect(entry, variant, pages)
                                         }
                                     >
                                         <span className="canvas-phone screens-gallery-preview">
                                             <ScreenContent
-                                                key={`${entry.id}-${mode}`}
+                                                key={`${entry.id}-${mode}-${variant}`}
                                                 entry={entry}
+                                                variant={variant}
                                             />
                                         </span>
                                     </Button>

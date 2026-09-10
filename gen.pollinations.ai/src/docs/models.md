@@ -42,6 +42,12 @@ Supported media models also advertise both endpoints and return generated-file
 links as assistant text. Reference-required models return their normal missing-input
 error; use their native endpoint until attachments are supported here.
 
+Chat model listings also expose `supported_parameters` — the OpenAI-compatible
+Chat Completions request parameters a model accepts through Pollinations — and
+`default_parameters`, which lists only the defaults the gateway itself applies
+(unset parameters use the upstream model's own defaults). These fields describe
+the Chat Completions and `/text` routes, not the native Responses API.
+
 ## Community Models
 
 Community models use an `owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `community=true` to return only community models or `community=false` to exclude them.

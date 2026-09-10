@@ -204,6 +204,14 @@ export type ModelDefinition = {
     // A single entry is fixed and ignores request overrides.
     searchContextSizes?: ("low" | "high")[];
     codeExecution?: boolean;
+    /** OpenAI-compatible chat request parameters this model accepts through
+     * Pollinations. Structural request fields (messages, model, stream) are
+     * excluded. */
+    supportedParameters?: string[];
+    /** Defaults the gateway itself applies to this model's request parameters.
+     * Only list values the gateway actually applies; unset parameters use the
+     * upstream model's own defaults. */
+    defaultParameters?: Record<string, unknown>;
     contextLength?: number;
     voices?: string[];
     isSpecialized?: boolean;

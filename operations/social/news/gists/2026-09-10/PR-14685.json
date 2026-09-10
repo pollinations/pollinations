@@ -1,0 +1,33 @@
+{
+  "pr_number": 14685,
+  "title": "fix: link staging models to staging OpenWebUI",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14685",
+  "merged_at": "2026-09-10T14:57:30Z",
+  "labels": [],
+  "pr_body_excerpt": "- Opens staging model test links in the staging OpenWebUI deployment.\n- Keeps development and production links on the production deployment.\n- Split from #14622.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Staging gets its own door",
+    "blurb": "Staging models now walk through the staging OpenWebUI door instead of wandering into production. The test garden has the right gate again.",
+    "summary": "Updated the model test-link component so staging models open the staging OpenWebUI deployment, while development and production models continue opening production OpenWebUI.",
+    "impact": "People testing staging models now land in the matching staging chat environment, keeping test conversations aligned with the models they selected.",
+    "keywords": [
+      "staging",
+      "OpenWebUI",
+      "models",
+      "frontend",
+      "testing"
+    ],
+    "visual_concept": "Depict Polli as a careful test gardener using two clearly labeled cozy portal doors: a lime-green STAGING door leading to a small CRT chat terminal in a garden shed, and a production door in the background. Polli should actively guide a tiny model-code seed toward the staging door, showing that each environment now reaches its proper OpenWebUI home.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tester's clipboard, guiding a glowing code-seed through a lime green (#ecf874) garden gate labeled “STAGING” toward a friendly CRT OpenWebUI terminal; a second production gate sits neatly in the background among flowers and code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, dark purple (#110518) outlines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-10/PR-14685.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tester's clipboard, guiding a glowing code-seed through a lime green (#ecf874) garden gate labeled “STAGING” toward a friendly CRT OpenWebUI terminal; a second production gate sits neatly in the background among flowers and code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, dark purple (#110518) outlines, emotionally warm."
+  },
+  "generated_at": "2026-09-10T14:58:34.804444+00:00"
+}

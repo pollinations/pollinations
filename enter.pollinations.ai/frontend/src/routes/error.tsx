@@ -1,4 +1,5 @@
-import { Button, Surface } from "@pollinations/ui";
+import { Button, Heading, Surface } from "@pollinations/ui";
+import logoWordmarkUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
 import { isBannedLoginError } from "@shared/auth/ban.ts";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -15,12 +16,12 @@ function ErrorPage() {
     const isStagingInviteOnly = error === "staging_is_invite-only";
 
     const title = isBanned
-        ? "Account Deactivated"
+        ? "Account Suspended"
         : isStagingInviteOnly
           ? "Staging is invite-only"
           : "Something went wrong";
     const message = isBanned
-        ? "Your account has been deactivated. If you think this is a mistake, contact billing."
+        ? "Your account has been suspended. If you think this is a mistake, contact billing."
         : isStagingInviteOnly
           ? "This is the staging environment and access is limited to the Pollinations team. Head to pollinations.ai to use the production app."
           : "An unexpected error occurred. Please try again or open a GitHub issue if this keeps happening.";
@@ -34,12 +35,23 @@ function ErrorPage() {
                 {isBanned && (
                     <a
                         href="https://pollinations.ai/"
-                        className="block mb-6 font-heading"
+                        className="inline-flex mb-6 text-theme-text-strong"
+                        aria-label="Pollinations"
                     >
-                        Pollinations
+                        <span className="sr-only">Pollinations</span>
+                        <span
+                            aria-hidden="true"
+                            className="block h-6 w-[195px] bg-current"
+                            style={{
+                                WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
+                                mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
+                            }}
+                        />
                     </a>
                 )}
-                <h1 className="font-heading text-3xl mb-3">{title}</h1>
+                <Heading as="h1" size="section" className="mb-3">
+                    {title}
+                </Heading>
 
                 <p className="font-body text-theme-text-base mb-6 leading-relaxed">
                     {message}

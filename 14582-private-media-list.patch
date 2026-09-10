@@ -1,0 +1,3162 @@
+diff --git a/enter.pollinations.ai/drizzle/0064_add_media_user_link.sql b/enter.pollinations.ai/drizzle/0064_add_media_user_link.sql
+new file mode 100644
+index 0000000..1fc5959
+--- /dev/null
++++ b/enter.pollinations.ai/drizzle/0064_add_media_user_link.sql
+@@ -0,0 +1,16 @@
++CREATE TABLE `media_user_link` (
++	`item_id` text NOT NULL,
++	`user_id` text NOT NULL,
++	`created_at` integer NOT NULL,
++	PRIMARY KEY(`user_id`, `item_id`),
++	FOREIGN KEY (`item_id`) REFERENCES `media_item`(`id`) ON UPDATE no action ON DELETE cascade,
++	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
++);
++--> statement-breakpoint
++CREATE INDEX `idx_media_user_link_user_created` ON `media_user_link` (`user_id`,`created_at`);--> statement-breakpoint
++--
++-- Backfill default: every media_item row that predates this migration was
++-- created through the tag-publish upload path (generations were never
++-- cataloged before this change), so `'upload'` is the correct historical
++-- value, not a guess. New rows always pass an explicit `source`.
++ALTER TABLE `media_item` ADD `source` text NOT NULL DEFAULT 'upload';
+\ No newline at end of file
+diff --git a/enter.pollinations.ai/drizzle/meta/0064_snapshot.json b/enter.pollinations.ai/drizzle/meta/0064_snapshot.json
+new file mode 100644
+index 0000000..9732137
+--- /dev/null
++++ b/enter.pollinations.ai/drizzle/meta/0064_snapshot.json
+@@ -0,0 +1,2347 @@
++{
++  "version": "6",
++  "dialect": "sqlite",
++  "id": "f8b457bb-c2a8-42e9-bc48-1e9737f16ee8",
++  "prevId": "15a2f160-9cb7-40a8-a49e-3b558755e655",
++  "tables": {
++    "account": {
++      "name": "account",
++      "columns": {
++        "id": {
++          "name": "id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "account_id": {
++          "name": "account_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "provider_id": {
++          "name": "provider_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "user_id": {
++          "name": "user_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "access_token": {
++          "name": "access_token",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "refresh_token": {
++          "name": "refresh_token",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "id_token": {
++          "name": "id_token",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "access_token_expires_at": {
++          "name": "access_token_expires_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "refresh_token_expires_at": {
++          "name": "refresh_token_expires_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "scope": {
++          "name": "scope",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "password": {
++          "name": "password",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "created_at": {
++          "name": "created_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false,
++          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
++        },
++        "updated_at": {
++          "name": "updated_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        }
++      },
++      "indexes": {
++        "idx_account_user_id": {
++          "name": "idx_account_user_id",
++          "columns": [
++            "user_id"
++          ],
++          "isUnique": false
++        }
++      },
++      "foreignKeys": {
++        "account_user_id_user_id_fk": {
++          "name": "account_user_id_user_id_fk",
++          "tableFrom": "account",
++          "tableTo": "user",
++          "columnsFrom": [
++            "user_id"
++          ],
++          "columnsTo": [
++            "id"
++          ],
++          "onDelete": "cascade",
++          "onUpdate": "no action"
++        }
++      },
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "checkConstraints": {}
++    },
++    "apikey": {
++      "name": "apikey",
++      "columns": {
++        "id": {
++          "name": "id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "config_id": {
++          "name": "config_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false,
++          "default": "'default'"
++        },
++        "name": {
++          "name": "name",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "start": {
++          "name": "start",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "prefix": {
++          "name": "prefix",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "key": {
++          "name": "key",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "user_id": {
++          "name": "user_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "refill_interval": {
++          "name": "refill_interval",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "refill_amount": {
++          "name": "refill_amount",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "last_refill_at": {
++          "name": "last_refill_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "enabled": {
++          "name": "enabled",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false,
++          "default": true
++        },
++        "rate_limit_enabled": {
++          "name": "rate_limit_enabled",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false,
++          "default": true
++        },
++        "rate_limit_time_window": {
++          "name": "rate_limit_time_window",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false,
++          "default": 1000
++        },
++        "rate_limit_max": {
++          "name": "rate_limit_max",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false,
++          "default": 5
++        },
++        "request_count": {
++          "name": "request_count",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false,
++          "default": 0
++        },
++        "remaining": {
++          "name": "remaining",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "last_request": {
++          "name": "last_request",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "expires_at": {
++          "name": "expires_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "created_at": {
++          "name": "created_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "updated_at": {
++          "name": "updated_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "permissions": {
++          "name": "permissions",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "metadata": {
++          "name": "metadata",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "pollen_balance": {
++          "name": "pollen_balance",
++          "type": "real",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "byop_client_key_id": {
++          "name": "byop_client_key_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        }
++      },
++      "indexes": {
++        "idx_apikey_key": {
++          "name": "idx_apikey_key",
++          "columns": [
++            "key"
++          ],
++          "isUnique": false
++        },
++        "idx_apikey_expires_at": {
++          "name": "idx_apikey_expires_at",
++          "columns": [
++            "expires_at"
++          ],
++          "isUnique": false
++        },
++        "idx_apikey_user_id": {
++          "name": "idx_apikey_user_id",
++          "columns": [
++            "user_id"
++          ],
++          "isUnique": false
++        },
++        "idx_apikey_config_id": {
++          "name": "idx_apikey_config_id",
++          "columns": [
++            "config_id"
++          ],
++          "isUnique": false
++        },
++        "idx_apikey_byop_client_key_id": {
++          "name": "idx_apikey_byop_client_key_id",
++          "columns": [
++            "byop_client_key_id"
++          ],
++          "isUnique": false
++        }
++      },
++      "foreignKeys": {
++        "apikey_user_id_user_id_fk": {
++          "name": "apikey_user_id_user_id_fk",
++          "tableFrom": "apikey",
++          "tableTo": "user",
++          "columnsFrom": [
++            "user_id"
++          ],
++          "columnsTo": [
++            "id"
++          ],
++          "onDelete": "cascade",
++          "onUpdate": "no action"
++        }
++      },
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "checkConstraints": {}
++    },
++    "community_endpoint": {
++      "name": "community_endpoint",
++      "columns": {
++        "id": {
++          "name": "id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "owner_user_id": {
++          "name": "owner_user_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "name": {
++          "name": "name",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "title": {
++          "name": "title",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "description": {
++          "name": "description",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "type": {
++          "name": "type",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false,
++          "default": "'proxy'"
++        },
++        "base_url": {
++          "name": "base_url",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "upstream_model": {
++          "name": "upstream_model",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "required_safety_features": {
++          "name": "required_safety_features",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false,
++          "default": "'[]'"
++        },
++        "payload": {
++          "name": "payload",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false,
++          "default": "'{}'"
++        },
++        "visibility": {
++          "name": "visibility",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false,
++          "default": "'private'"
++        },
++        "pending_payload": {
++          "name": "pending_payload",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "pending_visibility": {
++          "name": "pending_visibility",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "pending_at": {
++          "name": "pending_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "hidden_at": {
++          "name": "hidden_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "hidden_reason": {
++          "name": "hidden_reason",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "hidden_by": {
++          "name": "hidden_by",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "created_at": {
++          "name": "created_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false,
++          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
++        },
++        "updated_at": {
++          "name": "updated_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false,
++          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
++        }
++      },
++      "indexes": {
++        "idx_community_endpoint_owner_user_id": {
++          "name": "idx_community_endpoint_owner_user_id",
++          "columns": [
++            "owner_user_id"
++          ],
++          "isUnique": false
++        },
++        "idx_community_endpoint_owner_name": {
++          "name": "idx_community_endpoint_owner_name",
++          "columns": [
++            "owner_user_id",
++            "name"
++          ],
++          "isUnique": true
++        }
++      },
++      "foreignKeys": {
++        "community_endpoint_owner_user_id_user_id_fk": {
++          "name": "community_endpoint_owner_user_id_user_id_fk",
++          "tableFrom": "community_endpoint",
++          "tableTo": "user",
++          "columnsFrom": [
++            "owner_user_id"
++          ],
++          "columnsTo": [
++            "id"
++          ],
++          "onDelete": "cascade",
++          "onUpdate": "no action"
++        }
++      },
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "checkConstraints": {
++        "community_endpoint_type": {
++          "name": "community_endpoint_type",
++          "value": "type IN ('proxy', 'prompt_agent', 'endpoint_agent')"
++        },
++        "community_endpoint_prompt_agent_model": {
++          "name": "community_endpoint_prompt_agent_model",
++          "value": "type != 'prompt_agent' OR upstream_model = id"
++        },
++        "community_endpoint_base_url": {
++          "name": "community_endpoint_base_url",
++          "value": "type != 'prompt_agent' OR base_url = 'https://agent-runtime.invalid/api/agent-runtime/v1'"
++        }
++      }
++    },
++    "device_code": {
++      "name": "device_code",
++      "columns": {
++        "id": {
++          "name": "id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "device_code": {
++          "name": "device_code",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "user_code": {
++          "name": "user_code",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "user_id": {
++          "name": "user_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "expires_at": {
++          "name": "expires_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "status": {
++          "name": "status",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "client_id": {
++          "name": "client_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "scope": {
++          "name": "scope",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        }
++      },
++      "indexes": {
++        "idx_device_code_device_code": {
++          "name": "idx_device_code_device_code",
++          "columns": [
++            "device_code"
++          ],
++          "isUnique": false
++        },
++        "idx_device_code_user_code": {
++          "name": "idx_device_code_user_code",
++          "columns": [
++            "user_code"
++          ],
++          "isUnique": false
++        }
++      },
++      "foreignKeys": {
++        "device_code_user_id_user_id_fk": {
++          "name": "device_code_user_id_user_id_fk",
++          "tableFrom": "device_code",
++          "tableTo": "user",
++          "columnsFrom": [
++            "user_id"
++          ],
++          "columnsTo": [
++            "id"
++          ],
++          "onDelete": "cascade",
++          "onUpdate": "no action"
++        }
++      },
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "checkConstraints": {}
++    },
++    "oauth_access_token": {
++      "name": "oauth_access_token",
++      "columns": {
++        "id": {
++          "name": "id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "token": {
++          "name": "token",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "client_id": {
++          "name": "client_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "session_id": {
++          "name": "session_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "user_id": {
++          "name": "user_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "reference_id": {
++          "name": "reference_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "refresh_id": {
++          "name": "refresh_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "expires_at": {
++          "name": "expires_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "created_at": {
++          "name": "created_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "scopes": {
++          "name": "scopes",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        }
++      },
++      "indexes": {
++        "oauth_access_token_token_unique": {
++          "name": "oauth_access_token_token_unique",
++          "columns": [
++            "token"
++          ],
++          "isUnique": true
++        }
++      },
++      "foreignKeys": {
++        "oauth_access_token_client_id_oauth_client_client_id_fk": {
++          "name": "oauth_access_token_client_id_oauth_client_client_id_fk",
++          "tableFrom": "oauth_access_token",
++          "tableTo": "oauth_client",
++          "columnsFrom": [
++            "client_id"
++          ],
++          "columnsTo": [
++            "client_id"
++          ],
++          "onDelete": "cascade",
++          "onUpdate": "no action"
++        },
++        "oauth_access_token_session_id_session_id_fk": {
++          "name": "oauth_access_token_session_id_session_id_fk",
++          "tableFrom": "oauth_access_token",
++          "tableTo": "session",
++          "columnsFrom": [
++            "session_id"
++          ],
++          "columnsTo": [
++            "id"
++          ],
++          "onDelete": "set null",
++          "onUpdate": "no action"
++        },
++        "oauth_access_token_user_id_user_id_fk": {
++          "name": "oauth_access_token_user_id_user_id_fk",
++          "tableFrom": "oauth_access_token",
++          "tableTo": "user",
++          "columnsFrom": [
++            "user_id"
++          ],
++          "columnsTo": [
++            "id"
++          ],
++          "onDelete": "cascade",
++          "onUpdate": "no action"
++        },
++        "oauth_access_token_refresh_id_oauth_refresh_token_id_fk": {
++          "name": "oauth_access_token_refresh_id_oauth_refresh_token_id_fk",
++          "tableFrom": "oauth_access_token",
++          "tableTo": "oauth_refresh_token",
++          "columnsFrom": [
++            "refresh_id"
++          ],
++          "columnsTo": [
++            "id"
++          ],
++          "onDelete": "set null",
++          "onUpdate": "no action"
++        }
++      },
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "checkConstraints": {}
++    },
++    "oauth_client": {
++      "name": "oauth_client",
++      "columns": {
++        "id": {
++          "name": "id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "client_id": {
++          "name": "client_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "client_secret": {
++          "name": "client_secret",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "disabled": {
++          "name": "disabled",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false,
++          "default": false
++        },
++        "skip_consent": {
++          "name": "skip_consent",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "enable_end_session": {
++          "name": "enable_end_session",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "subject_type": {
++          "name": "subject_type",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "scopes": {
++          "name": "scopes",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "user_id": {
++          "name": "user_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "created_at": {
++          "name": "created_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "updated_at": {
++          "name": "updated_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "name": {
++          "name": "name",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "uri": {
++          "name": "uri",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "icon": {
++          "name": "icon",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "contacts": {
++          "name": "contacts",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "tos": {
++          "name": "tos",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "policy": {
++          "name": "policy",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "software_id": {
++          "name": "software_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "software_version": {
++          "name": "software_version",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "software_statement": {
++          "name": "software_statement",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "redirect_uris": {
++          "name": "redirect_uris",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "post_logout_redirect_uris": {
++          "name": "post_logout_redirect_uris",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "token_endpoint_auth_method": {
++          "name": "token_endpoint_auth_method",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "grant_types": {
++          "name": "grant_types",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "response_types": {
++          "name": "response_types",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "public": {
++          "name": "public",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "type": {
++          "name": "type",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "require_pkce": {
++          "name": "require_pkce",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "reference_id": {
++          "name": "reference_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "metadata": {
++          "name": "metadata",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        }
++      },
++      "indexes": {
++        "oauth_client_client_id_unique": {
++          "name": "oauth_client_client_id_unique",
++          "columns": [
++            "client_id"
++          ],
++          "isUnique": true
++        }
++      },
++      "foreignKeys": {
++        "oauth_client_user_id_user_id_fk": {
++          "name": "oauth_client_user_id_user_id_fk",
++          "tableFrom": "oauth_client",
++          "tableTo": "user",
++          "columnsFrom": [
++            "user_id"
++          ],
++          "columnsTo": [
++            "id"
++          ],
++          "onDelete": "cascade",
++          "onUpdate": "no action"
++        }
++      },
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "checkConstraints": {}
++    },
++    "oauth_consent": {
++      "name": "oauth_consent",
++      "columns": {
++        "id": {
++          "name": "id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "client_id": {
++          "name": "client_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "user_id": {
++          "name": "user_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "reference_id": {
++          "name": "reference_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "scopes": {
++          "name": "scopes",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "created_at": {
++          "name": "created_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "updated_at": {
++          "name": "updated_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        }
++      },
++      "indexes": {},
++      "foreignKeys": {
++        "oauth_consent_client_id_oauth_client_client_id_fk": {
++          "name": "oauth_consent_client_id_oauth_client_client_id_fk",
++          "tableFrom": "oauth_consent",
++          "tableTo": "oauth_client",
++          "columnsFrom": [
++            "client_id"
++          ],
++          "columnsTo": [
++            "client_id"
++          ],
++          "onDelete": "cascade",
++          "onUpdate": "no action"
++        },
++        "oauth_consent_user_id_user_id_fk": {
++          "name": "oauth_consent_user_id_user_id_fk",
++          "tableFrom": "oauth_consent",
++          "tableTo": "user",
++          "columnsFrom": [
++            "user_id"
++          ],
++          "columnsTo": [
++            "id"
++          ],
++          "onDelete": "cascade",
++          "onUpdate": "no action"
++        }
++      },
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "checkConstraints": {}
++    },
++    "oauth_refresh_token": {
++      "name": "oauth_refresh_token",
++      "columns": {
++        "id": {
++          "name": "id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "token": {
++          "name": "token",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "client_id": {
++          "name": "client_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "session_id": {
++          "name": "session_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "user_id": {
++          "name": "user_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "reference_id": {
++          "name": "reference_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "expires_at": {
++          "name": "expires_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "created_at": {
++          "name": "created_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "revoked": {
++          "name": "revoked",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "auth_time": {
++          "name": "auth_time",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "scopes": {
++          "name": "scopes",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        }
++      },
++      "indexes": {},
++      "foreignKeys": {
++        "oauth_refresh_token_client_id_oauth_client_client_id_fk": {
++          "name": "oauth_refresh_token_client_id_oauth_client_client_id_fk",
++          "tableFrom": "oauth_refresh_token",
++          "tableTo": "oauth_client",
++          "columnsFrom": [
++            "client_id"
++          ],
++          "columnsTo": [
++            "client_id"
++          ],
++          "onDelete": "cascade",
++          "onUpdate": "no action"
++        },
++        "oauth_refresh_token_session_id_session_id_fk": {
++          "name": "oauth_refresh_token_session_id_session_id_fk",
++          "tableFrom": "oauth_refresh_token",
++          "tableTo": "session",
++          "columnsFrom": [
++            "session_id"
++          ],
++          "columnsTo": [
++            "id"
++          ],
++          "onDelete": "set null",
++          "onUpdate": "no action"
++        },
++        "oauth_refresh_token_user_id_user_id_fk": {
++          "name": "oauth_refresh_token_user_id_user_id_fk",
++          "tableFrom": "oauth_refresh_token",
++          "tableTo": "user",
++          "columnsFrom": [
++            "user_id"
++          ],
++          "columnsTo": [
++            "id"
++          ],
++          "onDelete": "cascade",
++          "onUpdate": "no action"
++        }
++      },
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "checkConstraints": {}
++    },
++    "polar_checkout_credits": {
++      "name": "polar_checkout_credits",
++      "columns": {
++        "order_id": {
++          "name": "order_id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "event_id": {
++          "name": "event_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "event_type": {
++          "name": "event_type",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "user_id": {
++          "name": "user_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "pollen_credited": {
++          "name": "pollen_credited",
++          "type": "real",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "polar_created_at": {
++          "name": "polar_created_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "amount": {
++          "name": "amount",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "total_amount": {
++          "name": "total_amount",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "currency": {
++          "name": "currency",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "customer_id": {
++          "name": "customer_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "product_id": {
++          "name": "product_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "product_name": {
++          "name": "product_name",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "product_slug": {
++          "name": "product_slug",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "metadata_json": {
++          "name": "metadata_json",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "created_at": {
++          "name": "created_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false,
++          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
++        }
++      },
++      "indexes": {
++        "idx_polar_checkout_credits_user_id": {
++          "name": "idx_polar_checkout_credits_user_id",
++          "columns": [
++            "user_id"
++          ],
++          "isUnique": false
++        }
++      },
++      "foreignKeys": {
++        "polar_checkout_credits_user_id_user_id_fk": {
++          "name": "polar_checkout_credits_user_id_user_id_fk",
++          "tableFrom": "polar_checkout_credits",
++          "tableTo": "user",
++          "columnsFrom": [
++            "user_id"
++          ],
++          "columnsTo": [
++            "id"
++          ],
++          "onDelete": "cascade",
++          "onUpdate": "no action"
++        }
++      },
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "checkConstraints": {}
++    },
++    "rewards": {
++      "name": "rewards",
++      "columns": {
++        "id": {
++          "name": "id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "idempotency_key": {
++          "name": "idempotency_key",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "user_id": {
++          "name": "user_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "quest_id": {
++          "name": "quest_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "title": {
++          "name": "title",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "url": {
++          "name": "url",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "pollen_amount": {
++          "name": "pollen_amount",
++          "type": "real",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "balance_bucket": {
++          "name": "balance_bucket",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "earned_at": {
++          "name": "earned_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false,
++          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
++        },
++        "claimed_at": {
++          "name": "claimed_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        }
++      },
++      "indexes": {
++        "rewards_idempotency_key_unique": {
++          "name": "rewards_idempotency_key_unique",
++          "columns": [
++            "idempotency_key"
++          ],
++          "isUnique": true
++        },
++        "idx_rewards_user_id": {
++          "name": "idx_rewards_user_id",
++          "columns": [
++            "user_id"
++          ],
++          "isUnique": false
++        }
++      },
++      "foreignKeys": {
++        "rewards_user_id_user_id_fk": {
++          "name": "rewards_user_id_user_id_fk",
++          "tableFrom": "rewards",
++          "tableTo": "user",
++          "columnsFrom": [
++            "user_id"
++          ],
++          "columnsTo": [
++            "id"
++          ],
++          "onDelete": "set null",
++          "onUpdate": "no action"
++        }
++      },
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "checkConstraints": {}
++    },
++    "session": {
++      "name": "session",
++      "columns": {
++        "id": {
++          "name": "id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "expires_at": {
++          "name": "expires_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "token": {
++          "name": "token",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "created_at": {
++          "name": "created_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false,
++          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
++        },
++        "updated_at": {
++          "name": "updated_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "ip_address": {
++          "name": "ip_address",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "user_agent": {
++          "name": "user_agent",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "user_id": {
++          "name": "user_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "impersonated_by": {
++          "name": "impersonated_by",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        }
++      },
++      "indexes": {
++        "session_token_unique": {
++          "name": "session_token_unique",
++          "columns": [
++            "token"
++          ],
++          "isUnique": true
++        },
++        "idx_session_user_id": {
++          "name": "idx_session_user_id",
++          "columns": [
++            "user_id"
++          ],
++          "isUnique": false
++        }
++      },
++      "foreignKeys": {
++        "session_user_id_user_id_fk": {
++          "name": "session_user_id_user_id_fk",
++          "tableFrom": "session",
++          "tableTo": "user",
++          "columnsFrom": [
++            "user_id"
++          ],
++          "columnsTo": [
++            "id"
++          ],
++          "onDelete": "cascade",
++          "onUpdate": "no action"
++        }
++      },
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "checkConstraints": {}
++    },
++    "stripe_auto_top_up_attempt": {
++      "name": "stripe_auto_top_up_attempt",
++      "columns": {
++        "id": {
++          "name": "id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "user_id": {
++          "name": "user_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "stripe_invoice_id": {
++          "name": "stripe_invoice_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "amount_usd": {
++          "name": "amount_usd",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "status": {
++          "name": "status",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "failure_reason": {
++          "name": "failure_reason",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "created_at": {
++          "name": "created_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false,
++          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
++        },
++        "updated_at": {
++          "name": "updated_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false,
++          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
++        },
++        "completed_at": {
++          "name": "completed_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        }
++      },
++      "indexes": {
++        "stripe_auto_top_up_attempt_stripe_invoice_id_unique": {
++          "name": "stripe_auto_top_up_attempt_stripe_invoice_id_unique",
++          "columns": [
++            "stripe_invoice_id"
++          ],
++          "isUnique": true
++        },
++        "idx_stripe_auto_top_up_attempt_user_id": {
++          "name": "idx_stripe_auto_top_up_attempt_user_id",
++          "columns": [
++            "user_id"
++          ],
++          "isUnique": false
++        },
++        "idx_stripe_auto_top_up_attempt_status": {
++          "name": "idx_stripe_auto_top_up_attempt_status",
++          "columns": [
++            "status"
++          ],
++          "isUnique": false
++        }
++      },
++      "foreignKeys": {
++        "stripe_auto_top_up_attempt_user_id_user_id_fk": {
++          "name": "stripe_auto_top_up_attempt_user_id_user_id_fk",
++          "tableFrom": "stripe_auto_top_up_attempt",
++          "tableTo": "user",
++          "columnsFrom": [
++            "user_id"
++          ],
++          "columnsTo": [
++            "id"
++          ],
++          "onDelete": "cascade",
++          "onUpdate": "no action"
++        }
++      },
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "checkConstraints": {}
++    },
++    "stripe_card_fingerprint_attempt": {
++      "name": "stripe_card_fingerprint_attempt",
++      "columns": {
++        "event_id": {
++          "name": "event_id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "user_id": {
++          "name": "user_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "card_fingerprint": {
++          "name": "card_fingerprint",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "created_at": {
++          "name": "created_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false,
++          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
++        }
++      },
++      "indexes": {
++        "idx_stripe_card_fingerprint_attempt_user_created": {
++          "name": "idx_stripe_card_fingerprint_attempt_user_created",
++          "columns": [
++            "user_id",
++            "created_at"
++          ],
++          "isUnique": false
++        },
++        "idx_stripe_card_fingerprint_attempt_user_fingerprint": {
++          "name": "idx_stripe_card_fingerprint_attempt_user_fingerprint",
++          "columns": [
++            "user_id",
++            "card_fingerprint"
++          ],
++          "isUnique": false
++        }
++      },
++      "foreignKeys": {
++        "stripe_card_fingerprint_attempt_user_id_user_id_fk": {
++          "name": "stripe_card_fingerprint_attempt_user_id_user_id_fk",
++          "tableFrom": "stripe_card_fingerprint_attempt",
++          "tableTo": "user",
++          "columnsFrom": [
++            "user_id"
++          ],
++          "columnsTo": [
++            "id"
++          ],
++          "onDelete": "cascade",
++          "onUpdate": "no action"
++        }
++      },
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "checkConstraints": {}
++    },
++    "stripe_checkout_credits": {
++      "name": "stripe_checkout_credits",
++      "columns": {
++        "session_id": {
++          "name": "session_id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "event_id": {
++          "name": "event_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "event_type": {
++          "name": "event_type",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "user_id": {
++          "name": "user_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "pollen_credited": {
++          "name": "pollen_credited",
++          "type": "real",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "created_at": {
++          "name": "created_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false,
++          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
++        }
++      },
++      "indexes": {
++        "idx_stripe_checkout_credits_user_id": {
++          "name": "idx_stripe_checkout_credits_user_id",
++          "columns": [
++            "user_id"
++          ],
++          "isUnique": false
++        }
++      },
++      "foreignKeys": {
++        "stripe_checkout_credits_user_id_user_id_fk": {
++          "name": "stripe_checkout_credits_user_id_user_id_fk",
++          "tableFrom": "stripe_checkout_credits",
++          "tableTo": "user",
++          "columnsFrom": [
++            "user_id"
++          ],
++          "columnsTo": [
++            "id"
++          ],
++          "onDelete": "cascade",
++          "onUpdate": "no action"
++        }
++      },
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "checkConstraints": {}
++    },
++    "user": {
++      "name": "user",
++      "columns": {
++        "id": {
++          "name": "id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "name": {
++          "name": "name",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "email": {
++          "name": "email",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "email_verified": {
++          "name": "email_verified",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false,
++          "default": false
++        },
++        "image": {
++          "name": "image",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "created_at": {
++          "name": "created_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false,
++          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
++        },
++        "updated_at": {
++          "name": "updated_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false,
++          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
++        },
++        "role": {
++          "name": "role",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "banned": {
++          "name": "banned",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false,
++          "default": false
++        },
++        "ban_reason": {
++          "name": "ban_reason",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "ban_expires": {
++          "name": "ban_expires",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "github_id": {
++          "name": "github_id",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "github_username": {
++          "name": "github_username",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "community_provider_name": {
++          "name": "community_provider_name",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "community_provider_url": {
++          "name": "community_provider_url",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "tier": {
++          "name": "tier",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false,
++          "default": "'spore'"
++        },
++        "tier_balance": {
++          "name": "tier_balance",
++          "type": "real",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "pack_balance": {
++          "name": "pack_balance",
++          "type": "real",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "last_tier_grant": {
++          "name": "last_tier_grant",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "stripe_customer_id": {
++          "name": "stripe_customer_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "auto_top_up_enabled": {
++          "name": "auto_top_up_enabled",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false,
++          "default": "0"
++        },
++        "auto_top_up_amount_usd": {
++          "name": "auto_top_up_amount_usd",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        }
++      },
++      "indexes": {
++        "user_email_unique": {
++          "name": "user_email_unique",
++          "columns": [
++            "email"
++          ],
++          "isUnique": true
++        },
++        "user_stripe_customer_id_unique": {
++          "name": "user_stripe_customer_id_unique",
++          "columns": [
++            "stripe_customer_id"
++          ],
++          "isUnique": true
++        },
++        "idx_user_email": {
++          "name": "idx_user_email",
++          "columns": [
++            "email"
++          ],
++          "isUnique": false
++        },
++        "idx_user_auto_top_up_enabled": {
++          "name": "idx_user_auto_top_up_enabled",
++          "columns": [
++            "auto_top_up_enabled"
++          ],
++          "isUnique": false
++        },
++        "user_github_id_unique": {
++          "name": "user_github_id_unique",
++          "columns": [
++            "github_id"
++          ],
++          "isUnique": true
++        }
++      },
++      "foreignKeys": {},
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "checkConstraints": {}
++    },
++    "verification": {
++      "name": "verification",
++      "columns": {
++        "id": {
++          "name": "id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "identifier": {
++          "name": "identifier",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "value": {
++          "name": "value",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "expires_at": {
++          "name": "expires_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "created_at": {
++          "name": "created_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false,
++          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
++        },
++        "updated_at": {
++          "name": "updated_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false,
++          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
++        }
++      },
++      "indexes": {
++        "idx_verification_identifier": {
++          "name": "idx_verification_identifier",
++          "columns": [
++            "identifier"
++          ],
++          "isUnique": false
++        }
++      },
++      "foreignKeys": {},
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "checkConstraints": {}
++    },
++    "media_item": {
++      "name": "media_item",
++      "columns": {
++        "id": {
++          "name": "id",
++          "type": "text",
++          "primaryKey": true,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "owner_user_id": {
++          "name": "owner_user_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "app_key_id": {
++          "name": "app_key_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "content_type": {
++          "name": "content_type",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "size": {
++          "name": "size",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": false,
++          "autoincrement": false
++        },
++        "source": {
++          "name": "source",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "created_at": {
++          "name": "created_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        }
++      },
++      "indexes": {
++        "idx_media_item_owner_created": {
++          "name": "idx_media_item_owner_created",
++          "columns": [
++            "owner_user_id",
++            "created_at"
++          ],
++          "isUnique": false
++        }
++      },
++      "foreignKeys": {
++        "media_item_owner_user_id_user_id_fk": {
++          "name": "media_item_owner_user_id_user_id_fk",
++          "tableFrom": "media_item",
++          "tableTo": "user",
++          "columnsFrom": [
++            "owner_user_id"
++          ],
++          "columnsTo": [
++            "id"
++          ],
++          "onDelete": "cascade",
++          "onUpdate": "no action"
++        }
++      },
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "checkConstraints": {}
++    },
++    "media_tag": {
++      "name": "media_tag",
++      "columns": {
++        "item_id": {
++          "name": "item_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "tag": {
++          "name": "tag",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        }
++      },
++      "indexes": {
++        "idx_media_tag_item_tag": {
++          "name": "idx_media_tag_item_tag",
++          "columns": [
++            "item_id",
++            "tag"
++          ],
++          "isUnique": true
++        },
++        "idx_media_tag_tag_item": {
++          "name": "idx_media_tag_tag_item",
++          "columns": [
++            "tag",
++            "item_id"
++          ],
++          "isUnique": false
++        }
++      },
++      "foreignKeys": {
++        "media_tag_item_id_media_item_id_fk": {
++          "name": "media_tag_item_id_media_item_id_fk",
++          "tableFrom": "media_tag",
++          "tableTo": "media_item",
++          "columnsFrom": [
++            "item_id"
++          ],
++          "columnsTo": [
++            "id"
++          ],
++          "onDelete": "cascade",
++          "onUpdate": "no action"
++        }
++      },
++      "compositePrimaryKeys": {},
++      "uniqueConstraints": {},
++      "checkConstraints": {}
++    },
++    "media_user_link": {
++      "name": "media_user_link",
++      "columns": {
++        "item_id": {
++          "name": "item_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "user_id": {
++          "name": "user_id",
++          "type": "text",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        },
++        "created_at": {
++          "name": "created_at",
++          "type": "integer",
++          "primaryKey": false,
++          "notNull": true,
++          "autoincrement": false
++        }
++      },
++      "indexes": {
++        "idx_media_user_link_user_created": {
++          "name": "idx_media_user_link_user_created",
++          "columns": [
++            "user_id",
++            "created_at"
++          ],
++          "isUnique": false
++        }
++      },
++      "foreignKeys": {
++        "media_user_link_item_id_media_item_id_fk": {
++          "name": "media_user_link_item_id_media_item_id_fk",
++          "tableFrom": "media_user_link",
++          "tableTo": "media_item",
++          "columnsFrom": [
++            "item_id"
++          ],
++          "columnsTo": [
++            "id"
++          ],
++          "onDelete": "cascade",
++          "onUpdate": "no action"
++        },
++        "media_user_link_user_id_user_id_fk": {
++          "name": "media_user_link_user_id_user_id_fk",
++          "tableFrom": "media_user_link",
++          "tableTo": "user",
++          "columnsFrom": [
++            "user_id"
++          ],
++          "columnsTo": [
++            "id"
++          ],
++          "onDelete": "cascade",
++          "onUpdate": "no action"
++        }
++      },
++      "compositePrimaryKeys": {
++        "media_user_link_user_id_item_id_pk": {
++          "columns": [
++            "user_id",
++            "item_id"
++          ],
++          "name": "media_user_link_user_id_item_id_pk"
++        }
++      },
++      "uniqueConstraints": {},
++      "checkConstraints": {}
++    }
++  },
++  "views": {},
++  "enums": {},
++  "_meta": {
++    "schemas": {},
++    "tables": {},
++    "columns": {}
++  },
++  "internal": {
++    "indexes": {}
++  }
++}
+\ No newline at end of file
+diff --git a/enter.pollinations.ai/drizzle/meta/_journal.json b/enter.pollinations.ai/drizzle/meta/_journal.json
+index 8223041..cc85871 100644
+--- a/enter.pollinations.ai/drizzle/meta/_journal.json
++++ b/enter.pollinations.ai/drizzle/meta/_journal.json
+@@ -449,6 +449,13 @@
+       "when": 1788818400000,
+       "tag": "0063_oauth-provider",
+       "breakpoints": true
++    },
++    {
++      "idx": 64,
++      "version": "6",
++      "when": 1789003091142,
++      "tag": "0064_add_media_user_link",
++      "breakpoints": true
+     }
+   ]
+ }
+diff --git a/gen.pollinations.ai/src/middleware/media-cache.ts b/gen.pollinations.ai/src/middleware/media-cache.ts
+index 1eaff35..afe11ba 100644
+--- a/gen.pollinations.ai/src/middleware/media-cache.ts
++++ b/gen.pollinations.ai/src/middleware/media-cache.ts
+@@ -2,11 +2,14 @@
+ 
+ import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+ import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
++import type { Context } from "hono";
+ import { generateCacheKey } from "@/utils/media-cache.ts";
++import type { AuthVariables } from "./auth.ts";
+ import {
+     createGenerationCache,
+     createGenerationExecutionCache,
+     type GenerationCacheAdapter,
++    type GenerationCacheEnv,
+     hashGenerationCacheIdentity,
+ } from "./generation-cache.ts";
+ import { withLegacyMediaCache } from "./legacy-media-cache.ts";
+@@ -35,6 +38,25 @@ const CACHED_HEADERS = new Set([
+     "x-voice-changer-voice",
+ ]);
+ 
++// Best-effort: record the current request's user against a generation's
++// media id so it shows up in their private list (GET /media/mine), without
++// making the response wait on it. Runs on both a fresh write and a cache
++// hit — a hit means someone else's request already produced this exact
++// file, and the current requester should still see it in their own list.
++// Anonymous requests (no authenticated user) are not linked to anything.
++function linkCurrentUserToMedia(c: Context<GenerationCacheEnv>, id: string) {
++    const userId = (c.var as typeof c.var & Partial<AuthVariables>).auth?.user
++        ?.id;
++    if (!userId) return;
++    c.executionCtx.waitUntil(
++        c.env.MEDIA.linkToUser(id, userId).catch((error) => {
++            c.get("log")
++                .getChild("media-cache")
++                .error("Error linking media to user: {error}", { error });
++        }),
++    );
++}
++
+ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
+     return withLegacyMediaCache({
+         storage: "media",
+@@ -68,6 +90,7 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
+             if (!response) return null;
+             response.headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
+             response.headers.set("X-Cache", "HIT");
++            linkCurrentUserToMedia(c, cacheKey);
+             return response;
+         },
+         shouldCache(response) {
+@@ -89,9 +112,17 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
+                     stored.headers.delete(name);
+                 }
+             }
++            const write = c.env.MEDIA.put(cacheKey, stored);
++            // Link only after the blob actually exists — chained off `write`
++            // rather than run alongside it, so a fresh write can't race
++            // linkToUser's R2 head() against the still-in-flight put. Any
++            // link failure is swallowed here (already logged internally by
++            // linkCurrentUserToMedia) so it never affects `write`'s own
++            // resolution, which the caller uses to report caching errors.
++            write.then(() => linkCurrentUserToMedia(c, cacheKey)).catch(() => {});
+             return {
+                 response,
+-                write: c.env.MEDIA.put(cacheKey, stored),
++                write,
+             };
+         },
+     });
+diff --git a/gen.pollinations.ai/test/media-cache.test.ts b/gen.pollinations.ai/test/media-cache.test.ts
+index 7e66c0b..798caae 100644
+--- a/gen.pollinations.ai/test/media-cache.test.ts
++++ b/gen.pollinations.ai/test/media-cache.test.ts
+@@ -1,5 +1,6 @@
+ import {
+     createExecutionContext,
++    env,
+     waitOnExecutionContext,
+ } from "cloudflare:test";
+ import type { Logger } from "@logtape/logtape";
+@@ -73,6 +74,7 @@ function createMediaCacheEnv(
+         MEDIA: new MediaUpload(mediaCtx, {
+             MEDIA_BUCKET: bucket,
+             MAX_FILE_SIZE: "104857600",
++            DB: env.DB,
+         }),
+         mediaCtx,
+     } as unknown as CloudflareBindings;
+diff --git a/gen.pollinations.ai/test/openai-image-cache.test.ts b/gen.pollinations.ai/test/openai-image-cache.test.ts
+index afd40b3..5d00202 100644
+--- a/gen.pollinations.ai/test/openai-image-cache.test.ts
++++ b/gen.pollinations.ai/test/openai-image-cache.test.ts
+@@ -1,5 +1,6 @@
+ import {
+     createExecutionContext,
++    env,
+     waitOnExecutionContext,
+ } from "cloudflare:test";
+ import type { Logger } from "@logtape/logtape";
+@@ -358,6 +359,7 @@ describe("OpenAI image cache", () => {
+                 MEDIA: new MediaUpload(ctx, {
+                     MEDIA_BUCKET: bucket,
+                     MAX_FILE_SIZE: "104857600",
++                    DB: env.DB,
+                 }),
+             } as unknown as CloudflareBindings,
+             ctx,
+diff --git a/media.pollinations.ai/src/catalog.ts b/media.pollinations.ai/src/catalog.ts
+index c4df382..0e4c6f5 100644
+--- a/media.pollinations.ai/src/catalog.ts
++++ b/media.pollinations.ai/src/catalog.ts
+@@ -1,10 +1,16 @@
+-// Media catalog: D1-backed metadata for published (tagged) media. Blobs stay
+-// in R2 — this module only indexes them. Tags are the publish action: only
+-// tagged uploads get catalog rows. Writes are awaited inline on the upload
+-// path (no waitUntil): a D1 failure surfaces as a 500 rather than silently
+-// dropping catalog data.
++// Media catalog: D1-backed metadata for uploaded and generated media. Blobs
++// stay in R2 — this module only indexes them. Tags remain the *publish*
++// action (only tagged items appear in a public gallery), but every
++// authenticated upload now gets a catalog row so it can appear in its
++// owner's private list even untagged. Generations link into the catalog via
++// MediaUpload.linkToUser (media-upload.ts) instead of a helper here: that
++// entrypoint is imported directly by other services' tests as an in-process
++// double for its RPC binding, and duplicating the writes there in raw SQL
++// avoids pulling this package's drizzle-orm install into that cross-package
++// build. Writes are awaited inline (no waitUntil): a D1 failure surfaces as
++// a 500 rather than silently dropping catalog data.
+ 
+-import { mediaItem, mediaTag } from "@shared/db/media-catalog.ts";
++import { mediaItem, mediaTag, mediaUserLink } from "@shared/db/media-catalog.ts";
+ import type { SQL } from "drizzle-orm";
+ import { and, desc, eq, inArray, lt, or, sql } from "drizzle-orm";
+ import { drizzle } from "drizzle-orm/d1";
+@@ -68,39 +74,51 @@ export interface InsertUploadParams {
+     appKeyId: string | null;
+     contentType: string;
+     size: number;
+-    // Non-empty: tags are what publish an upload, so an untagged upload
+-    // never reaches the catalog at all.
++    // May be empty: tags still control public visibility, but every
++    // user-owned upload gets a catalog row so it shows up in the owner's
++    // private list even untagged.
+     tags: string[];
+ }
+ 
+ /**
+- * Insert a catalog row for a published upload together with its tags. Each
+- * upload is its own row (re-uploading the same bytes is a new item, not an
+- * upsert). Returns the item id.
++ * Insert a catalog row for a user-owned upload, its tags (if any), and the
++ * owner's personal-list association. Each upload is its own row
++ * (re-uploading the same bytes is a new item, not an upsert).
+  */
+ export async function insertUploadCatalogItem(
+     db: CatalogDb,
+     params: InsertUploadParams,
+ ): Promise<void> {
+-    // One atomic batch: the item row and its tags land together or not at
+-    // all — a tagless catalog row would be invisible (galleries are
+-    // tag-scoped) yet undeletable by its owner via unpublish.
+-    await db.batch([
+-        db.insert(mediaItem).values({
+-            id: params.id,
+-            ownerUserId: params.ownerUserId,
+-            appKeyId: params.appKeyId,
+-            contentType: params.contentType,
+-            size: params.size,
+-            createdAt: new Date(),
+-        }),
+-        db.insert(mediaTag).values(
++    const createdAt = new Date();
++    const itemInsert = db.insert(mediaItem).values({
++        id: params.id,
++        ownerUserId: params.ownerUserId,
++        appKeyId: params.appKeyId,
++        contentType: params.contentType,
++        size: params.size,
++        source: "upload" as const,
++        createdAt,
++    });
++    const linkInsert = db.insert(mediaUserLink).values({
++        itemId: params.id,
++        userId: params.ownerUserId,
++        createdAt,
++    });
++    // One atomic batch: the item, its tags, and the owner's link land
++    // together or not at all. `.batch` requires at least one statement per
++    // call and rejects an empty `.values([])`, so the tag insert is only
++    // included when there are tags to write.
++    if (params.tags.length > 0) {
++        const tagInsert = db.insert(mediaTag).values(
+             params.tags.map((tag) => ({
+                 itemId: params.id,
+                 tag,
+             })),
+-        ),
+-    ]);
++        );
++        await db.batch([itemInsert, linkInsert, tagInsert]);
++    } else {
++        await db.batch([itemInsert, linkInsert]);
++    }
+ }
+ 
+ /**
+@@ -120,21 +138,46 @@ export async function catalogItemOwner(
+ }
+ 
+ /**
+- * Delete a catalog item and its tags. Deleting the R2 blob is the caller's
+- * responsibility.
++ * Delete a catalog item, its tags, and everyone's personal-list links to
++ * it. This removes the shared item entirely — only appropriate for the
++ * single-owner upload path (see DELETE /media/:id). Deleting the R2 blob is
++ * the caller's responsibility.
+  */
+ export async function deleteCatalogItem(
+     db: CatalogDb,
+     itemId: string,
+ ): Promise<void> {
+-    // Explicit tag delete in the same atomic batch — doesn't depend on the
++    // Explicit deletes in the same atomic batch — doesn't depend on the
+     // runtime enforcing ON DELETE CASCADE.
+     await db.batch([
+         db.delete(mediaTag).where(eq(mediaTag.itemId, itemId)),
++        db.delete(mediaUserLink).where(eq(mediaUserLink.itemId, itemId)),
+         db.delete(mediaItem).where(eq(mediaItem.id, itemId)),
+     ]);
+ }
+ 
++/**
++ * Remove one user's personal-list association with an item. This is the
++ * *unlink* action, distinct from deleteCatalogItem: it never touches the
++ * item row, its tags, or the R2 blob, so a shared generation (or an item
++ * linked by several users) keeps existing for everyone else. Returns
++ * whether a link existed to remove.
++ */
++export async function unlinkUserMedia(
++    db: CatalogDb,
++    params: { userId: string; itemId: string },
++): Promise<boolean> {
++    const result = await db
++        .delete(mediaUserLink)
++        .where(
++            and(
++                eq(mediaUserLink.userId, params.userId),
++                eq(mediaUserLink.itemId, params.itemId),
++            ),
++        );
++    return (result.meta.changes ?? 0) > 0;
++}
++
+ export interface CatalogItem {
+     id: string;
+     contentType: string;
+@@ -226,6 +269,54 @@ export async function listMedia(
+     return paginate(rows, params.limit);
+ }
+ 
++/**
++ * List a user's private media list: every item they uploaded or generated,
++ * tagged or not, newest-linked first. Requires the caller to already be
++ * authenticated as that user — this is not tag-scoped and is never public.
++ * Ordering and pagination mirror listMedia, but over media_user_link.createdAt
++ * (when the item entered *this user's* list) rather than the item's own
++ * createdAt, since a generation can be linked to a user long after it was
++ * first created by someone else's request.
++ */
++export async function listUserMedia(
++    db: CatalogDb,
++    params: {
++        userId: string;
++        limit: number;
++        cursor?: { createdAt: Date; id: string };
++    },
++): Promise<CatalogPage> {
++    const conditions: SQL[] = [eq(mediaUserLink.userId, params.userId)];
++    if (params.cursor) {
++        conditions.push(beforeLinkCursor(params.cursor));
++    }
++
++    const rows = await db
++        .select({
++            id: mediaItem.id,
++            contentType: mediaItem.contentType,
++            size: mediaItem.size,
++            createdAt: mediaUserLink.createdAt,
++        })
++        .from(mediaUserLink)
++        .innerJoin(mediaItem, eq(mediaItem.id, mediaUserLink.itemId))
++        .where(and(...conditions))
++        .orderBy(desc(mediaUserLink.createdAt), desc(mediaItem.id))
++        .limit(params.limit + 1);
++
++    return paginate(rows, params.limit);
++}
++
++function beforeLinkCursor(cursor: { createdAt: Date; id: string }): SQL {
++    return sql`${or(
++        lt(mediaUserLink.createdAt, cursor.createdAt),
++        and(
++            eq(mediaUserLink.createdAt, cursor.createdAt),
++            lt(mediaItem.id, cursor.id),
++        ),
++    )}`;
++}
++
+ // D1 caps bound parameters at 100 per statement. A full page holds up to
+ // MAX_LIMIT (100) ids, and some lookups bind values on top of the id list,
+ // so id-list queries run in chunks that stay well under the cap.
+diff --git a/media.pollinations.ai/src/index.ts b/media.pollinations.ai/src/index.ts
+index 6c8256f..9e50029 100644
+--- a/media.pollinations.ai/src/index.ts
++++ b/media.pollinations.ai/src/index.ts
+@@ -19,10 +19,12 @@ import {
+     getDb,
+     insertUploadCatalogItem,
+     listMedia,
++    listUserMedia,
+     MAX_LIMIT,
+     normalizeTags,
+     TagError,
+     tagsForItems,
++    unlinkUserMedia,
+ } from "./catalog.ts";
+ 
+ import { readMedia } from "./media-upload.ts";
+@@ -273,6 +275,30 @@ const MediaListQuerySchema = z.object({
+         ),
+ });
+ 
++// Query-param schema for GET /media/mine: same paging shape as
++// MediaListQuerySchema, minus `tag` — the private list is scoped to the
++// authenticated caller, not a tag.
++const MyMediaListQuerySchema = z.object({
++    limit: z.coerce
++        .number()
++        .int()
++        .min(1)
++        .max(MAX_LIMIT)
++        .optional()
++        .describe(`Page size, 1–${MAX_LIMIT}. Omitted → ${DEFAULT_LIMIT}.`),
++    cursor: z
++        .string()
++        .optional()
++        .describe(
++            "Opaque pagination cursor from a previous response's nextCursor.",
++        ),
++});
++
++const UnlinkResponseSchema = z.object({
++    unlinked: z.literal(true),
++    id: z.string().describe("Id of the item removed from your list"),
++});
++
+ const api = new Hono<{ Bindings: Env }>();
+ 
+ api.post(
+@@ -281,7 +307,7 @@ api.post(
+         tags: ["media.pollinations.ai"],
+         summary: "Upload media",
+         description:
+-            "Upload an image, audio, or video file via multipart/form-data (field `file`) or application/json (base64 `data`). Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.",
++            "Upload an image, audio, or video file via multipart/form-data (field `file`) or application/json (base64 `data`). Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable.\n\n**Private list.** With a user-owned API key, every upload (tagged or not) is added to your private list (GET /media/mine) and can be removed from it (DELETE /media/mine/:id) or fully deleted (DELETE /media/:id). Anonymous or app-only keys are not tracked in any list. **Alpha:** the publish tagging and private list are new and may still change.",
+         requestBody: {
+             content: {
+                 "multipart/form-data": {
+@@ -548,13 +574,13 @@ api.post(
+                 return c.json({ error: "Media ID already exists" }, 409);
+             }
+ 
+-            // Tags are the publish action: only tagged uploads get catalog
+-            // rows (untagged uploads stay uncataloged blobs behind their
+-            // unguessable id). The write is awaited inline (not waitUntil):
+-            // a D1 failure must surface as a 500, not be silently swallowed.
+-            // `tags` non-empty implies a user-attached key (rejected above
+-            // otherwise), so ownerUserId is always real here.
+-            if (tags.length > 0 && authResult.userId !== null) {
++            // Every user-owned upload gets a catalog row, tagged or not, so
++            // it can appear in the owner's private list (GET /media/mine).
++            // Tags remain the *publish* action — they're what makes an item
++            // additionally visible in a public tag gallery. The write is
++            // awaited inline (not waitUntil): a D1 failure must surface as a
++            // 500, not be silently swallowed.
++            if (authResult.userId !== null) {
+                 const db = getDb(c.env.DB);
+                 await insertUploadCatalogItem(db, {
+                     id,
+@@ -662,13 +688,219 @@ api.get(
+     },
+ );
+ 
++api.get(
++    "/media/mine",
++    describeRoute({
++        tags: ["media.pollinations.ai"],
++        summary: "List your private media",
++        description:
++            "List every upload and generation associated with you, tagged or not, newest first — including items you've never published. Tags still control what's *additionally* visible in a public gallery; this list is independent of that and requires your **secret (`sk_`)** API key. This does not change the visibility of existing retrieval URLs: an untagged item stays reachable by anyone who has (or guesses) its URL. **Alpha:** this endpoint is new and its API may still change.",
++        security: [],
++        responses: {
++            200: {
++                description: "Page of your media items",
++                content: {
++                    "application/json": {
++                        schema: resolver(MediaPageResponseSchema),
++                    },
++                },
++            },
++            400: {
++                description: "Invalid cursor or limit",
++                content: {
++                    "application/json": { schema: resolver(ErrorSchema) },
++                },
++            },
++            401: {
++                description: "Missing or invalid API key",
++                content: {
++                    "application/json": { schema: resolver(ErrorSchema) },
++                },
++            },
++            403: {
++                description:
++                    "Key is not a secret (`sk_`) key or is not attached to a user account",
++                content: {
++                    "application/json": { schema: resolver(ErrorSchema) },
++                },
++            },
++        },
++    }),
++    validator("query", MyMediaListQuerySchema, (result, c) => {
++        if (!result.success) {
++            const issue = result.error[0];
++            const path = issue?.path
++                ?.map((p) =>
++                    typeof p === "object" ? String(p.key) : String(p),
++                )
++                .join(".");
++            return c.json(
++                {
++                    error: `Invalid query${path ? ` (${path})` : ""}: ${issue?.message ?? "validation failed"}`,
++                },
++                400,
++            );
++        }
++    }),
++    async (c) => {
++        const apiKey = extractApiKey(c.req.raw);
++        if (!apiKey) {
++            return c.json(
++                {
++                    error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>",
++                },
++                401,
++            );
++        }
++        const auth = await verifyApiKey(apiKey);
++        if (!auth) {
++            return c.json({ error: "Invalid or expired API key" }, 401);
++        }
++        if (auth.userId === null) {
++            return c.json(
++                { error: "This API key is not attached to a user account" },
++                403,
++            );
++        }
++        // Private-list contents (including unpublished items) are only as
++        // safe as the key that can read them — a leaked publishable key
++        // ships inside public clients, so reading the list is secret-key
++        // only, same as deleting.
++        if (auth.type !== "secret") {
++            return c.json(
++                {
++                    error: "Listing your media requires a secret (sk_) API key",
++                },
++                403,
++            );
++        }
++
++        const query = c.req.valid("query");
++        const limit = query.limit ?? DEFAULT_LIMIT;
++        let cursor: { createdAt: Date; id: string } | undefined;
++        if (query.cursor) {
++            try {
++                cursor = decodeCursor(query.cursor);
++            } catch {
++                return c.json({ error: "Invalid cursor" }, 400);
++            }
++        }
++
++        const db = getDb(c.env.DB);
++        const page = await listUserMedia(db, {
++            userId: auth.userId,
++            limit,
++            cursor,
++        });
++        return c.json(await toPageResponse(db, page));
++    },
++);
++
++api.delete(
++    "/media/mine/:id",
++    describeRoute({
++        tags: ["media.pollinations.ai"],
++        summary: "Remove an item from your private list",
++        description:
++            "Remove one item from your private list (GET /media/mine) without affecting anyone else: the underlying file, its catalog entry, its tags, and any other user's link to the same item are all left untouched. A generation's file can be linked to several users because its id is content-derived and shared cache hits reuse the same file — unlinking only ever removes *your* association. To permanently delete an upload you own (including for everyone else and from public galleries), use DELETE /media/:id instead. Requires your **secret (`sk_`)** API key.",
++        parameters: [
++            {
++                name: "id",
++                in: "path",
++                required: true,
++                description: "Media id (from GET /media/mine).",
++                schema: { type: "string" },
++            },
++        ],
++        responses: {
++            200: {
++                description: "Item removed from your list",
++                content: {
++                    "application/json": {
++                        schema: resolver(UnlinkResponseSchema),
++                    },
++                },
++            },
++            401: {
++                description: "Missing or invalid API key",
++                content: {
++                    "application/json": { schema: resolver(ErrorSchema) },
++                },
++            },
++            403: {
++                description:
++                    "Key is not a secret (`sk_`) key or is not attached to a user account",
++                content: {
++                    "application/json": { schema: resolver(ErrorSchema) },
++                },
++            },
++            404: {
++                description: "This item is not in your private list",
++                content: {
++                    "application/json": { schema: resolver(ErrorSchema) },
++                },
++            },
++        },
++    }),
++    async (c) => {
++        const apiKey = extractApiKey(c.req.raw);
++        if (!apiKey) {
++            return c.json(
++                {
++                    error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>",
++                },
++                401,
++            );
++        }
++        const auth = await verifyApiKey(apiKey);
++        if (!auth) {
++            return c.json({ error: "Invalid or expired API key" }, 401);
++        }
++        if (auth.userId === null) {
++            return c.json(
++                { error: "This API key is not attached to a user account" },
++                403,
++            );
++        }
++        if (auth.type !== "secret") {
++            return c.json(
++                {
++                    error: "Removing items from your list requires a secret (sk_) API key",
++                },
++                403,
++            );
++        }
++
++        const id = c.req.param("id");
++        const db = getDb(c.env.DB);
++        const unlinked = await unlinkUserMedia(db, {
++            userId: auth.userId,
++            itemId: id,
++        });
++        if (!unlinked) {
++            return c.json({ error: "This item is not in your private list" }, 404);
++        }
++
++        console.log(
++            JSON.stringify({
++                event: "unlink",
++                id,
++                keyType: auth.type,
++                unlinkedBy: auth.name || "unknown",
++            }),
++        );
++
++        return c.json({ unlinked: true, id });
++    },
++);
++
+ api.delete(
+     "/media/:id",
+     describeRoute({
+         tags: ["media.pollinations.ai"],
+         summary: "Delete media",
+         description:
+-            "Delete a published media item you own: the file, its catalog entry, and all its tags are removed, so it disappears from galleries and its URL 404s. Requires your **secret (`sk_`)** API key. Untagged uploads were never published, have no catalog entry, and can't be deleted — they use the same 30-day lifecycle, refreshed by a GET once they are at least 15 days old. **Alpha:** this endpoint is new and its API may still change.",
++            "Permanently delete a media item you uploaded: the file, its catalog entry, all its tags, and everyone's private-list links to it are removed, so it disappears from galleries and its URL 404s. This is destructive and only available for uploads (single owner) — use DELETE /media/mine/:id instead to just remove an item from your own list without affecting anyone else. Requires your **secret (`sk_`)** API key. Anonymous uploads (no user-owned key at upload time) have no catalog entry and can't be deleted this way — they use the same 30-day lifecycle, refreshed by a GET once they are at least 15 days old. **Alpha:** this endpoint is new and its API may still change.",
+         parameters: [
+             {
+                 name: "id",
+diff --git a/media.pollinations.ai/src/media-upload.ts b/media.pollinations.ai/src/media-upload.ts
+index aaf5869..2c88feb 100644
+--- a/media.pollinations.ai/src/media-upload.ts
++++ b/media.pollinations.ai/src/media-upload.ts
+@@ -7,6 +7,7 @@ const DEFAULT_MAX_SIZE = 100 * 1024 * 1024;
+ type MediaStorageEnv = {
+     MEDIA_BUCKET: R2Bucket;
+     MAX_FILE_SIZE: string;
++    DB: D1Database;
+ };
+ 
+ export type UnlistedMediaUpload = {
+@@ -153,4 +154,46 @@ export class MediaUpload extends WorkerEntrypoint<MediaStorageEnv> {
+             customMetadata: metadata,
+         });
+     }
++
++    /**
++     * Record that `userId` has this generation in their private list
++     * (surfaced via GET /media/mine on the public API). Called by other
++     * services over this RPC binding, both on a fresh generation write and
++     * on a cache hit — a cache hit means someone else's request already
++     * produced this exact file, and the current requester should still see
++     * it in their own list. Looks up the object's own contentType/size via
++     * R2 rather than trusting the caller for them, since this entrypoint is
++     * reachable cross-service with no request-level validation of its own.
++     * A silent no-op if the object no longer exists (expired, or the id was
++     * never written): callers use this best-effort and shouldn't have to
++     * special-case a missing object on every cache hit.
++     *
++     * Uses raw D1 statements rather than catalog.ts's drizzle helpers: this
++     * file is imported directly (not just over a service binding) by
++     * gen.pollinations.ai's tests as a fast in-process double for the RPC
++     * binding, and media.pollinations.ai keeps its own, separately-versioned
++     * drizzle-orm install — a drizzle import here would pull two
++     * incompatible copies of drizzle-orm's classes into that cross-package
++     * build. Column names below must stay in sync with
++     * shared/db/media-catalog.ts.
++     */
++    async linkToUser(id: string, userId: string): Promise<void> {
++        const object = await this.env.MEDIA_BUCKET.head(id);
++        if (!object) return;
++        const contentType =
++            object.httpMetadata?.contentType || "application/octet-stream";
++        const createdAt = Math.floor(Date.now() / 1000);
++        await this.env.DB.batch([
++            this.env.DB.prepare(
++                `INSERT INTO media_item (id, owner_user_id, app_key_id, content_type, size, source, created_at)
++                 VALUES (?, NULL, NULL, ?, ?, 'generation', ?)
++                 ON CONFLICT (id) DO NOTHING`,
++            ).bind(id, contentType, object.size, createdAt),
++            this.env.DB.prepare(
++                `INSERT INTO media_user_link (item_id, user_id, created_at)
++                 VALUES (?, ?, ?)
++                 ON CONFLICT (user_id, item_id) DO NOTHING`,
++            ).bind(id, userId, createdAt),
++        ]);
++    }
+ }
+diff --git a/shared/db/media-catalog.ts b/shared/db/media-catalog.ts
+index bb02478..a2eb1b2 100644
+--- a/shared/db/media-catalog.ts
++++ b/shared/db/media-catalog.ts
+@@ -1,13 +1,25 @@
+-// Media catalog: queryable metadata for published (tagged) uploads. Blobs
+-// stay in R2 — these tables only index them. Tags are the publish action:
+-// only tagged uploads get a catalog row (untagged uploads stay uncataloged
+-// blobs behind their UUID). The row id is the R2 storage key and the public
+-// retrieval id. (Generations are not cataloged yet; see the
+-// generation-tagging followup.)
+-
++// Media catalog: queryable metadata for uploaded and generated media. Blobs
++// stay in R2 — these tables only index them. Tags remain the *publish*
++// action (only tagged items show up in a public gallery), but catalog rows
++// now exist independently of tags so a user's private list can include
++// untagged uploads and generations too. The row id is the R2 storage key
++// and the public retrieval id.
++//
++// `ownerUserId` on media_item is the single-owner field used to authorize
++// destructive actions (DELETE /media/:id, which removes the blob for
++// everyone). It is only ever set for uploads, where the id is a random
++// per-upload key with exactly one owner. Generations use a content-derived
++// id that can be produced by many different users' requests (a cache hit
++// replays someone else's file), so they have no single owner — deleting the
++// underlying blob is not exposed for them. Instead, `media_user_link`
++// records *association* (who has this in their personal list) separately
++// from ownership: many users can link to the same item, and unlinking only
++// removes that user's association, never the shared file. See media catalog
++// issue tracker: "Add a private list of uploaded and generated media".
+ import {
+     index,
+     integer,
++    primaryKey,
+     sqliteTable,
+     text,
+     uniqueIndex,
+@@ -17,15 +29,20 @@ import { user } from "./better-auth.ts";
+ export const mediaItem = sqliteTable(
+     "media_item",
+     {
+-        // Per-upload id: also the R2 storage key and the public retrieval id.
++        // Per-item id: also the R2 storage key and the public retrieval id.
+         id: text("id").primaryKey(),
+-        // Server-attested from the verified API key — never from request params.
++        // Server-attested from the verified API key — never from request
++        // params. Null for generation items, which have no single owner.
+         ownerUserId: text("owner_user_id").references(() => user.id, {
+             onDelete: "cascade",
+         }),
+         appKeyId: text("app_key_id"),
+         contentType: text("content_type").notNull(),
+         size: integer("size"),
++        // How this row entered the catalog: "upload" (via the media API,
++        // single-owner) or "generation" (content-addressed, shared cache).
++        // Drives which actions (delete vs. unlink) apply to the item.
++        source: text("source", { enum: ["upload", "generation"] }).notNull(),
+         createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+     },
+     (table) => [
+@@ -36,6 +53,34 @@ export const mediaItem = sqliteTable(
+     ],
+ );
+ 
++export const mediaUserLink = sqliteTable(
++    "media_user_link",
++    {
++        itemId: text("item_id")
++            .notNull()
++            .references(() => mediaItem.id, { onDelete: "cascade" }),
++        userId: text("user_id")
++            .notNull()
++            .references(() => user.id, { onDelete: "cascade" }),
++        // Recorded at link time from server-attested data (the upload's own
++        // owner, or the generation request's authenticated user) — never
++        // backfilled from later access. A historical item whose original
++        // requester is unknown simply has no link row rather than being
++        // attributed to whoever happens to trigger a later migration or
++        // cache hit.
++        createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
++    },
++    (table) => [
++        // One association per (user, item); linking twice is a no-op.
++        primaryKey({ columns: [table.userId, table.itemId] }),
++        // Covering index for the personal-list keyset query.
++        index("idx_media_user_link_user_created").on(
++            table.userId,
++            table.createdAt,
++        ),
++    ],
++);
++
+ export const mediaTag = sqliteTable(
+     "media_tag",
+     {

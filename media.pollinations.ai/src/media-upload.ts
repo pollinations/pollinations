@@ -7,6 +7,7 @@ const DEFAULT_MAX_SIZE = 100 * 1024 * 1024;
 type MediaStorageEnv = {
     MEDIA_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
+    DB: D1Database;
 };
 
 export type UnlistedMediaUpload = {
@@ -152,5 +153,47 @@ export class MediaUpload extends WorkerEntrypoint<MediaStorageEnv> {
             },
             customMetadata: metadata,
         });
+    }
+
+    /**
+     * Record that `userId` has this generation in their private list
+     * (surfaced via GET /media/mine on the public API). Called by other
+     * services over this RPC binding, both on a fresh generation write and
+     * on a cache hit — a cache hit means someone else's request already
+     * produced this exact file, and the current requester should still see
+     * it in their own list. Looks up the object's own contentType/size via
+     * R2 rather than trusting the caller for them, since this entrypoint is
+     * reachable cross-service with no request-level validation of its own.
+     * A silent no-op if the object no longer exists (expired, or the id was
+     * never written): callers use this best-effort and shouldn't have to
+     * special-case a missing object on every cache hit.
+     *
+     * Uses raw D1 statements rather than catalog.ts's drizzle helpers: this
+     * file is imported directly (not just over a service binding) by
+     * gen.pollinations.ai's tests as a fast in-process double for the RPC
+     * binding, and media.pollinations.ai keeps its own, separately-versioned
+     * drizzle-orm install — a drizzle import here would pull two
+     * incompatible copies of drizzle-orm's classes into that cross-package
+     * build. Column names below must stay in sync with
+     * shared/db/media-catalog.ts.
+     */
+    async linkToUser(id: string, userId: string): Promise<void> {
+        const object = await this.env.MEDIA_BUCKET.head(id);
+        if (!object) return;
+        const contentType =
+            object.httpMetadata?.contentType || "application/octet-stream";
+        const createdAt = Math.floor(Date.now() / 1000);
+        await this.env.DB.batch([
+            this.env.DB.prepare(
+                `INSERT INTO media_item (id, owner_user_id, app_key_id, content_type, size, source, created_at)
+                 VALUES (?, NULL, NULL, ?, ?, 'generation', ?)
+                 ON CONFLICT (id) DO NOTHING`,
+            ).bind(id, contentType, object.size, createdAt),
+            this.env.DB.prepare(
+                `INSERT INTO media_user_link (item_id, user_id, created_at)
+                 VALUES (?, ?, ?)
+                 ON CONFLICT (user_id, item_id) DO NOTHING`,
+            ).bind(id, userId, createdAt),
+        ]);
     }
 }

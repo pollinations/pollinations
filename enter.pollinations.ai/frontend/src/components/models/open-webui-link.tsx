@@ -1,5 +1,9 @@
-import { config } from "@frontend/config.ts";
 import { ExternalLinkIcon, Tooltip } from "@pollinations/ui";
+
+export const OPEN_WEBUI_URL =
+    import.meta.env.MODE === "staging"
+        ? "https://openwebui-staging.elliot-b6e.workers.dev"
+        : "https://openwebui.pollinations.ai";
 
 /**
  * Open WebUI signs in with Pollinations OAuth and fetches its model list with
@@ -10,7 +14,7 @@ import { ExternalLinkIcon, Tooltip } from "@pollinations/ui";
  * Only text models reach that picker — Open WebUI is a chat client.
  */
 export function openWebUiChatUrl(modelId: string): string {
-    return `${config.openWebUiUrl}/?model=${encodeURIComponent(modelId)}`;
+    return `${OPEN_WEBUI_URL}/?model=${encodeURIComponent(modelId)}`;
 }
 
 /**

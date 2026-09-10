@@ -30,8 +30,12 @@ export function computeDevCredit(
     baselinePrice: number,
     markupPct: number = MARKUP_PCT,
 ): number {
-    if (baselinePrice <= 0 || markupPct <= 0) return 0;
-    return baselinePrice * markupPct;
+    const clamped = Math.max(
+        MIN_MARKUP_PCT,
+        Math.min(MAX_MARKUP_PCT, markupPct),
+    );
+    if (baselinePrice <= 0 || clamped <= 0) return 0;
+    return baselinePrice * clamped;
 }
 
 export type ByopClientMarkupFields = {

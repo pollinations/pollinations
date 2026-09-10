@@ -77,7 +77,7 @@ describe("code agent deployment", () => {
             }
             if (
                 url ===
-                `https://raw.githubusercontent.com/example/agents/${commit}/tools/image/agent.js`
+                `https://raw.githubusercontent.com/example/agents/${commit}/agent.js`
             ) {
                 return new Response(source);
             }
@@ -98,7 +98,6 @@ describe("code agent deployment", () => {
         await expect(
             loadCodeAgentSource(
                 repository.repository,
-                "tools/image",
                 repository.deployedCommitSha,
             ),
         ).resolves.toBe(source);

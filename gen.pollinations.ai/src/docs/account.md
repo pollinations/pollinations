@@ -51,7 +51,7 @@ Returns the current API key's validity, type, and permissions.
 
 ### /account/agents
 
-Create and manage prompt or code agents and their callable `owner/name` model listings. Code deployment requires community publisher access. A code agent points to a public GitHub repository containing `agent.js`, optionally under `directory`; Pollinations deploys the repository's current default-branch revision. `POST /account/agents/{id}/sync` deploys a newer revision without authentication and cannot change the stored repository. Code agents receive `pollinations(path, init)` for caller-funded API requests and `mcp(server, tool, arguments)` for hosted MCP tools. Managed agents are text-only and free at the outer layer; their model and tool calls consume the caller's Pollen.
+Create and manage prompt or code agents and their callable `owner/name` model listings. Private agents are available to any account with linked GitHub; public listing requires community publisher access. A code agent points to a public GitHub repository with `agent.js` at its root, and Pollinations deploys the current default-branch revision. `POST /account/agents/{id}/sync` deploys a newer revision without authentication and cannot change the stored repository. Code agents receive `pollinations(path, init)` for caller-funded API requests and `mcp(server, tool, arguments)` for hosted MCP tools. Managed agents are text-only and free at the outer layer; their model and tool calls consume the caller's Pollen.
 
 To deploy after every push, add a GitHub Action step (replace `AGENT_ID`):
 

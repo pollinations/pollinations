@@ -642,13 +642,11 @@ describe("community endpoint helpers", () => {
                 "code_agent",
                 JSON.stringify({
                     repository: "https://github.com/example/agents",
-                    directory: "tools/image",
                     deployedCommitSha: "a".repeat(40),
                 }),
             ),
         ).toEqual({
             repository: "https://github.com/example/agents",
-            directory: "tools/image",
             deployedCommitSha: "a".repeat(40),
         });
         expect(
@@ -7656,7 +7654,6 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         id: string;
         type: string;
         repository: string;
-        directory: string;
         deployedCommitSha: string;
     };
     expect(agent).toMatchObject({
@@ -7665,7 +7662,6 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         title: "agents",
         description: "Example code agents",
         repository: "https://github.com/example/agents",
-        directory: "",
         deployedCommitSha: commit,
         visibility: "private",
     });
@@ -7682,7 +7678,6 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
     });
     expect(JSON.parse(stored.payload)).toEqual({
         repository: "https://github.com/example/agents",
-        directory: "",
         deployedCommitSha: commit,
     });
 
@@ -7788,7 +7783,6 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
                 id: agent.id,
                 type: "code_agent",
                 repository: "https://github.com/example/agents",
-                directory: "",
                 deployedCommitSha: commit,
                 description: "Updated on GitHub",
             }),

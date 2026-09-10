@@ -8,7 +8,7 @@ This is different from hosting your own OpenAI-compatible model endpoint. It is 
 
 1. Open [My Models](https://enter.pollinations.ai/my-models).
 2. Add an agent and choose **Prompt agent** or **Code agent**.
-3. Configure a prompt and base model, or enter a public GitHub repository and optional directory.
+3. Configure a prompt and base model, or enter a public GitHub repository.
 4. Save it. The dashboard creates the agent configuration and registers its callable model name.
 
 A linked GitHub username is required to create an agent. Private agents are visible and callable only by their owner. Public listings require [community publisher access](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml).
@@ -43,7 +43,7 @@ The `composio` server uses each caller's connections from **Account → MCP Conn
 
 ## Code agent configuration
 
-A code agent uses a public GitHub repository as its source of truth. Put a self-contained `agent.js` at the repository root, or set `directory` when a repository contains multiple agents. The repository name becomes the model ID and title; when `directory` is set, its final segment is used instead. The repository description becomes the catalog description. Repository visibility and agent visibility are independent: a private agent is owner-only even though its source repository is public.
+A code agent uses a public GitHub repository as its source of truth. Put one self-contained `agent.js` at the repository root. The repository name becomes the model ID and title, and its description becomes the catalog description. Repository visibility and agent visibility are independent: a private agent is owner-only even though its source repository is public.
 
 ```js
 export default async function ({ request, pollinations, mcp }) {
@@ -63,12 +63,11 @@ Example `code-agent.json`:
 ```json
 {
   "type": "code_agent",
-  "repository": "https://github.com/your-name/your-agents",
-  "directory": "agents/research"
+  "repository": "https://github.com/your-name/your-agent"
 }
 ```
 
-Create it with `npx @pollinations/cli agents create --config code-agent.json`. Add `--visibility public` to publish after your account has community publisher access. The API stores the GitHub-derived listing fields, repository, directory, and deployed commit SHA—not the source code. The repository binding and model ID are fixed after creation; syncing refreshes the code, title, and description.
+Create it with `npx @pollinations/cli agents create --config code-agent.json`. Add `--visibility public` to publish after your account has community publisher access. The API stores the GitHub-derived listing fields, repository, and deployed commit SHA—not the source code. The repository binding and model ID are fixed after creation; syncing refreshes the code, title, and description.
 
 To deploy the newest default-branch revision after a push, add this step to a GitHub Action (replace `AGENT_ID`):
 

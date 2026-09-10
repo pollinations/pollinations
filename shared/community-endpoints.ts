@@ -662,37 +662,12 @@ const GitHubRepositorySchema = z
         return `https://github.com/${parts[0]}/${parts[1]}`;
     });
 
-const CodeAgentDirectorySchema = z
-    .string()
-    .trim()
-    .max(512)
-    .refine(
-        (value) =>
-            value === "" ||
-            value
-                .split("/")
-                .every(
-                    (part) =>
-                        part !== "" &&
-                        part !== "." &&
-                        part !== ".." &&
-                        part.length <= 120 &&
-                        /^[A-Za-z0-9._-]+$/.test(part),
-                ),
-        "Directory must be a relative GitHub repository path",
-    );
-
 /** Public GitHub source selected when a code agent is created. */
 export const CodeAgentInputSchema = z
     .object({
         repository: GitHubRepositorySchema.describe(
-            "Public GitHub repository containing agent.js.",
+            "Public GitHub repository containing agent.js at its root.",
         ),
-        directory: CodeAgentDirectorySchema.optional()
-            .default("")
-            .describe(
-                "Optional repository directory containing agent.js. Defaults to the repository root.",
-            ),
     })
     .strict();
 

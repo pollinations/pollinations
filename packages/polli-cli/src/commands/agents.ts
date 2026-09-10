@@ -30,7 +30,6 @@ type PromptAgent = AgentBase & {
 type CodeAgent = AgentBase & {
     type: "code_agent";
     repository: string;
-    directory: string;
     deployedCommitSha: string;
 };
 

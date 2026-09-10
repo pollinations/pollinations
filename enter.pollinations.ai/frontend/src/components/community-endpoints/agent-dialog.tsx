@@ -75,7 +75,6 @@ export function AgentDialog({
                 agent?.type === "code_agent" && {
                     type: "code_agent" as const,
                     repository: agent.repository,
-                    directory: agent.directory,
                     requiredSafetyFeatures: agent.requiredSafetyFeatures,
                 }),
         });
@@ -215,9 +214,8 @@ export function AgentDialog({
 
                     {form.type === "code_agent" && (
                         <p className="text-sm text-theme-text-muted">
-                            The repository or directory name becomes the model
-                            ID and title. The repository description becomes the
-                            catalog description.
+                            The repository name becomes the model ID and title.
+                            Its description becomes the catalog description.
                         </p>
                     )}
 

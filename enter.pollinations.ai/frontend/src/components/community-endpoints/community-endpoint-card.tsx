@@ -152,9 +152,7 @@ export function CommunityEndpointCard({
                     <CommunityDetailRow
                         icon={<GitHubIcon className="h-3.5 w-3.5" />}
                         label="Source"
-                        value={`${agent.repository}/${
-                            agent.directory ? `${agent.directory}/` : ""
-                        }agent.js @ ${agent.deployedCommitSha.slice(0, 7)}`}
+                        value={`${agent.repository}/agent.js @ ${agent.deployedCommitSha.slice(0, 7)}`}
                         copyLabel="Copy source"
                     />
                 )}

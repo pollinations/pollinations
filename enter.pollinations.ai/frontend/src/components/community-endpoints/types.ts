@@ -46,7 +46,6 @@ export type ManagedPromptAgent = ManagedAgentBase & {
 export type ManagedCodeAgent = ManagedAgentBase & {
     type: "code_agent";
     repository: string;
-    directory: string;
     deployedCommitSha: string;
 };
 
@@ -60,7 +59,6 @@ type AgentFields = Pick<
 export type AgentFormState = AgentFields & {
     type: "prompt_agent" | "code_agent";
     repository: string;
-    directory: string;
 };
 
 export type AgentPayload =
@@ -68,7 +66,6 @@ export type AgentPayload =
     | {
           type: "code_agent";
           repository: string;
-          directory: string;
           requiredSafetyFeatures: SafetyFeature[];
       };
 
@@ -323,7 +320,6 @@ export const emptyAgentForm: AgentFormState = {
     requiredSafetyFeatures: [],
     mcpServers: [],
     repository: "",
-    directory: "",
 };
 
 export const idleAction: ActionState = { status: "idle" };
@@ -549,7 +545,6 @@ export function toAgentPayload(form: AgentFormState): AgentPayload {
         return {
             type: "code_agent",
             repository,
-            directory: form.directory.trim(),
             requiredSafetyFeatures: form.requiredSafetyFeatures,
         };
     }

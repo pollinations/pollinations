@@ -170,14 +170,13 @@ async function requireOwnedAgent(db: Db, id: string, ownerUserId: string) {
 
 const CODE_AGENT_SYNC_THROTTLE_SECONDS = 30;
 
-function codeAgentListingFields(
-    repository: { name: string; description: string | null },
-    directory: string,
-) {
-    const sourceName = directory.split("/").at(-1) || repository.name;
+function codeAgentListingFields(repository: {
+    name: string;
+    description: string | null;
+}) {
     return {
-        name: sourceName.toLowerCase(),
-        title: sourceName.slice(0, COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH),
+        name: repository.name.toLowerCase(),
+        title: repository.name.slice(0, COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH),
         description:
             repository.description
                 ?.trim()
@@ -218,7 +217,7 @@ async function syncCodeAgent(c: Context<Env>, id: string) {
         config.repository,
     );
     const { deployedCommitSha } = repository;
-    const listing = codeAgentListingFields(repository, config.directory);
+    const listing = codeAgentListingFields(repository);
     const metadataChanged =
         listing.title !== row.title ||
         listing.description !== row.description ||
@@ -232,7 +231,6 @@ async function syncCodeAgent(c: Context<Env>, id: string) {
     if (deployedCommitSha !== config.deployedCommitSha) {
         const source = await loadCodeAgentSource(
             repository.repository,
-            config.directory,
             deployedCommitSha,
         );
         await deployCodeAgent(c.env, id, source);
@@ -411,7 +409,7 @@ export const agentsRoutes = new Hono<Env>()
                     input.repository,
                 );
                 const { deployedCommitSha } = repository;
-                listing = codeAgentListingFields(repository, input.directory);
+                listing = codeAgentListingFields(repository);
                 await requireAgentWriteAccess(
                     db,
                     user.id,
@@ -420,13 +418,11 @@ export const agentsRoutes = new Hono<Env>()
                 );
                 const source = await loadCodeAgentSource(
                     repository.repository,
-                    input.directory,
                     deployedCommitSha,
                 );
                 await deployCodeAgent(c.env, id, source);
                 payload = JSON.stringify({
                     repository: repository.repository,
-                    directory: input.directory,
                     deployedCommitSha,
                 });
             } else {
@@ -481,7 +477,7 @@ export const agentsRoutes = new Hono<Env>()
             tags: ["🤖 Community Agents"],
             summary: "Update Agent",
             description:
-                "Update a prompt agent's configuration or a code agent's visibility and safety policy. A code agent's identity, repository, and directory are fixed after creation. API keys require `account:keys`.",
+                "Update a prompt agent's configuration or a code agent's visibility and safety policy. A code agent's identity and repository are fixed after creation. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Updated agent",

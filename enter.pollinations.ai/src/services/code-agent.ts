@@ -162,20 +162,15 @@ export async function resolveCodeAgentRepository(
 /** Load agent.js from an already resolved, immutable GitHub revision. */
 export async function loadCodeAgentSource(
     repository: string,
-    directory: string,
     commitSha: string,
 ): Promise<string> {
     const { owner, name } = githubRepositoryParts(repository);
-    const entrypoint = directory ? `${directory}/agent.js` : "agent.js";
     const sourceResponse = await fetch(
-        `${GITHUB_RAW}/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/${commitSha}/${entrypoint
-            .split("/")
-            .map(encodeURIComponent)
-            .join("/")}`,
+        `${GITHUB_RAW}/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/${commitSha}/agent.js`,
     );
     if (sourceResponse.status === 404) {
         throw new HTTPException(400, {
-            message: `${entrypoint} was not found in the repository`,
+            message: "agent.js was not found at the repository root",
         });
     }
     if (!sourceResponse.ok) {

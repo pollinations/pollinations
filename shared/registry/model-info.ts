@@ -118,6 +118,8 @@ export const ModelInfoSchema = z.object({
         .optional(),
     alpha: z.boolean().optional(),
     flat_rate: z.boolean().optional(),
+    supported_parameters: z.array(z.string()).optional(),
+    default_parameters: z.record(z.string(), z.unknown()).optional(),
     added_date: z.number().optional(),
 });
 
@@ -230,6 +232,8 @@ export function modelInfoFromDefinition(
             (service.category === "image"
                 ? service.cost.promptTextTokens === undefined
                 : undefined),
+        supported_parameters: service.supportedParameters,
+        default_parameters: service.defaultParameters,
         added_date: service.addedDate,
     };
 }

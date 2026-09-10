@@ -152,3 +152,80 @@ test("applies the same 404 rule to aliases of hidden models", async ({
     });
     expect(response.status).toBe(404);
 });
+
+test("exposes supported_parameters and default_parameters on retrieve and list endpoints", async ({
+    paidApiKey,
+}) => {
+    // 1. Standard Chat model (openai/gpt-5.4-nano)
+    const nanoRes = await fetchWorker("/v1/models/openai%2Fgpt-5.4-nano");
+    expect(nanoRes.status).toBe(200);
+    const nanoBody = (await nanoRes.json()) as {
+        supported_parameters?: string[];
+        default_parameters?: Record<string, unknown>;
+    };
+    expect(nanoBody.supported_parameters).toEqual([
+        "frequency_penalty",
+        "max_tokens",
+        "presence_penalty",
+        "response_format",
+        "seed",
+        "stop",
+        "temperature",
+        "tool_choice",
+        "tools",
+        "top_p",
+    ]);
+    expect(nanoBody.default_parameters).toEqual({});
+
+    // 2. Reasoning Chat model (google/gemini-3.7-flash)
+    const geminiRes = await fetchWorker(
+        `/v1/models/${encodeURIComponent("google/gemini-3.7-flash")}`,
+        { headers: { Authorization: `Bearer ${paidApiKey}` } },
+    );
+    expect(geminiRes.status).toBe(200);
+    const geminiBody = (await geminiRes.json()) as {
+        supported_parameters?: string[];
+        default_parameters?: Record<string, unknown>;
+    };
+    expect(geminiBody.supported_parameters).toContain("reasoning_effort");
+    expect(geminiBody.supported_parameters).toContain("tools");
+
+    // 3. Search Chat model (perplexity/sonar)
+    const sonarRes = await fetchWorker("/v1/models/perplexity%2Fsonar");
+    expect(sonarRes.status).toBe(200);
+    const sonarBody = (await sonarRes.json()) as {
+        supported_parameters?: string[];
+        default_parameters?: Record<string, unknown>;
+    };
+    expect(sonarBody.supported_parameters).toContain("web_search_options");
+    expect(sonarBody.default_parameters).toEqual({
+        web_search_options: { search_context_size: "low" },
+    });
+
+    // 4. Verify /models and /text/models include supported_parameters and default_parameters
+    const textModelsRes = await fetchWorker("/text/models");
+    expect(textModelsRes.status).toBe(200);
+    const textModels = (await textModelsRes.json()) as {
+        name: string;
+        supported_parameters?: string[];
+        default_parameters?: Record<string, unknown>;
+    }[];
+    const nanoInText = textModels.find((m) => m.name === "openai/gpt-5.4-nano");
+    expect(nanoInText?.supported_parameters).toBeDefined();
+    expect(nanoInText?.default_parameters).toBeDefined();
+});
+
+test("returns identical parameter metadata for alias lookups", async () => {
+    const canonicalRes = await fetchWorker(
+        `/v1/models/${encodeURIComponent("openai/gpt-5.4-nano")}`,
+    );
+    const aliasRes = await fetchWorker("/v1/models/gpt-5.4-nano");
+
+    expect(canonicalRes.status).toBe(200);
+    expect(aliasRes.status).toBe(200);
+
+    const canonicalBody = await canonicalRes.json();
+    const aliasBody = await aliasRes.json();
+
+    expect(aliasBody).toEqual(canonicalBody);
+});

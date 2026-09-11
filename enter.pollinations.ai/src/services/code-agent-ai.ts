@@ -1,5 +1,4 @@
 import {
-    type FinishReason,
     jsonSchema,
     stepCountIs,
     ToolLoopAgent,
@@ -14,6 +13,7 @@ import {
     strictAgentUsage,
 } from "../../../shared/agents/model.ts";
 import { handleAgentResponsesRequest } from "../../../shared/agents/responses.ts";
+import { runSdkAgent } from "../../../shared/agents/sdk-runner.ts";
 import type { AgentRunner } from "../../../shared/agents/types.ts";
 import { CreateResponseRequestSchema } from "../../../shared/schemas/openai.ts";
 
@@ -136,47 +136,12 @@ export function createCodeAgentAI(
                 // Retries would spend the caller's balance again.
                 maxRetries: 0,
             });
-            let reason: FinishReason;
-            let steps: Parameters<typeof strictAgentUsage>[0];
-            if (stream) {
-                const result = await agent.stream({
-                    messages,
-                    abortSignal: signal,
-                });
-                for await (const part of result.fullStream) {
-                    if (part.type === "error") throw part.error;
-                    if (
-                        part.type === "text-delta" ||
-                        part.type === "tool-call" ||
-                        part.type === "tool-result" ||
-                        part.type === "tool-error"
-                    )
-                        onPart(part);
-                }
-                [reason, steps] = await Promise.all([
-                    result.finishReason,
-                    result.steps,
-                ]);
-            } else {
-                const result = await agent.generate({
-                    messages,
-                    abortSignal: signal,
-                });
-                for (const step of result.steps) {
-                    for (const part of step.content) {
-                        if (part.type === "text")
-                            onPart({ type: "text-delta", text: part.text });
-                        if (
-                            part.type === "tool-call" ||
-                            part.type === "tool-result" ||
-                            part.type === "tool-error"
-                        )
-                            onPart(part);
-                    }
-                }
-                reason = result.finishReason;
-                steps = result.steps;
-            }
+            const { finishReason: reason, steps } = await runSdkAgent(agent, {
+                messages,
+                signal,
+                stream,
+                onPart,
+            });
             const stoppedWithoutAnswer = reason === "tool-calls";
             if (stoppedWithoutAnswer) {
                 onPart({

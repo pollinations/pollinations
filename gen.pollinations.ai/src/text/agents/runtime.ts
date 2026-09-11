@@ -6,6 +6,7 @@ import {
     openAIFinishReason,
     strictAgentUsage,
 } from "@shared/agents/model.ts";
+import { runSdkAgent } from "@shared/agents/sdk-runner.ts";
 import type {
     AgentOutput,
     AgentPart,
@@ -187,25 +188,13 @@ export async function runPromptAgent(
         settings,
     );
     try {
-        const result = await agent.generate({
+        const result = await runSdkAgent(agent, {
             messages,
-            abortSignal: signal,
+            signal,
+            stream: false,
+            onPart,
         });
         const limited = hitStepLimit(result.finishReason, result.steps.length);
-        for (const step of result.steps) {
-            for (const part of step.content) {
-                if (part.type === "text") {
-                    onPart({ type: "text-delta", text: part.text });
-                }
-                if (
-                    part.type === "tool-call" ||
-                    part.type === "tool-result" ||
-                    part.type === "tool-error"
-                ) {
-                    onPart(part);
-                }
-            }
-        }
         if (limited) {
             onPart({ type: "text-delta", text: `\n\n${STEP_LIMIT_MESSAGE}` });
         }
@@ -234,22 +223,12 @@ export async function streamPromptAgent(
         settings,
     );
     try {
-        const result = await agent.stream({ messages, abortSignal: signal });
-        for await (const part of result.fullStream) {
-            if (part.type === "error") throw part.error;
-            if (
-                part.type === "text-delta" ||
-                part.type === "tool-call" ||
-                part.type === "tool-result" ||
-                part.type === "tool-error"
-            ) {
-                onPart(part);
-            }
-        }
-        const [reason, steps] = await Promise.all([
-            result.finishReason,
-            result.steps,
-        ]);
+        const { finishReason: reason, steps } = await runSdkAgent(agent, {
+            messages,
+            signal,
+            stream: true,
+            onPart,
+        });
         const limited = hitStepLimit(reason, steps.length);
         if (limited) {
             onPart({ type: "text-delta", text: `\n\n${STEP_LIMIT_MESSAGE}` });

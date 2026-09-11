@@ -837,11 +837,19 @@ describe("tracking observability", () => {
                 new URL(request.url).searchParams.get("name") === "error_event",
         );
         expect(tinybirdRequests).toHaveLength(2);
+        const streamSummary = {
+            chunks: 3,
+            contentChars: "partial output".length,
+            reasoningChars: 0,
+            finishReason: "error",
+            doneSeen: true,
+        };
         await expect(generationRequest?.json()).resolves.toMatchObject({
             responseStatus: 502,
             isBilledUsage: false,
             errorResponseCode: "upstream_finish_reason_error",
             errorMessage: "Upstream ended generation with finish_reason=error",
+            errorDetails: JSON.stringify(streamSummary),
         });
         const errorEvent = (await errorRequest?.json()) as Record<
             string,
@@ -868,6 +876,7 @@ describe("tracking observability", () => {
         });
         const loggedOutput = JSON.parse(errorEvent.upstream_body as string) as {
             streamEvents: unknown[];
+            streamSummary: unknown;
         };
         expect(loggedOutput.streamEvents).toHaveLength(3);
         expect(loggedOutput.streamEvents[1]).toMatchObject({
@@ -878,7 +887,106 @@ describe("tracking observability", () => {
                 },
             ],
         });
+        expect(loggedOutput.streamSummary).toEqual(streamSummary);
         expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
+    it("logs the head and tail of a long stream that ends without usage", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const chunks = Array.from({ length: 50 }, (_, index) =>
+            JSON.stringify({
+                id: `chunk-${index}`,
+                model: "gpt-5-nano",
+                choices: [
+                    {
+                        index: 0,
+                        delta: { content: "x", reasoning_content: "yy" },
+                        finish_reason: null,
+                    },
+                ],
+            }),
+        );
+        const upstreamBody = [...chunks, "[DONE]"]
+            .map((data) => `data: ${data}\n\n`)
+            .join("");
+        const upstream = new Response(upstreamBody, {
+            headers: { "content-type": "text/event-stream" },
+        });
+
+        const ctx = createExecutionContext();
+        const response = await createTrackedResponseApp(
+            async () => {},
+            "generate.text",
+            upstream,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai/gpt-5.4-nano",
+                    stream: true,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        await expect(response.text()).resolves.toBe(upstreamBody);
+        await waitOnExecutionContext(ctx);
+
+        const streamSummary = {
+            chunks: 50,
+            contentChars: 50,
+            reasoningChars: 100,
+            finishReason: null,
+            doneSeen: true,
+        };
+        const generationRequest = tinybirdRequests.find(
+            (request) =>
+                new URL(request.url).searchParams.get("name") ===
+                "generation_event_v2",
+        );
+        await expect(generationRequest?.json()).resolves.toMatchObject({
+            responseStatus: 502,
+            isBilledUsage: false,
+            errorResponseCode: "usage_missing",
+            errorDetails: JSON.stringify(streamSummary),
+        });
+        const errorRequest = tinybirdRequests.find(
+            (request) =>
+                new URL(request.url).searchParams.get("name") === "error_event",
+        );
+        const errorEvent = (await errorRequest?.json()) as Record<
+            string,
+            unknown
+        >;
+        const loggedOutput = JSON.parse(errorEvent.upstream_body as string) as {
+            streamEvents: { id: string }[];
+            streamSummary: unknown;
+        };
+        expect(loggedOutput.streamSummary).toEqual(streamSummary);
+        expect(loggedOutput.streamEvents.map((event) => event.id)).toEqual([
+            "chunk-0",
+            "chunk-1",
+            ...Array.from({ length: 30 }, (_, index) => `chunk-${index + 20}`),
+        ]);
     });
 
     it.each([
@@ -2927,6 +3035,40 @@ describe("trackResponse missing usage", () => {
         expect(tracking.isBilledUsage).toBe(false);
         expect(tracking.cost?.totalCost).toBeGreaterThan(0);
         expect(tracking.errorTracking?.errorResponseCode).toBe("usage_missing");
+        expect(JSON.parse(tracking.errorTracking?.errorDetails ?? "")).toEqual({
+            chunks: 2,
+            contentChars: 0,
+            reasoningChars: 0,
+            finishReason: null,
+            doneSeen: false,
+        });
+    });
+
+    it("records that [DONE] arrived when the validator rejects a stream there", async () => {
+        const chunk = {
+            choices: [{ delta: { content: "partial" }, finish_reason: null }],
+        };
+        // The validator swallows this [DONE]; the tracker must still see it.
+        const upstream = new Blob([
+            `data: ${JSON.stringify(chunk)}\n\ndata: [DONE]\n\n`,
+        ]).stream();
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            new Response(requireChatStreamUsage(upstream), {
+                headers: { "content-type": "text/event-stream" },
+            }),
+            candidateFixture(),
+        );
+        expect(tracking.responseStatus).toBe(502);
+        expect(tracking.errorTracking?.errorResponseCode).toBe("usage_missing");
+        expect(JSON.parse(tracking.errorTracking?.errorDetails ?? "")).toEqual({
+            chunks: 2,
+            contentChars: "partial".length,
+            reasoningChars: 0,
+            finishReason: null,
+            doneSeen: true,
+        });
     });
 
     it.each([

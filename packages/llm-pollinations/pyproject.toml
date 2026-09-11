@@ -16,6 +16,9 @@ dependencies = [
     "httpx>=0.27",
 ]
 
+[project.optional-dependencies]
+test = ["pytest"]
+
 [project.urls]
 Homepage = "https://github.com/pollinations/pollinations/tree/main/packages/llm-pollinations"
 Issues = "https://github.com/pollinations/pollinations/issues"

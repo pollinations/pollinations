@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "Ziban",
+    "url": "https://ziban.pages.dev",
+    "description": "Want to see how a fashion item will fit you before you buy? Ziban uses AI to help you visualize your style, so you can shop with more confidence.",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "ayub-kokabi",
+    "githubUserId": "116794136",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": "ayub_kokabi",
+    "other": null,
+    "submittedDate": "2026-09-11",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14728",
+    "approvedDate": "2026-09-11",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "💬",
     "name": "Talk Ai Companion",
     "url": "https://talkaicompanion.com",

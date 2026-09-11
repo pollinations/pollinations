@@ -4,13 +4,17 @@ import ReactDOM from "react-dom/client";
 import { config } from "./config";
 import { routeTree } from "./routeTree.gen";
 
-const ref = new URLSearchParams(window.location.search).get("ref");
+const search = new URLSearchParams(window.location.search);
+const ref = search.get("ref");
 if (
     ref === "image" ||
     ref === "agent_low_balance_topup" ||
     ref === "agent_low_balance_quests"
 ) {
-    navigator.sendBeacon(`${config.apiBaseUrl}/referral?ref=${ref}`);
+    const query = new URLSearchParams({ ref });
+    const keyId = search.get("key_id");
+    if (keyId) query.set("key_id", keyId);
+    navigator.sendBeacon(`${config.apiBaseUrl}/referral?${query}`);
 }
 
 // Register the router instance for type safety

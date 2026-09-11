@@ -27,6 +27,7 @@ type AgentDialogProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSubmit: (form: AgentFormState) => Promise<void>;
+    onSync?: () => Promise<void>;
     trigger?: ReactNode;
 };
 
@@ -36,16 +37,21 @@ export function AgentDialog({
     open,
     onOpenChange,
     onSubmit,
+    onSync,
     trigger,
 }: AgentDialogProps) {
     const [form, setForm] = useState(() => agentToForm(agent));
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "synced">(
+        "idle",
+    );
 
     useEffect(() => {
         setForm(agentToForm(open ? agent : undefined));
         setError(null);
         setIsSubmitting(false);
+        setSyncStatus("idle");
     }, [open, agent]);
 
     function updateAgentForm(
@@ -71,12 +77,28 @@ export function AgentDialog({
         }
     }
 
+    async function handleSync(): Promise<void> {
+        if (!onSync) return;
+        setSyncStatus("syncing");
+        setError(null);
+        try {
+            await onSync();
+            setSyncStatus("synced");
+        } catch (thrown) {
+            setSyncStatus("idle");
+            setError(
+                thrown instanceof Error ? thrown.message : "Agent sync failed",
+            );
+        }
+    }
+
     const hasRuntimeConfiguration =
         form.type === "code_agent"
             ? form.repository.trim() !== ""
             : form.systemPrompt.trim() !== "" && form.baseModel.trim() !== "";
     const canSubmit =
         !isSubmitting &&
+        syncStatus !== "syncing" &&
         (form.type === "code_agent" ||
             (form.name.trim() !== "" && form.title.trim() !== "")) &&
         hasRuntimeConfiguration;
@@ -214,6 +236,27 @@ export function AgentDialog({
                                 disabled={isSubmitting}
                                 onChange={updateAgentForm}
                             />
+                        )}
+                        {agent?.type === "code_agent" && onSync && (
+                            <div className="flex items-center gap-3">
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    disabled={
+                                        isSubmitting || syncStatus === "syncing"
+                                    }
+                                    onClick={() => void handleSync()}
+                                >
+                                    {syncStatus === "syncing"
+                                        ? "Syncing…"
+                                        : "Sync from GitHub"}
+                                </Button>
+                                {syncStatus === "synced" && (
+                                    <output className="text-sm text-theme-text-muted">
+                                        Synced from GitHub.
+                                    </output>
+                                )}
+                            </div>
                         )}
                     </div>
                 </ScrollArea>

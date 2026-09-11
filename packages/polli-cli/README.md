@@ -138,11 +138,13 @@ polli harness opencode on         # enables the Pollinations OpenCode plugin + d
 polli harness openclaw on         # adds the Pollinations provider + Polli skill to OpenClaw
 polli harness pi on               # native provider, key, startup model, and Polli skill
 polli harness prime on            # native Prime Agent provider support
+polli harness tgpt on             # authenticated Pollinations text models in tgpt
 polli harness <harness> status
 polli harness <harness> off
 ```
 
 Bloom stores its dedicated key in `$BLOOM_HOME/.env` (default `~/.bloom/.env`).
+tgpt stores its provider, dedicated key, and model in `~/.config/tgpt/config.conf`.
 The DSH adapter configures the Pollinations provider, hosted Pollinations MCP,
 and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`). OpenCode uses
 its official plugin; OpenClaw uses `openclaw.json`, while Pi and Prime Agent use

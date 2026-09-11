@@ -103,6 +103,76 @@ describe("PolliProvider", () => {
         });
     });
 
+    it("reports a storage write failure and allows a subsequent login", async () => {
+        const win = stubWindow("https://app.example/");
+        const storage = memoryStorage();
+        const write = vi
+            .spyOn(storage, "setItem")
+            .mockImplementationOnce(() => {
+                throw new Error("Storage full");
+            });
+        let auth: ReturnType<typeof useAuth> | undefined;
+        let login: ReturnType<typeof useAuthActions>["login"] | undefined;
+        function Capture() {
+            auth = useAuth();
+            login = useAuthActions().login;
+            return null;
+        }
+        await act(async () => {
+            create(
+                <PolliProvider appKey="pk_test" storage={storage}>
+                    <Capture />
+                </PolliProvider>,
+            );
+        });
+        await act(async () => {
+            login?.();
+        });
+        expect(auth?.error?.message).toBe("Storage full");
+        expect(storage.snapshot()).toEqual({});
+        expect((win.location as { href: string }).href).toBe(
+            "https://app.example/",
+        );
+        write.mockRestore();
+        await act(async () => {
+            login?.();
+            await vi.waitFor(() =>
+                expect(
+                    new URL((win.location as { href: string }).href).pathname,
+                ).toBe("/authorize"),
+            );
+        });
+        expect(auth?.error).toBeNull();
+    });
+
+    it("exposes blocked browser storage without crashing the provider", async () => {
+        const win = stubWindow("https://app.example/");
+        Object.defineProperty(win, "localStorage", {
+            get() {
+                throw new Error("Storage unavailable");
+            },
+        });
+        let auth: ReturnType<typeof useAuth> | undefined;
+        let login: ReturnType<typeof useAuthActions>["login"] | undefined;
+        function Capture() {
+            auth = useAuth();
+            login = useAuthActions().login;
+            return null;
+        }
+        await act(async () => {
+            create(
+                <PolliProvider appKey="pk_test">
+                    <Capture />
+                </PolliProvider>,
+            );
+        });
+        expect(auth?.error?.message).toBe("Storage unavailable");
+        await act(async () => {
+            login?.();
+        });
+        expect(auth?.error?.message).toBe("Storage unavailable");
+    });
+
     it("ignores repeated login calls while a redirect is pending", async () => {
         stubWindow("https://app.example/");
         const storage = memoryStorage();
@@ -356,6 +426,42 @@ describe("PolliProvider", () => {
         expect(auth.current?.apiKey).toBe(nextKey);
         expect(auth.current?.isHydrated).toBe(true);
         expect(storage.getItem("polli:pk_test:token")).toBe(nextKey);
+    });
+
+    it("finishes a key-check retry even when storage cleanup fails", async () => {
+        stubWindow("https://app.example/");
+        const storage = memoryStorage({ "polli:pk_test:token": "sk_stored" });
+        vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Offline")));
+        const auth: { current: ReturnType<typeof useAuth> | null } = {
+            current: null,
+        };
+        function Probe() {
+            auth.current = useAuth();
+            return null;
+        }
+        await act(async () => {
+            create(
+                <PolliProvider appKey="pk_test" storage={storage}>
+                    <Probe />
+                </PolliProvider>,
+            );
+        });
+        expect(auth.current?.retryConnection).toBeTypeOf("function");
+        storage.removeItem("polli:pk_test:token");
+        vi.spyOn(storage, "removeItem").mockImplementationOnce(() => {
+            throw new Error("Storage unavailable");
+        });
+        await act(async () => {
+            await auth.current?.retryConnection?.();
+        });
+        expect(auth.current?.isHydrated).toBe(true);
+        expect(auth.current?.error?.message).toBe("Storage unavailable");
+        expect(auth.current?.isLoggedIn).toBe(false);
+        await act(async () => {
+            await auth.current?.retryConnection?.();
+        });
+        expect(auth.current?.isHydrated).toBe(true);
+        expect(auth.current?.error).toBeNull();
     });
 
     it("retries a temporary key-check failure with the same key, without restarting OAuth", async () => {

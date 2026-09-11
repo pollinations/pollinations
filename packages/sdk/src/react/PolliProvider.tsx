@@ -250,12 +250,12 @@ export function PolliProvider({
 
     const updateApiKey = useCallback(
         (nextApiKey: string | null) => {
-            keyRevision.current++;
             if (nextApiKey) {
                 storage.setItem(storageKey, nextApiKey);
             } else {
                 storage.removeItem(storageKey);
             }
+            keyRevision.current++;
             setApiKey(nextApiKey);
             setError(null);
             setKeyCheckFailed(false);
@@ -265,49 +265,53 @@ export function PolliProvider({
     );
 
     const checkStoredKey = useCallback(
-        (clearError = true) => {
+        async (clearError = true) => {
             if (keyCheckPending.current) return;
-            const storedKey = storage.getItem(storageKey);
-            if (!storedKey) {
-                updateApiKey(null);
-                return;
-            }
             keyCheckPending.current = true;
             const revision = keyRevision.current;
             if (clearError) setError(null);
             setKeyCheckFailed(false);
             setIsHydrated(false);
-            void fetch(
-                `${resolvedApiBaseUrl.replace(/\/+$/, "")}/account/key`,
-                {
-                    headers: { Authorization: `Bearer ${storedKey}` },
-                },
-            )
-                .then(async (response) => {
-                    if (!response.ok)
-                        throw await pollinationsErrorFromResponse(response);
-                    if (keyRevision.current === revision) setApiKey(storedKey);
-                })
-                .catch((cause) => {
-                    if (keyRevision.current !== revision) return;
-                    if (
-                        cause instanceof PollinationsError &&
-                        cause.status === 401
-                    ) {
+            try {
+                const storedKey = storage.getItem(storageKey);
+                if (!storedKey) {
+                    updateApiKey(null);
+                    return;
+                }
+                const response = await fetch(
+                    `${resolvedApiBaseUrl.replace(/\/+$/, "")}/account/key`,
+                    { headers: { Authorization: `Bearer ${storedKey}` } },
+                );
+                if (!response.ok)
+                    throw await pollinationsErrorFromResponse(response);
+                if (keyRevision.current === revision) setApiKey(storedKey);
+            } catch (cause) {
+                if (keyRevision.current !== revision) return;
+                if (
+                    cause instanceof PollinationsError &&
+                    cause.status === 401
+                ) {
+                    try {
                         storage.removeItem(storageKey);
-                    } else {
-                        setKeyCheckFailed(true);
+                    } catch (storageError) {
                         setError(
-                            cause instanceof Error
-                                ? cause
-                                : new Error("Could not check app connection"),
+                            storageError instanceof Error
+                                ? storageError
+                                : new Error("Could not clear app connection"),
                         );
                     }
-                })
-                .finally(() => {
-                    keyCheckPending.current = false;
-                    if (keyRevision.current === revision) setIsHydrated(true);
-                });
+                } else {
+                    setKeyCheckFailed(true);
+                    setError(
+                        cause instanceof Error
+                            ? cause
+                            : new Error("Could not check app connection"),
+                    );
+                }
+            } finally {
+                keyCheckPending.current = false;
+                if (keyRevision.current === revision) setIsHydrated(true);
+            }
         },
         [storage, storageKey, resolvedApiBaseUrl, updateApiKey],
     );
@@ -317,64 +321,65 @@ export function PolliProvider({
         if (typeof window === "undefined" || hydrationStarted.current) return;
         hydrationStarted.current = true;
 
-        const result = consumeOAuthCallback(
-            window.location,
-            storage,
-            stateStorageKey,
-        );
-        const returnPath = storage.getItem(returnPathStorageKey);
-        const callbackUrl = result.cleanedUrl
-            ? (returnPath ?? result.cleanedUrl)
-            : null;
-        if (callbackUrl) window.history.replaceState({}, "", callbackUrl);
-
-        if (result.invalidState) {
-            console.warn(
-                "[PolliProvider] dropping auth response with missing or mismatched state",
+        void (async () => {
+            const result = consumeOAuthCallback(
+                window.location,
+                storage,
+                stateStorageKey,
             );
-            setError(new Error("Invalid OAuth state"));
-        }
-        if (result.error) {
-            console.warn(
-                `[PolliProvider] auth error: ${result.error}${
-                    result.errorDescription
-                        ? ` — ${result.errorDescription}`
-                        : ""
-                }`,
-            );
-            setError(new Error(result.errorDescription ?? result.error));
-            storage.removeItem(verifierStorageKey);
-            storage.removeItem(returnPathStorageKey);
-        }
+            const returnPath = storage.getItem(returnPathStorageKey);
+            const callbackUrl = result.cleanedUrl
+                ? (returnPath ?? result.cleanedUrl)
+                : null;
+            if (callbackUrl) window.history.replaceState({}, "", callbackUrl);
 
-        const storedKey = storage.getItem(storageKey);
-        if (!result.code) {
-            if (storedKey) {
-                checkStoredKey(false);
+            if (result.invalidState) {
+                console.warn(
+                    "[PolliProvider] dropping auth response with missing or mismatched state",
+                );
+                setError(new Error("Invalid OAuth state"));
+            }
+            if (result.error) {
+                console.warn(
+                    `[PolliProvider] auth error: ${result.error}${
+                        result.errorDescription
+                            ? ` — ${result.errorDescription}`
+                            : ""
+                    }`,
+                );
+                setError(new Error(result.errorDescription ?? result.error));
+                storage.removeItem(verifierStorageKey);
+                storage.removeItem(returnPathStorageKey);
+            }
+
+            const storedKey = storage.getItem(storageKey);
+            if (!result.code) {
+                if (storedKey) {
+                    await checkStoredKey(false);
+                    return;
+                }
+                setIsHydrated(true);
                 return;
             }
-            setIsHydrated(true);
-            return;
-        }
 
-        const verifier = storage.getItem(verifierStorageKey);
-        const redirectUrl = currentRedirectUrl();
-        storage.removeItem(verifierStorageKey);
-        storage.removeItem(returnPathStorageKey);
-        if (!verifier || !redirectUrl) {
-            setError(new Error("Missing PKCE verifier"));
-            setIsHydrated(true);
-            return;
-        }
+            const verifier = storage.getItem(verifierStorageKey);
+            const redirectUrl = currentRedirectUrl();
+            storage.removeItem(verifierStorageKey);
+            storage.removeItem(returnPathStorageKey);
+            if (!verifier || !redirectUrl) {
+                setError(new Error("Missing PKCE verifier"));
+                setIsHydrated(true);
+                return;
+            }
 
-        void exchangeAuthorizationCode({
-            enterUrl,
-            appKey,
-            redirectUrl,
-            code: result.code,
-            verifier,
-        })
-            .then(updateApiKey)
+            await exchangeAuthorizationCode({
+                enterUrl,
+                appKey,
+                redirectUrl,
+                code: result.code,
+                verifier,
+            }).then(updateApiKey);
+        })()
             .catch((cause) => {
                 setError(
                     cause instanceof Error
@@ -402,43 +407,50 @@ export function PolliProvider({
             const returnPath = currentReturnPath();
             if (!redirectUrl || !returnPath) return;
             loginStarted.current = true;
-            const extraPermissions = request?.permissions;
-            const perms: AccountPermission[] =
-                extraPermissions && extraPermissions.length > 0
-                    ? Array.from(
-                          new Set([...defaultPermissions, ...extraPermissions]),
-                      )
-                    : [...defaultPermissions];
-            const state = crypto.randomUUID();
-            const verifier = createPkceVerifier();
-            storage.setItem(stateStorageKey, state);
-            storage.setItem(verifierStorageKey, verifier);
-            storage.setItem(returnPathStorageKey, returnPath);
-            void createPkceChallenge(verifier)
-                .then((codeChallenge) => {
-                    window.location.href = buildAuthorizeUrl({
-                        enterUrl,
-                        appKey,
-                        permissions: perms,
-                        redirectUrl,
-                        state,
-                        codeChallenge,
-                        models: request?.models ?? defaultModels,
-                        budget: request?.budget ?? defaultBudget,
-                        expiry: request?.expiry ?? defaultExpiry,
-                    });
-                })
-                .catch((cause) => {
-                    loginStarted.current = false;
+            setError(null);
+            void (async () => {
+                const extraPermissions = request?.permissions;
+                const perms: AccountPermission[] =
+                    extraPermissions && extraPermissions.length > 0
+                        ? Array.from(
+                              new Set([
+                                  ...defaultPermissions,
+                                  ...extraPermissions,
+                              ]),
+                          )
+                        : [...defaultPermissions];
+                const state = crypto.randomUUID();
+                const verifier = createPkceVerifier();
+                storage.setItem(stateStorageKey, state);
+                storage.setItem(verifierStorageKey, verifier);
+                storage.setItem(returnPathStorageKey, returnPath);
+                const codeChallenge = await createPkceChallenge(verifier);
+                window.location.href = buildAuthorizeUrl({
+                    enterUrl,
+                    appKey,
+                    permissions: perms,
+                    redirectUrl,
+                    state,
+                    codeChallenge,
+                    models: request?.models ?? defaultModels,
+                    budget: request?.budget ?? defaultBudget,
+                    expiry: request?.expiry ?? defaultExpiry,
+                });
+            })().catch((cause) => {
+                loginStarted.current = false;
+                try {
                     storage.removeItem(stateStorageKey);
                     storage.removeItem(verifierStorageKey);
                     storage.removeItem(returnPathStorageKey);
-                    setError(
-                        cause instanceof Error
-                            ? cause
-                            : new Error("Could not start authorization"),
-                    );
-                });
+                } catch {
+                    // Storage itself may be the failure; still expose it.
+                }
+                setError(
+                    cause instanceof Error
+                        ? cause
+                        : new Error("Could not start authorization"),
+                );
+            });
         },
         [
             enterUrl,

@@ -20,6 +20,7 @@ export async function runSdkAgent<TOOLS extends ToolSet>(
         const result = await agent.stream({ messages, abortSignal: signal });
         for await (const part of result.fullStream) {
             if (part.type === "error") throw part.error;
+            if (part.type === "tool-result" && part.preliminary) continue;
             if (
                 part.type === "text-delta" ||
                 part.type === "tool-call" ||

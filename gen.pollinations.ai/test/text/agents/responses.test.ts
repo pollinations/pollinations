@@ -279,7 +279,8 @@ describe("shared agent Responses adapter", () => {
             },
         );
         expect(response.status).toBe(200);
-        await expect(response.json()).resolves.toMatchObject({
+        const body = await response.json<{ output: unknown[] }>();
+        expect(body).toMatchObject({
             output: [
                 { type: "function_call", name: "lookup" },
                 {
@@ -288,6 +289,26 @@ describe("shared agent Responses adapter", () => {
                 },
             ],
         });
+        const replay = await handleAgentResponsesRequest(
+            request({ input: body.output }),
+            new AbortController().signal,
+            async ({ messages, onPart }) => {
+                expect(messages[1]).toMatchObject({
+                    role: "tool",
+                    content: [
+                        {
+                            output:
+                                typeof toolOutput === "string"
+                                    ? { type: "text", value: toolOutput }
+                                    : { type: "json", value: toolOutput },
+                        },
+                    ],
+                });
+                onPart({ type: "text-delta", text: "Remembered." });
+                return output;
+            },
+        );
+        expect(replay.status).toBe(200);
     });
 
     it("aborts the active run when the client cancels its response stream", async () => {

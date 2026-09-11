@@ -1,4 +1,5 @@
 import { runtimeModule, sdkModules } from "virtual:code-agent-sdk";
+import { jsonSchema, tool } from "ai";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createWorker as createComposioWorker } from "../../apps/composio-mcp/worker.js";
 import {
@@ -67,12 +68,15 @@ describe("code agent AI SDK", () => {
             });
         });
         vi.stubGlobal("fetch", fetchMock);
-        const worker = createCodeAgentWorker(({ model, respond }) =>
-            respond({
-                model: model("test-model"),
-                instructions: "Answer briefly.",
-                temperature: 1,
-            }),
+        const worker = createCodeAgentWorker(
+            async ({ request, model, respond }) => {
+                expect(await request.json()).toMatchObject({ input: "Hello" });
+                return respond({
+                    model: model("test-model"),
+                    instructions: "Answer briefly.",
+                    temperature: 1,
+                });
+            },
         );
         const response = await worker.fetch(
             request({
@@ -96,6 +100,168 @@ describe("code agent AI SDK", () => {
             usage: { input_tokens: 4, output_tokens: 2, total_tokens: 6 },
         });
         expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+        { stream: false, fail: false },
+        { stream: true, fail: false },
+        { stream: false, fail: true },
+        { stream: true, fail: true },
+    ])("replays final tool output without re-execution (stream:$stream, fail:$fail)", async ({
+        stream,
+        fail,
+    }) => {
+        let modelCalls = 0;
+        let executions = 0;
+        let conversions = 0;
+        vi.stubGlobal("fetch", async (_url, init) => {
+            const body = JSON.parse(init.body);
+            modelCalls++;
+            if (modelCalls > 1) {
+                const result = body.messages.find(
+                    (message) => message.role === "tool",
+                ).content;
+                if (fail) expect(result).toContain("Lookup unavailable");
+                else expect(result).toBe("lookup-call: weather = 42");
+            }
+            const message =
+                modelCalls === 1
+                    ? {
+                          role: "assistant",
+                          content: null,
+                          tool_calls: [
+                              {
+                                  id: "lookup-call",
+                                  type: "function",
+                                  function: {
+                                      name: "lookup",
+                                      arguments: '{"topic":"weather"}',
+                                  },
+                              },
+                          ],
+                      }
+                    : { role: "assistant", content: "Done." };
+            const finishReason = modelCalls === 1 ? "tool_calls" : "stop";
+            const usage = {
+                prompt_tokens: 4,
+                completion_tokens: 2,
+                total_tokens: 6,
+            };
+            if (!body.stream)
+                return Response.json({
+                    choices: [
+                        { index: 0, message, finish_reason: finishReason },
+                    ],
+                    usage,
+                });
+            const delta = {
+                ...message,
+                ...(message.tool_calls
+                    ? {
+                          tool_calls: message.tool_calls.map((call, index) => ({
+                              ...call,
+                              index,
+                          })),
+                      }
+                    : {}),
+            };
+            return new Response(
+                `data: ${JSON.stringify({ choices: [{ index: 0, delta, finish_reason: null }] })}\n\n` +
+                    `data: ${JSON.stringify({ choices: [{ index: 0, delta: {}, finish_reason: finishReason }], usage })}\n\n` +
+                    "data: [DONE]\n\n",
+                { headers: { "content-type": "text/event-stream" } },
+            );
+        });
+        const worker = createCodeAgentWorker(({ model, respond }) =>
+            respond({
+                model: model("test-model"),
+                tools: {
+                    lookup: tool({
+                        description: "Look up a topic",
+                        inputSchema: jsonSchema<{ topic: string }>({
+                            type: "object",
+                            properties: { topic: { type: "string" } },
+                            required: ["topic"],
+                        }),
+                        async *execute() {
+                            executions++;
+                            if (fail) throw new Error("Lookup unavailable");
+                            yield { answer: 0 };
+                            yield { answer: 42 };
+                        },
+                        async toModelOutput({ toolCallId, input, output }) {
+                            conversions++;
+                            return {
+                                type: "text",
+                                value: `${toolCallId}: ${input.topic} = ${output.answer.toString()}`,
+                            };
+                        },
+                    }),
+                },
+            }),
+        );
+        async function responseBody(response: Response) {
+            expect(response.status).toBe(200);
+            if (!stream) return response.json();
+            const events = (await response.text())
+                .split("\n\n")
+                .flatMap((block) => {
+                    const data = block
+                        .split("\n")
+                        .find((line) => line.startsWith("data: "))
+                        ?.slice(6);
+                    return data && data !== "[DONE]" ? [JSON.parse(data)] : [];
+                });
+            expect(events.at(-1)?.type).toBe("response.completed");
+            return events.at(-1).response;
+        }
+        const first = await responseBody(
+            await worker.fetch(
+                request({
+                    model: "example/agent",
+                    input: "Look up weather",
+                    stream,
+                }),
+                runtimeEnv,
+            ),
+        );
+        expect(
+            first.output.filter((item) => item.type === "function_call_output"),
+        ).toEqual([
+            expect.objectContaining({
+                call_id: "lookup-call",
+                output: fail
+                    ? JSON.stringify({
+                          isError: true,
+                          content: [
+                              { type: "text", text: "Lookup unavailable" },
+                          ],
+                      })
+                    : '{"answer":42}',
+            }),
+        ]);
+        const replay = await responseBody(
+            await worker.fetch(
+                request({
+                    model: "example/agent",
+                    input: [
+                        ...first.output,
+                        { role: "user", content: "Remember the result" },
+                    ],
+                    stream,
+                }),
+                runtimeEnv,
+            ),
+        );
+        expect(replay.output).toEqual([
+            expect.objectContaining({
+                type: "message",
+                content: [expect.objectContaining({ text: "Done." })],
+            }),
+        ]);
+        expect(modelCalls).toBe(3);
+        expect(executions).toBe(1);
+        expect(conversions).toBe(fail ? 0 : 2);
     });
 
     it.each([

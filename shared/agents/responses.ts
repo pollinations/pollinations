@@ -3,6 +3,7 @@ import {
     type ModelMessage,
     type ToolCallPart,
     type ToolResultPart,
+    type ToolSet,
 } from "ai";
 import { z } from "zod";
 import {
@@ -33,6 +34,12 @@ type PromptCacheProviderOptions = {
         prompt_cache_breakpoint: { mode: "explicit" };
     };
 };
+
+// collectOutput serializes executed tool failures in this shape.
+const ToolErrorOutputSchema = z.object({
+    isError: z.literal(true),
+    content: z.array(z.object({ type: z.literal("text"), text: z.string() })),
+});
 
 export class AgentResponsesRequestError extends Error {
     constructor(
@@ -167,7 +174,10 @@ function userContent(content: unknown): UserMessage["content"] {
     }) as UserMessage["content"];
 }
 
-function inputMessages(request: CreateResponseRequest): ModelMessage[] {
+async function inputMessages(
+    request: CreateResponseRequest,
+    tools?: ToolSet,
+): Promise<ModelMessage[]> {
     const messages: ModelMessage[] = [];
     if (request.instructions) {
         messages.push({ role: "system", content: request.instructions });
@@ -272,13 +282,34 @@ function inputMessages(request: CreateResponseRequest): ModelMessage[] {
                     "input.output",
                 );
             }
+            let modelOutput: ToolResultPart["output"] =
+                typeof output === "string"
+                    ? { type: "text", value: output }
+                    : { type: "json", value: output };
+            const toModelOutput = tools?.[call.name]?.toModelOutput;
+            const toolError = ToolErrorOutputSchema.safeParse(output);
+            if (isMcp) {
+                modelOutput = safeMcpModelOutput({ output });
+            } else if (toolError.success) {
+                // Like the SDK, bypass the successful-output formatter on errors.
+                modelOutput = {
+                    type: "error-text",
+                    value: toolError.data.content
+                        .map((part) => part.text)
+                        .join("\n"),
+                };
+            } else if (toModelOutput) {
+                modelOutput = await toModelOutput({
+                    toolCallId: call.call_id,
+                    input: JSON.parse(call.arguments),
+                    output,
+                });
+            }
             results.push({
                 type: "tool-result",
                 toolCallId: call.call_id,
                 toolName: call.name,
-                output: isMcp
-                    ? safeMcpModelOutput({ output })
-                    : { type: "json", value: output },
+                output: modelOutput,
             });
             pendingCalls.delete(call.call_id);
             continue;
@@ -674,10 +705,12 @@ export async function handleAgentResponsesRequest(
     request: CreateResponseRequest,
     signal: AbortSignal,
     runner: AgentRunner,
+    tools?: ToolSet,
 ): Promise<Response> {
     try {
         signal.throwIfAborted();
-        const messages = inputMessages(request);
+        const messages = await inputMessages(request, tools);
+        signal.throwIfAborted();
         const settings = requestSettings(request);
         if (request.stream) {
             return streamResponse(request, runner, messages, settings, signal);

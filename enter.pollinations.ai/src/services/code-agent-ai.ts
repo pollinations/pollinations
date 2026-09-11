@@ -40,6 +40,8 @@ export function createCodeAgentAI(
     pollinations: typeof fetch,
     mcp: Mcp,
 ) {
+    // The agent may read its own request before calling respond().
+    const responseRequest = request.clone();
     const model = createAgentModelProvider({
         baseURL: `${baseUrl.replace(/\/$/, "")}/v1`,
         fetch: pollinations,
@@ -72,7 +74,7 @@ export function createCodeAgentAI(
     async function respond(config: ToolLoopAgentSettings<never, ToolSet>) {
         let body: unknown;
         try {
-            body = await request.json();
+            body = await responseRequest.json();
         } catch {
             return Response.json(
                 {
@@ -157,7 +159,12 @@ export function createCodeAgentAI(
                 toolCallCounts,
             };
         };
-        return handleAgentResponsesRequest(parsed.data, request.signal, run);
+        return handleAgentResponsesRequest(
+            parsed.data,
+            request.signal,
+            run,
+            config.tools,
+        );
     }
 
     return { model, respond };

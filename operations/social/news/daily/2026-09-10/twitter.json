@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-09-10",
+  "period_start": "2026-09-10",
+  "period_end": "2026-09-10",
+  "generated_at": "2026-09-11T06:29:09.448987+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-10/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: StoryCraft AI + YouTube Transcription AI in writing; explicit chat limits and tool settings now stick; Polli CLI can wire Bloom into text. Also cut inline-image memory and preserved KPI secrets on deploy. 10 PRs, fewer small hauntings."
+}

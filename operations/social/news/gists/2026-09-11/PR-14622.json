@@ -1,0 +1,35 @@
+{
+  "pr_number": 14622,
+  "title": "feat: add managed code agents",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14622",
+  "merged_at": "2026-09-11T16:51:05Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds code agents to the existing API, model registry, dashboard, and Polli CLI (0.1.14).\n- Deploys root `agent.ts` from a public GitHub repository into Workers for Platforms; transpiles TypeScript, pins commits, and derives listing identity from GitHub.\n- Bundles the pinned AI SDK with caller-funded `model()`, `respond(config)`, and `mcp.tools()` helpers without exposing reusable credentials.\n- Shares SDK execution, Responses formatting, and the Chat adapter with prompt agents. Preserves readable request bodies, final tool results, and custom result formatting during replay, including tool failures.\n- Rate-limited sync refreshes source, GitHub metadata, and the platform runtime, including unchanged source commits. Raw Worker handlers remain supported.\n\nActivation uses the separately provisioned `CODE_AGENT_DEPLOY_API_TOKEN`; no secrets are created or modified.\n\nIndependent fixes: #14709 (unknown costs), #14710 (cancel publication), #14711 (error messages). Staging OpenWebUI: #14685. Future useChat transport: #14703.\n\nValidation: 125 targeted runtime, SDK-packaging, and CLI tests; Gen/Enter TypeScript checks; CLI and staging builds pass. Latest SDK changes are not deployed yet.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Agents, now with roots",
+    "blurb": "Code agents can now grow from a public GitHub repo into managed API endpoints. Plant an agent.ts at the root, and the hive handles the Workers runtime, pinned source, and model plumbing.",
+    "summary": "Added managed code agents across the API, model registry, dashboard, and Polli CLI 0.1.14, deploying a public GitHub repository’s root agent.ts as a commit-pinned Workers for Platforms runtime with bundled caller-funded AI SDK helpers.",
+    "impact": "Developers can publish and refresh GitHub-backed TypeScript agents from the dashboard or CLI, while retaining model(), respond(config), and mcp.tools() support plus consistent chat and Responses-format tool results.",
+    "keywords": [
+      "code agents",
+      "GitHub",
+      "Workers for Platforms",
+      "AI SDK",
+      "MCP",
+      "Polli CLI",
+      "community endpoints"
+    ],
+    "visual_concept": "A GitHub-shaped seed packet labeled agent.ts grows into a small code-plant connected to a cozy Worker terminal. Polli, wearing a tiny developer cap, tends the plant while the eager CRT Monitor Robot watches a commit-pinned branch become a managed agent endpoint; small flowers and vines make the deployment feel cultivated rather than industrial.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny developer cap and watering a GitHub-shaped seed packet labeled “agent.ts” as it grows into a code-plant plugged into a retro Worker terminal; a cute chunky CRT monitor robot eagerly holds a pinned commit tag beside it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, pixel flowers and vines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-11/PR-14622.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny developer cap and watering a GitHub-shaped seed packet labeled “agent.ts” as it grows into a code-plant plugged into a retro Worker terminal; a cute chunky CRT monitor robot eagerly holds a pinned commit tag beside it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, pixel flowers and vines, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-11T16:52:20.581745+00:00"
+}

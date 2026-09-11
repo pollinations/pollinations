@@ -229,15 +229,18 @@ test("DeepSeek V4 models are billed at provider cost", () => {
 
     const expectedProviders = {
         "deepseek/deepseek-v4-flash": "fireworks",
+        "deepseek/deepseek-v4.1-flash": "fireworks",
         "deepseek/deepseek-v4-pro": "fireworks",
     } as const;
     const expectedPaidOnly = {
         "deepseek/deepseek-v4-flash": undefined,
+        "deepseek/deepseek-v4.1-flash": undefined,
         "deepseek/deepseek-v4-pro": undefined,
     } as const;
 
     for (const model of [
         "deepseek/deepseek-v4-flash",
+        "deepseek/deepseek-v4.1-flash",
         "deepseek/deepseek-v4-pro",
     ] as const) {
         const definition = getRegistryModelDefinition(model);

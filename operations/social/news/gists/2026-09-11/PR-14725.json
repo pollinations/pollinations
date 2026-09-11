@@ -1,0 +1,36 @@
+{
+  "pr_number": 14725,
+  "title": "Add Talk Ai Companion to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14725",
+  "merged_at": "2026-09-11T13:17:41Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Talk Ai Companion](https://talkaicompanion.com) to chat\n- # Talk Talk (talkaicompanion.com) is a free AI girlfriend & AI companion chat app — talk online with 7 Indian AI companions who remember you, make live voice calls, and live inside 4 interactive stori\n\nFixes #14720",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Seven new seats at chat",
+    "blurb": "Talk AI Companion has joined the chat garden. Seven Indian AI companions, memory, live voice calls, and interactive stories now have a path into the hive.",
+    "summary": "Added Talk AI Companion (talkaicompanion.com) to the app registry and README, bringing its seven Indian AI companion chats, persistent memory, live voice calls, and four interactive stories into the chat ecosystem.",
+    "impact": "People browsing Pollinations-connected apps can now discover Talk AI Companion as a free companion-chat experience with remembered conversations and live voice features.",
+    "keywords": [
+      "community",
+      "chat",
+      "AI companions",
+      "app registry",
+      "voice calls",
+      "interactive stories"
+    ],
+    "visual_concept": "Depict Polli welcoming seven small, friendly companion-chat portrait sprites into a cozy garden chat room. A retro terminal and glowing speech bubbles represent remembered conversations and voice calls, while storybooks and flowering vines suggest the interactive stories; keep the companions warm and non-romantic rather than depicting dating imagery.",
+    "image_prompt": "A cozy pixel-art garden chat room where Polli, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blushes, light-blue rounded wings, and a tiny host headset, warmly welcomes seven friendly companion portrait sprites around a lime green (#ecf874) CRT chat terminal; speech bubbles, a small microphone, storybooks, code-plants, and flowers show memory, live calls, and interactive stories. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-11/PR-14725.jpg",
+    "prompt": "A cozy pixel-art garden chat room where Polli, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blushes, light-blue rounded wings, and a tiny host headset, warmly welcomes seven friendly companion portrait sprites around a lime green (#ecf874) CRT chat terminal; speech bubbles, a small microphone, storybooks, code-plants, and flowers show memory, live calls, and interactive stories. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-11T13:18:56.459788+00:00",
+  "app_name": "Talk Ai Companion",
+  "app_url": "https://talkaicompanion.com"
+}

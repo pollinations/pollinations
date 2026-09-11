@@ -1,0 +1,34 @@
+{
+  "pr_number": 14640,
+  "title": "feat: expose chat model parameters",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/14640",
+  "merged_at": "2026-09-11T21:36:53Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #14599\n\n- Adds registry-backed `supported_parameters` for Chat models, describing what works through Pollinations rather than upstream provider claims.\n- Publishes metadata through `/models`, `/text/models`, `/v1/models`, and alias lookup.\n- Documents conditional Claude sampling and keeps native Responses behavior distinct.\n- Maintainer follow-up (stacked from tomdacatto/pollinations#2): extends coverage to all 84 public Chat models and 34 fallback routes using shared parameter arrays, verified against the request transforms and targeted live probes after #14664.\n- `default_parameters` was dropped as low-signal (65 of 84 entries only said `stream: false`); runtime defaults are unchanged.\n\nTests: `npx vitest run test/models-retrieve.test.ts`, typecheck, Biome, and 1,431 parameter-forwarding checks through the Gen transforms.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The models show their knobs",
+    "blurb": "Chat models now carry an honest little map of the controls Pollinations actually supports, rather than repeating whatever their upstream cousins claim. Eighty-four models and 34 fallback routes have labelled their dials for the hive.",
+    "summary": "Added registry-backed supported_parameters metadata for all 84 public Chat models and 34 fallback routes, publishing Pollinations-verified parameter support through /models, /text/models, /v1/models, and alias lookup while documenting conditional Claude sampling and preserving native Responses behavior.",
+    "impact": "Developers can now discover which parameters—including conditional Claude sampling—will work for a specific Pollinations chat model before sending requests, with the same metadata available from every model-listing endpoint and alias lookup.",
+    "keywords": [
+      "chat-models",
+      "model-registry",
+      "supported-parameters",
+      "api-metadata",
+      "claude",
+      "openai-compatibility"
+    ],
+    "visual_concept": "A cozy model-library garden where verified parameter tags are physical control dials on seed packets or model cards. Polli, wearing tiny librarian glasses, carefully compares a glowing model card with a set of clearly labelled knobs while the eager CRT Monitor Robot displays a neat /v1/models catalogue; code-plants and flowers show that the metadata is growing from one shared registry.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-library: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses and carefully files glowing model cards with small pixel dials labelled \"PARAMS\" beside a cute chunky CRT-monitor robot showing \"/v1/models\". Lime green (#ecf874) model-card glow is prominent among lavender, mint, peach, and warm-cream code-plants and flowers, with dark purple (#110518) outlines; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT scanlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-11/PR-14640.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-library: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses and carefully files glowing model cards with small pixel dials labelled \"PARAMS\" beside a cute chunky CRT-monitor robot showing \"/v1/models\". Lime green (#ecf874) model-card glow is prominent among lavender, mint, peach, and warm-cream code-plants and flowers, with dark purple (#110518) outlines; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT scanlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-11T21:38:12.770195+00:00"
+}

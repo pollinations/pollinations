@@ -741,31 +741,7 @@ function ConnectLab() {
                         <span>Connect</span>
                     </div>
                     <div className="connect-navigation">
-                        <nav
-                            className="connect-entrances"
-                            aria-label="Choose a flow"
-                        >
-                            <span className="connect-navigation-label">
-                                Flow
-                            </span>
-                            <div className="connect-navigation-buttons">
-                                {entrances.map((item) => (
-                                    <TabButton
-                                        key={item.id}
-                                        size="sm"
-                                        variant="ghost"
-                                        active={entrance.world === item.id}
-                                        onClick={() => chooseFlow(item.id)}
-                                    >
-                                        {item.label}
-                                    </TabButton>
-                                ))}
-                            </div>
-                        </nav>
                         <nav className="connect-view-tabs" aria-label="View">
-                            <span className="connect-navigation-label">
-                                View
-                            </span>
                             <div className="connect-navigation-buttons">
                                 <TabButton
                                     size="sm"
@@ -804,55 +780,76 @@ function ConnectLab() {
                         <ColorModeToggle />
                     </div>
                 </div>
-                {(entrance.world === "app" || entrance.world === "account") && (
+                <div className="connect-header-flows">
                     <nav
-                        className="connect-subflows"
-                        aria-label={
-                            entrance.world === "app"
-                                ? "Apps flow"
-                                : "Dashboard flow"
-                        }
+                        className="connect-entrances"
+                        aria-label="Choose a flow"
                     >
-                        <TabButton
-                            size="sm"
-                            variant="ghost"
-                            active={entrance.section === "main"}
-                            onClick={() =>
-                                setEntrance((old) => ({
-                                    ...old,
-                                    section: "main",
-                                    revision: old.revision + 1,
-                                }))
-                            }
-                        >
-                            {entrance.world === "app" ? "Login" : "Account"}
-                        </TabButton>
-                        <TabButton
-                            size="sm"
-                            variant="ghost"
-                            active={entrance.section === "topup"}
-                            ariaLabel={
-                                entrance.world === "app"
-                                    ? "Top up (Alpha)"
-                                    : "Top up"
-                            }
-                            onClick={() =>
-                                setEntrance((old) => ({
-                                    ...old,
-                                    section: "topup",
-                                    revision: old.revision + 1,
-                                }))
-                            }
-                        >
-                            Top up
-                            {entrance.world === "app" && (
-                                <span className="connect-alpha-badge">
-                                    Alpha
-                                </span>
-                            )}
-                        </TabButton>
+                        <div className="connect-navigation-buttons">
+                            {entrances.map((item) => (
+                                <TabButton
+                                    key={item.id}
+                                    size="sm"
+                                    variant="ghost"
+                                    active={entrance.world === item.id}
+                                    onClick={() => chooseFlow(item.id)}
+                                >
+                                    {item.label}
+                                </TabButton>
+                            ))}
+                        </div>
                     </nav>
-                )}
+                    {(entrance.world === "app" ||
+                        entrance.world === "account") && (
+                        <nav
+                            className="connect-subflows"
+                            aria-label={
+                                entrance.world === "app"
+                                    ? "Apps flow"
+                                    : "Dashboard flow"
+                            }
+                        >
+                            <TabButton
+                                size="sm"
+                                variant="ghost"
+                                active={entrance.section === "main"}
+                                onClick={() =>
+                                    setEntrance((old) => ({
+                                        ...old,
+                                        section: "main",
+                                        revision: old.revision + 1,
+                                    }))
+                                }
+                            >
+                                {entrance.world === "app" ? "Login" : "Account"}
+                            </TabButton>
+                            <TabButton
+                                size="sm"
+                                variant="ghost"
+                                active={entrance.section === "topup"}
+                                ariaLabel={
+                                    entrance.world === "app"
+                                        ? "Top up (Alpha)"
+                                        : "Top up"
+                                }
+                                onClick={() =>
+                                    setEntrance((old) => ({
+                                        ...old,
+                                        section: "topup",
+                                        revision: old.revision + 1,
+                                    }))
+                                }
+                            >
+                                Top up
+                                {entrance.world === "app" && (
+                                    <span className="connect-alpha-badge">
+                                        Alpha
+                                    </span>
+                                )}
+                            </TabButton>
+                        </nav>
+                    )}
+                </div>
             </header>
             <div className="connect-journey-view" hidden={view !== "journey"}>
                 <Journey

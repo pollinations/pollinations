@@ -83,6 +83,15 @@ To deploy the newest default-branch revision after a push, add this step to a Gi
 
 The sync route needs no secret and cannot change which repository is deployed. It redeploys the current commit with the latest bundled runtime even when the source is unchanged, and is limited to once every 30 seconds.
 
+## Code agent examples
+
+Fork an example, then enter **your fork's URL** when creating a code agent in the dashboard. Each example is a separate repository with `agent.ts` at its root:
+
+- [MCP tool loop](https://github.com/voodoohop/pollinations-code-agent-example) — a model that can call Pollinations MCP tools using the AI SDK.
+- [Streaming timer](https://github.com/voodoohop/pollinations-timer-agent) — streams a countdown without calling an AI model.
+
+Edit `agent.ts` in your fork to customize it. If you keep the example's sync workflow, replace its agent ID and API host with those for your own registration before enabling it.
+
 ## Create with the CLI
 
 Create a prompt agent and its callable model listing in one command:

@@ -1,4 +1,4 @@
-import { FieldStack, Input } from "@pollinations/ui";
+import { FieldStack, InlineLink, Input } from "@pollinations/ui";
 import type { AgentFormState } from "./types.ts";
 
 type CodeAgentFieldsProps = {
@@ -15,7 +15,21 @@ export function CodeAgentFields({
     return (
         <FieldStack
             label="GitHub repository"
-            helper="Public repository with agent.ts at its root."
+            helper={
+                <>
+                    Public repository with agent.ts at its root.{" "}
+                    <InlineLink
+                        href="https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md#code-agent-examples"
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        Fork an example
+                    </InlineLink>
+                    .
+                    <br />
+                    Private GitHub repositories are coming soon.
+                </>
+            }
             alignLabelRow
         >
             <Input

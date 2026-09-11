@@ -395,7 +395,7 @@ it("shows the shared app sign-in UI once while keeping each visible sign-in stat
     const pages = galleryPagesForFlow("app", "main");
     const signIn = pages.filter((entry) => entry.id.startsWith("sign-in"));
     expect(signIn.map((entry) => entry.title)).toEqual([
-        "Sign in to Pollinations · OAuth, BYOP & new accounts",
+        "Sign in to Pollinations · Ready",
         "Sign in to Pollinations · Checking app",
         "Sign in to Pollinations · Signing in",
         "Sign in to Pollinations · Sign-in failed",

@@ -1,3 +1,8 @@
+import {
+    DEFAULT_CONSENT_BUDGET,
+    DEFAULT_CONSENT_EXPIRY_DAYS,
+} from "@shared/auth/authorize-config.ts";
+
 export const defaultAppPreview: Record<string, string> = {
     protocol: "oauth",
     request_scope: "profile usage keys",
@@ -5,6 +10,14 @@ export const defaultAppPreview: Record<string, string> = {
     request_earnings: "1",
     sim_paid: "10",
     sim_quest: "5",
+};
+export const defaultPreviewRequest = {
+    request_scope: defaultAppPreview.request_scope,
+    request_models: defaultAppPreview.request_models,
+    request_budget: String(DEFAULT_CONSENT_BUDGET),
+    request_expiry: String(DEFAULT_CONSENT_EXPIRY_DAYS),
+    request_earnings: defaultAppPreview.request_earnings,
+    request_attribution: "1",
 };
 export type AppPreviewProps = {
     appPreview: Record<string, string>;
@@ -34,15 +47,15 @@ export const previewPollenOptions = [
 ] as const;
 
 export function readPreviewRequest(query: URLSearchParams) {
+    const get = (key: keyof typeof defaultPreviewRequest) =>
+        query.get(key) ?? defaultPreviewRequest[key];
     return {
-        scopes: (query.get("request_scope") ?? "profile usage keys")
-            .split(/\s+/)
-            .filter(Boolean),
-        models: query.get("request_models") ?? "all",
-        budget: query.get("request_budget") ?? "5",
-        expiry: query.get("request_expiry") ?? "7",
-        earnings: query.get("request_earnings") !== "0",
-        attribution: query.get("request_attribution") !== "0",
+        scopes: get("request_scope").split(/\s+/).filter(Boolean),
+        models: get("request_models"),
+        budget: get("request_budget"),
+        expiry: get("request_expiry"),
+        earnings: get("request_earnings") !== "0",
+        attribution: get("request_attribution") !== "0",
     };
 }
 

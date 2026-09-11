@@ -218,12 +218,9 @@ export function galleryPagesForFlow(
             ...entry,
             id: `${entry.id}--${index}`,
             title:
-                entry.id === "sign-in" && variant.label === "OAuth"
-                    ? "Sign in to Pollinations · OAuth, BYOP & new accounts"
-                    : variant.label === entry.title ||
-                        variant.label === "Default"
-                      ? entry.title
-                      : `${entry.title.replace(/ errors$/, "")} · ${variant.label}`,
+                variant.label === entry.title || variant.label === "Default"
+                    ? entry.title
+                    : `${entry.title.replace(/ errors$/, "")} · ${variant.label}`,
             variants: [variant],
         }));
     });

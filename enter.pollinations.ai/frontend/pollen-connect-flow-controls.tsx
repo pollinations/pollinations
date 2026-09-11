@@ -35,12 +35,10 @@ export function FlowSwitch({
 export function AppRequestSelect({
     value,
     oauth = true,
-    errorsOnly = false,
     onChange,
 }: {
     value: string;
     oauth?: boolean;
-    errorsOnly?: boolean;
     onChange: (value: string) => void;
 }) {
     return (
@@ -51,7 +49,7 @@ export function AppRequestSelect({
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
             >
-                {!errorsOnly && <option value="">Valid request</option>}
+                <option value="">Valid request</option>
                 {authorizeRequestErrors
                     .filter((variant) =>
                         appVariantSupportsProtocol(

@@ -1,4 +1,5 @@
 import { loginErrors } from "@shared/auth/login-errors.ts";
+import { defaultPreviewRequest } from "./pollen-connect-request-config";
 
 export type ScreenVariant = {
     label: string;
@@ -14,7 +15,6 @@ export type CanvasScreen = {
     maintained?: boolean;
     screen?: string;
     illustration?: string;
-    previewKind?: "simulation" | "illustration";
     variants?: ScreenVariant[];
 };
 export const enterLoginErrorScreens: CanvasScreen[] = Object.entries(
@@ -125,7 +125,6 @@ export const canvasGroups: { title: string; screens: CanvasScreen[] }[] = [
                 owner: "Developer app",
                 maintained: true,
                 screen: "add-pollen-connect",
-                previewKind: "simulation",
             },
             {
                 id: "sign-in",
@@ -133,7 +132,7 @@ export const canvasGroups: { title: string; screens: CanvasScreen[] }[] = [
                 owner: "Pollinations",
                 screen: "oauth-signed-out",
                 variants: [
-                    { label: "OAuth" },
+                    { label: "Ready" },
                     { label: "Checking app", params: { app_loading: "1" } },
                     {
                         label: "Signing in",
@@ -215,7 +214,6 @@ export const canvasGroups: { title: string; screens: CanvasScreen[] }[] = [
                 owner: "Developer app",
                 maintained: true,
                 screen: "add-pollen-play",
-                previewKind: "simulation",
                 variants: [
                     { label: "Available app Pollen" },
                     {
@@ -254,7 +252,6 @@ export const canvasGroups: { title: string; screens: CanvasScreen[] }[] = [
                 title: "Budget",
                 owner: "Pollinations",
                 screen: "add-pollen-amount",
-                previewKind: "simulation",
                 variants: [
                     { label: "Purchase needed" },
                     {
@@ -306,7 +303,6 @@ export const canvasGroups: { title: string; screens: CanvasScreen[] }[] = [
                 title: "Review purchase",
                 owner: "Stripe",
                 screen: "add-pollen-checkout",
-                previewKind: "illustration",
             },
             {
                 id: "add-pollen-pending",
@@ -314,7 +310,6 @@ export const canvasGroups: { title: string; screens: CanvasScreen[] }[] = [
                 owner: "Developer app",
                 maintained: true,
                 screen: "add-pollen-pending",
-                previewKind: "simulation",
                 variants: [
                     { label: "Waiting for confirmation" },
                     {
@@ -518,7 +513,6 @@ export const canvasGroups: { title: string; screens: CanvasScreen[] }[] = [
                 title: "Buy account Pollen",
                 owner: "Stripe",
                 screen: "account-checkout",
-                previewKind: "illustration",
                 variants: [
                     {
                         label: "Buy Pollen",
@@ -622,12 +616,7 @@ export function canvasScreenUrl(
         balance: "positive",
         badge: "none",
         wallet: "total",
-        request_scope: "profile usage keys",
-        request_models: "all",
-        request_budget: "5",
-        request_expiry: "7",
-        request_earnings: "1",
-        request_attribution: "1",
+        ...defaultPreviewRequest,
         ...variant?.params,
         ...overrides,
     });

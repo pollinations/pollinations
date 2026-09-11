@@ -1,0 +1,51 @@
+{
+  "date": "2026-09-10",
+  "period_start": "2026-09-10",
+  "period_end": "2026-09-10",
+  "title": "Two new ways to turn ideas and videos into finished stories",
+  "summary": "A community-heavy day: new story and transcript tools, more dependable chat controls, and less drama around large images and deployments.\n\nThe writing collection gained StoryCraft AI for generating multi-chapter illustrated storybooks, plus MrPaloma's YouTube Transcription AI for turning video transcripts into structured notes, translations, and concept-cover ideas. Men's Fashion Pins also joined the image apps, making polished Pinterest artwork a slightly more specialized solved problem.\n\nExplicit token limits, tool-call settings, and supported top_k options now reach the chat gateway without defaults quietly rewriting the request. The gateway update also improves support for Azure parallel tools and Claude effort, JSON-schema, and output settings.\n\nBloom 0.1.3 users can now enable, inspect, or remove a dedicated Pollinations key through `polli harness bloom`, without turning their existing `.env` file into configuration compost.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 14664,
+      "date": "2026-09-10"
+    },
+    {
+      "number": 14669,
+      "date": "2026-09-10"
+    },
+    {
+      "number": 14670,
+      "date": "2026-09-10"
+    },
+    {
+      "number": 14675,
+      "date": "2026-09-10"
+    },
+    {
+      "number": 14677,
+      "date": "2026-09-10"
+    },
+    {
+      "number": 14684,
+      "date": "2026-09-10"
+    },
+    {
+      "number": 14685,
+      "date": "2026-09-10"
+    },
+    {
+      "number": 14692,
+      "date": "2026-09-10"
+    },
+    {
+      "number": 14694,
+      "date": "2026-09-10"
+    },
+    {
+      "number": 14697,
+      "date": "2026-09-10"
+    }
+  ],
+  "generated_at": "2026-09-11T06:29:09.448987+00:00"
+}

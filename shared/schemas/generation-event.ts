@@ -69,10 +69,15 @@ export type TinybirdEvent = {
     referrerDomain?: string;
 
     // Model
+    /** Caller input, which may be an alias. */
     modelRequested?: string | null;
+    /** Canonical public model requested, before fallback. */
     resolvedModelRequested?: string;
+    /** Public ID of the serving model, including when a fallback ran. */
     modelUsed?: string;
     modelProviderUsed?: string;
+    /** Whether totalCost uses validated usage; false for missing usage or fee-only estimates. */
+    hasCostEstimate?: boolean;
     /** Named conditional pricing sheet selected for this billed request. */
     costVariant?: string;
     /** True when Portkey served from a non-primary fallback target. */

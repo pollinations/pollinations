@@ -53,6 +53,10 @@ SCHEMA >
 `resolved_model_requested`  LowCardinality(String) `json:$.resolvedModelRequested` DEFAULT 'undefined',
 `model_used`                LowCardinality(String) `json:$.modelUsed` DEFAULT 'undefined',
 `model_provider_used`       LowCardinality(String) `json:$.modelProviderUsed` DEFAULT 'undefined',
+-- Whether total_cost uses validated usage; false for missing usage or fee-only costs.
+-- New writers always set this flag and record canonical serving model_used.
+-- Older rows keep NULL and mixed model strings; never remap via today's registry.
+`has_cost_estimate` Nullable(Bool) `json:$.hasCostEstimate` DEFAULT NULL,
 `cost_variant`              LowCardinality(String) `json:$.costVariant` DEFAULT 'undefined',
 `fallback_used`             Bool                   `json:$.fallbackUsed` DEFAULT false,
 -- This row says how the request ENDED, rather than recording one upstream call

@@ -28,11 +28,8 @@ SQL >
         -- there and 0% here. Keyed on fallback_used so a primary's group never
         -- absorbs the health of the fallbacks it borrowed.
         --
-        -- Not `model_used = resolved_model_requested`: model_used holds the
-        -- UPSTREAM name on a successful call (`deepseek-chat`) and our registry
-        -- id on a failed one (`voodoohop/anyvm-deepseek-chat`), so that
-        -- comparison is false for 97% of successful community calls and would
-        -- read as a permanently dead model.
+        -- Compare fallback_used, not model IDs: another route can serve the same
+        -- public model. Historical model_used values also include upstream names.
         -- A gateway-enforced per-user cap says nothing about whether the
         -- upstream works. Keep the 429 visible without depressing its health.
         countIf(NOT fallback_used AND error_response_code != 'community_model_rate_limit') as own_calls,

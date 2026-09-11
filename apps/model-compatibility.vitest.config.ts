@@ -12,6 +12,7 @@ export default defineConfig({
     test: {
         include: [
             "shared/providers.test.ts",
+            "shared/registry/model-identity.test.ts",
             "apps/catgpt/ai.test.js",
             "apps/chat/src/**/*.test.{js,jsx}",
             "apps/playground/src/model-selection.test.ts",

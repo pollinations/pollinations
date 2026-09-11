@@ -505,6 +505,10 @@ describe("tracking observability", () => {
         expect(tinybirdRequests[0].headers.get("authorization")).toBe(
             "Bearer test_tinybird_token",
         );
+        // Internal accounting canonicalization does not rewrite the provider response.
+        expect(response.headers.get("x-model-used")).toBe(
+            "gpt-5-nano-2025-08-07",
+        );
         const event = await tinybirdRequests[0].json();
         expect(event).toMatchObject({
             requestPath: "/v1/chat/completions",
@@ -513,7 +517,8 @@ describe("tracking observability", () => {
             responseStatus: 200,
             modelRequested: "openai/gpt-5.4-nano",
             resolvedModelRequested: "openai/gpt-5.4-nano",
-            modelUsed: "gpt-5-nano-2025-08-07",
+            modelUsed: "openai/gpt-5.4-nano",
+            hasCostEstimate: true,
             modelProviderUsed: expect.any(String),
             userId: trackingUser.id,
             isBilledUsage: true,
@@ -527,6 +532,94 @@ describe("tracking observability", () => {
         expect(event).not.toHaveProperty("cacheKey");
         expect(consumePollen).toHaveBeenCalledWith(expect.any(Number));
         expect(consumePollen.mock.calls[0]?.[0]).toBeGreaterThan(0);
+    });
+
+    it.each([
+        true,
+        false,
+    ])("records estimated cost without debiting Pollen when failed text has valid usage: %s", async (hasUsage) => {
+        const events: TinybirdEvent[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url.includes("name=generation_event_v2")) {
+                    events.push((await request.json()) as TinybirdEvent);
+                }
+                return new Response("ok");
+            },
+        );
+        const model = "google/gemini-3.7-flash";
+        const consumePollen = vi.fn(async (_amount: number) => {});
+        const ctx = createExecutionContext();
+        const before = await getUserBalance(drizzle(env.DB), trackingUser.id);
+        await createTrackedResponseApp(
+            consumePollen,
+            "generate.text",
+            Response.json(
+                {
+                    id: "gen-unbilled-cost",
+                    model: "provider-gemini",
+                    choices: [
+                        {
+                            index: 0,
+                            finish_reason: "error",
+                            message: { role: "assistant", content: "" },
+                        },
+                    ],
+                    usage: {
+                        ...(hasUsage
+                            ? {
+                                  prompt_tokens: 100,
+                                  completion_tokens: 10,
+                                  total_tokens: 110,
+                              }
+                            : {}),
+                    },
+                },
+                {
+                    headers: {
+                        "x-model-used": model,
+                        ...(hasUsage
+                            ? {
+                                  "x-usage-prompt-text-tokens": "100",
+                                  "x-usage-completion-text-tokens": "10",
+                              }
+                            : { "x-usage-missing": "true" }),
+                    },
+                },
+            ),
+            model,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(events).toHaveLength(1);
+        expect(events[0]).toMatchObject({
+            modelUsed: model,
+            hasCostEstimate: hasUsage,
+            totalPrice: 0,
+            isBilledUsage: false,
+            isFinal: true,
+        });
+        if (hasUsage) expect(events[0].totalCost).toBeGreaterThan(0);
+        else expect(events[0].totalCost).toBe(0);
+        expect(await getUserBalance(drizzle(env.DB), trackingUser.id)).toEqual(
+            before,
+        );
+        expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
     it("tracks provider work but not coalesced cache hits", async () => {
@@ -757,6 +850,7 @@ describe("tracking observability", () => {
             isBilledUsage: false,
             totalCost: 0,
             totalPrice: 0,
+            hasCostEstimate: false,
             errorResponseCode: "usage_missing",
         });
         expect(await tinybirdRequests[1].json()).toMatchObject({
@@ -2263,7 +2357,7 @@ describe("tracking observability", () => {
                 new Date(event.startTime).getTime(),
         ).toBeGreaterThanOrEqual(100);
         expect(event.tokenCountCompletionText).toBe(500);
-        expect(event.modelUsed).toBe("gpt-5-nano-2025-08-07");
+        expect(event.modelUsed).toBe("openai/gpt-5.4-nano");
         expect(event.isBilledUsage).toBe(true);
     });
 
@@ -2927,6 +3021,7 @@ describe("trackResponse missing usage", () => {
         expect(tracking.isBilledUsage).toBe(false);
         expect(tracking.cost?.totalCost).toBeGreaterThan(0);
         expect(tracking.errorTracking?.errorResponseCode).toBe("usage_missing");
+        expect(tracking.hasCostEstimate).toBe(false);
     });
 
     it.each([
@@ -2968,6 +3063,7 @@ describe("trackResponse missing usage", () => {
         expect(tracking.errorTracking).toMatchObject({
             errorResponseCode: "usage_missing",
         });
+        expect(tracking.hasCostEstimate).toBe(false);
         // Reserved for upstream hostnames; the provider is already on the row.
         expect(tracking.errorTracking?.errorSource).toBeUndefined();
     });
@@ -2983,6 +3079,7 @@ describe("trackResponse missing usage", () => {
         expect(tracking.responseStatus).toBe(502);
         expect(tracking.cost?.totalCost).toBeGreaterThan(0);
         expect(tracking.errorTracking?.errorResponseCode).toBe("usage_missing");
+        expect(tracking.hasCostEstimate).toBe(false);
     });
 });
 
@@ -3075,5 +3172,82 @@ describe("reduceAdjustmentsToEventFields", () => {
         const parsedWithout = JSON.parse(serializedWithout);
         expect(parsedWithout).not.toHaveProperty("adjustmentCosts");
         expect(parsedWithout).not.toHaveProperty("adjustmentUnits");
+    });
+});
+
+describe("trackResponse model identity and cost estimates", () => {
+    it("treats validated zero usage as a complete estimate", async () => {
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            new Response(
+                'data: {"choices":[],"usage":{"prompt_tokens":0,"completion_tokens":0,"total_tokens":0}}\n\ndata: [DONE]\n\n',
+                {
+                    headers: {
+                        "content-type": "text/event-stream",
+                        "x-model-used": "openai/gpt-5.4-nano",
+                    },
+                },
+            ),
+            candidateFixture(),
+        );
+        expect(tracking.hasCostEstimate).toBe(true);
+        expect(tracking.cost?.totalCost).toBe(0);
+    });
+
+    const model = "google/gemini-3.7-flash" as const;
+    const usage = {
+        prompt_tokens: 1000,
+        completion_tokens: 50,
+        total_tokens: 1050,
+    };
+
+    function response() {
+        return Response.json(
+            {
+                id: "gen-provider-123",
+                model: "google/gemini-3.7-flash-upstream",
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "ok" },
+                        finish_reason: "stop",
+                    },
+                ],
+                usage,
+            },
+            {
+                headers: {
+                    "x-model-used": model,
+                    "x-usage-prompt-text-tokens": "1000",
+                    "x-usage-completion-text-tokens": "50",
+                },
+            },
+        );
+    }
+
+    it("keeps a public model stable across provider routes and records cross-model fallbacks", async () => {
+        const route = `${model}:openrouter:ai-studio-priority` as const;
+        const sameModel = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(false, model),
+            response(),
+            candidateFixture(route),
+        );
+        const differentModel = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(),
+            response(),
+            candidateFixture(route),
+        );
+        for (const tracking of [sameModel, differentModel]) {
+            expect(tracking).toMatchObject({
+                modelUsed: model,
+                modelProviderUsed: "openrouter",
+                fallbackUsed: true,
+            });
+        }
+        // A fallback still charges the customer's original quote.
+        expect(differentModel.price).not.toEqual(sameModel.price);
     });
 });

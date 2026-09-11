@@ -1,0 +1,48 @@
+DESCRIPTION >
+    Model/supplier usage for one explicit UTC date, including unbilled attempts.
+    Costs are calculated estimates; missing usage and historical model identities
+    remain explicit. Provider bills are reconciled separately.
+    Raw provider names remain as recorded; account attribution is not inferred.
+
+TOKEN "operations_read" READ
+
+NODE executions
+SQL >
+    %
+    SELECT
+        is_final,
+        resolved_model_requested AS model_requested,
+        model_provider_used AS provider,
+        -- New writers always set the coverage flag; legacy model strings stay unknown.
+        if(isNotNull(has_cost_estimate), nullIf(model_used, 'undefined'), NULL) AS model_used,
+        has_cost_estimate,
+        total_cost AS event_metered_cost_usd,
+        total_price AS pollen_debited,
+        selected_meter_slug AS meter,
+        response_status
+    FROM generation_event_v2
+    WHERE start_time >= toDateTime({{Date(date, description="UTC usage date")}})
+      AND start_time < toDateTime({{Date(date)}}) + INTERVAL 1 DAY
+      AND startsWith(event_type, 'generate.')
+
+NODE endpoint
+SQL >
+    SELECT
+        model_requested,
+        provider,
+        model_used,
+        count() AS attempts,
+        countIf(is_final) AS final_outcomes,
+        countIf(response_status >= 400) AS failed_attempts,
+        countIf(isNull(model_used)) AS unknown_model_attempts,
+        sumIf(pollen_debited, is_final AND meter = 'v1:meter:pack') AS paid_pollen,
+        sumIf(pollen_debited, is_final AND meter = 'v1:meter:tier') AS quest_pollen,
+        sumIf(pollen_debited, is_final AND meter NOT IN ('v1:meter:pack', 'v1:meter:tier')) AS other_pollen,
+        sumIf(event_metered_cost_usd, provider != 'community') AS metered_cost_usd,
+        sumIf(event_metered_cost_usd, provider != 'community' AND pollen_debited = 0) AS unbilled_metered_cost_usd,
+        countIf(isNull(has_cost_estimate) OR has_cost_estimate = false) AS missing_cost_estimate_attempts
+    FROM executions
+    GROUP BY model_requested, provider, model_used
+    ORDER BY provider, model_requested, model_used
+
+TYPE ENDPOINT

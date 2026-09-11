@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { Env } from "./env.ts";
 import { accountRoutes } from "./routes/account.ts";
+import { publicAgentSyncRoutes } from "./routes/agents.ts";
 import { apiKeysRoutes } from "./routes/api-keys.ts";
 import { appLookupRoutes } from "./routes/app-lookup.ts";
 import { customerRoutes } from "./routes/customer.ts";
@@ -19,6 +20,7 @@ export const frontendApi = new Hono<Env>()
     .route("/api-keys", apiKeysRoutes)
     .route("/app-lookup", appLookupRoutes)
     .route("/account/integrations", integrationsRoutes)
+    .route("/account/agents", publicAgentSyncRoutes)
     .route("/account", accountRoutes)
     .route("/device", deviceRoutes)
     .route("/oauth", oauthRoutes)

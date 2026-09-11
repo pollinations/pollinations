@@ -3,6 +3,12 @@ import {
     ResponseUsageSchema,
 } from "@shared/schemas/openai.ts";
 import {
+    completedFunctionCalls,
+    type ResponseFunctionCall,
+    ResponseFunctionCallOutputSchema,
+    ResponseFunctionCallSchema,
+} from "@shared/schemas/response-function-items.ts";
+import {
     type EventSourceMessage,
     EventSourceParserStream,
 } from "eventsource-parser/stream";
@@ -12,12 +18,6 @@ import {
     McpCallSchema,
 } from "../agents/mcp.ts";
 import type { ChatCompletion, ChatMessage, ServiceError } from "../types.js";
-import {
-    completedFunctionCalls,
-    type ResponseFunctionCall,
-    ResponseFunctionCallOutputSchema,
-    ResponseFunctionCallSchema,
-} from "./functionItems.ts";
 
 type JsonObject = Record<string, unknown>;
 type TextDeltaKind = "content" | "refusal" | "reasoning_content";

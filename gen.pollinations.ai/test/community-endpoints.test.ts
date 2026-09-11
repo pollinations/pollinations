@@ -7862,10 +7862,11 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
     );
     expect(unchangedSyncResponse.status).toBe(200);
     await expect(unchangedSyncResponse.json()).resolves.toEqual({
-        updated: false,
+        updated: true,
         deployedCommitSha: commit,
     });
-    expect(deploymentFetch).toHaveBeenCalledTimes(10);
+    expect(deploymentFetch).toHaveBeenCalledTimes(12);
+    expect(deploymentFetch.mock.calls[11][1]?.method).toBe("PUT");
 
     const listResponse = await fetchEnterApi(
         enterApi,
@@ -7896,8 +7897,8 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         enterEnv,
     );
     expect(deleteResponse.status).toBe(200);
-    expect(deploymentFetch).toHaveBeenCalledTimes(11);
-    expect(deploymentFetch.mock.calls[10][1]?.method).toBe("DELETE");
+    expect(deploymentFetch).toHaveBeenCalledTimes(13);
+    expect(deploymentFetch.mock.calls[12][1]?.method).toBe("DELETE");
 
     repositoryDescription = null;
     const createWithoutDescriptionResponse = await fetchEnterApi(

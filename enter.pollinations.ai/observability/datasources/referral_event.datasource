@@ -6,7 +6,9 @@ Visits to enter.pollinations.ai from tracked referral links.
 
 SCHEMA >
 `timestamp` DateTime               `json:$.timestamp`,
-`ref`       LowCardinality(String) `json:$.ref`
+`ref`       LowCardinality(String) `json:$.ref`,
+-- NULL for historical events or failed session lookups.
+`logged_in` Nullable(Bool)          `json:$.logged_in`
 
 ENGINE "MergeTree"
 ENGINE_SORTING_KEY "timestamp, ref"

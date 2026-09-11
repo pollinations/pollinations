@@ -340,7 +340,12 @@ export function AuthAccessItem({
                         onClick={() => onChange(!checked)}
                         variant={checked ? "tile" : "ghost"}
                         size="md"
-                        className="polli:shrink-0"
+                        className={cn(
+                            "polli:shrink-0",
+                            checked &&
+                                !disabled &&
+                                "polli:text-theme-bg-pale polli:hover:text-theme-bg-pale",
+                        )}
                     >
                         <span aria-hidden="true">{icon}</span>
                     </IconButton>
@@ -350,6 +355,7 @@ export function AuthAccessItem({
                         className={cn(
                             "polli:flex polli:h-9 polli:w-9 polli:shrink-0 polli:items-center polli:justify-center polli:rounded-full polli:text-theme-text-soft",
                             checked && "polli:bg-theme-bg-active",
+                            checked && !disabled && "polli:text-theme-bg-pale",
                         )}
                     >
                         {icon}

@@ -1,12 +1,13 @@
-"""Native Pollinations provider plugin for Simon Willison's `llm`.
+"""Native Pollinations provider plugin for Simon Willison's \x60llm\x60.
 
-Reuses LLM's OpenAI-compatible ``Chat`` / ``AsyncChat`` against
-``https://gen.pollinations.ai/v1`` — streaming, conversations, tools and
+Reuses LLM's OpenAI-compatible \x60\x60Chat\x60\x60 / \x60\x60AsyncChat\x60\x60 against
+\x60\x60https://gen.pollinations.ai/v1\x60\x60 — streaming, conversations, tools and
 attachments all come from the base classes. Compatible text models are loaded
-from the authenticated ``/v1/models`` catalog and registered as
-``pollinations/<model-id>`` with no hardcoded model list.
+from the authenticated \x60\x60/v1/models\x60\x60 catalog and registered as
+\x60\x60pollinations/<model-id>\x60\x60 with no hardcoded model list.
 """
 
+import hashlib
 import json
 import time
 from pathlib import Path
@@ -20,13 +21,49 @@ API_BASE = "https://gen.pollinations.ai/v1"
 MODELS_URL = f"{API_BASE}/models"
 KEY_ALIAS = "pollinations"
 KEY_ENV_VAR = "POLLINATIONS_API_KEY"
-CACHE_FILENAME = "pollinations_models.json"
+KV_FILENAME = "pollinations_kv.json"
+# Kept as a compatibility alias for callers that used the old cache constant.
+CACHE_FILENAME = KV_FILENAME
+CACHE_NAMESPACE = "pollinations.models"
 # Small time-limited cache (5 minutes) with stale-cache fallback.
 CACHE_TIMEOUT_SECONDS = 5 * 60
 
 
 class DownloadError(Exception):
     pass
+
+
+class PersistentKV:
+    """Small file-backed key-value store for user-level plugin state."""
+
+    def __init__(self, path: Path):
+        self.path = path
+
+    def _read(self) -> dict:
+        try:
+            value = json.loads(self.path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return {}
+        return value if isinstance(value, dict) else {}
+
+    def get(self, key: str, default=None):
+        return self._read().get(key, default)
+
+    def set(self, key: str, value) -> None:
+        data = self._read()
+        data[key] = value
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = self.path.with_name(f".{self.path.name}.tmp")
+        try:
+            temporary.write_text(
+                json.dumps(data, separators=(",", ":")), encoding="utf-8"
+            )
+            temporary.replace(self.path)
+        finally:
+            try:
+                temporary.unlink()
+            except FileNotFoundError:
+                pass
 
 
 class PollinationsChat(Chat):
@@ -40,7 +77,35 @@ class PollinationsAsyncChat(AsyncChat):
 
 
 def _cache_path() -> Path:
-    return llm.user_dir() / CACHE_FILENAME
+    return llm.user_dir() / KV_FILENAME
+
+
+def _cache_key(key: str) -> str:
+    """Return a persistent cache key without storing the API key itself."""
+    fingerprint = hashlib.sha256(key.encode("utf-8")).hexdigest()
+    return f"{CACHE_NAMESPACE}:{fingerprint}"
+
+
+def _cache_entry(key: str):
+    entry = PersistentKV(_cache_path()).get(_cache_key(key))
+    return entry if isinstance(entry, dict) else None
+
+
+def _cached_models(entry):
+    if not isinstance(entry, dict):
+        return None
+    payload = entry.get("payload")
+    if not isinstance(payload, dict) or not isinstance(payload.get("data"), list):
+        return None
+    return payload["data"]
+
+
+def _is_fresh(entry) -> bool:
+    stored_at = entry.get("stored_at") if isinstance(entry, dict) else None
+    if not isinstance(stored_at, (int, float)):
+        return False
+    age = time.time() - stored_at
+    return 0 <= age < CACHE_TIMEOUT_SECONDS
 
 
 def _auth_headers(key: str) -> dict:
@@ -48,46 +113,50 @@ def _auth_headers(key: str) -> dict:
 
 
 def get_pollinations_models(skip_cache: bool = False) -> list:
-    """Load the authenticated ``/v1/models`` catalog (OpenAI list shape).
+    """Load the authenticated \x60\x60/v1/models\x60\x60 catalog (OpenAI list shape).
 
-    Sends the stored ``pollinations`` key so the catalog reflects the caller's
-    permissions. Results are cached briefly; a stale cache is served when the
-    network fails.
+    Results are persisted in a user-level key-value file under a hash of the
+    API key, so catalogs for different keys never leak into one another. A
+    stale value is served when the network fails.
     """
     key = llm.get_key("", KEY_ALIAS, KEY_ENV_VAR)
     if not key:
         raise DownloadError(
-            "No Pollinations API key found. Run `llm keys set pollinations` "
+            "No Pollinations API key found. Run \x60llm keys set pollinations\x60 "
             f"or set {KEY_ENV_VAR}."
         )
-    path = _cache_path()
-    if not skip_cache and path.is_file():
-        try:
-            if time.time() - path.stat().st_mtime < CACHE_TIMEOUT_SECONDS:
-                with open(path) as f:
-                    return json.load(f)["data"]
-        except (OSError, ValueError, KeyError):
-            pass
+
+    entry = _cache_entry(key)
+    cached = _cached_models(entry)
+    if not skip_cache and cached is not None and _is_fresh(entry):
+        return cached
+
     try:
         response = httpx.get(
-            MODELS_URL, headers=_auth_headers(key), timeout=30,
+            MODELS_URL,
+            headers=_auth_headers(key),
+            timeout=30,
             follow_redirects=True,
         )
         response.raise_for_status()
         payload = response.json()
-        with open(path, "w") as f:
-            json.dump(payload, f)
+        if not isinstance(payload, dict) or not isinstance(payload.get("data"), list):
+            raise ValueError("Unexpected Pollinations model catalog")
+        try:
+            PersistentKV(_cache_path()).set(
+                _cache_key(key),
+                {"payload": payload, "stored_at": time.time()},
+            )
+        except OSError:
+            # A read-only user directory should not prevent a live response.
+            pass
         return payload["data"]
     except Exception:
-        if path.is_file():
-            try:
-                with open(path) as f:
-                    return json.load(f)["data"]
-            except (OSError, ValueError, KeyError):
-                pass
+        if cached is not None:
+            return cached
         raise DownloadError(
-            f"Failed to download the Pollinations model catalog and no cache "
-            f"is available at {path}"
+            "Failed to download the Pollinations model catalog and no cached "
+            "value is available"
         )
 
 
@@ -129,7 +198,7 @@ def register_models(register):
     try:
         models = get_pollinations_models()
     except Exception:
-        # Discovery is best-effort: never break `llm` startup when the
+        # Discovery is best-effort: never break \x60llm\x60 startup when the
         # catalog is unreachable and uncached.
         return
     for model in models:

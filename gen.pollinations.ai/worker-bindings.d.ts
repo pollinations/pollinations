@@ -19,6 +19,9 @@ interface CloudflareBindings {
     INFERENCEPORT_API_KEY?: string;
     STABILITY_API_KEY?: string;
     KV: KVNamespace;
+    FLAGS?: {
+        getBooleanValue(key: string, defaultValue: boolean): Promise<boolean>;
+    };
     MEDIA: Service<import("../media.pollinations.ai/src/media-upload.ts").MediaUpload>;
     TEXT_BUCKET: R2Bucket;
     /** Temporary old binary-cache source; used only for reads. */

@@ -11,7 +11,6 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index.ts";
-import { TEXT_BALANCE_NOTICE_ENABLED } from "../src/middleware/text-balance-notice.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 afterEach(() => vi.restoreAllMocks());
@@ -28,9 +27,7 @@ beforeEach(async () => {
     );
 });
 
-describe("text balance notice", () => {
-    const enabled = TEXT_BALANCE_NOTICE_ENABLED;
-
+describe.each([true, false])("text balance notice enabled=%s", (enabled) => {
     it.each([false, true])("handles HEAD with json=%s", async (json) => {
         const caller = await createTestApiKey();
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
@@ -45,7 +42,7 @@ describe("text balance notice", () => {
                     headers: { Authorization: `Bearer ${caller.key}` },
                 },
             ),
-            env,
+            { ...env, FLAGS: { getBooleanValue: async () => enabled } },
             ctx,
         );
         expect(response.status).toBe(enabled && !json ? 200 : 402);
@@ -94,7 +91,7 @@ describe("text balance notice", () => {
                     }),
                 },
             ),
-            env,
+            { ...env, FLAGS: { getBooleanValue: async () => enabled } },
             ctx,
         );
         const text = await response.text();
@@ -142,8 +139,10 @@ describe("text balance notice", () => {
                 return Response.json({ data: [] });
             },
         );
+        const getBooleanValue = vi.fn().mockResolvedValue(enabled);
         const bindings = {
             ...withInlineGenerationCoordinator(env),
+            FLAGS: { getBooleanValue },
             TINYBIRD_INGEST_URL:
                 "https://tinybird.test/v0/events?name=generation_event_v2",
         };
@@ -179,11 +178,9 @@ describe("text balance notice", () => {
             const response = await worker.fetch(request(), bindings, ctx);
             const body = await response.text();
             await waitOnExecutionContext(ctx);
-            expect(response.status, body).toBe(
-                TEXT_BALANCE_NOTICE_ENABLED ? 200 : 402,
-            );
+            expect(response.status, body).toBe(enabled ? 200 : 402);
             expect(response.headers.get("x-cache")).not.toBe("HIT");
-            if (TEXT_BALANCE_NOTICE_ENABLED) {
+            if (enabled) {
                 expect(response.headers.get("cache-control")).toBe(
                     "private, no-store",
                 );
@@ -218,6 +215,10 @@ describe("text balance notice", () => {
                 }
             }
         }
+        expect(getBooleanValue.mock.calls).toEqual([
+            ["text-balance-notice", false],
+            ["text-balance-notice", false],
+        ]);
         expect(otherRequests).toEqual([]);
         expect(
             (await env.TEXT_BUCKET.list()).objects.map((object) => object.key),
@@ -252,6 +253,7 @@ describe("text balance notice", () => {
         );
         expect(funded.status).not.toBe(402);
         await waitOnExecutionContext(fundedCtx);
+        expect(getBooleanValue).toHaveBeenCalledTimes(2);
     });
 
     it.each([
@@ -292,6 +294,7 @@ describe("text balance notice", () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             Response.json({ data: [] }),
         );
+        const getBooleanValue = vi.fn().mockResolvedValue(enabled);
         const ctx = createExecutionContext();
         const response = await worker.fetch(
             new Request(`https://gen.pollinations.ai${path}`, {
@@ -314,12 +317,13 @@ describe("text balance notice", () => {
                     }),
                 }),
             }),
-            env,
+            { ...env, FLAGS: { getBooleanValue } },
             ctx,
         );
         const text = await response.text();
         expect(response.status, text).toBe(402);
         expect(text).toContain("INSUFFICIENT_BALANCE");
+        expect(getBooleanValue).not.toHaveBeenCalled();
         await waitOnExecutionContext(ctx);
     });
 });
@@ -350,5 +354,36 @@ it("keeps API key budget exhaustion as HTTP 402", async () => {
     );
     expect(response.status).toBe(402);
     expect(await response.text()).toContain("KEY_BUDGET_EXHAUSTED");
+    await waitOnExecutionContext(ctx);
+});
+
+it.each([
+    "missing",
+    "unavailable",
+])("keeps HTTP 402 when Flagship is %s", async (state) => {
+    const caller = await createTestApiKey();
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        Response.json({ data: [] }),
+    );
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(
+        new Request(`https://gen.pollinations.ai/text/hello?model=${model}`, {
+            headers: { Authorization: `Bearer ${caller.key}` },
+        }),
+        {
+            ...env,
+            FLAGS:
+                state === "missing"
+                    ? undefined
+                    : {
+                          getBooleanValue: async () => {
+                              throw new Error("Flagship unavailable");
+                          },
+                      },
+        },
+        ctx,
+    );
+    expect(response.status).toBe(402);
+    expect(await response.text()).toContain("INSUFFICIENT_BALANCE");
     await waitOnExecutionContext(ctx);
 });

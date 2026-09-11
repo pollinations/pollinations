@@ -99,7 +99,6 @@ import {
     callCommunityVideoEndpoint,
 } from "../src/image/communityEndpoint.ts";
 import worker from "../src/index.ts";
-import { TEXT_BALANCE_NOTICE_ENABLED } from "../src/middleware/text-balance-notice.ts";
 import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
@@ -2898,28 +2897,9 @@ fixtureTest(
         const { key: zeroBalanceCallerKey } = await createTestApiKey({
             user: { tierBalance: 0, packBalance: 0 },
         });
-        const zeroBalanceResponse =
-            await callFreePublicModel(zeroBalanceCallerKey);
-        expect(zeroBalanceResponse.status).toBe(
-            TEXT_BALANCE_NOTICE_ENABLED ? 200 : 402,
+        expect((await callFreePublicModel(zeroBalanceCallerKey)).status).toBe(
+            402,
         );
-        if (TEXT_BALANCE_NOTICE_ENABLED) {
-            await expect(zeroBalanceResponse.json()).resolves.toMatchObject({
-                choices: [
-                    {
-                        message: {
-                            content: expect.stringContaining(
-                                "?ref=agent_low_balance_topup",
-                            ),
-                        },
-                    },
-                ],
-                usage: { total_tokens: 0 },
-            });
-            expect(zeroBalanceResponse.headers.get("cache-control")).toBe(
-                "private, no-store",
-            );
-        }
         const { key: fundedCallerKey } = await createTestApiKey({
             user: { tierBalance: 1, packBalance: 0 },
         });

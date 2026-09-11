@@ -16,9 +16,6 @@ import {
     responsesToChatStream,
 } from "../text/responses/chatResponse.ts";
 
-// Set false to restore HTTP 402 for every insufficient-balance response.
-export const TEXT_BALANCE_NOTICE_ENABLED = true;
-
 const MESSAGE =
     "The account behind this API key doesn't have enough credits. " +
     "Its owner can " +
@@ -32,7 +29,6 @@ export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
 
     const error = c.get("error");
     if (
-        !TEXT_BALANCE_NOTICE_ENABLED ||
         c.res.status !== 402 ||
         !(error instanceof PaymentRequiredError) ||
         error.errorCode !== "INSUFFICIENT_BALANCE"
@@ -58,6 +54,14 @@ export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
         requestsJson(request.json, request.jsonMode);
     if (jsonAlias || format === "json_object" || format === "json_schema")
         return;
+
+    // Keep the original 402 if the flag is off, unconfigured, or unavailable.
+    try {
+        if (!(await c.env.FLAGS?.getBooleanValue("text-balance-notice", false)))
+            return;
+    } catch {
+        return;
+    }
 
     // Hono preserves the old headers on replacement; update and pass them along.
     const headers = c.res.headers;

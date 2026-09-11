@@ -1388,10 +1388,9 @@ export function Journey({
                     </aside>
                 </main>
             </div>
-            <div className="connect-view-tools journey-back-tools">
+            <div className="journey-back-tools">
                 <Button
-                    size="sm"
-                    className="journey-quiet"
+                    data-theme="neutral"
                     disabled={!past.length}
                     onClick={() => {
                         const previous = past.at(-1);

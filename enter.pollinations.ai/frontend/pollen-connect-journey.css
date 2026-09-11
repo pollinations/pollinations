@@ -29,7 +29,7 @@
 .journey-parameter-column { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .journey-error-card .journey-switch-row { min-height: 24px; }
 
-.journey-view .journey-back-tools { top: 12px; left: 20px; right: auto; bottom: auto; }
+.journey-back-tools { position: absolute; top: 12px; left: 20px; z-index: 2; }
 
 /* Mobile previews use the available height; parameters scroll beside the phone. */
 @media (min-width: 640px) {

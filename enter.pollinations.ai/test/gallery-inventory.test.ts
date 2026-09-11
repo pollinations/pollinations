@@ -252,20 +252,15 @@ it("routes failed Enter login to its real error page before completing any journ
 it("recognizes the ban code emitted by Better Auth and keeps unknown failures generic", () => {
     expect(getLoginError("BANNED_USER")).toBe(loginErrors.banned);
     expect(getLoginError("banned")).toBe(loginErrors.banned);
-    expect(getLoginError("staging_is_invite-only")).toBe(loginErrors.default);
-    for (const { id } of entrances) {
-        expect(
-            galleryScreensForFlow(id).some((screen) =>
-                screen.id.includes("staging-invite"),
-            ),
-        ).toBe(false);
-    }
-    expect(flowNodes.some((node) => node.id.includes("staging-invite"))).toBe(
-        false,
-    );
+    expect(getLoginError(loginErrors.staging.code)).toBe(loginErrors.staging);
+    expect(appLoginScreens.has(loginErrors.staging.id)).toBe(true);
     expect(
-        [...appLoginScreens.keys()].some((id) => id.includes("staging-invite")),
-    ).toBe(false);
+        appLoginEdges.some(
+            (edge) =>
+                edge.from === "github-handoff" &&
+                edge.to === loginErrors.staging.id,
+        ),
+    ).toBe(true);
     for (const code of [
         "",
         "state_mismatch",
@@ -434,10 +429,16 @@ it("groups configuration controls without hiding loading, success, or error stat
                 pages.map((entry) => canvasScreenUrl(entry)).sort(),
             );
             for (const card of cards) {
-                if (id === "app" && card.title === "Sign-in failed") {
-                    expect(
-                        card.variants?.map((variant) => variant.label),
-                    ).toEqual(["Starting sign-in", "Returning from GitHub"]);
+                if (id === "app" && section === "main") {
+                    const counts: Record<string, number> = {
+                        "Sign in to Pollinations": 4,
+                        "Pollinations sign-in error": 4,
+                        "App connection error": 15,
+                        "Allow access": 5,
+                        "App · Return to app": 6,
+                    };
+                    if (card.title in counts)
+                        expect(card.variants).toHaveLength(counts[card.title]);
                     continue;
                 }
                 if (card.title === "Connection failed") {
@@ -473,10 +474,11 @@ it("groups configuration controls without hiding loading, success, or error stat
         "Checking app",
         "Loading models",
         "Models unavailable",
+        "Connecting",
     ]);
     expect(
         app.some((entry) => entry.title === "Allow access · Connecting"),
-    ).toBe(true);
+    ).toBe(false);
     expect(
         app.some((entry) => entry.title === "Allow access · Checking app"),
     ).toBe(false);
@@ -489,15 +491,18 @@ it("groups configuration controls without hiding loading, success, or error stat
 
 it("groups matching request errors while preserving identity, phase, and recovery differences", () => {
     const app = galleryCardsForFlow("app", "main");
-    const blocked = app.filter((entry) => entry.title === "Connection blocked");
+    const blocked = app.filter(
+        (entry) => entry.title === "App connection error",
+    );
     expect(blocked).toHaveLength(1);
-    expect(blocked[0].variants).toHaveLength(10);
+    expect(blocked[0].variants).toHaveLength(15);
     const expectedReasons = [
         "redirect",
         "app",
         "lookup",
         "missing-redirect",
         "invalid-redirect",
+        "redirect-scheme",
         "response-type",
         "missing-client",
         "missing-challenge",
@@ -506,19 +511,19 @@ it("groups matching request errors while preserving identity, phase, and recover
     ].sort();
     expect(
         blocked[0].variants
-            ?.map((variant) => variant.params?.request_error)
+            ?.filter((variant) => variant.params?.request_error)
+            .map((variant) => variant.params?.request_error)
             .sort(),
     ).toEqual(expectedReasons);
     // Session and return-page availability are independent controls, not duplicate errors.
-    expect(
-        blocked[0].variants?.some(
-            (variant) => variant.screen || variant.params?.origin,
-        ),
-    ).toBe(false);
+    expect(blocked[0].variants?.some((variant) => variant.params?.origin)).toBe(
+        false,
+    );
     expect(
         app
-            .find((entry) => entry.title === "Connection failed")
-            ?.variants?.map((variant) => variant.params?.authorize_error),
+            .find((entry) => entry.title === "App connection error")
+            ?.variants?.filter((variant) => variant.params?.authorize_error)
+            .map((variant) => variant.params?.authorize_error),
     ).toEqual(authorizeFailures.map(({ id }) => id));
     const device = galleryCardsForFlow("device", "main");
     expect(
@@ -621,11 +626,11 @@ it("uses exactly the same Apps Login cards and variant URLs in Map, Screens and 
 
 it("shares sign-in failure UI while retaining both failure and retry paths", () => {
     const failures = galleryCardsForFlow("app", "main").filter(
-        (entry) => entry.title === "Sign-in failed",
+        (entry) => entry.title === "Pollinations sign-in error",
     );
     expect(failures).toHaveLength(1);
     const card = failures[0];
-    expect(card.variants).toHaveLength(2);
+    expect(card.variants).toHaveLength(4);
     expect(card.variants?.[0].params).toEqual({
         action: "sign-in",
         result: "error",

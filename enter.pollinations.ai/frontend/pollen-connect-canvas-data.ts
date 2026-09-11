@@ -19,7 +19,7 @@ export type CanvasScreen = {
 };
 export const enterLoginErrorScreens: CanvasScreen[] = Object.entries(
     loginErrors,
-).map(([code, error]) => ({
+).map(([, error]) => ({
     id: error.id,
     title: error.title,
     owner: "Pollinations",
@@ -28,12 +28,7 @@ export const enterLoginErrorScreens: CanvasScreen[] = Object.entries(
         {
             label: error.title,
             params: {
-                login_error:
-                    code === "banned"
-                        ? "BANNED_USER"
-                        : code === "default"
-                          ? "unknown"
-                          : code,
+                login_error: error.code,
             },
         },
     ],
@@ -54,6 +49,7 @@ export const authorizeRequestErrors: ScreenVariant[] = [
         ["App verification failed", "lookup"],
         ["Missing redirect", "missing-redirect"],
         ["Invalid redirect", "invalid-redirect"],
+        ["Unsupported redirect scheme", "redirect-scheme"],
         ["Unsupported response", "response-type"],
         ["Missing client", "missing-client"],
         ["Missing security challenge", "missing-challenge"],
@@ -72,6 +68,22 @@ export const authorizeFailures = [
     { id: "key", label: "Key creation failed" },
     { id: "code", label: "Authorization code creation failed" },
 ] as const;
+
+export function appVariantSupportsProtocol(
+    variant: ScreenVariant,
+    protocol?: string,
+) {
+    return (
+        protocol !== "direct" ||
+        (![
+            "missing-client",
+            "missing-challenge",
+            "challenge-method",
+            "invalid-challenge",
+        ].includes(variant.params?.request_error ?? "") &&
+            variant.params?.authorize_error !== "code")
+    );
+}
 
 export const modelCatalogStates = [
     { id: "ready", label: "Models available" },
@@ -619,5 +631,11 @@ export function canvasScreenUrl(
         ...variant?.params,
         ...overrides,
     });
+    const previewScreen = params.get("screen");
+    if (
+        params.get("protocol") === "direct" &&
+        previewScreen?.startsWith("oauth")
+    )
+        params.set("screen", previewScreen.replace(/^oauth/, "direct"));
     return `/pollen-connect-screen.html?${params}`;
 }

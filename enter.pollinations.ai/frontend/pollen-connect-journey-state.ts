@@ -1,5 +1,5 @@
-import { loginErrors } from "@shared/auth/login-errors.ts";
 import type { PollenStatus } from "@pollinations/ui/wallet";
+import { loginErrors } from "@shared/auth/login-errors.ts";
 import { getAuthorizePollenBudget } from "../../shared/auth/authorize-config";
 import {
     addPollenPlan,
@@ -46,7 +46,7 @@ export type JourneySettings = {
     storedKeyStatus: "valid" | "invalid" | "unavailable";
     accountDetailsError: boolean;
     appReturnPage: boolean;
-    loginResult: "ready" | keyof typeof loginErrors;
+    loginResult: "ready" | "start" | keyof typeof loginErrors;
 };
 export const defaultJourneySettings: JourneySettings = {
     githubSignedIn: true,
@@ -163,6 +163,7 @@ export function restoreJourney(
     let next = {
         ...saved,
         signedIn: current.signedIn,
+        method: current.method,
         paid: current.paid,
         quest: current.quest,
     };
@@ -559,7 +560,8 @@ export function journeyAdvance(
         state.world === "app" &&
         edge.to === "loading" &&
         edge.from === "github-handoff" &&
-        settings.loginResult !== "ready"
+        settings.loginResult !== "ready" &&
+        settings.loginResult !== "start"
     ) {
         const failure = journeyOptions(state).find(
             (option) =>
@@ -598,7 +600,8 @@ export function journeyAdvance(
                 ? "loading"
                 : "github-authorize",
             loading:
-                settings.loginResult !== "ready"
+                settings.loginResult !== "ready" &&
+                settings.loginResult !== "start"
                     ? loginErrors[settings.loginResult].id
                     : settings.errors
                       ? next.world === "topup"

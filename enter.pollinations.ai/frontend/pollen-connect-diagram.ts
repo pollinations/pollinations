@@ -80,7 +80,7 @@ export function loginRetryNode(flow: string): string {
           : "sign-in";
 }
 export const flowNodes: FlowNode[] = [
-    ...[loginErrors.banned].map(
+    ...[loginErrors.banned, loginErrors.staging].map(
         (error, index): FlowNode => ({
             id: `${error.id}-exit`,
             kind: "outcome",
@@ -1181,7 +1181,9 @@ export function edgePoints(
 // Flow membership follows the journey, including shared sign-in, not screen position.
 const signInNodes = [
     ...enterLoginErrorScreens.map((screen) => screen.id),
-    ...[loginErrors.banned].map((error) => `${error.id}-exit`),
+    ...[loginErrors.banned, loginErrors.staging].map(
+        (error) => `${error.id}-exit`,
+    ),
     "session",
     "sign-in",
     "github-session",
@@ -1196,7 +1198,9 @@ const signInNodes = [
 const flowMembership: Record<FlowId, readonly string[]> = {
     "add-pollen": [
         ...enterLoginErrorScreens.map((screen) => screen.id),
-        ...[loginErrors.banned].map((error) => `${error.id}-exit`),
+        ...[loginErrors.banned, loginErrors.staging].map(
+            (error) => `${error.id}-exit`,
+        ),
         "app-connected",
         "github-session",
         "github-login",

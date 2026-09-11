@@ -423,7 +423,10 @@ if (screen.startsWith("add-pollen-") || screen === "account-checkout") {
         params.set("redirect_uri", `${location.origin}/callback`);
         params.set("state", "preview-state");
         if (query.has("scope")) params.set("scope", query.get("scope") ?? "");
-        if (screen.startsWith("oauth") || screen === "login-failed") {
+        if (
+            screen.startsWith("oauth") ||
+            (screen === "login-failed" && query.get("protocol") !== "direct")
+        ) {
             params.set("response_type", "code");
             params.set("code_challenge", "a".repeat(43));
             params.set("code_challenge_method", "S256");
@@ -432,6 +435,7 @@ if (screen.startsWith("add-pollen-") || screen === "account-checkout") {
         const requestOverrides: Record<string, [string, string | null]> = {
             "missing-redirect": ["redirect_uri", null],
             "invalid-redirect": ["redirect_uri", "not-a-url"],
+            "redirect-scheme": ["redirect_uri", "http://app.example/callback"],
             "response-type": ["response_type", "token"],
             "missing-client": ["client_id", null],
             "missing-challenge": ["code_challenge", null],

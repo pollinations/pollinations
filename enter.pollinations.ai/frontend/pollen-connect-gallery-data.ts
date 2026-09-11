@@ -333,30 +333,45 @@ export function galleryCardsForFlow(
             return page ? [page] : [];
         });
     });
-    // Both failures render SignInScreen. Keep their distinct runtime URLs so
-    // focus controls can inspect either trigger without duplicating the UI.
-    const callbackFailure = cards.find(
-        (entry) => entry.screen === "login-failed",
-    );
-    if (flow !== "app" || !callbackFailure) return cards;
-    return cards.flatMap((entry) => {
-        if (entry === callbackFailure) return [];
-        if (!entry.id.startsWith("sign-in-errors")) return [entry];
-        return [
-            {
+    if (flow !== "app" || section === "topup") return cards;
+    // Group by UI family while retaining every source variant and route.
+    const families = new Map<string, CanvasScreen>();
+    for (const entry of cards) {
+        const family =
+            entry.id.startsWith("sign-in--") || entry.id.startsWith("loading--")
+                ? "Sign in to Pollinations"
+                : entry.id === "consent" || entry.id.startsWith("consent--")
+                  ? "Allow access"
+                  : entry.id.startsWith("sign-in-errors") ||
+                      loginErrorIds.some((id) => entry.id.startsWith(`${id}--`))
+                    ? "Pollinations sign-in error"
+                    : entry.id.startsWith("connection-link") ||
+                        entry.id.startsWith("consent-errors")
+                      ? "App connection error"
+                      : entry.id;
+        const existing = families.get(family);
+        const variants = (entry.variants ?? []).map((variant) => ({
+            ...(existing && entry.screen !== existing.screen
+                ? { screen: entry.screen }
+                : {}),
+            ...variant,
+            label: entry.id.startsWith("sign-in-errors")
+                ? "Starting sign-in"
+                : entry.id.startsWith("loading--")
+                  ? "Checking account"
+                  : variant.label,
+        }));
+        if (existing) {
+            if (entry.screen === "login-failed")
+                existing.variants?.splice(1, 0, ...variants);
+            else
+                existing.variants = [...(existing.variants ?? []), ...variants];
+        } else
+            families.set(family, {
                 ...entry,
-                title: "Sign-in failed",
-                variants: [
-                    ...(entry.variants ?? []).map((variant) => ({
-                        ...variant,
-                        label: "Starting sign-in",
-                    })),
-                    ...(callbackFailure.variants ?? []).map((variant) => ({
-                        ...variant,
-                        screen: callbackFailure.screen,
-                    })),
-                ],
-            },
-        ];
-    });
+                title: family === entry.id ? entry.title : family,
+                variants: variants.length ? variants : undefined,
+            });
+    }
+    return [...families.values()];
 }

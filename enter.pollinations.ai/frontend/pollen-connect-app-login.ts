@@ -57,14 +57,35 @@ export const appLoginScreens = new Map<string, CanvasScreen>(
     bindings.map(([id, match]) => {
         // Callback failure shares the gallery UI but remains a distinct arrival
         // in Map/Journey, using its original /error route and retry context.
-        const entries =
-            id === "login-failed" ? galleryPagesForFlow("app", "main") : cards;
+        const entries = [
+            "app-signing-in",
+            "app-connecting",
+            "app-connection-failed",
+            "loading",
+            ...Object.values(loginErrors).map((error) => error.id),
+        ].includes(id)
+            ? galleryPagesForFlow("app", "main")
+            : cards;
         const matches = entries.filter(match);
-        if (matches.length !== 1)
+        if (
+            !matches.length ||
+            (matches.length !== 1 && id !== "app-connection-failed")
+        )
             throw new Error(
                 `Apps Login needs one screen for ${id}, found ${matches.length}`,
             );
-        return [id, matches[0]];
+        return [
+            id,
+            matches.length === 1
+                ? matches[0]
+                : {
+                      ...matches[0],
+                      title: "App connection error",
+                      variants: matches.flatMap(
+                          (entry) => entry.variants ?? [],
+                      ),
+                  },
+        ];
     }),
 );
 // App lookup changes the current screen's busy state, not the user's task.
@@ -134,7 +155,7 @@ export const appLoginNodes: FlowNode[] = [
         x: 100 + column * 370,
         y: 100 + row * 740,
     })),
-    ...[loginErrors.banned].map(
+    ...[loginErrors.banned, loginErrors.staging].map(
         (error, index): FlowNode => ({
             id: `${error.id}-exit`,
             kind: "outcome",
@@ -189,7 +210,7 @@ export const appLoginNodes: FlowNode[] = [
     },
 ];
 export const appLoginEdges: FlowEdge[] = [
-    ...[loginErrors.banned].map((error) => ({
+    ...[loginErrors.banned, loginErrors.staging].map((error) => ({
         from: error.id,
         to: `${error.id}-exit`,
         label: error.action.label,
@@ -388,9 +409,11 @@ export function appLoginAutomaticDestination(
                   ? "consent"
                   : "sign-in";
         case "app-signing-in":
-            return settings.errors ? "error" : "github-handoff";
+            return settings.loginResult === "start"
+                ? "error"
+                : "github-handoff";
         case "app-connecting":
-            return settings.errors || settings.authorizationError !== "none"
+            return settings.authorizationError !== "none"
                 ? "app-connection-failed"
                 : state.method === "oauth"
                   ? "app-callback"

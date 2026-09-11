@@ -1005,14 +1005,13 @@ describe("automatic journey routing", () => {
             advance({ ...startJourney(), node: "consent" }, "cancelled").node,
         ).toBe("app-callback-error");
     });
-    it("shows real error states when error simulation is enabled", () => {
+    it("uses the failure setting for the relevant auth stage", () => {
         const settings = { ...defaultJourneySettings, errors: true };
         expect(
-            advance(
-                { ...startJourney(), node: "sign-in" },
-                "app-signing-in",
-                settings,
-            ).node,
+            advance({ ...startJourney(), node: "sign-in" }, "app-signing-in", {
+                ...settings,
+                loginResult: "start",
+            }).node,
         ).toBe("error");
         expect(
             advance({ ...startJourney(), signedIn: true }, "loading", {
@@ -1027,6 +1026,18 @@ describe("automatic journey routing", () => {
                 settings,
             ),
         ).toMatchObject({ node: "device-code", scenario: "device-invalid" });
+        expect(
+            appLoginAutomaticDestination(
+                { ...startJourney(), node: "app-signing-in" },
+                settings,
+            ),
+        ).toBe("github-handoff");
+        expect(
+            appLoginAutomaticDestination(
+                { ...startJourney(), node: "app-connecting" },
+                settings,
+            ),
+        ).toBe("app-callback");
     });
     it("resolves admin access and device validation automatically", () => {
         const admin = {
@@ -1053,6 +1064,10 @@ describe("automatic journey routing", () => {
 });
 
 describe("remembered journey sections", () => {
+    it("keeps the chosen protocol when returning to a previous step", () => {
+        const current = { ...startJourney(), method: "direct" as const };
+        expect(restoreJourney(startJourney(), current).method).toBe("direct");
+    });
     it("preserves app progress while reading the latest shared account balance", () => {
         const saved = {
             ...startJourney(),

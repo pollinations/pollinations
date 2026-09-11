@@ -26,6 +26,32 @@ function model(overrides: Partial<ModelPrice> = {}): ModelPrice {
 const matches = (candidate: ModelPrice, query: string): boolean =>
     matchesModelQuery(candidate, parseModelQuery(query));
 
+it("finds canonical catalog entries through old search terms and saved id filters", () => {
+    const candidate = model({
+        name: "google/gemini-2.5-flash-lite:search",
+        aliases: ["gemini-search"],
+    });
+    expect(matches(candidate, "gemini-search")).toBe(true);
+    expect(matches(candidate, "id:GEMINI-SEARCH")).toBe(true);
+    expect(matches(candidate, "id:google/gemini-2.5-flash-lite:search")).toBe(
+        true,
+    );
+    expect(matches(candidate, "id:gemini-sea")).toBe(false);
+    expect(
+        matches(candidate, "id:google/gemini-2.5-flash-lite:search:openrouter"),
+    ).toBe(false);
+    expect(candidate.name).toBe("google/gemini-2.5-flash-lite:search");
+    expect(getModelQuerySuggestions("id:google/", [candidate])).toEqual([
+        "id:google/gemini-2.5-flash-lite:search ",
+    ]);
+    expect(
+        matches(
+            model({ name: "owner/community-model", community: true }),
+            "id:owner/community-model",
+        ),
+    ).toBe(true);
+});
+
 describe("parseModelQuery", () => {
     it("separates case-insensitive filters from text terms", () => {
         expect(
@@ -151,7 +177,7 @@ describe("matchesModelQuery", () => {
         ["canonical model ID", { name: "alice/quick-coder" }, "quick-coder"],
         ["title", { displayName: "Rapid Illustrator" }, "illustrator"],
         ["description", { description: "Great at restoration" }, "restoration"],
-        ["publisher", { brand: "Acme Labs" }, "acme"],
+        ["publisher", { publisher: "Acme Labs" }, "acme"],
         ["base model", { baseModel: "openai-fast" }, "openai-fast"],
         ["input modality", { inputModalities: ["audio"] }, "audio"],
         ["output modality", { outputModalities: ["video"] }, "video"],
@@ -165,7 +191,7 @@ describe("matchesModelQuery", () => {
     it("requires every free-text term to match", () => {
         const candidate = model({
             displayName: "Quick Coder",
-            brand: "Alice AI",
+            publisher: "Alice AI",
         });
 
         expect(matches(candidate, "alice quick")).toBe(true);
@@ -188,17 +214,20 @@ describe("matchesModelQuery", () => {
         const community = model({
             name: "PublicOwner/image-model",
             community: true,
-            brand: "internal-user-123",
+            publisher: "internal-user-123",
         });
 
         expect(matches(community, "publisher:publicowner")).toBe(true);
         expect(matches(community, "publisher:public")).toBe(false);
         expect(
-            matches(model({ brand: "Moonshot AI" }), "publisher:moonshot-ai"),
+            matches(
+                model({ publisher: "Moonshot AI" }),
+                "publisher:moonshot-ai",
+            ),
         ).toBe(true);
-        expect(matches(model({ brand: "NVIDIA" }), "publisher:nvidia")).toBe(
-            true,
-        );
+        expect(
+            matches(model({ publisher: "NVIDIA" }), "publisher:nvidia"),
+        ).toBe(true);
     });
 
     it("filters official and community model sources", () => {
@@ -266,7 +295,7 @@ describe("matchesModelQuery", () => {
 
 describe("getModelQuerySuggestions", () => {
     const models = [
-        model({ name: "openai/gpt", type: "text", brand: "OpenAI" }),
+        model({ name: "openai/gpt", type: "text", publisher: "OpenAI" }),
         model({
             name: "Alice/quick-coder",
             community: true,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Data, OpCloudRow, OpTransactionRow } from "../types";
+import type { Data, OpTransactionRow, VendorLedgerRow } from "../types";
 import { ledgerFacets } from "./filterFacets";
 
 const transaction = (
@@ -20,7 +20,7 @@ const transaction = (
     recorded_at: "2026-08-01 00:00:00",
 });
 
-const cloud = (vendor: string, type: string): OpCloudRow => ({
+const cloud = (vendor: string, type: string): VendorLedgerRow => ({
     entry_id: `${vendor}-${type}`,
     source: "api",
     vendor,
@@ -75,8 +75,8 @@ describe("ledgerFacets", () => {
 
     it("uses registry labels for vendors and flags unknown values", () => {
         const facets = ledgerFacets(
-            { opCloud: [cloud("aws", "inference"), cloud("new", "odd")] },
-            "op-cloud",
+            { vendorLedger: [cloud("aws", "inference"), cloud("new", "odd")] },
+            "vendor-ledger",
             selection,
         );
 
@@ -89,8 +89,8 @@ describe("ledgerFacets", () => {
 
     it("keeps a selected zero-result value visible until it is cleared", () => {
         const facets = ledgerFacets(
-            { opCloud: [cloud("aws", "inference")] },
-            "op-cloud",
+            { vendorLedger: [cloud("aws", "inference")] },
+            "vendor-ledger",
             { ...selection, vendors: ["google"] },
         );
 

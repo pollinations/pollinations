@@ -27,6 +27,8 @@ export default defineConfig(({ mode }) => ({
     root: "frontend",
     server: {
         port: 3000,
+        // Let Enter handle credentialed dashboard preflights instead of Vite.
+        cors: false,
         allowedHosts: [".trycloudflare.com"],
     },
     publicDir: "public",

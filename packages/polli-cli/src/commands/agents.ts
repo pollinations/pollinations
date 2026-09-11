@@ -16,8 +16,6 @@ type Agent = {
     title: string;
     description: string | null;
     visibility: "private" | "public";
-    baseUrl: string;
-    upstreamModel: string;
     systemPrompt: string;
     baseModel: string;
     mcpServers: string[];

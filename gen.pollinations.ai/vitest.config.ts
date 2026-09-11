@@ -4,6 +4,7 @@ import {
     defineWorkersConfig,
     readD1Migrations,
 } from "@cloudflare/vitest-pool-workers/config";
+import { buildSync } from "esbuild";
 import { loadEnv } from "vite";
 import { configDefaults, defineConfig } from "vitest/config";
 
@@ -53,7 +54,7 @@ const genAliases = [
     "utils/text-cache.ts",
 ];
 
-const baseConfig = defineConfig({
+const baseConfig = defineWorkersConfig({
     resolve: {
         dedupe: ["hono", "hono-openapi"],
         alias: [
@@ -88,20 +89,50 @@ const baseConfig = defineConfig({
     },
 });
 
-export default defineWorkersConfig(async ({ mode }) => {
+export default defineConfig(async ({ mode }) => {
     const migrationsPath = path.join(
         __dirname,
         "../enter.pollinations.ai/drizzle",
     );
     const migrations = await readD1Migrations(migrationsPath);
     const env = loadEnv(mode, process.cwd(), "");
+    // Exercise the real media RPC service, with isolated local R2 storage.
+    const mediaScript = buildSync({
+        entryPoints: [
+            path.join(
+                __dirname,
+                "../media.pollinations.ai/src/media-upload.ts",
+            ),
+        ],
+        bundle: true,
+        write: false,
+        format: "esm",
+        external: ["cloudflare:workers"],
+        tsconfig: path.join(
+            __dirname,
+            "../media.pollinations.ai/tsconfig.json",
+        ),
+        footer: { js: "export default {};" },
+    }).outputFiles[0].text;
 
     return {
         ...baseConfig,
         test: {
+            // Use Gen's pool, not the older version hoisted for Enter.
+            pool: fileURLToPath(
+                import.meta.resolve("@cloudflare/vitest-pool-workers"),
+            ),
             globalSetup: ["./test/setup/snapshot-server.ts"],
             setupFiles: ["./test/setup/apply-migrations.ts"],
             exclude: [...configDefaults.exclude],
+            deps: {
+                optimizer: {
+                    ssr: {
+                        enabled: true,
+                        include: ["better-auth", "drizzle-orm"],
+                    },
+                },
+            },
             poolOptions: {
                 workers: {
                     singleWorker: true,
@@ -110,12 +141,26 @@ export default defineWorkersConfig(async ({ mode }) => {
                         environment: env.TEST_ENV || "test",
                     },
                     miniflare: {
+                        workers: [
+                            {
+                                name: "media-test",
+                                modules: true,
+                                script: mediaScript,
+                                compatibilityDate: "2025-11-12",
+                                r2Buckets: ["MEDIA_BUCKET"],
+                                bindings: { MAX_FILE_SIZE: "104857600" },
+                            },
+                        ],
                         bindings: {
                             TEST_MIGRATIONS: migrations,
                             TEST_VCR_MODE:
                                 env.TEST_VCR_MODE || "replay-or-record",
                         },
                         serviceBindings: {
+                            MEDIA: {
+                                name: "media-test",
+                                entrypoint: "MediaUpload",
+                            },
                             ENTER: async (request: Request) => {
                                 const url = new URL(request.url);
                                 if (

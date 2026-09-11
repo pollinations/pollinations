@@ -2,9 +2,11 @@
 
 Canonical vendor: `ovhcloud`
 
-## Verified — 2026-07-10
+## Verified — 2026-09-04
 
 - Status: signed OVH credit API works end to end.
+- Account: `fd415008-ovh` (`Myceli.AI OÜ`), login `elliot@myceli.ai`.
+- Billing: <https://manager.eu.ovhcloud.com/#/billing/payment/credits>
 - Movement amounts use signed values: `USE` is negative and `VOUCHER` is
   positive. Preserve the provider date before shifting a monthly debit.
 
@@ -30,6 +32,48 @@ Collection endpoints:
 - `GET /me/bill/{billId}` and `GET /me/bill/{billId}/details` when the
   consumer key has invoice-detail permission.
 - Sign every request with the OVH server time; never log the signature inputs.
+- The current consumer key reads balances and movements but receives `403` for
+  bill/order details. Use invoice PDFs or the authenticated dashboard for SKU
+  classification; movement aggregates prove only exact voucher burn.
+
+## Verified — 2026-09-06
+
+- Invoice line items without the bill-detail API permission: in the signed-in
+  manager tab (`manager.eu.ovhcloud.com`), the manager's own API proxy answers
+  with the session:
+
+  ```
+  fetch('/engine/apiv6/me/bill/<billId>/details', {credentials: 'include'})
+  fetch('/engine/apiv6/me/bill/<billId>/details/<detailId>', {credentials: 'include'})
+  ```
+
+  Each detail carries `description`, `periodStart`, `periodEnd`, `quantity`,
+  `unitPrice.value` and `totalPrice.value` (EUR). AI Endpoints lines name the
+  model (`gpt-oss-20b`, `Qwen3-Coder-30B-A3B-Instruct`, `whisper-large-v3`) and
+  are inference; `Public Cloud Snapshots` lines are infra; ignore the
+  `Use of your Voucher account` lines (they net each line to zero). Invoices
+  issued on the 1st cover the previous month's service period.
+
+## Verified — 2026-09-06 (invoice PDFs)
+
+- List and download bills from the signed-in manager tab without the
+  bill-detail API permission:
+
+  ```
+  fetch('/engine/apiv6/me/bill?date.from=2026-01-01&date.to=2026-09-06', {credentials: 'include'})
+  fetch('/engine/apiv6/me/bill/<billId>', {credentials: 'include'})
+  ```
+
+  The bill object carries `date`, `priceWithoutTax`, `priceWithTax`, and a
+  signed `pdfUrl` that `curl` downloads without cookies.
+- OVH issues one bill per Public Cloud project on the 1st (two per month
+  since March 2026), each covering the previous month. Voucher-funded bills
+  print `Invoice total ex. VAT €0.00`; the real usage is the `SUB-TOTAL` line
+  before `Use of your Voucher`. The ledger's EUR month totals equal those
+  subtotals exactly.
+- Archive: every 2026 bill (`IE1971296` … `IE2153030`) is in the accounting
+  Drive under `2026/<MM Month>/Invoices` as
+  `YYYY-MM-DD__OVHcloud__IE<id>.pdf` (invoice date).
 
 Known traps:
 

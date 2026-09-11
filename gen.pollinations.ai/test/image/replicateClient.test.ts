@@ -4,7 +4,7 @@ import { syncImageEnvironment } from "../../src/image/handler.ts";
 import {
     ReplicateError,
     runReplicatePrediction,
-    toReplicateHttpError,
+    toReplicateUpstreamError,
 } from "../../src/image/utils/replicateClient.ts";
 
 beforeEach(() => {
@@ -24,6 +24,28 @@ const MODEL = "bytedance/seedance-2.0";
 const OFFICIAL_PREDICTION_URL = `https://api.replicate.com/v1/models/${MODEL}/predictions`;
 
 describe("runReplicatePrediction", () => {
+    it("retains the full provider body through the public error adapter", async () => {
+        const body = JSON.stringify({
+            detail: "x".repeat(20000),
+            token: "test-only",
+        });
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(body, { status: 429 }),
+        );
+        const error = await runReplicatePrediction({
+            model: MODEL,
+            input: {},
+        }).catch((error) =>
+            toReplicateUpstreamError(error, "generation failed"),
+        );
+        expect(error).toMatchObject({
+            status: 502,
+            upstreamStatus: 429,
+            responseBody: body,
+        });
+        expect(error).toHaveProperty("message", expect.stringContaining(body));
+    });
+
     it("returns when initial response is succeeded", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response(
@@ -534,10 +556,10 @@ describe("runReplicatePrediction", () => {
     });
 });
 
-describe("toReplicateHttpError", () => {
+describe("toReplicateUpstreamError", () => {
     it("preserves classified status, URL, and adapter context", () => {
         expect(
-            toReplicateHttpError(
+            toReplicateUpstreamError(
                 new ReplicateError(
                     "rate limited",
                     429,
@@ -546,15 +568,16 @@ describe("toReplicateHttpError", () => {
                 "Wan generation failed",
             ),
         ).toMatchObject({
-            name: "HttpError",
+            name: "UpstreamError",
             message: "Wan generation failed: rate limited",
-            status: 429,
-            upstreamUrl: "https://api.replicate.com/v1/predictions/123",
+            status: 502,
+            upstreamStatus: 429,
+            requestUrl: new URL("https://api.replicate.com/v1/predictions/123"),
         });
     });
 
     it("does not mask non-Replicate failures", () => {
         const error = new TypeError("coding bug");
-        expect(toReplicateHttpError(error, "ignored")).toBe(error);
+        expect(toReplicateUpstreamError(error, "ignored")).toBe(error);
     });
 });

@@ -30,6 +30,7 @@ import {
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
 import { linkFallbackEntries } from "./fallback.ts";
+import { mediaPromptRoute } from "./media/prompt-route.ts";
 import { supportsDirectResponses } from "./text/availableModels.ts";
 
 const REGISTRY_TTL_MS = 60_000;
@@ -138,16 +139,23 @@ function communityEntryToGenerationEntry(
     entry: CommunityModelRegistryEntry,
 ): GenerationModelEntry {
     const eventType = eventTypeForCategory(entry.definition.category);
+    const supportedEndpoints = communityEndpointSupportedEndpoints(
+        entry.communityEndpoint.modality,
+        entry.definition.inputModalities ?? [],
+    );
+    if (
+        entry.communityEndpoint.modality === "text" &&
+        entry.communityEndpoint.api === "responses"
+    ) {
+        supportedEndpoints.push("/v1/responses");
+    }
     return {
         id: entry.id,
         aliases: entry.aliases,
         eventType,
-        supportedEndpoints: communityEndpointSupportedEndpoints(
-            entry.communityEndpoint.modality,
-            entry.definition.inputModalities ?? [],
-        ),
+        supportedEndpoints,
         definition: entry.definition,
-        info: entry.info,
+        info: { ...entry.info, supported_endpoints: supportedEndpoints },
         communityEndpoint: entry.communityEndpoint,
         agentConfig: entry.agentConfig,
         // Public endpoints appear for everyone. Private endpoints are added
@@ -196,7 +204,22 @@ function buildRegistry(
 ): GenerationModelRegistry {
     // Link on copies: STATIC_ENTRIES is module-level and shared across registry
     // rebuilds, so resolution must never mutate the originals.
-    const entries = sourceEntries.map((entry) => ({ ...entry }));
+    const entries = sourceEntries.map((entry) => {
+        const supportedEndpoints = mediaPromptRoute(entry)
+            ? [
+                  ...new Set([
+                      ...entry.supportedEndpoints,
+                      "/v1/responses",
+                      "/v1/chat/completions",
+                  ]),
+              ]
+            : entry.supportedEndpoints;
+        return {
+            ...entry,
+            supportedEndpoints,
+            info: { ...entry.info, supported_endpoints: supportedEndpoints },
+        };
+    });
     // Build lookup keys before presentation sorting so duplicate aliases keep
     // their declaration-order, first-wins resolution behavior.
     const byIdOrAlias = new Map<string, GenerationModelEntry>();

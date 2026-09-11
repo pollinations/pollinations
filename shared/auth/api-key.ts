@@ -1,6 +1,6 @@
+import { apiKey } from "@better-auth/api-key";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { apiKey } from "better-auth/plugins";
 import { eq, getTableColumns } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { alias } from "drizzle-orm/sqlite-core";
@@ -294,14 +294,14 @@ async function loadActiveApiKeyAuthResult(opts: {
             apiKey: getTableColumns(schema.apikey),
             user: getTableColumns(schema.user),
             byopClientName: byopClientKey.name,
-            byopClientUserId: byopClientKey.userId,
+            byopClientUserId: byopClientKey.referenceId,
             byopClientPrefix: byopClientKey.prefix,
             byopClientEnabled: byopClientKey.enabled,
             byopClientExpiresAt: byopClientKey.expiresAt,
             byopClientMetadata: byopClientKey.metadata,
         })
         .from(schema.apikey)
-        .innerJoin(schema.user, eq(schema.user.id, schema.apikey.userId))
+        .innerJoin(schema.user, eq(schema.user.id, schema.apikey.referenceId))
         .leftJoin(
             byopClientKey,
             eq(byopClientKey.id, schema.apikey.byopClientKeyId),

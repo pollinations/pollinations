@@ -113,7 +113,7 @@ curl -X POST https://enter.pollinations.ai/api/oauth/token \
 
 The authorization code is single-use and expires after 10 minutes. Token responses use RFC 6749 error objects such as `invalid_grant`, `invalid_request`, and `unsupported_grant_type`.
 
-Scopes: `profile` (name + email), `usage` (account balance + usage), `keys` (account admin — create/list/revoke keys). The response's `scope` echoes what the user actually granted, which may be narrower than requested. Generation needs no scope — spending is bounded by the budget and expiry the user approved. There are no refresh tokens; re-run the flow when the key expires. Issued keys appear in the user's dashboard like any other API key and can be edited or revoked there at any time — revocation is immediate.
+Scopes: `profile` (name + email), `usage` (account balance + usage), `keys` (account admin — create/list/revoke keys). The response's `scope` echoes what the user actually granted, which may be narrower than requested. Generation needs no scope — spending is bounded by the budget and expiry the user approved. By default there is no refresh token and `expires_in` is the key's lifetime; re-run the flow when it expires. Add `offline_access` to `scope` to get a one-hour `expires_in` plus a `refresh_token`: `grant_type=refresh_token` with `refresh_token` and `client_id` returns the same key while it exists, re-mints it with the approved permissions if the user deleted it, and fails with `invalid_grant` once the approved expiry has passed. Issued keys appear in the user's dashboard like any other API key and can be edited or revoked there at any time — revocation is immediate.
 
 **Browser-only apps.** The same request works from `fetch`:
 

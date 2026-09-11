@@ -22,6 +22,7 @@ import { formatPollen } from "@pollinations/ui/wallet";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
+    OFFLINE_ACCESS_SCOPE,
     PKCE_S256_CHALLENGE_REGEX,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
@@ -420,7 +421,16 @@ export function Authorize() {
                                 // — RFC 6749 §5.1 needs the token response to
                                 // echo the former
                                 scope: requestedScopes.size
-                                    ? grantedAccountPermissions.join(" ")
+                                    ? [
+                                          ...grantedAccountPermissions,
+                                          // Not a permission: asks the token
+                                          // endpoint for a refresh token
+                                          ...(requestedScopes.has(
+                                              OFFLINE_ACCESS_SCOPE,
+                                          )
+                                              ? [OFFLINE_ACCESS_SCOPE]
+                                              : []),
+                                      ].join(" ")
                                     : undefined,
                                 codeChallenge: code_challenge,
                                 codeChallengeMethod: "S256",

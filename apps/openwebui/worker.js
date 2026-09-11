@@ -44,7 +44,10 @@ export class OpenWebUIContainer extends Container {
         OAUTH_CODE_CHALLENGE_METHOD: "S256",
         OPENID_PROVIDER_URL: `${required("ENTER_URL")}/.well-known/oauth-authorization-server`,
         OPENID_REDIRECT_URI: `${WEBUI_URL}/oauth/oidc/callback`,
-        OAUTH_SCOPES: "profile",
+        // offline_access: the token endpoint then issues a refresh token and
+        // Open WebUI refreshes hourly, so a consent key the user deletes from
+        // the dashboard is re-minted instead of breaking chat until re-login.
+        OAUTH_SCOPES: "profile offline_access",
         OAUTH_USERNAME_CLAIM: "name",
         OAUTH_EMAIL_CLAIM: "email",
         OAUTH_PICTURE_CLAIM: "picture",

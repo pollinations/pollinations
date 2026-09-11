@@ -147,7 +147,9 @@ Production deploys run through `.github/workflows/deploy-applications.yml`.
 - `OAUTH_CLIENT_SECRET` stays empty. With a secret, authlib switches to Basic
   auth and drops `client_id` from the token request, which the Pollinations
   token endpoint rejects.
-- `OAUTH_SCOPES=profile`: email is only returned with that scope. A user who
-  unticks "profile" on the consent screen cannot log in.
-- There is no refresh grant. The consent key expiry (`OAUTH_AUTHORIZE_PARAMS`)
-  is the re-login interval for API access.
+- `OAUTH_SCOPES=profile offline_access`: email is only returned with `profile`.
+  A user who unticks "profile" on the consent screen cannot log in.
+  `offline_access` makes the token endpoint return a one-hour access token plus
+  a refresh token; Open WebUI refreshes on its own, and a consent key the user
+  deleted from the dashboard is re-minted at the next refresh. The consent key
+  expiry (`OAUTH_AUTHORIZE_PARAMS`) stays the re-login interval.

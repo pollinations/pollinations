@@ -60,6 +60,13 @@ export const PKCE_S256_CHALLENGE_REGEX = /^[A-Za-z0-9_-]{43}$/;
  */
 export const CONSENT_PERMISSIONS = ["profile", "usage", "keys"] as const;
 
+/**
+ * Requested alongside the consent permissions by OAuth code-flow clients that
+ * want a refresh token. Not an account permission: it only changes the shape
+ * of the token response, so it never reaches the key's permissions.
+ */
+export const OFFLINE_ACCESS_SCOPE = "offline_access";
+
 export function sanitizeAuthorizeAccountPermissions(
     permissions: string[] | null | undefined,
 ): string[] | null {

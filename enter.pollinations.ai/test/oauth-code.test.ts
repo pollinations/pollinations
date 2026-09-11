@@ -1,5 +1,6 @@
 import { env, SELF } from "cloudflare:test";
 import * as schema from "@shared/db/better-auth.ts";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
 import { test } from "./fixtures.ts";
@@ -74,8 +75,15 @@ describe("OAuth authorization server metadata", () => {
             `${BASE}/api/device/code`,
         );
         expect(meta.response_types_supported).toEqual(["code"]);
+        expect(meta.scopes_supported).toEqual([
+            "profile",
+            "usage",
+            "keys",
+            "offline_access",
+        ]);
         expect(meta.grant_types_supported).toEqual([
             "authorization_code",
+            "refresh_token",
             DEVICE_GRANT,
         ]);
         expect(meta.code_challenge_methods_supported).toEqual(["S256"]);
@@ -99,6 +107,8 @@ describe("POST /api/oauth/token (authorization_code + PKCE)", () => {
         expect(body.token_type).toBe("bearer");
         expect(body.scope).toBe("profile");
         expect(body.expires_in).toBe(604800);
+        // Without offline_access there is nothing to refresh with
+        expect(body.refresh_token).toBeUndefined();
 
         // Replay: the code is burned on first use
         const replay = await SELF.fetch(
@@ -463,6 +473,228 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
         });
         expect(res.status).toBe(400);
     }, 30000);
+});
+
+describe("POST /api/oauth/token (refresh_token)", () => {
+    const REFRESH_URI = "https://refresh.example/cb";
+
+    function sessionHeaders(sessionToken: string): Record<string, string> {
+        return {
+            "Content-Type": "application/json",
+            Cookie: `better-auth.session_token=${sessionToken}`,
+        };
+    }
+
+    /** Register a client and mint a consent key the way /authorize does. */
+    async function consentWithOfflineAccess(sessionToken: string) {
+        const clientRes = await SELF.fetch(`${BASE}/api/api-keys`, {
+            method: "POST",
+            headers: sessionHeaders(sessionToken),
+            body: JSON.stringify({ name: "refresh-app", type: "publishable" }),
+        });
+        expect(clientRes.status).toBe(200);
+        const client = (await clientRes.json()) as { id: string; key: string };
+        const metaRes = await SELF.fetch(
+            `${BASE}/api/api-keys/${client.id}/metadata`,
+            {
+                method: "POST",
+                headers: sessionHeaders(sessionToken),
+                body: JSON.stringify({ redirectUris: [REFRESH_URI] }),
+            },
+        );
+        expect(metaRes.status).toBe(200);
+
+        const keyRes = await SELF.fetch(`${BASE}/api/api-keys`, {
+            method: "POST",
+            headers: sessionHeaders(sessionToken),
+            body: JSON.stringify({
+                name: "Refresh App",
+                type: "secret",
+                expiresIn: 86400,
+                pollenBudget: 20,
+                allowedModels: ["openai/gpt-5-nano"],
+                accountPermissions: ["profile"],
+                metadata: {
+                    requestedClientId: client.key,
+                    redirectOrigin: new URL(REFRESH_URI).origin,
+                    redirectUri: REFRESH_URI,
+                },
+            }),
+        });
+        expect(keyRes.status).toBe(200);
+        const consentKey = (await keyRes.json()) as { id: string; key: string };
+
+        const codeRes = await SELF.fetch(`${BASE}/api/oauth/code`, {
+            method: "POST",
+            headers: sessionHeaders(sessionToken),
+            body: JSON.stringify({
+                apiKey: consentKey.key,
+                clientId: client.key,
+                redirectUri: REFRESH_URI,
+                scope: "profile offline_access",
+                codeChallenge: await s256(VERIFIER),
+                codeChallengeMethod: "S256",
+                expiresIn: 86400,
+            }),
+        });
+        expect(codeRes.status).toBe(200);
+        const { code } = (await codeRes.json()) as { code: string };
+
+        const tokenRes = await SELF.fetch(
+            `${BASE}/api/oauth/token`,
+            formPost({
+                grant_type: "authorization_code",
+                code,
+                client_id: client.key,
+                redirect_uri: REFRESH_URI,
+                code_verifier: VERIFIER,
+            }),
+        );
+        expect(tokenRes.status).toBe(200);
+        const token = (await tokenRes.json()) as {
+            access_token: string;
+            expires_in: number;
+            refresh_token: string;
+            scope: string;
+        };
+        return { client, consentKey, token };
+    }
+
+    async function refresh(refreshToken: string, clientId: string) {
+        return SELF.fetch(
+            `${BASE}/api/oauth/token`,
+            formPost({
+                grant_type: "refresh_token",
+                refresh_token: refreshToken,
+                client_id: clientId,
+            }),
+        );
+    }
+
+    test("offline_access pairs a short-lived access token with a refresh token", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+        const { client, consentKey, token } =
+            await consentWithOfflineAccess(sessionToken);
+
+        expect(token.access_token).toBe(consentKey.key);
+        expect(token.scope).toBe("profile offline_access");
+        // One hour, not the key's 24h lifetime
+        expect(token.expires_in).toBeLessThanOrEqual(3600);
+        expect(token.expires_in).toBeGreaterThan(3500);
+        expect(token.refresh_token).toMatch(/^[A-Za-z0-9]{64}$/);
+
+        // While the key exists a refresh hands back the same key
+        const res = await refresh(token.refresh_token, client.key);
+        expect(res.status).toBe(200);
+        expect(res.headers.get("Cache-Control")).toBe("no-store");
+        const refreshed = (await res.json()) as Record<string, unknown>;
+        expect(refreshed.access_token).toBe(consentKey.key);
+        expect(refreshed.refresh_token).toBe(token.refresh_token);
+        expect(refreshed.scope).toBe("profile offline_access");
+    }, 30000);
+
+    test("re-mints a deleted consent key with the approved permissions", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+        const { client, consentKey, token } =
+            await consentWithOfflineAccess(sessionToken);
+        const db = drizzle(env.DB, { schema });
+        const original = await db.query.apikey.findFirst({
+            where: eq(schema.apikey.id, consentKey.id),
+        });
+        expect(original).toBeTruthy();
+
+        // The user deletes the key from the dashboard
+        await db
+            .delete(schema.apikey)
+            .where(eq(schema.apikey.id, consentKey.id));
+
+        const res = await refresh(token.refresh_token, client.key);
+        expect(res.status).toBe(200);
+        const refreshed = (await res.json()) as {
+            access_token: string;
+            refresh_token: string;
+        };
+        expect(refreshed.access_token).toMatch(/^sk_/);
+        expect(refreshed.access_token).not.toBe(consentKey.key);
+        expect(refreshed.refresh_token).toBe(token.refresh_token);
+
+        const rows = await db.query.apikey.findMany({
+            where: eq(schema.apikey.name, "Refresh App"),
+        });
+        expect(rows).toHaveLength(1);
+        const replacement = rows[0];
+        expect(replacement.id).not.toBe(consentKey.id);
+        expect(replacement.prefix).toBe("sk");
+        expect(replacement.pollenBalance).toBe(20);
+        expect(replacement.byopClientKeyId).toBe(client.id);
+        expect(JSON.parse(replacement.permissions ?? "{}")).toEqual(
+            JSON.parse(original?.permissions ?? "{}"),
+        );
+        expect(JSON.parse(replacement.metadata ?? "{}")).toMatchObject({
+            createdVia: "redirect-auth",
+            redirectOrigin: new URL(REFRESH_URI).origin,
+        });
+        // Never outlives what the user approved
+        expect(replacement.expiresAt?.getTime()).toBeLessThanOrEqual(
+            original?.expiresAt?.getTime() ?? 0,
+        );
+
+        // The new key is now the one behind the refresh token
+        const again = await refresh(token.refresh_token, client.key);
+        expect(again.status).toBe(200);
+        const body = (await again.json()) as { access_token: string };
+        expect(body.access_token).toBe(refreshed.access_token);
+    }, 30000);
+
+    test("rejects an unknown refresh token, a foreign client_id, and an expired grant", async () => {
+        const unknown = await refresh("nope", "pk_test_client");
+        expect(unknown.status).toBe(400);
+        expect(((await unknown.json()) as { error: string }).error).toBe(
+            "invalid_grant",
+        );
+
+        const grant = {
+            key: "sk_test_access_token",
+            keyId: "missing",
+            userId: "user",
+            clientId: "pk_test_client",
+            redirectUri: REDIRECT_URI,
+            name: "app",
+            scope: "offline_access",
+            allowedModels: null,
+            accountPermissions: null,
+            pollenBudget: null,
+            expiresAt: Date.now() - 1000,
+        };
+        await env.KV.put("oauth-refresh:expired", JSON.stringify(grant));
+
+        const foreign = await refresh("expired", "pk_other_client");
+        expect(foreign.status).toBe(400);
+        expect(((await foreign.json()) as { error: string }).error).toBe(
+            "invalid_grant",
+        );
+
+        const expired = await refresh("expired", "pk_test_client");
+        expect(expired.status).toBe(400);
+        const body = (await expired.json()) as { error_description: string };
+        expect(body.error_description).toMatch(/expired/);
+        expect(await env.KV.get("oauth-refresh:expired")).toBeNull();
+
+        const missing = await SELF.fetch(
+            `${BASE}/api/oauth/token`,
+            formPost({ grant_type: "refresh_token", client_id: "pk_x" }),
+        );
+        expect(missing.status).toBe(400);
+        expect(((await missing.json()) as { error: string }).error).toBe(
+            "invalid_request",
+        );
+    });
 });
 
 describe("GET /api/oauth/userinfo", () => {

@@ -2,7 +2,6 @@ import { getRedirectUris } from "@shared/auth/api-key-metadata.ts";
 import { PKCE_S256_CHALLENGE_REGEX } from "@shared/auth/authorize-config.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
@@ -15,6 +14,12 @@ import {
     handleUserinfo,
     parseFormOrJsonBody,
 } from "./device.ts";
+import {
+    exchangeRefreshToken,
+    hasOfflineAccess,
+    issueRefreshToken,
+    tokenError,
+} from "./oauth-refresh.ts";
 
 const KV_TTL = 600; // 10 minutes — codes are single-use and short-lived
 const CODE_LENGTH = 40;
@@ -49,13 +54,6 @@ async function verifyPkceS256(
     return computed === challenge;
 }
 
-function tokenError(c: Context<Env>, error: string, description?: string) {
-    return c.json(
-        { error, ...(description && { error_description: description }) },
-        400,
-    );
-}
-
 const CreateCodeSchema = z.object({
     apiKey: z.string().min(1),
     clientId: z.string().startsWith("pk_"),
@@ -74,7 +72,7 @@ const CreateCodeSchema = z.object({
  * untouched — this is an additional issuance path, not a replacement.
  *
  * POST /code     — called by the consent page after the user approves
- * POST /token    — code+PKCE (and device_code) exchange, RFC 6749 §3.2
+ * POST /token    — code+PKCE, refresh_token and device_code exchange, RFC 6749 §3.2
  * GET  /userinfo — alias of /api/device/userinfo for discovery metadata
  */
 export const oauthRoutes = new Hono<Env>()
@@ -139,11 +137,14 @@ export const oauthRoutes = new Hono<Env>()
         if (body.grant_type === DEVICE_CODE_GRANT) {
             return await exchangeDeviceCode(c, body as DeviceTokenRequest);
         }
+        if (body.grant_type === "refresh_token") {
+            return await exchangeRefreshToken(c, body);
+        }
         if (body.grant_type !== "authorization_code") {
             return tokenError(
                 c,
                 "unsupported_grant_type",
-                "Only authorization_code and device_code are supported.",
+                "Only authorization_code, refresh_token and device_code are supported.",
             );
         }
         // redirect_uri is required per RFC 6749 §4.1.3 since the
@@ -193,10 +194,16 @@ export const oauthRoutes = new Hono<Env>()
             return tokenError(c, "invalid_grant", "PKCE verification failed");
         }
 
+        // With offline_access the access token is short-lived and paired
+        // with a refresh token; otherwise expires_in is the key's lifetime.
+        const refresh = hasOfflineAccess(stored.scope)
+            ? await issueRefreshToken(c, stored)
+            : null;
         return c.json({
             access_token: stored.key,
             token_type: "bearer",
-            ...(stored.expiresIn != null && { expires_in: stored.expiresIn }),
+            ...(refresh ??
+                (stored.expiresIn != null && { expires_in: stored.expiresIn })),
             ...(stored.scope != null && { scope: stored.scope }),
         });
     })

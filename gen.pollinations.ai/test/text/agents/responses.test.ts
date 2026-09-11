@@ -1,6 +1,13 @@
+import {
+    createAgentModelProvider,
+    strictAgentUsage,
+} from "@shared/agents/model.ts";
+import { collectOutput } from "@shared/agents/output.ts";
+import { handleAgentResponsesRequest } from "@shared/agents/responses.ts";
+import type { AgentRunner } from "@shared/agents/types.ts";
+import { ToolLoopAgent } from "ai";
 import OpenAI from "openai";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { collectOutput } from "../../../src/text/agents/output.ts";
 import {
     handlePromptAgentResponsesRequest,
     PromptAgentResponsesRequestSchema,
@@ -38,8 +45,366 @@ function streamEvents(body: string): Record<string, unknown>[] {
         .map((line) => JSON.parse(line.slice(6)) as Record<string, unknown>);
 }
 
+describe("shared agent Responses adapter", () => {
+    it.each([
+        false,
+        true,
+    ])("defers invalid provider usage rejection until strict aggregation (stream:%s)", async (stream) => {
+        const invalidUsage = {
+            prompt_tokens: -1,
+            completion_tokens: 2,
+            total_tokens: 1,
+        };
+        const provider = createAgentModelProvider({
+            baseURL: "https://gen.test/v1",
+            fetch: async () =>
+                stream
+                    ? new Response(
+                          'data: {"choices":[{"delta":{"content":"done"},"finish_reason":null}]}\n\n' +
+                              `data: ${JSON.stringify({
+                                  choices: [
+                                      { delta: {}, finish_reason: "stop" },
+                                  ],
+                                  usage: invalidUsage,
+                              })}\n\n` +
+                              "data: [DONE]\n\n",
+                          { headers: { "content-type": "text/event-stream" } },
+                      )
+                    : Response.json({
+                          choices: [
+                              {
+                                  message: {
+                                      role: "assistant",
+                                      content: "done",
+                                  },
+                                  finish_reason: "stop",
+                              },
+                          ],
+                          usage: invalidUsage,
+                      }),
+        });
+        const agent = new ToolLoopAgent({
+            model: provider("test"),
+            maxRetries: 0,
+        });
+        const result = stream
+            ? await agent.stream({ prompt: "hello" })
+            : await agent.generate({ prompt: "hello" });
+        const [text, steps, finishReason] = await Promise.all([
+            result.text,
+            result.steps,
+            result.finishReason,
+        ]);
+        expect(text).toBe("done");
+        expect(finishReason).toBe("stop");
+        expect(
+            steps[0].providerMetadata?.pollinations?.completionUsage,
+        ).toBeNull();
+        expect(() => strictAgentUsage(steps)).toThrow(
+            "Agent response omitted valid usage",
+        );
+    });
+
+    const output = {
+        finishReason: "stop",
+        usage: { inputTokens: 6, outputTokens: 2, totalTokens: 8 },
+        toolCallCounts: {},
+    };
+
+    it.each([
+        false,
+        true,
+    ])("round-trips ordinary JSON tools without treating content as MCP with stream:%s", async (stream) => {
+        const toolOutput = {
+            answer: 42,
+            content: [{ type: "application-record", value: "preserve me" }],
+        };
+        let invocations = 0;
+        const runner: AgentRunner = async ({
+            onPart,
+            messages,
+            settings,
+            stream: streaming,
+        }) => {
+            invocations++;
+            expect(streaming).toBe(stream);
+            if (invocations === 1) {
+                expect(settings).toMatchObject({ maxOutputTokens: 42 });
+                expect(messages).toEqual([
+                    { role: "system", content: "Use the lookup tool." },
+                    {
+                        role: "user",
+                        content: [
+                            { type: "text", text: "What is this?" },
+                            {
+                                type: "image",
+                                image: "https://media.test/input.png",
+                            },
+                        ],
+                    },
+                ]);
+                onPart({ type: "text-delta", text: "Looking up the answer." });
+                onPart({
+                    type: "tool-call",
+                    toolCallId: "lookup-call",
+                    toolName: "lookup",
+                    input: { question: "test" },
+                });
+                onPart({
+                    type: "tool-result",
+                    toolCallId: "lookup-call",
+                    toolName: "lookup",
+                    input: { question: "test" },
+                    output: toolOutput,
+                });
+            } else {
+                expect(messages).toEqual(
+                    expect.arrayContaining([
+                        {
+                            role: "assistant",
+                            content: [
+                                {
+                                    type: "tool-call",
+                                    toolCallId: "lookup-call",
+                                    toolName: "lookup",
+                                    input: { question: "test" },
+                                },
+                            ],
+                        },
+                        {
+                            role: "tool",
+                            content: [
+                                {
+                                    type: "tool-result",
+                                    toolCallId: "lookup-call",
+                                    toolName: "lookup",
+                                    output: { type: "json", value: toolOutput },
+                                },
+                            ],
+                        },
+                        { role: "user", content: "Remember that result." },
+                    ]),
+                );
+            }
+            onPart({ type: "text-delta", text: "The answer is 42." });
+            return output;
+        };
+        const response = await handleAgentResponsesRequest(
+            request({
+                stream,
+                instructions: "Use the lookup tool.",
+                max_output_tokens: 42,
+                input: [
+                    {
+                        role: "user",
+                        content: [
+                            { type: "input_text", text: "What is this?" },
+                            {
+                                type: "input_image",
+                                image_url: "https://media.test/input.png",
+                            },
+                        ],
+                    },
+                ],
+            }),
+            new AbortController().signal,
+            runner,
+        );
+        expect(invocations).toBe(1);
+        const body = stream
+            ? streamEvents(await response.text()).at(-1)?.response
+            : await response.json();
+        expect(body).toMatchObject({
+            status: "completed",
+            usage: { input_tokens: 6, output_tokens: 2, total_tokens: 8 },
+            output: [
+                {
+                    type: "message",
+                    content: [{ text: "Looking up the answer." }],
+                },
+                {
+                    type: "function_call",
+                    name: "lookup",
+                    call_id: "lookup-call",
+                },
+                {
+                    type: "function_call_output",
+                    call_id: "lookup-call",
+                    output: JSON.stringify(toolOutput),
+                },
+                { type: "message", content: [{ text: "The answer is 42." }] },
+            ],
+        });
+        const history = (body as { output: unknown[] }).output;
+        const replay = await handleAgentResponsesRequest(
+            request({
+                stream,
+                input: [
+                    ...history,
+                    { role: "user", content: "Remember that result." },
+                ],
+            }),
+            new AbortController().signal,
+            runner,
+        );
+        expect(replay.status).toBe(200);
+        await replay.text();
+        expect(invocations).toBe(2);
+    });
+
+    it.each([
+        null,
+        ["one", 2],
+        "plain text",
+        42,
+    ])("preserves a JSON tool result %j", async (toolOutput) => {
+        const response = await handleAgentResponsesRequest(
+            request({}),
+            new AbortController().signal,
+            async ({ onPart }) => {
+                onPart({
+                    type: "tool-call",
+                    toolCallId: "call",
+                    toolName: "lookup",
+                    input: {},
+                });
+                onPart({
+                    type: "tool-result",
+                    toolCallId: "call",
+                    toolName: "lookup",
+                    input: {},
+                    output: toolOutput,
+                });
+                return output;
+            },
+        );
+        expect(response.status).toBe(200);
+        const body = await response.json<{ output: unknown[] }>();
+        expect(body).toMatchObject({
+            output: [
+                { type: "function_call", name: "lookup" },
+                {
+                    type: "function_call_output",
+                    output: JSON.stringify(toolOutput),
+                },
+            ],
+        });
+        const replay = await handleAgentResponsesRequest(
+            request({ input: body.output }),
+            new AbortController().signal,
+            async ({ messages, onPart }) => {
+                expect(messages[1]).toMatchObject({
+                    role: "tool",
+                    content: [
+                        {
+                            output:
+                                typeof toolOutput === "string"
+                                    ? { type: "text", value: toolOutput }
+                                    : { type: "json", value: toolOutput },
+                        },
+                    ],
+                });
+                onPart({ type: "text-delta", text: "Remembered." });
+                return output;
+            },
+        );
+        expect(replay.status).toBe(200);
+    });
+
+    it("aborts the active run when the client cancels its response stream", async () => {
+        let runSignal: AbortSignal | undefined;
+        let sawAbort = false;
+        const response = await handleAgentResponsesRequest(
+            request({ stream: true }),
+            new AbortController().signal,
+            ({ signal }) => {
+                runSignal = signal;
+                return new Promise((_, reject) => {
+                    signal.addEventListener(
+                        "abort",
+                        () => {
+                            sawAbort = true;
+                            reject(signal.reason);
+                        },
+                        { once: true },
+                    );
+                });
+            },
+        );
+        const reader = response.body?.getReader();
+        expect(reader).toBeDefined();
+        expect((await reader?.read())?.done).toBe(false);
+        await reader?.cancel("client disconnected");
+        expect(runSignal?.aborted).toBe(true);
+        expect(runSignal?.reason).toBe("client disconnected");
+        expect(sawAbort).toBe(true);
+    });
+
+    it("passes request cancellation to the active streamed run", async () => {
+        const cancellation = new AbortController();
+        const response = await handleAgentResponsesRequest(
+            request({ stream: true }),
+            cancellation.signal,
+            ({ signal }) =>
+                new Promise((_, reject) => {
+                    signal.addEventListener(
+                        "abort",
+                        () => reject(new Error("Request cancelled")),
+                        { once: true },
+                    );
+                }),
+        );
+        cancellation.abort();
+        const events = streamEvents(await response.text());
+        expect(events.at(-1)).toMatchObject({
+            type: "response.failed",
+            response: {
+                status: "failed",
+                error: { message: "Request cancelled" },
+            },
+        });
+        expect(
+            events.some((event) => event.type === "response.completed"),
+        ).toBe(false);
+    });
+});
+
 describe("managed agent Responses runtime", () => {
     beforeEach(() => vi.unstubAllGlobals());
+
+    it.each([
+        false,
+        true,
+    ])("rejects non-MCP prompt history before starting stream:%s", async (stream) => {
+        const response = await handlePromptAgentResponsesRequest(
+            request({
+                stream,
+                input: [
+                    {
+                        type: "function_call",
+                        id: "fc_external",
+                        call_id: "external-call",
+                        name: "lookup",
+                        arguments: "{}",
+                        status: "completed",
+                    },
+                    {
+                        type: "function_call_output",
+                        id: "fco_external",
+                        call_id: "external-call",
+                        output: '{"answer":42}',
+                        status: "completed",
+                    },
+                ],
+            }),
+            new AbortController().signal,
+            RUNTIME,
+        );
+        expect(response.status).toBe(400);
+        await expect(response.json()).resolves.toMatchObject({
+            error: { code: "unsupported_parameter", param: "input" },
+        });
+    });
 
     it("returns a native stateless Response with required usage", async () => {
         const fetchMock = vi.fn(

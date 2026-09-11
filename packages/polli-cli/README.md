@@ -98,12 +98,12 @@ polli agents list            # managed prompt agents
 polli my-models list         # invite-only community text, image, and transcription models
 ```
 
-Manage agents with API-shaped JSON config files plus their callable model name
-and catalog title:
+Manage agents with API-shaped JSON config files:
 
 ```bash
 polli agents get <id>
 polli agents create --config agent.json --name my-agent --title "My Agent"
+polli agents create --config code-agent.json
 polli agents update <id> --config agent.json
 polli agents delete <id>
 ```

@@ -1,6 +1,6 @@
+import { loginErrors } from "@shared/auth/login-errors.ts";
 import { useState } from "react";
 import { authClient } from "../auth.ts";
-import { loginErrors } from "../lib/login-errors.ts";
 import { rememberSignIn } from "../lib/sign-in-context.ts";
 
 export function useGitHubSignIn(callbackURL?: string, failed = false) {

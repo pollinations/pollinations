@@ -1,3 +1,4 @@
+import { getLoginError, loginErrors } from "@shared/auth/login-errors.ts";
 import { describe, expect, it } from "vitest";
 import {
     appLoginAutomaticDestination,
@@ -26,7 +27,6 @@ import {
     startJourney,
     startSelectedJourney,
 } from "../frontend/pollen-connect-journey-state";
-import { getLoginError, loginErrors } from "../frontend/src/lib/login-errors";
 
 describe("Complete managed screen inventory", () => {
     const sources = canvasGroups.flatMap((group) => group.screens);

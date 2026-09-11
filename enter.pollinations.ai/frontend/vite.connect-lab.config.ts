@@ -17,6 +17,7 @@ export default defineConfig({
     define: { "import.meta.env.MODE": JSON.stringify("development") },
     resolve: {
         alias: {
+            "@shared": fileURLToPath(new URL("../../shared", import.meta.url)),
             "@pollinations/ui/brand": fileURLToPath(
                 new URL("../../packages/ui/src/brand", import.meta.url),
             ),

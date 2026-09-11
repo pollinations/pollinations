@@ -1,3 +1,4 @@
+import { getLoginError } from "@shared/auth/login-errors.ts";
 import { Button, ExternalLinkIcon, Heading, MailIcon } from "@pollinations/ui";
 import {
     AuthFlowLayout,
@@ -6,7 +7,6 @@ import {
 } from "@pollinations/ui/auth";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { SignInScreen } from "../components/auth/sign-in-screen";
-import { getLoginError } from "../lib/login-errors";
 import { appSignInErrorPath, getSignInContext } from "../lib/sign-in-context";
 
 export const Route = createFileRoute("/error")({

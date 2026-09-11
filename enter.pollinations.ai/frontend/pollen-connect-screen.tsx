@@ -1,3 +1,4 @@
+import { loginErrors } from "@shared/auth/login-errors.ts";
 import type React from "react";
 import { createRoot } from "react-dom/client";
 import { INVALID_AUTHORIZATION_CLIENT_MESSAGE } from "../../shared/auth/authorize-config.ts";
@@ -7,7 +8,6 @@ import {
     readPreviewRequest,
 } from "./pollen-connect-request-config";
 import type { AuthorizeConsent } from "./src/components/auth/authorize";
-import { loginErrors } from "./src/lib/login-errors";
 import { clearSignInContext, rememberSignIn } from "./src/lib/sign-in-context";
 
 const query = new URLSearchParams(location.search);

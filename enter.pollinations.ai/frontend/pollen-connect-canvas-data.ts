@@ -1,4 +1,4 @@
-import { loginErrors } from "./src/lib/login-errors";
+import { loginErrors } from "@shared/auth/login-errors.ts";
 
 export type ScreenVariant = {
     label: string;

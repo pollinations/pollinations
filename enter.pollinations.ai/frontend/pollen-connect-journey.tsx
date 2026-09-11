@@ -1,3 +1,4 @@
+import { loginErrors } from "@shared/auth/login-errors.ts";
 import { Button, Input, Surface, Switch, useColorMode } from "@pollinations/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getPollenPackByKey } from "../../shared/pollen-packs";
@@ -36,7 +37,6 @@ import {
 } from "./pollen-connect-journey-state";
 import { Illustration, ScreenWindow } from "./pollen-connect-preview";
 import type { AuthorizeConsent } from "./src/components/auth/authorize";
-import { loginErrors } from "./src/lib/login-errors";
 import "./pollen-connect-journey.css";
 
 import { addPollenAmounts } from "./pollen-connect-add-pollen-data";

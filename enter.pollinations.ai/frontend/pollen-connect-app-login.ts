@@ -1,3 +1,4 @@
+import { loginErrors } from "@shared/auth/login-errors.ts";
 import { type CanvasScreen, canvasGroups } from "./pollen-connect-canvas-data";
 import type { FlowEdge, FlowNode } from "./pollen-connect-diagram";
 import {
@@ -8,7 +9,6 @@ import type {
     JourneySettings,
     JourneyState,
 } from "./pollen-connect-journey-state";
-import { loginErrors } from "./src/lib/login-errors";
 
 // Apps Login has one screen inventory. Map positions and Journey transitions
 // reference these exact gallery entries, including their real preview parameters.

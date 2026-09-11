@@ -1,3 +1,4 @@
+import { loginErrors } from "@shared/auth/login-errors.ts";
 import type { PollenStatus } from "@pollinations/ui/wallet";
 import { getAuthorizePollenBudget } from "../../shared/auth/authorize-config";
 import {
@@ -15,7 +16,6 @@ import {
     loginRetryNode,
 } from "./pollen-connect-diagram";
 import type { AuthorizeConsent } from "./src/components/auth/authorize";
-import { loginErrors } from "./src/lib/login-errors";
 
 export const entrances = [
     { id: "app", label: "Apps", node: "app-connect" },

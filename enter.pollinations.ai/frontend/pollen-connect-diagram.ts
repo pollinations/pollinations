@@ -1,6 +1,6 @@
+import { loginErrors } from "@shared/auth/login-errors.ts";
 import { appLoginEdges, appLoginNodes } from "./pollen-connect-app-login";
 import { enterLoginErrorScreens } from "./pollen-connect-canvas-data";
-import { loginErrors } from "./src/lib/login-errors";
 
 export type FlowNode = {
     id: string;

@@ -45,10 +45,11 @@ export function shouldPostKeyMetadata(
         typeof apiKey.metadata?.markupPct === "number"
             ? apiKey.metadata.markupPct
             : 0.25;
+    const effectiveMarkupPct = next.markupPct ?? 0.25;
     return (
         next.redirectUris.length !== initialUris.length ||
         next.redirectUris.some((v, i) => v !== initialUris[i]) ||
         next.earningsEnabled !== (apiKey.metadata?.earningsEnabled === true) ||
-        (next.earningsEnabled && next.markupPct !== initialMarkupPct)
+        (next.earningsEnabled && effectiveMarkupPct !== initialMarkupPct)
     );
 }

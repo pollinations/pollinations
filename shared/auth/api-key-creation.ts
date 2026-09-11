@@ -125,7 +125,10 @@ function pickCallerMetadata(
         out.description = metadata.description;
     if (isPublishable) {
         out.earningsEnabled = metadata?.earningsEnabled === true;
-        if (typeof metadata?.markupPct === "number") {
+        if (
+            typeof metadata?.markupPct === "number" &&
+            Number.isFinite(metadata.markupPct)
+        ) {
             out.markupPct = Math.max(0.1, Math.min(0.5, metadata.markupPct));
         }
     }

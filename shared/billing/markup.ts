@@ -30,10 +30,9 @@ export function computeDevCredit(
     baselinePrice: number,
     markupPct: number = MARKUP_PCT,
 ): number {
-    const clamped = Math.max(
-        MIN_MARKUP_PCT,
-        Math.min(MAX_MARKUP_PCT, markupPct),
-    );
+    const safe =
+        Number.isFinite(markupPct) && markupPct > 0 ? markupPct : MARKUP_PCT;
+    const clamped = Math.max(MIN_MARKUP_PCT, Math.min(MAX_MARKUP_PCT, safe));
     if (baselinePrice <= 0 || clamped <= 0) return 0;
     return baselinePrice * clamped;
 }

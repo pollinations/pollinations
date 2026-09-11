@@ -759,8 +759,12 @@ export function Authorize() {
                                             Earn{" "}
                                             <span className="font-semibold">
                                                 {Math.round(
-                                                    (attribution.markupPct ??
-                                                        0.25) * 100,
+                                                    ((attribution.markupPct ??
+                                                        0.25) /
+                                                        (1 +
+                                                            (attribution.markupPct ??
+                                                                0.25))) *
+                                                        100,
                                                 )}
                                                 %
                                             </span>{" "}

@@ -20,6 +20,7 @@ import {
     validateCommunityEndpointUrl,
 } from "@shared/community-endpoint-urls.ts";
 import {
+    CODE_AGENT_BASE_URL_PLACEHOLDER,
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointApi,
@@ -99,6 +100,7 @@ import {
     callCommunityVideoEndpoint,
 } from "../src/image/communityEndpoint.ts";
 import worker from "../src/index.ts";
+import { TEXT_BALANCE_NOTICE_ENABLED } from "../src/middleware/text-balance-notice.ts";
 import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
@@ -634,6 +636,24 @@ describe("community endpoint helpers", () => {
             parseListingPayload(
                 "prompt_agent",
                 JSON.stringify({ systemPrompt: "Missing base model" }),
+            ),
+        ).toBeNull();
+        expect(
+            parseListingPayload(
+                "code_agent",
+                JSON.stringify({
+                    repository: "https://github.com/example/agents",
+                    deployedCommitSha: "a".repeat(40),
+                }),
+            ),
+        ).toEqual({
+            repository: "https://github.com/example/agents",
+            deployedCommitSha: "a".repeat(40),
+        });
+        expect(
+            parseListingPayload(
+                "code_agent",
+                JSON.stringify({ repository: "https://example.com/agents" }),
             ),
         ).toBeNull();
         expect(
@@ -2897,9 +2917,28 @@ fixtureTest(
         const { key: zeroBalanceCallerKey } = await createTestApiKey({
             user: { tierBalance: 0, packBalance: 0 },
         });
-        expect((await callFreePublicModel(zeroBalanceCallerKey)).status).toBe(
-            402,
+        const zeroBalanceResponse =
+            await callFreePublicModel(zeroBalanceCallerKey);
+        expect(zeroBalanceResponse.status).toBe(
+            TEXT_BALANCE_NOTICE_ENABLED ? 200 : 402,
         );
+        if (TEXT_BALANCE_NOTICE_ENABLED) {
+            await expect(zeroBalanceResponse.json()).resolves.toMatchObject({
+                choices: [
+                    {
+                        message: {
+                            content: expect.stringContaining(
+                                "?ref=agent_low_balance_topup",
+                            ),
+                        },
+                    },
+                ],
+                usage: { total_tokens: 0 },
+            });
+            expect(zeroBalanceResponse.headers.get("cache-control")).toBe(
+                "private, no-store",
+            );
+        }
         const { key: fundedCallerKey } = await createTestApiKey({
             user: { tierBalance: 1, packBalance: 0 },
         });
@@ -7751,6 +7790,360 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
             .from(communityEndpointTable)
             .where(eq(communityEndpointTable.id, agent.id)),
     ).resolves.toEqual([]);
+});
+
+fixtureTest("creates, updates, lists, and deletes code agents", async () => {
+    const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+    const ownerUserId = await createTestUser({
+        githubId: COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID,
+        githubUsername: ownerGithubUsername,
+    });
+    const sessionToken = `session-${crypto.randomUUID()}`;
+    await db.insert(sessionTable).values({
+        id: `session-${crypto.randomUUID()}`,
+        token: sessionToken,
+        userId: ownerUserId,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+
+    const enterApi = await createEnterFrontendApi();
+    const cookie = (await signedSessionCookie(sessionToken)).replace(
+        "better-auth.session_token",
+        "__Secure-better-auth.session_token",
+    );
+    let commit = "a".repeat(40);
+    let repositoryDescription: string | null = "Example code agents";
+    let source = `export default async ({ request, pollinations, mcp }) => {
+        const input = await request.json();
+        await mcp("pollinations", "listModels", {});
+        return pollinations("/v1/responses", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ model: "openai-fast", input: input.input })
+        });
+    };`;
+    const deploymentFetch = vi.fn(
+        async (input: RequestInfo | URL, _init?: RequestInit) => {
+            const url = String(input);
+            if (url.endsWith("/repos/example/agents")) {
+                return Response.json({
+                    name: "agents",
+                    full_name: "example/agents",
+                    description: repositoryDescription,
+                    private: false,
+                });
+            }
+            if (url.endsWith("/repos/example/agents/commits/HEAD")) {
+                return Response.json({ sha: commit });
+            }
+            if (
+                url ===
+                `https://raw.githubusercontent.com/example/agents/${commit}/agent.ts`
+            ) {
+                return new Response(source);
+            }
+            return Response.json({ success: true });
+        },
+    );
+    vi.stubGlobal("fetch", deploymentFetch);
+    const enterEnv = {
+        ...env,
+        BETTER_AUTH_URL: "https://enter.test",
+        GEN_BASE_URL: "https://gen.pollinations.ai",
+        CODE_AGENT_DEPLOY_API_TOKEN: "test-deploy-token",
+        CODE_AGENT_DISPATCH_NAMESPACE: "code-agents-test",
+    };
+    const createResponse = await fetchEnterApi(
+        enterApi,
+        new Request("https://enter.test/api/account/agents", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Cookie: cookie },
+            body: JSON.stringify({
+                type: "code_agent",
+                repository: "https://github.com/example/agents.git",
+                description: "",
+            }),
+        }),
+        enterEnv,
+    );
+    expect(createResponse.status).toBe(200);
+    const agent = (await createResponse.json()) as {
+        id: string;
+        type: string;
+        repository: string;
+        deployedCommitSha: string;
+    };
+    expect(agent).toMatchObject({
+        type: "code_agent",
+        name: "agents",
+        title: "agents",
+        description: "Example code agents",
+        repository: "https://github.com/example/agents",
+        deployedCommitSha: commit,
+        visibility: "private",
+    });
+    expect(deploymentFetch).toHaveBeenCalledTimes(4);
+
+    const [stored] = await db
+        .select()
+        .from(communityEndpointTable)
+        .where(eq(communityEndpointTable.id, agent.id));
+    expect(stored).toMatchObject({
+        type: "code_agent",
+        baseUrl: CODE_AGENT_BASE_URL_PLACEHOLDER,
+        upstreamModel: agent.id,
+    });
+    expect(JSON.parse(stored.payload)).toEqual({
+        repository: "https://github.com/example/agents",
+        deployedCommitSha: commit,
+    });
+
+    const registryEntry = (await getCommunityModelRegistryEntries(env)).find(
+        (entry) => entry.communityEndpoint.id === agent.id,
+    );
+    expect(registryEntry?.communityEndpoint).toMatchObject({
+        type: "code_agent",
+        api: "responses",
+        baseUrl: CODE_AGENT_BASE_URL_PLACEHOLDER,
+        upstreamModel: agent.id,
+    });
+    expect(registryEntry?.info.agent).toBe(true);
+    expect(registryEntry?.definition.brandUrl).toBe(
+        "https://github.com/example/agents",
+    );
+    if (!registryEntry) throw new Error("Code agent was not registered");
+    const gatewayContext = await communityEndpointGatewayContext({
+        endpoint: registryEntry.communityEndpoint,
+        modelDefinition: registryEntry.definition,
+        requestData: { messages: [{ role: "user", content: "hello" }] },
+        secret: env.BETTER_AUTH_SECRET,
+        portkeyGatewayUrl: env.PORTKEY_GATEWAY_URL,
+        userApiKey: "sk_user_key",
+        parentRequestId: "caller-request-id",
+        parentApiKeyId: "caller-api-key-id",
+    });
+    await expect(
+        verifyAgentRunToken(
+            String(gatewayContext.modelConfig?.authKey),
+            env.BETTER_AUTH_SECRET,
+        ),
+    ).resolves.toMatchObject({
+        parentApiKeyId: "caller-api-key-id",
+        parentRequestId: "caller-request-id",
+        managedAgentId: agent.id,
+    });
+
+    for (const [method, path] of [
+        ["PATCH", `/api/account/agents/${agent.id}`],
+        ["POST", `/api/account/my-models/${agent.id}/update`],
+    ]) {
+        for (const body of [
+            { name: "renamed-agent" },
+            { title: "Updated Code Agent" },
+            { description: "Locally edited description" },
+        ]) {
+            const updateResponse = await fetchEnterApi(
+                enterApi,
+                new Request(`https://enter.test${path}`, {
+                    method,
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: cookie,
+                    },
+                    body: JSON.stringify(body),
+                }),
+                enterEnv,
+            );
+            expect(updateResponse.status).toBe(400);
+        }
+
+        for (const body of [
+            { description: "" },
+            { requiredSafetyFeatures: ["violence"] },
+            { visibility: "private" },
+        ]) {
+            const updateResponse = await fetchEnterApi(
+                enterApi,
+                new Request(`https://enter.test${path}`, {
+                    method,
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: cookie,
+                    },
+                    body: JSON.stringify(body),
+                }),
+                enterEnv,
+            );
+            expect(updateResponse.status).toBe(200);
+            await expect(updateResponse.json()).resolves.toMatchObject({
+                id: agent.id,
+                name: stored.name,
+                title: stored.title,
+                description: stored.description,
+                visibility: "private",
+                ...(body.requiredSafetyFeatures && {
+                    requiredSafetyFeatures: body.requiredSafetyFeatures,
+                }),
+            });
+            const [updated] = await db
+                .select()
+                .from(communityEndpointTable)
+                .where(eq(communityEndpointTable.id, agent.id));
+            expect(updated).toMatchObject({
+                name: stored.name,
+                title: stored.title,
+                description: stored.description,
+                payload: stored.payload,
+                baseUrl: stored.baseUrl,
+                upstreamModel: stored.upstreamModel,
+                visibility: "private",
+            });
+        }
+    }
+    const hideResponse = await fetchEnterApi(
+        enterApi,
+        new Request(
+            `https://enter.test/api/account/my-models/${agent.id}/update`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Cookie: cookie },
+                body: JSON.stringify({ hidden: true, description: "" }),
+            },
+        ),
+        enterEnv,
+    );
+    expect(hideResponse.status).toBe(200);
+    await expect(hideResponse.json()).resolves.toMatchObject({
+        hidden: true,
+        description: stored.description,
+    });
+    const noOpResponse = await fetchEnterApi(
+        enterApi,
+        new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", Cookie: cookie },
+            body: "{}",
+        }),
+        enterEnv,
+    );
+    expect(noOpResponse.status).toBe(200);
+    const [afterNoOp] = await db
+        .select()
+        .from(communityEndpointTable)
+        .where(eq(communityEndpointTable.id, agent.id));
+    expect(afterNoOp).toMatchObject({
+        name: stored.name,
+        title: stored.title,
+        description: stored.description,
+        payload: stored.payload,
+        requiredSafetyFeatures: ["violence"],
+        hiddenAt: expect.any(Date),
+        hiddenReason: "Hidden by owner",
+        hiddenBy: "owner",
+    });
+    expect(deploymentFetch).toHaveBeenCalledTimes(4);
+
+    const publishResponse = await fetchEnterApi(
+        enterApi,
+        new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", Cookie: cookie },
+            body: JSON.stringify({ visibility: "public" }),
+        }),
+        enterEnv,
+    );
+    expect(publishResponse.status).toBe(403);
+
+    commit = "b".repeat(40);
+    repositoryDescription = "Updated on GitHub";
+    source = "export default async () => new Response('updated');";
+    const syncResponse = await fetchEnterApi(
+        enterApi,
+        new Request(`https://enter.test/api/account/agents/${agent.id}/sync`, {
+            method: "POST",
+        }),
+        enterEnv,
+    );
+    expect(syncResponse.status, await syncResponse.clone().text()).toBe(200);
+    await expect(syncResponse.json()).resolves.toEqual({
+        updated: true,
+        deployedCommitSha: commit,
+    });
+    expect(deploymentFetch).toHaveBeenCalledTimes(8);
+
+    await enterEnv.KV.delete(`code-agent-sync:throttle:${agent.id}`);
+    const unchangedSyncResponse = await fetchEnterApi(
+        enterApi,
+        new Request(`https://enter.test/api/account/agents/${agent.id}/sync`, {
+            method: "POST",
+        }),
+        enterEnv,
+    );
+    expect(unchangedSyncResponse.status).toBe(200);
+    await expect(unchangedSyncResponse.json()).resolves.toEqual({
+        updated: true,
+        deployedCommitSha: commit,
+    });
+    expect(deploymentFetch).toHaveBeenCalledTimes(12);
+    expect(deploymentFetch.mock.calls[11][1]?.method).toBe("PUT");
+
+    const listResponse = await fetchEnterApi(
+        enterApi,
+        new Request("https://enter.test/api/account/agents", {
+            headers: { Cookie: cookie },
+        }),
+        enterEnv,
+    );
+    expect(listResponse.status).toBe(200);
+    await expect(listResponse.json()).resolves.toMatchObject({
+        data: [
+            expect.objectContaining({
+                id: agent.id,
+                type: "code_agent",
+                repository: "https://github.com/example/agents",
+                deployedCommitSha: commit,
+                description: "Updated on GitHub",
+            }),
+        ],
+    });
+
+    const deleteResponse = await fetchEnterApi(
+        enterApi,
+        new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+            method: "DELETE",
+            headers: { Cookie: cookie },
+        }),
+        enterEnv,
+    );
+    expect(deleteResponse.status).toBe(200);
+    expect(deploymentFetch).toHaveBeenCalledTimes(13);
+    expect(deploymentFetch.mock.calls[12][1]?.method).toBe("DELETE");
+
+    repositoryDescription = null;
+    const createWithoutDescriptionResponse = await fetchEnterApi(
+        enterApi,
+        new Request("https://enter.test/api/account/agents", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Cookie: cookie },
+            body: JSON.stringify({
+                type: "code_agent",
+                repository: "https://github.com/example/agents",
+            }),
+        }),
+        enterEnv,
+    );
+    expect(createWithoutDescriptionResponse.status).toBe(200);
+    await expect(
+        createWithoutDescriptionResponse.json(),
+    ).resolves.toMatchObject({
+        type: "code_agent",
+        name: "agents",
+        description: null,
+        repository: "https://github.com/example/agents",
+        deployedCommitSha: commit,
+    });
 });
 
 fixtureTest("validates community fallback targets on write", async () => {

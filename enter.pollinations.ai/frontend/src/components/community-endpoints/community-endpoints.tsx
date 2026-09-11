@@ -34,16 +34,16 @@ import { CommunityEndpointDeleteConfirmation } from "./community-endpoint-delete
 import { CommunityEndpointDialog } from "./community-endpoint-dialog.tsx";
 import { CommunityEndpointToggleConfirmation } from "./community-endpoint-toggle-confirmation.tsx";
 import {
-    type AgentListingDetailsPayload,
-    type AgentPayload,
+    type AgentFormState,
     type CommunityEndpoint,
     type CommunityProviderProfile,
     type EditableEndpoint,
     type EndpointPayload,
     type FallbackModelOption,
     type ManagedAgent,
-    type PromptAgentCommunityEndpoint,
     readError,
+    toAgentPayload,
+    toAgentUpdatePayload,
 } from "./types.ts";
 
 type CommunityEndpointsProps = {
@@ -144,26 +144,20 @@ export function CommunityEndpoints({
         void loadEndpoints();
     }, [loadEndpoints]);
 
-    async function handleCreateAgent(
-        payload: AgentPayload,
-        listing: AgentListingDetailsPayload,
-    ): Promise<void> {
+    async function handleCreateAgent(form: AgentFormState): Promise<void> {
         const response = await apiClient.account.agents.$post({
-            json: { ...payload, ...listing },
+            json: toAgentPayload(form),
         });
         if (!response.ok) throw new Error(await readError(response));
         await loadEndpoints();
         await onChange?.();
     }
 
-    async function handleUpdateAgent(
-        payload: AgentPayload,
-        listing: AgentListingDetailsPayload,
-    ): Promise<void> {
+    async function handleUpdateAgent(form: AgentFormState): Promise<void> {
         if (!editingAgent) return;
         const response = await apiClient.account.agents[":id"].$patch({
             param: { id: editingAgent.id },
-            json: { ...payload, ...listing },
+            json: toAgentUpdatePayload(form),
         });
         if (!response.ok) throw new Error(await readError(response));
         await loadEndpoints();
@@ -189,6 +183,16 @@ export function CommunityEndpoints({
                     : "Agent delete failed",
             );
         }
+    }
+
+    async function handleSyncAgent(): Promise<void> {
+        if (!editingAgent) return;
+        const response = await apiClient.account.agents[":id"].sync.$post({
+            param: { id: editingAgent.id },
+        });
+        if (!response.ok) throw new Error(await readError(response));
+        await loadEndpoints();
+        await onChange?.();
     }
 
     async function handleCreate(
@@ -385,38 +389,41 @@ export function CommunityEndpoints({
         </>
     );
 
-    const endpointByAgentId = new Map<string, PromptAgentCommunityEndpoint>();
     const modelEndpoints: CommunityEndpoint[] = [];
     const agentEndpoints: CommunityEndpoint[] = [];
     for (const endpoint of endpoints) {
-        if (endpoint.type === "prompt_agent") {
-            endpointByAgentId.set(endpoint.id, endpoint);
-            agentEndpoints.push(endpoint);
-        } else if (endpoint.type === "endpoint_agent") {
-            agentEndpoints.push(endpoint);
-        } else {
+        if (endpoint.type === "proxy") {
             modelEndpoints.push(endpoint);
+        } else {
+            agentEndpoints.push(endpoint);
         }
     }
     const agentById = new Map(agents.map((agent) => [agent.id, agent]));
 
     function renderEndpointCard(endpoint: CommunityEndpoint) {
         const agent =
-            endpoint.type === "prompt_agent"
+            endpoint.type === "prompt_agent" || endpoint.type === "code_agent"
                 ? agentById.get(endpoint.id)
                 : undefined;
         return (
             <CommunityEndpointCard
                 key={endpoint.id}
                 endpoint={endpoint}
+                agent={agent}
                 isToggling={togglingId === endpoint.id}
                 onToggle={() => setToggling(endpoint)}
-                onEdit={() => {
-                    if (agent) setEditingAgent(agent);
-                    else if (endpoint.type !== "prompt_agent") {
-                        setEditing(endpoint);
-                    }
-                }}
+                onEdit={
+                    agent
+                        ? () =>
+                              setEditingAgent({
+                                  ...agent,
+                                  visibility: endpoint.visibility,
+                              })
+                        : endpoint.type === "proxy" ||
+                            endpoint.type === "endpoint_agent"
+                          ? () => setEditing(endpoint)
+                          : undefined
+                }
                 onDelete={() => {
                     if (agent) setDeletingAgent(agent);
                     else setDeleting(endpoint);
@@ -639,8 +646,8 @@ export function CommunityEndpoints({
                                     Create your first agent
                                 </p>
                                 <p className="text-sm text-theme-text-muted">
-                                    Build a managed agent with a system prompt,
-                                    model, and tools.
+                                    Build from a prompt and model, or deploy
+                                    agent.ts from GitHub.
                                 </p>
                             </Surface>
                         ) : (
@@ -651,10 +658,9 @@ export function CommunityEndpoints({
                         <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                             <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                Private agents do not need approval. To publish
-                                agents for everyone in <strong>/models</strong>,
-                                submit a {publisherAccessRequestLink} for agents
-                                or both.
+                                Private agents do not need approval. Public
+                                agents require publishing access. Request it
+                                through the {publisherAccessRequestLink}.
                             </span>
                         </p>
                     )}
@@ -744,15 +750,11 @@ export function CommunityEndpoints({
             <AgentDialog
                 key={editingAgent?.id ?? "agent-edit-closed"}
                 agent={editingAgent ?? undefined}
-                endpoint={
-                    editingAgent
-                        ? endpointByAgentId.get(editingAgent.id)
-                        : undefined
-                }
                 canPublish={canPublish}
                 open={!!editingAgent}
                 onOpenChange={(open) => !open && setEditingAgent(null)}
                 onSubmit={handleUpdateAgent}
+                onSync={handleSyncAgent}
             />
 
             <AgentDeleteConfirmation

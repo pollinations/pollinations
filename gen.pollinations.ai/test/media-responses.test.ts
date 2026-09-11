@@ -5,7 +5,7 @@ import {
     createMediaResponse,
     MediaChatCompletionSchema,
     MediaResponseSchema,
-    mediaResponseStream,
+    textResponseStream,
 } from "../src/media/response-output.ts";
 import { mediaPrompt } from "../src/media/responses.ts";
 import { getGenerationModelRegistry } from "../src/model-registry.ts";
@@ -114,9 +114,7 @@ describe("media text protocols", () => {
 
     it("emits ordered Responses events and adapts them to one Chat text delta", async () => {
         const response = createMediaResponse("media-model", url, "image/png");
-        const events = (
-            await new Response(mediaResponseStream(response)).text()
-        )
+        const events = (await new Response(textResponseStream(response)).text())
             .split("\n\n")
             .filter((line) => line.startsWith("event:"))
             .map((line) => JSON.parse(line.split("\ndata: ")[1]));
@@ -129,7 +127,7 @@ describe("media text protocols", () => {
         });
         const chat = await new Response(
             responsesToChatStream(
-                mediaResponseStream(response),
+                textResponseStream(response),
                 response.model,
                 { requireUsage: false },
             ),
@@ -147,10 +145,7 @@ describe("media text protocols", () => {
         expect(chunks.some((chunk) => chunk.usage != null)).toBe(false);
         expect(chat).toContain("data: [DONE]");
         const strict = await new Response(
-            responsesToChatStream(
-                mediaResponseStream(response),
-                response.model,
-            ),
+            responsesToChatStream(textResponseStream(response), response.model),
         ).text();
         expect(strict).toContain("usage_missing");
     });

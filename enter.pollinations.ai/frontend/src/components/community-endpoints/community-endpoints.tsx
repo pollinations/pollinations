@@ -15,7 +15,17 @@ import {
     COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
     COMMUNITY_PROVIDER_URL_MAX_LENGTH,
 } from "@shared/community-endpoints.ts";
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import {
+    COMMUNITY_PROVIDER_ICON_PRESETS,
+    type CommunityProviderIconPreset,
+} from "@shared/community-provider-icon.ts";
+import {
+    type ChangeEvent,
+    type FormEvent,
+    useCallback,
+    useEffect,
+    useState,
+} from "react";
 import { apiClient } from "../../api.ts";
 import { AgentDeleteConfirmation } from "./agent-delete-confirmation.tsx";
 import { AgentDialog } from "./agent-dialog.tsx";
@@ -59,12 +69,29 @@ export function CommunityEndpoints({
     const [error, setError] = useState<string | null>(null);
     const [providerName, setProviderName] = useState("");
     const [providerUrl, setProviderUrl] = useState("");
+    const [providerIconPreset, setProviderIconPreset] =
+        useState<CommunityProviderIconPreset | null>(null);
+    const [providerIconSvg, setProviderIconSvg] = useState<string | null>(null);
+    const [removeProviderIcon, setRemoveProviderIcon] = useState(false);
     const [savedProvider, setSavedProvider] =
-        useState<CommunityProviderProfile>({ name: null, url: null });
+        useState<CommunityProviderProfile>({
+            name: null,
+            url: null,
+            iconPreset: null,
+            hasCustomIcon: false,
+        });
     const [isSavingProvider, setIsSavingProvider] = useState(false);
     const providerIsSaved =
         providerName === (savedProvider.name ?? "") &&
-        providerUrl === (savedProvider.url ?? "");
+        providerUrl === (savedProvider.url ?? "") &&
+        providerIconPreset === savedProvider.iconPreset &&
+        !removeProviderIcon &&
+        !providerIconSvg;
+    const customIconPreviewUrl = providerIconSvg
+        ? `data:image/svg+xml,${encodeURIComponent(providerIconSvg)}`
+        : !removeProviderIcon && savedProvider.hasCustomIcon
+          ? savedProvider.iconUrl
+          : undefined;
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState<EditableEndpoint | null>(null);
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
@@ -102,7 +129,14 @@ export function CommunityEndpoints({
         setAgents(agentBody.data);
         setProviderName(endpointBody.provider.name ?? "");
         setProviderUrl(endpointBody.provider.url ?? "");
-        setSavedProvider(endpointBody.provider);
+        setProviderIconPreset(endpointBody.provider.iconPreset ?? null);
+        setProviderIconSvg(null);
+        setRemoveProviderIcon(false);
+        setSavedProvider({
+            ...endpointBody.provider,
+            iconPreset: endpointBody.provider.iconPreset ?? null,
+            hasCustomIcon: endpointBody.provider.hasCustomIcon ?? false,
+        });
         setIsLoading(false);
     }, []);
 
@@ -232,13 +266,29 @@ export function CommunityEndpoints({
             const response = await apiClient.account[
                 "my-models"
             ].provider.$post({
-                json: { name: providerName, url: providerUrl },
+                json: {
+                    name: providerName,
+                    url: providerUrl,
+                    iconPreset: providerIconPreset,
+                    ...(removeProviderIcon
+                        ? { iconSvg: null }
+                        : providerIconSvg
+                          ? { iconSvg: providerIconSvg }
+                          : {}),
+                },
             });
             if (!response.ok) throw new Error(await readError(response));
             const profile = (await response.json()) as CommunityProviderProfile;
             setProviderName(profile.name ?? "");
             setProviderUrl(profile.url ?? "");
-            setSavedProvider(profile);
+            setProviderIconPreset(profile.iconPreset ?? null);
+            setProviderIconSvg(null);
+            setRemoveProviderIcon(false);
+            setSavedProvider({
+                ...profile,
+                iconPreset: profile.iconPreset ?? null,
+                hasCustomIcon: profile.hasCustomIcon ?? false,
+            });
             await onChange?.();
         } catch (thrown) {
             setError(
@@ -249,6 +299,37 @@ export function CommunityEndpoints({
         } finally {
             setIsSavingProvider(false);
         }
+    }
+
+    async function handleProviderIconChange(
+        event: ChangeEvent<HTMLInputElement>,
+    ): Promise<void> {
+        const file = event.currentTarget.files?.[0];
+        event.currentTarget.value = "";
+        if (!file) return;
+        if (file.size > 64 * 1024) {
+            setError("Custom icon must be 64 KiB or smaller");
+            return;
+        }
+        if (
+            file.type !== "image/svg+xml" &&
+            !file.name.toLowerCase().endsWith(".svg")
+        ) {
+            setError("Custom icon must be an SVG file");
+            return;
+        }
+        setProviderIconSvg(await file.text());
+        setRemoveProviderIcon(false);
+        setError(null);
+    }
+
+    function resetProviderChanges(): void {
+        setProviderName(savedProvider.name ?? "");
+        setProviderUrl(savedProvider.url ?? "");
+        setProviderIconPreset(savedProvider.iconPreset ?? null);
+        setProviderIconSvg(null);
+        setRemoveProviderIcon(false);
+        setError(null);
     }
 
     async function handleToggle(endpoint: CommunityEndpoint): Promise<void> {
@@ -385,6 +466,114 @@ export function CommunityEndpoints({
                                         }
                                     />
                                 </FieldStack>
+                                <FieldStack label="Icon preset">
+                                    <select
+                                        name="community-provider-icon-preset"
+                                        value={providerIconPreset ?? ""}
+                                        className="h-10 rounded-md border border-divider bg-surface px-3 text-sm text-theme-text-base"
+                                        onChange={(event) =>
+                                            setProviderIconPreset(
+                                                (event.target.value ||
+                                                    null) as CommunityProviderIconPreset | null,
+                                            )
+                                        }
+                                    >
+                                        <option value="">
+                                            Generic community icon
+                                        </option>
+                                        {COMMUNITY_PROVIDER_ICON_PRESETS.map(
+                                            (preset) => (
+                                                <option
+                                                    key={preset}
+                                                    value={preset}
+                                                >
+                                                    {preset[0].toUpperCase() +
+                                                        preset.slice(1)}
+                                                </option>
+                                            ),
+                                        )}
+                                    </select>
+                                    {customIconPreviewUrl ? (
+                                        <img
+                                            src={customIconPreviewUrl}
+                                            alt=""
+                                            aria-hidden="true"
+                                            className="mt-2 h-8 w-8 object-contain"
+                                        />
+                                    ) : providerIconPreset ? (
+                                        <span
+                                            aria-hidden="true"
+                                            className="mt-2 block h-8 w-8 bg-current text-ink-900 opacity-55"
+                                            style={{
+                                                maskImage: `url(/brand-logos/${providerIconPreset ?? "community"}.svg)`,
+                                                WebkitMaskImage: `url(/brand-logos/${providerIconPreset ?? "community"}.svg)`,
+                                                maskRepeat: "no-repeat",
+                                                WebkitMaskRepeat: "no-repeat",
+                                                maskPosition: "center",
+                                                WebkitMaskPosition: "center",
+                                                maskSize: "contain",
+                                                WebkitMaskSize: "contain",
+                                            }}
+                                        />
+                                    ) : (
+                                        <BotIcon
+                                            aria-hidden="true"
+                                            className="mt-2 h-8 w-8 text-ink-900 opacity-55"
+                                        />
+                                    )}
+                                    {!removeProviderIcon &&
+                                        (savedProvider.hasCustomIcon ||
+                                            providerIconSvg) && (
+                                            <span className="text-xs text-theme-text-muted">
+                                                Custom SVG{" "}
+                                                {providerIconSvg
+                                                    ? "pending"
+                                                    : savedProvider.iconUrl
+                                                      ? "active"
+                                                      : "saved (preview unavailable until a public model)"}{" "}
+                                                (overrides preset)
+                                            </span>
+                                        )}
+                                </FieldStack>
+                                <FieldStack label="Custom SVG icon">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <Input
+                                            type="file"
+                                            accept="image/svg+xml,.svg"
+                                            name="community-provider-icon-svg"
+                                            aria-describedby="community-provider-icon-help"
+                                            onChange={(event) =>
+                                                void handleProviderIconChange(
+                                                    event,
+                                                )
+                                            }
+                                        />
+                                        {!removeProviderIcon &&
+                                            (savedProvider.hasCustomIcon ||
+                                                providerIconSvg) && (
+                                                <Button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setProviderIconSvg(
+                                                            null,
+                                                        );
+                                                        setRemoveProviderIcon(
+                                                            true,
+                                                        );
+                                                    }}
+                                                >
+                                                    Remove custom
+                                                </Button>
+                                            )}
+                                    </div>
+                                    <span
+                                        id="community-provider-icon-help"
+                                        className="text-xs text-theme-text-muted"
+                                    >
+                                        Safe SVG, up to 64 KiB. Custom icons
+                                        override presets.
+                                    </span>
+                                </FieldStack>
                             </div>
                             <div>
                                 <Button
@@ -394,6 +583,15 @@ export function CommunityEndpoints({
                                     }
                                 >
                                     {isSavingProvider ? "Saving…" : "Save"}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    disabled={
+                                        providerIsSaved || isSavingProvider
+                                    }
+                                    onClick={resetProviderChanges}
+                                >
+                                    Cancel
                                 </Button>
                             </div>
                         </form>

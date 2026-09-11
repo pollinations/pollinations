@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+    COMMUNITY_PROVIDER_ICON_PRESETS,
+    isCommunityProviderIconPreset,
+} from "../community-provider-icon.ts";
 import { SAFETY_FEATURES } from "../schemas/safety.ts";
 import { publicPriceInfo, toFixedPoint } from "./public-pricing";
 import {
@@ -43,6 +47,11 @@ export const ModelInfoSchema = z.object({
         .string()
         .describe("Human-readable model publisher, not the inference provider"),
     brand_url: z.string().url().optional(),
+    brand_icon_preset: z.enum(COMMUNITY_PROVIDER_ICON_PRESETS).optional(),
+    brand_icon_url: z
+        .string()
+        .regex(/^\/api\/community-icons\/[A-Za-z0-9_-]+\.svg$/u)
+        .optional(),
     community: z.boolean(),
     agent: z.boolean().optional(),
     base_model: z.string().optional(),
@@ -169,6 +178,12 @@ export function modelInfoFromDefinition(
         category: service.category,
         publisher: service.publisher,
         brand_url: service.brandUrl,
+        brand_icon_preset: isCommunityProviderIconPreset(
+            service.brandIconPreset,
+        )
+            ? service.brandIconPreset
+            : undefined,
+        brand_icon_url: service.brandIconUrl,
         community: options.community ?? false,
         agent: options.agent || undefined,
         per_user_rpm: service.perUserRpm,

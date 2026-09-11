@@ -190,6 +190,8 @@ export type ModelDefinition = {
     // User-facing metadata
     title: string; // Human display name, e.g. "FLUX.1 Kontext"
     brandUrl?: string;
+    brandIconPreset?: string;
+    brandIconUrl?: string;
     // Backward compatibility: public descriptions currently include the title
     // prefix ("Title - description"). Prefer `title` for display names.
     description?: string;

@@ -1,4 +1,14 @@
+import { isCommunityProviderIconPreset } from "@shared/community-provider-icon.ts";
 import type { ModelCapability, ModelPrice } from "./types.ts";
+
+const COMMUNITY_PROVIDER_ICON_URL =
+    /^\/api\/community-icons\/[A-Za-z0-9_-]+\.svg$/u;
+
+export function isSafeCommunityProviderIconUrl(
+    value: unknown,
+): value is string {
+    return typeof value === "string" && COMMUNITY_PROVIDER_ICON_URL.test(value);
+}
 
 const BRAND_LOGOS: Record<string, string> = {
     Alibaba: "alibaba",
@@ -59,7 +69,16 @@ export const getModelDescriptionWithoutName = (
 export const getModelBrandLogoPath = (
     model: ModelPrice,
 ): string | undefined => {
-    if (model.community) return undefined;
+    if (model.community) {
+        return (
+            (isSafeCommunityProviderIconUrl(model.brandIconUrl)
+                ? model.brandIconUrl
+                : undefined) ??
+            (isCommunityProviderIconPreset(model.brandIconPreset)
+                ? `/brand-logos/${model.brandIconPreset}.svg`
+                : undefined)
+        );
+    }
     const logoName = model.publisher ? BRAND_LOGOS[model.publisher] : undefined;
     return logoName ? `/brand-logos/${logoName}.svg` : undefined;
 };

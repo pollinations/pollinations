@@ -14,6 +14,10 @@ import {
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
 } from "@shared/community-endpoints.ts";
+import {
+    COMMUNITY_PROVIDER_ICON_MAX_BYTES,
+    COMMUNITY_PROVIDER_ICON_PRESETS,
+} from "@shared/community-provider-icon.ts";
 import { ValidationError } from "@shared/http/validation-error.ts";
 import { MODEL_INPUT_MODALITIES } from "@shared/registry/registry.ts";
 import { SAFETY_FEATURES } from "@shared/schemas/safety.ts";
@@ -378,17 +382,41 @@ export const CommunityEndpointListResponseSchema = z.object({
     provider: z.object({
         name: z.string().nullable(),
         url: z.string().url().nullable(),
+        iconPreset: z
+            .enum(COMMUNITY_PROVIDER_ICON_PRESETS)
+            .nullable()
+            .optional(),
+        hasCustomIcon: z.boolean().optional(),
+        iconUrl: z
+            .string()
+            .regex(/^\/api\/community-icons\/[A-Za-z0-9_-]+\.svg$/u)
+            .optional(),
     }),
 });
 export const CommunityProviderProfileInputSchema = z
     .object({
         name: z.string().trim().max(COMMUNITY_PROVIDER_NAME_MAX_LENGTH),
         url: z.string().trim().max(COMMUNITY_PROVIDER_URL_MAX_LENGTH),
+        iconPreset: z
+            .enum(COMMUNITY_PROVIDER_ICON_PRESETS)
+            .nullable()
+            .optional(),
+        iconSvg: z
+            .string()
+            .max(COMMUNITY_PROVIDER_ICON_MAX_BYTES)
+            .nullable()
+            .optional(),
     })
     .strict();
 export const CommunityProviderProfileResponseSchema = z.object({
     name: z.string().nullable(),
     url: z.string().url().nullable(),
+    iconPreset: z.enum(COMMUNITY_PROVIDER_ICON_PRESETS).nullable().optional(),
+    hasCustomIcon: z.boolean().optional(),
+    iconUrl: z
+        .string()
+        .regex(/^\/api\/community-icons\/[A-Za-z0-9_-]+\.svg$/u)
+        .optional(),
 });
 export const CommunityEndpointModelsResponseSchema = z.object({
     data: z.array(z.string()),

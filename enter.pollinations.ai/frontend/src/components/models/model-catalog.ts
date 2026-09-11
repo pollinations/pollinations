@@ -1,9 +1,11 @@
+import { isCommunityProviderIconPreset } from "@shared/community-provider-icon.ts";
 import type { ModelInfo } from "@shared/registry/model-info.ts";
 import {
     formatPrice,
     formatPriceFlat,
     formatPricePer1M,
 } from "./formatters.ts";
+import { isSafeCommunityProviderIconUrl } from "./model-info.ts";
 import type { ModelCategory, ModelPrice, ModelPriceLine } from "./types.ts";
 import type { ModelStats } from "./use-model-stats.ts";
 
@@ -202,6 +204,12 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         description: getCatalogDescriptionWithoutName(model),
         publisher: model.publisher,
         brandUrl: model.brand_url,
+        brandIconPreset: isCommunityProviderIconPreset(model.brand_icon_preset)
+            ? model.brand_icon_preset
+            : undefined,
+        brandIconUrl: isSafeCommunityProviderIconUrl(model.brand_icon_url)
+            ? model.brand_icon_url
+            : undefined,
         inputModalities: model.input_modalities,
         outputModalities: model.output_modalities,
         supportedEndpoints: model.supported_endpoints,

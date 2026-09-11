@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { isCommunityModelAllowedGithubId } from "./auth/github-id-list.ts";
+import type { CommunityProviderIconPreset } from "./community-provider-profile.ts";
 import { MCP_SERVER_IDS } from "./registry/mcp.ts";
 import type { ModelCapability } from "./registry/model-info.ts";
 import {
@@ -763,6 +764,8 @@ type CommunityEndpointRuntimeBase = {
     description: string | null;
     providerName?: string | null;
     providerUrl?: string | null;
+    providerIconPreset?: CommunityProviderIconPreset | null;
+    providerIconUrl?: string | null;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     inputModalities: ModelInputModality[] | null;
@@ -829,6 +832,8 @@ export type CommunityModelDefinitionInput = {
     description: string | null;
     providerName?: string | null;
     providerUrl?: string | null;
+    providerIconPreset?: CommunityProviderIconPreset | null;
+    providerIconUrl?: string | null;
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[] | null;
@@ -1006,6 +1011,8 @@ export function communityModelDefinition(
         perUserRpm: endpoint.perUserRpm,
         publisher: providerName || "Community",
         brandUrl: providerName && providerUrl ? providerUrl : undefined,
+        brandIconPreset: endpoint.providerIconPreset ?? undefined,
+        brandIconUrl: endpoint.providerIconUrl ?? undefined,
         category: spec.category,
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,

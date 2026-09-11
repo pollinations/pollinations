@@ -6409,7 +6409,7 @@ fixtureTest(
     "manages my-models through account API with a key that has account keys permission",
     async () => {
         const ownerGithubUsername = `pk-${crypto.randomUUID().slice(0, 8)}`;
-        const { key } = await createTestApiKey({
+        const { key, userId } = await createTestApiKey({
             type: "publishable",
             accountPermissions: ["keys"],
             user: {
@@ -6494,6 +6494,36 @@ fixtureTest(
         );
         expect(insecureProviderResponse.status).toBe(400);
 
+        const oversizedChunkPayload = JSON.stringify({
+            name: "Example AI",
+            url: "https://example.com",
+            iconSvg: "x".repeat(81 * 1024),
+        });
+        const oversizedChunk = new ReadableStream<Uint8Array>({
+            start(controller) {
+                controller.enqueue(
+                    new TextEncoder().encode(oversizedChunkPayload),
+                );
+                controller.close();
+            },
+        });
+        const chunkedProviderResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                "http://localhost:3000/api/account/my-models/provider",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: oversizedChunk,
+                    duplex: "half",
+                } as RequestInit,
+            ),
+        );
+        expect(chunkedProviderResponse.status).not.toBe(200);
+
         const providerResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -6516,6 +6546,45 @@ fixtureTest(
             name: "Example AI",
             url: "https://example.com/",
         });
+
+        const iconProviderResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                "http://localhost:3000/api/account/my-models/provider",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        name: "Example AI",
+                        url: "https://example.com",
+                        iconPreset: "openai",
+                        iconSvg:
+                            '<svg viewBox="0 0 1 1"><path d="M0 0h1v1H0z" fill="#000"/></svg>',
+                    }),
+                },
+            ),
+        );
+        const iconProviderBody = await iconProviderResponse.text();
+        expect(iconProviderResponse.status).toBe(200);
+        expect(JSON.parse(iconProviderBody)).toEqual({
+            name: "Example AI",
+            url: "https://example.com/",
+            iconPreset: "openai",
+            hasCustomIcon: true,
+        });
+
+        const iconResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/community-icons/${userId}.svg`,
+            ),
+        );
+        const iconBody = await iconResponse.text();
+        expect(iconResponse.status).toBe(404);
+        expect(iconBody).toBe("");
 
         const createResponse = await fetchEnterApi(
             enterApi,
@@ -6561,6 +6630,32 @@ fixtureTest(
         expect(created).not.toHaveProperty("bearerTokenCiphertext");
         expect(typeof created.id).toBe("string");
         const createdId = created.id as string;
+        const secondCreateResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name: "my-second-model",
+                    title: "My Second Model",
+                    description: "Account API model",
+                    api: "chat_completions",
+                    url: "https://api.example.com/v1/chat/completions",
+                    upstreamModel: "gpt-4.1-mini",
+                    bearerToken: "sk_saved_token",
+                    visibility: "public",
+                }),
+            }),
+        );
+        expect(secondCreateResponse.status).toBe(200);
+        const secondCreated = (await secondCreateResponse.json()) as Record<
+            string,
+            unknown
+        >;
+        expect(typeof secondCreated.id).toBe("string");
         await db
             .update(communityEndpointTable)
             .set({
@@ -6659,6 +6754,14 @@ fixtureTest(
             hidden: true,
             hiddenReason: "Hidden by owner",
         });
+        const hiddenIconResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/community-icons/${userId}.svg`,
+            ),
+        );
+        expect(hiddenIconResponse.status).toBe(404);
+        await maturePendingCommunityEndpoint(secondCreated.id as string);
 
         // Minimum-price policy is independent of visibility: any non-negative
         // owner price is accepted by this API.
@@ -6799,6 +6902,44 @@ fixtureTest(
             pending: { visibility: "public" },
         });
 
+        await db
+            .update(communityEndpointTable)
+            .set({
+                visibility: "public",
+                pendingVisibility: null,
+                pendingAt: null,
+                hiddenAt: null,
+                hiddenReason: null,
+                hiddenBy: null,
+            })
+            .where(eq(communityEndpointTable.id, createdId));
+        const publicIconResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                `http://localhost:3000/api/community-icons/${userId}.svg`,
+            ),
+        );
+        const publicIconBody = await publicIconResponse.text();
+        expect(publicIconResponse.status, publicIconBody).toBe(200);
+        expect(publicIconResponse.headers.get("content-type")).toContain(
+            "image/svg+xml",
+        );
+        expect(publicIconResponse.headers.get("x-content-type-options")).toBe(
+            "nosniff",
+        );
+        expect(publicIconBody).toContain('xmlns="http://www.w3.org/2000/svg"');
+        await db
+            .update(communityEndpointTable)
+            .set({ visibility: "public" })
+            .where(eq(communityEndpointTable.id, secondCreated.id as string));
+
+        const genIconResponse = await fetchGen(
+            `https://gen.pollinations.ai/api/community-icons/${userId}.svg`,
+        );
+        const genIconBody = await genIconResponse.text();
+        expect(genIconResponse.status, genIconBody).toBe(200);
+        expect(genIconBody).toBe("enter test stub");
+
         const secondListResponse = await fetchEnterApi(
             enterApi,
             new Request("http://localhost:3000/api/account/my-models", {
@@ -6812,12 +6953,19 @@ fixtureTest(
             data: Record<string, unknown>[];
             provider: { name: string | null; url: string | null };
         };
-        expect(secondList.data).toHaveLength(1);
+        expect(secondList.data).toHaveLength(2);
         expect(secondList.provider).toEqual({
             name: "Example AI",
             url: "https://example.com/",
+            iconPreset: "openai",
+            hasCustomIcon: true,
+            iconUrl: `/api/community-icons/${userId}.svg`,
         });
-        expect(secondList.data[0]).toMatchObject({
+        expect(
+            secondList.data.find(
+                (model) => model.title === "Updated Model Title",
+            ),
+        ).toMatchObject({
             title: "Updated Model Title",
             perUserRpm: 0.5,
         });
@@ -6830,8 +6978,58 @@ fixtureTest(
         expect(registryEntry?.info).toMatchObject({
             publisher: "Example AI",
             brand_url: "https://example.com/",
+            brand_icon_preset: "openai",
+            brand_icon_url: `/api/community-icons/${userId}.svg`,
         });
         expect(registryEntry?.communityEndpoint.perUserRpm).toBe(0.5);
+
+        const registryEntries = await getCommunityModelRegistryEntries(env);
+        expect(
+            registryEntries.filter((entry) =>
+                [
+                    `${ownerGithubUsername}/my-test-model`,
+                    `${ownerGithubUsername}/my-second-model`,
+                ].includes(entry.id),
+            ),
+        ).toHaveLength(2);
+        for (const entry of registryEntries.filter((entry) =>
+            [
+                `${ownerGithubUsername}/my-test-model`,
+                `${ownerGithubUsername}/my-second-model`,
+            ].includes(entry.id),
+        )) {
+            expect(entry.info).toMatchObject({
+                brand_icon_preset: "openai",
+                brand_icon_url: `/api/community-icons/${userId}.svg`,
+            });
+        }
+
+        const removeIconResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                "http://localhost:3000/api/account/my-models/provider",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        name: "Example AI",
+                        url: "https://example.com",
+                        iconPreset: "google",
+                        iconSvg: null,
+                    }),
+                },
+            ),
+        );
+        expect(removeIconResponse.status).toBe(200);
+        await expect(removeIconResponse.json()).resolves.toEqual({
+            name: "Example AI",
+            url: "https://example.com/",
+            iconPreset: "google",
+            hasCustomIcon: false,
+        });
 
         const clearLimitResponse = await fetchEnterApi(
             enterApi,

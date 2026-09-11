@@ -4,6 +4,7 @@ import {
     CAPABILITY_ICON,
     getCommunityModelIcon,
     MODALITY_ICON,
+    ModelBrandIcon,
 } from "./model-icons.tsx";
 import {
     type DisplayCapability,
@@ -189,29 +190,10 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     return (
         <div className="rounded-xl mb-1 bg-surface-opaque shadow-sm transition-colors hover:bg-surface-opaque/90">
             <div className="flex items-center gap-2.5 p-4">
-                {CommunityModelIcon ? (
-                    <CommunityModelIcon
-                        aria-hidden="true"
-                        className="h-8 w-8 shrink-0 text-ink-900 opacity-55"
-                    />
-                ) : (
-                    brandLogoPath && (
-                        <span
-                            aria-hidden="true"
-                            className="h-8 w-8 shrink-0 bg-current opacity-55"
-                            style={{
-                                maskImage: `url(${brandLogoPath})`,
-                                WebkitMaskImage: `url(${brandLogoPath})`,
-                                maskRepeat: "no-repeat",
-                                WebkitMaskRepeat: "no-repeat",
-                                maskPosition: "center",
-                                WebkitMaskPosition: "center",
-                                maskSize: "contain",
-                                WebkitMaskSize: "contain",
-                            }}
-                        />
-                    )
-                )}
+                <ModelBrandIcon
+                    model={model}
+                    className="h-8 w-8 shrink-0 bg-current opacity-55"
+                />
                 {hasLeadingIcon && (
                     <span
                         aria-hidden="true"

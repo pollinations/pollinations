@@ -13,14 +13,19 @@ import {
     pendingCommunityEndpointChangeIsReady,
     resolveEffectiveProxyListing,
 } from "@shared/community-endpoints.ts";
+import {
+    isCommunityProviderIconPreset,
+    sanitizeCommunityProviderSvg,
+} from "@shared/community-provider-profile.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { resolveModelName } from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
 import type { Env } from "../env.ts";
@@ -276,11 +281,29 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 .orderBy(desc(schema.communityEndpoint.createdAt));
             const owner = await db.query.user.findFirst({
                 columns: {
+                    id: true,
                     communityProviderName: true,
                     communityProviderUrl: true,
+                    communityProviderIconPreset: true,
+                    communityProviderIconSvg: true,
                 },
                 where: eq(schema.user.id, user.id),
             });
+            const providerIconPreset = isCommunityProviderIconPreset(
+                owner?.communityProviderIconPreset,
+            )
+                ? owner.communityProviderIconPreset
+                : null;
+            const hasCustomIcon = Boolean(owner?.communityProviderIconSvg);
+            const hasPublicListing = rows.some(
+                (row) =>
+                    !row.hiddenAt &&
+                    effectiveCommunityEndpointVisibility(
+                        row.visibility,
+                        row.pendingVisibility,
+                        row.pendingAt,
+                    ) === "public",
+            );
             return c.json(
                 CommunityEndpointListResponseSchema.parse({
                     data: rows.map((endpoint) =>
@@ -292,6 +315,17 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     provider: {
                         name: owner?.communityProviderName ?? null,
                         url: owner?.communityProviderUrl ?? null,
+                        ...(providerIconPreset || hasCustomIcon
+                            ? {
+                                  iconPreset: providerIconPreset,
+                                  hasCustomIcon,
+                                  ...(hasCustomIcon && hasPublicListing
+                                      ? {
+                                            iconUrl: `/api/community-icons/${user.id}.svg`,
+                                        }
+                                      : {}),
+                              }
+                            : {}),
                     },
                 }),
             );
@@ -320,6 +354,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 403: { description: "Permission denied" },
             },
         }),
+        bodyLimit({ maxSize: 80 * 1024 }),
         validator("json", CommunityProviderProfileInputSchema),
         async (c) => {
             const user = c.var.auth.requireUser();
@@ -336,6 +371,18 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 });
             }
 
+            const iconSvg =
+                input.iconSvg === undefined
+                    ? undefined
+                    : input.iconSvg
+                      ? sanitizeCommunityProviderSvg(input.iconSvg)
+                      : null;
+            if (input.iconSvg && !iconSvg) {
+                throw new HTTPException(400, {
+                    message: "Custom icon must be a valid safe SVG",
+                });
+            }
+
             const [profile] = await db
                 .update(schema.user)
                 .set({
@@ -343,14 +390,67 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     communityProviderUrl: url
                         ? normalizeInputProviderUrl(url)
                         : null,
+                    ...(input.iconPreset === undefined
+                        ? {}
+                        : {
+                              communityProviderIconPreset: input.iconPreset,
+                          }),
+                    ...(iconSvg === undefined
+                        ? {}
+                        : { communityProviderIconSvg: iconSvg }),
                     updatedAt: new Date(),
                 })
                 .where(eq(schema.user.id, user.id))
                 .returning({
                     name: schema.user.communityProviderName,
                     url: schema.user.communityProviderUrl,
+                    iconPreset: schema.user.communityProviderIconPreset,
+                    hasCustomIcon: schema.user.communityProviderIconSvg,
                 });
-            return c.json(profile);
+            const providerIconPreset = isCommunityProviderIconPreset(
+                profile.iconPreset,
+            )
+                ? profile.iconPreset
+                : null;
+            const hasCustomIcon = Boolean(profile.hasCustomIcon);
+            const publicRows = await db
+                .select({
+                    visibility: schema.communityEndpoint.visibility,
+                    pendingVisibility:
+                        schema.communityEndpoint.pendingVisibility,
+                    pendingAt: schema.communityEndpoint.pendingAt,
+                    hiddenAt: schema.communityEndpoint.hiddenAt,
+                })
+                .from(schema.communityEndpoint)
+                .where(
+                    and(
+                        eq(schema.communityEndpoint.ownerUserId, user.id),
+                        isNull(schema.communityEndpoint.hiddenAt),
+                    ),
+                );
+            const hasPublicListing = publicRows.some(
+                (row) =>
+                    effectiveCommunityEndpointVisibility(
+                        row.visibility,
+                        row.pendingVisibility,
+                        row.pendingAt,
+                    ) === "public",
+            );
+            return c.json({
+                name: profile.name,
+                url: profile.url,
+                ...(providerIconPreset || hasCustomIcon
+                    ? {
+                          iconPreset: providerIconPreset,
+                          hasCustomIcon,
+                          ...(hasCustomIcon && hasPublicListing
+                              ? {
+                                    iconUrl: `/api/community-icons/${user.id}.svg`,
+                                }
+                              : {}),
+                      }
+                    : {}),
+            });
         },
     )
     .get(

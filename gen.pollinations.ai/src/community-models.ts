@@ -9,6 +9,7 @@ import {
     resolveEffectiveProxyListing,
     usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
+import { isCommunityProviderIconPreset } from "@shared/community-provider-profile.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
     type ModelInfo,
@@ -43,6 +44,8 @@ export async function getCommunityModelRegistryEntries(
             ownerGithubUsername: schema.user.githubUsername,
             providerName: schema.user.communityProviderName,
             providerUrl: schema.user.communityProviderUrl,
+            providerIconPreset: schema.user.communityProviderIconPreset,
+            providerIconSvg: schema.user.communityProviderIconSvg,
             name: schema.communityEndpoint.name,
             title: schema.communityEndpoint.title,
             description: schema.communityEndpoint.description,
@@ -104,6 +107,17 @@ export async function getCommunityModelRegistryEntries(
             description: row.description,
             providerName: row.providerName,
             providerUrl: row.providerUrl,
+            providerIconPreset: isCommunityProviderIconPreset(
+                row.providerIconPreset,
+            )
+                ? row.providerIconPreset
+                : null,
+            providerIconUrl:
+                row.providerIconSvg &&
+                effectiveVisibility === "public" &&
+                !row.hiddenAt
+                    ? `/api/community-icons/${row.ownerUserId}.svg`
+                    : null,
             baseUrl,
             upstreamModel: row.upstreamModel,
             requiredSafetyFeatures: row.requiredSafetyFeatures,

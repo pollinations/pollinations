@@ -23,6 +23,7 @@ import {
     mediaResponseDescription,
 } from "../media/response-output.ts";
 import { mediaResponses } from "../media/responses.ts";
+import { textBalanceNotice } from "../middleware/text-balance-notice.ts";
 import {
     formatOpenAIImageResponse,
     handleImageGeneration,
@@ -207,7 +208,7 @@ const chatCompletionHandlers = factory.createHandlers(
     validator("json", CreateChatCompletionRequestSchema),
     mediaResponses("chat/completions"),
     resolveModel("generate.text"),
-    track("generate.text"),
+    every(textBalanceNotice, track("generate.text")),
     textCache,
     every(generationAccess, deduplicateGeneration),
     apiKeyBudgetReservation,
@@ -219,7 +220,7 @@ const responsesHandlers = factory.createHandlers(
     validator("json", CreateResponseRequestSchema),
     mediaResponses("responses"),
     resolveModel("generate.text"),
-    track("generate.text"),
+    every(textBalanceNotice, track("generate.text")),
     textCache,
     every(generationAccess, deduplicateGeneration),
     apiKeyBudgetReservation,
@@ -809,7 +810,7 @@ export const proxyRoutes = new Hono<Env>()
         textBodyLimit,
         validator("json", CreateChatCompletionRequestSchema),
         resolveModel("generate.text"),
-        track("generate.text"),
+        every(textBalanceNotice, track("generate.text")),
         textCache,
         generationAccess,
         deduplicateGeneration,
@@ -849,7 +850,7 @@ export const proxyRoutes = new Hono<Env>()
         ),
         validator("query", GenerateTextRequestQueryParamsSchema),
         resolveModel("generate.text"),
-        track("generate.text"),
+        every(textBalanceNotice, track("generate.text")),
         textCache,
         generationAccess,
         deduplicateGeneration,

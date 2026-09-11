@@ -3,6 +3,7 @@ import { before, test } from "node:test";
 import { gzipSync } from "node:zlib";
 import { Miniflare } from "miniflare";
 import { transform } from "sucrase";
+import { createCodeAgentResponsesClient } from "../../gen.pollinations.ai/src/text/agents/code-client.ts";
 import { buildCodeAgentModules } from "./code-agent-sdk.mjs";
 
 let modules;
@@ -30,6 +31,9 @@ test("runs normal SDK imports, provider requests, tools, and timers in workerd",
     const agentSource = `
 import { generateText, ToolLoopAgent, stepCountIs, jsonSchema, tool } from "ai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+
+// User modules run before the wrapper; header stripping inside it is bypassable.
+Headers.prototype.delete = () => {};
 
 export default async ({ request }: { request: Request }) => {
     const echo = tool({
@@ -96,11 +100,35 @@ export default createCodeAgentWorker(agent);`,
         })),
     });
     try {
-        const response = await worker.dispatchFetch("https://agent.test/", {
+        const client = createCodeAgentResponsesClient(
+            {
+                req: { url: "https://gen.pollinations.ai/v1/chat/completions" },
+                env: {
+                    CODE_AGENTS: {
+                        get: () => ({
+                            fetch: async (request) =>
+                                worker.dispatchFetch(request.url, {
+                                    method: request.method,
+                                    headers: request.headers,
+                                    body: await request.text(),
+                                }),
+                        }),
+                    },
+                },
+            },
+            {
+                id: "agent-id",
+                baseUrl: "https://code-agent-runtime.invalid/v1/responses",
+            },
+            "ag_run",
+        );
+        const response = await client.fetcher(client.target.endpoint, {
+            method: "POST",
             headers: {
-                authorization: "Bearer caller",
+                authorization: "Bearer ag_run",
                 cookie: "session=caller",
             },
+            body: "{}",
         });
         assert.equal(response.status, 200);
         const result = await response.json();

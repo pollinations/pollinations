@@ -33,10 +33,6 @@ async function readMcpResult(response, id) {
 }
 
 function createAgentContext(request, baseUrl) {
-    const headers = new Headers(request.headers);
-    headers.delete("authorization");
-    headers.delete("cookie");
-    const safeRequest = new Request(request, { headers });
     const origin = new URL(baseUrl);
     const pollinations = (path, init = {}) => {
         const url = new URL(path instanceof Request ? path.url : path, origin);
@@ -139,10 +135,10 @@ function createAgentContext(request, baseUrl) {
         return result.tools;
     };
     return {
-        request: safeRequest,
+        request,
         pollinations,
         mcp,
-        ...createCodeAgentAI(safeRequest, baseUrl, pollinations, mcp),
+        ...createCodeAgentAI(request, baseUrl, pollinations, mcp),
     };
 }
 

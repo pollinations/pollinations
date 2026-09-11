@@ -42,7 +42,14 @@ export function createCodeAgentResponsesClient(
         model: endpoint.id,
         defaults: {},
     };
+    // Credentials belong only in the trusted outbound context, never the user
+    // isolate. Both Chat and Responses dispatch a JSON request here.
     const fetcher: typeof fetch = (input, init) =>
-        worker.fetch(new Request(input, init));
+        worker.fetch(
+            new Request(input, {
+                ...init,
+                headers: { "Content-Type": "application/json" },
+            }),
+        );
     return { fetcher, target };
 }

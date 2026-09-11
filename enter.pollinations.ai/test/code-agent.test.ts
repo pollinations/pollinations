@@ -28,7 +28,6 @@ describe("code agent AI SDK", () => {
             method: "POST",
             headers: {
                 "content-type": "application/json",
-                authorization: "Bearer caller-key",
             },
             body: JSON.stringify(body),
         });
@@ -387,7 +386,7 @@ export default async ({ request }: AgentContext) => new Response(request.url);`;
 describe("code agent runtime", () => {
     const runtimeEnv = { POLLINATIONS_BASE_URL: "https://gen.pollinations.ai" };
 
-    it("strips caller credentials and passes through the agent response", async () => {
+    it("accepts the credential-free dispatch request and passes through the agent response", async () => {
         const upstream = new Response("streamed result");
         const fetchMock = vi.fn(async () => upstream);
         vi.stubGlobal("fetch", fetchMock);
@@ -407,8 +406,7 @@ describe("code agent runtime", () => {
             new Request("https://code-agent-runtime.invalid/v1/responses", {
                 method: "POST",
                 headers: {
-                    authorization: "Bearer caller-key",
-                    cookie: "session=caller",
+                    "content-type": "application/json",
                 },
                 body: JSON.stringify({ input: "hello" }),
             }),

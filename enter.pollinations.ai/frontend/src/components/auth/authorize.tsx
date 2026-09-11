@@ -1061,7 +1061,7 @@ export function Authorize({
                                 inline
                             />
                         </AuthInfoCard>
-                        <p className="px-4 pt-3 text-xs text-theme-text-soft">
+                        <p className="pt-3 text-xs text-theme-text-soft">
                             Revoke access anytime in your{" "}
                             <InlineLink href={`${config.baseUrl}/`} external>
                                 dashboard

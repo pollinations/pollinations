@@ -7,10 +7,34 @@ import { roundPollenLedgerAmount } from "./precision.ts";
  * markup is credited to the app owner's matching Quest Pollen or pack balance.
  */
 export const MARKUP_PCT = 0.25;
+export const MIN_MARKUP_PCT = 0.1;
+export const MAX_MARKUP_PCT = 0.5;
 
-export function computeDevCredit(baselinePrice: number): number {
-    if (baselinePrice <= 0 || MARKUP_PCT <= 0) return 0;
-    return baselinePrice * MARKUP_PCT;
+/**
+ * Resolve the effective markup percentage from the client's metadata.
+ * Returns the clamped value within [MIN_MARKUP_PCT, MAX_MARKUP_PCT],
+ * or MARKUP_PCT when absent / invalid.
+ */
+export function resolveMarkupPct(
+    metadata: Record<string, unknown> | null | undefined,
+): number {
+    if (!metadata || typeof metadata.markupPct !== "number") return MARKUP_PCT;
+    const clamped = Math.max(
+        MIN_MARKUP_PCT,
+        Math.min(MAX_MARKUP_PCT, metadata.markupPct),
+    );
+    return Number.isFinite(clamped) ? clamped : MARKUP_PCT;
+}
+
+export function computeDevCredit(
+    baselinePrice: number,
+    markupPct: number = MARKUP_PCT,
+): number {
+    const safe =
+        Number.isFinite(markupPct) && markupPct > 0 ? markupPct : MARKUP_PCT;
+    const clamped = Math.max(MIN_MARKUP_PCT, Math.min(MAX_MARKUP_PCT, safe));
+    if (baselinePrice <= 0 || clamped <= 0) return 0;
+    return baselinePrice * clamped;
 }
 
 export type ByopClientMarkupFields = {
@@ -48,8 +72,11 @@ export function byopClientAllowsMarkup(
 export function withByopMarkup(
     baselinePrice: number,
     applies: boolean,
+    markupPct: number = MARKUP_PCT,
 ): number {
     const baseline = Math.max(0, baselinePrice);
     if (!applies) return baseline;
-    return roundPollenLedgerAmount(baseline + computeDevCredit(baseline));
+    return roundPollenLedgerAmount(
+        baseline + computeDevCredit(baseline, markupPct),
+    );
 }

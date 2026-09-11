@@ -1,4 +1,7 @@
 import json
+import time
+
+import pytest
 
 import llm_pollinations as plugin
 from llm.default_plugins.openai_models import AsyncChat, Chat
@@ -57,6 +60,71 @@ def test_capabilities_enabled_only_when_advertised():
     assert plugin.supports_reasoning({}) is False
 
 
+def test_catalog_persists_in_key_value_store(monkeypatch, tmp_path):
+    catalog = {"data": [{"id": "openai/cached", "output_modalities": ["text"]}]}
+    calls = []
+
+    class FakeResponse:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return catalog
+
+    monkeypatch.setattr(plugin.llm, "get_key", lambda *a, **k: "sk_one")
+    monkeypatch.setattr(plugin.llm, "user_dir", lambda: tmp_path)
+    monkeypatch.setattr(
+        plugin.httpx,
+        "get",
+        lambda *a, **k: (calls.append((a, k)) or FakeResponse()),
+    )
+
+    assert plugin.get_pollinations_models() == catalog["data"]
+    store = json.loads((tmp_path / plugin.KV_FILENAME).read_text())
+    cache_key = plugin._cache_key("sk_one")
+    assert store[cache_key]["payload"] == catalog
+    assert "sk_one" not in json.dumps(store)
+
+    def network_must_not_run(*args, **kwargs):
+        raise AssertionError("fresh KV value was not used")
+
+    monkeypatch.setattr(plugin.httpx, "get", network_must_not_run)
+    assert plugin.get_pollinations_models() == catalog["data"]
+    assert len(calls) == 1
+
+
+def test_cache_is_scoped_to_hashed_key(monkeypatch, tmp_path):
+    monkeypatch.setattr(plugin.llm, "user_dir", lambda: tmp_path)
+    plugin.PersistentKV(tmp_path / plugin.KV_FILENAME).set(
+        plugin._cache_key("sk_one"),
+        {"payload": {"data": [{"id": "only-for-one"}]}, "stored_at": time.time()},
+    )
+    monkeypatch.setattr(plugin.llm, "get_key", lambda *a, **k: "sk_two")
+    monkeypatch.setattr(plugin.httpx, "get", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("offline")))
+
+    with pytest.raises(plugin.DownloadError):
+        plugin.get_pollinations_models()
+
+
+def test_malformed_key_value_store_is_replaced(monkeypatch, tmp_path):
+    cache = tmp_path / plugin.KV_FILENAME
+    cache.write_text("not json")
+    catalog = {"data": [{"id": "openai/recovered"}]}
+
+    class FakeResponse:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return catalog
+
+    monkeypatch.setattr(plugin.llm, "get_key", lambda *a, **k: "sk_test")
+    monkeypatch.setattr(plugin.llm, "user_dir", lambda: tmp_path)
+    monkeypatch.setattr(plugin.httpx, "get", lambda *a, **k: FakeResponse())
+    assert plugin.get_pollinations_models() == catalog["data"]
+    assert json.loads(cache.read_text())[plugin._cache_key("sk_test")]["payload"] == catalog
+
+
 def test_registration_namespaces_ids_without_hardcoded_list(monkeypatch, tmp_path):
     catalog = {
         "data": [
@@ -85,9 +153,7 @@ def test_registration_namespaces_ids_without_hardcoded_list(monkeypatch, tmp_pat
 
     monkeypatch.setattr(plugin.llm, "get_key", lambda *a, **k: "sk_test")
     monkeypatch.setattr(plugin.llm, "user_dir", lambda: tmp_path)
-    monkeypatch.setattr(
-        plugin.httpx, "get", lambda *a, **k: FakeResponse()
-    )
+    monkeypatch.setattr(plugin.httpx, "get", lambda *a, **k: FakeResponse())
     registered = []
     plugin.register_models(lambda *models: registered.extend(models))
     assert len(registered) == 2  # sync + async for the one text model
@@ -142,14 +208,18 @@ def test_reasoning_option_only_when_advertised(monkeypatch, tmp_path):
 
 def test_stale_cache_fallback(monkeypatch, tmp_path):
     stale = {"data": [{"id": "openai/x", "category": "text"}]}
-    cache = tmp_path / plugin.CACHE_FILENAME
-    cache.write_text(json.dumps(stale))
-    # Make the cache stale (older than the timeout).
-    import os
-    import time
-
     old = time.time() - plugin.CACHE_TIMEOUT_SECONDS - 10
-    os.utime(cache, (old, old))
+    cache = tmp_path / plugin.KV_FILENAME
+    cache.write_text(
+        json.dumps(
+            {
+                plugin._cache_key("sk_test"): {
+                    "payload": stale,
+                    "stored_at": old,
+                }
+            }
+        )
+    )
 
     def boom(*a, **k):
         raise RuntimeError("network down")

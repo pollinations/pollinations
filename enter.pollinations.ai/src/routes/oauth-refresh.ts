@@ -30,7 +30,11 @@ type RefreshGrant = {
     scope: string | null;
     allowedModels: string[] | null;
     accountPermissions: string[] | null;
-    pollenBudget: number | null;
+    /**
+     * Budget left on the key at the last refresh. A re-mint starts from here,
+     * not from the approved budget, so deleting the key never resets spend.
+     */
+    remainingBudget: number | null;
     /** Unix ms; null when the approved key never expires. */
     expiresAt: number | null;
 };
@@ -127,7 +131,7 @@ export async function issueRefreshToken(
         scope: code.scope,
         allowedModels: permissions.models ?? null,
         accountPermissions: permissions.account ?? null,
-        pollenBudget: row.pollenBalance ?? null,
+        remainingBudget: row.pollenBalance ?? null,
         expiresAt: row.expiresAt?.getTime() ?? null,
     };
     const remaining = remainingSeconds(grant.expiresAt);
@@ -144,9 +148,10 @@ export async function issueRefreshToken(
 /**
  * RFC 6749 §6 refresh_token grant. Returns the approved key while it exists.
  * If the user deleted it (an Open WebUI user removing the "Open WebUI" key
- * from the dashboard is the common case), re-mints it with the permissions,
- * budget and expiry the user approved, so the app recovers without a new
- * consent round. A disabled key is left alone: that is a deliberate pause.
+ * from the dashboard is the common case), re-mints it with the approved
+ * permissions and expiry and the budget that was left at the last refresh, so
+ * the app recovers without a new consent round and without a budget reset.
+ * A disabled key is left alone: that is a deliberate pause.
  */
 export async function exchangeRefreshToken(
     c: Context<Env>,
@@ -182,7 +187,12 @@ export async function exchangeRefreshToken(
     const row = await db.query.apikey.findFirst({
         where: eq(schema.apikey.id, grant.keyId),
     });
-    if (!row) {
+    if (row) {
+        if (row.pollenBalance !== grant.remainingBudget) {
+            grant.remainingBudget = row.pollenBalance ?? null;
+            await putGrant(c.env.KV, body.refresh_token, grant);
+        }
+    } else {
         let created: Awaited<ReturnType<typeof createApiKeyForUser>>;
         try {
             created = await createApiKeyForUser({
@@ -193,7 +203,7 @@ export async function exchangeRefreshToken(
                 type: "secret",
                 ...(remaining != null && { expiresIn: remaining }),
                 allowedModels: grant.allowedModels,
-                pollenBudget: grant.pollenBudget,
+                pollenBudget: grant.remainingBudget,
                 accountPermissions: grant.accountPermissions,
                 metadata: {
                     requestedClientId: grant.clientId,

@@ -609,6 +609,15 @@ describe("POST /api/oauth/token (refresh_token)", () => {
         });
         expect(original).toBeTruthy();
 
+        // The app spends 13 of the 20 Pollen, then a refresh sees the rest
+        await db
+            .update(schema.apikey)
+            .set({ pollenBalance: 7 })
+            .where(eq(schema.apikey.id, consentKey.id));
+        expect((await refresh(token.refresh_token, client.key)).status).toBe(
+            200,
+        );
+
         // The user deletes the key from the dashboard
         await db
             .delete(schema.apikey)
@@ -631,7 +640,8 @@ describe("POST /api/oauth/token (refresh_token)", () => {
         const replacement = rows[0];
         expect(replacement.id).not.toBe(consentKey.id);
         expect(replacement.prefix).toBe("sk");
-        expect(replacement.pollenBalance).toBe(20);
+        // Remaining budget carries over; deleting the key resets nothing
+        expect(replacement.pollenBalance).toBe(7);
         expect(replacement.byopClientKeyId).toBe(client.id);
         expect(JSON.parse(replacement.permissions ?? "{}")).toEqual(
             JSON.parse(original?.permissions ?? "{}"),
@@ -669,7 +679,7 @@ describe("POST /api/oauth/token (refresh_token)", () => {
             scope: "offline_access",
             allowedModels: null,
             accountPermissions: null,
-            pollenBudget: null,
+            remainingBudget: null,
             expiresAt: Date.now() - 1000,
         };
         await env.KV.put("oauth-refresh:expired", JSON.stringify(grant));

@@ -624,7 +624,7 @@ Exchange it at `POST /api/oauth/token` with form-encoded `grant_type=authorizati
 { "access_token": "sk_xxxxx", "token_type": "bearer" }
 ```
 
-With `offline_access` in the requested `scope`, the response carries a one-hour `expires_in` and a `refresh_token`. `grant_type=refresh_token` (with `refresh_token` and `client_id`) returns the same key while it exists and re-mints it with the approved permissions, budget and expiry if the user deleted it (`src/routes/oauth-refresh.ts`). The grant is stored in KV under `oauth-refresh:` and ends with the approved key's expiry.
+With `offline_access` in the requested `scope`, the response carries a one-hour `expires_in` and a `refresh_token`. `grant_type=refresh_token` (with `refresh_token` and `client_id`) returns the same key while it exists and re-mints it with the approved permissions and expiry and the budget left at the last refresh if the user deleted it (`src/routes/oauth-refresh.ts`). The grant is stored in KV under `oauth-refresh:` and ends with the approved key's expiry.
 
 ### App Lookup Endpoint
 

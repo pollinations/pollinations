@@ -1,0 +1,35 @@
+{
+  "pr_number": 14700,
+  "title": "feat: show top-up links when text balance is too low",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14700",
+  "merged_at": "2026-09-11T13:27:22Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds an unbilled low-balance notice with top-up and quest links for text output, including streaming. Explains whom to contact when the account belongs to an app or service owner.\n- Keeps JSON modes, audio/media output and API-key budget failures on HTTP 402. Notices are never cached or billed and remain 402 failures in analytics.\n- Counts anonymous arrivals from each link in Tinybird; no unique-user or purchase attribution.\n- Controls the feature with `TEXT_BALANCE_NOTICE_ENABLED` in `gen.pollinations.ai/src/middleware/text-balance-notice.ts`, currently `true`. Set it to `false` and deploy through the normal pipeline to restore HTTP 402. No Cloudflare binding is required.\n- Independent adversarial and Claude Fable reviews completed; verified HEAD and audio issues fixed. The Flagship experiment remains in commits `650d63ab69` and `f11186a5ca`, followed by an explicit revert that restores the previously tested implementation.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A gentler empty jar",
+    "blurb": "When text balance runs low, the hive now leaves a useful little signpost instead of a bare 402 wall. Top up, try a Quest, or find the person holding the app’s wallet.",
+    "summary": "Text requests with insufficient unbilled balance now return a low-balance notice with Top Up and Quest links, including streaming responses, while JSON modes, audio/media output, and API-key budget failures keep their HTTP 402 behavior.",
+    "impact": "People arriving through an app or service get a clear path to add Pollen, earn it through Quests, or contact the account owner, without notices being cached or billed.",
+    "keywords": [
+      "text-api",
+      "balance",
+      "pollen",
+      "top-up",
+      "quests",
+      "streaming",
+      "http-402"
+    ],
+    "visual_concept": "A cozy text-generation garden has a nearly empty Pollen jar beside a retro terminal, but a friendly signpost offers two paths: Top Up and Quests. Polli, wearing a tiny gardener tool belt, points warmly toward the paths while code-flowers continue growing; this represents a helpful low-balance response rather than a blocked, sterile error page.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt and hovering beside a nearly empty Pollen jar at a lime green (#ecf874) glowing retro text terminal; she points toward two small garden signposts reading “TOP UP” and “QUESTS” as code-plants sprout from flower pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-11/PR-14700.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt and hovering beside a nearly empty Pollen jar at a lime green (#ecf874) glowing retro text terminal; she points toward two small garden signposts reading “TOP UP” and “QUESTS” as code-plants sprout from flower pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-11T13:28:22.305610+00:00"
+}

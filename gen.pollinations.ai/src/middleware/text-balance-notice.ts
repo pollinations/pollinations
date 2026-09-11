@@ -21,7 +21,7 @@ export const TEXT_BALANCE_NOTICE_ENABLED = true;
 
 const MESSAGE =
     "The account behind this API key doesn't have enough credits. " +
-    "Its owner can " +
+    "Please " +
     "[top up](https://enter.pollinations.ai/pollen?ref=agent_low_balance_topup) or " +
     "[complete a quest](https://enter.pollinations.ai/quests?ref=agent_low_balance_quests), then try again.\n\n" +
     "If this isn’t your Pollinations account, contact whoever runs the app or service you’re using.";

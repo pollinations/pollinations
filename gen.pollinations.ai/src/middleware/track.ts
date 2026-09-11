@@ -98,11 +98,7 @@ import {
     isResponsesFailure,
     normalizeResponsesTerminalEvent,
 } from "@/text/responses/tracking.ts";
-import {
-    createStreamSummary,
-    summarizeChunk,
-    trimStreamEvents,
-} from "@/text/streamSummary.ts";
+import { summarizeStreamForLog } from "@/text/streamSummary.ts";
 import { generateRandomId, parseBooleanLike } from "@/util.ts";
 import { releaseApiKeyBudgetReservation } from "@/utils/generation-access.ts";
 import {
@@ -911,7 +907,7 @@ function finishReasonError(
 
 function stringifyErrorOutput(output: unknown): string {
     try {
-        return JSON.stringify(trimStreamEvents(output)).slice(0, 16_000);
+        return JSON.stringify(summarizeStreamForLog(output)).slice(0, 16_000);
     } catch (error) {
         return JSON.stringify({
             error: "error_output_json_stringify_failed",
@@ -1344,11 +1340,11 @@ async function extractUsageAndContentFilterResultsStream(
     // Every chunk is kept: billing rules scan them all (Gemini grounding
     // metadata can sit on any chunk); only the error log is trimmed.
     const streamEvents: unknown[] = [];
-    const streamSummary = createStreamSummary();
+    let doneSeen = false;
 
     for await (const event of events) {
         if (event === STREAM_DONE) {
-            streamSummary.doneSeen = true;
+            doneSeen = true;
             continue;
         }
         const parseResult = EventSchema.safeParse(event);
@@ -1357,7 +1353,6 @@ async function extractUsageAndContentFilterResultsStream(
             (event as { usage?: unknown } | null)?.usage,
         );
         streamEvents.push(event);
-        summarizeChunk(event, streamSummary);
 
         const incomingPromptFilterResults =
             parseResult.data?.prompt_filter_results?.map(
@@ -1408,7 +1403,7 @@ async function extractUsageAndContentFilterResultsStream(
     // belongs to a different owner's model than the one that served.
     const servedModel = servedModelId || model;
     const output =
-        streamEvents.length > 0 ? { streamEvents, streamSummary } : undefined;
+        streamEvents.length > 0 ? { streamEvents, doneSeen } : undefined;
     if (!servedModel || !usage) {
         log.error("No usage object found in event stream");
         return { modelUsage: null, output, contentFilterResults };

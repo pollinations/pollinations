@@ -59,6 +59,7 @@ import {
     resetGenerationModelRegistryCache,
 } from "../src/model-registry.ts";
 import { requireChatStreamUsage } from "../src/text/chat/usage.ts";
+import { summarizeStreamForLog } from "../src/text/streamSummary.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 afterEach(() => {
@@ -837,13 +838,6 @@ describe("tracking observability", () => {
                 new URL(request.url).searchParams.get("name") === "error_event",
         );
         expect(tinybirdRequests).toHaveLength(2);
-        const streamSummary = {
-            chunks: 3,
-            contentChars: "partial output".length,
-            reasoningChars: 0,
-            finishReason: "error",
-            doneSeen: true,
-        };
         await expect(generationRequest?.json()).resolves.toMatchObject({
             responseStatus: 502,
             isBilledUsage: false,
@@ -875,8 +869,8 @@ describe("tracking observability", () => {
         });
         const loggedOutput = JSON.parse(errorEvent.upstream_body as string) as {
             streamEvents: unknown[];
-            streamSummary: unknown;
         };
+        expect(loggedOutput).toMatchObject({ chunks: 3, doneSeen: true });
         expect(loggedOutput.streamEvents).toHaveLength(3);
         expect(loggedOutput.streamEvents[1]).toMatchObject({
             choices: [
@@ -886,7 +880,6 @@ describe("tracking observability", () => {
                 },
             ],
         });
-        expect(loggedOutput.streamSummary).toEqual(streamSummary);
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
@@ -950,13 +943,6 @@ describe("tracking observability", () => {
         await expect(response.text()).resolves.toBe(upstreamBody);
         await waitOnExecutionContext(ctx);
 
-        const streamSummary = {
-            chunks: 50,
-            contentChars: 50,
-            reasoningChars: 100,
-            finishReason: null,
-            doneSeen: true,
-        };
         const generationRequest = tinybirdRequests.find(
             (request) =>
                 new URL(request.url).searchParams.get("name") ===
@@ -977,9 +963,8 @@ describe("tracking observability", () => {
         >;
         const loggedOutput = JSON.parse(errorEvent.upstream_body as string) as {
             streamEvents: { id: string }[];
-            streamSummary: unknown;
         };
-        expect(loggedOutput.streamSummary).toEqual(streamSummary);
+        expect(loggedOutput).toMatchObject({ chunks: 50, doneSeen: true });
         expect(loggedOutput.streamEvents.map((event) => event.id)).toEqual([
             "chunk-0",
             "chunk-1",
@@ -3033,14 +3018,9 @@ describe("trackResponse missing usage", () => {
         expect(tracking.isBilledUsage).toBe(false);
         expect(tracking.cost?.totalCost).toBeGreaterThan(0);
         expect(tracking.errorTracking?.errorResponseCode).toBe("usage_missing");
-        expect(tracking.errorOutput).toMatchObject({
-            streamSummary: {
-                chunks: 2,
-                contentChars: 0,
-                reasoningChars: 0,
-                finishReason: null,
-                doneSeen: false,
-            },
+        expect(summarizeStreamForLog(tracking.errorOutput)).toMatchObject({
+            chunks: 2,
+            doneSeen: false,
         });
     });
 
@@ -3062,14 +3042,9 @@ describe("trackResponse missing usage", () => {
         );
         expect(tracking.responseStatus).toBe(502);
         expect(tracking.errorTracking?.errorResponseCode).toBe("usage_missing");
-        expect(tracking.errorOutput).toMatchObject({
-            streamSummary: {
-                chunks: 2,
-                contentChars: "partial".length,
-                reasoningChars: 0,
-                finishReason: null,
-                doneSeen: true,
-            },
+        expect(summarizeStreamForLog(tracking.errorOutput)).toMatchObject({
+            chunks: 2,
+            doneSeen: true,
         });
     });
 

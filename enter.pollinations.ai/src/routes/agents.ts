@@ -319,6 +319,10 @@ export const agentsRoutes = new Hono<Env>()
                             ? stored.description
                             : input.description || null,
                     visibility,
+                    ...(input.visibility === "private" && {
+                        pendingVisibility: null,
+                        pendingAt: null,
+                    }),
                     requiredSafetyFeatures:
                         input.requiredSafetyFeatures ??
                         stored.requiredSafetyFeatures,

@@ -410,7 +410,7 @@ Media models that advertise this endpoint in `/models` also accept text prompts.
 | `top_p` | `number` \| `null` | — |
 | `tools` | `object`[] | — |
 | `tool_choice` | `"none"` \| `"auto"` \| `"required"` \| `object` | — |
-| `parallel_tool_calls` | `boolean` | default: `true` |
+| `parallel_tool_calls` | `boolean` | — |
 | `user` | `string` | — |
 | `prompt_cache_key` | `string` | — |
 | `prompt_cache_options` | [`PromptCacheOptions`](#promptcacheoptions) | — |
@@ -568,7 +568,7 @@ Use `/v1/chat/completions` when you need the full OpenAI-compatible JSON respons
 | `top_p` | `number` \| `null` | — |
 | `tools` | `object`[] | — |
 | `tool_choice` | `"none"` \| `"auto"` \| `"required"` \| `object` | — |
-| `parallel_tool_calls` | `boolean` | default: `true` |
+| `parallel_tool_calls` | `boolean` | — |
 | `user` | `string` | — |
 | `prompt_cache_key` | `string` | — |
 | `prompt_cache_options` | [`PromptCacheOptions`](#promptcacheoptions) | — |

@@ -6,21 +6,25 @@ import {
 import { openRouterGeminiBilling } from "./gemini-billing";
 import type { FallbackMap } from "./merge-fallbacks";
 import { perMillion } from "./price-helpers";
+import { CHAT_PARAMETERS } from "./text-parameters";
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
     "perplexity/sonar": {
         "perplexity/sonar:openrouter:perplexity": {
+            supportedParameters: CHAT_PARAMETERS.openRouterSonar,
             provider: "openrouter",
         },
     },
     "perplexity/sonar-pro": {
         "perplexity/sonar-pro:openrouter:perplexity": {
+            supportedParameters: CHAT_PARAMETERS.openRouterSonar,
             provider: "openrouter",
         },
     },
     "perplexity/sonar-reasoning-pro": {
         "perplexity/sonar-reasoning-pro:openrouter:perplexity": {
+            supportedParameters: CHAT_PARAMETERS.openRouterSonarReasoning,
             provider: "openrouter",
         },
     },
@@ -53,6 +57,7 @@ export const TEXT_FALLBACKS = {
     },
     "deepseek/deepseek-v4-flash": {
         "deepseek/deepseek-v4-flash:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
             provider: "deepinfra",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
@@ -64,6 +69,7 @@ export const TEXT_FALLBACKS = {
     },
     "minimax/minimax-m2.7": {
         "minimax/minimax-m2.7:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
             provider: "deepinfra",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
@@ -75,6 +81,7 @@ export const TEXT_FALLBACKS = {
     },
     "qwen/qwen3.8-2.4t-a95b": {
         "qwen/qwen3.8-2.4t-a95b:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
             provider: "deepinfra",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
@@ -86,12 +93,14 @@ export const TEXT_FALLBACKS = {
     },
     "qwen/qwen3.8-27b": {
         "qwen/qwen3.8-27b:openrouter:akashml-fp8": {
+            supportedParameters: CHAT_PARAMETERS.qwen38Akash,
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
     "qwen/qwen3.7-flash": {
         "qwen/qwen3.7-flash:alibaba": {
+            supportedParameters: CHAT_PARAMETERS.alibabaQwen,
             provider: "alibaba",
             addedDate: new Date("2026-09-02").getTime(),
             // This bypasses OpenRouter but deliberately keeps Alibaba as the
@@ -192,6 +201,7 @@ export const TEXT_FALLBACKS = {
     },
     "qwen/qwen3.8-flash": {
         "qwen/qwen3.8-flash:alibaba": {
+            supportedParameters: CHAT_PARAMETERS.alibabaQwenReasoning,
             provider: "alibaba",
             addedDate: new Date("2026-09-05").getTime(),
             // This bypasses OpenRouter but deliberately keeps Alibaba as the
@@ -206,6 +216,7 @@ export const TEXT_FALLBACKS = {
     },
     "moonshotai/kimi-k2.6": {
         "moonshotai/kimi-k2.6:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
             provider: "deepinfra",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
@@ -218,6 +229,7 @@ export const TEXT_FALLBACKS = {
     },
     "meta/llama-3.3-70b-instruct": {
         "meta/llama-3.3-70b-instruct:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfra,
             provider: "deepinfra",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
@@ -228,12 +240,14 @@ export const TEXT_FALLBACKS = {
     },
     "mistralai/mistral-large-3": {
         "mistralai/mistral-large-3:openrouter:mistral-zdr": {
+            supportedParameters: CHAT_PARAMETERS.openRouterMistralLarge,
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
     "mistralai/mistral-small-3.2": {
         "mistralai/mistral-small-3.2:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfra,
             provider: "deepinfra",
             addedDate: new Date("2026-09-02").getTime(),
             // This bypasses OpenRouter but deliberately keeps DeepInfra as the
@@ -245,6 +259,7 @@ export const TEXT_FALLBACKS = {
     },
     "google/gemma-4-26b-a4b-it": {
         "google/gemma-4-26b-a4b-it:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
             provider: "deepinfra",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
@@ -256,6 +271,7 @@ export const TEXT_FALLBACKS = {
     },
     "google/gemma-4-31b-it": {
         "google/gemma-4-31b-it:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
             provider: "deepinfra",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
@@ -267,12 +283,14 @@ export const TEXT_FALLBACKS = {
     },
     "anthropic/claude-opus-4.7": {
         "anthropic/claude-opus-4.7:openrouter:vertex-global": {
+            supportedParameters: CHAT_PARAMETERS.openRouterOpus,
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
     "meta/llama-4-scout": {
         "meta/llama-4-scout:openrouter:vertex-us-east5": {
+            supportedParameters: CHAT_PARAMETERS.openRouterLlamaScout,
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             // The caller still pays the public DeepInfra quote ($0.10/M input
@@ -297,6 +315,7 @@ export const TEXT_FALLBACKS = {
     },
     "x-ai/grok-4.20": {
         "x-ai/grok-4.20:openrouter:xai-zdr": {
+            supportedParameters: CHAT_PARAMETERS.openRouterGrok420,
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
@@ -328,6 +347,7 @@ export const TEXT_FALLBACKS = {
     },
     "x-ai/grok-4.3": {
         "x-ai/grok-4.3:openrouter:xai-zdr": {
+            supportedParameters: CHAT_PARAMETERS.openRouterGrok43,
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
@@ -340,18 +360,21 @@ export const TEXT_FALLBACKS = {
     },
     "anthropic/claude-haiku-4.5": {
         "anthropic/claude-haiku-4.5:openrouter:vertex-global": {
+            supportedParameters: CHAT_PARAMETERS.openRouterHaiku,
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
     "anthropic/claude-fable-5": {
         "anthropic/claude-fable-5:openrouter:vertex-global": {
+            supportedParameters: CHAT_PARAMETERS.openRouterOpus,
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
     "meta/muse-glimmer-30b": {
         "meta/muse-glimmer-30b:openrouter:deepinfra-bf16": {
+            supportedParameters: CHAT_PARAMETERS.openRouterMuseGlimmer,
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
@@ -364,6 +387,7 @@ export const TEXT_FALLBACKS = {
     },
     "nvidia/nemotron-3.5-lightning": {
         "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16": {
+            supportedParameters: CHAT_PARAMETERS.openRouterNemotron,
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
@@ -387,6 +411,7 @@ export const TEXT_FALLBACKS = {
     },
     "google/gemini-3.7-flash": {
         "google/gemini-3.7-flash:openrouter:ai-studio-priority": {
+            supportedParameters: CHAT_PARAMETERS.gemini35AiStudio,
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
@@ -412,6 +437,7 @@ export const TEXT_FALLBACKS = {
     },
     "google/gemini-3.5-flash-lite": {
         "google/gemini-3.5-flash-lite:openrouter:ai-studio-flex": {
+            supportedParameters: CHAT_PARAMETERS.gemini35AiStudio,
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
@@ -431,12 +457,14 @@ export const TEXT_FALLBACKS = {
     },
     "google/gemini-3.1-pro-preview": {
         "google/gemini-3.1-pro-preview:openrouter:ai-studio": {
+            supportedParameters: CHAT_PARAMETERS.gemini3AiStudio,
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
     "qwen/qwen3-vl-235b-a22b-thinking": {
         "qwen/qwen3-vl-235b-a22b-thinking:openrouter:novita-bf16": {
+            supportedParameters: CHAT_PARAMETERS.openRouterQwenVl,
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
@@ -449,6 +477,7 @@ export const TEXT_FALLBACKS = {
     },
     "z-ai/glm-5.3": {
         "z-ai/glm-5.3:openrouter:friendli": {
+            supportedParameters: CHAT_PARAMETERS.openRouterGlm53,
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
@@ -460,6 +489,7 @@ export const TEXT_FALLBACKS = {
     },
     "moonshotai/kimi-k2.7-code": {
         "moonshotai/kimi-k2.7-code:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
             provider: "deepinfra",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
@@ -473,6 +503,7 @@ export const TEXT_FALLBACKS = {
     },
     "qwen/qwen3-coder-next": {
         "qwen/qwen3-coder-next:openrouter:streamlake": {
+            supportedParameters: CHAT_PARAMETERS.openRouterQwenCoderNext,
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {

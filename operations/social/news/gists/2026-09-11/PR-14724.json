@@ -1,0 +1,35 @@
+{
+  "pr_number": 14724,
+  "title": "Add NewEra Ai Agent to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14724",
+  "merged_at": "2026-09-11T13:02:40Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [NewEra Ai Agent](https://newera.namansoni.in) to chat\n- # NewEra AI Agent NewEra is a free online AI agent that plans, codes, builds and deploys real applications. Created by Naman Soni. URL: https://newera.namansoni.in/ NewEra turns a plain-English descri\n\nFixes #14721",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A builder moved into the hive",
+    "blurb": "NewEra AI Agent has joined chat. Bring it a plain-English idea and it will help plan, code, build, and deploy the resulting little machine.",
+    "summary": "Added Naman Soni's NewEra AI Agent to chat, giving users access to an agent that turns plain-English app ideas into planned, coded, built, and deployed applications.",
+    "impact": "Users can now find NewEra in chat and use it to take an application concept from a written prompt toward a working deployment.",
+    "keywords": [
+      "NewEra",
+      "AI agent",
+      "chat",
+      "app builder",
+      "community"
+    ],
+    "visual_concept": "Depict NewEra as a friendly app-building workshop: a retro terminal grows a tiny finished web app from a seed labeled with a plain-English idea, with plans, code pages, and a small deploy rocket-like paper plane nearby. Polli should wear a tiny builder tool belt and help the process by watering the code-plant, surrounded by flowers and warm garden-workshop details.",
+    "image_prompt": "A cozy pixel art garden workshop where Polli, the cute yellow-and-brown striped bee mascot with black antennae, oval eyes, pink rectangular cheek blushes, light-blue rounded wings, and a tiny builder tool belt, waters a code-plant growing from a lime green (#ecf874) pot; its branches become a retro terminal, app blueprint, code pages, and a tiny deployed website. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, flowers and vines, retro gaming vibes like Stardew Valley or A Short Hike; simple pixel-font text: \"IDEA → APP\". Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-11/PR-14724.jpg",
+    "prompt": "A cozy pixel art garden workshop where Polli, the cute yellow-and-brown striped bee mascot with black antennae, oval eyes, pink rectangular cheek blushes, light-blue rounded wings, and a tiny builder tool belt, waters a code-plant growing from a lime green (#ecf874) pot; its branches become a retro terminal, app blueprint, code pages, and a tiny deployed website. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, flowers and vines, retro gaming vibes like Stardew Valley or A Short Hike; simple pixel-font text: \"IDEA → APP\". Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-11T13:03:42.011710+00:00",
+  "app_name": "NewEra Ai Agent",
+  "app_url": "https://newera.namansoni.in"
+}

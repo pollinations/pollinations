@@ -259,3 +259,26 @@ describe("getAuthorizeRequestError", () => {
         );
     });
 });
+
+describe("authorization redirect schemes", () => {
+    it.each([
+        "javascript:void(0)",
+        "data:text/html,example",
+        "http://app.example/callback",
+    ])("rejects %s before either protocol can redirect", (redirectUrl) => {
+        for (const responseType of [undefined, "code"]) {
+            expect(
+                getAuthorizeRequestError({ redirectUrl, responseType }),
+            ).toBe(
+                "Redirect URL must use HTTPS (HTTP is allowed for localhost).",
+            );
+        }
+    });
+    it.each([
+        "https://app.example/callback",
+        "http://localhost:1234/callback",
+        "http://127.0.0.1:1234/callback",
+    ])("preserves supported legacy callbacks: %s", (redirectUrl) => {
+        expect(getAuthorizeRequestError({ redirectUrl })).toBeNull();
+    });
+});

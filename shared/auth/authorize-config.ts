@@ -1,3 +1,5 @@
+import { isAllowedRedirectUrl } from "./redirect-uri.ts";
+
 /**
  * Parse a scope/permissions URL parameter. Accepts both OAuth-canonical
  * space-separated format (`scope=usage%20keys`) and our legacy
@@ -59,7 +61,8 @@ export function getAuthorizeRequestError(request: {
 }): string | null {
     if (!request.redirectUrl) return "No redirect URL provided";
     try {
-        new URL(request.redirectUrl);
+        if (!isAllowedRedirectUrl(new URL(request.redirectUrl)))
+            return "Redirect URL must use HTTPS (HTTP is allowed for localhost).";
     } catch {
         return "Invalid redirect URL format";
     }

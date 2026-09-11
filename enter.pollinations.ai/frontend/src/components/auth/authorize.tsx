@@ -256,6 +256,7 @@ export function Authorize({
         // redirect — no hostname-only fallback like the legacy flow.
         (isDeviceMode || !app_key || appLookupStatus === "valid");
     const canRedirectOnDeny =
+        !requestValidationError &&
         parsedRedirectUrl !== null &&
         (isCodeFlow
             ? appLookupStatus === "valid"

@@ -44,7 +44,7 @@ export type JourneySettings = {
     slowAppLookup: boolean;
     appConnectionError: "none" | "start" | "callback";
     storedKeyStatus: "valid" | "invalid" | "unavailable";
-    accountDetailsError: boolean;
+    accountStatus: "ready" | "unavailable" | "unauthorized";
     appReturnPage: boolean;
     loginResult: "ready" | "start" | keyof typeof loginErrors;
 };
@@ -60,7 +60,7 @@ export const defaultJourneySettings: JourneySettings = {
     slowAppLookup: false,
     appConnectionError: "none",
     storedKeyStatus: "valid",
-    accountDetailsError: false,
+    accountStatus: "ready",
     appReturnPage: true,
     loginResult: "ready",
 };
@@ -469,7 +469,11 @@ export function journeyStep(state: JourneyState, edge: FlowEdge): JourneyState {
     ) {
         next.signedIn = true;
     }
-    if (state.world === "app" && edge.to === "app-home") {
+    if (
+        state.world === "app" &&
+        edge.to === "app-home" &&
+        edge.from !== "consent"
+    ) {
         next.world = "account";
         next.node = next.signedIn ? "enter-connected" : "enter-signed-out";
     }
@@ -494,7 +498,10 @@ export function journeyStep(state: JourneyState, edge: FlowEdge): JourneyState {
         next.connected = false;
     if (edge.from === "app-connected" && edge.to === "app-connect") {
         next.connected = false;
-        next.notice = "App disconnected. Pollinations is still signed in.";
+        next.notice =
+            edge.label === "Disconnect app"
+                ? "App disconnected. Pollinations is still signed in."
+                : "App connection expired or was revoked. Connect again.";
     }
     if (
         (["enter-connected", "keys"].includes(edge.from) &&

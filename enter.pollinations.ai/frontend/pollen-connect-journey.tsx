@@ -279,6 +279,8 @@ export function Journey({
         overrides.drawer = "open";
     if (state.node === "app-account-error")
         overrides.app_account = "account-error";
+    if (state.node === "app-connected" && settings.accountStatus !== "ready")
+        overrides.app_account = "loading";
     if (state.node === "app-callback-error" && state.scenario === "key-check")
         overrides.app_callback = "check-error";
     if (state.scenario) overrides.topup_case = state.scenario;
@@ -618,7 +620,7 @@ export function Journey({
                     settingsRef.current,
                 );
                 const edge = journeyOptions(current, settingsRef.current).find(
-                    (edge) => edge.to === destination,
+                    (edge) => edge.to === destination && !edge.action,
                 );
                 if (edge) stepRef.current(edge);
             }, 1400);
@@ -670,9 +672,13 @@ export function Journey({
                     .trim()
                     .replace(/\s+/g, " ");
                 const edges = journeyOptions(current, settingsRef.current);
+                const action = target.getAttribute("data-pollinations-action");
                 const destination =
                     current.world === "app"
-                        ? (edges.find((edge) => edge.label === label)?.to ??
+                        ? (edges.find(
+                              (edge) => action && edge.action === action,
+                          )?.to ??
+                          edges.find((edge) => edge.label === label)?.to ??
                           (label === "Cancel" ||
                           label === "Open dashboard" ||
                           target.getAttribute("title") === "Open dashboard"
@@ -1145,18 +1151,33 @@ export function Journey({
                                                 )}
                                             {group === "App & payment" &&
                                                 state.world === "app" && (
-                                                    <FlowSwitch
-                                                        label="Account details unavailable"
-                                                        checked={
-                                                            settings.accountDetailsError
+                                                    <FlowSelect
+                                                        label="Account response"
+                                                        value={
+                                                            settings.accountStatus
                                                         }
+                                                        options={[
+                                                            {
+                                                                id: "ready",
+                                                                label: "Available",
+                                                            },
+                                                            {
+                                                                id: "unavailable",
+                                                                label: "Temporarily unavailable",
+                                                            },
+                                                            {
+                                                                id: "unauthorized",
+                                                                label: "Key expired or revoked",
+                                                            },
+                                                        ]}
                                                         onChange={(
-                                                            accountDetailsError,
+                                                            accountStatus,
                                                         ) =>
                                                             setSettings(
                                                                 (current) => ({
                                                                     ...current,
-                                                                    accountDetailsError,
+                                                                    accountStatus:
+                                                                        accountStatus as JourneySettings["accountStatus"],
                                                                 }),
                                                             )
                                                         }

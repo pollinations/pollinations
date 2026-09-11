@@ -19,6 +19,7 @@ export function PollenFundingAction({
         <Button
             as="a"
             href={new URL("/pollen#buy-pollen", enterUrl).href}
+            data-pollinations-action="fund-account"
             target="_blank"
             rel="noopener noreferrer"
             intent="danger"

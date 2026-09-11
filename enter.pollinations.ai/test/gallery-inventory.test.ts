@@ -660,15 +660,24 @@ it("shares sign-in failure UI while retaining both failure and retry paths", () 
     }
 });
 
-it("exposes dashboard navigation only from the interactive developer-app menu", () => {
-    expect(appLoginEdges.filter((edge) => edge.to === "app-home")).toEqual([
-        {
-            from: "app-connected",
-            to: "app-home",
-            label: "Open dashboard",
-            alternate: true,
-        },
-    ]);
+it("routes dashboard and funding links without depending on their visible labels", () => {
+    for (const node of ["app-connected", "consent"]) {
+        expect(
+            journeyOptions({ ...startJourney(), node }).find(
+                (edge) => edge.action === "dashboard",
+            )?.to,
+        ).toBe("app-home");
+    }
+    const consent = { ...startJourney(), node: "consent", signedIn: true };
+    const funding = journeyOptions(consent).find(
+        (edge) => edge.action === "fund-account",
+    );
+    if (!funding) throw new Error("Missing account funding exit");
+    const outcome = journeyAdvance(consent, funding);
+    expect(outcome.node).toBe("account-funding");
+    expect(outcome.connected).toBe(false);
+    expect(outcome.paid).toBe(consent.paid);
+    expect(outcome.budget).toBe(consent.budget);
 });
 
 it("exposes submission failures on the same page and routes the selected journey outcome", () => {
@@ -953,7 +962,7 @@ it("keeps account-detail failures on the return panel and retries account loadin
     expect(
         appLoginAutomaticDestination(connected, {
             ...defaultJourneySettings,
-            accountDetailsError: true,
+            accountStatus: "unavailable",
         }),
     ).toBe("app-account-error");
     expect(
@@ -977,6 +986,20 @@ it("keeps account-detail failures on the return panel and retries account loadin
     expect(
         appLoginAutomaticDestination(connected, defaultJourneySettings),
     ).toBeUndefined();
+    expect(
+        appLoginAutomaticDestination(connected, {
+            ...defaultJourneySettings,
+            accountStatus: "unauthorized",
+        }),
+    ).toBe("app-connect");
+    const revoked = journeyOptions(connected).find(
+        (edge) => edge.label === "Key expired or revoked",
+    );
+    if (!revoked) throw new Error("Missing expired-key transition");
+    const disconnected = journeyAdvance(connected, revoked);
+    expect(disconnected.node).toBe("app-connect");
+    expect(disconnected.connected).toBe(false);
+    expect(disconnected.signedIn).toBe(true);
 });
 
 it("keeps session and protocol consistent for every blocked-request preview", () => {

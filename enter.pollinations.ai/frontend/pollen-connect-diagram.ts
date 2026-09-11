@@ -16,6 +16,7 @@ export type FlowEdge = {
     from: string;
     to: string;
     label: string;
+    action?: string;
     fromSide?: Side;
     toSide?: Side;
     via?: [number, number][];

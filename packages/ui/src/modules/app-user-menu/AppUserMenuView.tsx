@@ -189,6 +189,7 @@ export function AppUserMenuView({
                         <DropdownItem
                             as="a"
                             href={dashboardHref}
+                            data-pollinations-action="dashboard"
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={close}
@@ -224,6 +225,7 @@ export function AppUserMenuView({
                         </DropdownItem>
                     )}
                     <DropdownItem
+                        data-pollinations-action="disconnect"
                         onClick={() => {
                             close();
                             onDisconnect();

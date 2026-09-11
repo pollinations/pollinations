@@ -1021,7 +1021,11 @@ export function Authorize({
                         </AuthInfoCard>
                         <p className="pt-3 text-xs text-theme-text-soft">
                             Revoke access anytime in your{" "}
-                            <InlineLink href={`${config.baseUrl}/`} external>
+                            <InlineLink
+                                href={`${config.baseUrl}/`}
+                                external
+                                data-pollinations-action="dashboard"
+                            >
                                 dashboard
                             </InlineLink>
                             .

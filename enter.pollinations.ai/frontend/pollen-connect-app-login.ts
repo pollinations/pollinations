@@ -208,6 +208,14 @@ export const appLoginNodes: FlowNode[] = [
         x: 100,
         y: 1400,
     },
+    {
+        id: "account-funding",
+        kind: "outcome",
+        label: "Top up account",
+        note: "Opens account top-up in a new tab. Return to the app’s request to finish connecting.",
+        x: 2320,
+        y: 1400,
+    },
 ];
 export const appLoginEdges: FlowEdge[] = [
     ...[loginErrors.banned, loginErrors.staging].map((error) => ({
@@ -356,7 +364,18 @@ export const appLoginEdges: FlowEdge[] = [
         alternate: true,
     },
     { from: "app-account-error", to: "app-connected", label: "Try again" },
-    { from: "app-connected", to: "app-connect", label: "Disconnect app" },
+    {
+        from: "app-connected",
+        to: "app-connect",
+        label: "Disconnect app",
+        action: "disconnect",
+    },
+    {
+        from: "app-connected",
+        to: "app-connect",
+        label: "Key expired or revoked",
+        alternate: true,
+    },
     {
         from: "app-connected",
         to: "add-pollen-amount",
@@ -367,6 +386,21 @@ export const appLoginEdges: FlowEdge[] = [
         from: "app-connected",
         to: "app-home",
         label: "Open dashboard",
+        action: "dashboard",
+        alternate: true,
+    },
+    {
+        from: "consent",
+        to: "app-home",
+        label: "Open dashboard",
+        action: "dashboard",
+        alternate: true,
+    },
+    {
+        from: "consent",
+        to: "account-funding",
+        label: "Top up account",
+        action: "fund-account",
         alternate: true,
     },
 ];
@@ -377,9 +411,11 @@ export function appLoginAutomaticDestination(
 ): string | undefined {
     switch (state.node) {
         case "app-connected":
-            return settings.accountDetailsError
-                ? "app-account-error"
-                : undefined;
+            return settings.accountStatus === "unauthorized"
+                ? "app-connect"
+                : settings.accountStatus === "unavailable"
+                  ? "app-account-error"
+                  : undefined;
         case "loading": {
             const checking = state.signedIn
                 ? "app-checking"

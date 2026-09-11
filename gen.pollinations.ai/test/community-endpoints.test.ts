@@ -7712,6 +7712,9 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         upstreamModel: agent.id,
     });
     expect(registryEntry?.info.agent).toBe(true);
+    expect(registryEntry?.definition.brandUrl).toBe(
+        "https://github.com/example/agents",
+    );
     if (!registryEntry) throw new Error("Code agent was not registered");
     const gatewayContext = await communityEndpointGatewayContext({
         endpoint: registryEntry.communityEndpoint,

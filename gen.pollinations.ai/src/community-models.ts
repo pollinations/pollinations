@@ -153,9 +153,13 @@ export async function getCommunityModelRegistryEntries(
             case "code_agent": {
                 const payload = parseListingPayload("code_agent", row.payload);
                 if (!payload) return [];
+                // The catalog's publisher link points at the source
+                // repository: for a code agent the code is the provider.
                 communityEndpoint = {
                     ...identity,
                     ...agentDefaults,
+                    providerName: row.providerName ?? row.ownerGithubUsername,
+                    providerUrl: payload.repository,
                     type: "code_agent",
                     api: "responses",
                 };

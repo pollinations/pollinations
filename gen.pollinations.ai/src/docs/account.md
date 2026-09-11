@@ -51,15 +51,18 @@ Returns the current API key's validity, type, and permissions.
 
 ### /account/agents
 
-Create and manage prompt or code agents and their callable `owner/name` model listings. Private agents are available to any account with linked GitHub; public listing requires community publisher access. A code agent points to a public GitHub repository with `agent.ts` at its root, and Pollinations deploys the current default-branch revision. `POST /account/agents/{id}/sync` redeploys the latest revision and bundled runtime, including when the source commit is unchanged. This unauthenticated trigger is limited to once every 30 seconds and cannot change the stored repository. Code agents can import the bundled Vercel AI SDK (`ai` and `@ai-sdk/openai-compatible`); arbitrary repository dependencies are not installed. Their callback receives `model(id)` for caller-funded SDK models, `mcp.tools(server)` for SDK-compatible hosted tools, and `respond(config)` for the existing Responses JSON/SSE contract. Direct `pollinations(path, init)`, `mcp.listTools(server)`, and `mcp(server, tool, arguments)` calls remain available. Managed agents are text-only and free at the outer layer; their model and tool calls consume the caller's Pollen.
+Create and manage managed agents and their callable `owner/name` model listings. Private agents are available to any account with linked GitHub; public listing requires community publisher access. Managed agents are text-only and free at the outer layer; their model and tool calls consume the caller's Pollen.
 
-To deploy after every push, add a GitHub Action step (replace `AGENT_ID`):
+- **Prompt agent**: instructions, a base model, and optional MCP servers.
+- **Code agent**: a public GitHub repository with `agent.ts` at its root. Pollinations deploys the current default-branch revision; the repository name becomes the model ID and title. The bundled Vercel AI SDK (`ai`, `@ai-sdk/openai-compatible`) is importable; other dependencies are not installed. The callback receives `model(id)`, `mcp.tools(server)`, `respond(config)`, `pollinations(path, init)`, `mcp.listTools(server)`, and `mcp(server, tool, arguments)`.
+
+`POST /account/agents/{id}/sync` redeploys a code agent's latest revision and bundled runtime. It needs no authentication, is limited to once every 30 seconds, and cannot change the stored repository. To deploy after every push, add a GitHub Action step (replace `AGENT_ID`):
 
 ```yaml
 - run: curl --fail --retry 2 --retry-delay 30 -X POST https://gen.pollinations.ai/account/agents/AGENT_ID/sync
 ```
 
-See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for dashboard, CLI, and API examples, or [fork a code agent example](https://github.com/orgs/pollinations/repositories?q=topic%3Apollinations-code-agent-example) to get started.
+See [Publish an Agent](/docs#tag/publish-an-agent) for dashboard, CLI, and API examples, or [fork a code agent example](https://github.com/orgs/pollinations/repositories?q=topic%3Apollinations-code-agent-example) to get started.
 
 ### /account/my-models
 

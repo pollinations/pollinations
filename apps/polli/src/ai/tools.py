@@ -461,6 +461,11 @@ Actions:
                         "type": "boolean",
                         "description": "Post AI review as GitHub comment? (for review action, default false)",
                     },
+                    "complexity": {
+                        "type": "string",
+                        "enum": ["low", "mid", "high"],
+                        "description": "Review effort: low for simple checks, mid for moderate changes, high for complex/security-sensitive changes.",
+                    },
                     "path": {
                         "type": "string",
                         "description": "File path for inline comment/suggestion (e.g., 'src/main.py')",
@@ -721,6 +726,11 @@ Page scanning:
                 "extract": {
                     "type": "string",
                     "description": "LLM extraction instruction (e.g., 'Extract product prices and descriptions')",
+                },
+                "complexity": {
+                    "type": "string",
+                    "enum": ["low", "mid", "high"],
+                    "description": "Extraction effort: low for simple facts, mid for moderate synthesis, high for complex extraction.",
                 },
                 "schema": {
                     "type": "object",
@@ -992,8 +1002,9 @@ RENDER_VISUAL_TOOL = {
 
 Choose the form autonomously by the data's job: bar for magnitude/ranking, horizontal_bar for long labels, line/area for change over time, scatter for relationships, histogram for distributions, heatmap for a matrix, pie/donut only for ≤8 meaningful parts of a whole, table for exact lookup, and diagram for systems/flows. Never use dual axes, rainbow scales, decorative 3D effects, or color alone to carry meaning. Aggregate excess detail without hiding the conclusion. Keep accompanying prose brief.
 
-Types: table, bar, horizontal_bar, line, area, scatter, pie/donut (≤8 slices), heatmap, histogram, diagram.
+Types: table, bar, horizontal_bar, line, area, scatter, pie/donut (≤8 slices), heatmap, histogram, diagram, studio.
 `diagram` is Mermaid — flowchart, sequenceDiagram, classDiagram, stateDiagram, erDiagram, journey, gantt, pie, quadrantChart, requirementDiagram, gitGraph, mindmap, timeline, sankey, xychart, block, packet, kanban, architecture, radar, treemap, C4Context.
+`studio` generates isolated full-page React JSX and Tailwind screenshots from display data. Set options.prompt with the desired composition, options.complexity to low, mid, or high, and optional viewport_width/viewport_height. Content taller than the viewport is captured in full and may return readable tiles within Discord's 10-image limit.
 
 Discord does not render Mermaid fences. Always use `type: "diagram"` when the user asks for a diagram or flowchart; the tool returns an attached image.
 
@@ -1023,6 +1034,7 @@ Callable multiple times per turn; each call attaches one image (Discord caps at 
                         "heatmap",
                         "histogram",
                         "diagram",
+                        "studio",
                     ],
                     "description": "Visual type. Pick from the enum.",
                 },
@@ -1042,6 +1054,24 @@ Callable multiple times per turn; each call attaches one image (Discord caps at 
                         "caption": {"type": "string", "description": "Short note below the chart."},
                         "sort": {"type": "boolean", "description": "Sort bars descending (single-series bar only)."},
                         "stacked": {"type": "boolean", "description": "Stack series for bar charts."},
+                        "prompt": {"type": "string", "description": "Studio composition request."},
+                        "complexity": {
+                            "type": "string",
+                            "enum": ["low", "mid", "high"],
+                            "description": "Studio model routing.",
+                        },
+                        "viewport_width": {
+                            "type": "integer",
+                            "minimum": 320,
+                            "maximum": 3840,
+                            "description": "Studio layout viewport width in pixels (default 1440).",
+                        },
+                        "viewport_height": {
+                            "type": "integer",
+                            "minimum": 240,
+                            "maximum": 2160,
+                            "description": "Studio layout viewport height in pixels (default 900); capture remains full-page.",
+                        },
                     },
                 },
             },

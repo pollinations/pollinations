@@ -254,7 +254,7 @@ def is_image_url(url: str) -> bool:
 def decode_base64_images(
     content_blocks: list[dict],
     max_images: int = 10,
-    max_bytes: int = 8 * 1024 * 1024,
+    max_bytes: int = 20 * 1024 * 1024,
 ) -> list[discord.File]:
     """
     Decode base64 images from content_blocks to discord.File objects.

@@ -1,0 +1,8 @@
+FROM mcr.microsoft.com/playwright:v1.62.0-noble
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+COPY src/integrations/visual_studio_runtime.jsx src/integrations/visual_studio_runtime.jsx
+COPY scripts/render_visual_studio.mjs scripts/render_visual_studio.mjs
+USER pwuser
+ENTRYPOINT ["node", "/app/scripts/render_visual_studio.mjs"]

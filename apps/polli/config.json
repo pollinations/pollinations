@@ -45,7 +45,7 @@
   },
   "ai": {
     "api_base": "https://gen.pollinations.ai",
-    "model": "gpt-5.6-sol",
+    "model": "openai/gpt-5.6-sol",
     "fallback_model": "glm-5.3",
     "request_timeout_seconds": 60,
     "max_tokens": 4096,

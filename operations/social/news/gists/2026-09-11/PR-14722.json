@@ -1,0 +1,35 @@
+{
+  "pr_number": 14722,
+  "title": "feat: add Polli visual studio and tool complexity routing",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/14722",
+  "merged_at": "2026-09-11T14:44:00Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds Visual Studio rendering with complexity-based model selection and full-page image capture.\n- Packages the Discord bot and API with a separate networkless rendering worker, persistent data, and loopback-only API exposure.\n- Adds opt-in container deployment with health checks, prior-release rollback, and deployment-lock safeguards.\n- Manually deployed d22a26009 on production: both containers healthy, Discord connected to two guilds, API healthy, and real isolated rendering verified.\n- Preserves the old installation and pre-cutover data backup for rollback; container autodeploy is enabled for the upcoming merge. PR left unmerged.",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli Opens the Studio",
+    "blurb": "Polli can now render a Visual Studio workspace into a full-page image, choosing an appropriately capable model based on the task’s complexity. The tiny bee has acquired a design desk and, somehow, a separate rendering bunker.",
+    "summary": "Added Polli Visual Studio rendering with complexity-based model routing and full-page image capture, alongside an isolated networkless rendering worker and container deployment path with health checks and rollback safeguards.",
+    "impact": "Discord communities using Polli can request richer Visual Studio renders while the bot selects models by task complexity and keeps page rendering isolated from its public API service.",
+    "keywords": [
+      "polli",
+      "visual-studio",
+      "rendering",
+      "complexity-routing",
+      "discord-bot",
+      "containers",
+      "full-page-capture"
+    ],
+    "visual_concept": "Depict Polli’s new Visual Studio as a cozy garden-shed design workspace: Polli, wearing a tiny painter’s beret, directs a retro CRT rendering station that captures a long illustrated webpage as a glowing scroll. A small Monitor Robot eagerly holds the finished full-page printout, while a separate little sealed render-room glows safely in the background; code-plants and flowers make the routing and isolated-worker theme feel warm rather than industrial.",
+    "image_prompt": "Cozy pixel art scene of the pollinations bee mascot in a tiny painter’s beret at a garden-shed Visual Studio, choosing between small and large glowing model cards while a retro CRT captures a long full-page artwork scroll; the bee has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings. A cute chunky Monitor Robot holds the finished render beside a small safely enclosed worker room, with code-plants, flowers, and vines around soft lime green (#ecf874) screens; simple pixel text reads “FULL PAGE.” Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-11/PR-14722.jpg",
+    "prompt": "Cozy pixel art scene of the pollinations bee mascot in a tiny painter’s beret at a garden-shed Visual Studio, choosing between small and large glowing model cards while a retro CRT captures a long full-page artwork scroll; the bee has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings. A cute chunky Monitor Robot holds the finished render beside a small safely enclosed worker room, with code-plants, flowers, and vines around soft lime green (#ecf874) screens; simple pixel text reads “FULL PAGE.” Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-11T14:45:05.791908+00:00"
+}

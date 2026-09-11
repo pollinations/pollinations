@@ -6,6 +6,7 @@ import {
     previewAuthorizeParams,
     readPreviewRequest,
 } from "./pollen-connect-request-config";
+import type { AuthorizeConsent } from "./src/components/auth/authorize";
 import { loginErrors } from "./src/lib/login-errors";
 import { clearSignInContext, rememberSignIn } from "./src/lib/sign-in-context";
 
@@ -61,7 +62,9 @@ const requestedMode = query.get("theme");
 const storedMode = localStorage.getItem("polli-color-mode");
 const initialMode = requestedMode ?? storedMode ?? "light";
 document.documentElement.classList.toggle("dark", initialMode === "dark");
-let signedIn = !screen.includes("signed-out") && screen !== "identity";
+let signedIn =
+    !screen.includes("signed-out") &&
+    !["identity", "login-failed"].includes(screen);
 const originalFetch = window.fetch.bind(window);
 window.fetch = async (input, init) => {
     const url = new URL(
@@ -117,6 +120,15 @@ window.fetch = async (input, init) => {
             query.get("action") === "authorize" &&
             url.pathname === "/api/api-keys"
         ) {
+            const failure = query.get("authorize_error") ?? "revoked";
+            if (failure === "code")
+                return json({
+                    id: "preview-key",
+                    key: "preview-only-not-a-valid-credential",
+                });
+            if (failure === "key") return json({}, 500);
+            if (failure === "session")
+                return json({ error: { message: "Unauthorized" } }, 401);
             return json(
                 {
                     success: false,
@@ -130,6 +142,13 @@ window.fetch = async (input, init) => {
                 400,
             );
         }
+        if (
+            query.get("authorize_error") === "code" &&
+            url.pathname === "/api/oauth/code"
+        )
+            return json({}, 503);
+        if (url.pathname === "/api/auth/api-key/delete")
+            return json({ success: true });
         return json(
             {
                 message: "Request failed. Try again.",
@@ -173,7 +192,7 @@ window.fetch = async (input, init) => {
         if (query.get("app_loading") === "1")
             return new Promise<Response>(() => {});
         if (query.get("request_error") === "lookup")
-            throw new Error("App lookup unavailable");
+            return json({ error: { message: "App lookup unavailable" } }, 503);
         if (query.get("request_error") === "redirect")
             return json({
                 found: false,
@@ -234,6 +253,10 @@ window.fetch = async (input, init) => {
             scope: query.get("scope") ?? appRequest.scopes.join(" "),
         });
     }
+    if (url.pathname === "/models" && query.get("model_catalog") === "loading")
+        return new Promise<Response>(() => {});
+    if (url.pathname === "/models" && query.get("model_catalog") === "error")
+        return json({}, 503);
     if (url.pathname === "/models")
         return originalFetch("https://gen.pollinations.ai/models", {
             credentials: "omit",
@@ -335,14 +358,27 @@ if (screen.startsWith("add-pollen-") || screen === "account-checkout") {
         "./src/routes/authorize.tsx"
     );
     const { Authorize } = await import("./src/components/auth/authorize.tsx");
+    const savedConsent = query.get("consent");
+    const initialConsent: AuthorizeConsent | undefined = savedConsent
+        ? JSON.parse(savedConsent)
+        : undefined;
+    const onConsentChange = (consent: AuthorizeConsent) => {
+        document.documentElement.dataset.consent = JSON.stringify(consent);
+    };
     authorizeRoute.update({
-        component: () => <Authorize />,
+        component: () => (
+            <Authorize
+                initialConsent={initialConsent}
+                onConsentChange={onConsentChange}
+            />
+        ),
     });
     let path = "/keys";
     if (
         screen.startsWith("direct") ||
         screen.startsWith("oauth") ||
-        screen === "device-consent"
+        screen === "device-consent" ||
+        (screen === "login-failed" && query.get("login_flow") === "app")
     ) {
         let params: URLSearchParams;
         try {
@@ -385,7 +421,7 @@ if (screen.startsWith("add-pollen-") || screen === "account-checkout") {
         params.set("redirect_uri", `${location.origin}/callback`);
         params.set("state", "preview-state");
         if (query.has("scope")) params.set("scope", query.get("scope") ?? "");
-        if (screen.startsWith("oauth")) {
+        if (screen.startsWith("oauth") || screen === "login-failed") {
             params.set("response_type", "code");
             params.set("code_challenge", "a".repeat(43));
             params.set("code_challenge_method", "S256");
@@ -410,6 +446,14 @@ if (screen.startsWith("add-pollen-") || screen === "account-checkout") {
         }
         if (screen === "device-consent") params.set("user_code", "ABCD-EFGH");
         path = `/authorize?${params}`;
+        if (screen === "login-failed") {
+            rememberSignIn(path);
+            if (query.get("origin") !== "none")
+                Object.defineProperty(document, "referrer", {
+                    value: "https://app.example/",
+                });
+            path = "/error?error=unknown";
+        }
     } else if (Object.values(loginErrors).some((error) => error.id === screen))
         path = `/error?${new URLSearchParams({ error: query.get("login_error") ?? "unknown" })}`;
     else if (screen === "identity") path = "/app/sign-in?client_id=preview";
@@ -429,7 +473,8 @@ if (screen.startsWith("add-pollen-") || screen === "account-checkout") {
                   ? "?user_code=ABCD-EFGH"
                   : "");
     if (query.get("origin") === "none") {
-        clearSignInContext();
+        if (!(screen === "login-failed" && query.get("login_flow") === "app"))
+            clearSignInContext();
         Object.defineProperty(document, "referrer", { value: "" });
     } else if (query.get("origin") !== "browser") {
         if (path.startsWith("/authorize")) {
@@ -438,11 +483,11 @@ if (screen.startsWith("add-pollen-") || screen === "account-checkout") {
             Object.defineProperty(document, "referrer", {
                 value: "https://app.example/",
             });
-        } else if (screen === "login-failed") {
-            rememberSignIn(
-                `/authorize?${new URLSearchParams({ client_id: "pk_ui_preview", redirect_uri: `${location.origin}/callback`, response_type: "code", code_challenge: "a".repeat(43), code_challenge_method: "S256" })}`,
-            );
-        }
+        } else if (
+            screen === "login-failed" &&
+            query.get("login_flow") !== "app"
+        )
+            clearSignInContext();
     }
     const router = createRouter({
         routeTree,

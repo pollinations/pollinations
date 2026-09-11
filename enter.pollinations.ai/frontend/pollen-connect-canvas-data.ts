@@ -66,6 +66,19 @@ export const authorizeRequestErrors: ScreenVariant[] = [
     })),
 ];
 
+export const authorizeFailures = [
+    { id: "revoked", label: "App key revoked before approval" },
+    { id: "session", label: "Session expired before approval" },
+    { id: "key", label: "Key creation failed" },
+    { id: "code", label: "Authorization code creation failed" },
+] as const;
+
+export const modelCatalogStates = [
+    { id: "ready", label: "Models available" },
+    { id: "loading", label: "Loading models" },
+    { id: "error", label: "Models unavailable" },
+] as const;
+
 export const appReturnVariants: ScreenVariant[] = [
     { label: "Connected" },
     {
@@ -160,18 +173,28 @@ export const canvasGroups: { title: string; screens: CanvasScreen[] }[] = [
                 owner: "Pollinations",
                 screen: "oauth",
                 variants: [
-                    { label: "All permissions" },
+                    { label: "Ready" },
                     ...authorizeRequestErrors,
                     { label: "Checking app", params: { app_loading: "1" } },
+                    ...modelCatalogStates
+                        .filter(({ id }) => id !== "ready")
+                        .map(({ id, label }) => ({
+                            label,
+                            params: { model_catalog: id },
+                        })),
                     {
                         label: "Connecting",
                         params: { action: "authorize", result: "waiting" },
                     },
-                    {
-                        label: "App key revoked before approval",
+                    ...authorizeFailures.map(({ id, label }) => ({
+                        label,
                         error: true,
-                        params: { action: "authorize", result: "error" },
-                    },
+                        params: {
+                            action: "authorize",
+                            result: "error",
+                            authorize_error: id,
+                        },
+                    })),
                 ],
             },
             {

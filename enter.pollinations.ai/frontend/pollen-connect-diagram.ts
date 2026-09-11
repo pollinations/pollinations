@@ -684,21 +684,6 @@ export const flowEdges: FlowEdge[] = [
         labelAt: [5820, 125],
     },
     {
-        from: "consent",
-        to: "enter-connected",
-        label: "Profile / dashboard · new tab",
-        fromSide: "right",
-        toSide: "top",
-        via: [
-            [2860, 435],
-            [2860, 880],
-            [3860, 880],
-            [3860, 3065],
-            [2260, 3065],
-        ],
-        labelAt: [3860, 2140],
-    },
-    {
         from: "app-connected",
         to: "enter-connected",
         label: "Dashboard · new tab",

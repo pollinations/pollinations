@@ -8,10 +8,21 @@ import {
     appLoginScreens,
     appLoginVariant,
 } from "./pollen-connect-app-login";
-import { canvasGroups, canvasScreenUrl } from "./pollen-connect-canvas-data";
-import { type FlowEdge, flowNodes } from "./pollen-connect-diagram";
-import { AppRequestSelect, FlowSwitch } from "./pollen-connect-flow-controls";
 import {
+    authorizeFailures,
+    canvasGroups,
+    canvasScreenUrl,
+    modelCatalogStates,
+} from "./pollen-connect-canvas-data";
+import { type FlowEdge, flowNodes } from "./pollen-connect-diagram";
+import {
+    AppRequestSelect,
+    FlowSelect,
+    FlowSwitch,
+    PollenPreviewSelect,
+} from "./pollen-connect-flow-controls";
+import {
+    applyJourneyConsent,
     defaultJourneySettings,
     type JourneyLocation,
     type JourneySelection,
@@ -24,6 +35,7 @@ import {
     startSelectedJourney,
 } from "./pollen-connect-journey-state";
 import { Illustration, ScreenWindow } from "./pollen-connect-preview";
+import type { AuthorizeConsent } from "./src/components/auth/authorize";
 import { loginErrors } from "./src/lib/login-errors";
 import "./pollen-connect-journey.css";
 
@@ -128,6 +140,10 @@ export function Journey({
     const [state, setState] = useState(() => startSelectedJourney(entrance));
     const [past, setPast] = useState<JourneyState[]>([]);
     const selectionKey = `${entrance.world}:${entrance.section}`;
+    const appLogin =
+        entrance.world === "app" &&
+        entrance.section === "main" &&
+        state.world === "app";
     const selectedSection = useRef(selectionKey);
     const savedSections = useRef(
         new Map<string, { state: JourneyState; past: JourneyState[] }>(),
@@ -175,7 +191,12 @@ export function Journey({
         state.world === "app" ? appLoginScreens.get(state.node) : undefined;
     const entry = appEntry ?? screens.find((item) => item.id === entryId);
     const variantIndex = appEntry
-        ? appLoginVariant(appEntry, settings.appRequestError)
+        ? appLoginVariant(
+              appEntry,
+              state.node === "app-connection-failed"
+                  ? settings.authorizationError
+                  : settings.appRequestError,
+          )
         : 0;
     const funding = journeyFunding(state);
     const width = size === "mobile" ? 375 : 1280;
@@ -199,6 +220,16 @@ export function Journey({
             : {}),
         request_budget: `${state.budget}`,
         request_models: state.paidOnly ? "paid" : "all",
+        ...(state.world === "app" &&
+        ["consent", "app-checking"].includes(state.node)
+            ? { model_catalog: settings.modelCatalog }
+            : {}),
+        ...(state.consent &&
+        ["consent", "app-connecting", "app-connection-failed"].includes(
+            state.node,
+        )
+            ? { consent: JSON.stringify(state.consent) }
+            : {}),
     };
     if (state.node === "enter-connected" && past.at(-1)?.signedIn === false)
         overrides.drawer = "open";
@@ -331,30 +362,12 @@ export function Journey({
             };
         }
         if (current.node === "consent") {
-            const enabled =
-                !Array.from(doc.querySelectorAll("button")).some((button) =>
-                    /^Models\s*None\s+selected/.test(button.textContent ?? ""),
-                ) &&
-                doc
-                    .querySelector('[aria-label="Allow AI generation"]')
-                    ?.getAttribute("aria-pressed") !== "false";
-            const input = doc.querySelector<HTMLInputElement>(
-                "#pollen-budget-input",
-            );
-            const budget =
-                input?.value === ""
-                    ? Number.POSITIVE_INFINITY
-                    : Number(input?.value ?? current.budget);
-            const sharesUsage =
-                doc
-                    .querySelector('[aria-label="Share account activity"]')
-                    ?.getAttribute("aria-pressed") === "true";
-            next = {
-                ...next,
-                budget:
-                    enabled && !Number.isNaN(budget) ? Math.max(0, budget) : 0,
-                sharesUsage,
-            };
+            const value = doc.documentElement.dataset.consent;
+            if (value)
+                next = applyJourneyConsent(
+                    next,
+                    JSON.parse(value) as AuthorizeConsent,
+                );
         }
         return next;
     }, []);
@@ -411,7 +424,14 @@ export function Journey({
         setState(journeyAdvance(current, edge, settingsRef.current));
     }
     function updateScreen(update: (current: JourneyState) => JourneyState) {
-        const next = update(readScreen(stateRef.current));
+        const current = readScreen(stateRef.current);
+        const next = update(current);
+        if (next.paidOnly !== current.paidOnly) next.consent = null;
+        else if (next.consent && next.budget !== current.budget)
+            next.consent = {
+                ...next.consent,
+                pollenBudget: Number.isFinite(next.budget) ? next.budget : null,
+            };
         setState(restoreJourney(next, next));
     }
     const walletContext = ["app", "device", "topup", "account"].includes(
@@ -483,7 +503,11 @@ export function Journey({
             checked: state.method === "oauth",
             disabled: state.world !== "app" || state.node !== "app-connect",
             onChange: (on: boolean) => {
-                setSettings((old) => ({ ...old, appRequestError: "" }));
+                setSettings((old) => ({
+                    ...old,
+                    appRequestError: "",
+                    authorizationError: "none",
+                }));
                 updateScreen((old) => ({
                     ...old,
                     method: on ? "oauth" : "direct",
@@ -913,25 +937,82 @@ export function Journey({
                                             )}
                                             {group === "App & payment" &&
                                                 state.world === "app" && (
-                                                    <AppRequestSelect
-                                                        value={
-                                                            settings.appRequestError
-                                                        }
-                                                        oauth={
-                                                            state.method ===
-                                                            "oauth"
-                                                        }
-                                                        onChange={(
-                                                            appRequestError,
-                                                        ) =>
-                                                            setSettings(
-                                                                (old) => ({
-                                                                    ...old,
-                                                                    appRequestError,
-                                                                }),
-                                                            )
-                                                        }
-                                                    />
+                                                    <>
+                                                        <AppRequestSelect
+                                                            value={
+                                                                settings.appRequestError
+                                                            }
+                                                            oauth={
+                                                                state.method ===
+                                                                "oauth"
+                                                            }
+                                                            onChange={(
+                                                                appRequestError,
+                                                            ) =>
+                                                                setSettings(
+                                                                    (old) => ({
+                                                                        ...old,
+                                                                        appRequestError,
+                                                                    }),
+                                                                )
+                                                            }
+                                                        />
+                                                        <FlowSelect
+                                                            label="Model catalogue"
+                                                            value={
+                                                                settings.modelCatalog
+                                                            }
+                                                            options={
+                                                                modelCatalogStates
+                                                            }
+                                                            onChange={(
+                                                                modelCatalog,
+                                                            ) => {
+                                                                setState(
+                                                                    readScreen(
+                                                                        stateRef.current,
+                                                                    ),
+                                                                );
+                                                                setSettings(
+                                                                    (old) => ({
+                                                                        ...old,
+                                                                        modelCatalog:
+                                                                            modelCatalog as JourneySettings["modelCatalog"],
+                                                                    }),
+                                                                );
+                                                            }}
+                                                        />
+                                                        <FlowSelect
+                                                            label="Authorization result"
+                                                            value={
+                                                                settings.authorizationError
+                                                            }
+                                                            options={[
+                                                                {
+                                                                    id: "none",
+                                                                    label: "Access granted",
+                                                                },
+                                                                ...authorizeFailures.filter(
+                                                                    ({ id }) =>
+                                                                        state.method ===
+                                                                            "oauth" ||
+                                                                        id !==
+                                                                            "code",
+                                                                ),
+                                                            ]}
+                                                            onChange={(
+                                                                authorizationError,
+                                                            ) =>
+                                                                setSettings(
+                                                                    (old) => ({
+                                                                        ...old,
+                                                                        authorizationError:
+                                                                            authorizationError as JourneySettings["authorizationError"],
+                                                                    }),
+                                                                )
+                                                            }
+                                                        />
+                                                    </>
                                                 )}
                                             {group === "App & payment" &&
                                                 state.world === "app" &&
@@ -1073,7 +1154,74 @@ export function Journey({
                                                         </select>
                                                     </label>
                                                 )}
+                                            {group === "Pollen" && appLogin && (
+                                                <>
+                                                    <PollenPreviewSelect
+                                                        paid={state.paid}
+                                                        quest={state.quest}
+                                                        disabled={walletLocked}
+                                                        onChange={(balances) =>
+                                                            updateScreen(
+                                                                (old) => ({
+                                                                    ...old,
+                                                                    ...balances,
+                                                                }),
+                                                            )
+                                                        }
+                                                    />
+                                                    {state.node ===
+                                                        "app-connected" && (
+                                                        <FlowSelect
+                                                            label="App allowance"
+                                                            value={
+                                                                !Number.isFinite(
+                                                                    state.budget,
+                                                                )
+                                                                    ? "unlimited"
+                                                                    : state.budget >
+                                                                        0
+                                                                      ? "available"
+                                                                      : "used"
+                                                            }
+                                                            options={[
+                                                                {
+                                                                    id: "available",
+                                                                    label: "Available",
+                                                                },
+                                                                {
+                                                                    id: "used",
+                                                                    label: "Used up",
+                                                                },
+                                                                {
+                                                                    id: "unlimited",
+                                                                    label: "Unlimited",
+                                                                },
+                                                            ]}
+                                                            disabled={
+                                                                state.payment ===
+                                                                "pending"
+                                                            }
+                                                            onChange={(value) =>
+                                                                updateScreen(
+                                                                    (old) => ({
+                                                                        ...old,
+                                                                        budget:
+                                                                            value ===
+                                                                            "unlimited"
+                                                                                ? Infinity
+                                                                                : value ===
+                                                                                    "available"
+                                                                                  ? 5
+                                                                                  : 0,
+                                                                    }),
+                                                                )
+                                                            }
+                                                        />
+                                                    )}
+                                                </>
+                                            )}
                                             {group === "Pollen" &&
+                                                !appLogin &&
                                                 (
                                                     [
                                                         [

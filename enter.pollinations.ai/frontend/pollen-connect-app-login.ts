@@ -55,7 +55,11 @@ const bindings: [string, (entry: CanvasScreen) => boolean, number, number][] = [
 ];
 export const appLoginScreens = new Map<string, CanvasScreen>(
     bindings.map(([id, match]) => {
-        const matches = cards.filter(match);
+        // Callback failure shares the gallery UI but remains a distinct arrival
+        // in Map/Journey, using its original /error route and retry context.
+        const entries =
+            id === "login-failed" ? galleryPagesForFlow("app", "main") : cards;
+        const matches = entries.filter(match);
         if (matches.length !== 1)
             throw new Error(
                 `Apps Login needs one screen for ${id}, found ${matches.length}`,
@@ -243,7 +247,13 @@ export const appLoginEdges: FlowEdge[] = [
         alternate: true,
     },
     { from: "sign-in", to: "app-signing-in", label: "Sign in with GitHub" },
-    { from: "login-failed", to: "sign-in", label: "Try again" },
+    { from: "login-failed", to: "app-signing-in", label: "Try again" },
+    {
+        from: "login-failed",
+        to: "cancelled",
+        label: "Back to app",
+        alternate: true,
+    },
     { from: "blocked", to: "app-connect", label: "Back to app" },
     { from: "sign-in", to: "cancelled", label: "Back to app", alternate: true },
     { from: "app-signing-in", to: "github-handoff", label: "Open GitHub" },
@@ -338,23 +348,6 @@ export const appLoginEdges: FlowEdge[] = [
         label: "Open dashboard",
         alternate: true,
     },
-    ...[
-        "app-checking",
-        "blocked",
-        "app-connecting",
-        "app-connection-failed",
-    ].map((from) => ({
-        from,
-        to: "app-home",
-        label: "Open dashboard",
-        alternate: true,
-    })),
-    {
-        from: "consent",
-        to: "app-home",
-        label: "Open dashboard",
-        alternate: true,
-    },
 ];
 
 export function appLoginAutomaticDestination(
@@ -397,7 +390,7 @@ export function appLoginAutomaticDestination(
         case "app-signing-in":
             return settings.errors ? "error" : "github-handoff";
         case "app-connecting":
-            return settings.errors
+            return settings.errors || settings.authorizationError !== "none"
                 ? "app-connection-failed"
                 : state.method === "oauth"
                   ? "app-callback"
@@ -419,7 +412,9 @@ export function appLoginAutomaticDestination(
 export function appLoginVariant(entry: CanvasScreen, reason: string) {
     const index =
         entry.variants?.findIndex(
-            (variant) => variant.params?.request_error === reason,
+            (variant) =>
+                (variant.params?.request_error ??
+                    variant.params?.authorize_error) === reason,
         ) ?? -1;
     return Math.max(0, index);
 }

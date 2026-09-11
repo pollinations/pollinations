@@ -12,6 +12,13 @@ export const previewModelOptions = [
     { id: "unlisted", label: "Unlisted model" },
 ] as const;
 
+// Consent changes only when Paid Pollen is absent or both balances are empty.
+export const previewPollenOptions = [
+    { id: "paid", label: "Paid available", paid: 10, quest: 5 },
+    { id: "quest", label: "Quest only", paid: 0, quest: 5 },
+    { id: "empty", label: "No Pollen", paid: 0, quest: 0 },
+] as const;
+
 export function readPreviewRequest(query: URLSearchParams) {
     return {
         scopes: (query.get("request_scope") ?? "profile usage keys")

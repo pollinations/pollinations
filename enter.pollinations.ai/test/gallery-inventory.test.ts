@@ -7,6 +7,7 @@ import {
     appLoginVariant,
 } from "../frontend/pollen-connect-app-login";
 import {
+    authorizeFailures,
     canvasGroups,
     canvasScreenUrl,
 } from "../frontend/pollen-connect-canvas-data";
@@ -224,17 +225,26 @@ it("routes failed Enter login to its real error page before completing any journ
             if (!exit) throw new Error("Missing login recovery action");
             const retry = error.id === loginErrors.default.id;
             const retryNode =
-                world === "account"
-                    ? "enter-signed-out"
-                    : world === "admin"
-                      ? "dashboard-sign-in"
-                      : "sign-in";
+                world === "app"
+                    ? "app-signing-in"
+                    : world === "account"
+                      ? "enter-signed-out"
+                      : world === "admin"
+                        ? "dashboard-sign-in"
+                        : "sign-in";
             expect(exit.to).toBe(retry ? retryNode : `${error.id}-exit`);
             expect(journeyAdvance(failed, exit)).toMatchObject({
                 node: retry ? retryNode : `${error.id}-exit`,
                 world,
                 signedIn: false,
             });
+            if (retry && world === "app")
+                expect(journeyOptions(failed)).toContainEqual(
+                    expect.objectContaining({
+                        label: "Back to app",
+                        to: "cancelled",
+                    }),
+                );
         }
     }
 });
@@ -424,6 +434,22 @@ it("groups configuration controls without hiding loading, success, or error stat
                 pages.map((entry) => canvasScreenUrl(entry)).sort(),
             );
             for (const card of cards) {
+                if (id === "app" && card.title === "Sign-in failed") {
+                    expect(
+                        card.variants?.map((variant) => variant.label),
+                    ).toEqual(["Starting sign-in", "Returning from GitHub"]);
+                    continue;
+                }
+                if (card.title === "Connection failed") {
+                    expect(
+                        card.variants?.every(
+                            (variant) =>
+                                variant.error &&
+                                variant.params?.action === "authorize",
+                        ),
+                    ).toBe(true);
+                    continue;
+                }
                 if (
                     card.variants?.some(
                         (variant) =>
@@ -438,9 +464,16 @@ it("groups configuration controls without hiding loading, success, or error stat
     expect(app.filter((entry) => entry.title === "Allow access")).toHaveLength(
         1,
     );
-    expect(app.find((entry) => entry.id === "consent")?.variants?.length).toBe(
-        2,
-    );
+    expect(
+        app
+            .find((entry) => entry.id === "consent")
+            ?.variants?.map(({ label }) => label),
+    ).toEqual([
+        "Ready",
+        "Checking app",
+        "Loading models",
+        "Models unavailable",
+    ]);
     expect(
         app.some((entry) => entry.title === "Allow access · Connecting"),
     ).toBe(true);
@@ -483,8 +516,10 @@ it("groups matching request errors while preserving identity, phase, and recover
         ),
     ).toBe(false);
     expect(
-        app.find((entry) => entry.title === "Connection failed")?.variants,
-    ).toHaveLength(1);
+        app
+            .find((entry) => entry.title === "Connection failed")
+            ?.variants?.map((variant) => variant.params?.authorize_error),
+    ).toEqual(authorizeFailures.map(({ id }) => id));
     const device = galleryCardsForFlow("device", "main");
     expect(
         device
@@ -564,7 +599,7 @@ it("uses exactly the same Apps Login cards and variant URLs in Map, Screens and 
             expect(exits.some((edge) => edge.to === "app-connect")).toBe(
                 ["redirect", "missing-redirect"].includes(reason),
             );
-            expect(exits.some((edge) => edge.to === "app-home")).toBe(signedIn);
+            expect(exits.some((edge) => edge.to === "app-home")).toBe(false);
             expect(
                 exits
                     .filter((edge) => edge.label === "Try again")
@@ -581,7 +616,77 @@ it("uses exactly the same Apps Login cards and variant URLs in Map, Screens and 
             ...startJourney(),
             node: "app-connection-failed",
         }).map((edge) => edge.to),
-    ).toEqual(["cancelled", "app-home"]);
+    ).toEqual(["cancelled"]);
+});
+
+it("shares sign-in failure UI while retaining both failure and retry paths", () => {
+    const failures = galleryCardsForFlow("app", "main").filter(
+        (entry) => entry.title === "Sign-in failed",
+    );
+    expect(failures).toHaveLength(1);
+    const card = failures[0];
+    expect(card.variants).toHaveLength(2);
+    expect(card.variants?.[0].params).toEqual({
+        action: "sign-in",
+        result: "error",
+    });
+    expect(card.variants?.[1]).toMatchObject({
+        screen: "login-failed",
+        params: { login_error: "unknown", login_flow: "app" },
+    });
+    for (const [index, from, to] of [
+        [0, "app-signing-in", "error"],
+        [1, "github-handoff", "login-failed"],
+    ] as const) {
+        const entry = appLoginScreens.get(to);
+        if (!entry) throw new Error(`Missing failure binding: ${to}`);
+        expect(canvasScreenUrl(entry)).toBe(canvasScreenUrl(card, index));
+        expect(
+            appLoginEdges.some((edge) => edge.from === from && edge.to === to),
+        ).toBe(true);
+        expect(
+            journeyOptions({ ...startJourney(), node: to }).map(
+                ({ to, label }) => ({ to, label }),
+            ),
+        ).toEqual([
+            { to: "app-signing-in", label: "Try again" },
+            { to: "cancelled", label: "Back to app" },
+        ]);
+    }
+});
+
+it("exposes dashboard navigation only from the interactive developer-app menu", () => {
+    expect(appLoginEdges.filter((edge) => edge.to === "app-home")).toEqual([
+        {
+            from: "app-connected",
+            to: "app-home",
+            label: "Open dashboard",
+            alternate: true,
+        },
+    ]);
+});
+
+it("exposes submission failures on the same page and routes the selected journey outcome", () => {
+    const entry = appLoginScreens.get("app-connection-failed");
+    if (!entry) throw new Error("Missing submission failure screen");
+    for (const { id } of authorizeFailures) {
+        const variant = appLoginVariant(entry, id);
+        expect(entry.variants?.[variant].params?.authorize_error).toBe(id);
+        expect(
+            appLoginAutomaticDestination(
+                { ...startJourney(), node: "app-connecting" },
+                {
+                    ...defaultJourneySettings,
+                    authorizationError: id,
+                },
+            ),
+        ).toBe("app-connection-failed");
+    }
+    expect(
+        galleryCardsForFlow("device", "main")
+            .flatMap((card) => card.variants ?? [])
+            .some((variant) => variant.params?.authorize_error === "code"),
+    ).toBe(false);
 });
 
 it("models parallel app lookup and local validation without inventing mandatory loading steps", () => {
@@ -764,7 +869,7 @@ it("does not expose a return action without a known originating app page", () =>
             settings,
         );
         expect(edges.some((edge) => edge.label === "Back to app")).toBe(false);
-        expect(edges.some((edge) => edge.to === "app-home")).toBe(signedIn);
+        expect(edges.some((edge) => edge.to === "app-home")).toBe(false);
     }
 });
 

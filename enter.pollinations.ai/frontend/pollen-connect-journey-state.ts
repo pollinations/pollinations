@@ -1,14 +1,20 @@
 import type { PollenStatus } from "@pollinations/ui/wallet";
+import { getAuthorizePollenBudget } from "../../shared/auth/authorize-config";
 import {
     addPollenPlan,
     defaultAddPollenAmount,
 } from "./pollen-connect-add-pollen-data";
 import { appLoginEdges } from "./pollen-connect-app-login";
+import type {
+    authorizeFailures,
+    modelCatalogStates,
+} from "./pollen-connect-canvas-data";
 import {
     type FlowEdge,
     flowEdges,
     loginRetryNode,
 } from "./pollen-connect-diagram";
+import type { AuthorizeConsent } from "./src/components/auth/authorize";
 import { loginErrors } from "./src/lib/login-errors";
 
 export const entrances = [
@@ -33,6 +39,8 @@ export type JourneySettings = {
     paymentConfirmed: boolean;
     errors: boolean;
     appRequestError: string;
+    authorizationError: "none" | (typeof authorizeFailures)[number]["id"];
+    modelCatalog: (typeof modelCatalogStates)[number]["id"];
     slowAppLookup: boolean;
     appConnectionError: "none" | "start" | "callback";
     storedKeyStatus: "valid" | "invalid" | "unavailable";
@@ -47,6 +55,8 @@ export const defaultJourneySettings: JourneySettings = {
     paymentConfirmed: true,
     errors: false,
     appRequestError: "",
+    authorizationError: "none",
+    modelCatalog: "ready",
     slowAppLookup: false,
     appConnectionError: "none",
     storedKeyStatus: "valid",
@@ -72,7 +82,24 @@ export type JourneyState = {
     scenario: string;
     denied: boolean;
     notice: string;
+    consent: AuthorizeConsent | null;
 };
+
+export function applyJourneyConsent(
+    state: JourneyState,
+    consent: AuthorizeConsent,
+): JourneyState {
+    return {
+        ...state,
+        consent,
+        budget:
+            getAuthorizePollenBudget(
+                consent.generationEnabled ? consent.allowedModels : [],
+                consent.pollenBudget,
+            ) ?? Number.POSITIVE_INFINITY,
+        sharesUsage: consent.accountPermissions?.includes("usage") ?? false,
+    };
+}
 export const situations = [
     { label: "Available", paid: 10, quest: 5, budget: 5, paidOnly: false },
     { label: "No Pollen", paid: 0, quest: 0, budget: 5, paidOnly: false },
@@ -110,6 +137,7 @@ export function startJourney(world: JourneyWorld = "app"): JourneyState {
         scenario: "",
         denied: false,
         notice: "",
+        consent: null,
     };
 }
 
@@ -251,7 +279,7 @@ export function journeyOptions(
 ): FlowEdge[] {
     return (state.world === "app" ? appLoginEdges : flowEdges)
         .map((edge) =>
-            edge.from === "login-failed"
+            edge.from === "login-failed" && state.world !== "app"
                 ? { ...edge, to: loginRetryNode(state.world) }
                 : edge,
         )
@@ -266,7 +294,6 @@ export function journeyOptions(
                                 ? "app-checking"
                                 : "app-sign-in-checking")
                     );
-                if (edge.to === "app-home") return state.signedIn;
                 if (settings && edge.to === "app-connect")
                     return (
                         settings.appReturnPage &&
@@ -293,8 +320,7 @@ export function journeyOptions(
             if (
                 state.world === "app" &&
                 state.node === "app-connecting" &&
-                edge.to !== "app-connection-failed" &&
-                edge.to !== "app-home"
+                edge.to !== "app-connection-failed"
             )
                 return (
                     edge.to ===
@@ -406,6 +432,7 @@ export function journeyStep(state: JourneyState, edge: FlowEdge): JourneyState {
         scenario: "",
         notice: "",
     };
+    if (edge.to === "app-connect") next.consent = null;
     if (edge.from === "add-pollen-amount" && edge.to === "add-pollen-covered")
         next.payment = "idle";
     if (edge.from === "add-pollen-amount" && edge.to === "add-pollen-checkout")

@@ -26,6 +26,7 @@ import {
     nodeSize,
 } from "../frontend/pollen-connect-diagram";
 import {
+    applyJourneyConsent,
     defaultJourneySettings,
     type JourneyState,
     journeyAdvance,
@@ -42,6 +43,63 @@ import {
     previewScopeOptions,
     readPreviewRequest,
 } from "../frontend/pollen-connect-request-config";
+
+describe("consent carried through the app journey", () => {
+    it.each([
+        {
+            generationEnabled: false,
+            allowedModels: null,
+            pollenBudget: 5,
+            expiryDays: 2,
+            expectedBudget: 0,
+        },
+        {
+            generationEnabled: true,
+            allowedModels: [],
+            pollenBudget: 5,
+            expiryDays: 2,
+            expectedBudget: 0,
+        },
+        {
+            generationEnabled: true,
+            allowedModels: ["selected-model"],
+            pollenBudget: 0.5,
+            expiryDays: 0.5,
+            expectedBudget: 0.5,
+        },
+        {
+            generationEnabled: true,
+            allowedModels: null,
+            pollenBudget: null,
+            expiryDays: null,
+            expectedBudget: Number.POSITIVE_INFINITY,
+        },
+    ])("preserves the exact consent during approval: %j", ({
+        expectedBudget,
+        ...values
+    }) => {
+        const consent = { ...values, accountPermissions: ["profile"] };
+        const state = applyJourneyConsent(
+            { ...startJourney(), node: "consent", signedIn: true },
+            consent,
+        );
+        const allow = journeyOptions(state).find(
+            (edge) => edge.label === "Allow access",
+        );
+        if (!allow) throw new Error("Missing approval action");
+        const connecting = journeyStep(state, allow);
+        expect(connecting.node).toBe("app-connecting");
+        expect(connecting.consent).toEqual(consent);
+        expect(JSON.parse(JSON.stringify(connecting.consent))).toEqual(consent);
+        expect(connecting.budget).toBe(expectedBudget);
+        expect(connecting.sharesUsage).toBe(false);
+        const failed = journeyOptions(connecting).find(
+            (edge) => edge.to === "app-connection-failed",
+        );
+        if (!failed) throw new Error("Missing approval failure");
+        expect(journeyStep(connecting, failed).consent).toEqual(consent);
+    });
+});
 
 describe("Add Pollen flow preview", () => {
     it("offers the app-limit increments and starts at 5", () => {

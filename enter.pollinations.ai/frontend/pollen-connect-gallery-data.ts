@@ -94,6 +94,18 @@ export function galleryScreensForFlow(
         if (flow === "app" && id === "connection-link") {
             entry = { ...source, title: "Connection blocked" };
         }
+        if (id === "login-failed")
+            entry = {
+                ...entry,
+                variants: entry.variants?.map((variant) => ({
+                    ...variant,
+                    label:
+                        flow === "app"
+                            ? "Returning from GitHub"
+                            : variant.label,
+                    params: { ...variant.params, login_flow: flow },
+                })),
+            };
         if (section === "topup" && id === "add-pollen-amount")
             entry = {
                 ...source,
@@ -155,6 +167,7 @@ export function galleryScreensForFlow(
                             ["app", "lookup"].includes(
                                 variant.params.request_error,
                             )) &&
+                        variant.params?.authorize_error !== "code" &&
                         !variant.screen,
                 ),
             };
@@ -264,7 +277,7 @@ export function galleryCardsForFlow(
     const pages = new Map(
         galleryPagesForFlow(flow, section).map((page) => [page.id, page]),
     );
-    return galleryScreensForFlow(flow, section).flatMap((entry) => {
+    const cards = galleryScreensForFlow(flow, section).flatMap((entry) => {
         if (
             !entry.variants?.length ||
             (entry.id === "app-connected" && section !== "topup")
@@ -319,5 +332,31 @@ export function galleryCardsForFlow(
             const page = pages.get(`${entry.id}--${index}`);
             return page ? [page] : [];
         });
+    });
+    // Both failures render SignInScreen. Keep their distinct runtime URLs so
+    // focus controls can inspect either trigger without duplicating the UI.
+    const callbackFailure = cards.find(
+        (entry) => entry.screen === "login-failed",
+    );
+    if (flow !== "app" || !callbackFailure) return cards;
+    return cards.flatMap((entry) => {
+        if (entry === callbackFailure) return [];
+        if (!entry.id.startsWith("sign-in-errors")) return [entry];
+        return [
+            {
+                ...entry,
+                title: "Sign-in failed",
+                variants: [
+                    ...(entry.variants ?? []).map((variant) => ({
+                        ...variant,
+                        label: "Starting sign-in",
+                    })),
+                    ...(callbackFailure.variants ?? []).map((variant) => ({
+                        ...variant,
+                        screen: callbackFailure.screen,
+                    })),
+                ],
+            },
+        ];
     });
 }

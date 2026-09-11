@@ -1077,15 +1077,29 @@ export function Journey({
                                                             ]}
                                                             onChange={(
                                                                 authorizationError,
-                                                            ) =>
+                                                            ) => {
                                                                 setSettings(
                                                                     (old) => ({
                                                                         ...old,
                                                                         authorizationError:
                                                                             authorizationError as JourneySettings["authorizationError"],
                                                                     }),
+                                                                );
+                                                                if (
+                                                                    authorizationError ===
+                                                                        "none" &&
+                                                                    state.node ===
+                                                                        "app-connection-failed"
                                                                 )
-                                                            }
+                                                                    setState(
+                                                                        (
+                                                                            old,
+                                                                        ) => ({
+                                                                            ...old,
+                                                                            node: "consent",
+                                                                        }),
+                                                                    );
+                                                            }}
                                                         />
                                                     </>
                                                 )}

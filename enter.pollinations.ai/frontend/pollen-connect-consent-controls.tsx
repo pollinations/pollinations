@@ -1,5 +1,9 @@
-import { Input } from "@pollinations/ui";
-import { AppRequestSelect, FlowSwitch } from "./pollen-connect-flow-controls";
+import {
+    AppRequestSelect,
+    FlowSelect,
+    FlowSwitch,
+    PollenPreviewSelect,
+} from "./pollen-connect-flow-controls";
 import {
     previewModelOptions,
     previewScopeOptions,
@@ -73,33 +77,12 @@ export function ConsentPreviewControls({
             </fieldset>
             <fieldset>
                 <legend>AI generation</legend>
-                <FlowSwitch
-                    label="App requests paid-only models"
-                    checked={values.request_models === "paid"}
-                    onChange={(on) =>
-                        onChange({ request_models: on ? "paid" : "all" })
-                    }
+                <FlowSelect
+                    label="Models"
+                    value={values.request_models ?? "all"}
+                    options={previewModelOptions}
+                    onChange={(request_models) => onChange({ request_models })}
                 />
-                {values.request_models !== "paid" && (
-                    <label className="journey-switch-row">
-                        <span>Models</span>
-                        <select
-                            aria-label="Models"
-                            value={values.request_models ?? "all"}
-                            onChange={(event) =>
-                                onChange({ request_models: event.target.value })
-                            }
-                        >
-                            {previewModelOptions
-                                .filter(({ id }) => id !== "paid")
-                                .map(({ id, label }) => (
-                                    <option key={id} value={id}>
-                                        {label}
-                                    </option>
-                                ))}
-                        </select>
-                    </label>
-                )}
                 <FlowSwitch
                     label="App earns 20%"
                     checked={values.request_earnings !== "0"}
@@ -108,32 +91,13 @@ export function ConsentPreviewControls({
                     }
                 />
             </fieldset>
-            <fieldset>
-                <legend>Pollen</legend>
-                {[
-                    ["sim_paid", "Paid Pollen", "10"],
-                    ["sim_quest", "Quest Pollen", "5"],
-                ].map(([key, label, fallback]) => (
-                    <label
-                        key={key}
-                        htmlFor={`preview-${key}`}
-                        className="journey-switch-row"
-                    >
-                        <span>{label}</span>
-                        <Input
-                            id={`preview-${key}`}
-                            aria-label={label}
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={values[key] ?? fallback}
-                            onChange={(event) =>
-                                onChange({ [key]: event.target.value })
-                            }
-                        />
-                    </label>
-                ))}
-            </fieldset>
+            <PollenPreviewSelect
+                paid={Number(values.sim_paid ?? 10)}
+                quest={Number(values.sim_quest ?? 5)}
+                onChange={({ paid, quest }) =>
+                    onChange({ sim_paid: `${paid}`, sim_quest: `${quest}` })
+                }
+            />
         </div>
     );
 }

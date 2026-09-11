@@ -143,5 +143,3 @@ body { font: 14px/1.5 var(--polli-font-body); background: var(--polli-color-app-
 .consent-preview-controls legend { font-size: 12px; font-weight: 600; margin-bottom: 6px; }
 .canvas-inspector-desktop .consent-preview-controls { flex-direction: row; flex-wrap: wrap; }
 .canvas-inspector-desktop .consent-preview-controls fieldset { display: block; max-width: 300px; }
-
-.consent-preview-controls .journey-switch-row input[type="number"] { width: 85px; flex-shrink: 0; }

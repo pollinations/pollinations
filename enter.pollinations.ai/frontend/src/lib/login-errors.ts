@@ -3,8 +3,7 @@ export const loginErrors = {
     banned: {
         id: "account-deactivated",
         title: "Account Suspended",
-        message:
-            "Your account has been suspended. If you think this is a mistake, contact billing.",
+        message: "If you think this is a mistake, contact billing.",
         action: {
             label: "Contact billing",
             href: "mailto:billing@pollinations.ai",

@@ -47,7 +47,8 @@ function ErrorPage() {
     return (
         <AuthFlowLayout
             dialog={{ labelledBy: "login-error-title" }}
-            actions={
+            actions={null}
+            secondaryAction={
                 <Button as="a" href={href} className="polli:rounded-md gap-2">
                     {isBanned && (
                         <MailIcon aria-hidden="true" className="h-4 w-4" />

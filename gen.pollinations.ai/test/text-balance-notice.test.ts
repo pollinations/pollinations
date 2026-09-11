@@ -29,6 +29,84 @@ beforeEach(async () => {
 });
 
 describe("text balance notice", () => {
+    const enabled = TEXT_BALANCE_NOTICE_ENABLED;
+
+    it.each([false, true])("handles HEAD with json=%s", async (json) => {
+        const caller = await createTestApiKey();
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({ data: [] }),
+        );
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                `https://gen.pollinations.ai/text/hello?model=${model}&json=${json}`,
+                {
+                    method: "HEAD",
+                    headers: { Authorization: `Bearer ${caller.key}` },
+                },
+            ),
+            env,
+            ctx,
+        );
+        expect(response.status).toBe(enabled && !json ? 200 : 402);
+        expect(await response.text()).toBe("");
+        await waitOnExecutionContext(ctx);
+    });
+
+    it.each([
+        { path: "/text/hello", body: undefined, textOnly: false },
+        { path: "/text", body: {}, textOnly: false },
+        {
+            path: "/v1/chat/completions",
+            body: { modalities: ["text", "audio"] },
+            textOnly: false,
+        },
+        {
+            path: "/v1/chat/completions",
+            body: { modalities: ["text"] },
+            textOnly: true,
+        },
+    ])("preserves audio contracts on $path textOnly=$textOnly", async ({
+        path,
+        body,
+        textOnly,
+    }) => {
+        const caller = await createTestApiKey();
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({ data: [] }),
+        );
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                `https://gen.pollinations.ai${path}?model=openai-audio`,
+                {
+                    method: body ? "POST" : "GET",
+                    headers: {
+                        Authorization: `Bearer ${caller.key}`,
+                        "Content-Type": "application/json",
+                    },
+                    ...(body && {
+                        body: JSON.stringify({
+                            model: "openai-audio",
+                            messages: [{ role: "user", content: "hello" }],
+                            ...body,
+                        }),
+                    }),
+                },
+            ),
+            env,
+            ctx,
+        );
+        const text = await response.text();
+        expect(response.status, text).toBe(enabled && textOnly ? 200 : 402);
+        expect(text).toContain(
+            enabled && textOnly
+                ? "The account behind this API key"
+                : "INSUFFICIENT_BALANCE",
+        );
+        await waitOnExecutionContext(ctx);
+    });
+
     it.each([
         { path: "/text/hello", stream: false },
         { path: "/text/hello", stream: true },

@@ -20,8 +20,9 @@ import {
 export const TEXT_BALANCE_NOTICE_ENABLED = true;
 
 const MESSAGE =
-    "Your Pollen balance is too low for this request. " +
-    "[Top up](https://enter.pollinations.ai/pollen?ref=agent_low_balance_topup) or " +
+    "The account behind this API key doesn't have enough credits. " +
+    "Its owner can " +
+    "[top up](https://enter.pollinations.ai/pollen?ref=agent_low_balance_topup) or " +
     "[complete a quest](https://enter.pollinations.ai/quests?ref=agent_low_balance_quests), then try again.";
 
 /** Wrap tracking and caching so they capture the original 402 before formatting. */
@@ -39,10 +40,13 @@ export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
 
     const isResponses = c.req.path === "/v1/responses";
     const request = c.req.valid(
-        (c.req.method === "GET" ? "query" : "json") as never,
+        (c.req.method === "POST" ? "json" : "query") as never,
     ) as GenerateTextRequestQueryParams &
         CreateChatCompletionRequest &
         CreateResponseRequest;
+    const outputModalities =
+        request.modalities ?? c.var.model.definition.outputModalities;
+    if (outputModalities?.includes("audio")) return;
     const format = isResponses
         ? request.text?.format?.type
         : request.response_format?.type;

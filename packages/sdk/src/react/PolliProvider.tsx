@@ -250,16 +250,25 @@ export function PolliProvider({
 
     const updateApiKey = useCallback(
         (nextApiKey: string | null) => {
+            let cleanupError: Error | null = null;
             if (nextApiKey) {
                 storage.setItem(storageKey, nextApiKey);
             } else {
-                storage.removeItem(storageKey);
+                try {
+                    storage.removeItem(storageKey);
+                } catch (cause) {
+                    cleanupError =
+                        cause instanceof Error
+                            ? cause
+                            : new Error("Could not clear app connection");
+                }
             }
             keyRevision.current++;
             setApiKey(nextApiKey);
-            setError(null);
+            setError(cleanupError);
             setKeyCheckFailed(false);
             setIsHydrated(true);
+            return cleanupError;
         },
         [storage, storageKey],
     );
@@ -275,7 +284,7 @@ export function PolliProvider({
             try {
                 const storedKey = storage.getItem(storageKey);
                 if (!storedKey) {
-                    updateApiKey(null);
+                    setKeyCheckFailed(!!updateApiKey(null));
                     return;
                 }
                 const response = await fetch(
@@ -291,15 +300,7 @@ export function PolliProvider({
                     cause instanceof PollinationsError &&
                     cause.status === 401
                 ) {
-                    try {
-                        storage.removeItem(storageKey);
-                    } catch (storageError) {
-                        setError(
-                            storageError instanceof Error
-                                ? storageError
-                                : new Error("Could not clear app connection"),
-                        );
-                    }
+                    updateApiKey(null);
                 } else {
                     setKeyCheckFailed(true);
                     setError(

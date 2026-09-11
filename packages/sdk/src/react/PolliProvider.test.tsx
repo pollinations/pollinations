@@ -173,6 +173,53 @@ describe("PolliProvider", () => {
         expect(auth?.error?.message).toBe("Storage unavailable");
     });
 
+    it("disconnects in memory even when browser storage cannot be cleared", async () => {
+        stubWindow("https://app.example/");
+        const storage = memoryStorage({ "polli:pk_test:token": "sk_stored" });
+        vi.stubGlobal(
+            "fetch",
+            vi.fn().mockResolvedValue(Response.json({ valid: true })),
+        );
+        const auth: { current: ReturnType<typeof useAuth> | null } = {
+            current: null,
+        };
+        function Probe() {
+            auth.current = useAuth();
+            return null;
+        }
+        let renderer: ReturnType<typeof create>;
+        await act(async () => {
+            renderer = create(
+                <PolliProvider appKey="pk_test" storage={storage}>
+                    <Probe />
+                </PolliProvider>,
+            );
+        });
+        expect(auth.current?.isLoggedIn).toBe(true);
+        const remove = vi
+            .spyOn(storage, "removeItem")
+            .mockImplementation(() => {
+                throw new Error("Storage unavailable");
+            });
+        await act(async () => {
+            auth.current?.logout();
+        });
+        expect(auth.current?.isLoggedIn).toBe(false);
+        expect(auth.current?.apiKey).toBeNull();
+        expect(auth.current?.isHydrated).toBe(true);
+        expect(auth.current?.error?.message).toBe("Storage unavailable");
+        expect(storage.getItem("polli:pk_test:token")).toBe("sk_stored");
+        remove.mockRestore();
+        await act(async () => {
+            auth.current?.logout();
+        });
+        expect(storage.getItem("polli:pk_test:token")).toBeNull();
+        expect(auth.current?.error).toBeNull();
+        await act(async () => {
+            renderer.unmount();
+        });
+    });
+
     it("ignores repeated login calls while a redirect is pending", async () => {
         stubWindow("https://app.example/");
         const storage = memoryStorage();

@@ -54,6 +54,7 @@ import {
 import { useModelCategories } from "../models/use-model-categories.ts";
 import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
 import { AppAttribution } from "./app-attribution.tsx";
+import { ConnectionErrorScreen } from "./connection-error-screen";
 import { ConsentModelPicker } from "./consent-model-picker.tsx";
 import { SignInScreen } from "./sign-in-screen.tsx";
 
@@ -626,68 +627,26 @@ export function Authorize({
     ) : undefined;
     if (error && !isDeviceMode) {
         return (
-            <AuthFlowLayout
-                dialog={{ labelledBy: "connection-error-title" }}
+            <ConnectionErrorScreen
+                app={
+                    <AppAttribution
+                        titleId="connection-error-title"
+                        attribution={attribution}
+                        isDeviceMode={false}
+                        redirectHostname={redirectHostname}
+                    />
+                }
                 account={accountHeader}
-                actions={
-                    appLookupStatus === "unavailable" && (
-                        <Button
-                            onClick={() =>
-                                setLookupAttempt((attempt) => attempt + 1)
-                            }
-                            className="polli:rounded-md"
-                        >
-                            Try again
-                        </Button>
-                    )
+                error={error}
+                verified={appLookupStatus === "valid"}
+                pending={isAttributionPending}
+                onRetry={
+                    appLookupStatus === "unavailable"
+                        ? () => setLookupAttempt((attempt) => attempt + 1)
+                        : undefined
                 }
-                secondaryAction={
-                    (returnTo || canRedirectOnDeny) && (
-                        <Button
-                            onClick={handleDeny}
-                            data-theme="neutral"
-                            className="polli:rounded-md"
-                        >
-                            Back to app
-                        </Button>
-                    )
-                }
-            >
-                <div className="space-y-2 pt-3">
-                    <div>
-                        <AppAttribution
-                            titleId="connection-error-title"
-                            attribution={attribution}
-                            isDeviceMode={false}
-                            redirectHostname={redirectHostname}
-                        />
-                    </div>
-                    <p className="font-body text-xs font-semibold tracking-wide text-theme-text-soft">
-                        {appLookupStatus === "valid"
-                            ? "could not connect"
-                            : "cannot connect"}{" "}
-                        to your{" "}
-                        <InlineLink
-                            href="https://pollinations.ai/"
-                            className="polli:font-semibold"
-                        >
-                            pollinations.ai account
-                        </InlineLink>
-                        .
-                    </p>
-                </div>
-                <ErrorBanner>
-                    {error}
-                    {!returnTo &&
-                        !canRedirectOnDeny &&
-                        appLookupStatus !== "unavailable" &&
-                        !isAttributionPending && (
-                            <p className="mt-2">
-                                Open this connection from the app.
-                            </p>
-                        )}
-                </ErrorBanner>
-            </AuthFlowLayout>
+                onBack={returnTo || canRedirectOnDeny ? handleDeny : undefined}
+            />
         );
     }
 

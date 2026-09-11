@@ -9,12 +9,14 @@ import type { ReactNode } from "react";
 export function SignInScreen({
     app,
     appFirst = false,
+    title = "Sign in to pollinations.ai",
     error,
     actions,
     secondaryAction,
 }: {
     app?: ReactNode;
     appFirst?: boolean;
+    title?: string;
     error?: string | null;
     actions: ReactNode;
     secondaryAction?: ReactNode;
@@ -43,7 +45,7 @@ export function SignInScreen({
                 ) : (
                     <>
                         <Heading as="h1" size="section" id="sign-in-title">
-                            Sign in to pollinations.ai
+                            {title}
                         </Heading>
                         {app && (
                             <>

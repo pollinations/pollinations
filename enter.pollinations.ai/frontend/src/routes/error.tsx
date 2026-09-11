@@ -1,10 +1,6 @@
+import { Button, ExternalLinkIcon, MailIcon } from "@pollinations/ui";
+import { GitHubSignInButton } from "@pollinations/ui/auth";
 import { getLoginError } from "@shared/auth/login-errors.ts";
-import { Button, ExternalLinkIcon, Heading, MailIcon } from "@pollinations/ui";
-import {
-    AuthFlowLayout,
-    ErrorBanner,
-    GitHubSignInButton,
-} from "@pollinations/ui/auth";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { SignInScreen } from "../components/auth/sign-in-screen";
 import { appSignInErrorPath, getSignInContext } from "../lib/sign-in-context";
@@ -45,8 +41,9 @@ function ErrorPage() {
         );
 
     return (
-        <AuthFlowLayout
-            dialog={{ labelledBy: "login-error-title" }}
+        <SignInScreen
+            title={title}
+            error={message}
             actions={null}
             secondaryAction={
                 <Button as="a" href={href} className="polli:rounded-md gap-2">
@@ -62,16 +59,6 @@ function ErrorPage() {
                     )}
                 </Button>
             }
-        >
-            <Heading
-                as="h1"
-                size="section"
-                id="login-error-title"
-                className="pt-3"
-            >
-                {title}
-            </Heading>
-            <ErrorBanner>{message}</ErrorBanner>
-        </AuthFlowLayout>
+        />
     );
 }

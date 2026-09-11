@@ -1,0 +1,35 @@
+{
+  "pr_number": 14733,
+  "title": "Add Ziban to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14733",
+  "merged_at": "2026-09-11T17:17:55Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Ziban](https://ziban.pages.dev) to image\n- Want to see how a fashion item will fit you before you buy? Ziban uses AI to help you visualize your style, so you can shop with more confidence.\n\nFixes #14728",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Try it on, digitally",
+    "blurb": "Ziban has landed in the garden. Upload a fashion idea, let AI do the fitting-room part, and shop with a little more confidence.",
+    "summary": "Added Ziban to the Pollinations app directory, giving people an AI-assisted way to visualize how fashion items could fit their personal style before buying.",
+    "impact": "Users browsing the app directory can now discover Ziban for virtual fashion visualization and more confident shopping decisions.",
+    "keywords": [
+      "ziban",
+      "fashion",
+      "virtual-try-on",
+      "image-ai",
+      "community-app"
+    ],
+    "visual_concept": "Depict Ziban as a cozy virtual fitting room: Polli wears a tiny stylist beret and holds up a pastel outfit beside a glowing retro mirror that shows a tasteful AI-styled outfit preview. Include a clothing rack, pixel flowers and code-vines, and a prominent lime-green interface frame to connect fashion visualization with the Pollinations garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, pink rectangular blush, light blue wings, and a tiny stylist beret, arranging a pastel outfit on a clothing rack beside a glowing retro smart mirror showing a friendly virtual fashion preview; pixel flowers and code-plants grow around the fitting room, with lime green (#ecf874) prominent in the mirror interface. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with small pixel-font text: 'ZIBAN'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-11/PR-14733.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, pink rectangular blush, light blue wings, and a tiny stylist beret, arranging a pastel outfit on a clothing rack beside a glowing retro smart mirror showing a friendly virtual fashion preview; pixel flowers and code-plants grow around the fitting room, with lime green (#ecf874) prominent in the mirror interface. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with small pixel-font text: 'ZIBAN'."
+  },
+  "generated_at": "2026-09-11T17:19:04.282271+00:00",
+  "app_name": "Ziban",
+  "app_url": "https://ziban.pages.dev"
+}

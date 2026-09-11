@@ -1,4 +1,4 @@
-import { Heading } from "@pollinations/ui";
+import { Heading, InlineLink } from "@pollinations/ui";
 import {
     AuthFlowLayout,
     AuthInfoCard,
@@ -8,11 +8,13 @@ import type { ReactNode } from "react";
 
 export function SignInScreen({
     app,
+    appFirst = false,
     error,
     actions,
     secondaryAction,
 }: {
     app?: ReactNode;
+    appFirst?: boolean;
     error?: string | null;
     actions: ReactNode;
     secondaryAction?: ReactNode;
@@ -24,15 +26,33 @@ export function SignInScreen({
             secondaryAction={secondaryAction}
         >
             <div className="space-y-2 pt-3">
-                <Heading as="h1" size="section" id="sign-in-title">
-                    Sign in to pollinations.ai
-                </Heading>
-                {app && (
+                {appFirst && app ? (
                     <>
+                        <div>{app}</div>
                         <p className="font-body text-xs font-semibold tracking-wide text-theme-text-soft">
-                            to connect:
+                            wants to connect to your{" "}
+                            <InlineLink
+                                href="https://pollinations.ai/"
+                                className="polli:font-semibold"
+                            >
+                                pollinations.ai account
+                            </InlineLink>
+                            .
                         </p>
-                        <AuthInfoCard title={null}>{app}</AuthInfoCard>
+                    </>
+                ) : (
+                    <>
+                        <Heading as="h1" size="section" id="sign-in-title">
+                            Sign in to pollinations.ai
+                        </Heading>
+                        {app && (
+                            <>
+                                <p className="font-body text-xs font-semibold tracking-wide text-theme-text-soft">
+                                    to connect:
+                                </p>
+                                <AuthInfoCard title={null}>{app}</AuthInfoCard>
+                            </>
+                        )}
                     </>
                 )}
             </div>

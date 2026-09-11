@@ -12,7 +12,6 @@ type AppAttributionProps = {
     isDeviceMode: boolean;
     userCode?: string;
     redirectHostname: string;
-    detailsOnly?: boolean;
 };
 
 export function AppAttribution({
@@ -21,7 +20,6 @@ export function AppAttribution({
     isDeviceMode,
     userCode,
     redirectHostname,
-    detailsOnly = false,
 }: AppAttributionProps) {
     // A callback hostname identifies the destination, not the app. Keep it in
     // the details row even when lookup has not supplied an app name.
@@ -35,11 +33,9 @@ export function AppAttribution({
                     {displayName}
                 </Heading>
             ) : (
-                (!detailsOnly || attribution?.appName) && (
-                    <p className="font-body font-semibold text-theme-text-strong">
-                        {displayName}
-                    </p>
-                )
+                <p className="font-body font-semibold text-theme-text-strong">
+                    {displayName}
+                </p>
             )}
             {attribution?.githubUsername && (
                 <p className="text-sm text-theme-text-base mt-1">
@@ -56,9 +52,6 @@ export function AppAttribution({
             )}
             {!isDeviceMode && redirectHostname && (
                 <p className="text-xs text-theme-text-base font-mono mt-1">
-                    {detailsOnly && (
-                        <span className="font-body">Destination: </span>
-                    )}
                     {redirectHostname}
                 </p>
             )}

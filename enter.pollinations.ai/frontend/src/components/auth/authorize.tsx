@@ -5,7 +5,6 @@ import {
     Chip,
     Collapsible,
     EarningsIcon,
-    Heading,
     InlineLink,
     MailIcon,
     SparklesIcon,
@@ -659,26 +658,27 @@ export function Authorize({
                 }
             >
                 <div className="space-y-2 pt-3">
-                    <Heading as="h1" size="section" id="connection-error-title">
-                        Unable to connect
-                    </Heading>
-                    {(attribution?.appName || redirectHostname) && (
-                        <>
-                            <p className="font-body text-xs font-semibold tracking-wide text-theme-text-soft">
-                                {attribution?.appName
-                                    ? "to this app:"
-                                    : "to this destination:"}
-                            </p>
-                            <AuthInfoCard title={null}>
-                                <AppAttribution
-                                    attribution={attribution}
-                                    isDeviceMode={false}
-                                    redirectHostname={redirectHostname}
-                                    detailsOnly
-                                />
-                            </AuthInfoCard>
-                        </>
-                    )}
+                    <div>
+                        <AppAttribution
+                            titleId="connection-error-title"
+                            attribution={attribution}
+                            isDeviceMode={false}
+                            redirectHostname={redirectHostname}
+                        />
+                    </div>
+                    <p className="font-body text-xs font-semibold tracking-wide text-theme-text-soft">
+                        {appLookupStatus === "valid"
+                            ? "could not connect"
+                            : "cannot connect"}{" "}
+                        to your{" "}
+                        <InlineLink
+                            href="https://pollinations.ai/"
+                            className="polli:font-semibold"
+                        >
+                            pollinations.ai account
+                        </InlineLink>
+                        .
+                    </p>
                 </div>
                 <ErrorBanner>
                     {error}
@@ -699,8 +699,10 @@ export function Authorize({
         const displayedError = error ?? signInError;
         return (
             <SignInScreen
+                appFirst={!isDeviceMode}
                 app={
                     <AppAttribution
+                        titleId={isDeviceMode ? undefined : "sign-in-title"}
                         attribution={attribution}
                         isDeviceMode={isDeviceMode}
                         userCode={user_code}

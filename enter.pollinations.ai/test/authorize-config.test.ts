@@ -10,6 +10,7 @@ import {
     getAuthorizeInitialPermissions,
     getAuthorizePollenBudget,
     getAuthorizeRequestError,
+    getExpiryDaysError,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
 import { describe, expect, it } from "vitest";
@@ -139,6 +140,21 @@ describe("expiryDaysToExpiresIn", () => {
         expect(expiryDaysToExpiresIn(0)).toBe(0);
         expect(expiryDaysToExpiresIn(-7)).toBe(-604800);
     });
+});
+
+describe("consent expiry validation", () => {
+    it.each([null, 1 / 86400, 0.5, 7, 365])("accepts %s days", (days) => {
+        expect(getExpiryDaysError(days)).toBeNull();
+    });
+    it.each([
+        0,
+        -1,
+        0.000001,
+        366,
+        Number.NaN,
+        Number.POSITIVE_INFINITY,
+    ])("rejects %s days before submission", (days) =>
+        expect(getExpiryDaysError(days)).toContain("365 days"));
 });
 
 describe("sanitizeAuthorizeAccountPermissions", () => {

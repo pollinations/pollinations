@@ -44,6 +44,17 @@ export function expiryDaysToExpiresIn(
     return Math.round(expiryDays * SECONDS_PER_DAY);
 }
 
+export function getExpiryDaysError(expiryDays: number | null): string | null {
+    if (expiryDays === null) return null;
+    if (
+        !Number.isFinite(expiryDays) ||
+        expiryDays < 1 / SECONDS_PER_DAY ||
+        expiryDays > 365
+    )
+        return "Use a duration from 1 second to 365 days, or leave empty for no expiry.";
+    return null;
+}
+
 /**
  * An S256 PKCE code_challenge is exactly 43 base64url chars (unpadded
  * SHA-256, RFC 7636 §4.2). Single source of truth for the consent page's

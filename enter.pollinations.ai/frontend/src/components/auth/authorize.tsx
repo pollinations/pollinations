@@ -26,6 +26,7 @@ import {
     getAuthorizeInitialPermissions,
     getAuthorizePollenBudget,
     getAuthorizeRequestError,
+    getExpiryDaysError,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
@@ -247,8 +248,12 @@ export function Authorize({
               codeChallenge: code_challenge,
               codeChallengeMethod: code_challenge_method,
           });
+    const expiryError = getExpiryDaysError(
+        keyPermissions.permissions.expiryDays,
+    );
     const canAuthorize =
         !error &&
+        !expiryError &&
         !requestValidationError &&
         (isDeviceMode || parsedRedirectUrl !== null) &&
         !isAttributionPending &&
@@ -901,6 +906,7 @@ export function Authorize({
                                                         </div>
                                                     )}
                                                     <PollenBudgetInput
+                                                        disabled={isAuthorizing}
                                                         value={
                                                             keyPermissions
                                                                 .permissions
@@ -1004,6 +1010,8 @@ export function Authorize({
 
                         <AuthInfoCard title={null}>
                             <ExpiryDaysInput
+                                disabled={isAuthorizing}
+                                error={expiryError}
                                 value={keyPermissions.permissions.expiryDays}
                                 onChange={keyPermissions.setExpiryDays}
                                 inline

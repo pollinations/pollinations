@@ -156,7 +156,6 @@ export function AddPollenPreview({
                     ? balance - Number(params.get("sim_quest"))
                     : balance,
                 quest: simulation ? Number(params.get("sim_quest")) : 0,
-                dashboardHref: `/pollen-connect-screen.html?${dashboardParams}`,
             }}
             checkoutPack={
                 confirmationError ||

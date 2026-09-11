@@ -5,7 +5,6 @@ import {
     Chip,
     Collapsible,
     EarningsIcon,
-    ExternalLinkIcon,
     Heading,
     InlineLink,
     MailIcon,
@@ -553,14 +552,9 @@ export function Authorize() {
     }
 
     const accountHeader = user ? (
-        <Button
-            as="a"
-            href={`${config.baseUrl}/`}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Open dashboard"
-            size="sm"
-            className="polli:min-w-0 polli:max-w-full polli:gap-2 polli:p-1 polli:pr-3"
+        <div
+            data-theme="neutral"
+            className="polli:inline-flex polli:min-w-0 polli:max-w-full polli:rounded-full polli:bg-theme-bg-subtle polli:p-1 polli:pr-3"
         >
             <AccountIdentity
                 name={user.githubUsername || user.name || user.email}
@@ -584,11 +578,7 @@ export function Authorize() {
                     </span>
                 }
             />
-            <ExternalLinkIcon
-                aria-hidden="true"
-                className="h-3.5 w-3.5 shrink-0"
-            />
-        </Button>
+        </div>
     ) : undefined;
     if (error && !isDeviceMode) {
         return (

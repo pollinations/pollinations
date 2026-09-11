@@ -7,7 +7,6 @@ import { Dialog } from "../../primitives/Dialog.tsx";
 import { Dropdown } from "../../primitives/Dropdown.tsx";
 import { InlineLink } from "../../primitives/InlineLink.tsx";
 import {
-    ExternalLinkIcon,
     GlobeIcon,
     WalletIcon,
     WarningIcon,
@@ -39,7 +38,6 @@ export type AddPollenDialogProps = {
         avatarUrl?: string;
         paid: number;
         quest: number;
-        dashboardHref: string;
     };
     busy?: boolean;
     error?: string | null;
@@ -357,12 +355,9 @@ export function AddPollenDialog({
         >
             <AuthModalHeader logoOnly>
                 {account && (
-                    <Button
-                        as="a"
-                        href={account.dashboardHref}
-                        title="Open dashboard"
-                        size="sm"
-                        className="polli:min-w-0 polli:max-w-full polli:gap-2 polli:p-1 polli:pr-3"
+                    <div
+                        data-theme="neutral"
+                        className="polli:inline-flex polli:min-w-0 polli:max-w-full polli:rounded-full polli:bg-theme-bg-subtle polli:p-1 polli:pr-3"
                     >
                         <AccountIdentity
                             name={account.name}
@@ -386,11 +381,7 @@ export function AddPollenDialog({
                                 </span>
                             }
                         />
-                        <ExternalLinkIcon
-                            aria-hidden="true"
-                            className="polli:h-3.5 polli:w-3.5 polli:shrink-0"
-                        />
-                    </Button>
+                    </div>
                 )}
             </AuthModalHeader>
             {content}

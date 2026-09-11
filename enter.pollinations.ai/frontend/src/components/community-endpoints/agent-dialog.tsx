@@ -207,17 +207,6 @@ export function AgentDialog({
                         </p>
                     )}
 
-                    <SafetyFeatureSelector
-                        value={form.requiredSafetyFeatures}
-                        disabled={isSubmitting}
-                        onChange={(requiredSafetyFeatures) =>
-                            setForm((current) => ({
-                                ...current,
-                                requiredSafetyFeatures,
-                            }))
-                        }
-                    />
-
                     <div className="space-y-4 border-t border-divider pt-4">
                         {form.type === "code_agent" ? (
                             <CodeAgentFields
@@ -259,6 +248,16 @@ export function AgentDialog({
                             </div>
                         )}
                     </div>
+                    <SafetyFeatureSelector
+                        value={form.requiredSafetyFeatures}
+                        disabled={isSubmitting}
+                        onChange={(requiredSafetyFeatures) =>
+                            setForm((current) => ({
+                                ...current,
+                                requiredSafetyFeatures,
+                            }))
+                        }
+                    />
                 </ScrollArea>
                 <div className="flex shrink-0 justify-end gap-2 border-t border-divider p-6 pt-4">
                     <Button

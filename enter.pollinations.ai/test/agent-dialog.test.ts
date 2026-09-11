@@ -59,6 +59,13 @@ it.each([
     const syncButton = html.match(
         /<button\b[^>]*>Sync from GitHub<\/button>/,
     )?.[0];
+    const configurationLabel =
+        type === "code_agent" ? "GitHub repository" : "System prompt";
+    expect(html).toContain(configurationLabel);
+    expect(html).toContain("Prompt safety");
+    expect(html.indexOf("Prompt safety")).toBeGreaterThan(
+        html.indexOf(configurationLabel),
+    );
     if (type === "code_agent") {
         expect(syncButton).toContain('type="button"');
         expect(syncButton).not.toContain("disabled");

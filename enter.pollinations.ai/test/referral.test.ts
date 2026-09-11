@@ -20,7 +20,12 @@ for (const ref of [
         expect(response.status).toBe(204);
         await expect
             .poll(() => mocks.tinybird.state.referralEvents)
-            .toEqual([expect.objectContaining({ ref, logged_in: false })]);
+            .toEqual([
+                expect.objectContaining({
+                    ref,
+                    metadata: '{"logged_in":false}',
+                }),
+            ]);
     });
 
     test(`tracks a signed-in ${ref} referral`, async ({
@@ -41,7 +46,13 @@ for (const ref of [
         expect(response.status).toBe(204);
         await expect
             .poll(() => mocks.tinybird.state.referralEvents)
-            .toEqual([{ timestamp: expect.any(String), ref, logged_in: true }]);
+            .toEqual([
+                {
+                    timestamp: expect.any(String),
+                    ref,
+                    metadata: '{"logged_in":true}',
+                },
+            ]);
     });
 }
 
@@ -63,7 +74,9 @@ test("an expired session counts as signed out", async ({
     expect(response.status).toBe(204);
     await expect
         .poll(() => mocks.tinybird.state.referralEvents)
-        .toEqual([expect.objectContaining({ logged_in: false })]);
+        .toEqual([
+            expect.objectContaining({ metadata: '{"logged_in":false}' }),
+        ]);
 });
 
 test("an API key alone does not count as a signed-in visitor", async ({
@@ -78,7 +91,9 @@ test("an API key alone does not count as a signed-in visitor", async ({
     expect(response.status).toBe(204);
     await expect
         .poll(() => mocks.tinybird.state.referralEvents)
-        .toEqual([expect.objectContaining({ logged_in: false })]);
+        .toEqual([
+            expect.objectContaining({ metadata: '{"logged_in":false}' }),
+        ]);
 });
 
 test("does not track unknown referrals", async ({ mocks }) => {

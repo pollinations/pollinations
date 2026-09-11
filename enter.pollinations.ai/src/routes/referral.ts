@@ -39,7 +39,7 @@ async function trackReferral(
             body: JSON.stringify({
                 timestamp,
                 ref,
-                logged_in: loggedIn,
+                metadata: JSON.stringify({ logged_in: loggedIn }),
             }),
         },
     );

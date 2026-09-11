@@ -90,17 +90,6 @@ run_worker_first = ["/", "/manifest.webmanifest"]
 # Production routes
 [env.production]
 
-# Flagship app gen-pollinations is shared by staging and production; initially off.
-# Run from repo root: npx wrangler <command> --config gen.pollinations.ai/wrangler.toml
-# One-time setup: flagship apps create gen-pollinations
-# Then: flagship flags create <APP_ID> text-balance-notice --default off --rule 'serve=on' --disabled
-# Toggle: flagship flags enable <APP_ID> text-balance-notice (use disable to turn off).
-# If recreating the app, update both app_id bindings and deploy via the normal pipeline.
-# Subsequent toggles need no redeployment; allow up to 30 seconds to propagate.
-[[env.production.flagship]]
-binding = "FLAGS"
-app_id = "643724e0-7f1b-4061-860c-af3e285abf09"
-
 [env.production.images]
 binding = "IMAGES"
 
@@ -204,10 +193,6 @@ BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
 BEDROCK_GUARDRAIL_VERSION = "2"
 # Staging routes
 [env.staging]
-
-[[env.staging.flagship]]
-binding = "FLAGS"
-app_id = "643724e0-7f1b-4061-860c-af3e285abf09"
 
 [env.staging.images]
 binding = "IMAGES"

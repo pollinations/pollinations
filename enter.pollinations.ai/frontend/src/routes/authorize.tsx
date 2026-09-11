@@ -32,6 +32,7 @@ export const Route = createFileRoute("/authorize")({
             budget?: number | null;
             expiry?: number | null;
             scope?: string[] | null;
+            sign_in_error?: boolean;
         } = {
             // Canonical OAuth name is `redirect_uri`; keep `redirect_url`
             // as a legacy alias so existing apps keep working.
@@ -40,6 +41,9 @@ export const Route = createFileRoute("/authorize")({
                 (search.redirect_url as string) ||
                 "",
         };
+
+        if (search.sign_in_error === "1" || search.sign_in_error === 1)
+            result.sign_in_error = true;
 
         if (search.user_code && typeof search.user_code === "string") {
             result.user_code = search.user_code;

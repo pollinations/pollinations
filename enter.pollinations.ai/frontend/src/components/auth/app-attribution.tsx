@@ -27,7 +27,7 @@ export function AppAttribution({
     // the details row even when lookup has not supplied an app name.
     const displayName =
         attribution?.appName ||
-        (isDeviceMode ? "Device connection" : "App connection");
+        (isDeviceMode ? "Device connection" : "This app");
     return (
         <>
             {titleId ? (

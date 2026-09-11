@@ -65,7 +65,9 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     // A dashboard key belongs to the account, so it can call that account's own
     // private models. Offer them here too, or a key already scoped to one shows
     // up as granting nothing and loses the grant on the next edit.
-    const modelCategories = useModelCategories(useOwnCommunityModels());
+    const { categories: modelCategories } = useModelCategories(
+        useOwnCommunityModels(),
+    );
 
     return (
         <div className="space-y-6">

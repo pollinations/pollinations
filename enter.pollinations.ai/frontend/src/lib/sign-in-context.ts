@@ -55,6 +55,17 @@ export function rememberSignIn(value: string): SignInContext | null {
     });
 }
 
+// Resume the real authorization page after a provider callback failure so app
+// details and return destinations are looked up and validated again.
+export function appSignInErrorPath(path: string): string | null {
+    const safePath = signInPath(path);
+    if (!safePath) return null;
+    const url = new URL(safePath, location.origin);
+    if (url.pathname !== "/authorize") return null;
+    url.searchParams.set("sign_in_error", "1");
+    return `${url.pathname}${url.search}`;
+}
+
 // Revalidate against server-provided registration on every app lookup.
 // Never derive a return address from the requested (possibly rejected) callback.
 export function rememberAppPage(

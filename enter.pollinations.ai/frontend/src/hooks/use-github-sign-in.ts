@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { authClient } from "../auth.ts";
+import { loginErrors } from "../lib/login-errors.ts";
 import { rememberSignIn } from "../lib/sign-in-context.ts";
 
-export function useGitHubSignIn(callbackURL?: string) {
+export function useGitHubSignIn(callbackURL?: string, failed = false) {
     const [isSigningIn, setIsSigningIn] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(
+        failed ? loginErrors.default.message : null,
+    );
 
     async function signIn(): Promise<void> {
         if (isSigningIn) return;
@@ -21,7 +24,7 @@ export function useGitHubSignIn(callbackURL?: string) {
             // A network failure must not leave every sign-in control disabled.
         }
         setIsSigningIn(false);
-        setError("Could not connect to GitHub. Please try again.");
+        setError(loginErrors.default.message);
     }
 
     return { isSigningIn, error, signIn };

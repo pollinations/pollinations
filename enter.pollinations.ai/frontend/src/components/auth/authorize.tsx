@@ -48,7 +48,10 @@ import {
     rememberSignIn,
 } from "../../lib/sign-in-context.ts";
 import { ExpiryDaysInput } from "../keys/expiry-days-input.tsx";
-import { useKeyPermissions } from "../keys/key-permissions.tsx";
+import {
+    type KeyPermissions,
+    useKeyPermissions,
+} from "../keys/key-permissions.tsx";
 import { PollenBudgetInput } from "../keys/pollen-budget-input.tsx";
 import {
     areSelectedModelsPaidOnly,
@@ -58,6 +61,7 @@ import { useModelCategories } from "../models/use-model-categories.ts";
 import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
 import { AppAttribution } from "./app-attribution.tsx";
 import { ConsentModelPicker } from "./consent-model-picker.tsx";
+import { SignInScreen } from "./sign-in-screen.tsx";
 
 type Attribution = {
     found: boolean;
@@ -72,6 +76,7 @@ type Attribution = {
 };
 
 async function readAttribution(response: Response): Promise<Attribution> {
+    if (!response.ok) throw new Error("App lookup unavailable");
     return (await response.json()) as Attribution;
 }
 
@@ -83,7 +88,15 @@ function safeParseUrl(url: string): URL | null {
     }
 }
 
-export function Authorize() {
+export type AuthorizeConsent = KeyPermissions & { generationEnabled: boolean };
+
+export function Authorize({
+    initialConsent,
+    onConsentChange,
+}: {
+    initialConsent?: AuthorizeConsent;
+    onConsentChange?: (consent: AuthorizeConsent) => void;
+} = {}) {
     const {
         redirect_url,
         user_code,
@@ -96,8 +109,15 @@ export function Authorize() {
         budget,
         expiry,
         scope: urlScope,
+        sign_in_error,
     } = useSearch({ from: "/authorize" });
-    const requestPath = useLocation().href;
+    const location = useLocation();
+    const requestUrl = new URL(location.href, window.location.origin);
+    requestUrl.searchParams.delete("sign_in_error");
+    // Router search values are typed arrays; OAuth callbacks need wire strings.
+    if (urlScope) requestUrl.searchParams.set("scope", urlScope.join(" "));
+    if (models) requestUrl.searchParams.set("models", models.join(","));
+    const requestPath = `${requestUrl.pathname}${requestUrl.search}`;
     const [returnTo, setReturnTo] = useState<string | null>(null);
 
     const isDeviceMode = !!user_code;
@@ -117,7 +137,7 @@ export function Authorize() {
         isSigningIn,
         error: signInError,
         signIn,
-    } = useGitHubSignIn(requestPath);
+    } = useGitHubSignIn(requestPath, sign_in_error);
     const [error, setError] = useState<string | null>(null);
     const [attribution, setAttribution] = useState<Attribution | null>(null);
     const [deviceOutcome, setDeviceOutcome] = useState<
@@ -128,28 +148,56 @@ export function Authorize() {
         paid: number;
     } | null>(null);
     const [generationEnabled, setGenerationEnabled] = useState(
-        models?.length !== 0,
+        initialConsent?.generationEnabled ?? models?.length !== 0,
     );
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
 
     const keyPermissions = useKeyPermissions(
-        getAuthorizeInitialPermissions({
-            models,
-            budget,
-            expiry,
-            permissions: urlScope,
-        }),
+        initialConsent ??
+            getAuthorizeInitialPermissions({
+                models,
+                budget,
+                expiry,
+                permissions: urlScope,
+            }),
     );
     const { setAccountPermissions } = keyPermissions;
+    const {
+        allowedModels: selectedModels,
+        pollenBudget,
+        expiryDays,
+        accountPermissions,
+    } = keyPermissions.permissions;
+    useEffect(() => {
+        onConsentChange?.({
+            allowedModels: selectedModels,
+            pollenBudget,
+            expiryDays,
+            accountPermissions,
+            generationEnabled,
+        });
+    }, [
+        selectedModels,
+        pollenBudget,
+        expiryDays,
+        accountPermissions,
+        generationEnabled,
+        onConsentChange,
+    ]);
 
     // The minted key is the signed-in user's, so it reaches their own private
     // models just as their dashboard keys do — but the anonymous catalog omits
     // them, so the consent screen has to learn them separately.
     const [modelsExpanded, setModelsExpanded] = useState(false);
     const ownModels = useOwnCommunityModels(!!user);
-    const modelCategories = useModelCategories(ownModels);
+    const {
+        categories: modelCategories,
+        catalog,
+        status: modelStatus,
+        retry: retryModels,
+    } = useModelCategories(ownModels);
     const catalogModels = modelCategories.flatMap(({ models }) => models);
     const allowedModels = generationEnabled
         ? keyPermissions.permissions.allowedModels
@@ -209,6 +257,7 @@ export function Authorize() {
         !requestValidationError &&
         (isDeviceMode || parsedRedirectUrl !== null) &&
         !isAttributionPending &&
+        (!generationEnabled || modelStatus === "ready") &&
         // The code flow only runs for registered clients with a validated
         // redirect — no hostname-only fallback like the legacy flow.
         (isDeviceMode || !app_key || appLookupStatus === "valid");
@@ -609,24 +658,28 @@ export function Authorize() {
                     )
                 }
             >
-                <Heading
-                    as="h1"
-                    size="section"
-                    id="connection-error-title"
-                    className="py-3"
-                >
-                    App connection
-                </Heading>
-                {(attribution?.appName || redirectHostname) && (
-                    <AuthInfoCard title={null}>
-                        <AppAttribution
-                            attribution={attribution}
-                            isDeviceMode={false}
-                            redirectHostname={redirectHostname}
-                            detailsOnly
-                        />
-                    </AuthInfoCard>
-                )}
+                <div className="space-y-2 pt-3">
+                    <Heading as="h1" size="section" id="connection-error-title">
+                        Unable to connect
+                    </Heading>
+                    {(attribution?.appName || redirectHostname) && (
+                        <>
+                            <p className="font-body text-xs font-semibold tracking-wide text-theme-text-soft">
+                                {attribution?.appName
+                                    ? "to this app:"
+                                    : "to this destination:"}
+                            </p>
+                            <AuthInfoCard title={null}>
+                                <AppAttribution
+                                    attribution={attribution}
+                                    isDeviceMode={false}
+                                    redirectHostname={redirectHostname}
+                                    detailsOnly
+                                />
+                            </AuthInfoCard>
+                        </>
+                    )}
+                </div>
                 <ErrorBanner>
                     {error}
                     {!returnTo &&
@@ -642,15 +695,19 @@ export function Authorize() {
         );
     }
 
-    if (isPending || !user) {
+    if (isPending || !user || signInError || isSigningIn) {
         const displayedError = error ?? signInError;
         return (
-            <AuthFlowLayout
-                dialog={
-                    error
-                        ? { label: "Sign-in error" }
-                        : { labelledBy: "authorize-dialog-title" }
+            <SignInScreen
+                app={
+                    <AppAttribution
+                        attribution={attribution}
+                        isDeviceMode={isDeviceMode}
+                        userCode={user_code}
+                        redirectHostname={redirectHostname}
+                    />
                 }
+                error={displayedError}
                 actions={
                     !error && (
                         <GitHubSignInButton
@@ -689,30 +746,7 @@ export function Authorize() {
                         </Button>
                     )
                 }
-            >
-                <div className="py-3">
-                    <Heading
-                        as="h1"
-                        size="section"
-                        id="authorize-dialog-title"
-                        className="mb-3"
-                    >
-                        Sign in to pollinations.ai
-                    </Heading>
-                    <p className="mb-3 font-body text-xs font-semibold tracking-wide text-theme-text-soft">
-                        To connect:
-                    </p>
-                    <AuthInfoCard title={null}>
-                        <AppAttribution
-                            attribution={attribution}
-                            isDeviceMode={isDeviceMode}
-                            userCode={user_code}
-                            redirectHostname={redirectHostname}
-                        />
-                    </AuthInfoCard>
-                </div>
-                {displayedError && <ErrorBanner>{displayedError}</ErrorBanner>}
-            </AuthFlowLayout>
+            />
         );
     }
 
@@ -720,6 +754,7 @@ export function Authorize() {
         <AuthFlowLayout
             dialog={{ labelledBy: "authorize-dialog-title" }}
             account={accountHeader}
+            actionLayout="inline"
             actions={
                 !error && (
                     <Button
@@ -738,7 +773,7 @@ export function Authorize() {
                 )
             }
             secondaryAction={
-                (isDeviceMode || (!isAuthorizing && hasAppExit)) && (
+                (isDeviceMode || hasAppExit) && (
                     <Button
                         as="button"
                         onClick={handleDeny}
@@ -755,7 +790,7 @@ export function Authorize() {
             }
         >
             <div>
-                <div className="py-3">
+                <div className="pt-3">
                     <AppAttribution
                         titleId="authorize-dialog-title"
                         attribution={attribution}
@@ -778,6 +813,7 @@ export function Authorize() {
                                     >
                                         pollinations.ai account
                                     </InlineLink>
+                                    .
                                 </>
                             }
                         >
@@ -847,7 +883,7 @@ export function Authorize() {
                                 </AuthAccessItem>
                             )}
                         </AuthAccessSummary>
-                        <div className="mb-4">
+                        <div className="mb-3">
                             <AuthInfoCard title={null}>
                                 <ul className="space-y-3 text-sm text-theme-text-base">
                                     <AuthAccessItem
@@ -861,6 +897,30 @@ export function Authorize() {
                                         details={
                                             generationEnabled && (
                                                 <div className="space-y-3">
+                                                    {modelStatus ===
+                                                    "loading" ? (
+                                                        <output>
+                                                            Loading models…
+                                                        </output>
+                                                    ) : modelStatus ===
+                                                      "error" ? (
+                                                        <ErrorBanner>
+                                                            <p>
+                                                                Couldn’t load
+                                                                models.
+                                                            </p>
+                                                            <Button
+                                                                size="sm"
+                                                                onClick={
+                                                                    retryModels
+                                                                }
+                                                                aria-label="Retry loading models"
+                                                                className="polli:mt-2"
+                                                            >
+                                                                Try again
+                                                            </Button>
+                                                        </ErrorBanner>
+                                                    ) : null}
                                                     {(attribution?.earningsEnabled ||
                                                         fundingStatus) && (
                                                         <div className="flex flex-wrap items-center gap-2">
@@ -901,82 +961,87 @@ export function Authorize() {
                                                         }
                                                         inline
                                                     />
-                                                    <Collapsible
-                                                        label={
-                                                            <span className="flex flex-wrap items-center gap-2">
-                                                                <span>
-                                                                    Models
-                                                                </span>
-                                                                <span className="flex min-w-0 flex-wrap gap-1.5">
-                                                                    {selectedModelCounts.map(
-                                                                        ({
-                                                                            modality,
-                                                                            label,
-                                                                            count,
-                                                                        }) => (
+                                                    {modelStatus ===
+                                                        "ready" && (
+                                                        <Collapsible
+                                                            label={
+                                                                <span className="flex flex-wrap items-center gap-2">
+                                                                    <span>
+                                                                        Models
+                                                                    </span>
+                                                                    <span className="flex min-w-0 flex-wrap gap-1.5">
+                                                                        {selectedModelCounts.map(
+                                                                            ({
+                                                                                modality,
+                                                                                label,
+                                                                                count,
+                                                                            }) => (
+                                                                                <Chip
+                                                                                    key={
+                                                                                        modality
+                                                                                    }
+                                                                                    size="sm"
+                                                                                    intent="neutral"
+                                                                                >
+                                                                                    {
+                                                                                        label
+                                                                                    }{" "}
+                                                                                    ·{" "}
+                                                                                    {
+                                                                                        count
+                                                                                    }
+                                                                                </Chip>
+                                                                            ),
+                                                                        )}
+                                                                        {selectedModelCounts.length ===
+                                                                            0 && (
                                                                             <Chip
-                                                                                key={
-                                                                                    modality
-                                                                                }
                                                                                 size="sm"
                                                                                 intent="neutral"
                                                                             >
-                                                                                {
-                                                                                    label
-                                                                                }{" "}
-                                                                                ·{" "}
-                                                                                {
-                                                                                    count
-                                                                                }
+                                                                                None
+                                                                                selected
                                                                             </Chip>
-                                                                        ),
-                                                                    )}
-                                                                    {selectedModelCounts.length ===
-                                                                        0 && (
-                                                                        <Chip
-                                                                            size="sm"
-                                                                            intent="neutral"
-                                                                        >
-                                                                            None
-                                                                            selected
-                                                                        </Chip>
-                                                                    )}
+                                                                        )}
+                                                                    </span>
                                                                 </span>
-                                                            </span>
-                                                        }
-                                                        expanded={
-                                                            modelsExpanded
-                                                        }
-                                                        onToggle={() =>
-                                                            setModelsExpanded(
-                                                                (value) =>
-                                                                    !value,
-                                                            )
-                                                        }
-                                                        disabled={isAuthorizing}
-                                                        wrapperClassName="polli:border-0"
-                                                        triggerClassName="polli:px-0 polli:text-sm polli:font-semibold"
-                                                        hoverClassName="polli:hover:bg-transparent"
-                                                        panelClassName="polli:pt-2"
-                                                    >
-                                                        <ConsentModelPicker
-                                                            extraModels={
-                                                                ownModels
                                                             }
-                                                            models={
-                                                                requestedModels
+                                                            expanded={
+                                                                modelsExpanded
                                                             }
-                                                            selected={
-                                                                allowedModels
-                                                            }
-                                                            onChange={
-                                                                keyPermissions.setAllowedModels
+                                                            onToggle={() =>
+                                                                setModelsExpanded(
+                                                                    (value) =>
+                                                                        !value,
+                                                                )
                                                             }
                                                             disabled={
                                                                 isAuthorizing
                                                             }
-                                                        />
-                                                    </Collapsible>
+                                                            wrapperClassName="polli:border-0"
+                                                            triggerClassName="polli:px-0 polli:text-sm polli:font-semibold"
+                                                            hoverClassName="polli:hover:bg-transparent"
+                                                            panelClassName="polli:pt-2"
+                                                        >
+                                                            <ConsentModelPicker
+                                                                catalog={
+                                                                    catalog
+                                                                }
+                                                                models={
+                                                                    requestedModels
+                                                                }
+                                                                selected={
+                                                                    allowedModels
+                                                                }
+                                                                onChange={
+                                                                    keyPermissions.setAllowedModels
+                                                                }
+                                                                disabled={
+                                                                    isAuthorizing
+                                                                }
+                                                            />
+                                                        </Collapsible>
+                                                    )}
                                                 </div>
                                             )
                                         }
@@ -994,7 +1059,7 @@ export function Authorize() {
                                 inline
                             />
                         </AuthInfoCard>
-                        <p className="px-4 pt-4 text-xs text-theme-text-soft">
+                        <p className="px-4 pt-3 text-xs text-theme-text-soft">
                             Revoke access anytime in your{" "}
                             <InlineLink href={`${config.baseUrl}/`} external>
                                 dashboard

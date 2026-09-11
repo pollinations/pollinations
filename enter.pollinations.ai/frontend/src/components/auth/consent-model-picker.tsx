@@ -4,14 +4,13 @@ import {
     EditableCombobox,
     TabButton,
 } from "@pollinations/ui";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
     setConsentModelGroup,
     toggleConsentModel,
 } from "../keys/model-selection.ts";
 import {
     type ApiModelInfo,
-    fetchModelCatalog,
     getModelPricesFromCatalog,
 } from "../models/model-catalog.ts";
 import type { ModelCategoryModel } from "../models/model-categories.ts";
@@ -35,41 +34,29 @@ import {
 
 export function ConsentModelPicker({
     models,
-    extraModels,
+    catalog,
     selected,
     onChange,
     disabled,
 }: {
     models: ModelCategoryModel[];
-    extraModels: ApiModelInfo[];
+    catalog: ApiModelInfo[];
     selected: string[] | null;
     onChange: (models: string[]) => void;
     disabled: boolean;
 }) {
-    const [catalog, setCatalog] = useState<ApiModelInfo[]>([]);
     const [search, setSearch] = useState("source:official");
     const [draft, setDraft] = useState<ModelQueryDraftFilter>();
     const [editing, setEditing] = useState<ModelQueryFilterToken>();
     const [pendingRemoval, setPendingRemoval] = useState<number>();
     const [open, setOpen] = useState(false);
-    useEffect(() => {
-        let cancelled = false;
-        fetchModelCatalog()
-            .then((catalog) => {
-                if (!cancelled) setCatalog(catalog);
-            })
-            .catch(() => {});
-        return () => {
-            cancelled = true;
-        };
-    }, []);
     const requestedIds = models.map(({ id }) => id);
     const searchableModels = useMemo(() => {
         const offered = new Set(models.map(({ id }) => id));
-        return getModelPricesFromCatalog([...catalog, ...extraModels]).filter(
-            ({ name }) => offered.has(name),
+        return getModelPricesFromCatalog(catalog).filter(({ name }) =>
+            offered.has(name),
         );
-    }, [catalog, extraModels, models]);
+    }, [catalog, models]);
     const tokens = getModelQueryFilterTokens(search).filter(
         ({ index }) => index !== draft?.index,
     );

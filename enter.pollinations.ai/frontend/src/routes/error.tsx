@@ -1,14 +1,25 @@
 import { Button, ExternalLinkIcon, Heading, MailIcon } from "@pollinations/ui";
-import { AuthFlowLayout, ErrorBanner } from "@pollinations/ui/auth";
-import { createFileRoute } from "@tanstack/react-router";
+import {
+    AuthFlowLayout,
+    ErrorBanner,
+    GitHubSignInButton,
+} from "@pollinations/ui/auth";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { SignInScreen } from "../components/auth/sign-in-screen";
 import { getLoginError } from "../lib/login-errors";
-import { getSignInContext } from "../lib/sign-in-context";
+import { appSignInErrorPath, getSignInContext } from "../lib/sign-in-context";
 
 export const Route = createFileRoute("/error")({
     component: ErrorPage,
     validateSearch: (search: Record<string, unknown>) => ({
         error: typeof search.error === "string" ? search.error : "",
     }),
+    beforeLoad: ({ search }) => {
+        if (getLoginError(search.error).id !== "login-failed") return;
+        const context = getSignInContext();
+        const href = context && appSignInErrorPath(context.path);
+        if (href) throw redirect({ href, replace: true });
+    },
 });
 
 function ErrorPage() {
@@ -19,6 +30,19 @@ function ErrorPage() {
         id === "login-failed"
             ? (getSignInContext()?.path ?? action.href)
             : action.href;
+
+    if (id === "login-failed")
+        return (
+            <SignInScreen
+                error={message}
+                actions={
+                    <GitHubSignInButton
+                        retry
+                        onClick={() => location.assign(href)}
+                    />
+                }
+            />
+        );
 
     return (
         <AuthFlowLayout
@@ -42,7 +66,7 @@ function ErrorPage() {
                 as="h1"
                 size="section"
                 id="login-error-title"
-                className="py-3"
+                className="pt-3"
             >
                 {title}
             </Heading>

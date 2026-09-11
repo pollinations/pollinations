@@ -72,6 +72,8 @@ type Attribution = {
 };
 
 async function readAttribution(response: Response): Promise<Attribution> {
+    if (response.status === 400 || response.status === 404)
+        return { found: false };
     if (!response.ok) throw new Error("App lookup unavailable");
     return (await response.json()) as Attribution;
 }

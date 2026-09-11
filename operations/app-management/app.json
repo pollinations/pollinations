@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "💬",
+    "name": "NewEra Ai Agent",
+    "url": "https://newera.namansoni.in",
+    "description": "# NewEra AI Agent NewEra is a free online AI agent that plans, codes, builds and deploys real applications. Created by Naman Soni. URL: https://newera.namansoni.in/ NewEra turns a plain-English descri",
+    "language": "en",
+    "category": "chat",
+    "platform": "web",
+    "githubUsername": "NamanSoni78",
+    "githubUserId": "170070104",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-11",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14721",
+    "approvedDate": "2026-09-11",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "✍️",
     "name": "YouTube Transcription AI by MrPaloma",
     "url": "https://www.mrpaloma.com/trascrivere-video-youtube-pollinations",

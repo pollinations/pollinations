@@ -1,5 +1,4 @@
 import {
-    AppRequestSelect,
     FlowSelect,
     FlowSwitch,
     PollenPreviewSelect,
@@ -10,6 +9,7 @@ import {
 } from "./pollen-connect-request-config";
 
 type PreviewControlsProps = {
+    showPollen?: boolean;
     values: Record<string, string>;
     onChange: (patch: Record<string, string>) => void;
 };
@@ -20,11 +20,6 @@ export function ConnectionBlockedControls({
 }: PreviewControlsProps) {
     return (
         <div className="consent-preview-controls">
-            <AppRequestSelect
-                errorsOnly
-                value={values.request_error ?? "redirect"}
-                onChange={(request_error) => onChange({ request_error })}
-            />
             <FlowSwitch
                 label="Signed in to Pollinations"
                 checked={values.screen === "oauth"}
@@ -46,6 +41,7 @@ export function ConnectionBlockedControls({
 export function ConsentPreviewControls({
     values,
     onChange,
+    showPollen = true,
 }: PreviewControlsProps) {
     const scopes = new Set(
         (values.request_scope ?? "profile usage keys")
@@ -93,13 +89,15 @@ export function ConsentPreviewControls({
                     />
                 )}
             </fieldset>
-            <PollenPreviewSelect
-                paid={Number(values.sim_paid ?? 10)}
-                quest={Number(values.sim_quest ?? 5)}
-                onChange={({ paid, quest }) =>
-                    onChange({ sim_paid: `${paid}`, sim_quest: `${quest}` })
-                }
-            />
+            {showPollen && (
+                <PollenPreviewSelect
+                    paid={Number(values.sim_paid ?? 10)}
+                    quest={Number(values.sim_quest ?? 5)}
+                    onChange={({ paid, quest }) =>
+                        onChange({ sim_paid: `${paid}`, sim_quest: `${quest}` })
+                    }
+                />
+            )}
         </div>
     );
 }

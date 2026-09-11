@@ -14,7 +14,11 @@ import logoUrl from "@pollinations/ui/brand/mark.svg";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { appLoginScreens } from "./pollen-connect-app-login";
-import { type CanvasScreen, canvasGroups } from "./pollen-connect-canvas-data";
+import {
+    appVariantSupportsProtocol,
+    type CanvasScreen,
+    canvasGroups,
+} from "./pollen-connect-canvas-data";
 import {
     ConnectionBlockedControls,
     ConsentPreviewControls,
@@ -30,6 +34,7 @@ import {
     nodeSize,
     paper,
 } from "./pollen-connect-diagram";
+import { FlowSwitch } from "./pollen-connect-flow-controls";
 import { ScreenGallery } from "./pollen-connect-gallery";
 import { galleryScreensForFlow } from "./pollen-connect-gallery-data";
 import { Journey } from "./pollen-connect-journey";
@@ -41,6 +46,10 @@ import {
     type JourneySelection,
 } from "./pollen-connect-journey-state";
 import { ScreenContent } from "./pollen-connect-preview";
+import {
+    type AppPreviewProps,
+    defaultAppPreview,
+} from "./pollen-connect-request-config";
 import "./src/style.css";
 import "./pollen-connect-canvas.css";
 
@@ -51,6 +60,8 @@ if (requestedMode === "light" || requestedMode === "dark")
     setColorMode(requestedMode);
 
 function Canvas({
+    appPreview,
+    onAppPreviewChange,
     entrance,
     location: journeyLocation,
     gallery = false,
@@ -60,39 +71,78 @@ function Canvas({
     location: JourneyLocation;
     gallery?: boolean;
     desktop: boolean;
-}) {
+} & AppPreviewProps) {
     const { mode } = useColorMode();
     const [selected, setSelected] = useState<CanvasScreen | null>(null);
-    const [variant, setVariant] = useState(0);
+    const [selectedVariant, setVariant] = useState(0);
+    const variant =
+        selected?.variants?.[selectedVariant] &&
+        appVariantSupportsProtocol(
+            selected.variants[selectedVariant],
+            entrance.world === "app" ? appPreview.protocol : undefined,
+        )
+            ? selectedVariant
+            : 0;
     const [screenOptions, setScreenOptions] = useState<
         Record<string, Record<string, string>>
     >({});
     const consentControls = selected?.id === "consent";
-    const blockedControls = selected?.id.startsWith("connection-link") ?? false;
+    const blockedControls =
+        (selected?.id.startsWith("connection-link") ?? false) &&
+        selected?.variants?.[variant]?.params?.action !== "authorize";
     const optionsKey = `${entrance.world}:${selected?.id ?? ""}`;
-    const previewOptions =
-        consentControls || blockedControls
+    const isAppLogin = entrance.world === "app" && entrance.section === "main";
+    const previewOptions = {
+        screen:
+            selected?.variants?.[variant]?.screen ??
+            selected?.screen ??
+            "oauth",
+        ...selected?.variants?.[variant]?.params,
+        ...(isAppLogin ? appPreview : {}),
+        ...screenOptions[optionsKey],
+        ...(selected?.variants?.[variant]?.params?.action === "authorize"
             ? {
                   screen:
-                      selected?.variants?.[variant]?.screen ??
-                      selected?.screen ??
+                      selected.variants[variant].screen ??
+                      selected.screen ??
                       "oauth",
-                  ...selected?.variants?.[variant]?.params,
-                  ...screenOptions[optionsKey],
               }
-            : {};
+            : {}),
+    };
+    const changeOptions = (patch: Record<string, string>) => {
+        const shared = Object.fromEntries(
+            Object.entries(patch).filter(([key]) => key in defaultAppPreview),
+        );
+        const local = Object.fromEntries(
+            Object.entries(patch).filter(
+                ([key]) => !(isAppLogin && key in defaultAppPreview),
+            ),
+        );
+        if (isAppLogin && Object.keys(shared).length)
+            onAppPreviewChange(shared);
+        if (Object.keys(local).length)
+            setScreenOptions((current) => ({
+                ...current,
+                [optionsKey]: { ...current[optionsKey], ...local },
+            }));
+    };
     const statusTabs = selected?.variants && selected.variants.length > 1 && (
         <fieldset aria-label="Screen status">
-            {selected.variants.map((example, index) => (
-                <TabButton
-                    key={`${index}-${example.label}`}
-                    size="sm"
-                    active={variant === index}
-                    onClick={() => setVariant(index)}
-                >
-                    {example.label}
-                </TabButton>
-            ))}
+            {selected.variants.map((example, index) =>
+                !appVariantSupportsProtocol(
+                    example,
+                    isAppLogin ? appPreview.protocol : undefined,
+                ) ? null : (
+                    <TabButton
+                        key={`${index}-${example.label}`}
+                        size="sm"
+                        active={variant === index}
+                        onClick={() => setVariant(index)}
+                    >
+                        {example.label}
+                    </TabButton>
+                ),
+            )}
         </fieldset>
     );
     const navigationOrder = useRef(screens);
@@ -277,6 +327,7 @@ function Canvas({
         <>
             {gallery ? (
                 <ScreenGallery
+                    overrides={isAppLogin ? appPreview : {}}
                     entrance={entrance}
                     desktop={desktop}
                     onSelect={(entry, example, order) => {
@@ -550,6 +601,11 @@ function Canvas({
                                                 </span>
                                                 <span className="canvas-phone">
                                                     <ScreenContent
+                                                        overrides={
+                                                            isAppLogin
+                                                                ? appPreview
+                                                                : {}
+                                                        }
                                                         entry={entry}
                                                     />
                                                 </span>
@@ -586,19 +642,30 @@ function Canvas({
                                     {selected.title}
                                 </strong>
                             )}
+                            {isAppLogin &&
+                                /^(oauth|direct|login-failed)/.test(
+                                    previewOptions.screen,
+                                ) && (
+                                    <FlowSwitch
+                                        label="Use OAuth"
+                                        checked={
+                                            appPreview.protocol !== "direct"
+                                        }
+                                        onChange={(on) =>
+                                            onAppPreviewChange({
+                                                protocol: on
+                                                    ? "oauth"
+                                                    : "direct",
+                                            })
+                                        }
+                                    />
+                                )}
                             {blockedControls ? (
                                 <ScrollArea className="canvas-inspector-statuses">
+                                    {statusTabs}
                                     <ConnectionBlockedControls
                                         values={previewOptions}
-                                        onChange={(patch) =>
-                                            setScreenOptions((current) => ({
-                                                ...current,
-                                                [optionsKey]: {
-                                                    ...current[optionsKey],
-                                                    ...patch,
-                                                },
-                                            }))
-                                        }
+                                        onChange={changeOptions}
                                     />
                                 </ScrollArea>
                             ) : consentControls ? (
@@ -606,15 +673,7 @@ function Canvas({
                                     {statusTabs}
                                     <ConsentPreviewControls
                                         values={previewOptions}
-                                        onChange={(patch) =>
-                                            setScreenOptions((current) => ({
-                                                ...current,
-                                                [optionsKey]: {
-                                                    ...current[optionsKey],
-                                                    ...patch,
-                                                },
-                                            }))
-                                        }
+                                        onChange={changeOptions}
                                     />
                                 </ScrollArea>
                             ) : statusTabs ? (
@@ -649,6 +708,12 @@ function Canvas({
     );
 }
 function ConnectLab() {
+    const [appPreview, setAppPreview] = useState(defaultAppPreview);
+    const onAppPreviewChange = useCallback(
+        (patch: Record<string, string>) =>
+            setAppPreview((current) => ({ ...current, ...patch })),
+        [],
+    );
     const [desktop, setDesktop] = useState(false);
     const [view, setView] = useState(
         ["map", "screens"].includes(
@@ -853,6 +918,8 @@ function ConnectLab() {
             </header>
             <div className="connect-journey-view" hidden={view !== "journey"}>
                 <Journey
+                    appPreview={appPreview}
+                    onAppPreviewChange={onAppPreviewChange}
                     desktop={desktop}
                     entrance={entrance}
                     onLocationChange={setJourneyLocation}
@@ -861,6 +928,8 @@ function ConnectLab() {
             {(view === "map" || view === "screens") && (
                 <div className="connect-map-view">
                     <Canvas
+                        appPreview={appPreview}
+                        onAppPreviewChange={onAppPreviewChange}
                         desktop={desktop}
                         key={view}
                         entrance={entrance}

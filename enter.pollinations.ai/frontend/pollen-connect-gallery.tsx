@@ -1,6 +1,9 @@
 import { Button, IconButton, ScrollArea, useColorMode } from "@pollinations/ui";
 import { useEffect, useRef, useState } from "react";
-import type { CanvasScreen } from "./pollen-connect-canvas-data";
+import {
+    appVariantSupportsProtocol,
+    type CanvasScreen,
+} from "./pollen-connect-canvas-data";
 import { galleryCardsForFlow } from "./pollen-connect-gallery-data";
 import type { JourneySelection } from "./pollen-connect-journey-state";
 import { ScreenContent } from "./pollen-connect-preview";
@@ -9,9 +12,11 @@ export function ScreenGallery({
     entrance,
     desktop,
     onSelect,
+    overrides = {},
 }: {
     entrance: JourneySelection;
     desktop: boolean;
+    overrides?: Record<string, string>;
     onSelect: (
         entry: CanvasScreen,
         variant: number,
@@ -44,12 +49,20 @@ export function ScreenGallery({
                         className={`screens-gallery-grid ${desktop ? "screens-gallery-desktop" : ""}`}
                     >
                         {pages.map((entry) => {
-                            const optionCount = Math.max(
-                                1,
-                                entry.variants?.length ?? 0,
-                            );
+                            const indices = entry.variants
+                                ?.map((variant, index) => ({ variant, index }))
+                                .filter(({ variant }) =>
+                                    appVariantSupportsProtocol(
+                                        variant,
+                                        overrides.protocol,
+                                    ),
+                                )
+                                .map(({ index }) => index) ?? [0];
+                            const optionCount = Math.max(1, indices.length);
                             const key = `${selectionKey}:${entry.id}`;
-                            const variant = (variants[key] ?? 0) % optionCount;
+                            const variant =
+                                indices[(variants[key] ?? 0) % optionCount] ??
+                                0;
                             const changeVariant = (direction: number) =>
                                 setVariants((current) => ({
                                     ...current,
@@ -117,6 +130,7 @@ export function ScreenGallery({
                                         <span className="canvas-phone screens-gallery-preview">
                                             <ScreenContent
                                                 key={`${entry.id}-${mode}-${variant}`}
+                                                overrides={overrides}
                                                 entry={entry}
                                                 variant={variant}
                                             />

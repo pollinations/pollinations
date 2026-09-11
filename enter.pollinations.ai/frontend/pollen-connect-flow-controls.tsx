@@ -1,5 +1,8 @@
 import { Switch } from "@pollinations/ui";
-import { authorizeRequestErrors } from "./pollen-connect-canvas-data";
+import {
+    appVariantSupportsProtocol,
+    authorizeRequestErrors,
+} from "./pollen-connect-canvas-data";
 import { previewPollenOptions } from "./pollen-connect-request-config";
 
 export function FlowSwitch({
@@ -50,17 +53,11 @@ export function AppRequestSelect({
             >
                 {!errorsOnly && <option value="">Valid request</option>}
                 {authorizeRequestErrors
-                    .filter(
-                        (variant) =>
-                            oauth ||
-                            [
-                                "redirect",
-                                "app",
-                                "lookup",
-                                "missing-redirect",
-                                "invalid-redirect",
-                                "response-type",
-                            ].includes(variant.params?.request_error ?? ""),
+                    .filter((variant) =>
+                        appVariantSupportsProtocol(
+                            variant,
+                            oauth ? "oauth" : "direct",
+                        ),
                     )
                     .map((variant) => (
                         <option

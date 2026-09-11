@@ -1,3 +1,16 @@
+export const defaultAppPreview: Record<string, string> = {
+    protocol: "oauth",
+    request_scope: "profile usage keys",
+    request_models: "all",
+    request_earnings: "1",
+    sim_paid: "10",
+    sim_quest: "5",
+};
+export type AppPreviewProps = {
+    appPreview: Record<string, string>;
+    onAppPreviewChange: (patch: Record<string, string>) => void;
+};
+
 export const previewScopeOptions = [
     { id: "profile", label: "Display name & email" },
     { id: "usage", label: "Account activity" },

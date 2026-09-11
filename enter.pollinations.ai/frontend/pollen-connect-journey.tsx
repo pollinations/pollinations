@@ -1,5 +1,5 @@
-import { loginErrors } from "@shared/auth/login-errors.ts";
 import { Button, Input, Surface, Switch, useColorMode } from "@pollinations/ui";
+import { loginErrors } from "@shared/auth/login-errors.ts";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getPollenPackByKey } from "../../shared/pollen-packs";
 import {
@@ -15,6 +15,7 @@ import {
     canvasScreenUrl,
     modelCatalogStates,
 } from "./pollen-connect-canvas-data";
+import { ConsentPreviewControls } from "./pollen-connect-consent-controls";
 import { type FlowEdge, flowNodes } from "./pollen-connect-diagram";
 import {
     AppRequestSelect,
@@ -36,6 +37,7 @@ import {
     startSelectedJourney,
 } from "./pollen-connect-journey-state";
 import { Illustration, ScreenWindow } from "./pollen-connect-preview";
+import type { AppPreviewProps } from "./pollen-connect-request-config";
 import type { AuthorizeConsent } from "./src/components/auth/authorize";
 import "./pollen-connect-journey.css";
 
@@ -129,6 +131,8 @@ const productActions: Record<string, Record<string, string>> = {
 };
 
 export function Journey({
+    appPreview,
+    onAppPreviewChange,
     desktop,
     entrance,
     onLocationChange,
@@ -136,7 +140,7 @@ export function Journey({
     desktop: boolean;
     entrance: JourneySelection;
     onLocationChange: (location: JourneyLocation) => void;
-}) {
+} & AppPreviewProps) {
     const [state, setState] = useState(() => startSelectedJourney(entrance));
     const [past, setPast] = useState<JourneyState[]>([]);
     const selectionKey = `${entrance.world}:${entrance.section}`;
@@ -144,6 +148,44 @@ export function Journey({
         entrance.world === "app" &&
         entrance.section === "main" &&
         state.world === "app";
+    // biome-ignore lint/correctness/useExhaustiveDependencies: any changed app request needs a fresh consent draft.
+    useEffect(() => {
+        if (!appLogin) return;
+        setPast([]);
+        setState((old) => ({
+            ...old,
+            consent: null,
+            paidOnly: appPreview.request_models === "paid",
+        }));
+    }, [
+        appLogin,
+        appPreview.request_scope,
+        appPreview.request_models,
+        appPreview.request_earnings,
+    ]);
+    useEffect(() => {
+        if (!appLogin) return;
+        setState((old) => ({
+            ...old,
+            paid: Number(appPreview.sim_paid),
+            quest: Number(appPreview.sim_quest),
+        }));
+    }, [appLogin, appPreview.sim_paid, appPreview.sim_quest]);
+    useEffect(() => {
+        if (!appLogin) return;
+        const method = appPreview.protocol === "direct" ? "direct" : "oauth";
+        setPast([]);
+        setSettings((old) => ({
+            ...old,
+            appRequestError: "",
+            authorizationError: "none",
+        }));
+        setState((old) =>
+            old.method === method
+                ? old
+                : { ...old, method, node: "app-connect", consent: null },
+        );
+    }, [appLogin, appPreview.protocol]);
     const selectedSection = useRef(selectionKey);
     const savedSections = useRef(
         new Map<string, { state: JourneyState; past: JourneyState[] }>(),
@@ -220,6 +262,8 @@ export function Journey({
             : {}),
         request_budget: `${state.budget}`,
         request_models: state.paidOnly ? "paid" : "all",
+        ...(appLogin ? appPreview : {}),
+        protocol: state.method,
         ...(state.world === "app" &&
         ["consent", "app-checking"].includes(state.node)
             ? { model_catalog: settings.modelCatalog }
@@ -503,15 +547,7 @@ export function Journey({
             checked: state.method === "oauth",
             disabled: state.world !== "app" || state.node !== "app-connect",
             onChange: (on: boolean) => {
-                setSettings((old) => ({
-                    ...old,
-                    appRequestError: "",
-                    authorizationError: "none",
-                }));
-                updateScreen((old) => ({
-                    ...old,
-                    method: on ? "oauth" : "direct",
-                }));
+                onAppPreviewChange({ protocol: on ? "oauth" : "direct" });
             },
         },
         {
@@ -892,7 +928,12 @@ export function Journey({
                                         className="polli:p-4"
                                     >
                                         <fieldset className="journey-switch-group">
-                                            <legend>{group}</legend>
+                                            <legend>
+                                                {appLogin &&
+                                                group === "App & payment"
+                                                    ? "App"
+                                                    : group}
+                                            </legend>
                                             {group === "Sign-in" && (
                                                 <label className="journey-switch-row">
                                                     <span>
@@ -918,6 +959,12 @@ export function Journey({
                                                         <option value="ready">
                                                             Account ready
                                                         </option>
+                                                        {appLogin && (
+                                                            <option value="start">
+                                                                Cannot start
+                                                                sign-in
+                                                            </option>
+                                                        )}
                                                         {Object.entries(
                                                             loginErrors,
                                                         ).map(
@@ -938,6 +985,19 @@ export function Journey({
                                             {group === "App & payment" &&
                                                 state.world === "app" && (
                                                     <>
+                                                        {appLogin && (
+                                                            <ConsentPreviewControls
+                                                                values={
+                                                                    appPreview
+                                                                }
+                                                                showPollen={
+                                                                    false
+                                                                }
+                                                                onChange={
+                                                                    onAppPreviewChange
+                                                                }
+                                                            />
+                                                        )}
                                                         <AppRequestSelect
                                                             value={
                                                                 settings.appRequestError
@@ -948,14 +1008,29 @@ export function Journey({
                                                             }
                                                             onChange={(
                                                                 appRequestError,
-                                                            ) =>
+                                                            ) => {
                                                                 setSettings(
                                                                     (old) => ({
                                                                         ...old,
                                                                         appRequestError,
                                                                     }),
+                                                                );
+                                                                if (
+                                                                    !appRequestError &&
+                                                                    state.node ===
+                                                                        "blocked"
                                                                 )
-                                                            }
+                                                                    setState(
+                                                                        (
+                                                                            old,
+                                                                        ) => ({
+                                                                            ...old,
+                                                                            node: old.signedIn
+                                                                                ? "app-checking"
+                                                                                : "app-sign-in-checking",
+                                                                        }),
+                                                                    );
+                                                            }}
                                                         />
                                                         <FlowSelect
                                                             label="Model catalogue"
@@ -1160,13 +1235,20 @@ export function Journey({
                                                         paid={state.paid}
                                                         quest={state.quest}
                                                         disabled={walletLocked}
-                                                        onChange={(balances) =>
-                                                            updateScreen(
-                                                                (old) => ({
-                                                                    ...old,
-                                                                    ...balances,
-                                                                }),
-                                                            )
+                                                        onChange={({
+                                                            paid,
+                                                            quest,
+                                                        }) =>
+                                                            onAppPreviewChange({
+                                                                sim_paid:
+                                                                    String(
+                                                                        paid,
+                                                                    ),
+                                                                sim_quest:
+                                                                    String(
+                                                                        quest,
+                                                                    ),
+                                                            })
                                                         }
                                                     />
                                                     {state.node ===
@@ -1328,6 +1410,16 @@ export function Journey({
                                                             [
                                                                 "Signed in to GitHub",
                                                                 "GitHub access approved",
+                                                                "App requests paid-only models",
+                                                            ].includes(
+                                                                item.label,
+                                                            )
+                                                        ) &&
+                                                        !(
+                                                            appLogin &&
+                                                            [
+                                                                "Admin access",
+                                                                "Payment confirmed",
                                                             ].includes(
                                                                 item.label,
                                                             )
@@ -1344,7 +1436,7 @@ export function Journey({
                                                 ))}
                                         </fieldset>
                                     </Surface>
-                                    {group === "Pollen" && (
+                                    {group === "Pollen" && !appLogin && (
                                         <Surface
                                             variant="card-themed"
                                             className="journey-error-card"

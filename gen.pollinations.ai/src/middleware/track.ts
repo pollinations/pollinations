@@ -27,6 +27,7 @@ import {
     sendErrorEventToTinybird,
     sendToTinybird,
 } from "@shared/events.ts";
+import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
 import {
     collectRequestInputs,
     stringifyRequestInputs,
@@ -1520,6 +1521,7 @@ export function collectErrorData(status: number, error?: Error): ErrorData {
         source = error.requestUrl?.hostname;
         explicitCode = error.errorCode;
     }
+    if (error instanceof PaymentRequiredError) explicitCode = error.errorCode;
     // Note: errorStack and errorDetails removed to reduce D1 memory usage
     // Stack traces and details are still logged but not stored in the database
     return {

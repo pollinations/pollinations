@@ -1,0 +1,69 @@
+services:
+  polli:
+    image: ${POLLI_IMAGE:-polli:local}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      POLLI_API_BIND: 0.0.0.0
+      POLLI_STUDIO_SOCKET: /run/polli-studio/renderer.sock
+    ports:
+      - "127.0.0.1:55288:55288"
+    depends_on:
+      visual-studio:
+        condition: service_healthy
+    volumes:
+      - polli-data:/app/data
+      - polli-studio-socket:/run/polli-studio:ro
+    mem_limit: 2g
+    cpus: 2.0
+    pids_limit: 256
+    stop_grace_period: 30s
+    init: true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:55288/health', timeout=2).read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  visual-studio:
+    image: ${POLLI_VISUAL_STUDIO_IMAGE:-polli-visual-studio:local}
+    build:
+      context: .
+      dockerfile: Dockerfile.visual-studio
+    environment:
+      POLLI_STUDIO_SOCKET: /run/polli-studio/renderer.sock
+    network_mode: none
+    read_only: true
+    user: "1000:1000"
+    cap_drop:
+      - ALL
+    cap_add:
+      - SYS_CHROOT
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:./seccomp_profile.json
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256m
+    volumes:
+      - polli-studio-socket:/run/polli-studio
+    mem_limit: 768m
+    cpus: 1.0
+    pids_limit: 128
+    stop_grace_period: 30s
+    init: true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "node -e 'const r=require(\"http\").request({socketPath:\"/run/polli-studio/renderer.sock\",path:\"/health\"},x=>process.exit(x.statusCode===200?0:1));r.on(\"error\",()=>process.exit(1));r.end()'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  polli-data:
+  polli-studio-socket:

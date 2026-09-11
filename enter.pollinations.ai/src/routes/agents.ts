@@ -507,6 +507,10 @@ export const agentsRoutes = new Hono<Env>()
                 typeof schema.communityEndpoint.$inferInsert
             > = {
                 visibility: data.visibility,
+                ...(data.visibility === "private" && {
+                    pendingVisibility: null,
+                    pendingAt: null,
+                }),
                 requiredSafetyFeatures: data.requiredSafetyFeatures,
                 updatedAt: new Date(),
             };

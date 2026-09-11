@@ -731,6 +731,80 @@ describe("managed agent Responses runtime", () => {
     });
 
     it.each([
+        [
+            "Provider temporarily unavailable",
+            "Provider temporarily unavailable",
+        ],
+        ["   ", "Agent request failed"],
+    ])("reports an upstream stream error message %j", async (message, expected) => {
+        const fetchMock = vi.fn(
+            async () =>
+                new Response(
+                    `data: ${JSON.stringify({
+                        error: {
+                            message,
+                            type: "server_error",
+                            code: "provider_unavailable",
+                            param: { authorization: "private-provider-detail" },
+                        },
+                    })}\n\ndata: [DONE]\n\n`,
+                    { headers: { "content-type": "text/event-stream" } },
+                ),
+        );
+        vi.stubGlobal("fetch", fetchMock);
+
+        const response = await handlePromptAgentResponsesRequest(
+            request({ stream: true }),
+            new AbortController().signal,
+            RUNTIME,
+        );
+        const body = await response.text();
+        expect(streamEvents(body)).toMatchObject([
+            { type: "response.created" },
+            { type: "error", code: "agent_error", message: expected },
+            {
+                type: "response.failed",
+                response: {
+                    status: "failed",
+                    usage: null,
+                    error: { code: "agent_error", message: expected },
+                },
+            },
+        ]);
+        expect(body).not.toContain("private-provider-detail");
+        expect(body.match(/data: \[DONE\]/g)).toHaveLength(1);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+        [new Error("Connection failed"), "Connection failed"],
+        ["Connection failed", "Connection failed"],
+        [{ message: "Connection failed" }, "Connection failed"],
+        [{ message: "   " }, "Agent request failed"],
+        [{ authorization: "private-provider-detail" }, "Agent request failed"],
+    ])("reports a safe JSON error for %j", async (error, expected) => {
+        const response = await handlePromptAgentResponsesRequest(
+            request({}),
+            new AbortController().signal,
+            {
+                ...RUNTIME,
+                fetcher: async () => {
+                    throw error;
+                },
+            },
+        );
+        expect(response.status).toBe(502);
+        expect(await response.json()).toEqual({
+            error: {
+                message: expected,
+                type: "server_error",
+                code: "agent_error",
+                param: null,
+            },
+        });
+    });
+
+    it.each([
         false,
         true,
     ])("fails closed when stream:%s omits usage", async (stream) => {

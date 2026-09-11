@@ -6,6 +6,7 @@ import {
     type ToolSet,
 } from "ai";
 import { z } from "zod";
+import { communityEndpointErrorDetail } from "../community-endpoints.ts";
 import {
     type CreateResponseRequest,
     CreateResponseResponseSchema,
@@ -573,6 +574,12 @@ function responseObject(
     return response;
 }
 
+function errorMessage(error: unknown): string {
+    const message =
+        typeof error === "string" ? error : communityEndpointErrorDetail(error);
+    return message?.trim() ? message : "Agent request failed";
+}
+
 export function agentResponsesError(error: unknown): Response {
     const invalid = error instanceof AgentResponsesRequestError;
     const upstreamStatus = APICallError.isInstance(error)
@@ -586,7 +593,7 @@ export function agentResponsesError(error: unknown): Response {
     return Response.json(
         {
             error: {
-                message: error instanceof Error ? error.message : String(error),
+                message: errorMessage(error),
                 type: invalid ? "invalid_request_error" : "server_error",
                 code: invalid ? "unsupported_parameter" : "agent_error",
                 param: invalid ? error.param : null,
@@ -667,8 +674,7 @@ function streamResponse(
                     );
                 } catch (error) {
                     if (cancelled) return;
-                    const message =
-                        error instanceof Error ? error.message : String(error);
+                    const message = errorMessage(error);
                     const responseError = { code: "agent_error", message };
                     send("error", { ...responseError, param: null });
                     send("response.failed", {

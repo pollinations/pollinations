@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [💬 Talk Ai Companion](https://talkaicompanion.com) | # Talk Talk (talkaicompanion.com) is a free AI girlfriend & AI companion chat app — talk online with 7 Indian AI companions who remember you, make live voice calls, and live inside 4 interactive stori | [@NamanSoni78](https://github.com/NamanSoni78) |
 | [💬 NewEra Ai Agent](https://newera.namansoni.in) | # NewEra AI Agent NewEra is a free online AI agent that plans, codes, builds and deploys real applications. Created by Naman Soni. URL: https://newera.namansoni.in/ NewEra turns a plain-English descri | [@NamanSoni78](https://github.com/NamanSoni78) |
 | [✍️ YouTube Transcription AI by MrPaloma](https://www.mrpaloma.com/trascrivere-video-youtube-pollinations) | A lightweight, free web app that turns any YouTube video transcript into structured summaries, English translations, and AI-generated concept covers powered by Pollinations.ai. The YouTube Transcript | [@rapidbuildlabai](https://github.com/rapidbuildlabai) |
 | [🖼️ Men's Fashion Pins](https://fashionpins4u.blogspot.com/p/mens-fashion-pins.html) | Create attractive images of men's fashion for pinterest using pollinations. this app is using gpt-image-2 model. | [@hindi-status](https://github.com/hindi-status) |
@@ -37,7 +38,6 @@
 | [🛠️ Pollin Uptime (HA Gateway)](https://brhost.eu.org) | Zero-downtime serverless AI gateway and multimodal playground with automatic 4-layer fallback cascade. Never hit 500 errors or rate limits again — seamlessly route Chat, Vision, Images, Video, and Voi | [@samucamg](https://github.com/samucamg) |
 | [💬 Open WebUI for Pollinations](https://openwebui.pollinations.ai) | Open WebUI chat frontend with Pollinations login. All Pollinations text models in the picker, plus the Pollinations MCP server as a tool server for image, video and audio. | [@voodoohop](https://github.com/voodoohop) |
 | [📚 AI Homework Solver](https://zizoisu.github.io/ai-homework-solver) | A web-based homework solver that integrates with Pollinations AI. Supports multiple question types including MCQ, short answer, true/false, and fill-in-the-blank questions. Features a hybrid model wit | [@zizoisu](https://github.com/zizoisu) |
-| [🖼️ ¿Y si…? — Alternate History Scene Generator](https://jecxolab.github.io/y-si-historia) | Type a historical "what if" and get the scene illustrated. Built for the Spanish-language history channel El Efecto Historia. Uses the Pollinations image API with four visual presets (epic oil paintin | [@jecxolab](https://github.com/jecxolab) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

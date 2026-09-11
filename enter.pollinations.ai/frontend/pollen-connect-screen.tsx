@@ -359,9 +359,11 @@ if (screen.startsWith("add-pollen-") || screen === "account-checkout") {
     );
     const { Authorize } = await import("./src/components/auth/authorize.tsx");
     const savedConsent = query.get("consent");
-    const initialConsent: AuthorizeConsent | undefined = savedConsent
+    const initialConsent: Partial<AuthorizeConsent> | undefined = savedConsent
         ? JSON.parse(savedConsent)
-        : undefined;
+        : appRequest.models === "none"
+          ? { generationEnabled: false }
+          : undefined;
     const onConsentChange = (consent: AuthorizeConsent) => {
         document.documentElement.dataset.consent = JSON.stringify(consent);
     };
@@ -383,7 +385,7 @@ if (screen.startsWith("add-pollen-") || screen === "account-checkout") {
         let params: URLSearchParams;
         try {
             let catalog: Parameters<typeof previewAuthorizeParams>[1] = [];
-            if (!["all", "unlisted"].includes(appRequest.models)) {
+            if (!["all", "none", "unlisted"].includes(appRequest.models)) {
                 const response = await originalFetch(
                     "https://gen.pollinations.ai/models",
                     { credentials: "omit" },

@@ -83,13 +83,15 @@ export function ConsentPreviewControls({
                     options={previewModelOptions}
                     onChange={(request_models) => onChange({ request_models })}
                 />
-                <FlowSwitch
-                    label="App earns 20%"
-                    checked={values.request_earnings !== "0"}
-                    onChange={(on) =>
-                        onChange({ request_earnings: on ? "1" : "0" })
-                    }
-                />
+                {values.request_models !== "none" && (
+                    <FlowSwitch
+                        label="App earns 20%"
+                        checked={values.request_earnings !== "0"}
+                        onChange={(on) =>
+                            onChange({ request_earnings: on ? "1" : "0" })
+                        }
+                    />
+                )}
             </fieldset>
             <PollenPreviewSelect
                 paid={Number(values.sim_paid ?? 10)}

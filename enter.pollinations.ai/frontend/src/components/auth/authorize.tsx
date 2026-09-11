@@ -94,7 +94,7 @@ export function Authorize({
     initialConsent,
     onConsentChange,
 }: {
-    initialConsent?: AuthorizeConsent;
+    initialConsent?: Partial<AuthorizeConsent>;
     onConsentChange?: (consent: AuthorizeConsent) => void;
 } = {}) {
     const {
@@ -154,15 +154,15 @@ export function Authorize({
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
 
-    const keyPermissions = useKeyPermissions(
-        initialConsent ??
-            getAuthorizeInitialPermissions({
-                models,
-                budget,
-                expiry,
-                permissions: urlScope,
-            }),
-    );
+    const keyPermissions = useKeyPermissions({
+        ...getAuthorizeInitialPermissions({
+            models,
+            budget,
+            expiry,
+            permissions: urlScope,
+        }),
+        ...initialConsent,
+    });
     const { setAccountPermissions } = keyPermissions;
     const {
         allowedModels: selectedModels,

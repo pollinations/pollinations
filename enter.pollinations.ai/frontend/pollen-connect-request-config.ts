@@ -6,6 +6,7 @@ export const previewScopeOptions = [
 
 export const previewModelOptions = [
     { id: "all", label: "All models" },
+    { id: "none", label: "Off" },
     { id: "selected", label: "Selected models" },
     { id: "paid", label: "Paid only" },
     { id: "community", label: "Community models" },
@@ -43,7 +44,8 @@ export function previewAuthorizeParams(
     const params = new URLSearchParams({ scope: request.scopes.join(" ") });
     if (request.budget !== "") params.set("budget", request.budget);
     if (request.expiry !== "") params.set("expiry", request.expiry);
-    if (request.models !== "all") {
+    // "Off" previews declining generation in consent, not a model ID.
+    if (request.models !== "all" && request.models !== "none") {
         const ids =
             request.models === "unlisted"
                 ? ["unlisted-preview-model"]

@@ -7,6 +7,7 @@ import {
 import { buildSync } from "esbuild";
 import { loadEnv } from "vite";
 import { configDefaults, defineConfig } from "vitest/config";
+import { codeAgentSdk } from "../enter.pollinations.ai/scripts/code-agent-sdk.mjs";
 
 const genSrc = fileURLToPath(new URL("./src/", import.meta.url));
 const sharedSrc = fileURLToPath(new URL("../shared/", import.meta.url));
@@ -55,6 +56,7 @@ const genAliases = [
 ];
 
 const baseConfig = defineWorkersConfig({
+    plugins: [codeAgentSdk()],
     resolve: {
         dedupe: ["hono", "hono-openapi"],
         alias: [

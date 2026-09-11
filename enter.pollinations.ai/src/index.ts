@@ -10,6 +10,7 @@ import type { Env } from "./env.ts";
 import { logger } from "./middleware/logger.ts";
 import { createDocsRoutes } from "./routes/docs.ts";
 import { wellKnownRoutes } from "./routes/well-known.ts";
+import { handleCodeAgentOutbound } from "./services/code-agent-outbound.ts";
 
 function stripTrailingSlash(path: string): string {
     return path.length > 1 ? path.replace(/\/+$/, "") : path;
@@ -85,5 +86,10 @@ app.notFound(async (c: Context<Env>) => {
 app.onError(handleError);
 
 export default {
-    fetch: app.fetch,
-} satisfies ExportedHandler<CloudflareBindings>;
+    fetch(request, env, ctx) {
+        if (env.CODE_AGENT_CONTEXT) {
+            return handleCodeAgentOutbound(request, env.CODE_AGENT_CONTEXT);
+        }
+        return app.fetch(request, env, ctx);
+    },
+} satisfies ExportedHandler<Env["Bindings"]>;

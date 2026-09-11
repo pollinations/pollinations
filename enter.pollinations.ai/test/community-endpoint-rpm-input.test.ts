@@ -2,15 +2,15 @@ import { communityEndpointPrices } from "@shared/community-endpoints.ts";
 import { describe, expect, it } from "vitest";
 import { savedEndpointPriceKeys } from "../frontend/src/components/community-endpoints/price-table.tsx";
 import {
-    agentListingToForm,
+    agentToForm,
     emptyAgentForm,
     emptyForm,
     endpointToForm,
     isValidPerUserRpm,
     type ProxyCommunityEndpoint,
     publicCommunityFallbackOptions,
-    toAgentListingPayload,
     toAgentPayload,
+    toAgentUpdatePayload,
     toEndpointPayload,
 } from "../frontend/src/components/community-endpoints/types.ts";
 
@@ -61,15 +61,22 @@ describe("community endpoint per-user RPM input", () => {
         expect(payload).not.toHaveProperty("url");
     });
 
-    it("serializes the prompt-agent fields", () => {
+    it("serializes prompt-agent configuration and listing fields together", () => {
         expect(
             toAgentPayload({
                 ...emptyAgentForm,
+                name: " researcher ",
+                title: " Researcher ",
+                visibility: "public",
                 systemPrompt: " Help ",
                 baseModel: " openai ",
                 mcpServers: ["pollinations"],
             }),
         ).toEqual({
+            name: "researcher",
+            title: "Researcher",
+            description: "",
+            visibility: "public",
             systemPrompt: "Help",
             baseModel: "openai",
             requiredSafetyFeatures: [],
@@ -139,21 +146,48 @@ describe("community endpoint per-user RPM input", () => {
         ]);
     });
 
-    // Create adds the type and agent id at the API call site; the reusable
-    // listing form only emits fields that are also valid for updates.
-    it("serializes agent listing details only", () => {
-        const payload = toAgentListingPayload({
-            ...agentListingToForm(),
-            name: "researcher",
-            title: "Researcher",
+    it("keeps a public code agent public when editing its safety policy", () => {
+        const form = agentToForm({
+            id: "code-agent-id",
+            type: "code_agent",
+            name: "repo-agent",
+            title: "Repo Agent",
+            description: "From GitHub",
             visibility: "public",
-            perUserRpm: "12",
+            requiredSafetyFeatures: [],
+            repository: "https://github.com/example/repo-agent",
+            deployedCommitSha: "a".repeat(40),
+            createdAt: "2026-09-01T00:00:00Z",
+            updatedAt: "2026-09-01T00:00:00Z",
         });
-        expect(payload).toEqual({
-            name: "researcher",
-            title: "Researcher",
-            description: "",
+
+        expect(
+            toAgentUpdatePayload({
+                ...form,
+                requiredSafetyFeatures: ["violence"],
+            }),
+        ).toEqual({
             visibility: "public",
+            requiredSafetyFeatures: ["violence"],
+        });
+    });
+
+    it("creates code agents without editable listing identity or prompt configuration", () => {
+        expect(
+            toAgentPayload({
+                ...emptyAgentForm,
+                type: "code_agent",
+                repository: " https://github.com/example/agent ",
+                name: "unused-prompt-agent-name",
+                title: "Unused title",
+                description: "Unused description",
+                systemPrompt: "Unused prompt",
+            }),
+        ).toEqual({
+            type: "code_agent",
+            repository: "https://github.com/example/agent",
+            visibility: "private",
+            requiredSafetyFeatures: [],
         });
     });
 });

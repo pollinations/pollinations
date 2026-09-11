@@ -1,11 +1,8 @@
 import { getLogger } from "@logtape/logtape";
 import { rewardKey } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
-import {
-    getInstallationToken,
-    githubAppCredentialsFromEnv,
-} from "@shared/github/app-auth.ts";
 import { eq } from "drizzle-orm";
+import { githubApiHeaders } from "../../github-api.ts";
 import { type QuestDefinition, rewardableQuests } from "../definitions.ts";
 import type {
     QuestCard,
@@ -25,7 +22,6 @@ const log = getLogger(["enter", "quest", "github-profile"]);
 
 const PUBLIC_REPO_STAR_THRESHOLD = 20;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const REPO_OWNER = "pollinations";
 
 type GitHubProfileResponse = {
     login?: string;
@@ -37,27 +33,6 @@ type GitHubRepoResponse = {
     size?: number;
     stargazers_count?: number;
 };
-
-// GitHub removed OAuth client_id/client_secret Basic auth for API requests: it
-// now answers 401 Bad credentials, so the App installation token is the only
-// authenticated path (15,000 req/hr, against 60 unauthenticated).
-async function githubApiHeaders(
-    env: CloudflareBindings,
-): Promise<Record<string, string>> {
-    const token =
-        env.ENVIRONMENT === "test"
-            ? "mock_github_auth_token"
-            : await getInstallationToken(
-                  githubAppCredentialsFromEnv(env),
-                  REPO_OWNER,
-              );
-    return {
-        Accept: "application/vnd.github+json",
-        "User-Agent": "pollinations-enter",
-        "X-GitHub-Api-Version": "2022-11-28",
-        Authorization: `token ${token}`,
-    };
-}
 
 async function fetchGitHubProfile(
     env: CloudflareBindings,

@@ -1,0 +1,33 @@
+{
+  "pr_number": 14710,
+  "title": "fix: cancel queued publication when making agents private",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14710",
+  "merged_at": "2026-09-11T02:54:14Z",
+  "labels": [],
+  "pr_body_excerpt": "- Clears queued publication when an owner explicitly sets a prompt agent to private through `/account/agents`.\n- Keeps queued publication intact for configuration-only edits; leaves proxy pricing behavior unchanged.\n- Adds a real-route/D1 regression proving the agent stays private after the former publication deadline.\n- Validation: 24 focused tests, Enter typecheck, and Biome pass. Regression fails on unchanged main.\n\nRelated to the adversarial review in #14622; independent fix for existing main behavior.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Private means private",
+    "blurb": "A queued publication now withers the moment an owner makes their prompt agent private. Configuration edits can keep their place in line; an explicit privacy choice gets the final word.",
+    "summary": "Setting a prompt agent to private via `/account/agents` now clears any queued publication, while configuration-only edits and proxy pricing behavior remain unchanged.",
+    "impact": "Owners can make an agent private with confidence: it will stay private after its former publication deadline instead of later becoming public from an old queue entry.",
+    "keywords": [
+      "agents",
+      "privacy",
+      "publication",
+      "account",
+      "bug-fix"
+    ],
+    "visual_concept": "Depict Polli as a careful garden keeper closing a small private greenhouse around a code-plant agent, while a faded queued-publication calendar page is removed from a nearby noticeboard. The scene should make the privacy setting feel deliberate and protected, with a gentle contrast between the cozy private greenhouse and the harmless cancelled queue.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, carefully closing a small warm-cream greenhouse around a glowing code-plant labeled \"PRIVATE\" in dark purple pixel text; a cancelled calendar slip drifts off a nearby noticeboard. Lime green (#ecf874) foliage and flower pots appear prominently beside a retro terminal, with soft pastel gradients and warm lighting. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-11/PR-14710.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, carefully closing a small warm-cream greenhouse around a glowing code-plant labeled \"PRIVATE\" in dark purple pixel text; a cancelled calendar slip drifts off a nearby noticeboard. Lime green (#ecf874) foliage and flower pots appear prominently beside a retro terminal, with soft pastel gradients and warm lighting. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-11T02:55:15.758198+00:00"
+}

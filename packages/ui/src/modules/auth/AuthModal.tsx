@@ -64,12 +64,14 @@ export function AuthFlowLayout({
     account,
     actions,
     secondaryAction,
+    actionLayout = "stacked",
     dialog,
 }: {
     children: ReactNode;
     account?: ReactNode;
     actions: ReactNode;
     secondaryAction?: ReactNode;
+    actionLayout?: "stacked" | "inline";
     dialog?: AuthModalProps["dialog"];
 }) {
     return (
@@ -82,12 +84,13 @@ export function AuthFlowLayout({
                     <div className="polli:sticky polli:top-0 polli:z-10 polli:shrink-0 polli:bg-surface-white/80 polli:pb-3 polli:backdrop-blur-md">
                         <AuthModalHeader logoOnly>{account}</AuthModalHeader>
                     </div>
-                    <div className="polli:flex-1 polli:space-y-4 polli:px-6 polli:py-2">
+                    <div className="polli:flex-1 polli:space-y-3 polli:px-6 polli:py-2">
                         {children}
                     </div>
                     <AuthActionFooter
                         actions={actions}
                         secondaryAction={secondaryAction}
+                        actionLayout={actionLayout}
                     />
                 </div>
             </ScrollArea>
@@ -99,12 +102,30 @@ export function AuthFlowLayout({
 export function AuthActionFooter({
     actions,
     secondaryAction,
+    actionLayout = "stacked",
     className,
 }: {
     actions: ReactNode;
     secondaryAction?: ReactNode;
+    actionLayout?: "stacked" | "inline";
     className?: string;
 }) {
+    const primarySlot = (
+        <div
+            data-auth-slot="primary"
+            className="polli:flex polli:min-h-12 polli:w-full polli:items-center polli:justify-center polli:[&>button]:h-12 polli:[&>button]:w-full polli:[&>a]:h-12 polli:[&>a]:w-full"
+        >
+            {actions}
+        </div>
+    );
+    const secondarySlot = (
+        <div
+            data-auth-slot="secondary"
+            className="polli:flex polli:min-h-9 polli:items-center polli:justify-center polli:[&>button]:h-9 polli:[&>a]:h-9"
+        >
+            {secondaryAction}
+        </div>
+    );
     return (
         <div
             className={cn(
@@ -113,16 +134,24 @@ export function AuthActionFooter({
             )}
         >
             <div
-                data-auth-slot="primary"
-                className="polli:flex polli:min-h-12 polli:w-full polli:items-center polli:justify-center polli:[&>button]:h-12 polli:[&>button]:w-full polli:[&>a]:h-12 polli:[&>a]:w-full"
+                className={cn(
+                    "polli:w-full polli:gap-3",
+                    actionLayout === "inline"
+                        ? "polli:grid polli:grid-cols-2"
+                        : "polli:flex polli:flex-col polli:items-center",
+                )}
             >
-                {actions}
-            </div>
-            <div
-                data-auth-slot="secondary"
-                className="polli:flex polli:min-h-9 polli:items-center polli:justify-center polli:[&>button]:h-9 polli:[&>a]:h-9"
-            >
-                {secondaryAction}
+                {actionLayout === "inline" ? (
+                    <>
+                        {secondarySlot}
+                        {primarySlot}
+                    </>
+                ) : (
+                    <>
+                        {primarySlot}
+                        {secondarySlot}
+                    </>
+                )}
             </div>
             <InlineLink
                 href="https://pollinations.ai/terms"
@@ -211,7 +240,7 @@ export function ErrorBanner({ children }: { children: ReactNode }) {
     return (
         <div
             role="alert"
-            className="polli:rounded-lg polli:border-2 polli:border-intent-danger-border polli:bg-intent-danger-bg-light polli:p-4"
+            className="polli:rounded-lg polli:bg-intent-danger-bg-light polli:p-4"
         >
             <p className="polli:text-sm polli:text-intent-danger-text">
                 {children}
@@ -256,8 +285,8 @@ export function AuthAccessSummary({
     note?: ReactNode;
 }) {
     return (
-        <section className="polli:py-4">
-            <h2 className="polli:mb-3 polli:font-body polli:text-xs polli:font-semibold polli:tracking-wide polli:text-theme-text-soft">
+        <section className="polli:pt-2 polli:pb-3">
+            <h2 className="polli:mb-2 polli:font-body polli:text-xs polli:font-semibold polli:tracking-wide polli:text-theme-text-soft">
                 {title}
             </h2>
             <Surface variant="card-themed">
@@ -266,7 +295,7 @@ export function AuthAccessSummary({
                 </ul>
             </Surface>
             {note != null && (
-                <p className="polli:mt-4 polli:text-xs polli:text-theme-text-soft">
+                <p className="polli:mt-3 polli:text-xs polli:text-theme-text-soft">
                     {note}
                 </p>
             )}

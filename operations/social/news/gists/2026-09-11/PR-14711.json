@@ -1,0 +1,34 @@
+{
+  "pr_number": 14711,
+  "title": "fix: preserve prompt agent error messages",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14711",
+  "merged_at": "2026-09-11T02:59:41Z",
+  "labels": [],
+  "pr_body_excerpt": "- Preserves meaningful SDK error messages in prompt-agent JSON responses and SSE error/response.failed events.\n- Reuses the existing safe message extractor; falls back for blank or unknown errors without serializing private diagnostic fields.\n- Adds real-SDK regressions for upstream stream errors and JSON failures; 84 scoped tests, Gen TypeScript, and Biome pass.\n- Addresses a pre-existing issue found during review of #14622; independent of the code-agent implementation.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Errors that say something",
+    "blurb": "The prompt agent now keeps the useful part of an SDK error instead of filing it somewhere mysterious. JSON and streaming clients get the message they came for, with private diagnostics left in the compost bin.",
+    "summary": "Prompt-agent JSON responses and SSE error/response.failed events now preserve meaningful SDK error messages via the existing safe-message extractor, while blank or unknown errors use a safe fallback without exposing private diagnostic fields.",
+    "impact": "Developers debugging prompt-agent failures now receive the upstream SDK's actionable error text in both JSON and streaming responses, with safe fallback messages when no usable text exists.",
+    "keywords": [
+      "prompt-agent",
+      "errors",
+      "sse",
+      "json",
+      "sdk",
+      "api"
+    ],
+    "visual_concept": "Depict Polli as a careful API gardener using a tiny magnifying glass to rescue a clear error-message note from a noisy tangle of dark, sealed diagnostic papers; a friendly CRT monitor robot displays the readable note while code-plants grow nearby. The contrast is between useful public feedback and private details safely kept out of view.",
+    "image_prompt": "A cozy pixel art garden-hackerspace where Polli, the cute yellow-and-brown striped bee with black antennae, oval eyes, pink rectangular blush, light-blue wings, and a tiny debugger visor, carefully holds a clear error-message note beside a retro terminal; a chunky CRT monitor robot happily displays \"USEFUL ERROR\" while sealed diagnostic papers rest in a locked drawer, surrounded by code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) outlines and subtle CRT glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-11/PR-14711.jpg",
+    "prompt": "A cozy pixel art garden-hackerspace where Polli, the cute yellow-and-brown striped bee with black antennae, oval eyes, pink rectangular blush, light-blue wings, and a tiny debugger visor, carefully holds a clear error-message note beside a retro terminal; a chunky CRT monitor robot happily displays \"USEFUL ERROR\" while sealed diagnostic papers rest in a locked drawer, surrounded by code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) outlines and subtle CRT glow."
+  },
+  "generated_at": "2026-09-11T03:00:51.675416+00:00"
+}

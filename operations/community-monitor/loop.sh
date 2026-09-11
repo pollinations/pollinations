@@ -11,7 +11,7 @@ LOG=/home/ubuntu/monitor/loop.log
 
 echo "=== cycle start $(date -u +%FT%TZ) ===" | tee -a "$LOG"
 claude -p "$(cat CYCLE.md)" \
-    --model claude-opus-4-8 --effort medium \
+    --model claude-fable-5-1 --effort medium \
     --dangerously-skip-permissions \
     --allowedTools "Bash,Read,Write,mcp__discord__discord_read_messages,mcp__discord__discord_send" \
     2>&1 | tee -a "$LOG"

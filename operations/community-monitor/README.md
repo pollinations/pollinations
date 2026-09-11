@@ -54,8 +54,9 @@ Every new instance gets a persisted swapfile at least the size of RAM.
 
 Use a monitor-specific SSH key and the infrastructure secret manager; do not
 commit private keys or host credentials to this repository, even encrypted.
-Install Node and the `claude` CLI, clone/copy this directory, populate `.env`
-(see `.env.example`), install `community-monitor.service`, then run
+Install Node and Claude Code 2.1.257 or newer (required for Fable 5.1),
+clone/copy this directory, populate `.env` (see `.env.example`),
+install `community-monitor.service`, then run
 `systemctl enable --now community-monitor`.
 
 Moving credentials requires the separate, scoped approval in AGENTS.md's
@@ -180,7 +181,7 @@ message limits, health thresholds, and cooldowns remain unchanged.
 
 ## Model/effort
 
-The deployed agent is pinned to `claude-opus-4-8` at medium effort in
+The deployed agent is pinned to `claude-fable-5-1` at medium effort in
 `loop.sh`. Every cycle starts with a fresh context containing the complete
 current `CYCLE.md`. Medium effort is intentional: routine checks are
 mechanical, but owner replies and billing diagnostics require controlled
@@ -188,14 +189,15 @@ comparisons and careful interpretation.
 
 `CLAUDE_CODE_AUTO_COMPACT_WINDOW=300000` is committed in
 `.claude/settings.json`. This is Claude Code's effective context capacity for
-auto-compaction calculations, not a model output-token limit. Project scope is
+auto-compaction calculations, not a model output-token limit. Claude compacts
+before that window fills to reserve room for output and the summary. Project scope is
 intentional: it applies reproducibly to the headless service and the persistent
 remote-control session without modifying the machine's personal settings.
 
 Codex 5.6 Sol at medium effort is the preferred replacement once the EC2 box
 has its own non-personal Codex authentication. Do not copy a maintainer's local
 Codex credentials onto the shared server. Until that service credential is
-available, keep the Opus medium-effort runtime rather than silently leaving the
+available, keep the Fable medium-effort runtime rather than silently leaving the
 monitor offline.
 
 ## Authority split

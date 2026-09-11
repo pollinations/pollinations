@@ -19,7 +19,7 @@ export function CodeAgentFields({
                 <>
                     Public repository with agent.ts at its root.{" "}
                     <InlineLink
-                        href="https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md#code-agent-examples"
+                        href="https://github.com/orgs/pollinations/repositories?q=topic%3Apollinations-code-agent-example"
                         target="_blank"
                         rel="noreferrer"
                     >

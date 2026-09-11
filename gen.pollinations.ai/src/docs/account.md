@@ -59,7 +59,7 @@ To deploy after every push, add a GitHub Action step (replace `AGENT_ID`):
 - run: curl --fail --retry 2 --retry-delay 30 -X POST https://gen.pollinations.ai/account/agents/AGENT_ID/sync
 ```
 
-See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for dashboard, CLI, and API examples, or [fork a code agent example](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md#code-agent-examples) to get started.
+See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for dashboard, CLI, and API examples, or [fork a code agent example](https://github.com/orgs/pollinations/repositories?q=topic%3Apollinations-code-agent-example) to get started.
 
 ### /account/my-models
 

@@ -87,10 +87,13 @@ The sync route needs no secret and cannot change which repository is deployed. I
 
 Fork an example, then enter **your fork's URL** when creating a code agent in the dashboard. Each example is a separate repository with `agent.ts` at its root:
 
-- [MCP tool loop](https://github.com/voodoohop/pollinations-code-agent-example) — a model that can call Pollinations MCP tools using the AI SDK.
-- [Streaming timer](https://github.com/voodoohop/pollinations-timer-agent) — streams a countdown without calling an AI model.
+- [MCP tool loop](https://github.com/pollinations/pollinations-code-agent-example) — a model that can call Pollinations MCP tools using the AI SDK.
+- [Model router](https://github.com/pollinations/pollinations-router-agent) — selects a model for each request and forwards the conversation unchanged.
+- [Streaming timer](https://github.com/pollinations/pollinations-timer-agent) — streams a countdown without calling an AI model.
 
-Edit `agent.ts` in your fork to customize it. If you keep the example's sync workflow, replace its agent ID and API host with those for your own registration before enabling it.
+[Browse the example repositories](https://github.com/orgs/pollinations/repositories?q=topic%3Apollinations-code-agent-example).
+
+Edit `agent.ts` in your fork to customize it. For automatic sync after a push, enable GitHub Actions and set the repository variable `POLLINATIONS_SYNC_URL` to `https://gen.pollinations.ai/account/agents/YOUR_AGENT_ID/sync` (use `https://staging.gen.pollinations.ai` for staging). Without the variable, the example workflows skip deployment.
 
 ## Create with the CLI
 

@@ -61,6 +61,23 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         contextLength: 400000,
         isSpecialized: false,
+        // Verified through Pollinations: gateway strips sampling controls
+        // (see omitOpenAISampling in availableModels.ts), so they are NOT
+        // listed here. Vision works via image message parts (max 10 refs).
+        supportedParameters: [
+            "messages",
+            "model",
+            "max_tokens",
+            "max_completion_tokens",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "stream",
+            "stop",
+        ],
+        defaultParameters: {},
+        parameterNotes:
+            "Chat API only (not /v1/responses). temperature, top_p, frequency_penalty, presence_penalty, repetition_penalty and seed are stripped by the gateway and have no effect; reasoning_effort is not supported on this non-reasoning model.",
     },
     "openai/gpt-5-nano": {
         aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07", "openai-fast"],
@@ -154,6 +171,23 @@ const TEXT_BASE_SERVICES = {
         reasoning: true,
         contextLength: 1050000,
         isSpecialized: false,
+        // Verified through Pollinations: sampling stripped (omitOpenAISampling);
+        // reasoning_effort is forwarded to the upstream reasoner.
+        supportedParameters: [
+            "messages",
+            "model",
+            "max_tokens",
+            "max_completion_tokens",
+            "reasoning_effort",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "stream",
+            "stop",
+        ],
+        defaultParameters: {},
+        parameterNotes:
+            "Chat API only (not /v1/responses). temperature, top_p, frequency_penalty, presence_penalty, repetition_penalty and seed are stripped by the gateway and have no effect. Omit reasoning_effort for the upstream default reasoning level.",
     },
     "openai/gpt-5.4-mini": {
         aliases: ["gpt-5-mini", "openai-mini", "gpt-5.4-mini"],
@@ -1126,6 +1160,25 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         contextLength: 200000,
         isSpecialized: false,
+        // Verified through Pollinations (Bedrock via Portkey gateway):
+        // preferTemperature drops top_p when temperature is set; enabling
+        // thinking via reasoning_effort strips temperature/top_p/top_k.
+        // Thinking is OFF by default (opt-in reasoning).
+        supportedParameters: [
+            "messages",
+            "model",
+            "max_tokens",
+            "temperature",
+            "top_p",
+            "reasoning_effort",
+            "tools",
+            "tool_choice",
+            "stream",
+            "stop",
+        ],
+        defaultParameters: { reasoning_effort: "none" },
+        parameterNotes:
+            "Chat API only (not /v1/responses). top_p is dropped when temperature is set (Bedrock accepts one, not both). temperature/top_p are dropped when reasoning is enabled. Thinking is off by default; pass reasoning_effort (minimal|low|medium|high) to enable budget thinking. seed and sampling beyond temperature/top_p are not supported.",
     },
     "anthropic/claude-sonnet-4.6": {
         aliases: ["claude-sonnet-4.6", "claude-sonnet", "claude"],

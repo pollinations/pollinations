@@ -32,6 +32,28 @@ Rich model endpoints include `capabilities` for agentic/model traits:
 Modalities, video frame controls, voices, and context length remain separate
 structured fields.
 
+### Supported parameters
+
+Text models that have been verified through Pollinations expose Chat-API
+controls for settings UIs:
+
+- `supported_parameters`: controls the gateway forwards for this model
+  (e.g. `messages`, `max_tokens`, `tools`, `reasoning_effort`). Controls the
+  gateway silently strips (such as sampling params on some families) are
+  never listed here.
+- `default_parameters`: Pollinations-applied defaults. Empty when
+  Pollinations applies no default — unknown upstream defaults are never
+  invented.
+- `parameter_notes`: human-readable conditions (e.g. "`top_p` is dropped
+  when `temperature` is set", "thinking off by default").
+
+The fields appear on `/models`, `/text/models`, `/v1/models`, and
+`/v1/models/:model`, with identical values for an ID and its aliases.
+They describe the Chat API (`/v1/chat/completions`, `/text`) only — they do
+not describe the native Responses API (`/v1/responses`), which has its own
+parameters. Models without verified data omit the fields (unknown, not
+empty). Generation behavior, billing, and access rules are unchanged.
+
 Use `supported_endpoints` to discover which public API routes accept each
 model. `/v1/responses` identifies built-in models with a configured native
 Responses route, community text models and endpoint agents whose owner supplied

@@ -230,6 +230,21 @@ export type ModelDefinition = {
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
     /** Internal provider-route output-token cap used for fallback compatibility. */
     maxCompletionTokens?: number;
+    /**
+     * Chat-completions controls that work through Pollinations for this model.
+     * Only list controls the gateway forwards (never ones it silently strips).
+     * Describes the Chat API (/v1/chat/completions, /text) — not the native
+     * Responses API, which has its own parameters.
+     */
+    supportedParameters?: string[];
+    /**
+     * Pollinations-applied defaults for supported controls.
+     * Omit unknown upstream defaults — an empty object means Pollinations
+     * applies no default and the upstream provider decides.
+     */
+    defaultParameters?: Record<string, unknown>;
+    /** Human-readable conditions, e.g. "top_p only when temperature is unset". */
+    parameterNotes?: string;
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.

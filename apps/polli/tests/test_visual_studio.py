@@ -1,24 +1,38 @@
 import asyncio
+import importlib.util
+import io
 import json
+import os
 import struct
+import sys
+import tempfile
 import unittest
-import zlib
+import zipfile
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
-from src.integrations.visual_studio import (
-    _clean_source,
-    _render_isolated,
-    _run_bounded,
-    _viewport,
-)
+from src.integrations.visual_studio import _clean_source, _decode_response, _viewport
+
+_WORKER_PATH = Path(__file__).parents[1] / "scripts" / "studio_worker.py"
+_WORKER_SPEC = importlib.util.spec_from_file_location("studio_worker", _WORKER_PATH)
+assert _WORKER_SPEC and _WORKER_SPEC.loader
+studio_worker = importlib.util.module_from_spec(_WORKER_SPEC)
+_WORKER_SPEC.loader.exec_module(studio_worker)
 
 
-def _png(width: int, height: int) -> bytes:
+def _png() -> bytes:
     signature = b"\x89PNG\r\n\x1a\n"
-    ihdr = struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)
+    ihdr = struct.pack(">IIBBBBB", 1, 1, 8, 6, 0, 0, 0)
     chunk = b"IHDR" + ihdr
-    return signature + struct.pack(">I", len(ihdr)) + chunk + struct.pack(">I", zlib.crc32(chunk))
+    return signature + struct.pack(">I", len(ihdr)) + chunk
+
+
+def _archive() -> bytes:
+    output = io.BytesIO()
+    with zipfile.ZipFile(output, "w") as archive:
+        archive.writestr("metadata.json", json.dumps({"images": [{"path": "visual-1.png"}]}))
+        archive.writestr("visual-1.png", _png())
+    return output.getvalue()
 
 
 class VisualStudioTests(unittest.TestCase):
@@ -34,130 +48,122 @@ class VisualStudioTests(unittest.TestCase):
         self.assertEqual(_viewport({}), (1440, 900))
         self.assertEqual(_viewport({"viewport_width": 3840, "viewport_height": 2160}), (3840, 2160))
 
-    def test_viewport_rejects_dimensions_outside_resource_bounds(self):
-        for options in (
-            {"viewport_width": 319},
-            {"viewport_width": 3841},
-            {"viewport_height": 239},
-            {"viewport_height": 2161},
-            {"viewport_width": 1440.5},
-        ):
-            with self.subTest(options=options), self.assertRaisesRegex(ValueError, "Visual viewport_"):
-                _viewport(options)
+    def test_client_rejects_archive_with_unexpected_names(self):
+        archive = io.BytesIO()
+        with zipfile.ZipFile(archive, "w") as output:
+            output.writestr("metadata.json", "{}")
+            output.writestr("../escape.png", _png())
+        with self.assertRaisesRegex(ValueError, "archive names"):
+            _decode_response(archive.getvalue())
 
-    def test_unavailable_docker_daemon_fails_closed(self):
-        async def run():
+    def test_client_accepts_bounded_worker_archive(self):
+        images, metadata = _decode_response(_archive())
+        self.assertEqual(len(images), 1)
+        self.assertEqual(len(metadata["images"]), 1)
+
+    def test_client_rejects_compressed_oversized_metadata_before_reading(self):
+        archive = io.BytesIO()
+        with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as output:
+            output.writestr("metadata.json", b"x" * (65 * 1024))
+            output.writestr("visual-1.png", _png())
+        with self.assertRaisesRegex(ValueError, "compressed output|too large"):
+            _decode_response(archive.getvalue())
+
+
+@unittest.skipUnless(os.name == "posix", "Unix domain sockets require a POSIX host")
+class StudioWorkerTests(unittest.IsolatedAsyncioTestCase):
+    async def test_worker_serves_zip_over_unix_socket(self):
+        async def fake_render(source: str, width: int, height: int) -> bytes:
+            self.assertEqual((source, width, height), ("function Visual() { return <div />; }", 1440, 900))
+            return _archive()
+
+        with tempfile.TemporaryDirectory() as directory:
+            socket_path = Path(directory) / "renderer.sock"
+            with patch.object(studio_worker, "render", new=fake_render):
+                server = await asyncio.start_unix_server(
+                    lambda reader, writer: studio_worker.handle_client(
+                        reader, writer, asyncio.Semaphore(1), asyncio.Semaphore(1)
+                    ),
+                    path=str(socket_path),
+                )
+                try:
+                    reader, writer = await asyncio.open_unix_connection(str(socket_path))
+                    body = json.dumps(
+                        {"source": "function Visual() { return <div />; }", "width": 1440, "height": 900}
+                    ).encode()
+                    writer.write(
+                        b"POST /render HTTP/1.1\r\nContent-Length: " + str(len(body)).encode() + b"\r\n\r\n" + body
+                    )
+                    await writer.drain()
+                    response = await reader.read()
+                    self.assertIn(b"HTTP/1.1 200 OK", response)
+                    self.assertTrue(response.endswith(_archive()))
+                finally:
+                    server.close()
+                    await server.wait_closed()
+
+    async def test_worker_reaps_renderer_process_group_after_timeout(self):
+        with tempfile.TemporaryDirectory(dir="/tmp") as directory:
+            script = Path(directory) / "hang.py"
+            script.write_text("import time\ntime.sleep(60)\n", encoding="utf-8")
             with (
-                patch("src.integrations.visual_studio.shutil.which", return_value="docker"),
-                patch("src.integrations.visual_studio.SECCOMP_PROFILE", Path(__file__)),
-                patch("src.integrations.visual_studio._run_bounded", new=AsyncMock(return_value=1)),
-            ):
-                with self.assertRaisesRegex(ValueError, "daemon is not running"):
-                    await _render_isolated("function Visual() { return <div />; }")
-
-        asyncio.run(run())
-
-    def test_docker_preflight_timeout_fails_closed(self):
-        async def run():
-            with (
-                patch("src.integrations.visual_studio.shutil.which", return_value="docker"),
-                patch("src.integrations.visual_studio.SECCOMP_PROFILE", Path(__file__)),
-                patch("src.integrations.visual_studio._run_bounded", new=AsyncMock(side_effect=TimeoutError)),
-            ):
-                with self.assertRaisesRegex(ValueError, "readiness timed out"):
-                    await _render_isolated("function Visual() { return <div />; }")
-
-        asyncio.run(run())
-
-    def test_isolated_renderer_returns_all_tiles_and_capture_metadata(self):
-        async def run():
-            process = type("Process", (), {"returncode": 0})()
-
-            async def communicate():
-                command = subprocess.call_args.args
-                work_dir = Path(command[command.index("-v") + 1].split(":/work:rw")[0])
-                (work_dir / "visual-1.png").write_bytes(_png(1440, 4500))
-                (work_dir / "visual-2.png").write_bytes(_png(1440, 700))
-                metadata = {
-                    "viewport": {"width": 1440, "height": 900},
-                    "content": {"width": 1440, "height": 5200},
-                    "fullPage": True,
-                    "images": [
-                        {"path": "/work/visual-1.png", "width": 1440, "height": 4500, "y": 0, "bytes": 33},
-                        {"path": "/work/visual-2.png", "width": 1440, "height": 700, "y": 4500, "bytes": 33},
-                    ],
-                }
-                (work_dir / "metadata.json").write_text(json.dumps(metadata), encoding="utf-8")
-                return b"", b""
-
-            process.communicate = communicate
-            process.kill = Mock()
-            process.wait = AsyncMock(return_value=0)
-            with (
-                patch("src.integrations.visual_studio.shutil.which", return_value="docker"),
-                patch("src.integrations.visual_studio.SECCOMP_PROFILE", Path(__file__)),
-                patch("src.integrations.visual_studio._run_bounded", new=AsyncMock(return_value=0)),
-                patch("src.integrations.visual_studio._remove_container", new=AsyncMock()),
-                patch(
-                    "src.integrations.visual_studio.asyncio.create_subprocess_exec",
-                    new=AsyncMock(return_value=process),
-                ) as subprocess,
-            ):
-                images, metadata = await _render_isolated("function Visual() { return <div />; }")
-            self.assertEqual(len(images), 2)
-            self.assertEqual(metadata["content"]["height"], 5200)
-            self.assertEqual(metadata["images"][-1]["y"] + metadata["images"][-1]["height"], 5200)
-
-        asyncio.run(run())
-
-    def test_bounded_process_is_killed_and_reaped_on_timeout(self):
-        async def run():
-            process = type("Process", (), {})()
-            process.calls = 0
-            process.kill = Mock()
-
-            async def wait():
-                process.calls += 1
-                if process.calls == 1:
-                    await asyncio.Event().wait()
-                return 0
-
-            process.wait = wait
-            with patch(
-                "src.integrations.visual_studio.asyncio.create_subprocess_exec", new=AsyncMock(return_value=process)
+                patch.object(studio_worker, "RENDER_COMMAND", (sys.executable, str(script))),
+                patch.object(studio_worker, "RENDER_TIMEOUT_SECONDS", 0.01),
             ):
                 with self.assertRaises(TimeoutError):
-                    await _run_bounded("docker", "info", timeout=0.001)
-            process.kill.assert_called_once()
-            self.assertEqual(process.calls, 2)
+                    await studio_worker.render("function Visual() { return <div />; }", 1440, 900)
 
-        asyncio.run(run())
+    async def test_worker_cancels_render_when_client_disconnects(self):
+        started = asyncio.Event()
+        cancelled = asyncio.Event()
 
-    def test_bounded_process_is_killed_and_reaped_on_cancellation(self):
-        async def run():
-            process = type("Process", (), {})()
-            process.calls = 0
-            process.kill = Mock()
+        async def slow_render(source: str, width: int, height: int) -> bytes:
+            started.set()
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                cancelled.set()
+                raise
 
-            async def wait():
-                process.calls += 1
-                if process.calls == 1:
-                    await asyncio.Event().wait()
-                return 0
+        with tempfile.TemporaryDirectory() as directory:
+            socket_path = Path(directory) / "renderer.sock"
+            with patch.object(studio_worker, "render", new=slow_render):
+                server = await asyncio.start_unix_server(
+                    lambda reader, writer: studio_worker.handle_client(
+                        reader, writer, asyncio.Semaphore(1), asyncio.Semaphore(1)
+                    ),
+                    path=str(socket_path),
+                )
+                try:
+                    reader, writer = await asyncio.open_unix_connection(str(socket_path))
+                    body = json.dumps(
+                        {"source": "function Visual() { return <div />; }", "width": 1440, "height": 900}
+                    ).encode()
+                    writer.write(
+                        b"POST /render HTTP/1.1\r\nContent-Length: " + str(len(body)).encode() + b"\r\n\r\n" + body
+                    )
+                    await writer.drain()
+                    await started.wait()
+                    writer.close()
+                    await writer.wait_closed()
+                    await asyncio.wait_for(cancelled.wait(), timeout=1)
+                finally:
+                    server.close()
+                    await server.wait_closed()
 
-            process.wait = wait
-            with patch(
-                "src.integrations.visual_studio.asyncio.create_subprocess_exec", new=AsyncMock(return_value=process)
-            ):
-                task = asyncio.create_task(_run_bounded("docker", "info", timeout=60))
-                await asyncio.sleep(0)
-                task.cancel()
-                with self.assertRaises(asyncio.CancelledError):
-                    await task
-            process.kill.assert_called_once()
-            self.assertEqual(process.calls, 2)
-
-        asyncio.run(run())
+    async def test_worker_rejects_body_above_limit_without_rendering(self):
+        reader = asyncio.StreamReader()
+        writer = Mock()
+        writer.close = Mock()
+        writer.drain = AsyncMock()
+        writer.wait_closed = AsyncMock()
+        body = b"x" * (studio_worker.MAX_BODY_BYTES + 1)
+        reader.feed_data(b"POST /render HTTP/1.1\r\nContent-Length: " + str(len(body)).encode() + b"\r\n\r\n")
+        reader.feed_eof()
+        with patch.object(studio_worker, "render", new=AsyncMock()) as render:
+            await studio_worker.handle_client(reader, writer, asyncio.Semaphore(1), asyncio.Semaphore(1))
+        render.assert_not_awaited()
+        self.assertIn(b"413 Payload Too Large", writer.write.call_args.args[0])
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-"""Isolated React/Tailwind screenshot renderer for Polli visual studio."""
+"""React/Tailwind screenshot renderer client for Polli visual studio."""
 
 from __future__ import annotations
 
@@ -8,33 +8,31 @@ import io
 import json
 import logging
 import os
-import re
-import shutil
-import tempfile
-import uuid
-from pathlib import Path
+import zipfile
 from typing import Any
+
+import httpx
 
 from ..ai.client import pollinations_client
 from ..ai.complexity import model_for_complexity
 
 logger = logging.getLogger(__name__)
 
-VISUAL_STUDIO_IMAGE = "polli-visual-studio:1"
 MAX_PROMPT_CHARS = 4_000
 MAX_JSX_CHARS = 20_000
 MAX_DATA_CHARS = 12_000
 MAX_PNG_BYTES = 20 * 1024 * 1024
 MAX_IMAGES = 10
+MAX_METADATA_BYTES = 64 * 1024
+MAX_RESPONSE_BYTES = MAX_PNG_BYTES * MAX_IMAGES + MAX_METADATA_BYTES
 DEFAULT_VIEWPORT_WIDTH = 1440
 DEFAULT_VIEWPORT_HEIGHT = 900
 MIN_VIEWPORT_WIDTH = 320
 MAX_VIEWPORT_WIDTH = 3840
 MIN_VIEWPORT_HEIGHT = 240
 MAX_VIEWPORT_HEIGHT = 2160
-DOCKER_PREFLIGHT_TIMEOUT_SECONDS = 5
-RENDER_TIMEOUT_SECONDS = 30
-SECCOMP_PROFILE = Path(__file__).resolve().parents[2] / "seccomp_profile.json"
+RENDER_TIMEOUT_SECONDS = 35
+POLLI_STUDIO_SOCKET = os.environ.get("POLLI_STUDIO_SOCKET", "/run/polli-studio/renderer.sock")
 _RENDER_SLOTS = asyncio.Semaphore(2)
 
 SYSTEM_PROMPT = """Create one polished, self-contained React component for a screenshot.
@@ -104,136 +102,65 @@ async def _generate_source(prompt: str, data: Any, complexity: str | None) -> st
     return _clean_source(result)
 
 
-async def _run_bounded(*command: str, timeout: int) -> int:
-    process = await asyncio.create_subprocess_exec(
-        *command,
-        stdin=asyncio.subprocess.DEVNULL,
-        stdout=asyncio.subprocess.DEVNULL,
-        stderr=asyncio.subprocess.DEVNULL,
-        env={"PATH": os.environ.get("PATH", "")},
-    )
+def _decode_response(content: bytes) -> tuple[list[io.BytesIO], dict[str, Any]]:
+    if len(content) > MAX_RESPONSE_BYTES:
+        raise ValueError("Visual studio worker output is too large.")
     try:
-        return await asyncio.wait_for(process.wait(), timeout=timeout)
-    except (TimeoutError, asyncio.CancelledError):
-        process.kill()
-        await process.wait()
-        raise
-
-
-async def _remove_container(name: str) -> None:
-    try:
-        return_code = await _run_bounded("docker", "rm", "-f", name, timeout=DOCKER_PREFLIGHT_TIMEOUT_SECONDS)
-        if return_code != 0:
-            logger.warning("Failed to reap visual studio container %s", name)
-    except (OSError, TimeoutError):
-        logger.warning("Failed to reap visual studio container %s", name)
-
-
-def _renderer_error(stderr: bytes) -> str:
-    text = stderr.decode(errors="replace")[-4_000:]
-    matches = re.findall(r"Error: ([^\r\n]+)", text)
-    if matches:
-        return f"Visual studio renderer rejected the page: {matches[-1]}"
-    return "Visual studio is unavailable: isolated renderer failed."
+        with zipfile.ZipFile(io.BytesIO(content)) as archive:
+            entries = archive.infolist()
+            names = [entry.filename for entry in entries]
+            expected = ["metadata.json", *[f"visual-{index}.png" for index in range(1, len(entries))]]
+            if names != expected or len(entries) > MAX_IMAGES + 1:
+                raise ValueError("Visual studio worker returned invalid archive names.")
+            if any(entry.compress_type != zipfile.ZIP_STORED for entry in entries):
+                raise ValueError("Visual studio worker returned compressed output.")
+            limits = [MAX_METADATA_BYTES, *([MAX_PNG_BYTES] * (len(entries) - 1))]
+            if any(entry.file_size > limit for entry, limit in zip(entries, limits, strict=True)):
+                raise ValueError("Visual studio worker output is too large.")
+            if sum(entry.file_size for entry in entries) > MAX_RESPONSE_BYTES:
+                raise ValueError("Visual studio worker output is too large.")
+            metadata = json.loads(archive.read("metadata.json"))
+            images = []
+            for index in range(1, len(entries)):
+                image = archive.read(f"visual-{index}.png")
+                if not image.startswith(b"\x89PNG\r\n\x1a\n"):
+                    raise ValueError("Visual studio worker returned an invalid image.")
+                images.append(io.BytesIO(image))
+    except (OSError, zipfile.BadZipFile, json.JSONDecodeError) as exc:
+        raise ValueError("Visual studio worker returned invalid output.") from exc
+    image_metadata = metadata.get("images") if isinstance(metadata, dict) else None
+    if not isinstance(image_metadata, list) or len(images) != len(image_metadata) or not images:
+        raise ValueError("Visual studio worker returned invalid image metadata.")
+    return images, metadata
 
 
 async def _render_isolated(
-    source: str, viewport_width: int = DEFAULT_VIEWPORT_WIDTH, viewport_height: int = DEFAULT_VIEWPORT_HEIGHT
+    source: str, viewport_width: int, viewport_height: int
 ) -> tuple[list[io.BytesIO], dict[str, Any]]:
-    """Render the entire DOM in a networkless, privilege-dropped container."""
-    if not shutil.which("docker"):
-        raise ValueError("Visual studio is unavailable: Docker is not installed.")
-    if not SECCOMP_PROFILE.is_file():
-        raise ValueError("Visual studio is unavailable: sandbox profile is missing.")
+    """Ask the dedicated networkless renderer worker via its Unix socket."""
+    transport = httpx.AsyncHTTPTransport(uds=POLLI_STUDIO_SOCKET)
+    timeout = httpx.Timeout(RENDER_TIMEOUT_SECONDS, connect=5)
     try:
-        available = await _run_bounded("docker", "info", timeout=DOCKER_PREFLIGHT_TIMEOUT_SECONDS)
-    except TimeoutError as exc:
-        raise ValueError("Visual studio is unavailable: Docker daemon readiness timed out.") from exc
-    if available != 0:
-        raise ValueError("Visual studio is unavailable: Docker daemon is not running.")
-
-    with tempfile.TemporaryDirectory(prefix="polli-visual-") as directory:
-        work_dir = Path(directory)
-        metadata_path = work_dir / "metadata.json"
-        source_path = work_dir / "visual.jsx"
-        source_path.write_text(source, encoding="utf-8")
-        work_dir.chmod(0o755)
-        source_path.chmod(0o644)
-        metadata_path.touch()
-        metadata_path.chmod(0o666)
-        for index in range(1, MAX_IMAGES + 1):
-            output_path = work_dir / f"visual-{index}.png"
-            output_path.touch()
-            output_path.chmod(0o666)
-        container_name = f"polli-visual-{uuid.uuid4().hex}"
-        command = [
-            "docker",
-            "run",
-            "--name",
-            container_name,
-            "--network",
-            "none",
-            "--read-only",
-            "--cap-drop",
-            "ALL",
-            "--cap-add",
-            "SYS_CHROOT",
-            "--security-opt",
-            "no-new-privileges",
-            "--security-opt",
-            f"seccomp={SECCOMP_PROFILE}",
-            "--pids-limit",
-            "128",
-            "--memory",
-            "512m",
-            "--cpus",
-            "1",
-            "--tmpfs",
-            "/tmp:rw,noexec,nosuid,size=128m",
-            "-v",
-            f"{work_dir.resolve()}:/work:rw",
-            VISUAL_STUDIO_IMAGE,
-            "/work/visual.jsx",
-            "/work/visual",
-            "/work/metadata.json",
-            str(viewport_width),
-            str(viewport_height),
-        ]
-        process = await asyncio.create_subprocess_exec(
-            *command,
-            stdin=asyncio.subprocess.DEVNULL,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            env={"PATH": os.environ.get("PATH", "")},
-        )
-        stderr = b""
-        try:
-            _, stderr = await asyncio.wait_for(process.communicate(), timeout=RENDER_TIMEOUT_SECONDS)
-        except TimeoutError as exc:
-            raise ValueError("Visual studio renderer exceeded its time limit.") from exc
-        finally:
-            await asyncio.shield(_remove_container(container_name))
-            if process.returncode is None:
-                process.kill()
-                await process.wait()
-        if process.returncode or not metadata_path.is_file():
-            logger.warning("Visual studio renderer failed: %s", stderr.decode(errors="replace")[-2_000:])
-            raise ValueError(_renderer_error(stderr))
-
-        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-        image_metadata = metadata.get("images")
-        if not isinstance(image_metadata, list) or not 1 <= len(image_metadata) <= MAX_IMAGES:
-            raise ValueError("Visual studio is unavailable: renderer returned invalid image metadata.")
-        images = []
-        for index, _details in enumerate(image_metadata, start=1):
-            output_path = work_dir / f"visual-{index}.png"
-            if not output_path.is_file() or output_path.stat().st_size > MAX_PNG_BYTES:
-                raise ValueError("Visual studio is unavailable: renderer output is too large or missing.")
-            image = output_path.read_bytes()
-            if not image.startswith(b"\x89PNG\r\n\x1a\n"):
-                raise ValueError("Visual studio is unavailable: renderer returned an invalid PNG.")
-            images.append(io.BytesIO(image))
-        return images, metadata
+        async with httpx.AsyncClient(transport=transport, timeout=timeout) as client:
+            async with client.stream(
+                "POST",
+                "http://polli-studio/render",
+                json={"source": source, "width": viewport_width, "height": viewport_height},
+            ) as response:
+                if response.status_code == 429:
+                    raise ValueError("Visual studio is busy; try again shortly.")
+                if response.status_code != 200:
+                    raise ValueError("Visual studio is unavailable: renderer worker rejected the request.")
+                chunks: list[bytes] = []
+                size = 0
+                async for chunk in response.aiter_bytes():
+                    size += len(chunk)
+                    if size > MAX_RESPONSE_BYTES:
+                        raise ValueError("Visual studio worker output is too large.")
+                    chunks.append(chunk)
+    except httpx.HTTPError as exc:
+        raise ValueError("Visual studio is unavailable: renderer worker is not reachable.") from exc
+    return _decode_response(b"".join(chunks))
 
 
 async def render_studio(title: str, data: Any, options: dict[str, Any]) -> dict:

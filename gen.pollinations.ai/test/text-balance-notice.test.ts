@@ -187,8 +187,12 @@ describe("text balance notice", () => {
                 expect(response.headers.get("cache-control")).toBe(
                     "private, no-store",
                 );
-                expect(body).toContain("?ref=agent_low_balance_topup");
-                expect(body).toContain("?ref=agent_low_balance_quests");
+                expect(body).toContain(
+                    `?ref=agent_low_balance_topup&key_id=${caller.id}`,
+                );
+                expect(body).toContain(
+                    `?ref=agent_low_balance_quests&key_id=${caller.id}`,
+                );
                 if (stream) {
                     expect(response.headers.get("content-type")).toContain(
                         "text/event-stream",

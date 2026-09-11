@@ -19,12 +19,17 @@ import {
 // Set false to restore HTTP 402 for every insufficient-balance response.
 export const TEXT_BALANCE_NOTICE_ENABLED = true;
 
-const MESSAGE =
-    "The account behind this API key doesn't have enough credits. " +
-    "Please " +
-    "[top up](https://enter.pollinations.ai/pollen?ref=agent_low_balance_topup) or " +
-    "[complete a quest](https://enter.pollinations.ai/quests?ref=agent_low_balance_quests), then try again.\n\n" +
-    "If this isn’t your Pollinations account, contact whoever runs the app or service you’re using.";
+/** The key id lets the landing page tell whether the visitor owns the exhausted key. */
+function noticeMessage(apiKeyId?: string): string {
+    const keyQuery = apiKeyId ? `&key_id=${encodeURIComponent(apiKeyId)}` : "";
+    return (
+        "The account behind this API key doesn't have enough credits. " +
+        "Please " +
+        `[top up](https://enter.pollinations.ai/pollen?ref=agent_low_balance_topup${keyQuery}) or ` +
+        `[complete a quest](https://enter.pollinations.ai/quests?ref=agent_low_balance_quests${keyQuery}), then try again.\n\n` +
+        "If this isn’t your Pollinations account, contact whoever runs the app or service you’re using."
+    );
+}
 
 /** Wrap tracking and caching so they capture the original 402 before formatting. */
 export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
@@ -59,6 +64,7 @@ export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
     if (jsonAlias || format === "json_object" || format === "json_schema")
         return;
 
+    const message = noticeMessage(c.var.auth?.apiKey?.id);
     // Hono preserves the old headers on replacement; update and pass them along.
     const headers = c.res.headers;
     headers.set("Cache-Control", "private, no-store");
@@ -69,12 +75,12 @@ export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
         c.req.path !== "/v1/chat/completions"
     ) {
         headers.set("Content-Type", "text/plain; charset=utf-8");
-        c.res = new Response(MESSAGE, { headers });
+        c.res = new Response(message, { headers });
         return;
     }
 
     const model = c.var.model.requested ?? c.var.model.resolved;
-    const response = createTextResponse(model, MESSAGE, {
+    const response = createTextResponse(model, message, {
         input_tokens: 0,
         output_tokens: 0,
         total_tokens: 0,

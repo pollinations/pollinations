@@ -1,0 +1,34 @@
+{
+  "pr_number": 14727,
+  "title": "feat: track referral visitor login status",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14727",
+  "merged_at": "2026-09-11T15:03:38Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds signed-in / signed-out status at arrival to existing referral analytics, including the low-balance links from #14700. Sends no user IDs and does not compare visitors with API-key owners.\n- Stores `logged_in` in a JSON-string `metadata` column so additional properties need no new columns. Historical events default to `{}`; failed session lookups store `logged_in: null`. Both mean unknown, not signed out.\n- Reads the browser session in the existing background task without refreshing it. Links and frontend behavior stay unchanged.\n- Validates signed-in, signed-out, expired-session, API-key-only, and unknown-ref cases: all 9 tests pass, plus type check and Biome. The earlier local staging build passed; no live staging deployment or end-to-end staging test has been performed.\n- Requires the Tinybird datasource update in staging and production before Worker rollout.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The garden counts arrivals",
+    "blurb": "Referral links now carry a little more context into the hive: whether a visitor arrived signed in, signed out, or as an unknown. No identities collected, just healthier trail markers.",
+    "summary": "Referral analytics now store a privacy-preserving `logged_in` arrival status in JSON `metadata`, including low-balance referral links, with `null` or empty metadata representing unknown session state.",
+    "impact": "Maintainers can distinguish signed-in and signed-out referral arrivals without recording user IDs, matching visitors to API-key owners, refreshing browser sessions, or changing referral-link behavior.",
+    "keywords": [
+      "referrals",
+      "analytics",
+      "privacy",
+      "login-status",
+      "Tinybird",
+      "observability"
+    ],
+    "visual_concept": "Depict Polli as a tiny garden surveyor marking anonymous visitor trails on a cozy referral-path map. A retro terminal shows simple status symbols—signed-in, signed-out, and a question mark for unknown—while flowers and code-plants grow beside the paths, emphasizing useful aggregate context rather than personal identity.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black oval eyes, pink rectangular cheek blush, a small happy smile, light blue translucent wings, and a tiny surveyor hat, gently marking anonymous garden paths on a glowing referral map beside a retro terminal; the screen shows simple pixel icons for signed-in, signed-out, and unknown status, with no names or IDs. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-cream gradients, code-plants and small flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-11/PR-14727.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black oval eyes, pink rectangular cheek blush, a small happy smile, light blue translucent wings, and a tiny surveyor hat, gently marking anonymous garden paths on a glowing referral map beside a retro terminal; the screen shows simple pixel icons for signed-in, signed-out, and unknown status, with no names or IDs. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-cream gradients, code-plants and small flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-11T15:04:49.171695+00:00"
+}

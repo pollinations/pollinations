@@ -35,8 +35,8 @@ llm -m pollinations/openai/gpt-5.4-nano "Say hi in Russian"
 # Streaming, chat, vision and tools where the model advertises them
 llm -s -m pollinations/openai/gpt-5.4-nano "Tell a joke"
 llm chat -m pollinations/openai/gpt-5.4-nano
-llm -m pollinations/<vision-model> -a photo.jpg "Describe this photo"
-llm -T llm_get_time -m pollinations/<tool-model> "What time is it?"
+llm -m "pollinations/<vision-model>" -a photo.jpg "Describe this photo"
+llm -T llm_get_time -m "pollinations/<tool-model>" "What time is it?"
 ```
 
 Python API:

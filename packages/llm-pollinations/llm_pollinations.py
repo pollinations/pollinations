@@ -39,13 +39,25 @@ def fetch_catalog(skip_cache=False):
         response = httpx.get(CATALOG_URL, headers=headers, timeout=10, follow_redirects=True)
         response.raise_for_status()
         payload = response.json()
-    except httpx.HTTPError:
+    except (httpx.HTTPError, ValueError):
+        # ValueError covers malformed JSON in otherwise-successful responses.
         if stale is not None:
             return stale
         raise
     catalog = payload.get("data") if isinstance(payload, dict) else payload
-    CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    CACHE_PATH.write_text(json.dumps(catalog, indent=2))
+    if not isinstance(catalog, list):
+        # The catalog must be a list of model dicts; anything else means an
+        # unexpected response shape, so the stale cache is safer.
+        if stale is not None:
+            return stale
+        raise ValueError("Unexpected Pollinations catalog response")
+    try:
+        CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        CACHE_PATH.write_text(json.dumps(catalog, indent=2))
+    except OSError:
+        # Cache persistence is best-effort; the in-memory catalog is still
+        # valid for this run.
+        pass
     return catalog
 
 

@@ -152,7 +152,6 @@ export type TinybirdEvent = {
     errorResponseCode?: string;
     errorSource?: string;
     errorMessage?: string;
-    errorDetails?: string;
 };
 
 export type GenerationEventPriceParams = {

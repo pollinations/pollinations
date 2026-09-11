@@ -93,12 +93,16 @@ import {
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
-import { CHAT_USAGE_MISSING_AT_DONE_MESSAGE } from "@/text/chat/usage.ts";
 import {
     getResponsesEventUsage,
     isResponsesFailure,
     normalizeResponsesTerminalEvent,
 } from "@/text/responses/tracking.ts";
+import {
+    createStreamSummary,
+    summarizeChunk,
+    trimStreamEvents,
+} from "@/text/streamSummary.ts";
 import { generateRandomId, parseBooleanLike } from "@/util.ts";
 import { releaseApiKeyBudgetReservation } from "@/utils/generation-access.ts";
 import {
@@ -769,7 +773,6 @@ export async function trackResponse(
                         : finishError.status === CONTENT_POLICY_STATUS
                           ? "Upstream rejected generation for content policy"
                           : "Upstream ended generation with finish_reason=error",
-                errorDetails: streamErrorDetails(output),
             },
             errorOutput: output,
         };
@@ -803,7 +806,6 @@ export async function trackResponse(
                 errorTracking: {
                     errorResponseCode: "usage_missing",
                     errorMessage: `Provider omitted valid usage for model ${resolvedModelRequested}`,
-                    errorDetails: streamErrorDetails(output),
                 },
                 errorOutput: output ?? { streamEvents: [] },
             };
@@ -907,35 +909,6 @@ function finishReasonError(
     return undefined;
 }
 
-// A failed stream is explained by its end, not its first 16 KB of deltas: log
-// the opening chunks plus the tail, and let the summary account for the rest.
-const LOGGED_STREAM_HEAD = 2;
-const LOGGED_STREAM_TAIL = 30;
-
-function trimStreamEvents(output: unknown): unknown {
-    const streamEvents = (output as { streamEvents?: unknown } | null)
-        ?.streamEvents;
-    if (
-        !Array.isArray(streamEvents) ||
-        streamEvents.length <= LOGGED_STREAM_HEAD + LOGGED_STREAM_TAIL
-    ) {
-        return output;
-    }
-    return {
-        ...(output as object),
-        streamEvents: [
-            ...streamEvents.slice(0, LOGGED_STREAM_HEAD),
-            ...streamEvents.slice(-LOGGED_STREAM_TAIL),
-        ],
-    };
-}
-
-function streamErrorDetails(output: unknown): string | undefined {
-    const summary = (output as { streamSummary?: unknown } | null)
-        ?.streamSummary;
-    return summary ? JSON.stringify(summary) : undefined;
-}
-
 function stringifyErrorOutput(output: unknown): string {
     try {
         return JSON.stringify(trimStreamEvents(output)).slice(0, 16_000);
@@ -1006,45 +979,6 @@ function getContentTypeGuard(
 }
 
 const STREAM_DONE = Symbol("stream-done");
-
-// How a stream went, in a form that fits one analytics column.
-type StreamSummary = {
-    chunks: number;
-    contentChars: number;
-    reasoningChars: number;
-    finishReason: string | null;
-    doneSeen: boolean;
-};
-
-function summarizeChunk(event: unknown, summary: StreamSummary): void {
-    summary.chunks += 1;
-    const chunk = event as {
-        choices?: unknown;
-        error?: { code?: unknown; message?: unknown };
-    } | null;
-    if (
-        chunk?.error?.code === "usage_missing" &&
-        chunk.error.message === CHAT_USAGE_MISSING_AT_DONE_MESSAGE
-    ) {
-        summary.doneSeen = true;
-    }
-    if (!Array.isArray(chunk?.choices)) return;
-    for (const choice of chunk.choices as {
-        delta?: { content?: unknown; reasoning_content?: unknown };
-        finish_reason?: unknown;
-    }[]) {
-        const delta = choice?.delta;
-        if (typeof delta?.content === "string") {
-            summary.contentChars += delta.content.length;
-        }
-        if (typeof delta?.reasoning_content === "string") {
-            summary.reasoningChars += delta.reasoning_content.length;
-        }
-        if (typeof choice?.finish_reason === "string") {
-            summary.finishReason = choice.finish_reason;
-        }
-    }
-}
 
 async function* extractResponseStream(
     response: Response,
@@ -1410,13 +1344,7 @@ async function extractUsageAndContentFilterResultsStream(
     // Every chunk is kept: billing rules scan them all (Gemini grounding
     // metadata can sit on any chunk); only the error log is trimmed.
     const streamEvents: unknown[] = [];
-    const streamSummary: StreamSummary = {
-        chunks: 0,
-        contentChars: 0,
-        reasoningChars: 0,
-        finishReason: null,
-        doneSeen: false,
-    };
+    const streamSummary = createStreamSummary();
 
     for await (const event of events) {
         if (event === STREAM_DONE) {
@@ -1603,8 +1531,7 @@ type ErrorData = {
     errorResponseCode?: string;
     errorSource?: string;
     errorMessage?: string;
-    // Only the short stream summary; stack traces stay out of the row.
-    errorDetails?: string;
+    // errorStack and errorDetails removed to reduce D1 memory usage
 };
 
 export function collectErrorData(status: number, error?: Error): ErrorData {
@@ -1616,7 +1543,8 @@ export function collectErrorData(status: number, error?: Error): ErrorData {
         explicitCode = error.errorCode;
     }
     if (error instanceof PaymentRequiredError) explicitCode = error.errorCode;
-    // Stack traces are logged but not stored in the row.
+    // Note: errorStack and errorDetails removed to reduce D1 memory usage
+    // Stack traces and details are still logged but not stored in the database
     return {
         // Prefer the error's explicit code (e.g. content_policy_violation) so
         // analytics can distinguish it from a generic status-derived code.

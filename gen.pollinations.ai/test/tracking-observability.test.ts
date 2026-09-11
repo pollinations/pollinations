@@ -849,7 +849,6 @@ describe("tracking observability", () => {
             isBilledUsage: false,
             errorResponseCode: "upstream_finish_reason_error",
             errorMessage: "Upstream ended generation with finish_reason=error",
-            errorDetails: JSON.stringify(streamSummary),
         });
         const errorEvent = (await errorRequest?.json()) as Record<
             string,
@@ -967,7 +966,6 @@ describe("tracking observability", () => {
             responseStatus: 502,
             isBilledUsage: false,
             errorResponseCode: "usage_missing",
-            errorDetails: JSON.stringify(streamSummary),
         });
         const errorRequest = tinybirdRequests.find(
             (request) =>
@@ -3035,12 +3033,14 @@ describe("trackResponse missing usage", () => {
         expect(tracking.isBilledUsage).toBe(false);
         expect(tracking.cost?.totalCost).toBeGreaterThan(0);
         expect(tracking.errorTracking?.errorResponseCode).toBe("usage_missing");
-        expect(JSON.parse(tracking.errorTracking?.errorDetails ?? "")).toEqual({
-            chunks: 2,
-            contentChars: 0,
-            reasoningChars: 0,
-            finishReason: null,
-            doneSeen: false,
+        expect(tracking.errorOutput).toMatchObject({
+            streamSummary: {
+                chunks: 2,
+                contentChars: 0,
+                reasoningChars: 0,
+                finishReason: null,
+                doneSeen: false,
+            },
         });
     });
 
@@ -3062,12 +3062,14 @@ describe("trackResponse missing usage", () => {
         );
         expect(tracking.responseStatus).toBe(502);
         expect(tracking.errorTracking?.errorResponseCode).toBe("usage_missing");
-        expect(JSON.parse(tracking.errorTracking?.errorDetails ?? "")).toEqual({
-            chunks: 2,
-            contentChars: "partial".length,
-            reasoningChars: 0,
-            finishReason: null,
-            doneSeen: true,
+        expect(tracking.errorOutput).toMatchObject({
+            streamSummary: {
+                chunks: 2,
+                contentChars: "partial".length,
+                reasoningChars: 0,
+                finishReason: null,
+                doneSeen: true,
+            },
         });
     });
 

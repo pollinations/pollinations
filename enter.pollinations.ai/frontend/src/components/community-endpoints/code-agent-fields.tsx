@@ -27,7 +27,7 @@ export function CodeAgentFields({
                     </InlineLink>
                     .
                     <br />
-                    Private GitHub repositories are coming soon.
+                    Private code agents coming soon.
                 </>
             }
             alignLabelRow

@@ -1,4 +1,4 @@
-import { Heading, LockIcon, MailIcon, ScrollArea } from "@pollinations/ui";
+import { Heading, ScrollArea } from "@pollinations/ui";
 import {
     AuthAccessItem,
     AuthAccessSummary,
@@ -65,18 +65,10 @@ function AppSignIn() {
                         />
                     </AuthInfoCard>
                     <AuthAccessSummary title="Required for sign-in">
-                        <AuthAccessItem
-                            checked
-                            icon={<MailIcon className="h-4 w-4" />}
-                        >
+                        <AuthAccessItem checked>
                             Name, email and picture.
                         </AuthAccessItem>
-                        <AuthAccessItem
-                            checked
-                            icon={<LockIcon className="h-4 w-4" />}
-                        >
-                            Admin access.
-                        </AuthAccessItem>
+                        <AuthAccessItem checked>Admin access.</AuthAccessItem>
                     </AuthAccessSummary>
                 </div>
             </ScrollArea>

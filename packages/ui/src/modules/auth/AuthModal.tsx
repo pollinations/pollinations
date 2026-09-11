@@ -3,8 +3,8 @@ import wordmarkUrl from "../../brand/lockup-horizontal.svg";
 import logoUrl from "../../brand/mark.svg";
 import { cn } from "../../lib/cn.ts";
 import { Dialog } from "../../primitives/Dialog.tsx";
-import { IconButton } from "../../primitives/IconButton.tsx";
 import { InlineLink } from "../../primitives/InlineLink.tsx";
+import { CheckIcon } from "../../primitives/icons/index.tsx";
 import { ScrollArea } from "../../primitives/ScrollArea.tsx";
 import { Surface } from "../../primitives/Surface.tsx";
 import { Heading } from "../../primitives/Typography.tsx";
@@ -303,9 +303,8 @@ export function AuthAccessSummary({
     );
 }
 
-/** A consent row with an optional icon toggle and expandable details. */
+/** A consent row with an optional checkbox and expandable details. */
 export function AuthAccessItem({
-    icon,
     children,
     control,
     details,
@@ -314,7 +313,6 @@ export function AuthAccessItem({
     ariaLabel,
     disabled = false,
 }: {
-    icon: ReactNode;
     children: ReactNode;
     control?: ReactNode;
     details?: ReactNode;
@@ -325,42 +323,33 @@ export function AuthAccessItem({
 }) {
     return (
         <li>
-            <div
+            <label
                 className={cn(
-                    "polli:flex polli:items-center polli:gap-2",
-                    !onChange && "polli:cursor-not-allowed",
+                    "polli:flex polli:min-h-9 polli:items-center polli:gap-3",
+                    onChange &&
+                        (disabled
+                            ? "polli:cursor-not-allowed"
+                            : "polli:cursor-pointer"),
                 )}
             >
-                {onChange ? (
-                    <IconButton
-                        title={ariaLabel}
-                        tooltip={false}
-                        pressed={checked}
-                        disabled={disabled}
-                        onClick={() => onChange(!checked)}
-                        variant={checked ? "tile" : "ghost"}
-                        size="md"
-                        className={cn(
-                            "polli:shrink-0",
-                            checked &&
-                                !disabled &&
-                                "polli:text-theme-bg-pale polli:hover:text-theme-bg-pale",
-                        )}
-                    >
-                        <span aria-hidden="true">{icon}</span>
-                    </IconButton>
-                ) : (
+                <span className="polli:relative polli:flex polli:h-5 polli:w-5 polli:shrink-0">
+                    <input
+                        type="checkbox"
+                        aria-label={ariaLabel}
+                        checked={checked}
+                        disabled={disabled || !onChange}
+                        onChange={(event) => onChange?.(event.target.checked)}
+                        className="polli:peer polli:sr-only"
+                    />
                     <span
                         aria-hidden="true"
-                        className={cn(
-                            "polli:flex polli:h-9 polli:w-9 polli:shrink-0 polli:items-center polli:justify-center polli:rounded-full polli:text-theme-text-soft",
-                            checked && "polli:bg-theme-bg-active",
-                            checked && !disabled && "polli:text-theme-bg-pale",
-                        )}
+                        className="polli:flex polli:h-5 polli:w-5 polli:items-center polli:justify-center polli:rounded polli:border polli:border-theme-text-muted/50 polli:bg-transparent polli:transition-colors polli:peer-checked:border-theme-bg-active polli:peer-checked:bg-theme-bg-active polli:peer-checked:text-theme-text-strong polli:peer-focus-visible:outline-2 polli:peer-focus-visible:outline-offset-2 polli:peer-focus-visible:outline-theme-text-soft polli:peer-disabled:opacity-50"
                     >
-                        {icon}
+                        {checked && (
+                            <CheckIcon className="polli:h-3.5 polli:w-3.5" />
+                        )}
                     </span>
-                )}
+                </span>
                 <span
                     className={cn(
                         "polli:min-w-0 polli:flex-1 polli:transition-opacity",
@@ -372,7 +361,7 @@ export function AuthAccessItem({
                 {control != null && (
                     <span className="polli:shrink-0">{control}</span>
                 )}
-            </div>
+            </label>
             {details && <div className="polli:pt-3">{details}</div>}
         </li>
     );

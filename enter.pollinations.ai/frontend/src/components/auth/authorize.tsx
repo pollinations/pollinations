@@ -1,15 +1,10 @@
 import {
-    AccountIcon,
     AccountIdentity,
     Button,
     Chip,
     Collapsible,
     EarningsIcon,
     InlineLink,
-    MailIcon,
-    SparklesIcon,
-    ToolIcon,
-    UsageIcon,
     useScrollLock,
 } from "@pollinations/ui";
 import {
@@ -821,7 +816,6 @@ export function Authorize({
                         >
                             <AuthAccessItem
                                 checked
-                                icon={<AccountIcon className="h-4 w-4" />}
                                 control={
                                     <Chip intent="neutral" size="sm">
                                         Required
@@ -832,7 +826,6 @@ export function Authorize({
                             </AuthAccessItem>
                             {requestedScopes.has("profile") && (
                                 <AuthAccessItem
-                                    icon={<MailIcon className="h-4 w-4" />}
                                     ariaLabel="Share display name and email"
                                     checked={
                                         keyPermissions.permissions.accountPermissions?.includes(
@@ -852,7 +845,6 @@ export function Authorize({
                             )}
                             {requestedScopes.has("usage") && (
                                 <AuthAccessItem
-                                    icon={<UsageIcon className="h-4 w-4" />}
                                     ariaLabel="Share account activity"
                                     checked={
                                         keyPermissions.permissions.accountPermissions?.includes(
@@ -869,7 +861,6 @@ export function Authorize({
                             )}
                             {requestedScopes.has("keys") && (
                                 <AuthAccessItem
-                                    icon={<ToolIcon className="h-4 w-4" />}
                                     ariaLabel="Allow account management"
                                     checked={
                                         keyPermissions.permissions.accountPermissions?.includes(
@@ -889,9 +880,6 @@ export function Authorize({
                             <AuthInfoCard title={null}>
                                 <ul className="space-y-3 text-sm text-theme-text-base">
                                     <AuthAccessItem
-                                        icon={
-                                            <SparklesIcon className="h-4 w-4" />
-                                        }
                                         ariaLabel="Allow AI generation"
                                         checked={generationEnabled}
                                         onChange={setGenerationEnabled}

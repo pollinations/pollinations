@@ -115,3 +115,77 @@ test("applies the same 404 rule to aliases of hidden models", async ({
     });
     expect(response.status).toBe(404);
 });
+
+// --- supported_parameters and default_parameters ---
+
+test("exposes supported_parameters and default_parameters on /v1/models", async () => {
+    const response = await fetchWorker("/v1/models");
+    expect(response.status).toBe(200);
+    const list = (await response.json()) as {
+        data: Record<string, unknown>[];
+    };
+
+    const openai = list.data.find((m) => m.id === "openai");
+    expect(openai).toBeDefined();
+    expect(Array.isArray(openai!.supported_parameters)).toBe(true);
+    expect(openai!.supported_parameters).toContain("temperature");
+    expect(openai!.supported_parameters).toContain("tools");
+    expect(openai!.supported_parameters).not.toContain("reasoning_effort");
+    expect(openai!.default_parameters).toEqual({ temperature: 1.0 });
+});
+
+test("reasoning model includes reasoning_effort in supported_parameters", async () => {
+    const response = await fetchWorker("/v1/models/gpt-5.4");
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as Record<string, unknown>;
+    expect(body.supported_parameters).toContain("reasoning_effort");
+    expect(body.supported_parameters).toContain("tools");
+});
+
+test("search model includes web_search_options in supported_parameters", async () => {
+    const response = await fetchWorker("/v1/models/gemini-3-flash");
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as Record<string, unknown>;
+    expect(body.supported_parameters).toContain("web_search_options");
+    expect(body.supported_parameters).toContain("tools");
+});
+
+test("alias resolves with same supported_parameters as canonical", async () => {
+    const byAlias = await fetchWorker("/v1/models/gpt-5.4-nano");
+    expect(byAlias.status).toBe(200);
+    const aliasBody = (await byAlias.json()) as Record<string, unknown>;
+
+    const byId = await fetchWorker("/v1/models/openai");
+    const idBody = (await byId.json()) as Record<string, unknown>;
+
+    expect(aliasBody.supported_parameters).toEqual(idBody.supported_parameters);
+    expect(aliasBody.default_parameters).toEqual(idBody.default_parameters);
+});
+
+test("models without supported_parameters omit the field", async () => {
+    const response = await fetchWorker("/v1/models/openai-fast");
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as Record<string, unknown>;
+    // openai-fast does not have supportedParameters set, so field should be absent
+    expect("supported_parameters" in body).toBe(false);
+    expect("default_parameters" in body).toBe(false);
+});
+
+test("supported_parameters are consistent between /v1/models list and /v1/models/:id", async () => {
+    const listResponse = await fetchWorker("/v1/models");
+    const list = (await listResponse.json()) as {
+        data: Record<string, unknown>[];
+    };
+    const listed = list.data.find((m) => m.id === "gpt-5.4");
+
+    const retrieveResponse = await fetchWorker("/v1/models/gpt-5.4");
+    const retrieved = (await retrieveResponse.json()) as Record<
+        string,
+        unknown
+    >;
+
+    expect(retrieved.supported_parameters).toEqual(
+        listed!.supported_parameters,
+    );
+    expect(retrieved.default_parameters).toEqual(listed!.default_parameters);
+});

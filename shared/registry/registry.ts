@@ -219,6 +219,10 @@ export type ModelDefinition = {
     durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
+    // Chat completion parameter metadata — lets apps show useful controls
+    // without guessing which parameters actually reach the model.
+    supportedParameters?: string[]; // Parameters this model accepts (e.g. ["temperature", "max_tokens"])
+    defaultParameters?: Record<string, unknown>; // Pollinations-applied defaults when caller omits the param
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.

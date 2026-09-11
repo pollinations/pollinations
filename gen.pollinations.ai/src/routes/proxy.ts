@@ -310,6 +310,12 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         ...(entry.info.per_user_rpm !== undefined && {
             per_user_rpm: entry.info.per_user_rpm,
         }),
+        ...(entry.info.supported_parameters && {
+            supported_parameters: entry.info.supported_parameters,
+        }),
+        ...(entry.info.default_parameters && {
+            default_parameters: entry.info.default_parameters,
+        }),
     };
 }
 

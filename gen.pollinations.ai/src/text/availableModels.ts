@@ -84,6 +84,27 @@ const qwenFlashTransform: TransformFn = async (messages, options) => {
     return qwenForcedToolTransform(toggled.messages, toggled.options);
 };
 
+// Audio models: default to a spoken+text reply and pick a wire format that
+// matches transport (pcm16 for streaming, mp3 otherwise) unless the caller
+// already specified one.
+const audioDefaultsTransform: TransformFn = (messages, options) => {
+    const voice = options.voice || options.audio?.voice || "alloy";
+    const audioFormat = options.stream ? "pcm16" : "mp3";
+    return {
+        messages,
+        options: {
+            ...options,
+            modalities: options.modalities || ["text", "audio"],
+            audio: options.audio
+                ? {
+                      ...options.audio,
+                      format: options.audio.format || audioFormat,
+                  }
+                : { voice, format: audioFormat },
+        },
+    };
+};
+
 const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5.4-nano",
@@ -364,12 +385,12 @@ const models: ModelDefinition[] = [
         name: "openai/gpt-audio-mini",
         config: portkeyConfig["gpt-audio-mini-2025-12-15"],
         // Audio models don't support reasoning_effort.
-        transform: stripReasoning,
+        transform: pipe(audioDefaultsTransform, stripReasoning),
     },
     {
         name: "openai/gpt-audio-1.5",
         config: portkeyConfig["gpt-audio-1.5"],
-        transform: stripReasoning,
+        transform: pipe(audioDefaultsTransform, stripReasoning),
     },
     {
         name: "anthropic/claude-haiku-4.5",

@@ -1,6 +1,5 @@
 import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
@@ -47,29 +46,6 @@ type TextContext = Context<Env>;
 
 function generatePollinationsId(): string {
     return `pllns_${crypto.randomUUID().replaceAll("-", "")}`;
-}
-
-function prepareRequestParameters(
-    requestParams: RequestData,
-    modelDefinition: ModelDefinition,
-): RequestData {
-    const isAudioModel =
-        modelDefinition.outputModalities?.includes("audio") ?? false;
-    if (!isAudioModel) return requestParams;
-
-    const voice = requestParams.voice || requestParams.audio?.voice || "alloy";
-    const audioFormat = requestParams.stream ? "pcm16" : "mp3";
-
-    return {
-        ...requestParams,
-        modalities: requestParams.modalities || ["text", "audio"],
-        audio: requestParams.audio
-            ? {
-                  ...requestParams.audio,
-                  format: requestParams.audio.format || audioFormat,
-              }
-            : { voice, format: audioFormat },
-    };
 }
 
 /**
@@ -425,11 +401,7 @@ export async function handleTextContentLocal(
     c: TextContext,
     body: CreateChatCompletionRequest,
 ): Promise<Response> {
-    const requestData = prepareRequestParameters(
-        getChatRequestData(body),
-        c.var.model.definition,
-    );
-    return generateTextResponse(c, requestData, true);
+    return generateTextResponse(c, getChatRequestData(body), true);
 }
 
 export async function handleSimpleTextLocal(
@@ -438,9 +410,9 @@ export async function handleSimpleTextLocal(
     model: string,
     query: GenerateTextRequestQueryParams,
 ): Promise<Response> {
-    const requestData = prepareRequestParameters(
+    return generateTextResponse(
+        c,
         getSimpleTextRequestData(prompt, model, query),
-        c.var.model.definition,
+        true,
     );
-    return generateTextResponse(c, requestData, true);
 }

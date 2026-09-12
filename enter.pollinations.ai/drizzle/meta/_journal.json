@@ -460,8 +460,15 @@
     {
       "idx": 65,
       "version": "6",
+      "when": 1789084800000,
+      "tag": "0065_community-model-permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "6",
       "when": 1789221616961,
-      "tag": "0065_app-key-top-up",
+      "tag": "0066_app-key-top-up",
       "breakpoints": true
     }
   ]

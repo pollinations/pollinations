@@ -15,6 +15,7 @@ then choose a server:
 | FFmpeg | `https://gen.pollinations.ai/mcp/ffmpeg` | Trim, convert, resize, compress, and remix audio and video | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ffmpeg-mcp) |
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Composio | `https://gen.pollinations.ai/mcp/composio` | Use connected apps such as Gmail, Slack, GitHub, and Drive | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
+| Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 
 Send the key with every request:
 
@@ -119,6 +120,18 @@ executable and output path from the arguments.
 The Composio server discovers tools for the apps you ask to use. When an app is
 not connected, the agent can return a sign-in link. You can also manage
 connections from [MCP Connectors](https://enter.pollinations.ai/account#connectors).
+
+### Computer MCP
+
+The Computer server gives each account a private filesystem under `/workspace`
+and a bash shell. Files persist between requests and agent runs; nothing runs
+while idle. There is one tool, `bash`, with `command`, optional `stdin` (for
+example file content for `cat > path`) and optional `cwd`. The shell cannot run Node or Python; curl, coreutils,
+`grep`, `sed`, `awk`, `jq`, `tar`, and `git` are available. A `/workspace/README.md` is created on first use and
+describes a simple memory layout (`memory/facts.md` plus a dated
+`memory/log/`). `cwd` defaults to `/workspace`, with one folder per project. Nothing is shared between accounts. Files come in with `curl` or `git clone` and go out with `assets publish <path>`, which copies a file to
+[media.pollinations.ai](https://media.pollinations.ai) and prints its public
+URL, or with `git push` to a repository the caller owns. Every call costs the same flat rate; see the catalog.
 
 ### Billing and permissions
 

@@ -21,7 +21,7 @@ export function HeroStats({ stats }: HeroStatsProps) {
 
     return (
         <dl
-            className="mt-2 grid grid-cols-4 gap-3 sm:flex sm:flex-wrap sm:gap-8"
+            className="mt-2 grid grid-cols-2 gap-x-6 gap-y-5 sm:flex sm:flex-wrap sm:gap-8"
             aria-busy={loading}
         >
             {slots.map((slot) => (

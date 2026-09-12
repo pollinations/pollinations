@@ -1,15 +1,14 @@
-import { ContentHeader, InlineLink, ScrollArea } from "@pollinations/ui";
+import { ContentHeader, cn, InlineLink, ScrollArea } from "@pollinations/ui";
 import { Link } from "@tanstack/react-router";
 import { useAppShowcase } from "../../data/publicStats";
 import { AppCarousel } from "../apps/AppCarousel";
 
 /**
- * A wide shelf you skim sideways — the same strip the Apps spotlight uses, so
- * Hello shows eight covers instead of three tiles in yet another 3-up grid.
+ * A compact shelf of active community apps, shown before the build tools.
  * Missing screenshots use the shared Polli fallback, so the shelf remains
  * visual without pretending generated art is the real app.
  */
-export function LiveApps() {
+export function LiveApps({ className }: { className?: string }) {
     const { data: featured, loading, failed } = useAppShowcase();
 
     // Only disappears when the directory loaded fine and genuinely had
@@ -17,7 +16,7 @@ export function LiveApps() {
     if (!loading && !failed && featured.length === 0) return null;
 
     return (
-        <section className="flex flex-col gap-5">
+        <section className={cn("flex flex-col gap-5", className)}>
             <ContentHeader
                 eyebrow="Live now"
                 title="Apps from the community."

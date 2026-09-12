@@ -135,9 +135,9 @@ type PlatformStats = {
     requestsWeek: number;
     /** 2xx / (2xx + 5xx), cache excluded. */
     availability: number | null;
-    /** Models callable right now, community models included. */
+    /** Callable models excluding agents; official and community entries included. */
     models: number;
-    /** Agent entries included in the model catalog. */
+    /** Callable agents, counted separately from models. */
     agents: number;
     /** Public MCP servers, not the individual tools they expose. */
     mcpServers: number | null;
@@ -243,7 +243,7 @@ export const loadPlatformStats = cached(async (): Promise<PlatformStats> => {
     return {
         requestsWeek: latest.total_requests,
         availability: latest.official_availability ?? null,
-        models: catalog.length,
+        models: catalog.filter((model) => model.agent !== true).length,
         agents: catalog.filter((model) => model.agent === true).length,
         mcpServers,
         ...summariseCatalog(catalog),

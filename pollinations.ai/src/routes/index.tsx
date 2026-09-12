@@ -26,7 +26,7 @@ function useHeroStats() {
     if (!data) return [];
     return [
         { value: compact(data.requestsWeek), label: "requests last week" },
-        { value: String(data.models - data.agents), label: "models" },
+        { value: String(data.models), label: "models" },
         { value: String(data.agents), label: "agents" },
         data.mcpServers === null
             ? null
@@ -54,7 +54,7 @@ function HelloPage() {
                 <ContentHeader
                     eyebrow="Open infrastructure for AI apps"
                     title="Every model, one wallet."
-                    subtitle="Complete small Quests to earn Pollen—the platform credit, where 1 Pollen = $1. Use it across text, image, audio and video through one API, then publish what you build and earn more when people use it."
+                    subtitle="Build with AI models and ready-made agents through one platform and API. Use a shared Pollen wallet for text, images, audio and video—and start with credits earned through Quests."
                     variant="page"
                     className="sm:[&_h1]:max-w-[9ch]"
                 />
@@ -79,11 +79,11 @@ function HelloPage() {
                 <HeroStats stats={stats} />
             </HeroScene>
 
-            <DevKit className={postHeroSpacingClassName} />
+            <LiveApps className={postHeroSpacingClassName} />
+            <DevKit />
             {/* Dark panel is inset inside the cream sheet, not a sibling of
                 it — it reads as a band within the page, not a new section. */}
             <MoneyMoves />
-            <LiveApps />
             <OnTheWay />
             <StartBuilding />
             <BottomScene

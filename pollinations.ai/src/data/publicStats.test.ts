@@ -102,7 +102,7 @@ describe("platform stats", () => {
         await expect(loadPlatformStats()).rejects.toThrow("models: 503");
         catalogAvailable = true;
         await expect(loadPlatformStats()).resolves.toMatchObject({
-            models: 2,
+            models: 1,
             agents: 1,
         });
         expect(fetchMock).toHaveBeenCalledTimes(6);

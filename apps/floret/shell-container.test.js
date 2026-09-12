@@ -34,7 +34,9 @@ function container(response = new Response("result")) {
         forwarded: null,
         async startAndWaitForPorts() {
             this.starts += 1;
-            throw new Error("Startup must stay inside SDK fetch, not cross RPC");
+            throw new Error(
+                "Startup must stay inside SDK fetch, not cross RPC",
+            );
         },
         async fetch(request) {
             this.fetches += 1;

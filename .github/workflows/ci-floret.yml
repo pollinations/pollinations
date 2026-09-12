@@ -39,5 +39,7 @@ jobs:
         run: python -m mypy --config-file pyproject.toml src/floret
       - name: Test Worker boundaries
         run: node --test gateway.test.js model-catalog.test.js shell-container.test.js worker-runtime.test.js worker-rpc.test.js
+      - name: Validate deployment bundle
+        run: npm run deploy -- --dry-run
       - name: Build shell image
         run: docker build -f Dockerfile.shell -t floret-shell-test .

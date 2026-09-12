@@ -5,11 +5,15 @@
   "description": "Cloudflare Worker that fronts the Floret container",
   "main": "worker.js",
   "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
   "dependencies": {
     "@cloudflare/containers": "^0.3.7"
   },
   "devDependencies": {
-    "miniflare": "4.20260730.0"
+    "miniflare": "4.20260730.0",
+    "wrangler": "4.111.0"
   },
   "overrides": {
     "miniflare": {

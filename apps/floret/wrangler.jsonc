@@ -1,5 +1,8 @@
 {
   "name": "floret",
+  "account_id": "b6ec751c0862027ba269faf7029b2501",
+  "workers_dev": false,
+  "preview_urls": false,
   "main": "worker.js",
   "compatibility_date": "2026-01-01",
   "containers": [
@@ -27,19 +30,7 @@
     { "tag": "v1", "new_sqlite_classes": ["FloretContainer"] },
     { "tag": "v2", "new_sqlite_classes": ["FloretShellContainer", "FloretCatalog"] }
   ],
-  // Worker-backed apps bind their own hostnames; deploy.sh gates on the myceli
-  // origin serving before it verifies the public URL, so both are needed.
-  "routes": [
-    {
-      "pattern": "floret.myceli.ai",
-      "zone_name": "myceli.ai",
-      "custom_domain": true
-    },
-    {
-      "pattern": "floret.pollinations.ai",
-      "zone_name": "pollinations.ai",
-      "custom_domain": true
-    }
-  ],
+  // Existing custom domains are Dashboard-managed. Omit routes so deployments
+  // preserve their bindings without requiring zone-edit permissions.
   "observability": { "enabled": true }
 }

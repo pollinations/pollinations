@@ -42,7 +42,7 @@ function setup() {
         async (url, options) => {
             calls.auth++;
             assert.equal(url, "https://enter.pollinations.ai/api/account/key");
-            assert.equal(options.redirect, "error");
+            assert.equal(options.redirect, "manual");
             return Response.json({ valid: true });
         },
     );

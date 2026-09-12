@@ -313,7 +313,7 @@ test("concurrent review calls produce one lease and one advisory request", async
     const reviewFetch = async (_url, request) => {
         calls += 1;
         assert.equal(request.headers.authorization, "Bearer caller-key");
-        assert.equal(request.redirect, "error");
+        assert.equal(request.redirect, "manual");
         const requestBody = JSON.parse(request.body);
         assert.doesNotThrow(() => JSON.parse(requestBody.messages[1].content));
         await waiting;

@@ -7,5 +7,14 @@
   "type": "module",
   "dependencies": {
     "@cloudflare/containers": "^0.3.7"
+  },
+  "devDependencies": {
+    "miniflare": "4.20260730.0"
+  },
+  "overrides": {
+    "miniflare": {
+      "undici": "7.29.0",
+      "sharp": "0.35.4"
+    }
   }
 }

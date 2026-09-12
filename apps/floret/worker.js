@@ -17,10 +17,10 @@ export class FloretContainer extends Container {
         POLLI_ALLOW_OPERATOR_KEY: "false",
         OPENAI_API_KEY: "",
     };
-    static outboundByHost = {
-        "floret-catalog.internal": catalogOutbound,
-    };
 }
+FloretContainer.outboundByHost = {
+    "floret-catalog.internal": catalogOutbound,
+};
 attachShellOutbound(FloretContainer);
 
 export class FloretCatalog extends DurableObject {

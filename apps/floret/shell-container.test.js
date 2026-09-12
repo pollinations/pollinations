@@ -4,7 +4,7 @@ import { createShellOutbound } from "./shell-bridge.js";
 
 function authFetch(valid = true) {
     return async (_url, init) => {
-        assert.equal(init.redirect, "error");
+        assert.equal(init.redirect, "manual");
         assert.ok(init.signal instanceof AbortSignal);
         return new Response(JSON.stringify({ valid }), {
             status: 200,
@@ -34,6 +34,7 @@ function container(response = new Response("result")) {
         forwarded: null,
         async startAndWaitForPorts() {
             this.starts += 1;
+            throw new Error("Startup must stay inside SDK fetch, not cross RPC");
         },
         async fetch(request) {
             this.fetches += 1;
@@ -58,6 +59,23 @@ test("invalid auth allocates no shell container", async () => {
     assert.equal(allocations, 0);
 });
 
+test("authentication redirects are rejected without following or allocating", async () => {
+    let validations = 0;
+    const outbound = createShellOutbound({
+        fetchImpl: async (_url, init) => {
+            validations++;
+            assert.equal(init.redirect, "manual");
+            return new Response(null, {
+                status: 302,
+                headers: { Location: "https://untrusted.test/" },
+            });
+        },
+        getContainerImpl: () => assert.fail("Unauthenticated shell allocation"),
+    });
+    assert.equal((await outbound(shellRequest(), {})).status, 401);
+    assert.equal(validations, 1);
+});
+
 test("fresh container receives binary body without bearer and is destroyed", async () => {
     const instance = container(
         new Response(new Uint8Array([0, 0, 0, 2, 123, 125]), {
@@ -78,7 +96,7 @@ test("fresh container receives binary body without bearer and is destroyed", asy
     assert.equal(instance.destroys, 0);
     await response.arrayBuffer();
     assert.deepEqual(names, ["unique-run"]);
-    assert.equal(instance.starts, 1);
+    assert.equal(instance.starts, 0);
     assert.equal(instance.fetches, 1);
     assert.equal(instance.destroys, 1);
     assert.equal(instance.forwarded.headers.has("Authorization"), false);
@@ -95,8 +113,8 @@ test("fresh container receives binary body without bearer and is destroyed", asy
 test("container startup, request, and error response paths always destroy", async (t) => {
     await t.test("startup", async () => {
         const instance = container();
-        instance.startAndWaitForPorts = async () => {
-            throw new Error("start failed");
+        instance.fetch = async () => {
+            return new Response("Failed to start container", { status: 500 });
         };
         const outbound = createShellOutbound({
             fetchImpl: authFetch(),
@@ -181,14 +199,15 @@ test("response cancellation and stream errors destroy exactly once", async (t) =
     });
 });
 
-test("abort during startup destroys without forwarding", async () => {
+test("abort during SDK fetch cancels the request and destroys", async () => {
     const abort = new AbortController();
     const original = shellRequest();
     const request = new Request(original, { signal: abort.signal });
     const instance = container();
-    instance.startAndWaitForPorts = async ({ cancellationOptions }) => {
+    instance.fetch = async (forwarded) => {
         abort.abort();
-        assert.equal(cancellationOptions.abort.aborted, true);
+        assert.equal(forwarded.signal.aborted, true);
+        throw forwarded.signal.reason;
     };
     const outbound = createShellOutbound({
         fetchImpl: authFetch(),

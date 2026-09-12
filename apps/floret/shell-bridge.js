@@ -48,7 +48,7 @@ export async function authenticateRun(request, fetchImpl = globalThis.fetch) {
         response = await fetchImpl(AUTH_URL, {
             method: "GET",
             headers: { Authorization: `Bearer ${bearer}` },
-            redirect: "error",
+            redirect: "manual",
             signal: AbortSignal.timeout(AUTH_TIMEOUT_MS),
         });
     } catch {
@@ -171,9 +171,8 @@ export function createShellOutbound({
         };
         try {
             container = getContainerImpl(env.FLORET_SHELL, uuidImpl());
-            await container.startAndWaitForPorts({
-                cancellationOptions: { abort: lifecycleSignal },
-            });
+            // SDK fetch starts the container inside its DO, keeping AbortSignal
+            // local instead of passing it through unsupported Workers RPC.
             if (lifecycleSignal.aborted) throw lifecycleSignal.reason;
             const response = await container.fetch(
                 new Request("http://shell.internal/run", {

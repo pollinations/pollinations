@@ -332,7 +332,7 @@ export class FloretCatalogCore {
         try {
             const response = await fetcher(CATALOG_URL, {
                 signal: controller.signal,
-                redirect: "error",
+                redirect: "manual",
                 headers: { accept: "application/json" },
             });
             if (!response.ok)
@@ -502,7 +502,7 @@ export class FloretCatalogCore {
             const response = await fetcher(REVIEW_URL, {
                 method: "POST",
                 signal: controller.signal,
-                redirect: "error",
+                redirect: "manual",
                 headers: {
                     authorization: `Bearer ${apiKey}`,
                     "content-type": "application/json",

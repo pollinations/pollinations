@@ -1,0 +1,37 @@
+name: CI / llm-pollinations
+
+"on":
+  pull_request:
+    branches: [main, master]
+    paths:
+      - "packages/llm-pollinations/**"
+      - ".github/workflows/ci-llm-pollinations.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test llm-pollinations
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/llm-pollinations
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+
+      - name: Install package
+        run: python -m pip install ".[test]"
+
+      - name: Test package
+        run: python -m pytest
+
+      - name: Build distributions
+        run: python -m build

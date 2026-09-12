@@ -1,0 +1,25 @@
+[project]
+name = "llm-pollinations"
+version = "0.1.0"
+description = "Pollinations provider for Simon Willison's LLM"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = ["llm>=0.35", "httpx>=0.27"]
+
+[project.optional-dependencies]
+test = ["build", "pytest"]
+
+[project.entry-points.llm]
+pollinations = "llm_pollinations"
+
+[project.urls]
+Homepage = "https://pollinations.ai"
+Repository = "https://github.com/pollinations/pollinations"
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["llm_pollinations"]

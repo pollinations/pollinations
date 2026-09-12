@@ -354,12 +354,12 @@ export function SiteHeader() {
                                     <Button
                                         aria-label="Close menu"
                                         onClick={() => setMobileMenuOpen(false)}
-                                        className="h-11 w-full justify-between px-3 [&>svg]:size-6"
+                                        className="h-11 w-full justify-between gap-2 px-3 [&>svg]:size-6 [&>svg]:shrink-0"
                                     >
                                         <span
                                             aria-hidden="true"
                                             style={DRAWER_MENU_LOCKUP_STYLE}
-                                            className="block shrink-0"
+                                            className="block min-w-0"
                                         />
                                         <XIcon />
                                     </Button>
@@ -449,7 +449,7 @@ export function SiteHeader() {
                                             discordOnline={discordOnline}
                                         />
                                     </div>
-                                    <div className="flex shrink-0 items-center justify-between gap-3 px-1.5 pt-0.5 text-xs text-theme-text-muted">
+                                    <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 px-1.5 pt-0.5 text-xs text-theme-text-muted [&>button]:ml-auto">
                                         <div className="flex items-center gap-2">
                                             {LEGAL.map((item) => (
                                                 <Link

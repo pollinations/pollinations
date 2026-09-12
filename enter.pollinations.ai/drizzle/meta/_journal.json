@@ -449,6 +449,13 @@
       "when": 1788818400000,
       "tag": "0063_oauth-provider",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "6",
+      "when": 1788929212215,
+      "tag": "0064_complete_vanisher",
+      "breakpoints": true
     }
   ]
 }

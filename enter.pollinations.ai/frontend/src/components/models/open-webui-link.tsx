@@ -1,6 +1,9 @@
 import { ExternalLinkIcon, Tooltip } from "@pollinations/ui";
 
-export const OPEN_WEBUI_URL = "https://openwebui.pollinations.ai";
+export const OPEN_WEBUI_URL =
+    import.meta.env.MODE === "staging"
+        ? "https://openwebui-staging.elliot-b6e.workers.dev"
+        : "https://openwebui.pollinations.ai";
 
 /**
  * Open WebUI signs in with Pollinations OAuth and fetches its model list with

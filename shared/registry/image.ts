@@ -1359,28 +1359,34 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-09-04").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // fal launch pricing through 2026-09-07; restore list rates on 2026-09-08.
+        // fal launch pricing through 2026-09-14; restore list rates on 2026-09-15.
         cost: {
             completionVideoSeconds: 0.00625, // 480p per output second.
         },
         ...defineCostVariants(
             {
                 "768p": { completionVideoSeconds: 0.01 },
+                "1080p": { completionVideoSeconds: 0.02 },
             },
-            matchResolution("768p"),
+            matchResolution("768p", "1080p"),
             {
                 "768p": {
                     label: "768p",
                     description:
                         "Applies when the requested video resolution is 768p.",
                 },
+                "1080p": {
+                    label: "1080p",
+                    description:
+                        "Applies when the requested video resolution is 1080p.",
+                },
             },
             "480p",
         ),
-        resolutions: ["480p", "768p"],
+        resolutions: ["480p", "768p", "1080p"],
         title: "MiniMax H3 Max Turbo",
         description:
-            "Fast 5–15 second video with synchronized audio and first/last-frame control at 480p or 768p",
+            "Fast 5–15 second video with synchronized audio and first/last-frame control at 480p, 768p, or 1080p",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],

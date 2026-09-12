@@ -347,7 +347,7 @@ export const CreateChatCompletionRequestSchema = z
                 search_context_size: z.enum(["low", "medium", "high"]),
             })
             .describe(
-                "Controls Perplexity Sonar search context. Pollinations currently supports low and high.",
+                "Perplexity Sonar search context size, forwarded as-is. Low is the default and the request fee rises with the size.",
             )
             .optional(),
         temperature: z
@@ -742,6 +742,12 @@ export const OpenAIModelSchema = z
         base_model: z.string().optional(),
         pricing: z.record(z.string(), z.string()).optional(),
         capabilities: z.array(z.string()).optional(),
+        supported_parameters: z
+            .array(z.string())
+            .optional()
+            .describe(
+                "Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`.",
+            ),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),

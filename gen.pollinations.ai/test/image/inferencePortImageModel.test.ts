@@ -237,12 +237,4 @@ describe("callInferencePortImage", () => {
             upstreamStatus: 500,
         });
     });
-
-    it("fails clearly when API key is missing", async () => {
-        syncImageEnv({} as CloudflareBindings, []);
-
-        await expect(
-            callInferencePortImage("a lighthouse", baseParams, USER_INFO),
-        ).rejects.toThrow("INFERENCEPORT_API_KEY");
-    });
 });

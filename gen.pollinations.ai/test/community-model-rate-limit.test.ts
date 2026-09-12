@@ -14,6 +14,7 @@ import type { CommunityModelRateLimiter } from "../src/durable-objects/Community
 const QUOTA_BOUND_MODELS = new Set([
     "openai/gpt-image-2",
     "microsoft/mai-image-2.5-flash",
+    "inferenceport-ai/lightning-image-turbo",
 ]);
 
 describe("model rate limiting", () => {

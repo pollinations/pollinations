@@ -1,0 +1,17 @@
+[project]
+name = "llm-pollinations"
+version = "0.1.0"
+description = "LLM plugin for Pollinations text models"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = [
+    "llm",
+]
+
+[project.entry-points.llm]
+pollinations = "llm_pollinations"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"

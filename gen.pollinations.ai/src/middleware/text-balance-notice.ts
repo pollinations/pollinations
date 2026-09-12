@@ -1,4 +1,5 @@
 import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
+import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type {
     CreateChatCompletionRequest,
     CreateResponseRequest,
@@ -20,27 +21,28 @@ import {
 // Set false to restore HTTP 402 for every insufficient-balance response.
 export const TEXT_BALANCE_NOTICE_ENABLED = true;
 
-const ENTER_URL = "https://enter.pollinations.ai";
 const NOT_YOUR_ACCOUNT =
     "If this isn’t your Pollinations account, contact whoever runs the app or service you’re using.";
 
+/** Staging gen links to staging enter, where the Open WebUI staging user is logged in. */
+function enterUrl(environment: string): string {
+    return environment === "staging"
+        ? PUBLIC_URLS.enter.staging
+        : PUBLIC_URLS.enter.production;
+}
+
 function enterLink(
+    environment: string,
     path: string,
     params: Record<string, string | null | undefined>,
 ): string {
-    const url = new URL(path, ENTER_URL);
+    const url = new URL(path, enterUrl(environment));
     for (const [key, value] of Object.entries(params)) {
         if (value) url.searchParams.set(key, value);
     }
     return url.toString();
 }
 
-/**
- * Where the reader came from, so the enter page can send them back: the
- * origin a consent key was minted for, else the browser's Referer. Server-side
- * apps on plain dashboard keys give neither, and the page then says to close
- * the tab.
- */
 function appOrigin(c: Context<Env>): string | null {
     const stored = c.var.auth?.apiKey?.metadata?.redirectOrigin;
     if (typeof stored === "string") return stored;
@@ -54,6 +56,7 @@ function appOrigin(c: Context<Env>): string | null {
 }
 
 export function balanceNoticeMessage(
+    environment: string,
     errorCode: PaymentRequiredError["errorCode"],
     keyId: string | undefined,
     redirect: string | null,
@@ -62,15 +65,15 @@ export function balanceNoticeMessage(
         return (
             "The API key used for this request has reached its budget. " +
             "Please " +
-            `[raise the key budget](${enterLink("/edit-key", { id: keyId, ref: "agent_key_budget", redirect })}), then try again.\n\n` +
+            `[raise the key budget](${enterLink(environment, "/edit-key", { id: keyId, ref: "agent_key_budget", redirect })}), then try again.\n\n` +
             `Topping up the wallet does not raise this limit. ${NOT_YOUR_ACCOUNT}`
         );
     }
     return (
         "The account behind this API key doesn't have enough credits. " +
         "Please " +
-        `[top up](${enterLink("/top-up", { ref: "agent_low_balance_topup", redirect })}) or ` +
-        `[complete a quest](${enterLink("/quests", { ref: "agent_low_balance_quests" })}), then try again.\n\n` +
+        `[top up](${enterLink(environment, "/top-up", { ref: "agent_low_balance_topup", redirect })}) or ` +
+        `[complete a quest](${enterLink(environment, "/quests", { ref: "agent_low_balance_quests" })}), then try again.\n\n` +
         NOT_YOUR_ACCOUNT
     );
 }
@@ -87,6 +90,7 @@ export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
     )
         return;
     const message = balanceNoticeMessage(
+        c.env.ENVIRONMENT,
         error.errorCode,
         c.var.auth?.apiKey?.id,
         appOrigin(c),

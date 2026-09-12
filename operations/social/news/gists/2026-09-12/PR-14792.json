@@ -1,0 +1,34 @@
+{
+  "pr_number": 14792,
+  "title": "refactor: drop the read-through to the retired binary cache",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14792",
+  "merged_at": "2026-09-12T17:01:29Z",
+  "labels": [],
+  "pr_body_excerpt": "Every media cache miss fell through to `LEGACY_MEDIA_BUCKET`, the retired pre-migration binary cache. That kept a second, frozen key algorithm alive next to the real one, with both needing the same request-identity logic applied by hand. The file's own header said to delete it when the migration stopped being useful; no cutoff was ever set.\n\n- Deletes `legacy-media-cache.ts`, its test, the `withLegacyMediaCache` wrapper and the `LEGACY_MEDIA_BUCKET` binding across all four wrangler environments\n- Media cache adapters are now one plain object: one key algorithm, one bucket, no read-through\n- 431 lines removed\n\n### Notes\n\n- The R2 bucket `pollinations-images` is untouched. Only the Worker binding goes, so this is reversible by re-adding it.\n- That bucket is 25.6 TB over 221M objects and is pending archival to Glacier. The read-through was what required it to stay online.\n- Objects that were never promoted stop being served and regenerate on next request.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_0161ggPVjwNMTu6oaevEScZw\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One cache, fewer ghosts",
+    "blurb": "The media cache has stopped consulting its retired attic. New requests now follow one clean route to fresh pixels, and anything old that turns up gets regenerated.",
+    "summary": "Removed the retired `LEGACY_MEDIA_BUCKET` read-through from the gen worker, leaving media caching with one key algorithm and one active bucket instead of maintaining the frozen pre-migration path.",
+    "impact": "Media that was only stored in the old cache will regenerate on its next request, while the active `pollinations-images` R2 bucket and current cache behavior remain intact.",
+    "keywords": [
+      "media-cache",
+      "r2",
+      "gen-worker",
+      "cache",
+      "cleanup",
+      "migration"
+    ],
+    "visual_concept": "A cozy garden shed cache room where Polli retires an old dusty labeled storage jar while a single healthy lime-green code-plant feeds a modern glowing bucket. The scene represents removing a duplicate legacy lookup so generated media follows one clear path; a small monitor robot can happily point at the one active route.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-server shed: Polli, the cute yellow bee mascot with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blushes, light-blue rounded wings, and a tiny archivist scarf, gently places a dusty old cache jar on a retirement shelf while a single thriving code-plant flows into a glowing lime green (#ecf874) storage bucket; a chunky CRT monitor robot points happily at one clean path. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers and vines around the server shelf and subtle pixel-font text: \"ONE CACHE\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14792.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-server shed: Polli, the cute yellow bee mascot with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blushes, light-blue rounded wings, and a tiny archivist scarf, gently places a dusty old cache jar on a retirement shelf while a single thriving code-plant flows into a glowing lime green (#ecf874) storage bucket; a chunky CRT monitor robot points happily at one clean path. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers and vines around the server shelf and subtle pixel-font text: \"ONE CACHE\"."
+  },
+  "generated_at": "2026-09-12T17:02:40.750066+00:00"
+}

@@ -18,7 +18,11 @@ One tool, `bash`, with `command`, optional `stdin` (file content for
 slug (`^[a-z0-9][a-z0-9._-]{0,63}$`); each session is a
 separate Durable Object, so sessions of one user never see each other's files
 and run in parallel. Without it the agent is in the `default` session. There
-is no session listing. Every successful call is billed at one flat rate (`computer.tool_call.v1`, reported to gen as a
+is no session listing. Inside the shell, `assets publish <path>` copies a
+file to the Pollinations media service (`MEDIA` service binding, the same
+one ffmpeg-mcp uses) and prints its public `https://media.pollinations.ai/…`
+URL. It is a snapshot with media's 30-day retention, refreshed on reads; the
+command's expiry argument is ignored. Every successful call is billed at one flat rate (`computer.tool_call.v1`, reported to gen as a
 usage receipt); discovery requests and storage are free. Memory is a convention,
 not a tool: a `/workspace/README.md` seeded on first use tells the agent to keep
 current facts in `memory/facts.md` and a dated append-only journal in

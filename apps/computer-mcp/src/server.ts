@@ -12,7 +12,7 @@ const BASH_DESCRIPTION = `Run a bash command on your private, persistent compute
 
 Available: coreutils, grep, sed, awk, jq, tar, find, xargs, diff and git (init, add, commit, log, diff, status, clone over HTTPS). Not available: outbound network, Node, Python, npm, apt.
 
-To write a file, put its content in \`stdin\` and run \`cat > /workspace/path\`; the content is passed as-is, no quoting or heredoc needed. Anything that reads standard input (sed, jq, tee, git apply) works the same way. Edit with sed -i or rewrite the file. Output is stdout and stderr, truncated at 64 KB; use head, tail or grep for long output. A non-zero exit code is reported as an error.`;
+To write a file, put its content in \`stdin\` and run \`cat > /workspace/path\`; the content is passed as-is, no quoting or heredoc needed. Anything that reads standard input (sed, jq, tee, git apply) works the same way. Edit with sed -i or rewrite the file. \`assets publish <path>\` copies a file to public media storage and prints its URL (a snapshot; publish again after changes). Output is stdout and stderr, truncated at 64 KB; use head, tail or grep for long output. A non-zero exit code is reported as an error.`;
 
 // Session names become part of the Durable Object key; keep them short slugs.
 export const SESSION_NAME = /^[a-z0-9][a-z0-9._-]{0,63}$/;

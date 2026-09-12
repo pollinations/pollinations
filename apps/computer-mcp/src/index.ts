@@ -6,6 +6,7 @@ import {
     WorkspaceServiceProxy,
     withWorkspace,
 } from "@cloudflare/computer";
+import type { WorkspaceLike } from "@cloudflare/computer/assets";
 import { WorkerShellBackend } from "@cloudflare/computer/backends/worker-shell";
 import { createGitClient } from "@cloudflare/computer/git";
 import jqModules from "@cloudflare/computer/shell/jq";
@@ -15,6 +16,7 @@ import {
     COMPUTER_TOOL_CALL_PRICE,
     MCP_USER_ID_HEADER,
 } from "../../../shared/registry/mcp.ts";
+import { createMediaAssets, type MediaService } from "./assets.ts";
 import {
     createComputerMcpServer,
     DEFAULT_SESSION,
@@ -26,6 +28,7 @@ const TOOL_CALL_RATE = "computer.tool_call.v1";
 type Env = {
     COMPUTER: DurableObjectNamespace<Computer>;
     LOADER: WorkerLoader;
+    MEDIA: MediaService;
 };
 
 const README_PATH = "/workspace/README.md";
@@ -48,7 +51,8 @@ with its own files. Without it you are in the default session.
 
 The only tool is bash (no network, no Node, no Python; coreutils, grep,
 sed, awk, jq, tar and git are available). Write a file by passing its
-content as stdin to \`cat > path\`.
+content as stdin to \`cat > path\`. \`assets publish <path>\` copies a file
+to public media storage and prints its URL.
 `;
 
 // The Dynamic Worker running bash reaches this filesystem through the
@@ -65,6 +69,10 @@ export class Computer extends withWorkspace(
         return {
             storage: ctx.storage as unknown as DurableObjectStorageLike,
             git: createGitClient(),
+            // Typed as unknown: comparing Workspace to WorkspaceLike makes tsc
+            // recurse through the fs overloads until it gives up.
+            assets: (workspace: unknown) =>
+                createMediaAssets(workspace as WorkspaceLike, env.MEDIA),
             defaultGitIdentity: {
                 name: "Pollinations Agent",
                 email: "agent@pollinations.ai",

@@ -130,8 +130,10 @@ example file content for `cat > path`) and optional `session`. The shell has no 
 `grep`, `sed`, `awk`, `jq`, `tar`, and `git` are available. A `/workspace/README.md` is created on first use and
 describes a simple memory layout (`memory/facts.md` plus a dated
 `memory/log/`). Each `session` is an isolated computer with its own files;
-omitting it selects the `default` session. Every call costs the same flat
-rate; see the catalog.
+omitting it selects the `default`
+session. Inside the shell, `assets publish <path>` copies a file to
+[media.pollinations.ai](https://media.pollinations.ai) and prints its public
+URL. Every call costs the same flat rate; see the catalog.
 
 ### Billing and permissions
 

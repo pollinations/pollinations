@@ -12,6 +12,9 @@
   "observability": { "enabled": true },
   // Dynamic Worker loader: each shell exec runs just-bash in a fresh isolate.
   "worker_loaders": [{ "binding": "LOADER" }],
+  "services": [
+    { "binding": "MEDIA", "service": "pollinations-media-prod", "entrypoint": "MediaUpload" }
+  ],
   // One Durable Object per Pollinations user id; its SQLite holds the filesystem.
   "durable_objects": {
     "bindings": [{ "name": "COMPUTER", "class_name": "Computer" }]
@@ -23,6 +26,9 @@
       "workers_dev": false,
       "observability": { "enabled": true },
       "worker_loaders": [{ "binding": "LOADER" }],
+      "services": [
+        { "binding": "MEDIA", "service": "pollinations-media-staging", "entrypoint": "MediaUpload" }
+      ],
       "durable_objects": {
         "bindings": [{ "name": "COMPUTER", "class_name": "Computer" }]
       },

@@ -1,4 +1,4 @@
-import { SELF } from "cloudflare:test";
+import { env, SELF } from "cloudflare:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { describe, expect, it } from "vitest";
@@ -165,6 +165,27 @@ describe("computer MCP worker", () => {
         await client.close();
     });
 
+    it("publishes a file to media storage with assets publish", async () => {
+        const client = await connect("user-publish");
+        const html = "<h1>hello</h1>\n";
+        await bash(client, "cat > /workspace/report.html", html);
+        const publish = await bash(
+            client,
+            "assets publish /workspace/report.html",
+        );
+        expect(publish.isError).toBe(false);
+        const url = publish.text.trim();
+        expect(url).toMatch(
+            /^https:\/\/media\.pollinations\.ai\/[0-9a-f-]{36}$/,
+        );
+        const stored = await env.MEDIA.get(url.slice(url.lastIndexOf("/") + 1));
+        expect(stored?.headers.get("content-type")).toBe(
+            "text/html; charset=utf-8",
+        );
+        expect(await stored?.text()).toBe(html);
+        await client.close();
+    });
+
     it("runs pipelines, jq and git", async () => {
         const client = await connect("user-shell");
         const result = await bash(
@@ -177,13 +198,13 @@ describe("computer MCP worker", () => {
                 "git init . >/dev/null && git add notes.txt && git commit -m init >/dev/null && git log --oneline | wc -l",
             ].join(" && "),
         );
-        expect(result.isError).toBe(false);
         expect(result.text.split("\n").map((line) => line.trim())).toEqual([
             "3",
             "3",
             "1",
             "",
         ]);
+        expect(result.isError).toBe(false);
         await client.close();
     });
 });

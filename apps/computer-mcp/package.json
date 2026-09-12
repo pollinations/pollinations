@@ -14,12 +14,14 @@
   "dependencies": {
     "@cloudflare/computer": "0.3.0",
     "@modelcontextprotocol/sdk": "1.30.0",
+    "@platformatic/vfs": "^0.4.0",
     "ai": "^7.0.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.22.0",
     "@cloudflare/workers-types": "^5.20260722.1",
+    "esbuild": "^0.28.1",
     "typescript": "^6.0.3",
     "vitest": "^4.1.11",
     "wrangler": "^4.130.0"

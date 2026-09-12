@@ -1,7 +1,7 @@
 # Community model monitor
 
 Headless coding agent that watches community text and image models (the
-`owner/model` endpoints registered via My Models), probes them, reads Tinybird
+`community/owner/model` endpoints registered via My Models), probes them, reads Tinybird
 health, and hides unreliable ones from model listings while keeping exact-ID
 calls available. Runs on the `monitoring-agents` EC2 box (ssh alias
 `community-monitor`, see `operations/infrastructure/gpu/GPU_INSTANCES.md`),
@@ -155,7 +155,7 @@ D1/wrangler access needed on the box):
   512px PNG, avoiding external fixture hosts. Both use a cache-busted prompt,
   default output dimensions, and `b64_json` validation. A newly listed model
   is tested immediately. Use
-  `node probe.mjs --model '<owner/name>'` for an explicit freshness check; this
+  `node probe.mjs --model '<community/owner/name>'` for an explicit freshness check; this
   bypasses the cadence but still sends only one request. Targeted checks print
   JSON without replacing the latest full sweep or changing its cadence state.
   Image freshness checks default to generation; add `--operation edit` to test

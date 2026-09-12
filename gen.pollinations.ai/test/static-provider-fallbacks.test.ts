@@ -71,6 +71,11 @@ const OPENROUTER_ROUTES = [
         "deepinfra/bf16",
     ],
     [
+        "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8",
+        "deepseek/deepseek-v4.1-flash",
+        "deepinfra/fp8",
+    ],
+    [
         "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16",
         "nvidia/nemotron-3.5-lightning",
         "coreweave/bf16",
@@ -389,6 +394,15 @@ describe("static provider fallbacks", () => {
         ).toMatchObject({
             promptTextTokens: 0.08 / 1_000_000,
             completionTextTokens: 0.18 / 1_000_000,
+        });
+        expect(
+            TEXT_SERVICES[
+                "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8"
+            ].cost,
+        ).toMatchObject({
+            promptTextTokens: 0.2 / 1_000_000,
+            promptCachedTokens: 0.006 / 1_000_000,
+            completionTextTokens: 0.6 / 1_000_000,
         });
         expect(
             TEXT_SERVICES["meta/llama-4-scout:openrouter:vertex-us-east5"].cost,

@@ -67,6 +67,17 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "deepseek/deepseek-v4.1-flash": {
+        "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8": {
+            supportedParameters: CHAT_PARAMETERS.openRouterDeepseekV41Flash,
+            provider: "openrouter",
+            cost: {
+                promptTextTokens: perMillion(0.2),
+                promptCachedTokens: perMillion(0.006),
+                completionTextTokens: perMillion(0.6),
+            },
+        },
+    },
     "minimax/minimax-m2.7": {
         "minimax/minimax-m2.7:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,

@@ -1080,7 +1080,7 @@ describe("API Key Management", () => {
             const body = (await response.json()) as ApiKeyListResponse;
             const listed = body.data.find((item) => item.id === created.id);
             expect(listed?.permissions?.models).toEqual([
-                "model-owner/private-model",
+                "community/model-owner/private-model",
             ]);
         });
 

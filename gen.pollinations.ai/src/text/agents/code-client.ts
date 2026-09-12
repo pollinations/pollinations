@@ -26,7 +26,10 @@ export function createCodeAgentResponsesClient(
         endpoint.id,
         {},
         {
-            limits: { cpuMs: 1_000, subRequests: 32 },
+            // Guards against runaway code, not normal use: an agent with every
+            // hosted MCP server, eight steps and sixteen tool calls makes ~30
+            // subrequests, and CPU time excludes waiting on model responses.
+            limits: { cpuMs: 5_000, subRequests: 64 },
             outbound: {
                 CODE_AGENT_CONTEXT: {
                     authorization: `Bearer ${apiKey}`,

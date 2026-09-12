@@ -474,6 +474,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v4-flash-0731",
         }),
+    "accounts/fireworks/models/deepseek-v4p1-flash": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/deepseek-v4p1-flash",
+        }),
+    "deepseek-v41-flash-openrouter-deepinfra": createPinnedOpenRouterConfig(
+        "deepseek/deepseek-v4.1-flash",
+        "deepinfra/fp8",
+    ),
     "accounts/fireworks/models/deepseek-v4-flash-vision-exp": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v4-flash-vision-exp",

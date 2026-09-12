@@ -81,6 +81,8 @@ def is_compatible_text_model(model: object) -> bool:
     model_id = model.get("id")
     if not isinstance(model_id, str) or not model_id:
         return False
+    if model.get("category") not in (None, "text"):
+        return False
 
     endpoints = model.get("supported_endpoints")
     if endpoints is not None and (

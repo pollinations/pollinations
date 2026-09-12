@@ -26,6 +26,8 @@ type PollenBalanceProps = {
     packBalance: number;
     paidWeek?: number;
     tierWeek?: number;
+    /** Only the two balance cards: no total row, no "how it works" footer. */
+    compact?: boolean;
 };
 
 const BALANCE_DISPLAY_EPSILON = 0.0001;
@@ -70,6 +72,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     packBalance,
     paidWeek = 0,
     tierWeek = 0,
+    compact = false,
 }) => {
     const displayTierBalance = normalizeDisplayBalance(tierBalance);
     const displayPaidBalance = normalizeDisplayBalance(packBalance);
@@ -148,49 +151,53 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 />
             </div>
 
-            {/* Total + 7d earnings below */}
-            <div className="flex items-start justify-between gap-3 pt-3">
-                <span className="text-sm font-bold uppercase tracking-wide text-theme-text-soft pt-1">
-                    Total
-                </span>
-                <div className="flex flex-col items-end leading-tight">
-                    <span className="flex items-baseline gap-1.5">
-                        <span className="text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight text-theme-text-soft">
-                            {formatPollen(totalPollen)}
+            {!compact && (
+                <>
+                    {/* Total + 7d earnings below */}
+                    <div className="flex items-start justify-between gap-3 pt-3">
+                        <span className="text-sm font-bold uppercase tracking-wide text-theme-text-soft pt-1">
+                            Total
                         </span>
-                        <span className="text-xs font-bold text-theme-text-soft">
-                            pollen
-                        </span>
-                    </span>
-                    {totalWeek > 0 && (
-                        <span className="mt-1 text-sm font-bold tabular-nums text-intent-success-text">
-                            +{formatPollen(totalWeek)}{" "}
-                            <span className="font-medium text-theme-text-muted">
-                                / 7d
+                        <div className="flex flex-col items-end leading-tight">
+                            <span className="flex items-baseline gap-1.5">
+                                <span className="text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight text-theme-text-soft">
+                                    {formatPollen(totalPollen)}
+                                </span>
+                                <span className="text-xs font-bold text-theme-text-soft">
+                                    pollen
+                                </span>
                             </span>
-                        </span>
-                    )}
-                </div>
-            </div>
+                            {totalWeek > 0 && (
+                                <span className="mt-1 text-sm font-bold tabular-nums text-intent-success-text">
+                                    +{formatPollen(totalWeek)}{" "}
+                                    <span className="font-medium text-theme-text-muted">
+                                        / 7d
+                                    </span>
+                                </span>
+                            )}
+                        </div>
+                    </div>
 
-            {/* Footer: learn more */}
-            <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                <p className="flex items-start gap-1.5">
-                    <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Your wallet holds Pollen you've purchased plus Pollen
-                        you've earned.{" "}
-                        <InlineLink
-                            as={Link}
-                            to="/news"
-                            hash="how-does-my-pollen-wallet-work"
-                            external={false}
-                        >
-                            How it works
-                        </InlineLink>
-                    </span>
-                </p>
-            </div>
+                    {/* Footer: learn more */}
+                    <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                        <p className="flex items-start gap-1.5">
+                            <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                Your wallet holds Pollen you've purchased plus
+                                Pollen you've earned.{" "}
+                                <InlineLink
+                                    as={Link}
+                                    to="/news"
+                                    hash="how-does-my-pollen-wallet-work"
+                                    external={false}
+                                >
+                                    How it works
+                                </InlineLink>
+                            </span>
+                        </p>
+                    </div>
+                </>
+            )}
         </div>
     );
 };

@@ -164,7 +164,7 @@ function TopUpPage() {
                             Your payment went through.
                         </p>
                     </AuthInfoCard>
-                    {wallet && <PollenBalance {...wallet} />}
+                    {wallet && <PollenBalance {...wallet} compact />}
                     <ReturnToApp returnUrl={returnUrl} autoReturn />
                 </div>
             </AuthModal>
@@ -184,7 +184,7 @@ function TopUpPage() {
                     <ErrorBanner>Checkout was cancelled.</ErrorBanner>
                 )}
                 <Section title="Wallet" framed>
-                    <PollenBalance {...wallet} />
+                    <PollenBalance {...wallet} compact />
                 </Section>
                 <Section title="Top-up" framed>
                     <BuyPollenPanel

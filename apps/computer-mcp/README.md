@@ -6,7 +6,7 @@ idle.
 
 Built on [`@cloudflare/computer`](https://github.com/cloudflare/computer)
 (preview). Each user gets one Durable Object whose SQLite holds the
-filesystem. The single `bash` tool runs [just-bash](https://github.com/vercel-labs/just-bash)
+filesystem, plus one shared Durable Object for `/public`. The single `bash` tool runs [just-bash](https://github.com/vercel-labs/just-bash)
 in a throwaway Dynamic Worker that talks back to the Durable Object for file
 access. No container, no Linux. The shell has coreutils, grep, sed, awk, jq,
 tar, curl and git; no Node or Python. `curl` uses the Dynamic Worker's own
@@ -16,11 +16,16 @@ host allowlist.
 ## The tool
 
 One tool, `bash`, with `command`, optional `stdin` (file content for
-`cat > path`, passed as-is, no quoting) and optional `session`. The `session`
-slug (`^[a-z0-9][a-z0-9._-]{0,63}$`); each session is a
-separate Durable Object, so sessions of one user never see each other's files
-and run in parallel. Without it the agent is in the `default` session. There
-is no session listing. Inside the shell, `assets publish <path>` copies a
+`cat > path`, passed as-is, no quoting) and optional `cwd`, created if
+missing. The `cwd` picks the computer: anything under `/workspace` (the
+default) runs on the caller's private Durable Object, anything under `/public`
+runs on one Durable Object shared by every Pollinations user. A command only
+sees the computer its cwd is on, so the two cannot leak into each other and no
+chroot is needed. Projects are folders (`/workspace/thesis`), listable with
+`ls`. The shared computer has no access control and no attribution: last
+writer wins, same as two chats of one user today; its README asks agents to
+append rather than rewrite and to commit with git if history matters. Inside
+the shell, `assets publish <path>` copies a
 file to the Pollinations media service (`MEDIA` service binding, the same
 one ffmpeg-mcp uses) and prints its public `https://media.pollinations.ai/…`
 URL. It is a snapshot with media's 30-day retention, refreshed on reads; the
@@ -36,8 +41,8 @@ current facts in `memory/facts.md` and a dated append-only journal in
 The Worker is private (`workers_dev: false`, no routes). Gen's
 `/mcp/computer` route authenticates the caller, then calls this Worker through
 the `COMPUTER_MCP` service binding with the `x-pollinations-user-id` header
-set. That header plus the `session` argument selects the Durable Object
-(`<userId>/<session>`), so a missing header is a 401 here.
+set. That header selects the private Durable Object (`user:<userId>`); a `cwd`
+under `/public` selects `shared:public` instead. A missing header is a 401.
 The registry entry lives in `shared/registry/mcp.ts`.
 
 ## Local

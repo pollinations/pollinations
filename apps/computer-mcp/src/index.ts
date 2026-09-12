@@ -20,8 +20,9 @@ import {
 import { createMediaAssets, type MediaService } from "./assets.ts";
 import {
     createComputerMcpServer,
-    DEFAULT_SESSION,
-    SESSION_NAME,
+    isPublicPath,
+    PRIVATE_ROOT,
+    PUBLIC_ROOT,
 } from "./server.ts";
 
 const TOOL_CALL_RATE = "computer.tool_call.v1";
@@ -32,13 +33,24 @@ type Env = {
     MEDIA: MediaService;
 };
 
-const README_PATH = "/workspace/README.md";
-const README = `# Your computer
+const SHELL_NOTES = `## Shell
+
+The only tool is bash (no Node, no Python; coreutils, grep, sed, awk,
+jq, tar, curl and git are available). Write a file by passing its
+content as stdin to \`cat > path\`. \`assets publish <path>\` copies a file
+to public media storage and prints its URL; \`curl -o path <url>\`
+downloads one back. That pair is also how files move between this
+computer and the other one (private /workspace, shared /public): a
+command only sees the computer its cwd is on.
+`;
+
+const PRIVATE_README = `# Your computer
 
 This is your private, persistent computer. Everything under /workspace
-survives between runs. Nothing outside /workspace persists. Every call
-takes an optional \`session\` name; each session is a separate computer
-with its own files. Without it you are in the default session.
+survives between runs. Keep one folder per project (for example
+/workspace/thesis) and pass it as cwd. /public is a separate computer
+shared with every Pollinations user; use a cwd under /public to work
+there.
 
 ## Memory convention
 
@@ -48,14 +60,18 @@ with its own files. Without it you are in the default session.
   entry at the end of each run: what happened, what was decided, open items.
 - Before answering questions about earlier work, grep /workspace/memory.
 
-## Shell
+${SHELL_NOTES}`;
 
-The only tool is bash (no Node, no Python; coreutils, grep, sed, awk,
-jq, tar, curl and git are available). Write a file by passing its
-content as stdin to \`cat > path\`. \`assets publish <path>\` copies a file
-to public media storage and prints its URL; \`curl -o path <url>\`
-downloads one back.
-`;
+const PUBLIC_README = `# The public computer
+
+Everything under /public is shared with every Pollinations user and their
+agents. Anyone can read, change or delete these files; nothing here is
+private, so never store secrets or personal data. Keep one folder per
+topic, prefer appending (>>) to rewriting shared files, and commit with
+git if history matters. Your private computer is /workspace, reachable
+with a cwd under /workspace.
+
+${SHELL_NOTES}`;
 
 // The Dynamic Worker running bash reaches this filesystem through the
 // service proxy, so the loader loopback needs the class exported here.
@@ -97,7 +113,7 @@ export class Computer extends withWorkspace(
         }
         const payload = await readJsonRpc(request);
         const workspace = await getWorkspace(this);
-        await seedReadme(workspace);
+        await seedReadme(workspace, isPublicPath(cwdOf(payload)));
         const server = createComputerMcpServer(workspace);
         // JSON responses (not SSE) so the usage receipt can be attached once
         // the tool has finished.
@@ -115,7 +131,7 @@ export class Computer extends withWorkspace(
 type JsonRpcPayload = {
     id?: string | number | null;
     method?: string;
-    params?: { name?: string; arguments?: { session?: unknown } };
+    params?: { name?: string; arguments?: { cwd?: unknown } };
 };
 
 async function readJsonRpc(request: Request): Promise<JsonRpcPayload> {
@@ -138,12 +154,27 @@ function toolCallUsage(payload: JsonRpcPayload, response: Response) {
     };
 }
 
-async function seedReadme(workspace: WorkspaceClient): Promise<void> {
+function cwdOf(payload: JsonRpcPayload): string {
+    const cwd = payload.params?.arguments?.cwd;
+    return typeof cwd === "string" ? cwd : PRIVATE_ROOT;
+}
+
+async function seedReadme(
+    workspace: WorkspaceClient,
+    isPublic: boolean,
+): Promise<void> {
+    const root = isPublic ? PUBLIC_ROOT : PRIVATE_ROOT;
+    const readmePath = `${root}/README.md`;
     try {
-        await workspace.fs.stat(README_PATH);
+        await workspace.fs.stat(readmePath);
     } catch {
-        await workspace.fs.mkdir("/workspace/memory/log", { recursive: true });
-        await workspace.fs.writeFile(README_PATH, README);
+        await workspace.fs.mkdir(isPublic ? root : `${root}/memory/log`, {
+            recursive: true,
+        });
+        await workspace.fs.writeFile(
+            readmePath,
+            isPublic ? PUBLIC_README : PRIVATE_README,
+        );
     }
 }
 
@@ -161,21 +192,24 @@ export default {
             );
         }
         const payload = await readJsonRpc(request);
-        const session = payload.params?.arguments?.session ?? DEFAULT_SESSION;
-        if (typeof session !== "string" || !SESSION_NAME.test(session)) {
+        const cwd = cwdOf(payload);
+        if (!cwd.startsWith("/")) {
             return Response.json({
                 jsonrpc: "2.0",
                 id: payload.id ?? null,
                 error: {
                     code: -32602,
-                    message: `Invalid session name; use ${SESSION_NAME}`,
+                    message: `cwd must be an absolute path under ${PRIVATE_ROOT} or ${PUBLIC_ROOT}`,
                 },
             });
         }
-        // One Durable Object per user and session: sessions never see each
-        // other's files and run in parallel.
+        // The cwd picks the computer: one Durable Object per user for
+        // /workspace, a single shared one for /public. A command can only
+        // see the computer it runs on, so the two never leak into each other.
         const stub = env.COMPUTER.get(
-            env.COMPUTER.idFromName(`${userId}/${session}`),
+            env.COMPUTER.idFromName(
+                isPublicPath(cwd) ? "shared:public" : `user:${userId}`,
+            ),
         );
         return stub.fetch(request);
     },

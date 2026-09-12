@@ -3,20 +3,25 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
 const SERVER_INSTRUCTIONS =
-    "A private, persistent computer with one tool: bash. Files under " +
-    "/workspace survive between runs. Read /workspace/README.md first; it " +
-    "explains the memory layout. Every call takes an optional `session` " +
-    "name; each session is a separate computer with its own files.";
+    "A persistent computer with one tool: bash. /workspace is your private " +
+    "computer; /public is one computer shared with every Pollinations user. " +
+    "The `cwd` argument picks which one you are on. Read the README.md in " +
+    "the root of the computer you use first.";
 
-const BASH_DESCRIPTION = `Run a bash command on your private, persistent computer. Everything under /workspace survives between runs; nothing else persists.
+const BASH_DESCRIPTION = `Run a bash command on a persistent computer. \`cwd\` under /workspace (the default) runs on your private computer: keep one folder per project there, e.g. /workspace/thesis. \`cwd\` under /public runs on a computer shared with every Pollinations user: anyone can read, change or delete those files. A command sees only the computer its cwd is on; move files between them with \`assets publish\` and \`curl\`. The cwd folder is created if missing.
 
 Available: coreutils, grep, sed, awk, jq, tar, find, xargs, diff, curl (HTTP and HTTPS) and git (init, add, commit, log, diff, status, clone over HTTPS). Not available: Node, Python, npm, apt.
 
-To write a file, put its content in \`stdin\` and run \`cat > /workspace/path\`; the content is passed as-is, no quoting or heredoc needed. Anything that reads standard input (sed, jq, tee, git apply) works the same way. Edit with sed -i or rewrite the file. \`assets publish <path>\` copies a file to public media storage and prints its URL (a snapshot; publish again after changes); \`curl -o <path> <url>\` downloads a file, e.g. an image the user generated. Output is stdout and stderr, truncated at 64 KB; use head, tail or grep for long output. A non-zero exit code is reported as an error.`;
+To write a file, put its content in \`stdin\` and run \`cat > path\`; the content is passed as-is, no quoting or heredoc needed. Anything that reads standard input (sed, jq, tee, git apply) works the same way. Edit with sed -i or rewrite the file. \`assets publish <path>\` copies a file to public media storage and prints its URL (a snapshot; publish again after changes); \`curl -o <path> <url>\` downloads a file, e.g. an image the user generated. Output is stdout and stderr, truncated at 64 KB; use head, tail or grep for long output. A non-zero exit code is reported as an error.`;
 
-// Session names become part of the Durable Object key; keep them short slugs.
-export const SESSION_NAME = /^[a-z0-9][a-z0-9._-]{0,63}$/;
-export const DEFAULT_SESSION = "default";
+export const PRIVATE_ROOT = "/workspace";
+export const PUBLIC_ROOT = "/public";
+
+// Which computer a working directory lives on. Everything under /public is
+// the one shared computer; everything else is the caller's private one.
+export function isPublicPath(cwd: string): boolean {
+    return cwd === PUBLIC_ROOT || cwd.startsWith(`${PUBLIC_ROOT}/`);
+}
 
 const MAX_OUTPUT_BYTES = 64 * 1024;
 const COMMAND_TIMEOUT_MS = 60_000;
@@ -42,19 +47,18 @@ export function createComputerMcpServer(workspace: WorkspaceClient): McpServer {
                 cwd: z
                     .string()
                     .optional()
-                    .describe("Working directory. Defaults to /workspace."),
-                session: z
-                    .string()
-                    .regex(SESSION_NAME)
-                    .optional()
                     .describe(
-                        "Session to run in. Each session is an isolated " +
-                            "computer; omit for the default session.",
+                        "Absolute working directory; created if missing. " +
+                            "Under /workspace (default) it is your private " +
+                            "computer, under /public the shared one.",
                     ),
             },
         },
-        async ({ command, stdin, cwd }, context) => {
+        async ({ command, stdin, cwd = PRIVATE_ROOT }, context) => {
             try {
+                await workspace.fs
+                    .mkdir(cwd, { recursive: true })
+                    .catch(() => undefined);
                 const handle = await workspace.runtime.exec(command, {
                     cwd,
                     stdin,

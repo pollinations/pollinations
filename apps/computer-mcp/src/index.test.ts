@@ -29,11 +29,11 @@ async function bash(
     client: Client,
     command: string,
     stdin?: string,
-    session?: string,
+    cwd?: string,
 ): Promise<{ text: string; isError: boolean }> {
     const result = await client.callTool({
         name: "bash",
-        arguments: { command, stdin, session },
+        arguments: { command, stdin, cwd },
     });
     const content = result.content as { type: string; text?: string }[];
     const text = content
@@ -132,36 +132,60 @@ describe("computer MCP worker", () => {
         await bob.close();
     });
 
-    it("keeps sessions of one user isolated", async () => {
-        const client = await connect("user-sessions");
-        await bash(
+    it("creates the cwd folder and keeps projects on one computer", async () => {
+        const client = await connect("user-projects");
+        const write = await bash(
             client,
-            "echo 'thesis plan' > /workspace/plan.md",
+            "echo 'thesis plan' > plan.md",
             undefined,
-            "thesis",
+            "/workspace/thesis",
         );
-        const elsewhere = await bash(client, "ls /workspace");
-        expect(elsewhere.text).not.toContain("plan.md");
-        const same = await bash(
+        expect(write.isError).toBe(false);
+        const ls = await bash(
             client,
-            "cat /workspace/plan.md",
+            "ls /workspace/thesis && cat ../README.md | head -1",
             undefined,
-            "thesis",
+            "/workspace/thesis",
         );
-        expect(same.text).toContain("thesis plan");
-        const readme = await bash(
-            client,
-            "cat /workspace/README.md",
+        expect(ls.text).toContain("plan.md");
+        expect(ls.text).toContain("# Your computer");
+        await client.close();
+    });
+
+    it("shares /public between users and keeps it apart from /workspace", async () => {
+        const alice = await connect("user-public-alice");
+        const write = await bash(
+            alice,
+            "echo 'from alice' > /public/notes/hello.md && cat /public/README.md | head -1",
             undefined,
-            "thesis",
+            "/public/notes",
         );
-        expect(readme.isError).toBe(false);
+        expect(write.isError).toBe(false);
+        expect(write.text).toContain("# The public computer");
+        const alicePrivate = await bash(alice, "ls /public");
+        expect(alicePrivate.isError).toBe(true);
+        await alice.close();
+
+        const bob = await connect("user-public-bob");
+        const read = await bash(
+            bob,
+            "cat hello.md && ls /workspace",
+            undefined,
+            "/public/notes",
+        );
+        expect(read.text).toContain("from alice");
+        expect(read.text).not.toContain("README.md");
+        await bob.close();
+    });
+
+    it("rejects a relative cwd", async () => {
+        const client = await connect("user-cwd");
         await expect(
             client.callTool({
                 name: "bash",
-                arguments: { command: "ls", session: "../other" },
+                arguments: { command: "ls", cwd: "notes" },
             }),
-        ).rejects.toThrow(/Invalid session name/);
+        ).rejects.toThrow(/cwd must be an absolute path/);
         await client.close();
     });
 

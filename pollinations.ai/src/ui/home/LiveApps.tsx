@@ -1,10 +1,16 @@
-import { ContentHeader, cn, InlineLink, ScrollArea } from "@pollinations/ui";
+import {
+    ArrowRightIcon,
+    Button,
+    ContentHeader,
+    cn,
+    ScrollArea,
+} from "@pollinations/ui";
 import { Link } from "@tanstack/react-router";
 import { useAppShowcase } from "../../data/publicStats";
 import { AppCarousel } from "../apps/AppCarousel";
 
 /**
- * A compact shelf of active community apps, shown before the build tools.
+ * A compact shelf of active community apps.
  * Missing screenshots use the shared Polli fallback, so the shelf remains
  * visual without pretending generated art is the real app.
  */
@@ -20,12 +26,17 @@ export function LiveApps({ className }: { className?: string }) {
             <ContentHeader
                 eyebrow="Live now"
                 title="Apps from the community."
-                action={
-                    <InlineLink as={Link} to="/apps" directional>
-                        See all apps
-                    </InlineLink>
-                }
             />
+            <Button
+                as={Link}
+                to="/apps"
+                appearance="raised"
+                size="sm"
+                className="self-start gap-2"
+            >
+                See all apps
+                <ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
+            </Button>
             {loading ? (
                 <ScrollArea
                     axis="x"

@@ -2079,7 +2079,7 @@ test("Perplexity aliases add no options and allow explicit override", async ({
     });
 });
 
-test("rejects unsupported Perplexity search context sizes", async ({
+test("forwards a medium search context and bills the medium fee", async ({
     paidApiKey,
     mocks,
 }) => {
@@ -2092,23 +2092,25 @@ test("rejects unsupported Perplexity search context sizes", async ({
         },
         body: JSON.stringify({
             model: "perplexity/sonar",
-            messages: [{ role: "user", content: "invalid context" }],
+            messages: [{ role: "user", content: "medium context" }],
             web_search_options: { search_context_size: "medium" },
         }),
     });
 
-    expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toEqual({
-        error: {
-            message:
-                'Unsupported web_search_options.search_context_size. Use "low" or "high".',
-        },
-    });
-    expect(mocks.portkeyDirect.state.requests).toHaveLength(0);
+    expect(response.status).toBe(200);
+    await response.text();
     await wait();
+
+    expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
+        web_search_options: { search_context_size: "medium" },
+    });
+    // The reply reports no tier, so the fee follows what the caller asked for.
+    expect(mocks.tinybird.state.events[0].adjustmentCosts).toEqual({
+        "perplexity.sonar_medium.search_request.v1": 0.008,
+    });
 });
 
-test("pins other Perplexity models high and strips search options elsewhere", async ({
+test("forwards search options untouched and bills the requested tier", async ({
     paidApiKey,
     mocks,
 }) => {
@@ -2116,7 +2118,7 @@ test("pins other Perplexity models high and strips search options elsewhere", as
 
     for (const [model, searchContextSize] of [
         ["perplexity/sonar-pro", "low"],
-        ["perplexity/sonar-reasoning-pro", "low"],
+        ["perplexity/sonar-reasoning-pro", "high"],
         ["openai/gpt-5-nano", "medium"],
     ] as const) {
         const { response, wait } = await fetchWorker("/v1/chat/completions", {
@@ -2141,14 +2143,21 @@ test("pins other Perplexity models high and strips search options elsewhere", as
 
     expect(mocks.portkeyDirect.state.requests).toHaveLength(3);
     expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
-        web_search_options: { search_context_size: "high" },
+        web_search_options: { search_context_size: "low" },
     });
     expect(mocks.portkeyDirect.state.requests[1]).toMatchObject({
         web_search_options: { search_context_size: "high" },
     });
-    expect(mocks.portkeyDirect.state.requests[2]).not.toHaveProperty(
-        "web_search_options",
-    );
+    expect(mocks.portkeyDirect.state.requests[2]).toMatchObject({
+        web_search_options: { search_context_size: "medium" },
+    });
+    expect(mocks.tinybird.state.events[0].adjustmentCosts).toEqual({
+        "perplexity.sonar_pro_low.search_request.v1": 0.006,
+    });
+    expect(mocks.tinybird.state.events[1].adjustmentCosts).toEqual({
+        "perplexity.sonar_reasoning_high.search_request.v1": 0.014,
+    });
+    expect(mocks.tinybird.state.events[2].adjustmentCosts).toBeUndefined();
 });
 
 test("streaming chat completions bill provider-reported Perplexity request cost", async ({

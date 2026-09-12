@@ -261,27 +261,27 @@ type BuyPollenPanelProps = {
     initialBillingState: BillingState | null;
     selectedPackAmount: number;
     onSelectedPackAmountChange: (amount: number) => void;
-    /** Same-origin path Stripe sends the buyer back to; default is /pollen. */
-    checkoutReturnPath?: string;
+    /** Standalone /top-up: Stripe returns there, carrying the app link. */
+    returnToTopUp?: { redirect?: string };
 };
 
 export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     initialBillingState,
     selectedPackAmount,
     onSelectedPackAmountChange,
-    checkoutReturnPath,
+    returnToTopUp,
 }) => {
     return (
         <>
             <PollenPackPurchase
                 selectedPackAmount={selectedPackAmount}
                 onSelectedPackAmountChange={onSelectedPackAmountChange}
-                checkoutReturnPath={checkoutReturnPath}
+                returnToTopUp={returnToTopUp}
             />
             <Surface>
                 <AutoTopUpPanel
                     initialBillingState={initialBillingState}
-                    returnPath={checkoutReturnPath}
+                    returnToTopUp={returnToTopUp}
                 />
             </Surface>
             <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">

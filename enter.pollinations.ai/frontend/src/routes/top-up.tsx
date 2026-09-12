@@ -206,9 +206,6 @@ function TopUpPage() {
 
     if (!wallet || billing === undefined) return <AuthModalLoading />;
 
-    // Stripe comes back here; the server re-adds the pack it was sent.
-    const returnPath = `/top-up${search.redirect ? `?redirect=${encodeURIComponent(search.redirect)}` : ""}`;
-
     return (
         <AuthModal dialog={{ label: "Top up" }} contentClassName="max-w-2xl">
             <AuthModalHeader>{accountIdentity}</AuthModalHeader>
@@ -234,7 +231,7 @@ function TopUpPage() {
                                 });
                             }
                         }}
-                        checkoutReturnPath={returnPath}
+                        returnToTopUp={{ redirect: search.redirect }}
                     />
                 </Section>
                 <ReturnToApp returnUrl={returnUrl} />

@@ -25,7 +25,6 @@ import {
     getStripeNewCardGateStatus,
     stripeNewCardGateMetadata,
 } from "../utils/stripe-card-gate.ts";
-import { getStripeReturnUrl } from "../utils/stripe-return-url.ts";
 
 /**
  * Stripe pack configuration
@@ -70,11 +69,17 @@ export const stripeRoutes = new Hono<Env>()
         // Create Stripe client
         const stripe = createStripeClient(c.env);
 
-        // Return checkout sessions to the caller's page (`return`, a path on
-        // this origin, e.g. the standalone /top-up page), else to Pollen.
+        // Return the buyer to the standalone top-up page when checkout
+        // started there, else to the Pollen dashboard. Both paths are fixed
+        // here, so the return URL is always on this origin.
         const baseUrl =
             c.env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
-        const pollenUrl = getStripeReturnUrl(baseUrl, c.req.query("return"));
+        const pollenUrl = new URL(
+            c.req.query("return") === "top-up" ? "/top-up" : "/pollen",
+            baseUrl,
+        );
+        const appRedirect = c.req.query("redirect");
+        if (appRedirect) pollenUrl.searchParams.set("redirect", appRedirect);
         pollenUrl.searchParams.set("pack", pack.packKey);
         const pollenReturnUrl = pollenUrl.toString();
 
@@ -224,16 +229,17 @@ export const stripeRoutes = new Hono<Env>()
 
         const body = (await c.req.json().catch(() => null)) as {
             return?: unknown;
+            redirect?: unknown;
         } | null;
-        const returnPath =
-            typeof body?.return === "string" ? body.return : undefined;
 
         try {
-            const session = await createBillingPortalSession(
-                c.env,
-                user.id,
-                returnPath,
-            );
+            const session = await createBillingPortalSession(c.env, user.id, {
+                topUp: body?.return === "top-up",
+                redirect:
+                    typeof body?.redirect === "string"
+                        ? body.redirect
+                        : undefined,
+            });
 
             if (!session.url) {
                 return c.json(

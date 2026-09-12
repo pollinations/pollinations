@@ -1,7 +1,6 @@
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type Stripe from "stripe";
 import { createStripeClient } from "../stripe.ts";
-import { getStripeReturnUrl } from "../stripe-return-url.ts";
 import {
     BILLING_PORTAL_CONFIGURATION_METADATA_KEY,
     BILLING_PORTAL_CONFIGURATION_METADATA_VALUE,
@@ -14,7 +13,7 @@ import { getOrCreateStripeCustomerId } from "./customer.ts";
 export async function createBillingPortalSession(
     env: CloudflareBindings,
     userId: string,
-    returnPath?: string,
+    returnTo?: BillingReturn,
 ): Promise<Stripe.BillingPortal.Session> {
     const stripe = createStripeClient(env);
     const customer = await getOrCreateStripeCustomerId(env, userId);
@@ -28,7 +27,7 @@ export async function createBillingPortalSession(
     return stripe.billingPortal.sessions.create({
         customer,
         configuration,
-        return_url: getBillingReturnUrl(env, returnPath),
+        return_url: getBillingReturnUrl(env, returnTo),
     });
 }
 
@@ -138,12 +137,16 @@ function isBillingPortalConfigurationCurrent(
     return (currentPmc ?? undefined) === paymentMethodConfiguration;
 }
 
+/** Where the portal sends the user back: the standalone page, else Pollen. */
+type BillingReturn = { topUp?: boolean; redirect?: string };
+
 function getBillingReturnUrl(
     env: CloudflareBindings,
-    returnPath?: string,
+    returnTo?: BillingReturn,
 ): string {
     const baseUrl = env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
-    const url = getStripeReturnUrl(baseUrl, returnPath);
+    const url = new URL(returnTo?.topUp ? "/top-up" : "/pollen", baseUrl);
+    if (returnTo?.redirect) url.searchParams.set("redirect", returnTo.redirect);
     url.searchParams.set("stripe_billing_return", "true");
     return url.toString();
 }

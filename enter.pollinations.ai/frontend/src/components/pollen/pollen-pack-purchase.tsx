@@ -15,15 +15,15 @@ import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 type PollenPackPurchaseProps = {
     selectedPackAmount: number;
     onSelectedPackAmountChange: (amount: number) => void;
-    /** Same-origin path Stripe sends the buyer back to; default is /pollen. */
-    checkoutReturnPath?: string;
+    /** Standalone /top-up: Stripe returns there, carrying the app link. */
+    returnToTopUp?: { redirect?: string };
 };
 
 /** The pack slider and Buy button: the one thing a top-up needs. */
 export const PollenPackPurchase: FC<PollenPackPurchaseProps> = ({
     selectedPackAmount,
     onSelectedPackAmountChange,
-    checkoutReturnPath,
+    returnToTopUp,
 }) => {
     const selectedPackIndex = Math.max(
         0,
@@ -37,11 +37,16 @@ export const PollenPackPurchase: FC<PollenPackPurchaseProps> = ({
     const chargeLabel = formatUsdCentsCompact(
         selectedPack.amountUsd * 100 + serviceFeeCents,
     );
+    const checkoutParams = new URLSearchParams();
+    if (returnToTopUp) {
+        checkoutParams.set("return", "top-up");
+        if (returnToTopUp.redirect)
+            checkoutParams.set("redirect", returnToTopUp.redirect);
+    }
+    const checkoutQuery = checkoutParams.toString();
     const checkoutHref =
         `/api/stripe/checkout/${selectedPack.packKey}` +
-        (checkoutReturnPath
-            ? `?return=${encodeURIComponent(checkoutReturnPath)}`
-            : "");
+        (checkoutQuery ? `?${checkoutQuery}` : "");
 
     return (
         <Surface>

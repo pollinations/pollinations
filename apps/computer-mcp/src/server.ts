@@ -4,16 +4,17 @@ import { z } from "zod";
 
 const SERVER_INSTRUCTIONS =
     "A private, persistent computer with one tool: bash. Your files live " +
-    "under /workspace and survive between runs. Read /workspace/README.md " +
-    "first; it explains the memory layout and how to import and share files.";
+    "under /workspace; /workspace/README.md explains the memory layout.";
 
-const BASH_DESCRIPTION = `Run a bash command on your private, persistent computer. Everything you write survives between runs, except /tmp, which is emptied after every call; keep one folder per project under /workspace (the default cwd), e.g. /workspace/thesis. The cwd folder is created if missing.
+const BASH_DESCRIPTION = `Run a bash command on your private, persistent computer. Files survive between runs, except /tmp, which is emptied after every call. cwd defaults to /workspace and is created if missing; keep one folder per project.
 
-Available: coreutils, grep, sed, awk, jq, tar, find, xargs, diff, curl (HTTP and HTTPS) and git (init, add, commit, log, diff, status, clone, pull, push over HTTPS). Not available: Node, Python, npm, apt.
+Available: coreutils, grep, sed, awk, jq, tar, find, xargs, diff, curl, git. Not available: Node, Python, package managers. curl and git clone reach any public URL.
 
-To write a file, put its content in \`stdin\` and run \`cat > path\`; the content is passed as-is, no quoting or heredoc needed. Anything that reads standard input (sed, jq, tee, git apply) works the same way. Edit with sed -i or rewrite the file.
+Write a file by passing its content in \`stdin\` and running \`cat > path\`; stdin is used as-is, no quoting.
 
-Import: \`curl -o <path> <url>\` downloads any public URL; \`git clone <https-url>\` fetches any public repository. Share: \`assets publish <path>\` copies one file to public media storage and prints its URL (a snapshot, unlisted, kept 30 days; tar a folder first); \`git push\` to a repository the user owns, with their token in the remote URL. Output is stdout and stderr, truncated at 64 KB; use head, tail or grep for long output. A non-zero exit code is reported as an error.`;
+Send files out with \`assets publish <path>\`, which copies one file to media storage and prints an unlisted URL kept 30 days (tar a folder first), or \`git push\` to a repository you own with a token in the remote URL.
+
+Output is stdout and stderr, truncated at 64 KB; a non-zero exit is an error.`;
 
 export const HOME = "/workspace";
 
@@ -35,17 +36,11 @@ export function createComputerMcpServer(workspace: WorkspaceClient): McpServer {
                 stdin: z
                     .string()
                     .optional()
-                    .describe(
-                        "Text fed to the command's standard input, e.g. " +
-                            "file content for `cat > path`.",
-                    ),
+                    .describe("Text fed to the command's standard input."),
                 cwd: z
                     .string()
                     .optional()
-                    .describe(
-                        "Absolute working directory, created if missing. " +
-                            "Defaults to /workspace.",
-                    ),
+                    .describe("Absolute working directory."),
             },
         },
         async ({ command, stdin, cwd = HOME }, context) => {

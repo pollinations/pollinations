@@ -126,12 +126,13 @@ connections from [MCP Connectors](https://enter.pollinations.ai/account#connecto
 The Computer server gives each account a private filesystem under `/workspace`
 and a bash shell. Files persist between requests and agent runs; nothing runs
 while idle. There is one tool, `bash`, with `command`, optional `stdin` (for
-example file content for `cat > path`) and optional `cwd`. The shell cannot run Node or Python; curl, coreutils,
+example file content for `cat > path`) and optional `cwd`, which defaults to `/workspace` and is created if
+missing. The shell cannot run Node or Python; curl, coreutils,
 `grep`, `sed`, `awk`, `jq`, `tar`, and `git` are available. A `/workspace/README.md` is created on first use and
 describes a simple memory layout (`memory/facts.md` plus a dated
-`memory/log/`). `cwd` defaults to `/workspace`, with one folder per project. Nothing is shared between accounts. Files come in with `curl` or `git clone` and go out with `assets publish <path>`, which copies a file to
-[media.pollinations.ai](https://media.pollinations.ai) and prints its public
-URL, or with `git push` to a repository the caller owns. Every call costs the same flat rate; see the catalog.
+`memory/log/`). Keep one folder per project. Nothing is shared between accounts. Files come in with `curl` or `git clone` and go out with `assets publish <path>`, which copies a file to
+[media.pollinations.ai](https://media.pollinations.ai) and prints an unlisted URL that
+expires after 30 days, or with `git push` to a repository the caller owns. Every call costs the same flat rate; see the catalog.
 
 ### Billing and permissions
 

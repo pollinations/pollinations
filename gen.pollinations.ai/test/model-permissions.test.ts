@@ -1,5 +1,5 @@
 import { env, SELF } from "cloudflare:test";
-import { apikey } from "@shared/db/better-auth.ts";
+import { apikey, user as userTable } from "@shared/db/better-auth.ts";
 import { getAudioModelsInfo } from "@shared/registry/model-info.ts";
 import {
     getRegistryModelDefinition,
@@ -24,6 +24,40 @@ import { TEXT_BALANCE_NOTICE_ENABLED } from "../src/middleware/text-balance-noti
 async function fetchWorker(path: string, init: RequestInit = {}) {
     return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
 }
+
+test("banned app owners block direct keys and existing BYOP keys", async () => {
+    const owner = await createTestApiKey();
+    const caller = await createTestApiKey();
+    const db = drizzle(env.DB);
+    await db
+        .update(apikey)
+        .set({ byopClientKeyId: owner.id })
+        .where(eq(apikey.id, caller.id));
+    await db
+        .update(userTable)
+        .set({ banned: true })
+        .where(eq(userTable.id, owner.userId));
+    for (const key of [owner.key, caller.key]) {
+        expect(
+            (
+                await fetchWorker("/v1/models", {
+                    headers: { Authorization: `Bearer ${key}` },
+                })
+            ).status,
+        ).toBe(403);
+    }
+    await db
+        .update(userTable)
+        .set({ banned: false })
+        .where(eq(userTable.id, owner.userId));
+    expect(
+        (
+            await fetchWorker("/v1/models", {
+                headers: { Authorization: `Bearer ${caller.key}` },
+            })
+        ).status,
+    ).toBe(200);
+});
 
 test("catalog metadata exposes publisher rather than author or brand", async () => {
     const response = await fetchWorker("/models");

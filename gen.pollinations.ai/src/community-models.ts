@@ -1,3 +1,4 @@
+import { isUserBanned } from "@shared/auth/ban.ts";
 import { communityResponsesUrl } from "@shared/community-endpoint-urls.ts";
 import {
     type CommunityEndpointRuntime,
@@ -40,6 +41,8 @@ export async function getCommunityModelRegistryEntries(
         .select({
             id: schema.communityEndpoint.id,
             ownerUserId: schema.communityEndpoint.ownerUserId,
+            banned: schema.user.banned,
+            banExpires: schema.user.banExpires,
             ownerGithubUsername: schema.user.githubUsername,
             providerName: schema.user.communityProviderName,
             providerUrl: schema.user.communityProviderUrl,
@@ -68,7 +71,7 @@ export async function getCommunityModelRegistryEntries(
         .where(isNotNull(schema.user.githubUsername));
 
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
-        if (!row.ownerGithubUsername) return [];
+        if (!row.ownerGithubUsername || isUserBanned(row)) return [];
         const baseUrl = row.baseUrl;
         if (!baseUrl || !row.upstreamModel) return [];
         const modelId = communityModelId(row.ownerGithubUsername, row.name);

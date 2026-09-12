@@ -60,6 +60,7 @@ import {
 import {
     communityEndpoint as communityEndpointTable,
     session as sessionTable,
+    user as userTable,
 } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
@@ -109,6 +110,69 @@ import { communityEndpointGatewayContext } from "../src/text/communityEndpoint.t
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const db = drizzle(env.DB);
+
+fixtureTest(
+    "banned owners' public models and agents leave the registry",
+    async () => {
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: "banned-owner",
+        });
+        await insertCommunityEndpoints({
+            id: "ban-model",
+            ownerUserId,
+            name: "model",
+            description: "Test",
+            type: "proxy",
+            visibility: "public",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "test",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        await insertCommunityEndpoints({
+            id: "ban-agent",
+            ownerUserId,
+            name: "agent",
+            description: "Test",
+            type: "prompt_agent",
+            visibility: "public",
+            baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+            upstreamModel: "ban-agent",
+            payload: JSON.stringify({
+                prompt: "Test",
+                baseModel: DEFAULT_TEXT_MODEL,
+                mcpServers: [],
+            }),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        const before = await getCommunityModelRegistryEntries(env);
+        expect(
+            before.filter(
+                (row) => row.communityEndpoint.ownerUserId === ownerUserId,
+            ),
+        ).toHaveLength(2);
+        await db
+            .update(userTable)
+            .set({ banned: true })
+            .where(eq(userTable.id, ownerUserId));
+        expect(
+            (await getCommunityModelRegistryEntries(env)).filter(
+                (row) => row.communityEndpoint.ownerUserId === ownerUserId,
+            ),
+        ).toHaveLength(0);
+        await db
+            .update(userTable)
+            .set({ banned: false })
+            .where(eq(userTable.id, ownerUserId));
+        expect(
+            (await getCommunityModelRegistryEntries(env)).filter(
+                (row) => row.communityEndpoint.ownerUserId === ownerUserId,
+            ),
+        ).toHaveLength(2);
+    },
+);
 
 type CommunityEndpointInsert = typeof communityEndpointTable.$inferInsert;
 type CommunityEndpointFixture = Omit<CommunityEndpointInsert, "title"> &

@@ -1,0 +1,41 @@
+name: Billing / Check fraud bans
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: billing-fraud-bans
+  cancel-in-progress: false
+
+jobs:
+  check:
+    # Enable this repository variable only after the ban guards are deployed.
+    # Manual runs are always read-only. No activation as a side effect of merging.
+    if: github.repository == 'pollinations/pollinations' && (github.event_name == 'workflow_dispatch' || vars.FRAUD_BAN_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: production
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - uses: nhedger/setup-sops@v3
+      - name: Scan full Stripe history and apply the approved policy
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+          FRAUD_BAN_APPLY: ${{ github.event_name == 'schedule' && vars.FRAUD_BAN_ENABLED == 'true' }}
+          FRAUD_BAN_EXCLUDED_USER_IDS: ${{ vars.FRAUD_BAN_EXCLUDED_USER_IDS }}
+        run: >-
+          sops exec-file --no-fifo enter.pollinations.ai/secrets/prod.vars.json
+          'node enter.pollinations.ai/scripts/check-fraud-bans.mjs --secrets-file {}'

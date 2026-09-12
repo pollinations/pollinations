@@ -1,0 +1,34 @@
+{
+  "pr_number": 14782,
+  "title": "docs: trim the computer bash tool description",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14782",
+  "merged_at": "2026-09-12T16:42:26Z",
+  "labels": [],
+  "pr_body_excerpt": "- Cuts the `bash` tool description from ~300 to ~200 tokens by dropping what the model can infer (heredoc alternatives, `sed -i`, `curl -o` syntax, the git subcommand list, \"use head/tail for long output\"); every inference-critical fact stays: persistence, `/tmp` reset, cwd default, no Node/Python, the stdin convention, `assets publish`, the 64 KB cap\n- Shortens the server instructions and the two parameter descriptions that repeated it\n- Fixes the docs page: `/tmp` is emptied after every call, and `assets publish` prints an unlisted URL that expires after 30 days, not a permanent public one\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01WaGsSAmrHYji69S1Hw2EjV",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Less Bash, Same Roots",
+    "blurb": "The computer MCP's bash manual shed the parts a capable model already knows, while keeping the facts that prevent tiny terminal disasters. The /tmp garden now also has an accurately labeled 30-day exit sign.",
+    "summary": "Trimmed the computer MCP bash tool description from about 300 to 200 tokens while retaining persistence, per-call /tmp resets, default cwd, stdin conventions, no Node/Python, assets publish, and the 64 KB output cap; the MCP docs now clarify that assets publish URLs are unlisted and expire after 30 days.",
+    "impact": "Agents get a leaner bash prompt with the operational constraints they need, and developers now have accurate guidance that /tmp is cleared after every call and published asset links last 30 days.",
+    "keywords": [
+      "computer-mcp",
+      "bash",
+      "documentation",
+      "tool-descriptions",
+      "assets-publish",
+      "token-efficiency"
+    ],
+    "visual_concept": "A cozy garden-shed terminal represents the computer MCP bash tool: Polli, wearing tiny librarian glasses, carefully prunes excess words from a scroll while preserving a few clearly labeled command-root notes. A small code-plant sits beside a /tmp bucket being emptied after each watering, and a 30-day sandglass beside an unlisted asset-link envelope visualizes the corrected documentation.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed hackerspace: Polli, the cute yellow-and-dark-brown striped bee mascot with black oval eyes, pink rectangular cheek blushes, light blue rounded wings, and tiny librarian glasses, gently prunes a long bash-command scroll into a neat shorter one beside a glowing retro terminal; a code-plant, a small '/tmp' bucket being emptied, and an unlisted envelope with a tiny 30-day sandglass sit nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle CRT glow, nature details and pixel flowers, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14782.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed hackerspace: Polli, the cute yellow-and-dark-brown striped bee mascot with black oval eyes, pink rectangular cheek blushes, light blue rounded wings, and tiny librarian glasses, gently prunes a long bash-command scroll into a neat shorter one beside a glowing retro terminal; a code-plant, a small '/tmp' bucket being emptied, and an unlisted envelope with a tiny 30-day sandglass sit nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle CRT glow, nature details and pixel flowers, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-12T16:43:30.471575+00:00"
+}

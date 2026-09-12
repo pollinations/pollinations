@@ -1,0 +1,34 @@
+{
+  "pr_number": 14755,
+  "title": "fix: give code agent isolates headroom on CPU and subrequest limits",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14755",
+  "merged_at": "2026-09-12T12:47:53Z",
+  "labels": [],
+  "pr_body_excerpt": "- Raises the Workers for Platforms per-invocation limits for code agent isolates from `cpuMs: 1000, subRequests: 32` to `cpuMs: 5000, subRequests: 64`.\n- An agent with every hosted MCP server, the default eight steps and sixteen tool calls already makes about 30 subrequests, so the old cap left no headroom.\n- CPU time excludes waiting on model and MCP responses; 5 s still stops runaway code.\n- One-line change in `gen/src/text/agents/code-client.ts` plus the matching test expectation.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01WKMPrAfe4wMNBNdZ96Yqmr",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "More room in the hive",
+    "blurb": "The code agent isolate got a larger lunchbox: 5 seconds of CPU and 64 subrequests per invocation. Hosted MCP servers can now all come along without immediately eating the budget.",
+    "summary": "Raised code-agent isolate limits in gen.pollinations.ai from 1,000 ms to 5,000 ms of CPU time and from 32 to 64 subrequests per invocation, giving default eight-step agents using hosted MCP tools practical headroom.",
+    "impact": "Code agents can now complete more tool-heavy runs—especially with every hosted MCP server enabled—while the 5-second CPU cap still keeps runaway code contained.",
+    "keywords": [
+      "code-agent",
+      "MCP",
+      "Workers for Platforms",
+      "subrequests",
+      "CPU limits",
+      "tool calls"
+    ],
+    "visual_concept": "Depict Polli as a cozy code gardener wearing a tiny tool belt, expanding a retro terminal's roomy hive-like workstation from 32 to 64 little request slots. A friendly CRT monitor robot helps carry glowing MCP tool boxes while code-plants and flowers grow around the terminal, representing agents gaining safe room for more steps and tool calls.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tool belt, tending a lime green (#ecf874) retro code terminal whose glowing request counter grows from \"32\" to \"64\"; a cheerful CRT monitor robot carries small MCP tool boxes beside sprouting code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, dark purple (#110518) pixel outlines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14755.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tool belt, tending a lime green (#ecf874) retro code terminal whose glowing request counter grows from \"32\" to \"64\"; a cheerful CRT monitor robot carries small MCP tool boxes beside sprouting code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, dark purple (#110518) pixel outlines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-12T12:49:20.954700+00:00"
+}

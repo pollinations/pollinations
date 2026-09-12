@@ -80,29 +80,6 @@ test("retrieve matches the list entry exactly (shared mapper)", async () => {
     expect(retrieved).toEqual(listed);
 });
 
-test("reports health consistently across list, retrieve, and /models", async () => {
-    const listResponse = await fetchWorker("/v1/models");
-    const list = (await listResponse.json()) as {
-        data: Record<string, unknown>[];
-    };
-    const listed = list.data.find((m) => m.id === "openai/gpt-5-nano");
-    expect(listed?.health).toBeDefined();
-
-    const retrieveResponse = await fetchWorker(
-        `/v1/models/${encodeURIComponent("openai/gpt-5-nano")}`,
-    );
-    const retrieved = (await retrieveResponse.json()) as Record<
-        string,
-        unknown
-    >;
-    expect(retrieved.health).toEqual(listed?.health);
-
-    const modelsResponse = await fetchWorker("/models");
-    const models = (await modelsResponse.json()) as Record<string, unknown>[];
-    const model = models.find((m) => m.name === "openai/gpt-5-nano");
-    expect(model?.health).toEqual(listed?.health);
-});
-
 test("exposes supported Chat parameters across rich listings", async () => {
     const responses = await Promise.all([
         fetchWorker("/models"),

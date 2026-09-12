@@ -260,3 +260,10 @@ test("DeepSeek V4 models are billed at provider cost", () => {
         expect(price.totalPrice).toBeCloseTo(cost.totalCost, 8);
     }
 });
+
+test("legacy DeepSeek aliases continue to resolve to V4 Flash", () => {
+    expect(resolveModelName("deepseek")).toBe("deepseek/deepseek-v4-flash");
+    expect(resolveModelName("deepseek-flash")).toBe(
+        "deepseek/deepseek-v4-flash",
+    );
+});

@@ -22,7 +22,7 @@ WITH renames(old_id, new_id) AS (
         ('cohere-embed-v4', 'cohere/embed-v4.0'),
         ('command-a-plus', 'cohere/command-a-plus'),
         ('csm-1b', 'sesame/csm-1b'),
-        ('deepseek', 'deepseek/deepseek-v4.1-flash'),
+        ('deepseek', 'deepseek/deepseek-v4-flash'),
         ('deepseek-pro', 'deepseek/deepseek-v4-pro'),
         ('dreamshaper', 'lykon/dreamshaper-8-lcm'),
         ('eleven-dialogue', 'elevenlabs/eleven-v3:dialogue'),

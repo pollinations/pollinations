@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { SAFETY_FEATURES } from "../schemas/safety.ts";
-import { ModelHealthSchema } from "./model-health.ts";
 import { publicPriceInfo, toFixedPoint } from "./public-pricing";
 import {
     type BillingAdjustmentRule,
@@ -93,6 +92,16 @@ export const ModelInfoSchema = z.object({
     output_modalities: z.array(z.enum(MODEL_OUTPUT_MODALITIES)).optional(),
     required_safety: z.array(z.enum(SAFETY_FEATURES)).optional(),
     supported_endpoints: z.array(z.string()).optional(),
+    supported_parameters: z.array(z.string()).optional(),
+    default_parameters: z.record(z.string(), z.unknown()).optional(),
+    health: z
+        .object({
+            success_rate: z.number().min(0).max(1),
+            samples: z.number().int().nonnegative(),
+            window_minutes: z.number().int().positive(),
+            as_of: z.string().datetime(),
+        })
+        .optional(),
     video_capabilities: z.array(z.enum(VIDEO_CAPABILITIES)).optional(),
     min_duration: z.number().positive().optional(),
     max_duration: z.number().positive().optional(),
@@ -120,7 +129,6 @@ export const ModelInfoSchema = z.object({
     alpha: z.boolean().optional(),
     flat_rate: z.boolean().optional(),
     added_date: z.number().optional(),
-    health: ModelHealthSchema.optional(),
 });
 
 export type ModelInfo = z.infer<typeof ModelInfoSchema>;
@@ -209,6 +217,8 @@ export function modelInfoFromDefinition(
         output_modalities: service.outputModalities,
         required_safety: service.requiredSafetyFeatures,
         supported_endpoints: service.supportedEndpoints,
+        supported_parameters: service.supportedParameters,
+        default_parameters: service.defaultParameters,
         video_capabilities: service.videoCapabilities,
         min_duration: service.minDuration,
         max_duration: service.maxDuration,

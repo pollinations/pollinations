@@ -103,6 +103,17 @@ test("lists the MCP servers exposed through Gen", async () => {
                     ],
                 },
             },
+            {
+                id: "computer",
+                name: "Computer",
+                description:
+                    "A private persistent computer: files and a bash shell that survive between runs.",
+                url: "https://gen.pollinations.ai/mcp/computer",
+                pricing: {
+                    description: "Free during preview",
+                    rates: [],
+                },
+            },
         ],
     });
 });
@@ -236,6 +247,30 @@ test("routes Composio with the authenticated user", async () => {
         jsonrpc: "2.0",
         id: 1,
         result: { content: [{ type: "text", text: userId }] },
+    });
+});
+
+test("routes Computer with the authenticated user", async () => {
+    const { key, userId } = await createTestApiKey();
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/computer",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "x-pollinations-user-id": "spoofed-user",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: { content: [{ type: "text", text: `computer:${userId}` }] },
     });
 });
 

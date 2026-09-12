@@ -41,7 +41,8 @@ export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
-    | "COMPOSIO_MCP";
+    | "COMPOSIO_MCP"
+    | "COMPUTER_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -164,6 +165,19 @@ export const MCP_SERVERS = [
         userScoped: true,
         accountPath: "/account#connectors",
         pricing: COMPOSIO_MCP_PRICING,
+    },
+    {
+        id: "computer",
+        name: "Computer",
+        description:
+            "A private persistent computer: files and a bash shell that survive between runs.",
+        binding: "COMPUTER_MCP",
+        billing: "downstream",
+        userScoped: true,
+        pricing: {
+            description: "Free during preview",
+            rates: [],
+        },
     },
 ] as const satisfies readonly McpServerDefinition[];
 

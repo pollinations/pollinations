@@ -41,12 +41,8 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
         label: config.label,
         async getKey(c) {
             const variables = c.var as typeof c.var & Partial<ModelVariables>;
-            const cacheUrl = new URL(
-                c.var.generationCacheUrl ??
-                    c.var.generationRequestUrl ??
-                    c.req.url,
-            );
-            if (!c.var.generationCacheUrl && c.var.generationCacheBody) {
+            const cacheUrl = new URL(c.var.generationRequestUrl ?? c.req.url);
+            if (c.var.generationCacheBody) {
                 cacheUrl.searchParams.set(
                     "__request_body",
                     await hashGenerationCacheIdentity(
@@ -57,9 +53,7 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
             }
             return generateCacheKey(
                 cacheUrl,
-                c.var.generationCacheUrl
-                    ? undefined
-                    : c.req.header(SAFETY_HEADER_NAME),
+                c.req.header(SAFETY_HEADER_NAME),
                 getRequiredSafetyFeatures(variables.model),
             );
         },

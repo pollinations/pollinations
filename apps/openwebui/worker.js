@@ -149,7 +149,18 @@ function openwebui(env) {
 
 export default {
     async fetch(request, env) {
-        return openwebui(env).fetch(request);
+        const response = await openwebui(env).fetch(request);
+        if (response.webSocket) return response;
+        // Send the full chat URL as the referrer when a user follows a link
+        // out of a chat, so enter's top-up and key pages can bring them back
+        // to that chat. The browser default would send the origin only.
+        const headers = new Headers(response.headers);
+        headers.set("Referrer-Policy", "no-referrer-when-downgrade");
+        return new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers,
+        });
     },
 
     // Keepalive: a request every 5 minutes resets sleepAfter.

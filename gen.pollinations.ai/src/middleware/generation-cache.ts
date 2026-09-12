@@ -22,8 +22,6 @@ export type GenerationCacheVariables = {
         adapter: GenerationCacheAdapter;
         key: string;
     };
-    /** Alternate request identity for routes which wrap a media response. */
-    generationCacheUrl?: URL;
     /** Native route replayed when a public endpoint only formats its result. */
     generationRequestUrl?: URL;
     generationRequestMethod?: string;
@@ -135,7 +133,12 @@ export const prepareGenerationRequest = createMiddleware<GenerationCacheEnv>(
             if (typeof body === "string") {
                 c.set("generationRequestBody", identity);
             }
-            c.set("generationCacheBody", identity);
+            // A route that already declared its cache identity keeps it: the
+            // replayable body carries fields, such as the response format,
+            // that do not change the generated file.
+            if (c.var.generationCacheBody === undefined) {
+                c.set("generationCacheBody", identity);
+            }
             return next();
         }
 

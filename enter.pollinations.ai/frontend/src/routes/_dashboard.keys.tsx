@@ -1,12 +1,13 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
-import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import {
     ApiKeyList,
+    type ApiKeyUpdateParams,
     type CreateApiKey,
     type CreateApiKeyResponse,
 } from "../components/keys";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
+import { updateApiKey } from "../lib/update-api-key.ts";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/keys")({
@@ -69,30 +70,9 @@ function KeysPage() {
 
     async function handleUpdateApiKey(
         id: string,
-        updates: {
-            name?: string;
-            allowedModels?: string[] | null;
-            pollenBudget?: number | null;
-            accountPermissions?: string[] | null;
-            expiresAt?: Date | null;
-        },
+        updates: ApiKeyUpdateParams,
     ): Promise<void> {
-        const response = await apiClient["api-keys"][":id"].update.$post({
-            param: { id },
-            json: {
-                ...updates,
-                expiresAt:
-                    updates.expiresAt instanceof Date
-                        ? updates.expiresAt.toISOString()
-                        : updates.expiresAt,
-            },
-        });
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(
-                (error as { message?: string }).message || "Update failed",
-            );
-        }
+        await updateApiKey(id, updates);
         await router.invalidate();
     }
 

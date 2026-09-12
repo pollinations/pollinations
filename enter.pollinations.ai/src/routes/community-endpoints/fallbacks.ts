@@ -137,7 +137,7 @@ async function resolveFallback(
     const parsed = parseCommunityModelId(requested);
     if (!parsed) {
         throw new HTTPException(400, {
-            message: `Fallback target ${requested} must be a community model id in the form <owner>/<name>`,
+            message: `Fallback target ${requested} must be a community model id in the form community/<owner>/<name>`,
         });
     }
     const modelId = communityModelId(

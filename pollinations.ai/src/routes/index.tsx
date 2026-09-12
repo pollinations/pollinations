@@ -79,11 +79,11 @@ function HelloPage() {
                 <HeroStats stats={stats} />
             </HeroScene>
 
-            <LiveApps className={postHeroSpacingClassName} />
-            <DevKit />
+            <DevKit className={postHeroSpacingClassName} />
             {/* Dark panel is inset inside the cream sheet, not a sibling of
                 it — it reads as a band within the page, not a new section. */}
             <MoneyMoves />
+            <LiveApps />
             <OnTheWay />
             <StartBuilding />
             <BottomScene

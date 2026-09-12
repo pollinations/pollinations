@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isCommunityProviderIconUrl } from "../community-provider-icon.ts";
 import { SAFETY_FEATURES } from "../schemas/safety.ts";
 import { publicPriceInfo, toFixedPoint } from "./public-pricing";
 import {
@@ -43,6 +44,13 @@ export const ModelInfoSchema = z.object({
         .string()
         .describe("Human-readable model publisher, not the inference provider"),
     brand_url: z.string().url().optional(),
+    brand_icon_url: z
+        .string()
+        .refine(
+            isCommunityProviderIconUrl,
+            "Invalid community provider icon URL",
+        )
+        .optional(),
     community: z.boolean(),
     agent: z.boolean().optional(),
     base_model: z.string().optional(),
@@ -175,6 +183,9 @@ export function modelInfoFromDefinition(
         category: service.category,
         publisher: service.publisher,
         brand_url: service.brandUrl,
+        brand_icon_url: isCommunityProviderIconUrl(service.brandIconUrl)
+            ? service.brandIconUrl
+            : undefined,
         community: options.community ?? false,
         agent: options.agent || undefined,
         per_user_rpm: service.perUserRpm,

@@ -1,3 +1,4 @@
+import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
 import type { ModelCapability, ModelPrice } from "./types.ts";
 
 const BRAND_LOGOS: Record<string, string> = {
@@ -59,7 +60,11 @@ export const getModelDescriptionWithoutName = (
 export const getModelBrandLogoPath = (
     model: ModelPrice,
 ): string | undefined => {
-    if (model.community) return undefined;
+    if (model.community) {
+        return isCommunityProviderIconUrl(model.brandIconUrl)
+            ? model.brandIconUrl
+            : undefined;
+    }
     const logoName = model.publisher ? BRAND_LOGOS[model.publisher] : undefined;
     return logoName ? `/brand-logos/${logoName}.svg` : undefined;
 };

@@ -1,3 +1,4 @@
+import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
 import type { ModelInfo } from "@shared/registry/model-info.ts";
 import {
     formatPrice,
@@ -202,6 +203,9 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         description: getCatalogDescriptionWithoutName(model),
         publisher: model.publisher,
         brandUrl: model.brand_url,
+        brandIconUrl: isCommunityProviderIconUrl(model.brand_icon_url)
+            ? model.brand_icon_url
+            : undefined,
         inputModalities: model.input_modalities,
         outputModalities: model.output_modalities,
         supportedEndpoints: model.supported_endpoints,

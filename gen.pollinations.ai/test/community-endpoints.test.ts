@@ -60,6 +60,7 @@ import {
 import {
     communityEndpoint as communityEndpointTable,
     session as sessionTable,
+    user as userTable,
 } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
@@ -6448,7 +6449,7 @@ fixtureTest(
     "manages my-models through account API with a key that has account keys permission",
     async () => {
         const ownerGithubUsername = `pk-${crypto.randomUUID().slice(0, 8)}`;
-        const { key } = await createTestApiKey({
+        const { key, userId } = await createTestApiKey({
             type: "publishable",
             accountPermissions: ["keys"],
             user: {
@@ -6495,7 +6496,7 @@ fixtureTest(
         expect(listResponse.status).toBe(200);
         await expect(listResponse.json()).resolves.toEqual({
             data: [],
-            provider: { name: null, url: null },
+            provider: { name: null, url: null, iconUrl: null },
         });
 
         const incompleteProviderResponse = await fetchEnterApi(
@@ -6533,6 +6534,26 @@ fixtureTest(
         );
         expect(insecureProviderResponse.status).toBe(400);
 
+        const invalidIconResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                "http://localhost:3000/api/account/my-models/provider",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        name: "Example AI",
+                        url: "https://example.com",
+                        iconUrl: "https://tracker.test/icon.svg",
+                    }),
+                },
+            ),
+        );
+        expect(invalidIconResponse.status).toBe(400);
+
         const providerResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -6554,6 +6575,34 @@ fixtureTest(
         await expect(providerResponse.json()).resolves.toEqual({
             name: "Example AI",
             url: "https://example.com/",
+            iconUrl: null,
+        });
+
+        const iconProviderResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                "http://localhost:3000/api/account/my-models/provider",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        name: "Example AI",
+                        url: "https://example.com",
+                        iconUrl:
+                            "https://media.pollinations.ai/123e4567-e89b-12d3-a456-426614174000",
+                    }),
+                },
+            ),
+        );
+        expect(iconProviderResponse.status).toBe(200);
+        await expect(iconProviderResponse.json()).resolves.toEqual({
+            name: "Example AI",
+            url: "https://example.com/",
+            iconUrl:
+                "https://media.pollinations.ai/123e4567-e89b-12d3-a456-426614174000",
         });
 
         const createResponse = await fetchEnterApi(
@@ -6600,6 +6649,32 @@ fixtureTest(
         expect(created).not.toHaveProperty("bearerTokenCiphertext");
         expect(typeof created.id).toBe("string");
         const createdId = created.id as string;
+        const secondCreateResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name: "my-second-model",
+                    title: "My Second Model",
+                    description: "Account API model",
+                    api: "chat_completions",
+                    url: "https://api.example.com/v1/chat/completions",
+                    upstreamModel: "gpt-4.1-mini",
+                    bearerToken: "sk_saved_token",
+                    visibility: "public",
+                }),
+            }),
+        );
+        expect(secondCreateResponse.status).toBe(200);
+        const secondCreated = (await secondCreateResponse.json()) as Record<
+            string,
+            unknown
+        >;
+        expect(typeof secondCreated.id).toBe("string");
         await db
             .update(communityEndpointTable)
             .set({
@@ -6698,6 +6773,7 @@ fixtureTest(
             hidden: true,
             hiddenReason: "Hidden by owner",
         });
+        await maturePendingCommunityEndpoint(secondCreated.id as string);
 
         // Minimum-price policy is independent of visibility: any non-negative
         // owner price is accepted by this API.
@@ -6838,6 +6914,27 @@ fixtureTest(
             pending: { visibility: "public" },
         });
 
+        await db
+            .update(communityEndpointTable)
+            .set({
+                visibility: "public",
+                pendingVisibility: null,
+                pendingAt: null,
+                hiddenAt: null,
+                hiddenReason: null,
+                hiddenBy: null,
+            })
+            .where(eq(communityEndpointTable.id, createdId));
+        await db
+            .update(communityEndpointTable)
+            .set({ visibility: "public" })
+            .where(eq(communityEndpointTable.id, secondCreated.id as string));
+
+        const removedIconProxy = await fetchGen(
+            `https://gen.pollinations.ai/api/community-icons/${userId}.svg`,
+        );
+        expect(removedIconProxy.status).toBe(404);
+
         const secondListResponse = await fetchEnterApi(
             enterApi,
             new Request("http://localhost:3000/api/account/my-models", {
@@ -6849,19 +6946,51 @@ fixtureTest(
         expect(secondListResponse.status).toBe(200);
         const secondList = (await secondListResponse.json()) as {
             data: Record<string, unknown>[];
-            provider: { name: string | null; url: string | null };
+            provider: {
+                name: string | null;
+                url: string | null;
+                iconUrl: string | null;
+            };
         };
-        expect(secondList.data).toHaveLength(1);
+        expect(secondList.data).toHaveLength(2);
         expect(secondList.provider).toEqual({
             name: "Example AI",
             url: "https://example.com/",
+            iconUrl:
+                "https://media.pollinations.ai/123e4567-e89b-12d3-a456-426614174000",
         });
-        expect(secondList.data[0]).toMatchObject({
+        expect(
+            secondList.data.find(
+                (model) => model.title === "Updated Model Title",
+            ),
+        ).toMatchObject({
             title: "Updated Model Title",
             perUserRpm: 0.5,
         });
         expect(secondList.data[0]).not.toHaveProperty("bearerToken");
         expect(secondList.data[0]).not.toHaveProperty("bearerTokenCiphertext");
+
+        await db
+            .update(userTable)
+            .set({ communityProviderIconUrl: "https://tracker.test/icon.svg" })
+            .where(eq(userTable.id, userId));
+        const unsafeStoredIconResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                headers: { Authorization: `Bearer ${key}` },
+            }),
+        );
+        expect(unsafeStoredIconResponse.status).toBe(200);
+        await expect(unsafeStoredIconResponse.json()).resolves.toMatchObject({
+            provider: { iconUrl: null },
+        });
+        await db
+            .update(userTable)
+            .set({
+                communityProviderIconUrl:
+                    "https://media.pollinations.ai/123e4567-e89b-12d3-a456-426614174000",
+            })
+            .where(eq(userTable.id, userId));
 
         const registryEntry = (
             await getCommunityModelRegistryEntries(env)
@@ -6869,8 +6998,56 @@ fixtureTest(
         expect(registryEntry?.info).toMatchObject({
             publisher: "Example AI",
             brand_url: "https://example.com/",
+            brand_icon_url:
+                "https://media.pollinations.ai/123e4567-e89b-12d3-a456-426614174000",
         });
         expect(registryEntry?.communityEndpoint.perUserRpm).toBe(0.5);
+
+        const registryEntries = await getCommunityModelRegistryEntries(env);
+        expect(
+            registryEntries.filter((entry) =>
+                [
+                    `${ownerGithubUsername}/my-test-model`,
+                    `${ownerGithubUsername}/my-second-model`,
+                ].includes(entry.id),
+            ),
+        ).toHaveLength(2);
+        for (const entry of registryEntries.filter((entry) =>
+            [
+                `${ownerGithubUsername}/my-test-model`,
+                `${ownerGithubUsername}/my-second-model`,
+            ].includes(entry.id),
+        )) {
+            expect(entry.info).toMatchObject({
+                brand_icon_url:
+                    "https://media.pollinations.ai/123e4567-e89b-12d3-a456-426614174000",
+            });
+        }
+
+        const removeIconResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                "http://localhost:3000/api/account/my-models/provider",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        name: "Example AI",
+                        url: "https://example.com",
+                        iconUrl: null,
+                    }),
+                },
+            ),
+        );
+        expect(removeIconResponse.status).toBe(200);
+        await expect(removeIconResponse.json()).resolves.toEqual({
+            name: "Example AI",
+            url: "https://example.com/",
+            iconUrl: null,
+        });
 
         const clearLimitResponse = await fetchEnterApi(
             enterApi,

@@ -59,12 +59,18 @@ export function CommunityEndpoints({
     const [error, setError] = useState<string | null>(null);
     const [providerName, setProviderName] = useState("");
     const [providerUrl, setProviderUrl] = useState("");
+    const [providerIconUrl, setProviderIconUrl] = useState("");
     const [savedProvider, setSavedProvider] =
-        useState<CommunityProviderProfile>({ name: null, url: null });
+        useState<CommunityProviderProfile>({
+            name: null,
+            url: null,
+            iconUrl: null,
+        });
     const [isSavingProvider, setIsSavingProvider] = useState(false);
     const providerIsSaved =
         providerName === (savedProvider.name ?? "") &&
-        providerUrl === (savedProvider.url ?? "");
+        providerUrl === (savedProvider.url ?? "") &&
+        providerIconUrl === (savedProvider.iconUrl ?? "");
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState<EditableEndpoint | null>(null);
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
@@ -102,7 +108,11 @@ export function CommunityEndpoints({
         setAgents(agentBody.data);
         setProviderName(endpointBody.provider.name ?? "");
         setProviderUrl(endpointBody.provider.url ?? "");
-        setSavedProvider(endpointBody.provider);
+        setProviderIconUrl(endpointBody.provider.iconUrl ?? "");
+        setSavedProvider({
+            ...endpointBody.provider,
+            iconUrl: endpointBody.provider.iconUrl ?? null,
+        });
         setIsLoading(false);
     }, []);
 
@@ -236,13 +246,21 @@ export function CommunityEndpoints({
             const response = await apiClient.account[
                 "my-models"
             ].provider.$post({
-                json: { name: providerName, url: providerUrl },
+                json: {
+                    name: providerName,
+                    url: providerUrl,
+                    iconUrl: providerIconUrl.trim() || null,
+                },
             });
             if (!response.ok) throw new Error(await readError(response));
             const profile = (await response.json()) as CommunityProviderProfile;
             setProviderName(profile.name ?? "");
             setProviderUrl(profile.url ?? "");
-            setSavedProvider(profile);
+            setProviderIconUrl(profile.iconUrl ?? "");
+            setSavedProvider({
+                ...profile,
+                iconUrl: profile.iconUrl ?? null,
+            });
             await onChange?.();
         } catch (thrown) {
             setError(
@@ -253,6 +271,13 @@ export function CommunityEndpoints({
         } finally {
             setIsSavingProvider(false);
         }
+    }
+
+    function resetProviderChanges(): void {
+        setProviderName(savedProvider.name ?? "");
+        setProviderUrl(savedProvider.url ?? "");
+        setProviderIconUrl(savedProvider.iconUrl ?? "");
+        setError(null);
     }
 
     async function handleToggle(endpoint: CommunityEndpoint): Promise<void> {
@@ -392,6 +417,35 @@ export function CommunityEndpoints({
                                         }
                                     />
                                 </FieldStack>
+                                <FieldStack label="Brand icon URL">
+                                    <Input
+                                        type="url"
+                                        name="community-provider-icon-url"
+                                        value={providerIconUrl}
+                                        placeholder="https://media.pollinations.ai/…"
+                                        autoComplete="url"
+                                        aria-describedby="community-provider-icon-help"
+                                        onChange={(event) =>
+                                            setProviderIconUrl(
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                    <span
+                                        id="community-provider-icon-help"
+                                        className="text-xs text-theme-text-muted"
+                                    >
+                                        Upload an SVG with{" "}
+                                        <code>polli upload icon.svg</code> or
+                                        POST it to{" "}
+                                        <code>
+                                            https://media.pollinations.ai/upload
+                                        </code>
+                                        , then paste the returned URL. Uploads
+                                        expire after 30 days unless fetched
+                                        after day 15.
+                                    </span>
+                                </FieldStack>
                             </div>
                             <div>
                                 <Button
@@ -401,6 +455,15 @@ export function CommunityEndpoints({
                                     }
                                 >
                                     {isSavingProvider ? "Saving…" : "Save"}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    disabled={
+                                        providerIsSaved || isSavingProvider
+                                    }
+                                    onClick={resetProviderChanges}
+                                >
+                                    Cancel
                                 </Button>
                             </div>
                         </form>

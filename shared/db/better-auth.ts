@@ -38,6 +38,7 @@ export const user = sqliteTable("user", {
   // Public branding shared by every community model owned by this account.
   communityProviderName: text("community_provider_name"),
   communityProviderUrl: text("community_provider_url"),
+  communityProviderIconUrl: text("community_provider_icon_url"),
   tier: text("tier").default("spore").notNull(),
   tierBalance: real("tier_balance"),
   packBalance: real("pack_balance"),

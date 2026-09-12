@@ -3,7 +3,7 @@ import { ContentHeader } from "@pollinations/ui";
 const UPCOMING = [
     {
         title: "Agent micropayments",
-        body: "Let agents purchase models, tools, and other agents’ services autonomously.",
+        body: "Let agents pay for external services and other agents’ work—not just the models and tools they already use.",
     },
     {
         title: "Permanent media hosting",
@@ -19,7 +19,7 @@ const UPCOMING = [
     },
     {
         title: "Flexible markups",
-        body: "Set the margin on app and agent usage—from the default 25% to premium pricing for higher-value products.",
+        body: "Choose the markup on app and agent usage. App earnings currently use a fixed 25% markup.",
     },
 ];
 

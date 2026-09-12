@@ -20,35 +20,35 @@ const MONEY_FLOW = [
         icon: WalletIcon,
     },
     {
-        title: "Each generation pays for itself",
-        body: "Usage is paid from the caller's balance, with spending caps and access staying in their hands.",
+        title: "Users control their spending",
+        body: "Connected apps use the budget and permissions each user approves.",
         icon: UsageIcon,
     },
     {
         title: "Value flows back to builders",
-        body: "Every request can reward the app developer, model publisher, and agent publisher behind it.",
+        body: "Earn Pollen when others use your published model or your app with developer earnings enabled.",
         icon: EarningsIcon,
         earnings: [
             {
-                text: "Model · 75% of price",
+                text: "Model · 75% of its listed price",
                 icon: BeakerIcon,
                 href: "https://gen.pollinations.ai/docs#tag/publish-a-model",
                 docsLabel: "Model publishing documentation",
             },
             {
-                text: "App · 20% of model price",
+                text: "App · 20% of the marked-up request price",
                 icon: AppIcon,
                 href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
                 docsLabel: "App wallet integration documentation",
             },
             {
-                text: "Agent · 20% of price",
+                text: "Agent · Earnings coming soon",
                 icon: RobotIcon,
                 href: "https://gen.pollinations.ai/docs#tag/publish-an-agent",
                 docsLabel: "Agent publishing documentation",
             },
         ],
-        note: "App and agent earnings come from a 25% markup over the base price.",
+        note: "App earnings add 25% to base usage: 1 Pollen becomes 1.25, with 0.25 credited to the app. These are separate calculations, not shares of one total. Cashouts are coming later.",
     },
 ];
 
@@ -59,7 +59,7 @@ export function MoneyMoves() {
                 <ContentHeader
                     eyebrow="How the money moves"
                     title="Users fund the usage. Builders share the value."
-                    subtitle="Every generation is paid with the caller’s Pollen—bought or earned through Quests. The cost doesn’t fall on the app developer, while eligible usage can reward the app, model, and agent behind it."
+                    subtitle="With connected wallets, users pay for model usage from their own Pollen balance. App developers can add a markup, and community model publishers receive a share of their model’s usage."
                 />
             </div>
 

@@ -9,7 +9,7 @@ export function StartBuilding() {
     return (
         <Callout
             title="Start building"
-            body="One API. Free Pollen from Quests to start, earnings when your app gets used."
+            body="Build with models and agents, then connect your users’ Pollen wallets when you’re ready to share."
         >
             <ExternalLinkButton
                 href="https://enter.pollinations.ai/keys"

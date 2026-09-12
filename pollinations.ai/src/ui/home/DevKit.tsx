@@ -92,18 +92,18 @@ const BUILD_FEATURES = [...BUILD_FOUNDATIONS, ...BUILD_TOOLS];
 
 const PUBLISH_FEATURES: Feature[] = [
     {
-        title: "Publish an app",
-        body: "Add your app to the Pollinations catalog, reach new users, and earn from connected usage.",
+        title: "List your app",
+        body: "Add your app to the catalog for discovery. Connect user wallets and enable app earnings to earn Pollen from their usage.",
         icon: AppIcon,
     },
     {
         title: "Publish a model",
-        body: "Add your model to the community catalog, set its price, and earn whenever builders use it.",
+        body: "Publish your model with your own pricing and earn Pollen when other people use it.",
         icon: BeakerIcon,
     },
     {
         title: "Publish an agent",
-        body: "Combine a system prompt, base model, and MCP tools into an agent people can discover and use—and earn whenever it runs.",
+        body: "Share a prompt or code agent that runs on the caller’s Pollen. Agent earnings are coming soon.",
         icon: RobotIcon,
     },
 ];
@@ -259,7 +259,7 @@ export function DevKit({ className }: { className?: string }) {
             <FeatureGroup
                 eyebrow="Publish and earn"
                 title="Bring what you build to the ecosystem"
-                description="Publish apps, models and agents for people to discover, use and build on."
+                description="Share your apps, models and agents with people ready to use them."
             >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     {PUBLISH_FEATURES.map((feature) => (

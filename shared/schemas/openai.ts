@@ -752,6 +752,16 @@ export const OpenAIModelSchema = z
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),
         per_user_rpm: z.number().positive().nullable().optional(),
+        health: z
+            .object({
+                success_rate: z.number().min(0).max(1).nullable(),
+                sample_count: z.number().int().nonnegative(),
+                window_minutes: z.number().int().positive(),
+                fetched_at: z.string(),
+                status: z.enum(["healthy", "degraded", "down", "unknown"]),
+                stale: z.boolean().optional(),
+            })
+            .optional(),
     })
     .meta({
         description: "OpenAI-compatible model object with capability metadata",

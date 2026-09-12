@@ -125,6 +125,16 @@ export const ModelInfoSchema = z.object({
     alpha: z.boolean().optional(),
     flat_rate: z.boolean().optional(),
     added_date: z.number().optional(),
+    health: z
+        .object({
+            success_rate: z.number().min(0).max(1).nullable(),
+            sample_count: z.number().int().nonnegative(),
+            window_minutes: z.number().int().positive(),
+            fetched_at: z.string(),
+            status: z.enum(["healthy", "degraded", "down", "unknown"]),
+            stale: z.boolean().optional(),
+        })
+        .optional(),
 });
 
 export type ModelInfo = z.infer<typeof ModelInfoSchema>;

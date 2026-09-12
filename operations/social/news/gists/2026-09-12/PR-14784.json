@@ -1,0 +1,34 @@
+{
+  "pr_number": 14784,
+  "title": "feat: let callers list models as their own fallback chain",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14784",
+  "merged_at": "2026-09-12T17:48:14Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a comma-separated `model` list: `?model=a,b` serves with `a` and tries `b` if it fails. It lands in the shared resolver, so it works on every generation endpoint.\n- Each listed model is resolved and validated on its own, so an unknown, private, fallback-only or wrong-modality entry is rejected exactly as it is today.\n- A model's own declared provider routes are tried before the caller's next choice: a route is still the model they named.\n- Caps the list at 4 entries. Every extra entry is one more upstream attempt the caller's request waits on.\n- Scopes the cache when any listed model is a managed agent, not just the primary, and keys the normalized image cache on the whole list. Both would otherwise serve one caller's or one model's output from another's cache entry.\n\nBalance preflight still estimates from the first entry, as agreed. A restricted key whose first entry is not allowed still gets today's 403 rather than promoting the next allowed entry; permission lists hold resolved ids, so promoting correctly needs resolution first and is left for a follow-up.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_0161ggPVjwNMTu6oaevEScZw",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Bring Your Own Backup Bees",
+    "blurb": "Model requests can now carry their own little fallback ladder. Ask for `?model=a,b`, and the hive tries b if a cannot make the trip.",
+    "summary": "Added comma-separated model fallback chains such as `?model=a,b` across every generation endpoint, validating each entry independently, trying each model's declared provider routes first, and capping chains at four models.",
+    "impact": "Callers can make generation requests more resilient with up to four explicitly chosen models, while cache keys now distinguish the full fallback list and managed-agent routes stay safely scoped.",
+    "keywords": [
+      "models",
+      "fallback",
+      "generation",
+      "api",
+      "routing",
+      "cache"
+    ],
+    "visual_concept": "Polli is guiding a small line of four model-shaped seed packets along a garden path toward a glowing generation terminal; if the first path is blocked by a harmless fallen leaf, the next seed packet takes a clearly marked alternate route. The scene represents caller-defined ordered fallbacks, with a cache jar labeled by the whole chain and code-plants reinforcing shared endpoint support.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink rectangular blush, light blue wings, and a tiny gardener's tool belt, guiding four labeled seed packets along an ordered garden path into a retro terminal glowing lime green (#ecf874); a fallen leaf gently blocks the first path while the next packet follows its own provider-route sign, with code-plants and a cache jar nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike; simple pixel-font text: \"a, b, c\". Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14784.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink rectangular blush, light blue wings, and a tiny gardener's tool belt, guiding four labeled seed packets along an ordered garden path into a retro terminal glowing lime green (#ecf874); a fallen leaf gently blocks the first path while the next packet follows its own provider-route sign, with code-plants and a cache jar nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike; simple pixel-font text: \"a, b, c\". Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-12T17:49:12.937696+00:00"
+}

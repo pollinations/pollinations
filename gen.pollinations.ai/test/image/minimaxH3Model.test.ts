@@ -144,10 +144,13 @@ describe("callMinimaxH3MaxTurboAPI", () => {
     it.each([
         [5, "480p", "480P"],
         [5, "768p", "768P"],
+        [5, "1080p", "1080P"],
         [10, "480p", "480P"],
         [10, "768p", "768P"],
+        [10, "1080p", "1080P"],
         [15, "480p", "480P"],
         [15, "768p", "768P"],
+        [15, "1080p", "1080P"],
     ] as const)("routes %ss at %s with deterministic billing", async (duration, resolution, upstreamResolution) => {
         const requests: ProviderRequest[] = [];
         mockH3Fetch(requests);

@@ -9,12 +9,19 @@ import {
     DialogTitle,
     Field,
     GlobeIcon,
+    Heading,
     Input,
     LockIcon,
     ScrollArea,
 } from "@pollinations/ui";
-import type { FC } from "react";
-import { useState } from "react";
+import {
+    AuthActionButtons,
+    AuthFlowLayout,
+    AuthInfoCard,
+    ErrorBanner,
+} from "@pollinations/ui/auth";
+import type { FC, ReactNode } from "react";
+import { useId, useState } from "react";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import {
     isAppKey,
@@ -27,6 +34,10 @@ import type { ApiKey, ApiKeyUpdateParams } from "./types.ts";
 
 interface EditApiKeyDialogProps {
     apiKey: ApiKey;
+    title?: string;
+    presentation?: "dialog" | "page";
+    account?: ReactNode;
+    secondaryAction?: ReactNode;
     onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onClose: () => void;
 }
@@ -37,9 +48,14 @@ function cleanRedirectUris(uris: string[]): string[] {
 
 export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     apiKey,
+    title,
+    presentation = "dialog",
+    account,
+    secondaryAction,
     onUpdate,
     onClose,
 }) => {
+    const formId = useId();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [name, setName] = useState(apiKey.name || "");
     const [error, setError] = useState<string | null>(null);
@@ -121,118 +137,158 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         }
     }
 
-    return (
-        <Dialog
-            open
-            onOpenChange={(open) => !open && onClose()}
-            contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
-        >
-            <div className="shrink-0 p-6 pb-4">
-                <DialogTitle className="text-xl font-bold mb-4">
-                    {appKey ? "Edit App Key" : "Edit API Key"}
-                </DialogTitle>
-
-                <div className="flex items-center gap-3">
-                    <Chip>
-                        {appKey ? (
-                            <>
-                                <AppIcon className="h-4 w-4" />
-                                App
-                            </>
-                        ) : isPublishable ? (
-                            <>
-                                <GlobeIcon className="h-4 w-4" />
-                                Publishable
-                            </>
-                        ) : (
-                            <>
-                                <LockIcon className="h-4 w-4" />
-                                Secret
-                            </>
-                        )}
-                    </Chip>
-                    {isPublishable && plaintextKey ? (
-                        <CopyButton
-                            value={plaintextKey}
-                            tooltipClassName="inline-flex min-w-0"
-                            aria-label="Copy publishable API key"
-                            className={(copied) =>
-                                cn(
-                                    "font-mono text-sm cursor-pointer transition-all",
-                                    copied
-                                        ? "text-intent-success-text font-semibold"
-                                        : "text-theme-text-soft hover:text-theme-text-strong hover:underline",
-                                )
-                            }
-                        >
-                            {(copied) => (copied ? "Copied!" : plaintextKey)}
-                        </CopyButton>
-                    ) : (
-                        <span className="font-mono text-sm text-theme-text-muted">
-                            {apiKey.start}...
-                        </span>
-                    )}
-                </div>
-            </div>
-
-            <ScrollArea className="min-h-0 flex-1 overscroll-contain p-6 py-4 touch-pan-y [-webkit-overflow-scrolling:touch]">
-                {error && (
-                    <div className="mb-4 rounded-xl bg-intent-danger-bg-light p-4 text-intent-danger-text">
-                        {error}
-                    </div>
+    const identity = (
+        <div className="flex items-center gap-3">
+            <Chip>
+                {appKey ? (
+                    <>
+                        <AppIcon className="h-4 w-4" />
+                        App
+                    </>
+                ) : isPublishable ? (
+                    <>
+                        <GlobeIcon className="h-4 w-4" />
+                        Publishable
+                    </>
+                ) : (
+                    <>
+                        <LockIcon className="h-4 w-4" />
+                        Secret
+                    </>
                 )}
-
-                <div className="space-y-4">
-                    <Field.Root className="flex flex-col gap-2">
-                        <Field.Label className="text-sm font-semibold">
-                            Name
-                        </Field.Label>
+            </Chip>
+            {isPublishable && plaintextKey ? (
+                <CopyButton
+                    value={plaintextKey}
+                    tooltipClassName="inline-flex min-w-0"
+                    aria-label="Copy publishable API key"
+                    className={(copied) =>
+                        cn(
+                            "font-mono text-sm cursor-pointer transition-all",
+                            copied
+                                ? "text-intent-success-text font-semibold"
+                                : "text-theme-text-soft hover:text-theme-text-strong hover:underline",
+                        )
+                    }
+                >
+                    {(copied) => (copied ? "Copied!" : plaintextKey)}
+                </CopyButton>
+            ) : (
+                <span className="font-mono text-sm text-theme-text-muted">
+                    {apiKey.start}...
+                </span>
+            )}
+        </div>
+    );
+    const fields = (
+        <form
+            id={formId}
+            className="space-y-3"
+            onSubmit={(event) => {
+                event.preventDefault();
+                if (!isSubmitting) void handleSave();
+            }}
+        >
+            {error && <ErrorBanner>{error}</ErrorBanner>}
+            <AuthInfoCard title={null}>
+                {identity}
+                <Field.Root className="flex flex-col gap-2">
+                    <Field.Label className="text-sm font-semibold">
+                        Name
+                    </Field.Label>
+                    <Field.Input asChild>
                         <Input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             className="w-full"
                             placeholder="Enter API key name"
+                            required
                             disabled={isSubmitting}
                         />
-                    </Field.Root>
+                    </Field.Input>
+                </Field.Root>
+            </AuthInfoCard>
+            {isPublishable && (
+                <PublishableKeySettings
+                    redirectUris={redirectUris}
+                    onRedirectUrisChange={setRedirectUris}
+                    earningsEnabled={earningsEnabled}
+                    onEarningsEnabledChange={setEarningsEnabled}
+                    disabled={isSubmitting}
+                />
+            )}
 
-                    {isPublishable && (
-                        <PublishableKeySettings
-                            redirectUris={redirectUris}
-                            onRedirectUrisChange={setRedirectUris}
-                            earningsEnabled={earningsEnabled}
-                            onEarningsEnabledChange={setEarningsEnabled}
-                            disabled={isSubmitting}
-                        />
-                    )}
+            {!isPublishable && (
+                <KeyPermissionsInputs
+                    value={keyPermissions}
+                    disabled={isSubmitting}
+                    inline
+                />
+            )}
+            {secondaryAction}
+        </form>
+    );
+    const cancel = (
+        <Button
+            type="button"
+            data-theme="neutral"
+            onClick={onClose}
+            disabled={isSubmitting}
+        >
+            Cancel
+        </Button>
+    );
+    const save = (
+        <Button
+            type="submit"
+            form={formId}
+            disabled={isSubmitting || !name.trim()}
+        >
+            {isSubmitting ? "Saving..." : "Save"}
+        </Button>
+    );
+    const heading = title ?? (appKey ? "Edit App Key" : "Edit API Key");
 
-                    {!isPublishable && (
-                        <KeyPermissionsInputs
-                            value={keyPermissions}
-                            disabled={isSubmitting}
-                            inline
-                        />
-                    )}
+    // The standalone route changes only the shell. The dashboard and page
+    // share every field, validation rule and save operation above.
+    if (presentation === "page")
+        return (
+            <AuthFlowLayout
+                account={account}
+                actions={save}
+                secondaryAction={cancel}
+                dialog={{ labelledBy: "app-access-title" }}
+            >
+                <div className="space-y-2 pt-3">
+                    <Heading as="h1" size="section" id="app-access-title">
+                        {heading}
+                    </Heading>
+                    <p className="font-body text-xs font-semibold tracking-wide text-theme-text-soft">
+                        Manage permissions and spending limits for{" "}
+                        {apiKey.name || "this app"}.
+                    </p>
                 </div>
-            </ScrollArea>
+                {fields}
+            </AuthFlowLayout>
+        );
 
-            <div className="flex gap-2 justify-end p-6 pt-4 shrink-0">
-                <Button
-                    type="button"
-                    intent="danger"
-                    onClick={onClose}
-                    disabled={isSubmitting}
-                >
-                    Cancel
-                </Button>
-                <Button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={isSubmitting}
-                >
-                    {isSubmitting ? "Saving..." : "Save"}
-                </Button>
+    return (
+        <Dialog
+            open
+            onOpenChange={(open) => !open && !isSubmitting && onClose()}
+            layout="flow"
+        >
+            <div className="shrink-0 p-6 pb-4">
+                <Heading as={DialogTitle} size="section">
+                    {heading}
+                </Heading>
+            </div>
+            <ScrollArea className="min-h-0 flex-1 overscroll-contain px-6 pb-2 touch-pan-y [-webkit-overflow-scrolling:touch]">
+                {fields}
+            </ScrollArea>
+            <div className="p-6 pt-4 shrink-0">
+                <AuthActionButtons secondaryAction={cancel} actions={save} />
             </div>
         </Dialog>
     );

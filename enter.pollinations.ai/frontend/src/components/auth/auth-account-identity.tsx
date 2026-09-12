@@ -1,13 +1,21 @@
 import { AccountIdentity } from "@pollinations/ui";
-import { formatPollen, WalletKindIcon } from "@pollinations/ui/wallet";
+import {
+    AccountPollen,
+    type AccountPollenSource,
+} from "@pollinations/ui/wallet";
 import type { User } from "../../auth.ts";
 
 export function AuthAccountIdentity({
     user,
     balances,
+    requirement,
 }: {
     user: Pick<User, "name" | "email" | "image" | "githubUsername">;
     balances?: { paid: number; quest: number } | null;
+    requirement?: Extract<
+        AccountPollenSource,
+        { type: "wallet" }
+    >["requirement"];
 }) {
     return (
         <div
@@ -17,24 +25,13 @@ export function AuthAccountIdentity({
             <AccountIdentity
                 name={user.githubUsername || user.name || user.email}
                 avatarUrl={user.image}
+                dashboardHref="/pollen"
                 secondaryContent={
                     balances !== undefined ? (
-                        <span className="inline-flex items-center gap-2 text-xs tabular-nums">
-                            <span className="inline-flex items-center gap-1">
-                                <WalletKindIcon kind="paid" />
-                                <span className="sr-only">Paid Pollen: </span>
-                                {balances === null
-                                    ? "…"
-                                    : formatPollen(Math.max(0, balances.paid))}
-                            </span>
-                            <span className="inline-flex items-center gap-1">
-                                <WalletKindIcon kind="tier" />
-                                <span className="sr-only">Quest Pollen: </span>
-                                {balances === null
-                                    ? "…"
-                                    : formatPollen(Math.max(0, balances.quest))}
-                            </span>
-                        </span>
+                        <AccountPollen
+                            source={{ type: "wallet", balances, requirement }}
+                            topUpHref="/top-up"
+                        />
                     ) : undefined
                 }
             />

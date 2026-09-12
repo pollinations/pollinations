@@ -10,6 +10,7 @@ import {
     Section,
     Surface,
     TerminalIcon,
+    Text,
     TokensIcon,
     Tooltip,
     XIcon,
@@ -29,6 +30,7 @@ import type { ApiKey, ApiKeyManagerProps } from "./types.ts";
 
 export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     apiKeys,
+    kind,
     onCreate,
     onUpdate,
     onDelete,
@@ -228,101 +230,139 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     return (
         <>
             <div className="flex flex-col gap-6">
-                <Section
-                    title="API"
-                    framed
-                    action={
-                        <ApiKeyDialog
-                            onSubmit={onCreate}
-                            onComplete={() => {}}
-                            triggerLabel={
-                                <span className="inline-flex items-center gap-1.5">
-                                    <KeyIcon className="h-4 w-4" />
-                                    Add Key
-                                </span>
-                            }
-                        />
-                    }
-                >
-                    <div className="flex flex-col gap-3">
-                        {!sortedApiKeys.length && (
-                            <Surface className="p-6 text-center">
-                                <KeyIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
-                                <p className="font-semibold text-ink-900 text-lg mb-2">
-                                    Create your first API key
-                                </p>
-                                <p className="text-sm text-theme-text-muted">
-                                    Use API keys for your own private
-                                    server-side integrations.
-                                </p>
-                            </Surface>
-                        )}
-                        {sortedApiKeys.map(renderKeyCard)}
-                    </div>
-                    <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                        <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        <span>
-                            For your own backend, scripts, and CLIs — billed to
-                            your account.
-                        </span>
-                    </p>
-                </Section>
-                <Section
-                    title="App"
-                    framed
-                    action={
-                        <ApiKeyDialog
-                            onSubmit={onCreate}
-                            onComplete={() => {}}
-                            triggerLabel={
-                                <span className="inline-flex items-center gap-1.5">
-                                    <AppIcon className="h-4 w-4" />
-                                    Add App
-                                </span>
-                            }
-                            simplified
-                        />
-                    }
-                >
-                    <div className="flex flex-col gap-3">
-                        {!sortedAppKeys.length && (
-                            <Surface className="p-6 text-center">
-                                <AppIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
-                                <p className="font-semibold text-ink-900 text-lg mb-2">
-                                    Create your first app key
-                                </p>
-                                <p className="text-sm text-theme-text-muted">
-                                    Use app keys when your users bring their own
-                                    Pollinations account.
-                                </p>
-                            </Surface>
-                        )}
-                        {sortedAppKeys.map(renderKeyCard)}
-                    </div>
-                    <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                        <p className="flex items-start gap-1.5">
-                            <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                For apps where users sign in with their own
-                                Pollinations account and spend their own Pollen.
-                            </span>
-                        </p>
-                        <p className="flex items-start gap-1.5">
-                            <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                Turn on earnings to receive a share of pollen
-                                users spend in your app.{" "}
-                                <InlineLink
-                                    href={genDocsUrl("#tag/pollen-connect")}
-                                >
-                                    Read the guide
-                                </InlineLink>
-                            </span>
-                        </p>
-                    </div>
-                </Section>
+                {kind === "keys" && (
+                    <Section
+                        title="API keys"
+                        framed
+                        action={
+                            <ApiKeyDialog
+                                onSubmit={onCreate}
+                                onComplete={() => {}}
+                                triggerLabel={
+                                    <span className="inline-flex items-center gap-1.5">
+                                        <KeyIcon className="h-4 w-4" />
+                                        Add Key
+                                    </span>
+                                }
+                            />
+                        }
+                    >
+                        <div className="flex flex-col gap-3">
+                            {!sortedApiKeys.length && (
+                                <Surface className="p-6 text-center">
+                                    <KeyIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
+                                    <p className="font-semibold text-ink-900 text-lg mb-2">
+                                        Create your first API key
+                                    </p>
+                                    <p className="text-sm text-theme-text-muted">
+                                        Use API keys for your own private
+                                        server-side integrations.
+                                    </p>
+                                </Surface>
+                            )}
+                            {sortedApiKeys.map(renderKeyCard)}
+                        </div>
+                        <Text
+                            as="footer"
+                            size="xs"
+                            tone="muted"
+                            className="polli:border-t polli:border-divider polli:pt-4"
+                        >
+                            <ul className="space-y-2">
+                                <li className="flex items-start gap-1.5">
+                                    <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                    <span>
+                                        For your backend, scripts, and CLIs.
+                                        Requests use your Pollen.
+                                    </span>
+                                </li>
+                                <li className="flex items-start gap-1.5">
+                                    <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                    <span>
+                                        For browsers, register an app in Apps
+                                        and use{" "}
+                                        <InlineLink href="https://gen.pollinations.ai/docs#tag/connect-user-wallets">
+                                            Connect User Wallets
+                                        </InlineLink>
+                                        . Raw publishable keys (<code>pk_</code>
+                                        ) are legacy; do not mint them via the
+                                        CLI.
+                                    </span>
+                                </li>
+                            </ul>
+                        </Text>
+                    </Section>
+                )}
+                {kind === "apps" && (
+                    <Section
+                        title="Apps"
+                        framed
+                        action={
+                            <ApiKeyDialog
+                                onSubmit={onCreate}
+                                onComplete={() => {}}
+                                triggerLabel={
+                                    <span className="inline-flex items-center gap-1.5">
+                                        <AppIcon className="h-4 w-4" />
+                                        Add App
+                                    </span>
+                                }
+                                simplified
+                            />
+                        }
+                    >
+                        <div className="flex flex-col gap-3">
+                            {!sortedAppKeys.length && (
+                                <Surface className="p-6 text-center">
+                                    <AppIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
+                                    <p className="font-semibold text-ink-900 text-lg mb-2">
+                                        Create your first app key
+                                    </p>
+                                    <p className="text-sm text-theme-text-muted">
+                                        Use app keys when your users bring their
+                                        own Pollinations account.
+                                    </p>
+                                </Surface>
+                            )}
+                            {sortedAppKeys.map(renderKeyCard)}
+                        </div>
+                        <Text
+                            as="footer"
+                            size="xs"
+                            tone="muted"
+                            className="polli:border-t polli:border-divider polli:pt-4"
+                        >
+                            <ul className="space-y-2">
+                                <li className="flex items-start gap-1.5">
+                                    <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                    <span>
+                                        Connect with OAuth + PKCE or a simple
+                                        redirect to receive a scoped API key.
+                                        Requests use the user&apos;s Pollen.{" "}
+                                        <InlineLink
+                                            href={genDocsUrl(
+                                                "#tag/pollen-connect",
+                                            )}
+                                        >
+                                            Read the guide
+                                        </InlineLink>
+                                    </span>
+                                </li>
+                                <li className="flex items-start gap-1.5">
+                                    <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                    <span>
+                                        Enable earnings to receive a share of
+                                        Pollen spent in your app.
+                                    </span>
+                                </li>
+                            </ul>
+                        </Text>
+                    </Section>
+                )}
             </div>
             <DeleteConfirmation
+                kind={kind}
+                key={deleteId ?? "closed"}
                 deleteId={deleteId}
                 onConfirm={handleDelete}
                 onCancel={() => setDeleteId(null)}

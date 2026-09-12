@@ -20,7 +20,9 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
     inline = false,
 }) => {
     return (
-        <Field.Root className={inline ? "flex items-center gap-3" : ""}>
+        <Field.Root
+            className={inline ? "flex flex-wrap items-center gap-3" : ""}
+        >
             <Field.Label
                 className={`flex items-center gap-1.5 text-sm font-semibold ${inline ? "mb-0 shrink-0 w-20" : "mb-2"}`}
             >
@@ -31,22 +33,23 @@ export const PollenBudgetInput: FC<PollenBudgetInputProps> = ({
                 />
             </Field.Label>
             <div className="flex items-center gap-2">
-                <Input
-                    id="pollen-budget-input"
-                    name="pollen-budget"
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    value={value ?? ""}
-                    onChange={(e) => {
-                        const val = e.target.value;
-                        onChange(val === "" ? null : Number(val));
-                    }}
-                    className="w-[116px]"
-                    hideNumberSteppers
-                    placeholder="Unlimited"
-                    disabled={disabled}
-                />
+                <Field.Input asChild>
+                    <Input
+                        name="pollen-budget"
+                        type="number"
+                        min={0}
+                        step={0.01}
+                        value={value ?? ""}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            onChange(val === "" ? null : Number(val));
+                        }}
+                        className="w-[116px]"
+                        hideNumberSteppers
+                        placeholder="Unlimited"
+                        disabled={disabled}
+                    />
+                </Field.Input>
                 <span className="text-sm text-theme-text-muted w-12">
                     pollen
                 </span>

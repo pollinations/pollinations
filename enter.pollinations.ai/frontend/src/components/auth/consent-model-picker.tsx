@@ -120,15 +120,18 @@ export function ConsentModelPicker({
         ]
             .filter(Boolean)
             .join(" ");
-        const nextDraft = value.endsWith(" ")
-            ? undefined
-            : getModelQueryDraftFilter(next, true);
+        const nextDraft =
+            value.trim() === "" || value.endsWith(" ")
+                ? undefined
+                : getModelQueryDraftFilter(next, true);
         setSearch(next);
         setDraft(nextDraft);
         if (!nextDraft) setEditing(undefined);
         setOpen(
-            !!nextDraft ||
-                getModelQuerySuggestions(value, searchableModels).length > 0,
+            !value.endsWith(" ") &&
+                (!!nextDraft ||
+                    getModelQuerySuggestions(value, searchableModels).length >
+                        0),
         );
     };
 
@@ -141,6 +144,7 @@ export function ConsentModelPicker({
                     onChange={changeSearch}
                     open={open}
                     onOpenChange={setOpen}
+                    closeOnSelect={false}
                     disabled={disabled}
                     aria-label="Search and filter models"
                     autoComplete="off"
@@ -159,6 +163,14 @@ export function ConsentModelPicker({
                         resetDraft();
                     }}
                     onKeyDown={(event) => {
+                        // Searching inside a key form must not submit it.
+                        if (
+                            event.key === "Enter" &&
+                            (!open || options.length === 0)
+                        ) {
+                            event.preventDefault();
+                            return;
+                        }
                         if (event.key !== "Backspace" || visibleSearch !== "") {
                             setPendingRemoval(undefined);
                             return;
@@ -193,6 +205,7 @@ export function ConsentModelPicker({
                 />
                 <div className="flex flex-wrap items-center justify-end gap-3">
                     <Button
+                        type="button"
                         size="xs"
                         className="polli:bg-transparent polli:px-0 polli:text-xs polli:font-normal polli:text-theme-text-soft polli:underline polli:underline-offset-2 polli:hover:bg-transparent"
                         disabled={disabled || visibleModels.length === 0}
@@ -210,6 +223,7 @@ export function ConsentModelPicker({
                         Clear all
                     </Button>
                     <Button
+                        type="button"
                         size="xs"
                         className="polli:bg-transparent polli:px-0 polli:text-xs polli:font-normal polli:text-theme-text-soft polli:underline polli:underline-offset-2 polli:hover:bg-transparent"
                         disabled={disabled || visibleModels.length === 0}

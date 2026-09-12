@@ -1,4 +1,5 @@
-import { Button, Field, Input, Switch } from "@pollinations/ui";
+import { Button, Field, Input, Text } from "@pollinations/ui";
+import { AuthAccessItem, AuthInfoCard } from "@pollinations/ui/auth";
 import type { FC } from "react";
 
 type PublishableKeySettingsProps = {
@@ -39,69 +40,88 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
     }
 
     return (
-        <div className="space-y-5">
-            <Field.Root className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                    <Field.Label className="text-sm font-semibold">
-                        Redirect URIs
-                    </Field.Label>
-                </div>
-                <p className="text-xs text-theme-text-soft">
-                    A localhost callback is pre-filled for local development —
-                    edit the path to match your dev server, and remove it before
-                    going to production.
-                </p>
-                {redirectUris.map((uri, index) => (
-                    <div
-                        // biome-ignore lint/suspicious/noArrayIndexKey: stable enough for a small editable list
-                        key={index}
-                        className="flex items-center gap-2"
-                    >
-                        <Input
-                            type="text"
-                            value={uri}
-                            onChange={(e) => update(index, e.target.value)}
-                            className="flex-1 focus:outline-none focus:ring-2 focus:ring-theme-border"
-                            placeholder="https://myapp.com/auth/callback"
-                            disabled={disabled}
-                        />
-                        <Button
-                            type="button"
-                            onClick={() => remove(index)}
-                            disabled={disabled}
+        <div className="space-y-3">
+            <AuthInfoCard title={null}>
+                <div className="space-y-3">
+                    <div>
+                        <Text size="sm" weight="semibold">
+                            Callback URLs
+                        </Text>
+                        <Text size="xs" tone="muted" className="polli:mt-1">
+                            Where your app receives users after consent.
+                        </Text>
+                    </div>
+                    {redirectUris.map((uri, index) => (
+                        <div
+                            // biome-ignore lint/suspicious/noArrayIndexKey: stable enough for a small editable list
+                            key={index}
+                            className="flex items-center gap-2"
                         >
-                            Remove
-                        </Button>
-                    </div>
-                ))}
-                <div>
-                    <Button type="button" onClick={add} disabled={disabled}>
-                        + Add
-                    </Button>
-                </div>
-            </Field.Root>
-            {onEarningsEnabledChange && (
-                <div className="flex min-w-0 items-start justify-between gap-3">
-                    <div className="min-w-0">
-                        <div className="text-sm font-semibold">
-                            App earnings
+                            <Field.Root className="min-w-0 flex-1">
+                                <Field.Label className="sr-only">
+                                    Callback URL {index + 1}
+                                </Field.Label>
+                                <Field.Input asChild>
+                                    <Input
+                                        type="text"
+                                        value={uri}
+                                        onChange={(e) =>
+                                            update(index, e.target.value)
+                                        }
+                                        className="w-full"
+                                        placeholder="https://myapp.com/auth/callback"
+                                        disabled={disabled}
+                                    />
+                                </Field.Input>
+                            </Field.Root>
+                            <Button
+                                type="button"
+                                size="sm"
+                                data-theme="neutral"
+                                className="polli:shrink-0"
+                                aria-label={`Remove callback URL ${index + 1}`}
+                                onClick={() => remove(index)}
+                                disabled={disabled}
+                            >
+                                Remove
+                            </Button>
                         </div>
-                        <p className="mt-0.5 text-xs text-theme-text-soft">
-                            Users pay 25% over base rates. Markup credits to
-                            your balance.
-                        </p>
-                    </div>
-                    <Switch
-                        checked={earningsEnabled}
-                        onChange={onEarningsEnabledChange}
+                    ))}
+                    <Button
+                        type="button"
+                        size="sm"
+                        data-theme="neutral"
+                        onClick={add}
                         disabled={disabled}
-                        ariaLabel={
-                            earningsEnabled
-                                ? "Turn off app earnings"
-                                : "Enable app earnings"
-                        }
-                    />
+                    >
+                        + Add URL
+                    </Button>
+                    <Text size="xs" tone="muted">
+                        A localhost callback is pre-filled for local development
+                        — edit the path to match your dev server, and remove it
+                        before going to production.
+                    </Text>
                 </div>
+            </AuthInfoCard>
+            {onEarningsEnabledChange && (
+                <AuthInfoCard title={null}>
+                    <ul className="text-sm text-theme-text-base">
+                        <AuthAccessItem
+                            checked={earningsEnabled}
+                            onChange={onEarningsEnabledChange}
+                            disabled={disabled}
+                            ariaLabel="App earnings"
+                            details={
+                                <Text size="xs" tone="muted">
+                                    Users pay 25% over base rates. Markup
+                                    credits to your balance.
+                                </Text>
+                            }
+                        >
+                            App earnings
+                        </AuthAccessItem>
+                    </ul>
+                </AuthInfoCard>
             )}
         </div>
     );

@@ -13,6 +13,7 @@ export function SignInScreen({
     error,
     actions,
     secondaryAction,
+    children,
 }: {
     app?: ReactNode;
     appFirst?: boolean;
@@ -20,6 +21,7 @@ export function SignInScreen({
     error?: string | null;
     actions: ReactNode;
     secondaryAction?: ReactNode;
+    children?: ReactNode;
 }) {
     return (
         <AuthFlowLayout
@@ -58,6 +60,7 @@ export function SignInScreen({
                     </>
                 )}
             </div>
+            {children}
             {error && <ErrorBanner>{error}</ErrorBanner>}
         </AuthFlowLayout>
     );

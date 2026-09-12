@@ -1,7 +1,6 @@
 import {
     Button,
     Chip,
-    Collapsible,
     EarningsIcon,
     InlineLink,
     useScrollLock,
@@ -16,10 +15,6 @@ import {
     GitHubSignInButton,
 } from "@pollinations/ui/auth";
 import {
-    PollenFundingAction,
-    type PollenStatus,
-} from "@pollinations/ui/wallet";
-import {
     getAuthorizeInitialPermissions,
     getAuthorizePollenBudget,
     getAuthorizeRequestError,
@@ -28,10 +23,9 @@ import {
 } from "@shared/auth/authorize-config.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
 import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
-import { config } from "../../config.ts";
 import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
 import {
@@ -44,22 +38,21 @@ import {
     rememberAppPage,
     rememberSignIn,
 } from "../../lib/sign-in-context.ts";
+import { AccountPermissionsInput } from "../keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../keys/expiry-days-input.tsx";
 import {
     type KeyPermissions,
     useKeyPermissions,
 } from "../keys/key-permissions.tsx";
+import { ModelPermissionsInput } from "../keys/model-permissions-input.tsx";
 import { PollenBudgetInput } from "../keys/pollen-budget-input.tsx";
-import {
-    areSelectedModelsPaidOnly,
-    getSelectedModelCounts,
-} from "../models/model-categories.ts";
+import { getModelPricesFromCatalog } from "../models/model-catalog.ts";
+import { areSelectedModelsPaidOnly } from "../models/model-categories.ts";
 import { useModelCategories } from "../models/use-model-categories.ts";
 import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
 import { AppAttribution } from "./app-attribution.tsx";
 import { AuthAccountIdentity } from "./auth-account-identity.tsx";
 import { ConnectionErrorScreen } from "./connection-error-screen";
-import { ConsentModelPicker } from "./consent-model-picker.tsx";
 import { SignInScreen } from "./sign-in-screen.tsx";
 
 type Attribution = {
@@ -206,7 +199,6 @@ export function Authorize({
     // The minted key is the signed-in user's, so it reaches their own private
     // models just as their dashboard keys do — but the anonymous catalog omits
     // them, so the consent screen has to learn them separately.
-    const [modelsExpanded, setModelsExpanded] = useState(false);
     const ownModels = useOwnCommunityModels(!!user);
     const {
         categories: modelCategories,
@@ -228,33 +220,25 @@ export function Authorize({
                           label: id,
                       },
               );
-    const selectedModelCounts = getSelectedModelCounts(
-        allowedModels,
-        requestedModels.map(({ id }) => id),
-        modelCategories,
+    const selectedIds = allowedModels ?? requestedModels.map(({ id }) => id);
+    const modelPrices = useMemo(
+        () => getModelPricesFromCatalog(catalog),
+        [catalog],
     );
-    const fundingStatus: PollenStatus | undefined =
-        balances && balances.paid <= 0 && balances.quest <= 0
-            ? { state: "no-pollen" }
-            : balances &&
-                balances.paid <= 0 &&
-                areSelectedModelsPaidOnly(allowedModels, requestedModels)
-              ? { state: "paid-required" }
-              : undefined;
+    const freeOnly = selectedIds.every(
+        (id) => modelPrices.find(({ name }) => name === id)?.free === true,
+    );
+    const fundingRequirement =
+        modelStatus !== "ready" || freeOnly
+            ? "none"
+            : areSelectedModelsPaidOnly(allowedModels, requestedModels)
+              ? "paid"
+              : "any";
     // Preserve the caller's requested scopes for the authorization response.
     // App requests use the URL; device requests use the server record.
     const [requestedScopes, setRequestedScopes] = useState<Set<string>>(
         () => new Set(urlScope ?? []),
     );
-    const setOptionalPermission = (permission: string, checked: boolean) => {
-        if (!requestedScopes.has(permission)) return;
-        const current = keyPermissions.permissions.accountPermissions ?? [];
-        setAccountPermissions(
-            checked
-                ? Array.from(new Set([...current, permission]))
-                : current.filter((scope) => scope !== permission),
-        );
-    };
     // Validation/lookup errors end the check even when no attribution arrived.
     const isAttributionPending = appLookupStatus === "pending";
     const requestValidationError = isDeviceMode
@@ -454,20 +438,32 @@ export function Authorize({
         let active = true;
         setBalances(null);
         if (!user) return;
-
-        apiClient.customer.balance
-            .$get()
-            .then((response) => (response.ok ? response.json() : null))
-            .then((data) => {
-                if (!active || !data) return;
-                setBalances({
-                    quest: data.tierBalance ?? 0,
-                    paid: data.packBalance ?? 0,
+        let request = 0;
+        const refreshBalances = () => {
+            const currentRequest = ++request;
+            void apiClient.customer.balance
+                .$get()
+                .then((response) => (response.ok ? response.json() : null))
+                .then((data) => {
+                    if (!active || currentRequest !== request) return;
+                    setBalances(
+                        data
+                            ? {
+                                  quest: data.tierBalance,
+                                  paid: data.packBalance,
+                              }
+                            : null,
+                    );
+                })
+                .catch(() => {
+                    if (active && currentRequest === request) setBalances(null);
                 });
-            })
-            .catch(() => {});
+        };
+        refreshBalances();
+        window.addEventListener("focus", refreshBalances);
         return () => {
             active = false;
+            window.removeEventListener("focus", refreshBalances);
         };
     }, [user]);
 
@@ -655,7 +651,11 @@ export function Authorize({
     }
 
     const accountHeader = user ? (
-        <AuthAccountIdentity user={user} balances={balances} />
+        <AuthAccountIdentity
+            user={user}
+            balances={balances}
+            requirement={fundingRequirement}
+        />
     ) : undefined;
     if (deviceOutcome !== "pending") {
         return (
@@ -773,7 +773,7 @@ export function Authorize({
                             as="button"
                             onClick={handleDeny}
                             data-theme="neutral"
-                            className="polli:rounded-md whitespace-nowrap shrink-0"
+                            className="whitespace-nowrap shrink-0"
                             disabled={
                                 isPending ||
                                 isSigningIn ||
@@ -799,7 +799,7 @@ export function Authorize({
                     <Button
                         as="button"
                         onClick={handleAuthorize}
-                        className="polli:rounded-md whitespace-nowrap shrink-0"
+                        className="whitespace-nowrap shrink-0"
                         disabled={!canAuthorize || isAuthorizing}
                         aria-busy={isAuthorizing || isAttributionPending}
                     >
@@ -819,7 +819,7 @@ export function Authorize({
                         as="button"
                         onClick={handleDeny}
                         data-theme="neutral"
-                        className="polli:rounded-md whitespace-nowrap shrink-0"
+                        className="whitespace-nowrap shrink-0"
                         disabled={
                             isAuthorizing ||
                             (!isDeviceMode && isAttributionPending && !returnTo)
@@ -850,7 +850,7 @@ export function Authorize({
                             >
                                 pollinations.ai account
                             </InlineLink>
-                            .
+                            {" - revoke anytime"}
                         </>
                     }
                 >
@@ -864,54 +864,12 @@ export function Authorize({
                     >
                         ID, username and picture.
                     </AuthAccessItem>
-                    {requestedScopes.has("profile") && (
-                        <AuthAccessItem
-                            ariaLabel="Share display name and email"
-                            checked={
-                                keyPermissions.permissions.accountPermissions?.includes(
-                                    "profile",
-                                ) ?? false
-                            }
-                            onChange={(checked) =>
-                                setOptionalPermission("profile", checked)
-                            }
-                            disabled={isAuthorizing}
-                        >
-                            Display name and email.
-                        </AuthAccessItem>
-                    )}
-                    {requestedScopes.has("usage") && (
-                        <AuthAccessItem
-                            ariaLabel="Share account activity"
-                            checked={
-                                keyPermissions.permissions.accountPermissions?.includes(
-                                    "usage",
-                                ) ?? false
-                            }
-                            onChange={(checked) =>
-                                setOptionalPermission("usage", checked)
-                            }
-                            disabled={isAuthorizing}
-                        >
-                            Balance, usage, earnings and quest status.
-                        </AuthAccessItem>
-                    )}
-                    {requestedScopes.has("keys") && (
-                        <AuthAccessItem
-                            ariaLabel="Allow account management"
-                            checked={
-                                keyPermissions.permissions.accountPermissions?.includes(
-                                    "keys",
-                                ) ?? false
-                            }
-                            onChange={(checked) =>
-                                setOptionalPermission("keys", checked)
-                            }
-                            disabled={isAuthorizing}
-                        >
-                            API keys, agents, models and connected apps.
-                        </AuthAccessItem>
-                    )}
+                    <AccountPermissionsInput
+                        value={keyPermissions.permissions.accountPermissions}
+                        onChange={setAccountPermissions}
+                        visiblePermissions={requestedScopes}
+                        disabled={isAuthorizing}
+                    />
                 </AuthAccessSummary>
                 <div className="mb-3">
                     <AuthInfoCard title={null}>
@@ -939,32 +897,19 @@ export function Authorize({
                                                     </Button>
                                                 </ErrorBanner>
                                             ) : null}
-                                            {(attribution?.earningsEnabled ||
-                                                fundingStatus) && (
+                                            {attribution?.earningsEnabled && (
                                                 <div className="flex flex-wrap items-center gap-2">
-                                                    {attribution?.earningsEnabled && (
-                                                        <Chip
-                                                            intent="info"
-                                                            size="sm"
-                                                            title="The app earns 20% of the pollen you spend in it."
-                                                        >
-                                                            <EarningsIcon
-                                                                aria-hidden="true"
-                                                                className="h-3.5 w-3.5"
-                                                            />
-                                                            App earns 20%
-                                                        </Chip>
-                                                    )}
-                                                    {fundingStatus && (
-                                                        <PollenFundingAction
-                                                            status={
-                                                                fundingStatus
-                                                            }
-                                                            enterUrl={
-                                                                config.baseUrl
-                                                            }
+                                                    <Chip
+                                                        intent="info"
+                                                        size="sm"
+                                                        title="The app earns 20% of the pollen you spend in it."
+                                                    >
+                                                        <EarningsIcon
+                                                            aria-hidden="true"
+                                                            className="h-3.5 w-3.5"
                                                         />
-                                                    )}
+                                                        App earns 20%
+                                                    </Chip>
                                                 </div>
                                             )}
                                             <PollenBudgetInput
@@ -979,69 +924,16 @@ export function Authorize({
                                                 inline
                                             />
                                             {modelStatus === "ready" && (
-                                                <Collapsible
-                                                    label={
-                                                        <span className="flex flex-wrap items-center gap-2">
-                                                            <span>Models</span>
-                                                            <span className="flex min-w-0 flex-wrap gap-1.5">
-                                                                {selectedModelCounts.map(
-                                                                    ({
-                                                                        modality,
-                                                                        label,
-                                                                        count,
-                                                                    }) => (
-                                                                        <Chip
-                                                                            key={
-                                                                                modality
-                                                                            }
-                                                                            size="sm"
-                                                                            intent="neutral"
-                                                                        >
-                                                                            {
-                                                                                label
-                                                                            }{" "}
-                                                                            ·{" "}
-                                                                            {
-                                                                                count
-                                                                            }
-                                                                        </Chip>
-                                                                    ),
-                                                                )}
-                                                                {selectedModelCounts.length ===
-                                                                    0 && (
-                                                                    <Chip
-                                                                        size="sm"
-                                                                        intent="neutral"
-                                                                    >
-                                                                        None
-                                                                        selected
-                                                                    </Chip>
-                                                                )}
-                                                            </span>
-                                                        </span>
-                                                    }
-                                                    expanded={modelsExpanded}
-                                                    onToggle={() =>
-                                                        setModelsExpanded(
-                                                            (value) => !value,
-                                                        )
+                                                <ModelPermissionsInput
+                                                    catalog={catalog}
+                                                    categories={modelCategories}
+                                                    models={requestedModels}
+                                                    selected={allowedModels}
+                                                    onChange={
+                                                        keyPermissions.setAllowedModels
                                                     }
                                                     disabled={isAuthorizing}
-                                                    wrapperClassName="polli:border-0"
-                                                    triggerClassName="polli:px-0 polli:text-sm polli:font-semibold"
-                                                    hoverClassName="polli:hover:bg-transparent"
-                                                    panelClassName="polli:pt-2"
-                                                >
-                                                    <ConsentModelPicker
-                                                        catalog={catalog}
-                                                        models={requestedModels}
-                                                        selected={allowedModels}
-                                                        onChange={
-                                                            keyPermissions.setAllowedModels
-                                                        }
-                                                        disabled={isAuthorizing}
-                                                    />
-                                                </Collapsible>
+                                                />
                                             )}
                                         </div>
                                     )
@@ -1062,17 +954,6 @@ export function Authorize({
                         inline
                     />
                 </AuthInfoCard>
-                <p className="pt-3 text-xs text-theme-text-soft">
-                    Revoke access anytime in your{" "}
-                    <InlineLink
-                        href={`${config.baseUrl}/`}
-                        external
-                        data-pollinations-action="dashboard"
-                    >
-                        dashboard
-                    </InlineLink>
-                    .
-                </p>
             </div>
         </AuthFlowLayout>
     );

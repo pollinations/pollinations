@@ -21,6 +21,7 @@ export interface ApiKeyUpdateParams {
 }
 
 export interface ApiKeyManagerProps {
+    kind: "keys" | "apps";
     apiKeys: ApiKey[];
     onCreate: (formData: CreateApiKey) => Promise<CreateApiKeyResponse>;
     onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;

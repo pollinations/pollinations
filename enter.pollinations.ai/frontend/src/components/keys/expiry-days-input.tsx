@@ -36,25 +36,28 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
                 />
             </Field.Label>
             <div className="flex items-center gap-2">
-                <Input
-                    id="expiry-days-input"
-                    name="expiry-days"
-                    type="number"
-                    min={1 / 86400}
-                    max={365}
-                    step="any"
-                    value={value ?? ""}
-                    onChange={(e) => {
-                        const val = e.target.value;
-                        onChange(val === "" ? null : Number(val));
-                    }}
-                    className="w-[116px]"
-                    hideNumberSteppers
-                    placeholder="Never"
-                    disabled={disabled}
-                    aria-invalid={!!error}
-                    aria-describedby={error ? "expiry-days-error" : undefined}
-                />
+                <Field.Input asChild>
+                    <Input
+                        name="expiry-days"
+                        type="number"
+                        min={1 / 86400}
+                        max={365}
+                        step="any"
+                        value={value ?? ""}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            onChange(val === "" ? null : Number(val));
+                        }}
+                        className="w-[116px]"
+                        hideNumberSteppers
+                        placeholder="Never"
+                        disabled={disabled}
+                        aria-invalid={!!error}
+                        aria-describedby={
+                            error ? "expiry-days-error" : undefined
+                        }
+                    />
+                </Field.Input>
                 <span className="text-sm text-theme-text-muted w-12">days</span>
             </div>
             {error && (

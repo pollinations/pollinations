@@ -33,11 +33,7 @@ export function ConnectionErrorScreen({
             account={account}
             actions={
                 onRetry && (
-                    <Button
-                        onClick={onRetry}
-                        disabled={pending}
-                        className="polli:rounded-md"
-                    >
+                    <Button onClick={onRetry} disabled={pending}>
                         {retryLabel}
                     </Button>
                 )
@@ -48,7 +44,6 @@ export function ConnectionErrorScreen({
                         onClick={onBack}
                         disabled={pending}
                         data-theme="neutral"
-                        className="polli:rounded-md"
                     >
                         {backLabel}
                     </Button>

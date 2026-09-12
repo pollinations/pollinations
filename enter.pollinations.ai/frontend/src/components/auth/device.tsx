@@ -166,7 +166,7 @@ export function Device({ prefilledCode }: DeviceProps) {
                     form="device-code-form"
                     disabled={cannotVerify}
                     aria-busy={checking}
-                    className="polli:rounded-md whitespace-nowrap"
+                    className="whitespace-nowrap"
                 >
                     {checking
                         ? "Verifying…"

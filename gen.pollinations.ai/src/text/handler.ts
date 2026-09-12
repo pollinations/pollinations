@@ -338,11 +338,8 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
-        const normalization = normalizeSearchContext(c, requestData);
-        if ("errorResponse" in normalization) {
-            return normalization.errorResponse;
-        }
-        const normalizedRequestData = normalization.requestData;
+        const rejected = rejectUnsupportedSearchContext(c, requestData);
+        if (rejected) return rejected;
         const portkey = c.env.PORTKEY;
         const candidates = fallbackCandidates(c.var.model)
             .map((candidate, originalIndex) => ({
@@ -354,20 +351,26 @@ async function generateTextResponse(
                     candidate.originalIndex === 0 ||
                     supportsTextFallbackRequest(
                         candidate.definition,
-                        normalizedRequestData,
+                        requestData,
                     ),
             );
         const { result: completion, candidate } = await withModelFallback(
             candidates,
             async (attempt) => {
+                // The candidate that runs decides the search context it bills.
+                const attemptRequestData = applySearchContext(
+                    c,
+                    requestData,
+                    attempt.definition,
+                );
                 const result = await generateTextPortkey(
-                    normalizedRequestData.messages,
-                    await gatewayContext(c, normalizedRequestData, attempt),
+                    attemptRequestData.messages,
+                    await gatewayContext(c, attemptRequestData, attempt),
                     portkey
                         ? (input, init) => portkey.fetch(input, init)
                         : undefined,
                 );
-                if (!normalizedRequestData.stream) {
+                if (!attemptRequestData.stream) {
                     requireChatCompletionUsage(result);
                 }
                 return result;
@@ -385,7 +388,7 @@ async function generateTextResponse(
         // The successful candidate always carries the canonical registry id,
         // including aliases, community models, and fallback targets.
         const servedModelId = candidate.id || undefined;
-        if (normalizedRequestData.stream) {
+        if (requestData.stream) {
             if (!completion.responseStream) {
                 return sendTextStreamResponse(completion, servedModelId);
             }
@@ -419,50 +422,57 @@ async function generateTextResponse(
     }
 }
 
-function normalizeSearchContext(
+/** 400 when the caller asks for a search context size the model does not offer. */
+function rejectUnsupportedSearchContext(
     c: TextContext,
     requestData: RequestData,
-): { requestData: RequestData } | { errorResponse: Response } {
-    const { web_search_options, ...requestWithoutSearchOptions } = requestData;
-    const model = c.var.model;
-    if (!model) return { requestData: requestWithoutSearchOptions };
-    const supported = model.definition.searchContextSizes;
-    if (!supported?.length) {
-        return { requestData: requestWithoutSearchOptions };
-    }
-
-    const requested = web_search_options?.search_context_size;
+): Response | undefined {
+    const supported = c.var.model?.definition.searchContextSizes;
+    const requested = requestData.web_search_options?.search_context_size;
     if (
-        supported.length > 1 &&
-        requested !== undefined &&
-        !supported.includes(requested as "low" | "high")
+        !supported ||
+        supported.length < 2 ||
+        requested === undefined ||
+        supported.includes(requested as "low" | "high")
     ) {
-        return {
-            errorResponse: c.json(
-                {
-                    error: {
-                        message: `Unsupported web_search_options.search_context_size. Use ${supported.map((size) => `"${size}"`).join(" or ")}.`,
-                    },
-                },
-                400,
-            ),
-        };
+        return undefined;
     }
-
-    if (supported.length > 1 && requested === undefined) {
-        return { requestData: requestWithoutSearchOptions };
-    }
-
-    const searchContextSize =
-        supported.length > 1 && requested
-            ? (requested as "low" | "high")
-            : supported[0];
-    c.var.track.setPricingInput({ searchContextSize });
-    return {
-        requestData: {
-            ...requestWithoutSearchOptions,
-            web_search_options: { search_context_size: searchContextSize },
+    return c.json(
+        {
+            error: {
+                message: `Unsupported web_search_options.search_context_size. Use ${supported.map((size) => `"${size}"`).join(" or ")}.`,
+            },
         },
+        400,
+    );
+}
+
+/**
+ * The request as this candidate should see it: a fixed search context size is
+ * pinned, a choice is passed through, and a model without search sizes gets
+ * no search options at all. Pricing follows the same decision.
+ */
+function applySearchContext(
+    c: TextContext,
+    requestData: RequestData,
+    definition: ModelDefinition | undefined,
+): RequestData {
+    const { web_search_options, ...requestWithoutSearchOptions } = requestData;
+    const supported = definition?.searchContextSizes ?? [];
+    const requested = web_search_options?.search_context_size as
+        | "low"
+        | "high"
+        | undefined;
+    let searchContextSize: "low" | "high" | undefined;
+    if (supported.length === 1) searchContextSize = supported[0];
+    else if (requested && supported.includes(requested)) {
+        searchContextSize = requested;
+    }
+    c.var.track.setPricingInput({ searchContextSize });
+    if (!searchContextSize) return requestWithoutSearchOptions;
+    return {
+        ...requestWithoutSearchOptions,
+        web_search_options: { search_context_size: searchContextSize },
     };
 }
 

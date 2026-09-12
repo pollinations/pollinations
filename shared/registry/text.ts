@@ -109,6 +109,32 @@ const TEXT_BASE_SERVICES = {
         contextLength: 131072,
         isSpecialized: false,
     },
+    "openai/gpt-4o-mini": {
+        supportedParameters: CHAT_PARAMETERS.openRouterGpt4oMini,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-09-12").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter azure/openai route rates (2026-09-12). Image inputs
+            // are tokenized into promptTextTokens; no separate usage is
+            // reported or billed for image input.
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.075),
+            completionTextTokens: perMillion(0.6),
+        },
+        title: "GPT-4o Mini",
+        description:
+            "Affordable multimodal chat with vision input for everyday tasks",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        contextLength: 128000,
+        isSpecialized: false,
+    },
     "openai/gpt-5.4": {
         supportedParameters: CHAT_PARAMETERS.azureGpt54,
         aliases: [

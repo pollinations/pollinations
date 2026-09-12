@@ -117,6 +117,18 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins gpt-4o-mini to Azure then OpenAI on OpenRouter without further fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "openai/gpt-4o-mini",
+        });
+
+        expect(result.options.model).toBe("openai/gpt-4o-mini");
+        expect(result.options.provider).toEqual({
+            order: ["azure", "openai"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Mercury to Inception on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "inception/mercury-2",

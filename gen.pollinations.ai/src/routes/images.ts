@@ -5,7 +5,6 @@
  */
 
 import { UpstreamError } from "@shared/error.ts";
-import { getPublicOrigin } from "@shared/public-origin.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
@@ -18,11 +17,7 @@ import {
     CreateImageEditRequestSchema,
     type CreateImageRequest,
 } from "@shared/schemas/openai.ts";
-import {
-    normalizeSafeValue,
-    SAFETY_HEADER_NAME,
-    type SafeValue,
-} from "@shared/schemas/safety.ts";
+import { normalizeSafeValue, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import type { Env } from "@/env.ts";
@@ -81,14 +76,6 @@ function responseImageUsage(
     const fallbackTarget = response.headers.get(FALLBACK_TARGET_HEADER);
     if (fallbackTarget) c.header(FALLBACK_TARGET_HEADER, fallbackTarget);
     return usageToOpenAIImageUsage(usage);
-}
-
-function setUrlParam(url: URL, name: string, value: unknown): void {
-    if (value === undefined || value === null) return;
-    url.searchParams.set(
-        name,
-        Array.isArray(value) ? value.join("|") : String(value),
-    );
 }
 
 /** Resolve OpenAI params to Pollinations equivalents. */
@@ -294,12 +281,11 @@ export const prepareOpenAIImageEditReplay = createMiddleware<Env>(
     },
 );
 
-/** Resolve the POST body to the equivalent public media URL used for caching. */
+/** Normalize the generation body and hash the parts that shape the file. */
 export const prepareOpenAIImageGeneration = createMiddleware<Env>(
     async (c, next) => {
         const body = c.req.valid("json" as never) as CreateImageRequest &
             Record<string, unknown>;
-        const model = c.var.model.resolved;
 
         // This endpoint returns a complete image/JSON, never an SSE stream.
         // A passthrough stream flag must not bypass durable media storage.
@@ -315,23 +301,25 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
             prompt: safePrompt,
         });
         c.set("generationRequestBody", JSON.stringify(body));
-
-        const imageUrl = new URL(
-            `/image/${encodeURIComponent(body.prompt)}`,
-            getPublicOrigin(c),
+        // Only the prompt, the model and the generation parameters change the
+        // bytes. Response formatting and caller metadata are left out so they
+        // do not split one image across several cache entries.
+        c.set(
+            "generationCacheBody",
+            normalizedJsonBody(
+                JSON.stringify({
+                    prompt: safePrompt,
+                    // Any listed model may serve, so the whole list identifies
+                    // the cache entry. Keying on the primary alone would store
+                    // one model's image under another's key.
+                    model:
+                        c.var.model.listedModels?.join(",") ??
+                        c.var.model.resolved,
+                    ...resolved,
+                    ...collectPassthrough(body, ...CACHE_PARAMS),
+                }),
+            ),
         );
-        for (const [name, value] of Object.entries({
-            model,
-            ...resolved,
-            ...collectPassthrough(body, ...CACHE_PARAMS),
-        })) {
-            setUrlParam(imageUrl, name, value);
-        }
-        const safeValue = normalizeSafeValue(
-            (body.safe ?? c.req.header(SAFETY_HEADER_NAME)) as SafeValue,
-        );
-        if (safeValue) imageUrl.searchParams.set("safe", safeValue);
-        c.set("generationCacheUrl", imageUrl);
 
         await next();
     },

@@ -20,6 +20,7 @@ services = [
     { binding = "FFMPEG_MCP", service = "pollinations-ffmpeg-mcp" },
     { binding = "EXA_MCP", service = "pollinations-exa-mcp" },
     { binding = "COMPOSIO_MCP", service = "pollinations-composio-mcp" },
+    { binding = "COMPUTER_MCP", service = "pollinations-computer-mcp" },
     { binding = "MEDIA", service = "pollinations-media", entrypoint = "MediaUpload" }
 ]
 
@@ -122,6 +123,10 @@ service = "pollinations-exa-mcp"
 [[env.production.services]]
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp"
+
+[[env.production.services]]
+binding = "COMPUTER_MCP"
+service = "pollinations-computer-mcp"
 
 [[env.production.dispatch_namespaces]]
 binding = "CODE_AGENTS"
@@ -235,6 +240,10 @@ service = "pollinations-exa-mcp-staging"
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp-staging"
 
+[[env.staging.services]]
+binding = "COMPUTER_MCP"
+service = "pollinations-computer-mcp-staging"
+
 [[env.staging.dispatch_namespaces]]
 binding = "CODE_AGENTS"
 namespace = "pollinations-code-agents-staging"
@@ -332,6 +341,10 @@ service = "pollinations-exa-mcp"
 [[env.test.services]]
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp"
+
+[[env.test.services]]
+binding = "COMPUTER_MCP"
+service = "pollinations-computer-mcp"
 
 [[env.test.d1_databases]]
 binding = "DB"

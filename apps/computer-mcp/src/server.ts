@@ -10,8 +10,9 @@ const SERVER_INSTRUCTIONS =
     "The shell has no network access and cannot run Node, Python, or npm.";
 
 const WORKER_SHELL_DESCRIPTION =
-    "bash (just-bash) in an isolated Worker. Coreutils, grep, sed, awk, jq " +
-    "and sqlite3 are available. No outbound network, no Node, no Python.";
+    "bash (just-bash) in an isolated Worker. Coreutils, grep, sed, awk, jq, " +
+    "tar and git (init, status, diff, log, clone over HTTPS) are available. " +
+    "No outbound network, no Node, no Python.";
 
 // Tools that survive from createAITools: plain file and shell tools only.
 const EXPOSED_TOOLS = ["read", "write", "edit", "ls", "find", "grep", "exec"];

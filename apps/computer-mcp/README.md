@@ -8,7 +8,8 @@ Built on [`@cloudflare/computer`](https://github.com/cloudflare/computer)
 (preview). Each user gets one Durable Object whose SQLite holds the
 filesystem. `exec` runs [just-bash](https://github.com/vercel-labs/just-bash)
 in a throwaway Dynamic Worker that talks back to the Durable Object for file
-access. No container, no Linux, no outbound network.
+access. No container, no Linux, no outbound network. The shell has coreutils,
+grep, sed, awk, jq, tar and git; no Node or Python.
 
 ## Tools
 

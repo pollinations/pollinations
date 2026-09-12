@@ -126,8 +126,8 @@ connections from [MCP Connectors](https://enter.pollinations.ai/account#connecto
 The Computer server gives each account a private filesystem under `/workspace`
 and a bash shell. Files persist between requests and agent runs; nothing runs
 while idle. Tools: `read`, `write`, `edit`, `ls`, `find`, `grep`, and `exec`.
-The shell has no network access and cannot run Node or Python; `jq` and
-`sqlite3` are available. A `/workspace/README.md` is created on first use and
+The shell has no network access and cannot run Node or Python; coreutils,
+`grep`, `sed`, `awk`, `jq`, `tar`, and `git` are available. A `/workspace/README.md` is created on first use and
 describes a simple memory layout (`memory/facts.md` plus a dated
 `memory/log/`). Every tool call costs the same flat rate; see the catalog.
 

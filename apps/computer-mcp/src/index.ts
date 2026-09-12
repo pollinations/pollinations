@@ -7,8 +7,8 @@ import {
     withWorkspace,
 } from "@cloudflare/computer";
 import { WorkerShellBackend } from "@cloudflare/computer/backends/worker-shell";
+import { createGitClient } from "@cloudflare/computer/git";
 import jqModules from "@cloudflare/computer/shell/jq";
-import sqliteModules from "@cloudflare/computer/shell/sqlite";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { withMcpUsageHeaders } from "../../../shared/mcp-usage.ts";
 import {
@@ -41,7 +41,8 @@ survives between runs. Nothing outside /workspace persists.
 ## Tools
 
 read, write, edit, ls, find, grep operate on the filesystem. exec runs
-bash (no network, no Node, no Python; jq and sqlite3 are available).
+bash (no network, no Node, no Python; coreutils, grep, sed, awk, jq, tar
+and git are available).
 `;
 
 // The Dynamic Worker running bash reaches this filesystem through the
@@ -57,13 +58,18 @@ export class Computer extends withWorkspace(
         };
         return {
             storage: ctx.storage as unknown as DurableObjectStorageLike,
+            git: createGitClient(),
+            defaultGitIdentity: {
+                name: "Pollinations Agent",
+                email: "agent@pollinations.ai",
+            },
             backends: [
                 new WorkerShellBackend({
                     loader: env.LOADER,
                     workspace: { binding: "COMPUTER", id: ctx.id.toString() },
                     ctx,
                     egress: { mode: "none" },
-                    commands: [jqModules, sqliteModules],
+                    commands: [jqModules],
                 }),
             ],
         };

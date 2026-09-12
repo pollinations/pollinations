@@ -323,6 +323,16 @@ describe("community endpoint configuration policy", () => {
             pending: { visibility: "public" },
         });
         expect(hidden.hiddenAt).toEqual(expect.any(String));
+        const hiddenRow = await drizzle(env.DB, {
+            schema,
+        }).query.communityEndpoint.findFirst({
+            where: eq(schema.communityEndpoint.id, hidden.id as string),
+        });
+        expect(hiddenRow).toMatchObject({
+            hiddenBy: "owner",
+            hiddenReason: "Hidden by owner",
+        });
+        expect(hiddenRow?.hiddenAt).not.toBeNull();
 
         const modelsResponse = await SELF.fetch(endpointUrl, {
             headers: {

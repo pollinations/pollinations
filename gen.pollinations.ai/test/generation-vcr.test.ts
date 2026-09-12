@@ -1220,102 +1220,103 @@ test("chat streaming without usage fails closed and remains unbilled", async ({
     expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
 });
 
-test.for(["/v1/chat/completions", "/v1/responses"])(
-    "%s does not bill valid usage followed by a stream validation error",
-    async (path, { mocks }) => {
-        await mocks.enable("tinybird", "portkeyDirect", "responsesDirect");
-        const caller = await createTestApiKey({
-            name: "invalid-usage-after-valid-usage",
-            user: { packBalance: 100 },
-        });
-        const db = drizzle(env.DB);
-        const balanceBefore = await getUserBalance(db, caller.userId);
-        const prompt = "vcr invalid usage after valid usage";
-        const { response, wait } = await fetchWorker(path, {
-            method: "POST",
-            headers: {
-                "content-type": "application/json",
-                authorization: `Bearer ${caller.key}`,
-            },
-            body: JSON.stringify({
-                stream: true,
-                ...(path === "/v1/responses"
-                    ? { model: "qwen/qwen3.7-plus", input: prompt }
-                    : {
-                          model: "openai/gpt-5-nano",
-                          messages: [{ role: "user", content: prompt }],
-                      }),
-            }),
-        });
+test.for([
+    "/v1/chat/completions",
+    "/v1/responses",
+])("%s does not bill valid usage followed by a stream validation error", async (path, {
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect", "responsesDirect");
+    const caller = await createTestApiKey({
+        name: "invalid-usage-after-valid-usage",
+        user: { packBalance: 100 },
+    });
+    const db = drizzle(env.DB);
+    const balanceBefore = await getUserBalance(db, caller.userId);
+    const prompt = "vcr invalid usage after valid usage";
+    const { response, wait } = await fetchWorker(path, {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${caller.key}`,
+        },
+        body: JSON.stringify({
+            stream: true,
+            ...(path === "/v1/responses"
+                ? { model: "qwen/qwen3.7-plus", input: prompt }
+                : {
+                      model: "openai/gpt-5-nano",
+                      messages: [{ role: "user", content: prompt }],
+                  }),
+        }),
+    });
 
-        expect(response.status).toBe(200);
-        const stream = await response.text();
-        expect(stream).toContain('"total_tokens":');
-        expect(stream).toContain('"code":"usage_missing"');
-        expect(stream).not.toContain("[DONE]");
-        await wait();
+    expect(response.status).toBe(200);
+    const stream = await response.text();
+    expect(stream).toContain('"total_tokens":');
+    expect(stream).toContain('"code":"usage_missing"');
+    expect(stream).not.toContain("[DONE]");
+    await wait();
 
-        expect(mocks.tinybird.state.events).toHaveLength(1);
-        expect(mocks.tinybird.state.events[0]).toMatchObject({
-            responseStatus: 502,
-            isBilledUsage: false,
-            totalPrice: 0,
-            errorResponseCode: "usage_missing",
-        });
-        expect(mocks.tinybird.state.events[0].totalCost).toBeGreaterThan(0);
-        expect(mocks.tinybird.state.errorEvents).toHaveLength(1);
-        expect(mocks.tinybird.state.errorEvents[0]).toMatchObject({
-            status: 502,
-            upstream_status: 200,
-            error_code: "usage_missing",
-        });
-        expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
-    },
-);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        responseStatus: 502,
+        isBilledUsage: false,
+        totalPrice: 0,
+        errorResponseCode: "usage_missing",
+    });
+    expect(mocks.tinybird.state.events[0].totalCost).toBeGreaterThan(0);
+    expect(mocks.tinybird.state.errorEvents).toHaveLength(1);
+    expect(mocks.tinybird.state.errorEvents[0]).toMatchObject({
+        status: 502,
+        upstream_status: 200,
+        error_code: "usage_missing",
+    });
+    expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
+});
 
-test.for(["partial", "valid"])(
-    "chat bills final usage after %s early usage",
-    async (kind, { mocks }) => {
-        await mocks.enable("tinybird", "portkeyDirect");
-        const caller = await createTestApiKey({ user: { packBalance: 100 } });
-        const db = drizzle(env.DB);
-        const balanceBefore = await getUserBalance(db, caller.userId);
-        const { response, wait } = await fetchWorker("/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "content-type": "application/json",
-                authorization: `Bearer ${caller.key}`,
-            },
-            body: JSON.stringify({
-                model: "openai/gpt-5-nano",
-                stream: true,
-                messages: [
-                    { role: "user", content: `vcr early usage ${kind}` },
-                ],
-            }),
-        });
+test.for([
+    "partial",
+    "valid",
+])("chat bills final usage after %s early usage", async (kind, { mocks }) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const caller = await createTestApiKey({ user: { packBalance: 100 } });
+    const db = drizzle(env.DB);
+    const balanceBefore = await getUserBalance(db, caller.userId);
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${caller.key}`,
+        },
+        body: JSON.stringify({
+            model: "openai/gpt-5-nano",
+            stream: true,
+            messages: [{ role: "user", content: `vcr early usage ${kind}` }],
+        }),
+    });
 
-        expect(response.status).toBe(200);
-        const stream = await response.text();
-        expect(stream).toContain("[DONE]");
-        expect(stream).not.toContain("usage_missing");
-        await wait();
-        expect(mocks.tinybird.state.events).toHaveLength(1);
-        const event = mocks.tinybird.state.events[0];
-        expect(event).toMatchObject({
-            responseStatus: 200,
-            isBilledUsage: true,
-            tokenCountPromptText: 7,
-            tokenCountCompletionText: 3,
-        });
-        expect(event.totalPrice).toBeGreaterThan(0);
-        expect(mocks.tinybird.state.errorEvents).toHaveLength(0);
-        const balanceAfter = await getUserBalance(db, caller.userId);
-        expect(
-            balanceBefore.packBalance - balanceAfter.packBalance,
-        ).toBeCloseTo(event.totalPrice, 12);
-    },
-);
+    expect(response.status).toBe(200);
+    const stream = await response.text();
+    expect(stream).toContain("[DONE]");
+    expect(stream).not.toContain("usage_missing");
+    await wait();
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    const event = mocks.tinybird.state.events[0];
+    expect(event).toMatchObject({
+        responseStatus: 200,
+        isBilledUsage: true,
+        tokenCountPromptText: 7,
+        tokenCountCompletionText: 3,
+    });
+    expect(event.totalPrice).toBeGreaterThan(0);
+    expect(mocks.tinybird.state.errorEvents).toHaveLength(0);
+    const balanceAfter = await getUserBalance(db, caller.userId);
+    expect(balanceBefore.packBalance - balanceAfter.packBalance).toBeCloseTo(
+        event.totalPrice,
+        12,
+    );
+});
 
 test("chat bills token usage once when a provider appends cost-only metadata", async ({
     mocks,

@@ -1196,20 +1196,15 @@ function createTrackingEvent({
     };
 }
 
-/** Pricing inputs the caller states in the request body. */
+/** Pricing inputs the caller states in the validated request body. */
 function requestedPricingInput(request: HonoRequest): PricingInput | undefined {
-    try {
-        const body = request.valid("json" as never) as
-            | { web_search_options?: { search_context_size?: unknown } }
-            | undefined;
-        const size = body?.web_search_options?.search_context_size;
-        if (size === "low" || size === "medium" || size === "high") {
-            return { searchContextSize: size };
-        }
-    } catch {
-        // No JSON validator on this route.
-    }
-    return undefined;
+    const body = request.valid("json" as never) as
+        | { web_search_options?: { search_context_size?: unknown } }
+        | undefined;
+    const size = body?.web_search_options?.search_context_size;
+    return size === "low" || size === "medium" || size === "high"
+        ? { searchContextSize: size }
+        : undefined;
 }
 
 async function extractStreamRequested(request: HonoRequest): Promise<boolean> {

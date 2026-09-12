@@ -6,18 +6,19 @@ idle.
 
 Built on [`@cloudflare/computer`](https://github.com/cloudflare/computer)
 (preview). Each user gets one Durable Object whose SQLite holds the
-filesystem. `exec` runs [just-bash](https://github.com/vercel-labs/just-bash)
+filesystem. The single `bash` tool runs [just-bash](https://github.com/vercel-labs/just-bash)
 in a throwaway Dynamic Worker that talks back to the Durable Object for file
 access. No container, no Linux, no outbound network. The shell has coreutils,
 grep, sed, awk, jq, tar and git; no Node or Python.
 
-## Tools
+## The tool
 
-`read`, `write`, `edit`, `ls`, `find`, `grep`, `exec`. Every tool takes an
-optional `session` slug (`^[a-z0-9][a-z0-9._-]{0,63}$`); each session is a
+One tool, `bash`, with `command`, optional `stdin` (file content for
+`cat > path`, passed as-is, no quoting) and optional `session`. The `session`
+slug (`^[a-z0-9][a-z0-9._-]{0,63}$`); each session is a
 separate Durable Object, so sessions of one user never see each other's files
 and run in parallel. Without it the agent is in the `default` session. There
-is no session listing. Every successful tool call is billed at one flat rate (`computer.tool_call.v1`, reported to gen as a
+is no session listing. Every successful call is billed at one flat rate (`computer.tool_call.v1`, reported to gen as a
 usage receipt); discovery requests and storage are free. Memory is a convention,
 not a tool: a `/workspace/README.md` seeded on first use tells the agent to keep
 current facts in `memory/facts.md` and a dated append-only journal in
@@ -48,7 +49,7 @@ curl -s http://localhost:8787/ \
   -H 'content-type: application/json' \
   -H 'accept: application/json, text/event-stream' \
   -H 'x-pollinations-user-id: local-test' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"exec","arguments":{"command":"ls /workspace"}}}'
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"bash","arguments":{"command":"ls /workspace"}}}'
 ```
 
 ## Deploy

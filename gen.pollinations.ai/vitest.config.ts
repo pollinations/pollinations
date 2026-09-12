@@ -379,7 +379,7 @@ export default defineConfig(async ({ mode }) => {
                                     );
                                     headers.set(
                                         "x-pollinations-mcp-tool",
-                                        "exec",
+                                        "bash",
                                     );
                                     headers.set(
                                         "x-pollinations-mcp-status",

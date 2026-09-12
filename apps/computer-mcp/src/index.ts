@@ -32,7 +32,7 @@ const README_PATH = "/workspace/README.md";
 const README = `# Your computer
 
 This is your private, persistent computer. Everything under /workspace
-survives between runs. Nothing outside /workspace persists. Every tool
+survives between runs. Nothing outside /workspace persists. Every call
 takes an optional \`session\` name; each session is a separate computer
 with its own files. Without it you are in the default session.
 
@@ -44,11 +44,11 @@ with its own files. Without it you are in the default session.
   entry at the end of each run: what happened, what was decided, open items.
 - Before answering questions about earlier work, grep /workspace/memory.
 
-## Tools
+## Shell
 
-read, write, edit, ls, find, grep operate on the filesystem. exec runs
-bash (no network, no Node, no Python; coreutils, grep, sed, awk, jq, tar
-and git are available).
+The only tool is bash (no network, no Node, no Python; coreutils, grep,
+sed, awk, jq, tar and git are available). Write a file by passing its
+content as stdin to \`cat > path\`.
 `;
 
 // The Dynamic Worker running bash reaches this filesystem through the

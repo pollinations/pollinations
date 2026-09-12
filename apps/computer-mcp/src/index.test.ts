@@ -25,12 +25,16 @@ async function connect(userId: string): Promise<Client> {
     return client;
 }
 
-async function call(
+async function bash(
     client: Client,
-    name: string,
-    args: Record<string, unknown>,
+    command: string,
+    stdin?: string,
+    session?: string,
 ): Promise<{ text: string; isError: boolean }> {
-    const result = await client.callTool({ name, arguments: args });
+    const result = await client.callTool({
+        name: "bash",
+        arguments: { command, stdin, session },
+    });
     const content = result.content as { type: string; text?: string }[];
     const text = content
         .filter((part) => part.type === "text")
@@ -55,22 +59,20 @@ describe("computer MCP worker", () => {
         expect(response.status).toBe(401);
     });
 
-    it("exposes plain file and shell tools", async () => {
+    it("exposes a single bash tool", async () => {
         const client = await connect("user-tools");
         const { tools } = await client.listTools();
-        expect(tools.map((tool) => tool.name).sort()).toEqual(
-            ["edit", "exec", "find", "grep", "ls", "read", "write"].sort(),
-        );
+        expect(tools.map((tool) => tool.name)).toEqual(["bash"]);
         expect(lastResponse?.headers.has(MCP_USAGE_HEADERS.cost)).toBe(false);
         await client.close();
     });
 
-    it("reports a flat usage receipt per tool call", async () => {
+    it("reports a flat usage receipt per call", async () => {
         const client = await connect("user-billing");
-        await call(client, "ls", { path: "/workspace" });
+        await bash(client, "ls /workspace");
         const headers = lastResponse?.headers;
         expect(headers?.get(MCP_USAGE_HEADERS.cost)).toBe("0.0002");
-        expect(headers?.get(MCP_USAGE_HEADERS.tool)).toBe("ls");
+        expect(headers?.get(MCP_USAGE_HEADERS.tool)).toBe("bash");
         expect(headers?.get(MCP_USAGE_HEADERS.status)).toBe("200");
         expect(headers?.get(MCP_USAGE_HEADERS.adjustmentId)).toBe(
             "computer.tool_call.v1",
@@ -81,109 +83,107 @@ describe("computer MCP worker", () => {
 
     it("seeds a README that explains the memory convention", async () => {
         const client = await connect("user-readme");
-        const readme = await call(client, "read", {
-            path: "/workspace/README.md",
-        });
+        const readme = await bash(client, "cat /workspace/README.md");
         expect(readme.isError).toBe(false);
         expect(readme.text).toContain("/workspace/memory/facts.md");
         await client.close();
     });
 
-    it("writes, edits, reads and greps files that persist across connections", async () => {
+    it("writes files from stdin that persist across connections", async () => {
         const client = await connect("user-files");
-        const write = await call(client, "write", {
-            path: "/workspace/memory/facts.md",
-            content: "favourite colour: blue\n",
-        });
+        const write = await bash(
+            client,
+            "cat > /workspace/memory/facts.md",
+            "favourite colour: 'blue' $HOME `date`\n",
+        );
         expect(write.isError).toBe(false);
-
-        const edit = await call(client, "edit", {
-            path: "/workspace/memory/facts.md",
-            edits: [{ oldText: "blue", newText: "green" }],
-        });
+        const edit = await bash(
+            client,
+            "sed -i s/blue/green/ /workspace/memory/facts.md",
+        );
         expect(edit.isError).toBe(false);
         await client.close();
 
         const again = await connect("user-files");
-        const read = await call(again, "read", {
-            path: "/workspace/memory/facts.md",
-        });
-        expect(read.text).toContain("favourite colour: green");
-
-        const grep = await call(again, "grep", {
-            query: "green",
-            path: "/workspace/memory",
-        });
-        expect(grep.text).toContain("facts.md");
+        const read = await bash(again, "grep -r green /workspace/memory");
+        expect(read.text).toContain(
+            "facts.md:favourite colour: 'green' $HOME `date`",
+        );
         await again.close();
+    });
+
+    it("reports stderr and non-zero exit codes as errors", async () => {
+        const client = await connect("user-errors");
+        const result = await bash(client, "cat /workspace/missing.txt");
+        expect(result.isError).toBe(true);
+        expect(result.text).toContain("[stderr]");
+        expect(result.text).toContain("[exit code 1]");
+        await client.close();
     });
 
     it("keeps users isolated", async () => {
         const alice = await connect("user-alice");
-        await call(alice, "write", {
-            path: "/workspace/secret.txt",
-            content: "alice only\n",
-        });
+        await bash(alice, "echo 'alice only' > /workspace/secret.txt");
         await alice.close();
 
         const bob = await connect("user-bob");
-        const read = await call(bob, "read", { path: "/workspace/secret.txt" });
-        expect(read.text).not.toContain("alice only");
-        const ls = await call(bob, "ls", { path: "/workspace" });
+        const ls = await bash(bob, "ls /workspace");
         expect(ls.text).not.toContain("secret.txt");
         await bob.close();
     });
 
     it("keeps sessions of one user isolated", async () => {
         const client = await connect("user-sessions");
-        await call(client, "write", {
-            path: "/workspace/plan.md",
-            content: "thesis plan\n",
-            session: "thesis",
-        });
-        const elsewhere = await call(client, "ls", { path: "/workspace" });
+        await bash(
+            client,
+            "echo 'thesis plan' > /workspace/plan.md",
+            undefined,
+            "thesis",
+        );
+        const elsewhere = await bash(client, "ls /workspace");
         expect(elsewhere.text).not.toContain("plan.md");
-        const same = await call(client, "read", {
-            path: "/workspace/plan.md",
-            session: "thesis",
-        });
+        const same = await bash(
+            client,
+            "cat /workspace/plan.md",
+            undefined,
+            "thesis",
+        );
         expect(same.text).toContain("thesis plan");
-        const readme = await call(client, "read", {
-            path: "/workspace/README.md",
-            session: "thesis",
-        });
+        const readme = await bash(
+            client,
+            "cat /workspace/README.md",
+            undefined,
+            "thesis",
+        );
         expect(readme.isError).toBe(false);
         await expect(
             client.callTool({
-                name: "ls",
-                arguments: { path: "/workspace", session: "../other" },
+                name: "bash",
+                arguments: { command: "ls", session: "../other" },
             }),
         ).rejects.toThrow(/Invalid session name/);
         await client.close();
     });
 
-    it("runs bash against the persistent filesystem", async () => {
+    it("runs pipelines, jq and git", async () => {
         const client = await connect("user-shell");
-        await call(client, "write", {
-            path: "/workspace/notes.txt",
-            content: "one\ntwo\nthree\n",
-        });
-        const exec = await call(client, "exec", {
-            command:
-                "wc -l < /workspace/notes.txt && echo done >> /workspace/notes.txt",
-        });
-        expect(exec.isError).toBe(false);
-        const output = JSON.parse(exec.text) as {
-            exitCode: number | null;
-            stdout: string;
-        };
-        expect(output.exitCode).toBe(0);
-        expect(output.stdout.trim()).toBe("3");
-
-        const read = await call(client, "read", {
-            path: "/workspace/notes.txt",
-        });
-        expect(read.text).toContain("done");
+        const result = await bash(
+            client,
+            [
+                "cd /workspace",
+                "printf 'one\\ntwo\\nthree\\n' > notes.txt",
+                "wc -l < notes.txt",
+                "echo '{\"a\":[1,2,3]}' | jq -c '.a | length'",
+                "git init . >/dev/null && git add notes.txt && git commit -m init >/dev/null && git log --oneline | wc -l",
+            ].join(" && "),
+        );
+        expect(result.isError).toBe(false);
+        expect(result.text.split("\n").map((line) => line.trim())).toEqual([
+            "3",
+            "3",
+            "1",
+            "",
+        ]);
         await client.close();
     });
 });

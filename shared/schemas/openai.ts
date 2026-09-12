@@ -148,9 +148,7 @@ const ChatCompletionRequestMessageContentPartSchema = z
         ChatCompletionRequestMessageContentPartAudioSchema,
         ChatCompletionRequestMessageContentPartFileSchema,
         // Allow any other content types for provider-specific extensions
-        z
-            .object({ type: z.string() })
-            .passthrough(),
+        z.object({ type: z.string() }).passthrough(),
     ])
     .meta({ $id: "MessageContentPart" });
 
@@ -347,7 +345,7 @@ export const CreateChatCompletionRequestSchema = z
                 search_context_size: z.enum(["low", "medium", "high"]),
             })
             .describe(
-                "Controls Perplexity Sonar search context. Pollinations currently supports low and high.",
+                "Perplexity Sonar search context size, forwarded as-is. Low is the default and the request fee rises with the size.",
             )
             .optional(),
         temperature: z
@@ -559,9 +557,7 @@ const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionMessageContentPartThinkingSchema,
     ChatCompletionMessageContentPartRedactedThinkingSchema,
     // Allow any other content types for provider-specific extensions (video, audio, file, etc.)
-    z
-        .object({ type: z.string() })
-        .passthrough(),
+    z.object({ type: z.string() }).passthrough(),
 ]);
 
 const ChatCompletionResponseMessageSchema = z.object({

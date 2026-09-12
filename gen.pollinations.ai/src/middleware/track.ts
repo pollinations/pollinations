@@ -204,7 +204,8 @@ export const track = (eventType: EventType) =>
         const userTracking = requestIdentity(c.var.auth);
 
         let responseOverride: Response | null = null;
-        let pricingInput: PricingInput | undefined;
+        // What the caller asked for; a provider's response may refine it.
+        let pricingInput = requestedPricingInput(c.req);
         /** Filled by the fallback loop; this middleware turns it into rows. */
         const attempts: FallbackAttempt[] = [];
 
@@ -1193,6 +1194,22 @@ function createTrackingEvent({
         ...responseTracking.contentFilterResults,
         ...errorTracking,
     };
+}
+
+/** Pricing inputs the caller states in the request body. */
+function requestedPricingInput(request: HonoRequest): PricingInput | undefined {
+    try {
+        const body = request.valid("json" as never) as
+            | { web_search_options?: { search_context_size?: unknown } }
+            | undefined;
+        const size = body?.web_search_options?.search_context_size;
+        if (size === "low" || size === "medium" || size === "high") {
+            return { searchContextSize: size };
+        }
+    } catch {
+        // No JSON validator on this route.
+    }
+    return undefined;
 }
 
 async function extractStreamRequested(request: HonoRequest): Promise<boolean> {

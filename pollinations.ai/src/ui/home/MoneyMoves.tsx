@@ -98,32 +98,30 @@ export function MoneyMoves() {
                                                     key={earning.text}
                                                     size="sm"
                                                     weight="medium"
-                                                    className="flex flex-wrap items-center gap-x-2 gap-y-1 text-theme-text-strong"
+                                                    className="flex items-start gap-2.5 text-theme-text-strong"
                                                 >
-                                                    <span className="flex min-w-0 items-center gap-2.5">
-                                                        <EarningsTypeIcon
-                                                            aria-hidden="true"
-                                                            className="size-4.5 shrink-0"
-                                                        />
-                                                        <span>
-                                                            {earning.text}
-                                                        </span>
+                                                    <EarningsTypeIcon
+                                                        aria-hidden="true"
+                                                        className="mt-0.5 size-4.5 shrink-0"
+                                                    />
+                                                    <span className="min-w-0">
+                                                        {earning.text}{" "}
+                                                        <InlineLink
+                                                            href={earning.href}
+                                                            aria-label={
+                                                                earning.docsLabel
+                                                            }
+                                                            title={
+                                                                earning.docsLabel
+                                                            }
+                                                            className="align-middle text-brand-accent"
+                                                        >
+                                                            <BookIcon
+                                                                aria-hidden="true"
+                                                                className="size-3.5"
+                                                            />
+                                                        </InlineLink>
                                                     </span>
-                                                    <InlineLink
-                                                        href={earning.href}
-                                                        aria-label={
-                                                            earning.docsLabel
-                                                        }
-                                                        title={
-                                                            earning.docsLabel
-                                                        }
-                                                        className="shrink-0 text-brand-accent"
-                                                    >
-                                                        <BookIcon
-                                                            aria-hidden="true"
-                                                            className="size-3.5"
-                                                        />
-                                                    </InlineLink>
                                                 </Text>
                                             );
                                         })}

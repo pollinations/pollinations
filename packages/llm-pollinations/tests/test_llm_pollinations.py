@@ -228,5 +228,12 @@ def test_stale_cache_fallback(monkeypatch, tmp_path):
     monkeypatch.setattr(plugin.llm, "user_dir", lambda: tmp_path)
     monkeypatch.setattr(plugin.httpx, "get", boom)
     assert plugin.get_pollinations_models() == stale["data"]
-    # Forced refresh also falls back to stale rather than raising.
-    assert plugin.get_pollinations_models(skip_cache=True) == stale["data"]
+    # A forced refresh must not silently report success from stale data.
+    with pytest.raises(plugin.DownloadError):
+        plugin.get_pollinations_models(skip_cache=True)
+
+
+def test_invalid_catalog_entries_are_ignored():
+    assert plugin.is_compatible_text_model(None) is False
+    assert plugin.is_compatible_text_model("not-a-model") is False
+    assert plugin.is_compatible_text_model({"id": "text-model", "category": "text"}) is True

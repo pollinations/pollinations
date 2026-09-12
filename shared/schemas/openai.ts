@@ -752,6 +752,26 @@ export const OpenAIModelSchema = z
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),
         per_user_rpm: z.number().positive().nullable().optional(),
+        reliability: z
+            .enum(["reliable", "unreliable", "unknown"])
+            .optional()
+            .meta({
+                description:
+                    "Reliability verdict from recent traffic: reliable (high success rate on enough samples), unreliable, or unknown (no usable data). Independent of experimental status.",
+            }),
+        health: z
+            .object({
+                success_rate: z.number(),
+                sample_count: z.number(),
+                window_minutes: z.number(),
+                last_request_at: z.string().nullable(),
+            })
+            .nullable()
+            .optional()
+            .meta({
+                description:
+                    "Minimal health metadata behind the verdict. Null when unknown.",
+            }),
     })
     .meta({
         description: "OpenAI-compatible model object with capability metadata",

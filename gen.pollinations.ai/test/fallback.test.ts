@@ -1,3 +1,4 @@
+import { env } from "cloudflare:test";
 import { communityEndpointPrices } from "@shared/community-endpoints.ts";
 import { UpstreamError } from "@shared/error.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
@@ -21,6 +22,10 @@ import {
     withModelFallback,
     withModelFallbackResponse,
 } from "../src/fallback.ts";
+import {
+    requestedModelIds,
+    resolveModelDefinition,
+} from "../src/middleware/model.ts";
 import type { GenerationModelEntry } from "../src/model-registry.ts";
 
 function registryEntry(
@@ -771,5 +776,54 @@ describe("withModelFallbackResponse", () => {
             "config.targets[1]",
         );
         await expect(response.json()).resolves.toEqual({ model: "target" });
+    });
+});
+
+describe("caller-listed model chains", () => {
+    it("splits, trims and drops repeats", () => {
+        expect(requestedModelIds("openai")).toEqual(["openai"]);
+        expect(requestedModelIds(" openai , openai-fast ,openai")).toEqual([
+            "openai",
+            "openai-fast",
+        ]);
+    });
+
+    it("rejects a list longer than the attempt cap", () => {
+        expect(() => requestedModelIds("a,b,c,d,e")).toThrowError(
+            /at most 4 are tried/,
+        );
+    });
+
+    it("tries a model's own routes before the caller's next choice", async () => {
+        const model = await resolveModelDefinition(
+            "perplexity/sonar,openai-fast",
+            "generate.text",
+            env,
+        );
+
+        expect(model.resolved).toBe("perplexity/sonar");
+        expect(model.fallbackEntries?.map((entry) => entry.id)).toEqual([
+            "perplexity/sonar:openrouter:perplexity",
+            "openai/gpt-5-nano",
+        ]);
+    });
+
+    it("resolves each listed alias once", async () => {
+        const model = await resolveModelDefinition(
+            "openai-fast,gpt-5-nano,openai",
+            "generate.text",
+            env,
+        );
+
+        expect(model.resolved).toBe("openai/gpt-5-nano");
+        expect(model.fallbackEntries?.map((entry) => entry.id)).toEqual([
+            "openai/gpt-5.4-nano",
+        ]);
+    });
+
+    it("holds every listed model to the endpoint it was called on", async () => {
+        await expect(
+            resolveModelDefinition("openai-fast,flux", "generate.text", env),
+        ).rejects.toThrowError(/is a image model/);
     });
 });

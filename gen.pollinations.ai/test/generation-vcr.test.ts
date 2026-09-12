@@ -2570,6 +2570,35 @@ test("simple text prompts can include slashes", async ({
     await expect(response.text()).resolves.toBe("snapshot slash response");
 });
 
+test("a comma-separated model list serves with its first entry", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker(
+        "/text/vcr%20model%20list?model=openai-fast,openai&seed=42",
+        {
+            headers: { authorization: `Bearer ${paidApiKey}` },
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-model-requested")).toBe("openai/gpt-5-nano");
+    await response.text();
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        modelRequested: "openai-fast,openai",
+        resolvedModelRequested: "openai/gpt-5-nano",
+        modelUsed: "openai/gpt-5-nano",
+        responseStatus: 200,
+        fallbackUsed: false,
+        isFinal: true,
+    });
+});
+
 test("flux falls back to DeepInfra when the Vast pool is empty", async ({
     mocks,
 }) => {

@@ -15,6 +15,7 @@ import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import {
     type GenerationModelEntry,
+    type GenerationModelRegistry,
     getGenerationModelRegistry,
 } from "../model-registry.ts";
 import type { AuthVariables } from "./auth.ts";
@@ -81,14 +82,44 @@ function getValidatedJsonBody<T>(req: {
     }
 }
 
-export async function resolveModelDefinition(
+/**
+ * A caller names their own fallback chain by listing models: "a,b,c" serves
+ * with a and tries b, then c, if it fails. Capped because every extra entry is
+ * one more upstream attempt the caller's own request waits on.
+ */
+const MAX_REQUESTED_MODELS = 4;
+
+/** The models a caller asked for, in the order they want them tried. */
+export function requestedModelIds(model: string): string[] {
+    if (!model.includes(",")) return [model];
+    const ids = [
+        ...new Set(
+            model
+                .split(",")
+                .map((id) => id.trim())
+                .filter(Boolean),
+        ),
+    ];
+    if (ids.length === 0) {
+        throw new HTTPException(400, {
+            message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
+        });
+    }
+    if (ids.length > MAX_REQUESTED_MODELS) {
+        throw new HTTPException(400, {
+            message: `Too many models: "${model}" lists ${ids.length}, at most ${MAX_REQUESTED_MODELS} are tried.`,
+        });
+    }
+    return ids;
+}
+
+function resolveModelEntry(
+    registry: GenerationModelRegistry,
     model: string,
     eventType: EventType,
-    env: CloudflareBindings,
     callerUserId?: string,
     supportedEndpoint?: string,
-): Promise<ModelVariables["model"]> {
-    const registry = await getGenerationModelRegistry(env);
+): GenerationModelEntry {
     const entry = registry.resolve(model);
     if (!entry) {
         throw new HTTPException(400, {
@@ -138,6 +169,44 @@ export async function resolveModelDefinition(
         });
     }
 
+    return entry;
+}
+
+export async function resolveModelDefinition(
+    model: string,
+    eventType: EventType,
+    env: CloudflareBindings,
+    callerUserId?: string,
+    supportedEndpoint?: string,
+): Promise<ModelVariables["model"]> {
+    const registry = await getGenerationModelRegistry(env);
+    const [entry, ...alternates] = requestedModelIds(model).map((id) =>
+        resolveModelEntry(
+            registry,
+            id,
+            eventType,
+            callerUserId,
+            supportedEndpoint,
+        ),
+    );
+    // A declared route is still the model the caller named, so it is tried
+    // before their next choice. An alternate contributes only itself, so the
+    // chain stays as short as the list the caller can see.
+    const fallbackEntries = uniqueById(entry.id, [
+        ...(entry.fallbackEntries ?? []),
+        ...alternates.map((alternate) => ({
+            ...alternate,
+            fallbackEntries: undefined,
+        })),
+    ]);
+    // An agent run executes tools and spends the caller's balance, so its
+    // answer belongs to that caller and must never be replayed to another —
+    // whether it serves as the primary or as someone's listed alternate.
+    const agent = [entry, ...alternates].find(
+        (candidate) =>
+            candidate.communityEndpoint &&
+            usesAgentRunToken(candidate.communityEndpoint),
+    );
     return {
         requested: model,
         resolved: entry.id,
@@ -145,16 +214,23 @@ export async function resolveModelDefinition(
         ...(entry.communityEndpoint && {
             communityEndpoint: entry.communityEndpoint,
         }),
-        // An agent run executes tools and spends the caller's balance, so its
-        // answer belongs to that caller and must never be replayed to another.
-        ...(entry.communityEndpoint &&
-            usesAgentRunToken(entry.communityEndpoint) && {
-                cacheScope: `agent:${entry.id}`,
-            }),
-        ...(entry.fallbackEntries && {
-            fallbackEntries: entry.fallbackEntries,
-        }),
+        ...(agent && { cacheScope: `agent:${agent.id}` }),
+        ...(fallbackEntries.length > 0 && { fallbackEntries }),
     };
+}
+
+function uniqueById(
+    primaryId: string,
+    entries: GenerationModelEntry[],
+): GenerationModelEntry[] {
+    const seen = new Set([primaryId]);
+    const unique: GenerationModelEntry[] = [];
+    for (const entry of entries) {
+        if (seen.has(entry.id)) continue;
+        seen.add(entry.id);
+        unique.push(entry);
+    }
+    return unique;
 }
 
 /**

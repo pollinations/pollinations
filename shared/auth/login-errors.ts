@@ -3,7 +3,7 @@ export const loginErrors = {
     banned: {
         code: "BANNED_USER",
         id: "account-deactivated",
-        title: "Account Suspended",
+        title: "Account suspended",
         message: "If you think this is a mistake, contact billing.",
         action: {
             label: "Contact billing",
@@ -24,8 +24,8 @@ export const loginErrors = {
     default: {
         code: "unknown",
         id: "login-failed",
-        title: "Sign-in failed",
-        message: "We couldn’t sign you in. Please try again.",
+        title: "Couldn’t sign in to your pollinations.ai account",
+        message: "Please try again.",
         action: { label: "Try again", href: "/sign-in" },
     },
 } as const;

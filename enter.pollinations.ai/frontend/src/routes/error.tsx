@@ -30,6 +30,7 @@ function ErrorPage() {
     if (id === "login-failed")
         return (
             <SignInScreen
+                title={title}
                 error={message}
                 actions={
                     <GitHubSignInButton

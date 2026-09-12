@@ -6,9 +6,15 @@ function signInPath(value: string): string | null {
     try {
         const url = new URL(value, location.origin);
         return url.origin === location.origin &&
-            ["/authorize", "/sign-in", "/device", "/app/sign-in"].includes(
-                url.pathname,
-            )
+            [
+                "/authorize",
+                "/sign-in",
+                "/device",
+                "/app/sign-in",
+                "/api/auth/oauth2/authorize",
+                "/edit-key",
+                "/top-up",
+            ].includes(url.pathname)
             ? `${url.pathname}${url.search}`
             : null;
     } catch {

@@ -1,0 +1,33 @@
+{
+  "pr_number": 14779,
+  "title": "feat: triple prompt agent step and tool-call limits",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14779",
+  "merged_at": "2026-09-12T14:17:04Z",
+  "labels": [],
+  "pr_body_excerpt": "- `MAX_STEPS` 8 → 24, `MAX_TOOL_CALLS` 16 → 48 in the prompt agent runtime\n- Agents with a bash tool hit the old cap on ordinary multi-file tasks and ended with \"reached its maximum number of tool-use steps\"\n- Runtime tests updated to the new caps\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01WaGsSAmrHYji69S1Hw2EjV",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "More room for tool pollen",
+    "blurb": "Prompt agents can now take 24 steps and make 48 tool calls before calling it a day. Multi-file bash jobs get enough runway to finish their little migrations.",
+    "summary": "The prompt-agent runtime now raises MAX_STEPS from 8 to 24 and MAX_TOOL_CALLS from 16 to 48, giving bash-enabled agents room to complete ordinary multi-file tasks.",
+    "impact": "Agents working across multiple files can make up to three times as many reasoning and tool-use moves, avoiding the previous maximum tool-use-steps stop on longer tasks.",
+    "keywords": [
+      "prompt-agents",
+      "tool-calls",
+      "bash",
+      "runtime",
+      "multi-file"
+    ],
+    "visual_concept": "Depict Polli as a careful workshop mechanic in a cozy code garden, using a tiny tool belt to tend several connected code-plants while a retro terminal shows a generous 24-step path and 48 tiny tool icons. The growing path represents agents having enough room to complete multi-file work rather than stopping halfway through.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny tool belt, carefully tending three connected code-plants beside a retro terminal glowing lime green (#ecf874); the screen shows simple pixel text \"24 STEPS\" and a long trail of tiny tool icons through a warm garden. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with cream, mint, lavender, and peach details and dark purple (#110518) outlines."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14779.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny tool belt, carefully tending three connected code-plants beside a retro terminal glowing lime green (#ecf874); the screen shows simple pixel text \"24 STEPS\" and a long trail of tiny tool icons through a warm garden. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with cream, mint, lavender, and peach details and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-09-12T14:18:15.276168+00:00"
+}

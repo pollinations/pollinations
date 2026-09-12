@@ -30,6 +30,11 @@ export type DirectoryApp = {
     requests_24h: number;
 };
 
+/** Match the directory's deduplication rule; app names alone are not unique. */
+export const appIdentity = (
+    app: Pick<DirectoryApp, "name" | "web_url" | "github_repository_url">,
+) => `${app.name.toLowerCase()}|${app.web_url || app.github_repository_url}`;
+
 type TinybirdResponse<T> = { data: T[] };
 
 async function tinybird<T>(pipe: string, params = ""): Promise<T[]> {
@@ -93,7 +98,7 @@ const loadDirectory = cached(async () => {
     const seen = new Set<string>();
     return rows.filter((app) => {
         if (!app.name) return false;
-        const key = `${app.name.toLowerCase()}|${app.web_url || app.github_repository_url}`;
+        const key = appIdentity(app);
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
@@ -174,13 +179,8 @@ function currentWeekStart(now = new Date()): string {
  * flight at once, and the second came back empty, which showed up as a
  * catalog of 0 models.
  */
-let platformStats: Promise<PlatformStats | null> | null = null;
-
 export function usePlatformStats() {
-    return useAsync<PlatformStats | null>(() => {
-        platformStats ??= loadPlatformStats();
-        return platformStats;
-    }, null);
+    return useAsync<PlatformStats | null>(loadPlatformStats, null);
 }
 
 /**
@@ -200,40 +200,45 @@ export function usePlatformStats() {
  * default — plausibly how "1.5M daily requests" survived, an hour of traffic
  * read as a day.)
  */
-function loadPlatformStats(): Promise<PlatformStats | null> {
-    return (async () => {
-        const [weeks, models, mcpServers] = await Promise.all([
-            // 3, not 2: the window is relative to `now`, so the oldest bucket
-            // is left-truncated. Three guarantees a whole one in the middle.
-            tinybird<WeeklyHealthRow>("weekly_health_stats", "&weeks_back=3"),
-            fetch("https://gen.pollinations.ai/models").then((r) =>
-                r.ok ? r.json() : [],
-            ),
-            fetch("https://gen.pollinations.ai/mcp")
-                .then(async (response) => {
-                    if (!response.ok) return null;
-                    const body = await response.json();
-                    return Array.isArray(body.data) ? body.data.length : null;
-                })
-                .catch(() => null),
-        ]);
+export const loadPlatformStats = cached(async (): Promise<PlatformStats> => {
+    const [weeks, models, mcpServers] = await Promise.all([
+        // 3, not 2: the window is relative to `now`, so the oldest bucket
+        // is left-truncated. Three guarantees a whole one in the middle.
+        tinybird<WeeklyHealthRow>("weekly_health_stats", "&weeks_back=3"),
+        fetch("https://gen.pollinations.ai/models").then(async (response) => {
+            if (!response.ok) throw new Error(`models: ${response.status}`);
+            const catalog = await response.json();
+            if (!Array.isArray(catalog))
+                throw new Error("models: invalid catalog");
+            return catalog as CatalogModel[];
+        }),
+        fetch("https://gen.pollinations.ai/mcp")
+            .then(async (response) => {
+                if (!response.ok) return null;
+                const body = await response.json();
+                return Array.isArray(body.data) ? body.data.length : null;
+            })
+            .catch(() => null),
+    ]);
 
-        // Rows come back oldest-first; drop the week still in progress.
-        const thisWeek = currentWeekStart();
-        const complete = weeks.filter((row) => row.week !== thisWeek);
-        const latest = complete[complete.length - 1];
+    // Rows come back oldest-first; drop the week still in progress.
+    const thisWeek = currentWeekStart();
+    const complete = weeks.filter((row) => row.week !== thisWeek);
+    const latest = complete[complete.length - 1];
+    if (!latest || !Number.isFinite(latest.total_requests)) {
+        throw new Error("weekly health: no complete week available");
+    }
 
-        const catalog: CatalogModel[] = Array.isArray(models) ? models : [];
-        return {
-            requestsWeek: latest?.total_requests ?? 0,
-            availability: latest?.official_availability ?? null,
-            models: catalog.length,
-            agents: catalog.filter((model) => model.agent === true).length,
-            mcpServers,
-            ...summariseCatalog(catalog),
-        };
-    })();
-}
+    const catalog = models;
+    return {
+        requestsWeek: latest.total_requests,
+        availability: latest.official_availability ?? null,
+        models: catalog.length,
+        agents: catalog.filter((model) => model.agent === true).length,
+        mcpServers,
+        ...summariseCatalog(catalog),
+    };
+});
 
 /**
  * 984868 → "985K", 1204000 → "1.2M".

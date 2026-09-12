@@ -11,6 +11,7 @@ import {
 } from "@pollinations/ui";
 import { type ReactNode, useState } from "react";
 import {
+    appIdentity,
     type DirectoryApp,
     formatStars,
     githubProfileUrl,
@@ -141,7 +142,7 @@ export function SpotlightTile({
         <article>
             {href ? (
                 <a
-                    key={`${app.name}-image`}
+                    key={`${appIdentity(app)}-image`}
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -158,7 +159,7 @@ export function SpotlightTile({
             )}
             <div className="flex h-[8.5rem] items-start justify-between gap-3 px-5 py-4">
                 <div
-                    key={`${app.name}-copy`}
+                    key={`${appIdentity(app)}-copy`}
                     className={cn(
                         "flex min-w-0 flex-1 flex-col gap-1.5",
                         slideClassName,

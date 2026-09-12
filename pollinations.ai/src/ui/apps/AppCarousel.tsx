@@ -1,6 +1,6 @@
 import { ArrowRightIcon, IconButton, ScrollArea } from "@pollinations/ui";
 import { useEffect, useRef, useState } from "react";
-import type { DirectoryApp } from "../../data/publicStats";
+import { appIdentity, type DirectoryApp } from "../../data/publicStats";
 import { AppTile, SpotlightTile } from "./cards";
 
 const TILE_IMAGE_CLASS = "h-30";
@@ -199,7 +199,7 @@ export function AppCarousel({
                     {[0, 1].map((copy) =>
                         apps.map((app, index) => (
                             <article
-                                key={`${copy}-${app.name}`}
+                                key={`${copy}-${appIdentity(app)}`}
                                 data-loop-copy={copy}
                                 data-loop-index={index}
                                 aria-hidden={copy === 1 ? true : undefined}

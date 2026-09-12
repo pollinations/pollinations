@@ -19,6 +19,7 @@ import {
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { type KeyboardEvent, useMemo, useState } from "react";
 import {
+    appIdentity,
     type DirectoryApp,
     isPollen,
     platformsOf,
@@ -296,7 +297,7 @@ function AppSearchInput({
             value={visibleSearch}
             options={options}
             onChange={handleChange}
-            open={open}
+            open={open && (Boolean(draft) || options.length > 0)}
             onOpenChange={setOpen}
             onClick={() => setPendingRemoval(undefined)}
             onKeyDown={handleKeyDown}
@@ -669,7 +670,7 @@ function AppsPage() {
                     <>
                         <div className="border-t border-transparent">
                             {visible.map((app) => (
-                                <AppRow key={app.name} app={app} />
+                                <AppRow key={appIdentity(app)} app={app} />
                             ))}
                         </div>
                         {filtered.length > visible.length && (

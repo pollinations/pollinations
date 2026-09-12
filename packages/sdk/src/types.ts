@@ -775,6 +775,8 @@ export type EarningsOptions = Pick<
 
 /** API key validation response */
 export interface KeyInfo {
+    /** Opaque key ID for the owner-only editor; never the API key value. */
+    id: string;
     valid: boolean;
     type: string;
     name?: string | null;

@@ -1,10 +1,10 @@
-import type { PollenStatus } from "@pollinations/ui/wallet";
+import {
+    getAccountPollenStatus,
+    type PollenStatus,
+} from "@pollinations/ui/wallet";
 import { loginErrors } from "@shared/auth/login-errors.ts";
 import { getAuthorizePollenBudget } from "../../shared/auth/authorize-config";
-import {
-    addPollenPlan,
-    defaultAddPollenAmount,
-} from "./pollen-connect-add-pollen-data";
+
 import { appLoginEdges } from "./pollen-connect-app-login";
 import type {
     authorizeFailures,
@@ -22,11 +22,23 @@ export const entrances = [
     { id: "app", label: "Apps", node: "app-connect" },
     { id: "device", label: "Devices", node: "device-start" },
     { id: "account", label: "Dashboard", node: "enter-signed-out" },
-    { id: "admin", label: "Admin", node: "identity" },
+    { id: "admin", label: "Admin", node: "dashboard-sign-in" },
 ] as const;
 export type JourneyEntrance = (typeof entrances)[number]["id"];
 export type JourneyWorld = JourneyEntrance | "topup";
-export type JourneySection = "main" | "topup" | "link";
+export type JourneySection =
+    | "main"
+    | "topup"
+    | "link"
+    | "keys"
+    | "apps"
+    | "models"
+    | "agents"
+    | "news"
+    | "catalog"
+    | "activity"
+    | "quests"
+    | "account";
 export type JourneySelection = {
     world: JourneyEntrance;
     section: JourneySection;
@@ -39,7 +51,6 @@ export type JourneySettings = {
     deviceSubmitResult: "ready" | "key" | "approve" | "deny" | "session";
     githubSignedIn: boolean;
     githubApproved: boolean;
-    adminAccess: boolean;
     paymentConfirmed: boolean;
     errors: boolean;
     appRequestError: string;
@@ -58,7 +69,6 @@ export const defaultJourneySettings: JourneySettings = {
     deviceSubmitResult: "ready",
     githubSignedIn: true,
     githubApproved: true,
-    adminAccess: true,
     paymentConfirmed: true,
     errors: false,
     appRequestError: "",
@@ -80,14 +90,12 @@ export type JourneyState = {
     paid: number;
     quest: number;
     budget: number;
-    amount: number;
     method: "oauth" | "direct";
     signedIn: boolean;
     connected: boolean;
     paidOnly: boolean;
     sharesUsage: boolean;
     payment: "idle" | "pending" | "canceled" | "completed";
-    purchased: number;
     checkoutPack: number;
     scenario: string;
     denied: boolean;
@@ -110,20 +118,6 @@ export function applyJourneyConsent(
         sharesUsage: consent.accountPermissions?.includes("usage") ?? false,
     };
 }
-export const situations = [
-    { label: "Available", paid: 10, quest: 5, budget: 5, paidOnly: false },
-    { label: "No Pollen", paid: 0, quest: 0, budget: 5, paidOnly: false },
-    { label: "Paid needed", paid: 0, quest: 5, budget: 5, paidOnly: true },
-    { label: "Limit reached", paid: 10, quest: 5, budget: 0, paidOnly: false },
-    {
-        label: "Purchase covered",
-        paid: 40,
-        quest: 5,
-        budget: 5,
-        paidOnly: false,
-    },
-] as const;
-
 export function startJourney(world: JourneyWorld = "app"): JourneyState {
     return {
         deviceEntry: "main",
@@ -131,21 +125,19 @@ export function startJourney(world: JourneyWorld = "app"): JourneyState {
         deviceCode: "",
         node:
             world === "topup"
-                ? "app-connected"
+                ? "account-app"
                 : (entrances.find((entry) => entry.id === world)?.node ??
                   "app-connect"),
         world,
         paid: 10,
         quest: 5,
         budget: 5,
-        amount: defaultAddPollenAmount,
         method: "oauth",
         signedIn: world === "topup",
         connected: world === "topup",
         paidOnly: false,
         sharesUsage: true,
         payment: "idle",
-        purchased: 0,
         checkoutPack: 0,
         scenario: "",
         denied: false,
@@ -157,12 +149,16 @@ export function startJourney(world: JourneyWorld = "app"): JourneyState {
 export function startSelectedJourney(
     selection: Pick<JourneySelection, "world" | "section">,
 ): JourneyState {
-    // Apps enter through the same connection flow before opening the menu.
-    // The Add Pollen action switches to the budget/top-up world after login.
-    if (selection.section === "topup" && selection.world === "account")
+    // Account actions have their own route-backed journey.
+    if (selection.world === "app" && selection.section === "topup")
+        return startJourney("topup");
+    if (
+        ["topup", "keys"].includes(selection.section) &&
+        selection.world === "account"
+    )
         return {
             ...startJourney("account"),
-            node: "enter-connected",
+            node: selection.section === "keys" ? "keys" : "enter-connected",
             signedIn: true,
         };
     return {
@@ -202,9 +198,6 @@ export function restoreJourney(
                 "device-result",
                 "device-done",
                 "app-connected",
-                "add-pollen-amount",
-                "add-pollen-pending",
-                "add-pollen-checkout",
                 "account-checkout",
             ].includes(next.node)
         ) {
@@ -229,68 +222,11 @@ export function restoreJourney(
 
 // Report empty wallets and confirmed paid-model requirements.
 export function journeyFunding(state: JourneyState): PollenStatus | undefined {
-    if (state.paid + state.quest === 0) return { state: "no-pollen" };
-    if (state.paidOnly && state.paid === 0)
-        return { state: "paid-required", wallet: "paid" };
-    return undefined;
-}
-
-export type JourneyCondition =
-    | "covered"
-    | "shortfall"
-    | "partial"
-    | "signed-in"
-    | "signed-out"
-    | "connected"
-    | "simple"
-    | "available"
-    | "empty"
-    | "paid"
-    | "limit";
-
-/** Branch fixtures describe the world the next screen will encounter. */
-export function withJourneyCondition(
-    state: JourneyState,
-    condition?: JourneyCondition,
-): JourneyState {
-    if (condition === "covered" && Number.isFinite(state.budget))
-        return {
-            ...state,
-            paid: Math.max(0, state.budget + state.amount - state.quest),
-            notice: "",
-        };
-    if (condition === "partial")
-        return {
-            ...state,
-            paid: Math.min(5, Math.max(0, state.budget + state.amount - 1)),
-            quest: 0,
-            notice: "",
-        };
-    if (condition === "shortfall")
-        return { ...state, paid: 0, quest: 0, notice: "" };
-    if (condition === "signed-in")
-        return { ...state, signedIn: true, connected: false };
-    if (condition === "signed-out")
-        return { ...state, signedIn: false, connected: false };
-    if (condition === "connected")
-        return { ...state, signedIn: true, connected: true };
-    if (condition === "simple")
-        return {
-            ...state,
-            method: "direct",
-            signedIn: false,
-            connected: false,
-        };
-    if (!condition || condition === "covered") return state;
-    const index = { available: 0, empty: 1, paid: 2, limit: 3 }[condition];
-    return index === undefined
-        ? state
-        : {
-              ...state,
-              ...situations[index],
-              budget: condition === "limit" ? 0 : state.budget,
-              notice: "",
-          };
+    return getAccountPollenStatus({
+        type: "wallet",
+        balances: { paid: state.paid, quest: state.quest },
+        requirement: state.paidOnly ? "paid" : "any",
+    });
 }
 
 export function journeyOptions(
@@ -338,12 +274,6 @@ export function journeyOptions(
                         )
                     );
             }
-            if (["github-authorize", "loading"].includes(state.node)) {
-                if (state.world === "topup" && edge.to === "error")
-                    return false;
-                if (state.world !== "topup" && edge.to === "add-pollen-failed")
-                    return false;
-            }
             if (state.node === "cancelled")
                 return (
                     edge.to ===
@@ -382,66 +312,21 @@ export function journeyOptions(
         });
 }
 
-function finishTopUp(state: JourneyState, payment: boolean): JourneyState {
-    if (state.payment === "completed" || state.payment === "canceled")
-        return state;
-    const plan = addPollenPlan(
-        state.paid + state.quest,
-        state.budget,
-        state.amount,
-    );
-    if (payment && state.checkoutPack <= 0)
-        return {
-            ...state,
-            node: "add-pollen-failed",
-            notice: "No available pack covers the shortfall.",
-        };
-    const purchased = payment ? state.checkoutPack : 0;
-    return {
-        ...state,
-        paid: state.paid + purchased,
-        budget: payment ? state.budget : plan.resultingBudget,
-        purchased,
-        payment: "completed",
-        node: payment ? "add-pollen-amount" : "app-connected",
-        notice: purchased
-            ? `${purchased} pollen added to your account. App budget unchanged.`
-            : "Budget saved. No Pollen spent or transferred.",
-    };
-}
-
 // Routing decisions with known answers are followed immediately. Their edges
 // remain visible in Map; the journey stops at the next screen or actual choice.
 function resolve(state: JourneyState): JourneyState {
     let next = state;
     for (let i = 0; i < 8; i++) {
         let node = next.node;
-        if (node === "add-pollen-unchanged") node = "app-connected";
         if (node === "session") node = next.signedIn ? "resume" : "sign-in";
         else if (node === "resume")
             node = {
                 app: "request-valid",
                 device: "device-code",
                 account: "enter-connected",
-                admin: "admin",
-                topup: "add-pollen-amount",
+                admin: "admin-session",
+                topup: "account-app",
             }[next.world];
-        else if (node === "add-pollen-covered") {
-            const plan = addPollenPlan(
-                next.paid + next.quest,
-                next.budget,
-                next.amount,
-                next.checkoutPack,
-            );
-            if (plan.shortfall === 0) return finishTopUp(next, false);
-            node = plan.pack ? "add-pollen-checkout" : "add-pollen-failed";
-            next = {
-                ...next,
-                payment: "pending",
-                checkoutPack: plan.pack?.amountUsd ?? 0,
-            };
-        } else if (node === "add-pollen-credited")
-            return finishTopUp(next, true);
         if (node === next.node) return next;
         next = { ...next, node };
     }
@@ -462,10 +347,6 @@ export function journeyStep(state: JourneyState, edge: FlowEdge): JourneyState {
         notice: "",
     };
     if (edge.to === "app-connect") next.consent = null;
-    if (edge.from === "add-pollen-amount" && edge.to === "add-pollen-covered")
-        next.payment = "idle";
-    if (edge.from === "add-pollen-amount" && edge.to === "add-pollen-checkout")
-        next.payment = "pending";
     if (Object.values(loginErrors).some((error) => error.id === edge.to)) {
         next.signedIn = false;
         next.connected = false;
@@ -533,27 +414,7 @@ export function journeyStep(state: JourneyState, edge: FlowEdge): JourneyState {
         (edge.from === "dashboard-connected" && edge.to === "dashboard-sign-in")
     )
         next.signedIn = false;
-    if (edge.from === "app-connected" && edge.to === "add-pollen-amount") {
-        next.world = "topup";
-        next.payment = "idle";
-        next.amount = defaultAddPollenAmount;
-        next.purchased = 0;
-        next.checkoutPack = 0;
-        if (!next.signedIn) next.node = "github-session";
-    }
-    if (edge.from === "add-pollen-amount" && edge.to === "github-session")
-        next.signedIn = false;
-    if (edge.from === "add-pollen-checkout" && edge.label.includes("canceled"))
-        next.payment = "canceled";
-    if (edge.to === "add-pollen-unchanged")
-        next.notice = "Budget unchanged. Your app connection is still active.";
     if (edge.from === edge.to) {
-        next.scenario =
-            {
-                "add-pollen-amount": "start-error",
-                "add-pollen-pending": "pending",
-                "add-pollen-checkout": "checkout-error",
-            }[edge.from] ?? "";
         if (edge.from === "account-checkout")
             next.scenario = edge.label.startsWith("Payment failed")
                 ? "checkout-error"
@@ -654,12 +515,6 @@ export function journeyAdvance(
             throw new Error(`Missing app cancellation route: ${destination}`);
         return journeyStep(next, route);
     }
-    if (
-        settings.errors &&
-        edge.from === "add-pollen-pending" &&
-        edge.to === edge.from
-    )
-        next = { ...next, scenario: "status-error" };
     for (let i = 0; i < 12; i++) {
         const destination = {
             "github-session": settings.githubSignedIn
@@ -673,15 +528,9 @@ export function journeyAdvance(
                 settings.loginResult !== "start"
                     ? loginErrors[settings.loginResult].id
                     : settings.errors
-                      ? next.world === "topup"
-                          ? "add-pollen-failed"
-                          : "error"
+                      ? "error"
                       : "resume",
             "request-valid": settings.errors ? "blocked" : "consent",
-            admin:
-                settings.adminAccess && !settings.errors
-                    ? "dashboard-connected"
-                    : "dashboard-denied",
             cancelled: "app-connect",
         }[next.node];
         if (!destination) return next;

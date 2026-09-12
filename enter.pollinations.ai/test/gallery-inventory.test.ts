@@ -1,5 +1,10 @@
 import { getLoginError, loginErrors } from "@shared/auth/login-errors.ts";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { accountActionScreens } from "../frontend/pollen-connect-account-actions";
+import {
+    adminScreens,
+    adminSelectionForPreview,
+} from "../frontend/pollen-connect-admin";
 import {
     appLoginAutomaticDestination,
     appLoginEdges,
@@ -12,6 +17,11 @@ import {
     canvasGroups,
     canvasScreenUrl,
 } from "../frontend/pollen-connect-canvas-data";
+import {
+    dashboardScreens,
+    dashboardSections,
+    getDashboardFlow,
+} from "../frontend/pollen-connect-dashboard";
 import { getDeviceFlow } from "../frontend/pollen-connect-device";
 import { flowNodes, getFlowFocus } from "../frontend/pollen-connect-diagram";
 import {
@@ -28,13 +38,25 @@ import {
     startJourney,
     startSelectedJourney,
 } from "../frontend/pollen-connect-journey-state";
+import { oauthSignInCallback } from "../frontend/src/lib/oauth-sign-in";
+import {
+    clearSignInContext,
+    getSignInContext,
+    rememberSignIn,
+} from "../frontend/src/lib/sign-in-context";
 
 const { galleryScreens: deviceGalleryScreens, screens: deviceScreens } =
     getDeviceFlow();
 
 describe("Complete managed screen inventory", () => {
-    const sources = canvasGroups.flatMap((group) => group.screens);
-    const allGallery = entrances.flatMap(({ id }) => galleryScreensForFlow(id));
+    const sources = [
+        ...canvasGroups.flatMap((group) => group.screens),
+        ...accountActionScreens,
+    ];
+    const allGallery = [
+        ...entrances.flatMap(({ id }) => galleryScreensForFlow(id)),
+        ...galleryScreensForFlow("app", "topup"),
+    ];
     const represented = new Set(
         allGallery.map((entry) => entry.id.replace(/-errors$/, "")),
     );
@@ -50,7 +72,7 @@ describe("Complete managed screen inventory", () => {
                 .map((entry) => entry.id),
         ).toEqual([]);
         expect(represented.has("dashboard-sign-in")).toBe(true);
-        expect(represented.has("add-pollen-pending")).toBe(true);
+        expect(represented.has("account-wallet")).toBe(true);
     });
 
     it("covers every managed screen referenced by the journey", () => {
@@ -74,7 +96,7 @@ describe("Complete managed screen inventory", () => {
         ).toEqual([]);
     });
 
-    it("includes only managed screens and the explicit GitHub handoff in the gallery", () => {
+    it("includes only managed screens and the explicit provider handoffs in the gallery", () => {
         const managedIds = new Set(
             sources
                 .filter(
@@ -85,7 +107,15 @@ describe("Complete managed screen inventory", () => {
         );
         for (const entry of allGallery)
             expect(
-                entry.id === "github-handoff" ||
+                [
+                    "github-handoff",
+                    "account-github",
+                    "account-payment",
+                    "dashboard-github",
+                    "admin-github",
+                    "account-checkout",
+                    "account-billing",
+                ].includes(entry.id) ||
                     deviceGalleryScreens.includes(entry) ||
                     managedIds.has(entry.id.replace(/-errors$/, "")),
             ).toBe(true);
@@ -122,11 +152,15 @@ describe("Complete managed screen inventory", () => {
 
     it("includes admin denial and each retry condition at the same flow step", () => {
         const errors = galleryScreensForFlow("admin").find(
-            (entry) => entry.id === "dashboard-sign-in-errors",
+            (entry) => entry.id === "dashboard-sign-in",
         );
         expect(
             errors?.variants
-                ?.map((variant) => variant.params?.auth_error)
+                ?.flatMap((variant) =>
+                    variant.params?.auth_error
+                        ? [variant.params.auth_error]
+                        : [],
+                )
                 .sort(),
         ).toEqual(["admin_required", "invalid_state", "unavailable"]);
     });
@@ -137,27 +171,30 @@ describe("Complete managed screen inventory", () => {
             account
                 .find((entry) => entry.id === "enter-connected")
                 ?.variants?.some(
-                    (variant) => variant.params?.session === "loading",
+                    (variant) => variant.params?.account_case === "loading",
                 ),
         ).toBe(true);
         expect(
             account
-                .find((entry) => entry.id === "enter-connected-errors")
+                .find((entry) => entry.id === "enter-connected")
                 ?.variants?.some(
-                    (variant) => variant.params?.session === "error",
+                    (variant) => variant.params?.account_case === "load-error",
                 ),
         ).toBe(true);
         expect(
-            galleryScreensForFlow("app").some(
-                (entry) => entry.id === "add-pollen-pending-errors",
-            ),
+            galleryScreensForFlow("app", "topup")
+                .find((entry) => entry.id === "account-wallet")
+                ?.variants?.some(
+                    (variant) =>
+                        variant.params?.account_case === "payment-error",
+                ),
         ).toBe(true);
     });
 });
 
-it("starts Admin on Enter and uses the real sign-in error screen", () => {
+it("starts Admin at its dashboard entry and keeps app sign-in errors on the real route", () => {
     expect(entrances.find((entry) => entry.id === "admin")?.node).toBe(
-        "identity",
+        "dashboard-sign-in",
     );
     const error = galleryScreensForFlow("app").find(
         (entry) => entry.id === "sign-in-errors",
@@ -174,6 +211,33 @@ it("shows every Enter error route state separately in every login flow and map",
         const gallery = galleryScreensForFlow(id);
         const map = getFlowFocus(id);
         for (const error of Object.values(loginErrors)) {
+            if (id === "account" || id === "admin") {
+                const family =
+                    id === "admin"
+                        ? "admin-auth-error"
+                        : "dashboard-auth-error";
+                expect(
+                    gallery.find((entry) => entry.id === family)?.variants,
+                ).toContainEqual(
+                    expect.objectContaining({
+                        screen: error.id,
+                        params: expect.objectContaining({
+                            login_error: error.code,
+                        }),
+                    }),
+                );
+                expect(map.nodeIds.has(family)).toBe(true);
+                expect(map.edges).toContainEqual(
+                    expect.objectContaining({
+                        from:
+                            id === "admin"
+                                ? "admin-github"
+                                : "dashboard-github",
+                        to: family,
+                    }),
+                );
+                continue;
+            }
             expect(
                 (id === "device"
                     ? deviceScreens.get(error.id)
@@ -198,20 +262,14 @@ it("shows every Enter error route state separately in every login flow and map",
     }
     for (const error of Object.values(loginErrors))
         expect(
-            getFlowFocus("add-pollen").nodes.some(
-                (node) => node.screen === error.id,
-            ),
+            accountActionScreens
+                .find((screen) => screen.id === "account-auth-error")
+                ?.variants?.some((variant) => variant.screen === error.id),
         ).toBe(true);
 });
 
 it("routes failed Enter login to its real error page before completing any journey", () => {
-    for (const world of [
-        "app",
-        "device",
-        "account",
-        "admin",
-        "topup",
-    ] as const) {
+    for (const world of ["app", "device", "account", "topup"] as const) {
         for (const [code, error] of Object.entries(loginErrors)) {
             const before = {
                 ...startJourney(),
@@ -248,9 +306,7 @@ it("routes failed Enter login to its real error page before completing any journ
                       ? "device-session"
                       : world === "account"
                         ? "enter-signed-out"
-                        : world === "admin"
-                          ? "dashboard-sign-in"
-                          : "sign-in";
+                        : "sign-in";
             expect(exit.to).toBe(retry ? retryNode : `${error.id}-exit`);
             expect(journeyAdvance(failed, exit)).toMatchObject({
                 node: retry ? retryNode : `${error.id}-exit`,
@@ -294,7 +350,15 @@ it("keeps authentication in main flows and purchases in signed-in top-up flows",
         const main = galleryScreensForFlow(flow, "main");
         const topup = galleryScreensForFlow(flow, "topup");
         const represented = new Set(
-            [...main, ...topup].map((entry) => entry.id),
+            [
+                ...main,
+                ...topup,
+                ...(flow === "account"
+                    ? dashboardSections.flatMap(({ id }) =>
+                          galleryScreensForFlow("account", id),
+                      )
+                    : []),
+            ].map((entry) => entry.id),
         );
         for (const entry of galleryScreensForFlow(flow))
             expect(represented.has(entry.id)).toBe(true);
@@ -320,7 +384,15 @@ it("keeps authentication in main flows and purchases in signed-in top-up flows",
         ])
             expect(map.nodeIds.has(id)).toBe(false);
         for (const error of Object.values(loginErrors)) {
-            expect(main.some((entry) => entry.id === error.id)).toBe(true);
+            expect(
+                main.some(
+                    (entry) =>
+                        entry.id === error.id ||
+                        entry.variants?.some(
+                            (variant) => variant.screen === error.id,
+                        ),
+                ),
+            ).toBe(true);
             expect(topup.some((entry) => entry.id === error.id)).toBe(false);
         }
     }
@@ -339,19 +411,18 @@ it("keeps authentication in main flows and purchases in signed-in top-up flows",
             (entry) => entry.id === "key-edit",
         ),
     ).toBe(false);
-    expect(
-        galleryScreensForFlow("account", "topup")[0].variants?.[0].params
-            ?.drawer,
-    ).toBe("closed");
+    expect(galleryScreensForFlow("account", "topup")).toEqual(
+        getDashboardFlow("topup").screens,
+    );
 });
 
 it("starts each top-up journey at the right screen and filters its map", () => {
     expect(
         startSelectedJourney({ world: "app", section: "topup" }),
     ).toMatchObject({
-        world: "app",
-        node: "app-connect",
-        signedIn: false,
+        world: "topup",
+        node: "account-app",
+        signedIn: true,
     });
     expect(
         startSelectedJourney({ world: "account", section: "topup" }),
@@ -361,13 +432,19 @@ it("starts each top-up journey at the right screen and filters its map", () => {
         signedIn: true,
     });
     const app = getFlowFocus("app", "topup");
-    expect(app.nodeIds.has("add-pollen-amount")).toBe(true);
-    expect(app.nodeIds.has("app-connect")).toBe(true);
-    expect(app.nodeIds.has("app-login")).toBe(true);
+    expect([...app.nodeIds]).toEqual([
+        "account-app",
+        "account-key",
+        "account-wallet",
+        "account-github",
+        "account-auth-error",
+        "account-payment",
+        "account-billing",
+    ]);
     expect(app.edges).toContainEqual({
-        from: "app-login",
-        to: "app-connected",
-        label: "Return signed in",
+        from: "account-key",
+        to: "account-wallet",
+        label: "Wallet · separate tab",
     });
     expect(app.nodeIds.has("consent")).toBe(false);
     const account = getFlowFocus("account", "topup");
@@ -380,7 +457,9 @@ it("starts each top-up journey at the right screen and filters its map", () => {
 
 it("shows every configured state as its own page with the original render parameters", () => {
     for (const { id } of entrances) {
-        for (const section of ["main", "topup"] as const) {
+        for (const { id: section } of dashboardSections) {
+            if (!["main", "topup"].includes(section) && id !== "account")
+                continue;
             if (section === "topup" && id !== "app" && id !== "account")
                 continue;
             const source = galleryScreensForFlow(id, section);
@@ -404,10 +483,16 @@ it("shows every configured state as its own page with the original render parame
         }
     }
     const account = galleryPagesForFlow("account", "topup");
-    expect(account).toHaveLength(3);
-    expect(account.map((entry) => entry.variants?.[0].params?.session)).toEqual(
-        [undefined, "loading", "error"],
-    );
+    expect(account).toHaveLength(21);
+    expect(
+        account.map((entry) => entry.variants?.[0].params?.account_case),
+    ).toContain("pending");
+    expect(
+        account.map((entry) => entry.variants?.[0].params?.account_case),
+    ).toContain("payment-error");
+    expect(
+        account.map((entry) => entry.variants?.[0].params?.account_case),
+    ).toContain("credited");
 });
 
 it("shows the shared app sign-in UI once while keeping each visible sign-in state", () => {
@@ -432,7 +517,9 @@ it("shows the shared app sign-in UI once while keeping each visible sign-in stat
 
 it("groups configuration controls without hiding loading, success, or error states", () => {
     for (const { id } of entrances) {
-        for (const section of ["main", "topup"] as const) {
+        for (const { id: section } of dashboardSections) {
+            if (!["main", "topup"].includes(section) && id !== "account")
+                continue;
             if (section === "topup" && id !== "app" && id !== "account")
                 continue;
             const pages = galleryPagesForFlow(id, section);
@@ -454,10 +541,22 @@ it("groups configuration controls without hiding loading, success, or error stat
                         "Pollinations sign-in error": 4,
                         "App connection error": 15,
                         "Allow access": 5,
-                        "App · Connection status": 6,
+                        "App · Connection status": 7,
                     };
                     if (card.title in counts)
                         expect(card.variants).toHaveLength(counts[card.title]);
+                    continue;
+                }
+                if (id === "admin") {
+                    expect(adminScreens).toContainEqual(card);
+                    continue;
+                }
+                if (id === "account") {
+                    expect(dashboardScreens).toContainEqual(card);
+                    continue;
+                }
+                if (id === "app" && section === "topup") {
+                    expect(accountActionScreens).toContainEqual(card);
                     continue;
                 }
                 if (id === "device") {
@@ -784,10 +883,10 @@ it("models parallel app lookup and local validation without inventing mandatory 
 it("keeps the Apps top-up exit as a handoff rather than embedding its screens in Login", () => {
     const map = getFlowFocus("app", "main");
     expect(
-        map.nodes.find((node) => node.id === "add-pollen-amount"),
+        map.nodes.find((node) => node.id === "account-key-editor"),
     ).toMatchObject({ kind: "outcome" });
     expect(
-        map.nodes.find((node) => node.id === "add-pollen-amount")?.screen,
+        map.nodes.find((node) => node.id === "account-key-editor")?.screen,
     ).toBeUndefined();
     const state = {
         ...startJourney(),
@@ -796,12 +895,12 @@ it("keeps the Apps top-up exit as a handoff rather than embedding its screens in
         connected: true,
     };
     const edge = journeyOptions(state).find(
-        (edge) => edge.to === "add-pollen-amount",
+        (edge) => edge.to === "account-key-editor",
     );
     if (!edge) throw new Error("Missing top-up handoff");
     expect(journeyAdvance(state, edge)).toMatchObject({
-        world: "topup",
-        node: "add-pollen-amount",
+        world: "app",
+        node: "account-key-editor",
     });
 });
 
@@ -818,7 +917,7 @@ it("bookends Apps Login with the existing reusable app components", () => {
         maintained: true,
     });
     expect(cards[0].variants).toBeUndefined();
-    expect(cards.at(-1)?.variants).toHaveLength(6);
+    expect(cards.at(-1)?.variants).toHaveLength(7);
     for (const id of ["app-connect", "app-connected"]) {
         const card = cards.find((card) => card.id === id);
         expect(appLoginScreens.get(id)).toEqual(card);
@@ -828,13 +927,16 @@ it("bookends Apps Login with the existing reusable app components", () => {
         ).toBe(id);
     }
     const topup = galleryCardsForFlow("app", "topup");
-    expect(topup.slice(0, 3).map((card) => card.screen)).toEqual([
-        "add-pollen-connect",
+    expect(topup.map((card) => card.screen)).toEqual([
         "add-pollen-play",
-        "add-pollen-play",
+        "account-key",
+        "account-wallet",
+        "account-github",
+        "login-failed",
+        "account-payment",
+        "account-billing",
     ]);
-    expect(topup[2].variants?.[0].params?.app_menu).toBe("open");
-    expect(topup[3].screen).toBe("add-pollen-amount");
+    expect(topup[0].variants?.[0].params?.app_menu).toBe("open");
 });
 
 it("covers the SDK callback, cancellation feedback, retry, and legacy return", () => {
@@ -956,6 +1058,9 @@ it("retries a stored-key check without going through sign-in", () => {
     );
     const cards = galleryCardsForFlow("app", "main");
     const panel = cards.find((card) => card.id === "app-connected");
+    expect(
+        panel?.variants?.find((variant) => variant.label === "Limit reached"),
+    ).toMatchObject({ params: { sim_budget: "0" } });
     expect(
         panel?.variants
             ?.slice(0, 4)
@@ -1113,4 +1218,73 @@ it("uses one external GitHub handoff without simulating provider-internal steps"
                 }),
             ).toMatchObject({ node: "loading", signedIn: true });
         }
+});
+
+describe("shared Admin inventory", () => {
+    it("uses the same five page families in Screens and Map", () => {
+        expect(galleryCardsForFlow("admin")).toEqual(adminScreens);
+        expect(galleryScreensForFlow("admin")).toEqual(adminScreens);
+        expect(adminScreens).toHaveLength(5);
+        const map = getFlowFocus("admin");
+        expect(
+            map.nodes
+                .flatMap((node) => (node.screen ? [node.screen] : []))
+                .sort(),
+        ).toEqual(adminScreens.map((entry) => entry.id).sort());
+        for (const entry of adminScreens)
+            expect(map.edges.some((edge) => edge.from === entry.id)).toBe(true);
+    });
+
+    it("round-trips every preview state to the same Journey selection", () => {
+        for (const entry of adminScreens)
+            for (const [index] of (entry.variants ?? []).entries()) {
+                const url = new URL(
+                    canvasScreenUrl(entry, index),
+                    "https://preview.example",
+                );
+                expect(adminSelectionForPreview(url.searchParams)).toEqual({
+                    screen: entry.id,
+                    variant: index,
+                });
+            }
+    });
+
+    it("retains retries, sign-out, and the existing-session shortcut", () => {
+        const { edges } = getFlowFocus("admin");
+        for (const [from, to] of [
+            ["dashboard-sign-in", "admin-session"],
+            ["admin-session", "identity"],
+            ["admin-session", "admin-callback"],
+            ["identity", "admin-github"],
+            ["admin-callback", "dashboard-connected"],
+            ["admin-callback", "dashboard-sign-in"],
+            ["admin-auth-error", "identity"],
+            ["dashboard-connected", "dashboard-sign-in"],
+        ])
+            expect(edges).toContainEqual(expect.objectContaining({ from, to }));
+    });
+});
+
+it("preserves the Admin issuer request for retry without accepting another origin", () => {
+    vi.stubGlobal(
+        "location",
+        new URL("https://enter.pollinations.ai/app/sign-in"),
+    );
+    try {
+        clearSignInContext();
+        const callback = oauthSignInCallback(
+            "https://enter.pollinations.ai/app/sign-in?client_id=admin-example&state=preview-state&code_challenge=preview-challenge",
+        );
+        rememberSignIn(callback);
+        expect(getSignInContext()?.path).toBe(
+            "/api/auth/oauth2/authorize?client_id=admin-example&state=preview-state&code_challenge=preview-challenge",
+        );
+        rememberSignIn(
+            "https://other.example/api/auth/oauth2/authorize?client_id=other",
+        );
+        expect(getSignInContext()?.path).toBe("/sign-in");
+    } finally {
+        clearSignInContext();
+        vi.unstubAllGlobals();
+    }
 });

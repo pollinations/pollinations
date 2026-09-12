@@ -1,3 +1,5 @@
+import { accountActionScreens } from "./pollen-connect-account-actions";
+import { adminScreens } from "./pollen-connect-admin";
 import {
     appReturnVariants,
     type CanvasScreen,
@@ -5,6 +7,7 @@ import {
     enterLoginErrorScreens,
     type ScreenVariant,
 } from "./pollen-connect-canvas-data";
+import { getDashboardFlow } from "./pollen-connect-dashboard";
 import { getDeviceFlow } from "./pollen-connect-device";
 import type {
     JourneyEntrance,
@@ -23,47 +26,25 @@ export const galleryFlowScreens: Record<JourneyEntrance, readonly string[]> = {
         "loading",
         ...loginErrorIds,
         "consent",
-        "add-pollen-amount",
-        "add-pollen-pending",
         "app-connected",
     ],
     device: getDeviceFlow().galleryScreens.map((entry) => entry.id),
-    account: [
-        "enter-signed-out",
-        ...loginErrorIds,
-        "enter-connected",
-        "keys",
-        "api-key",
-        "key-edit",
-        "key-delete",
-        "app-key",
-    ],
-    admin: [
-        "identity",
-        "loading",
-        ...loginErrorIds,
-        "dashboard-sign-in",
-        "dashboard-connected",
-    ],
+    account: getDashboardFlow().screens.map((entry) => entry.id),
+    admin: adminScreens.map((entry) => entry.id),
 };
 
 export function galleryScreensForFlow(
     flow: JourneyEntrance,
     section?: JourneySection,
 ): CanvasScreen[] {
+    if (flow === "app" && section === "topup") return accountActionScreens;
+    if (flow === "admin") return adminScreens;
     if (flow === "device") return getDeviceFlow(section).galleryScreens;
+    if (flow === "account") return getDashboardFlow(section).screens;
     const entries = canvasGroups.flatMap((group) => group.screens);
     let ids = galleryFlowScreens[flow];
     if (flow === "app" && section === "main")
         ids = ids.filter((id) => !id.startsWith("add-pollen-"));
-    if (flow === "app" && section === "topup")
-        ids = [
-            "app-connect",
-            "app-connected",
-            "add-pollen-amount",
-            "add-pollen-pending",
-        ];
-    if (flow === "account" && section === "topup") ids = ["enter-connected"];
     return ids.flatMap((id) => {
         const source = entries.find((entry) => entry.id === id);
         if (!source) throw new Error(`Missing gallery screen: ${id}`);
@@ -104,28 +85,6 @@ export function galleryScreensForFlow(
                     params: { ...variant.params, login_flow: flow },
                 })),
             };
-        if (section === "topup" && id === "add-pollen-amount")
-            entry = {
-                ...source,
-                variants: source.variants?.filter(
-                    (variant) => variant.params?.topup_case !== "sign-in-error",
-                ),
-            };
-        if (
-            flow === "account" &&
-            section === "topup" &&
-            id === "enter-connected"
-        )
-            entry = {
-                ...source,
-                title: "Account top-up",
-                variants: source.variants?.map((variant) => ({
-                    ...variant,
-                    label:
-                        variant.label === "Account" ? "Top up" : variant.label,
-                    params: { ...variant.params, drawer: "closed" },
-                })),
-            };
         if (flow === "app" && id === "sign-in") {
             entry = {
                 ...source,
@@ -148,12 +107,6 @@ export function galleryScreensForFlow(
             };
         const errors = entry.variants?.filter((variant) => variant.error) ?? [];
         if (!errors.length) return [entry];
-        if (id === "dashboard-sign-in")
-            errors.sort(
-                (a, b) =>
-                    Number(b.params?.auth_error === "admin_required") -
-                    Number(a.params?.auth_error === "admin_required"),
-            );
         const normal =
             entry.variants?.filter((variant) => !variant.error) ?? [];
         return [
@@ -190,9 +143,7 @@ export function galleryPagesForFlow(
 function isInlineVariant(entry: CanvasScreen, variant: ScreenVariant) {
     const params = variant.params ?? {};
     return (
-        ["consent", "add-pollen-amount", "key-edit", "sign-in"].includes(
-            entry.id,
-        ) &&
+        ["consent", "key-edit", "sign-in"].includes(entry.id) &&
         !variant.error &&
         !params.result &&
         !params.session &&
@@ -225,7 +176,10 @@ export function galleryCardsForFlow(
     flow: JourneyEntrance,
     section?: JourneySection,
 ): CanvasScreen[] {
+    if (flow === "app" && section === "topup") return accountActionScreens;
+    if (flow === "admin") return adminScreens;
     if (flow === "device") return getDeviceFlow(section).galleryScreens;
+    if (flow === "account") return getDashboardFlow(section).screens;
     const pages = new Map(
         galleryPagesForFlow(flow, section).map((page) => [page.id, page]),
     );

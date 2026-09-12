@@ -1,7 +1,14 @@
 import { loginErrors } from "@shared/auth/login-errors.ts";
+import {
+    accountActionEdges,
+    accountActionNodes,
+} from "./pollen-connect-account-actions";
+import { adminEdges, adminNodes } from "./pollen-connect-admin";
 import { appLoginEdges, appLoginNodes } from "./pollen-connect-app-login";
 import { enterLoginErrorScreens } from "./pollen-connect-canvas-data";
+import { getDashboardFlow } from "./pollen-connect-dashboard";
 import { getDeviceFlow } from "./pollen-connect-device";
+import type { JourneySection } from "./pollen-connect-journey-state";
 
 export type FlowNode = {
     id: string;
@@ -28,8 +35,8 @@ export const paper = { width: 7500, height: 4950 };
 export const flowSections = [
     {
         id: "add-pollen",
-        title: "In-app Add Pollen",
-        note: "App budget is a spending limit, not a transfer",
+        title: "App access and wallet",
+        note: "Separate owner-only key editor and wallet destinations",
         x: 4160,
         y: 70,
         width: 3260,
@@ -98,59 +105,6 @@ export const flowNodes: FlowNode[] = [
         x: 2700 + index * 450,
         y: 1700,
     })),
-    { id: "add-pollen-amount", screen: "add-pollen-amount", x: 4210, y: 180 },
-    {
-        id: "add-pollen-covered",
-        kind: "decision",
-        label: "Can save without a purchase?",
-        x: 5100,
-        y: 350,
-    },
-    {
-        id: "add-pollen-checkout",
-        screen: "add-pollen-checkout",
-        x: 5520,
-        y: 860,
-    },
-    {
-        id: "add-pollen-pending",
-        screen: "add-pollen-pending",
-        x: 6020,
-        y: 1450,
-    },
-    {
-        id: "add-pollen-credited",
-        kind: "outcome",
-        label: "Account balance credited",
-        note: "Only after confirmed payment",
-        x: 6560,
-        y: 1000,
-    },
-    {
-        id: "add-pollen-increased",
-        kind: "outcome",
-        label: "App budget saved",
-        note: "Applied once · same app connection",
-        x: 7030,
-        y: 350,
-    },
-    {
-        id: "add-pollen-unchanged",
-        kind: "outcome",
-        label: "Return to app",
-        note: "App budget unchanged",
-        x: 4680,
-        y: 1800,
-    },
-
-    {
-        id: "add-pollen-failed",
-        kind: "outcome",
-        label: "Top-up unavailable",
-        note: "No increase · return to app and retry",
-        x: 5520,
-        y: 1820,
-    },
     { id: "app-connect", screen: "app-connect", x: 110, y: 180 },
     {
         id: "request-valid",
@@ -205,8 +159,8 @@ export const flowNodes: FlowNode[] = [
     { id: "loading", screen: "loading", x: 2700, y: 1060 },
     {
         id: "resume",
-        kind: "decision",
-        label: "Return to…",
+        kind: "outcome",
+        label: "Return to dashboard",
         note: "Original destination",
         x: 3080,
         y: 1180,
@@ -221,23 +175,7 @@ export const flowNodes: FlowNode[] = [
     { id: "key-delete", screen: "key-delete", x: 3190, y: 3730 },
     { id: "api-key", screen: "api-key", x: 3190, y: 3110 },
     { id: "app-key", screen: "app-key", x: 3740, y: 3110 },
-    { id: "dashboard-sign-in", screen: "dashboard-sign-in", x: 110, y: 4410 },
-    { id: "identity", screen: "identity", x: 820, y: 4410 },
-    { id: "admin", kind: "decision", label: "Admin access?", x: 2140, y: 4550 },
-    {
-        id: "dashboard-connected",
-        screen: "dashboard-connected",
-        x: 2700,
-        y: 4410,
-    },
-    {
-        id: "dashboard-denied",
-        kind: "outcome",
-        label: "Access denied",
-        note: "Admin account required",
-        x: 2140,
-        y: 4770,
-    },
+    ...adminNodes.filter((node) => !node.id.endsWith("-exit")),
 ];
 export const flowEdges: FlowEdge[] = [
     ...enterLoginErrorScreens.flatMap((screen): FlowEdge[] => [
@@ -319,19 +257,6 @@ export const flowEdges: FlowEdge[] = [
         alternate: true,
     },
     {
-        from: "add-pollen-checkout",
-        to: "add-pollen-checkout",
-        label: "Payment failed · retry",
-        fromSide: "right",
-        toSide: "bottom",
-        via: [
-            [5880, 1100],
-            [5880, 1370],
-            [5630, 1370],
-        ],
-        alternate: true,
-    },
-    {
         from: "keys",
         to: "key-edit",
         label: "Edit",
@@ -375,283 +300,11 @@ export const flowEdges: FlowEdge[] = [
         alternate: true,
     },
     {
-        from: "add-pollen-amount",
-        to: "add-pollen-amount",
-        label: "Budget update failed · retry",
-        fromSide: "right",
-        toSide: "bottom",
-        via: [
-            [4500, 710],
-            [4320, 710],
-        ],
-        alternate: true,
-    },
-    {
-        from: "add-pollen-amount",
-        to: "add-pollen-failed",
-        label: "Invalid / expired / unavailable",
-        fromSide: "bottom",
-        toSide: "top",
-        via: [
-            [5070, 950],
-            [5070, 1760],
-            [5630, 1760],
-        ],
-        labelAt: [5070, 1550],
-        alternate: true,
-    },
-    {
-        from: "add-pollen-failed",
-        to: "add-pollen-unchanged",
-        label: "Return manually · start again",
-        alternate: true,
-    },
-    {
-        from: "add-pollen-amount",
-        to: "github-session",
-        label: "Session expired · sign in",
-        fromSide: "left",
-        toSide: "bottom",
-        via: [
-            [4530, 800],
-            [4050, 800],
-            [4050, 2300],
-            [1245, 2300],
-        ],
-        labelAt: [3600, 2300],
-        alternate: true,
-    },
-    {
-        from: "resume",
-        to: "add-pollen-amount",
-        label: "Continue top-up",
-        fromSide: "right",
-        toSide: "top",
-        via: [
-            [4010, 1235],
-            [4010, 95],
-            [4770, 95],
-        ],
-        labelAt: [4390, 95],
-    },
-    {
-        from: "github-authorize",
-        to: "add-pollen-failed",
-        label: "Top-up sign-in denied",
-        fromSide: "bottom",
-        toSide: "bottom",
-        via: [
-            [2350, 2260],
-            [5630, 2260],
-        ],
-        labelAt: [4470, 2260],
-        alternate: true,
-    },
-    {
-        from: "loading",
-        to: "add-pollen-failed",
-        label: "Top-up sign-in failed",
-        fromSide: "bottom",
-        toSide: "bottom",
-        via: [
-            [2810, 2210],
-            [5630, 2210],
-        ],
-        labelAt: [4750, 2210],
-        alternate: true,
-    },
-    { from: "app-connected", to: "add-pollen-amount", label: "Add Pollen" },
-    {
-        from: "add-pollen-amount",
-        to: "enter-connected",
-        label: "Open dashboard",
-        alternate: true,
-    },
-    {
-        from: "add-pollen-amount",
-        to: "add-pollen-covered",
-        label: "Save budget",
-    },
-    {
-        from: "add-pollen-amount",
-        to: "add-pollen-checkout",
-        label: "Buy account pollen",
-        fromSide: "bottom",
-        toSide: "left",
-    },
-    {
-        from: "add-pollen-covered",
-        to: "add-pollen-increased",
-        label: "Yes · no payment, no Pollen spent",
-        fromSide: "top",
-        toSide: "left",
-        via: [
-            [5185, 290],
-            [6850, 290],
-            [6850, 390],
-        ],
-        labelAt: [6020, 290],
-    },
-    {
-        from: "add-pollen-covered",
-        to: "add-pollen-checkout",
-        label: "No · smallest pack covering the shortfall",
-        fromSide: "bottom",
-        toSide: "top",
-        via: [
-            [5185, 770],
-            [5630, 770],
-        ],
-        labelAt: [5540, 770],
-    },
-    {
-        from: "add-pollen-checkout",
-        to: "add-pollen-credited",
-        label: "Payment confirmed",
-    },
-    {
-        from: "add-pollen-checkout",
-        to: "add-pollen-pending",
-        label: "Return to app · payment pending",
-        fromSide: "bottom",
-        toSide: "top",
-        via: [
-            [5630, 1410],
-            [6130, 1410],
-        ],
-        labelAt: [5790, 1410],
-    },
-    {
-        from: "add-pollen-pending",
-        to: "add-pollen-pending",
-        label: "Still pending / check failed · retry",
-        fromSide: "right",
-        toSide: "bottom",
-        via: [
-            [6360, 1705],
-            [6360, 2010],
-            [6130, 2010],
-        ],
-        labelAt: [6360, 1940],
-        alternate: true,
-    },
-    {
-        from: "add-pollen-pending",
-        to: "add-pollen-credited",
-        label: "Payment confirmed",
-        fromSide: "top",
-        toSide: "bottom",
-        via: [
-            [6130, 1390],
-            [6670, 1390],
-        ],
-        labelAt: [6470, 1390],
-    },
-    {
-        from: "add-pollen-credited",
-        to: "add-pollen-amount",
-        label: "Balance updated · review app budget",
-        fromSide: "left",
-        toSide: "bottom",
-        via: [
-            [6460, 1260],
-            [4320, 1260],
-        ],
-        labelAt: [4920, 1260],
-    },
-    {
-        from: "add-pollen-increased",
-        to: "app-connected",
-        label: "Return to app · updated balance + budget",
-        fromSide: "right",
-        toSide: "top",
-        via: [
-            [7350, 390],
-            [7350, 75],
-            [3550, 75],
-        ],
-        labelAt: [6200, 75],
-    },
-    {
-        from: "add-pollen-checkout",
-        to: "add-pollen-unchanged",
-        label: "Checkout canceled · no increase",
-        fromSide: "right",
-        toSide: "right",
-        via: [
-            [5840, 1115],
-            [5840, 1840],
-        ],
-        labelAt: [5840, 1240],
-        alternate: true,
-    },
-    {
-        from: "add-pollen-amount",
-        to: "add-pollen-unchanged",
-        label: "Cancel",
-        fromSide: "bottom",
-        toSide: "left",
-        via: [[4320, 1840]],
-        labelAt: [4320, 1200],
-        alternate: true,
-    },
-    {
-        from: "add-pollen-pending",
-        to: "add-pollen-unchanged",
-        label: "Close while pending · no increase yet",
-        fromSide: "bottom",
-        toSide: "bottom",
-        via: [
-            [6130, 2070],
-            [4790, 2070],
-        ],
-        labelAt: [5450, 2070],
-        alternate: true,
-    },
-    {
-        from: "add-pollen-unchanged",
-        to: "app-connected",
-        label: "Keep existing connection",
-        fromSide: "left",
-        toSide: "bottom",
-        via: [
-            [4120, 1840],
-            [4120, 740],
-            [3550, 740],
-        ],
-        labelAt: [4120, 1530],
-        alternate: true,
-    },
-    {
-        from: "add-pollen-pending",
-        to: "app-connected",
-        label: "Back to app · same app key",
-        fromSide: "top",
-        toSide: "top",
-        via: [
-            [6420, 1410],
-            [6420, 125],
-            [3550, 125],
-        ],
-        labelAt: [5820, 125],
-    },
-    {
         from: "app-connected",
         to: "enter-connected",
         label: "Dashboard · new tab",
         fromSide: "right",
         toSide: "top",
-    },
-    {
-        from: "dashboard-connected",
-        to: "enter-connected",
-        label: "Dashboard link",
-        fromSide: "top",
-        toSide: "bottom",
-        via: [
-            [2810, 3700],
-            [2260, 3700],
-        ],
     },
 
     { from: "session", to: "sign-in", label: "No" },
@@ -892,72 +545,7 @@ export const flowEdges: FlowEdge[] = [
         ],
         alternate: true,
     },
-    {
-        from: "dashboard-sign-in",
-        to: "identity",
-        label: "Sign in with Pollinations",
-    },
-    {
-        from: "identity",
-        to: "github-session",
-        label: "Sign in with GitHub",
-        fromSide: "top",
-        toSide: "left",
-        via: [
-            [930, 4360],
-            [320, 4360],
-            [320, 1235],
-        ],
-        labelAt: [320, 2300],
-    },
-    {
-        from: "resume",
-        to: "admin",
-        label: "Dashboard",
-        fromSide: "right",
-        toSide: "top",
-        via: [
-            [4070, 1235],
-            [4070, 4380],
-            [2225, 4380],
-        ],
-        labelAt: [4070, 2940],
-    },
-    { from: "admin", to: "dashboard-connected", label: "Yes" },
-    {
-        from: "admin",
-        to: "dashboard-denied",
-        label: "No",
-        fromSide: "bottom",
-        toSide: "top",
-        alternate: true,
-    },
-    {
-        from: "dashboard-denied",
-        to: "identity",
-        label: "Use an admin account",
-        fromSide: "bottom",
-        toSide: "bottom",
-        via: [
-            [2250, 4920],
-            [220, 4920],
-        ],
-        labelAt: [1500, 4920],
-        alternate: true,
-    },
-    {
-        from: "dashboard-connected",
-        to: "dashboard-sign-in",
-        label: "Sign out",
-        fromSide: "bottom",
-        toSide: "bottom",
-        via: [
-            [2810, 4900],
-            [220, 4900],
-        ],
-        labelAt: [950, 4900],
-        alternate: true,
-    },
+    ...adminEdges,
 ];
 export function nodeSize(node: FlowNode) {
     return node.screen
@@ -1012,23 +600,7 @@ const signInNodes = [
     "github-signup",
 ];
 const flowMembership: Record<FlowId, readonly string[]> = {
-    "add-pollen": [
-        ...enterLoginErrorScreens.map((screen) => screen.id),
-        ...[loginErrors.banned, loginErrors.staging].map(
-            (error) => `${error.id}-exit`,
-        ),
-        "app-connected",
-        "github-session",
-        "github-login",
-        "github-approval",
-        "github-authorize",
-        "github-signup",
-        "loading",
-        "resume",
-        ...flowNodes
-            .filter((node) => node.id.startsWith("add-pollen-"))
-            .map((node) => node.id),
-    ],
+    "add-pollen": accountActionNodes.map((node) => node.id),
     app: appLoginNodes.map((node) => node.id),
     "sign-in": signInNodes,
     device: getDeviceFlow().nodes.map((node) => node.id),
@@ -1043,85 +615,58 @@ const flowMembership: Record<FlowId, readonly string[]> = {
         "key-edit",
         "key-delete",
     ],
-    admin: [
-        ...signInNodes,
-        "dashboard-sign-in",
-        "identity",
-        "admin",
-        "dashboard-connected",
-        "dashboard-denied",
-    ],
+    admin: adminNodes.map((node) => node.id),
 };
 
-export function getFlowFocus(id: FlowId, section?: "main" | "topup" | "link") {
+export function getFlowFocus(id: FlowId, section?: JourneySection) {
     const selectedFlow =
         id === "app" && section === "topup" ? "add-pollen" : id;
     let members = flowMembership[selectedFlow];
-    if (selectedFlow === "add-pollen" && section === "topup")
-        members = [
-            "app-connect",
-            ...members.filter(
-                (node) =>
-                    node === "app-connected" || node.startsWith("add-pollen-"),
-            ),
-        ];
     if (id === "account" && section === "main")
         members = members.filter((node) => node !== "account-checkout");
     if (id === "account" && section === "topup")
         members = ["enter-connected", "account-checkout"];
     const appLogin = id === "app" && section !== "topup";
     const deviceMap = id === "device" ? getDeviceFlow(section).map : null;
-    const sourceNodes = appLogin
-        ? appLoginNodes
-        : deviceMap
-          ? deviceMap.nodes
-          : flowNodes;
-    const sourceEdges = appLogin
-        ? appLoginEdges
-        : deviceMap
-          ? deviceMap.edges
-          : flowEdges;
+    const accountActions = selectedFlow === "add-pollen";
+    const dashboard = id === "account" ? getDashboardFlow(section) : null;
+    const sourceNodes =
+        id === "admin"
+            ? adminNodes
+            : dashboard
+              ? dashboard.nodes
+              : accountActions
+                ? accountActionNodes
+                : appLogin
+                  ? appLoginNodes
+                  : deviceMap
+                    ? deviceMap.nodes
+                    : flowNodes;
+    const sourceEdges =
+        id === "admin"
+            ? adminEdges
+            : dashboard
+              ? dashboard.edges
+              : accountActions
+                ? accountActionEdges
+                : appLogin
+                  ? appLoginEdges
+                  : deviceMap
+                    ? deviceMap.edges
+                    : flowEdges;
     const nodeIds = new Set(
-        appLogin || deviceMap ? sourceNodes.map((node) => node.id) : members,
+        dashboard || accountActions || appLogin || deviceMap
+            ? sourceNodes.map((node) => node.id)
+            : members,
     );
     const nodes = sourceNodes.filter((node) => nodeIds.has(node.id));
     const edges = sourceEdges
         .map((edge) =>
-            edge.from === "login-failed" && id !== "device"
+            edge.from === "login-failed" && id !== "device" && id !== "account"
                 ? { ...edge, to: loginRetryNode(id) }
                 : edge,
         )
         .filter((edge) => nodeIds.has(edge.from) && nodeIds.has(edge.to));
-    if (id === "app" && section === "topup") {
-        // Authentication is the same Apps Login flow, represented here as a
-        // handoff instead of duplicating its account and consent screens.
-        const start = nodes.find((node) => node.id === "app-connect");
-        const connected = nodes.find((node) => node.id === "app-connected");
-        if (!start || !connected)
-            throw new Error("Missing app top-up entry screens");
-        nodes[nodes.indexOf(start)] = { ...start, x: connected.x - 620 };
-        nodes.push({
-            id: "app-login",
-            kind: "outcome",
-            label: "Apps · Login",
-            note: "Shared login flow · return to the app",
-            x: connected.x - 310,
-            y: connected.y + 200,
-        });
-        nodeIds.add("app-login");
-        edges.push(
-            {
-                from: "app-connect",
-                to: "app-login",
-                label: "Connect with Pollinations",
-            },
-            {
-                from: "app-login",
-                to: "app-connected",
-                label: "Return signed in",
-            },
-        );
-    }
     const points: [number, number][] = nodes.flatMap((node) => {
         const size = nodeSize(node);
         return [

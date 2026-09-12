@@ -1,4 +1,6 @@
 import { loginErrors } from "@shared/auth/login-errors.ts";
+import { adminScreens } from "./pollen-connect-admin";
+import { dashboardScreens } from "./pollen-connect-dashboard";
 import { defaultPreviewRequest } from "./pollen-connect-request-config";
 
 export type ScreenVariant = {
@@ -121,6 +123,7 @@ export const appReturnVariants: ScreenVariant[] = [
         label: "Account details unavailable",
         params: { app_account: "account-error" },
     },
+    { label: "Limit reached", params: { sim_budget: "0" } },
 ];
 
 export const canvasGroups: { title: string; screens: CanvasScreen[] }[] = [
@@ -211,118 +214,7 @@ export const canvasGroups: { title: string; screens: CanvasScreen[] }[] = [
                 owner: "Developer app",
                 maintained: true,
                 screen: "add-pollen-play",
-                variants: [
-                    { label: "Available app Pollen" },
-                    {
-                        label: "Account covers increase",
-                        params: { topup_case: "covered" },
-                    },
-                    {
-                        label: "Limit reached",
-                        params: { topup_case: "limit-reached" },
-                    },
-                    {
-                        label: "After budget increase",
-                        params: { topup_case: "after-budget" },
-                    },
-                    {
-                        label: "After confirmed payment",
-                        params: { topup_case: "after-payment" },
-                    },
-                    {
-                        label: "Checkout canceled",
-                        params: { topup_case: "canceled" },
-                    },
-                    {
-                        label: "Payment pending",
-                        params: { topup_case: "pending" },
-                    },
-                ],
-            },
-        ],
-    },
-    {
-        title: "In-app Add Pollen",
-        screens: [
-            {
-                id: "add-pollen-amount",
-                title: "Budget",
-                owner: "Pollinations",
-                screen: "add-pollen-amount",
-                variants: [
-                    { label: "Purchase needed" },
-                    {
-                        label: "Checking account",
-                        params: { topup_case: "loading" },
-                    },
-                    {
-                        label: "Confirming",
-                        params: { topup_case: "confirming" },
-                    },
-                    {
-                        label: "Confirmation failed",
-                        error: true,
-                        params: { topup_case: "confirm-error" },
-                    },
-                    {
-                        label: "Expired request",
-                        error: true,
-                        params: { topup_case: "expired" },
-                    },
-                    {
-                        label: "Invalid link",
-                        error: true,
-                        params: { topup_case: "invalid-link" },
-                    },
-                    {
-                        label: "Reconnect required",
-                        error: true,
-                        params: { topup_case: "reconnect" },
-                    },
-                    {
-                        label: "Account check failed",
-                        error: true,
-                        params: { topup_case: "account-error" },
-                    },
-                    {
-                        label: "Sign-in failed",
-                        error: true,
-                        params: { topup_case: "sign-in-error" },
-                    },
-                    {
-                        label: "Balance covers budget",
-                        params: { topup_case: "covered" },
-                    },
-                ],
-            },
-            {
-                id: "add-pollen-checkout",
-                title: "Review purchase",
-                owner: "Stripe",
-                screen: "add-pollen-checkout",
-            },
-            {
-                id: "add-pollen-pending",
-                title: "Payment pending in app",
-                owner: "Developer app",
-                maintained: true,
-                screen: "add-pollen-pending",
-                variants: [
-                    { label: "Waiting for confirmation" },
-                    {
-                        label: "Checking confirmation",
-                        params: { topup_case: "confirming" },
-                    },
-                    {
-                        label: "Status check failed",
-                        error: true,
-                        params: { topup_case: "status-error" },
-                    },
-                    {
-                        label: "Still pending",
-                        params: { topup_case: "pending" },
-                    },
-                ],
+                variants: appReturnVariants,
             },
         ],
     },
@@ -374,191 +266,11 @@ export const canvasGroups: { title: string; screens: CanvasScreen[] }[] = [
     },
     {
         title: "Admin dashboards",
-        screens: [
-            {
-                id: "dashboard-sign-in",
-                title: "Admin sign-in recovery",
-                owner: "Developer app",
-                maintained: true,
-                screen: "observability",
-                variants: [
-                    { label: "Signed out", params: { signed_out: "1" } },
-                    ...["invalid_state", "unavailable"].map((code) => ({
-                        label:
-                            code === "invalid_state"
-                                ? "Expired sign-in"
-                                : "Sign-in unavailable",
-                        screen: "dashboard-error",
-                        error: true,
-                        params: { auth_error: code },
-                    })),
-                    {
-                        label: "Access denied",
-                        error: true,
-                        screen: "dashboard-error",
-                        params: { auth_error: "admin_required" },
-                    },
-                ],
-            },
-            {
-                id: "identity",
-                title: "Admin identity check",
-                owner: "Pollinations",
-                screen: "identity",
-                variants: [
-                    { label: "Sign in" },
-                    {
-                        label: "Signing in",
-                        params: { action: "sign-in", result: "waiting" },
-                    },
-                    {
-                        label: "Sign-in failed",
-                        error: true,
-                        params: { action: "sign-in", result: "error" },
-                    },
-                ],
-            },
-            {
-                id: "dashboard-connected",
-                title: "Admin account menu",
-                owner: "Developer app",
-                maintained: true,
-                screen: "dashboard-connected",
-            },
-        ],
+        screens: adminScreens,
     },
     {
         title: "Enter account",
-        screens: [
-            {
-                id: "enter-signed-out",
-                title: "Enter sign-in",
-                owner: "Pollinations",
-                screen: "enter-signed-out",
-                variants: [
-                    { label: "Sign in" },
-                    {
-                        label: "Signing in",
-                        params: { action: "sign-in", result: "waiting" },
-                    },
-                    {
-                        label: "Sign-in failed",
-                        error: true,
-                        params: { action: "sign-in", result: "error" },
-                    },
-                ],
-            },
-            {
-                id: "enter-connected",
-                title: "Enter account dashboard",
-                owner: "Pollinations",
-                screen: "enter-connected",
-                variants: [
-                    { label: "Account" },
-                    {
-                        label: "Loading account",
-                        params: { session: "loading" },
-                    },
-                    {
-                        label: "Account unavailable",
-                        error: true,
-                        params: { session: "error" },
-                    },
-                ],
-            },
-            {
-                id: "account-checkout",
-                title: "Buy account Pollen",
-                owner: "Stripe",
-                screen: "account-checkout",
-                variants: [
-                    {
-                        label: "Buy Pollen",
-                        params: { purchase: "account", sim_pack: "5" },
-                    },
-                ],
-            },
-            {
-                id: "keys",
-                title: "API keys",
-                owner: "Pollinations",
-                screen: "keys",
-                variants: [
-                    { label: "Signed in" },
-                    { label: "Signed out", screen: "account-signed-out" },
-                ],
-            },
-            {
-                id: "api-key",
-                title: "Create API key",
-                owner: "Pollinations",
-                screen: "api-key",
-                variants: [
-                    { label: "Create" },
-                    {
-                        label: "Creating",
-                        params: { action: "create", result: "waiting" },
-                    },
-                    {
-                        label: "Created",
-                        params: { action: "create", result: "success" },
-                    },
-                    {
-                        label: "Creation failed",
-                        error: true,
-                        params: { action: "create", result: "error" },
-                    },
-                ],
-            },
-            {
-                id: "key-edit",
-                title: "Edit key",
-                owner: "Pollinations",
-                screen: "key-edit",
-                variants: [
-                    { label: "App connection" },
-                    { label: "API key", params: { key_kind: "secret" } },
-                    { label: "App registration", params: { key_kind: "app" } },
-                    {
-                        label: "Saving",
-                        params: { action: "save", result: "waiting" },
-                    },
-                    {
-                        label: "Save failed",
-                        error: true,
-                        params: { action: "save", result: "error" },
-                    },
-                ],
-            },
-            {
-                id: "key-delete",
-                title: "Delete key",
-                owner: "Pollinations",
-                screen: "key-delete",
-            },
-            {
-                id: "app-key",
-                title: "Register an app",
-                owner: "Pollinations",
-                screen: "app-key",
-                variants: [
-                    { label: "Create" },
-                    {
-                        label: "Creating",
-                        params: { action: "create", result: "waiting" },
-                    },
-                    {
-                        label: "Created",
-                        params: { action: "create", result: "success" },
-                    },
-                    {
-                        label: "Creation failed",
-                        error: true,
-                        params: { action: "create", result: "error" },
-                    },
-                ],
-            },
-        ],
+        screens: dashboardScreens,
     },
 ];
 

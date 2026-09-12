@@ -193,10 +193,10 @@ export const appLoginNodes: FlowNode[] = [
         y: 760,
     },
     {
-        id: "add-pollen-amount",
+        id: "account-key-editor",
         kind: "outcome",
-        label: "Apps Top up · Alpha",
-        note: "Continue in the separate top-up flow",
+        label: "App access",
+        note: "Opens the existing key editor on Pollinations in a separate tab",
         x: 3060,
         y: 1400,
     },
@@ -218,6 +218,12 @@ export const appLoginNodes: FlowNode[] = [
     },
 ];
 export const appLoginEdges: FlowEdge[] = [
+    {
+        from: "app-connected",
+        to: "account-funding",
+        label: "Wallet",
+        alternate: true,
+    },
     ...[loginErrors.banned, loginErrors.staging].map((error) => ({
         from: error.id,
         to: `${error.id}-exit`,
@@ -378,8 +384,8 @@ export const appLoginEdges: FlowEdge[] = [
     },
     {
         from: "app-connected",
-        to: "add-pollen-amount",
-        label: "Add Pollen",
+        to: "account-key-editor",
+        label: "App access",
         alternate: true,
     },
     {

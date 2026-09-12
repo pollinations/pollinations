@@ -1,6 +1,7 @@
 import { copyFileSync, cpSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
+import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
@@ -25,6 +26,12 @@ export default defineConfig({
         dedupe: ["react", "react-dom", "zod"],
     },
     plugins: [
+        tanstackRouter({
+            target: "react",
+            autoCodeSplitting: true,
+            routesDirectory: `${here}src/routes`,
+            generatedRouteTree: `${here}src/routeTree.gen.ts`,
+        }),
         react(),
         tailwindcss(),
         tsconfigPaths({ projects: [`${here}src/tsconfig.json`] }),

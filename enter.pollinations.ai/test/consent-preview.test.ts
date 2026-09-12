@@ -5,11 +5,6 @@ import {
 } from "@shared/auth/authorize-config.ts";
 import { describe, expect, it } from "vitest";
 import {
-    addPollenAmounts,
-    addPollenPlan,
-    defaultAddPollenAmount,
-} from "../frontend/pollen-connect-add-pollen-data";
-import {
     appLoginAutomaticDestination,
     appLoginScreens,
 } from "../frontend/pollen-connect-app-login";
@@ -17,6 +12,7 @@ import {
     canvasGroups,
     canvasScreenUrl,
 } from "../frontend/pollen-connect-canvas-data";
+import { dashboardScreens } from "../frontend/pollen-connect-dashboard";
 import {
     deviceAutomaticDestination,
     getDeviceFlow,
@@ -40,7 +36,6 @@ import {
     restoreJourney,
     simulateUsage,
     startJourney,
-    withJourneyCondition,
 } from "../frontend/pollen-connect-journey-state";
 import {
     previewAuthorizeParams,
@@ -105,127 +100,6 @@ describe("consent carried through the app journey", () => {
     });
 });
 
-describe("Add Pollen flow preview", () => {
-    it("offers the app-limit increments and starts at 5", () => {
-        expect(addPollenAmounts).toEqual([1, 2, 3, 4, 5, 10, 20]);
-        expect(defaultAddPollenAmount).toBe(5);
-    });
-    it("keeps only unresolved payment screens inside the app", () => {
-        const screens = canvasGroups.flatMap((group) => group.screens);
-        const receipt = screens.find(
-            (screen) => screen.id === "add-pollen-pending",
-        );
-        expect(receipt?.owner).toBe("Developer app");
-        const receiptCases = receipt?.variants?.map(
-            (variant) => variant.params?.topup_case,
-        );
-        expect(receiptCases).not.toContain("after-payment");
-        expect(receiptCases).not.toContain("after-budget");
-        expect(receiptCases).not.toContain("canceled");
-        for (const scenario of ["pending", "status-error"])
-            expect(receiptCases).toContain(scenario);
-        const confirm = screens.find(
-            (screen) => screen.id === "add-pollen-amount",
-        );
-        const confirmationCases = confirm?.variants?.map(
-            (variant) => variant.params?.topup_case,
-        );
-        for (const scenario of [
-            "loading",
-            "expired",
-            "invalid-link",
-            "reconnect",
-            "account-error",
-            "sign-in-error",
-        ])
-            expect(confirmationCases).toContain(scenario);
-        expect(
-            flowEdges.some(
-                (edge) =>
-                    edge.from === "add-pollen-checkout" &&
-                    edge.to === "add-pollen-unchanged" &&
-                    edge.label.includes("canceled"),
-            ),
-        ).toBe(true);
-    });
-    it("uses the resulting app budget, not the increment, to determine the shortfall", () => {
-        const plan = addPollenPlan(10, 5, 20);
-        expect(plan.resultingBudget).toBe(25);
-        expect(plan.shortfall).toBe(15);
-        expect(plan.pack?.amountUsd).toBe(20);
-        expect(10 + (plan.pack?.amountUsd ?? 0)).toBe(30);
-    });
-    it("does not require a purchase when the account covers the increased budget", () => {
-        expect(addPollenPlan(25, 5, 20)).toMatchObject({
-            resultingBudget: 25,
-            shortfall: 0,
-            pack: undefined,
-        });
-        expect(addPollenPlan(40, 5, 20).pack).toBeUndefined();
-    });
-    it("never requires a purchase for a reduction or unchanged allowance", () => {
-        for (const amount of [-5, -2, 0]) {
-            expect(addPollenPlan(0, 5, amount)).toEqual({
-                resultingBudget: 5 + amount,
-                shortfall: 0,
-                pack: undefined,
-            });
-        }
-    });
-    it("chooses the smallest sufficient pack and never invents a pack", () => {
-        expect(addPollenPlan(10, 5, 10).pack?.amountUsd).toBe(5);
-        expect(addPollenPlan(10, 5, 50).pack?.amountUsd).toBe(50);
-        expect(addPollenPlan(10, 5, 100).pack?.amountUsd).toBe(100);
-        expect(addPollenPlan(0, 5, 100).pack).toBeUndefined();
-    });
-    it.each([
-        [1, 2],
-        [2, 2],
-        [3, 5],
-        [5, 5],
-        [6, 10],
-        [11, 20],
-    ])("covers a %i Pollen shortfall with the existing %i Pollen pack", (shortfall, expectedPack) => {
-        const plan = addPollenPlan(5, 5, shortfall);
-        expect(plan.pack?.amountUsd).toBe(expectedPack);
-        expect(plan.resultingBudget).toBe(5 + shortfall);
-    });
-    it("keeps canceled and pending payments away from the budget-increase outcome", () => {
-        const edges = (id: string) =>
-            flowEdges.filter((edge) => edge.from === id);
-        expect(
-            edges("add-pollen-covered")
-                .map((edge) => edge.to)
-                .sort(),
-        ).toEqual(["add-pollen-checkout", "add-pollen-increased"]);
-        expect(edges("add-pollen-unchanged").map((edge) => edge.to)).toEqual([
-            "app-connected",
-        ]);
-        expect(
-            flowEdges
-                .filter((edge) => edge.to === "add-pollen-increased")
-                .map((edge) => edge.from)
-                .sort(),
-        ).toEqual(["add-pollen-covered"]);
-        expect(
-            flowEdges.find((edge) => edge.from === "add-pollen-credited")?.to,
-        ).toBe("add-pollen-amount");
-        expect(
-            flowEdges
-                .filter((edge) => edge.to === "add-pollen-credited")
-                .every((edge) => edge.label === "Payment confirmed"),
-        ).toBe(true);
-        expect(
-            edges("app-connected").some(
-                (edge) => edge.to === "add-pollen-amount",
-            ),
-        ).toBe(true);
-        expect(edges("app-connected").some((edge) => edge.to === "keys")).toBe(
-            false,
-        );
-    });
-});
-
 const catalog = [
     { name: "official/free" },
     { name: "official/paid", paid_only: true },
@@ -236,6 +110,39 @@ describe("focused flow navigation", () => {
     it("includes shared sign-in in app, device, account and admin journeys", () => {
         for (const id of ["app", "device", "account", "admin"] as const) {
             const focus = getFlowFocus(id);
+            if (id === "admin") {
+                const focus = getFlowFocus("admin");
+                for (const screen of [
+                    "dashboard-sign-in",
+                    "identity",
+                    "admin-github",
+                    "admin-auth-error",
+                    "dashboard-connected",
+                ])
+                    expect(focus.nodeIds.has(screen)).toBe(true);
+                expect(focus.edges).toContainEqual(
+                    expect.objectContaining({
+                        from: "admin-auth-error",
+                        to: "identity",
+                    }),
+                );
+                continue;
+            }
+            if (id === "account") {
+                for (const shared of [
+                    "enter-signed-out",
+                    "dashboard-github",
+                    "dashboard-auth-error",
+                ])
+                    expect(focus.nodeIds.has(shared)).toBe(true);
+                expect(focus.edges).toContainEqual(
+                    expect.objectContaining({
+                        from: "dashboard-auth-error",
+                        to: "enter-signed-out",
+                    }),
+                );
+                continue;
+            }
             for (const shared of [
                 "sign-in",
                 ...(["app", "device"].includes(id)
@@ -263,34 +170,6 @@ describe("focused flow navigation", () => {
             getFlowFocus("app").edges.some(
                 (edge) =>
                     edge.from === "app-connected" && edge.to === "app-home",
-            ),
-        ).toBe(true);
-    });
-    it("includes the connected app and top-up reauthentication without a dashboard detour", () => {
-        const focus = getFlowFocus("add-pollen");
-        expect(focus.nodeIds.has("app-connected")).toBe(true);
-        expect(focus.nodeIds.has("sign-in")).toBe(false);
-        expect(focus.nodeIds.has("github-login")).toBe(true);
-        expect(focus.nodeIds.has("enter-connected")).toBe(false);
-        expect(
-            focus.edges.some(
-                (edge) =>
-                    edge.from === "app-connected" &&
-                    edge.to === "add-pollen-amount",
-            ),
-        ).toBe(true);
-        expect(
-            focus.edges.some(
-                (edge) =>
-                    edge.from === "add-pollen-increased" &&
-                    edge.to === "app-connected",
-            ),
-        ).toBe(true);
-        expect(
-            focus.edges.some(
-                (edge) =>
-                    edge.from === "add-pollen-unchanged" &&
-                    edge.to === "app-connected",
             ),
         ).toBe(true);
     });
@@ -353,7 +232,13 @@ describe("authorization preview coverage", () => {
         );
         expect(new Set(screens).size).toBe(screens.length);
         const represented = new Set([
-            ...screens,
+            // Dashboard registration is a variant of the shared create dialog.
+            ...screens.map((id) =>
+                ["app-key", "api-key", "key-edit", "key-delete"].includes(id)
+                    ? "keys"
+                    : id,
+            ),
+            ...dashboardScreens.map((entry) => entry.id),
             "device-start",
             "device-done",
             ...[...appLoginScreens.values()].map((entry) =>
@@ -514,25 +399,6 @@ describe("Connect lab journey", () => {
         if (!edge) throw new Error(`No route from ${state.node} to ${to}`);
         return journeyStep(state, edge);
     };
-    const confirm = (state: JourneyState) =>
-        go(
-            { ...go(state, "add-pollen-amount"), amount: 20 },
-            "add-pollen-covered",
-        );
-    it("opens one hosted selector and signs in first when the Enter session expired", () => {
-        const state = { ...startJourney("topup"), signedIn: false };
-        const next = go(state, "add-pollen-amount");
-        expect(next.node).toBe("github-session");
-        expect(next.amount).toBe(5);
-        expect(
-            canvasGroups
-                .flatMap((group) => group.screens)
-                .find((screen) => screen.id === "add-pollen-amount")?.owner,
-        ).toBe("Pollinations");
-        expect(flowNodes.some((node) => node.id === "add-pollen-confirm")).toBe(
-            false,
-        );
-    });
     it("reuses a Pollinations session but keeps app connection independent", () => {
         const start = { ...startJourney(), signedIn: true };
         expect(go(start, "loading").node).toBe("loading");
@@ -565,54 +431,6 @@ describe("Connect lab journey", () => {
         expect(
             go({ ...state, node: "loading", world: "account" }, "resume").node,
         ).toBe("enter-connected");
-    });
-    it("offers enough-funds and purchase branches for the chosen increase", () => {
-        const amount = {
-            ...startJourney("topup"),
-            node: "add-pollen-amount",
-            amount: 50,
-        };
-        const covered = withJourneyCondition(amount, "covered");
-        expect(covered.paid + covered.quest).toBe(55);
-        const funded = go(covered, "add-pollen-covered");
-        expect(funded).toMatchObject({
-            node: "app-connected",
-            budget: 55,
-            purchased: 0,
-        });
-        const shortfall = withJourneyCondition(amount, "shortfall");
-        expect(go(shortfall, "add-pollen-covered")).toMatchObject({
-            node: "add-pollen-checkout",
-            budget: 5,
-            checkoutPack: 100,
-        });
-    });
-    it("preserves the selected larger pack through checkout and credits it without enlarging the requested allowance", () => {
-        const start = {
-            ...startJourney("topup"),
-            node: "add-pollen-amount",
-            paid: 14,
-            quest: 0,
-            budget: 5,
-            amount: 20,
-            checkoutPack: 50,
-        };
-        const checkout = go(start, "add-pollen-covered");
-        expect(checkout).toMatchObject({
-            node: "add-pollen-checkout",
-            amount: 20,
-            budget: 5,
-            checkoutPack: 50,
-        });
-        expect(go(checkout, "add-pollen-credited")).toMatchObject({
-            paid: 64,
-            budget: 5,
-            node: "add-pollen-amount",
-            purchased: 50,
-        });
-        expect(addPollenPlan(14, 5, 20, 10).pack?.amountUsd).toBe(20);
-        expect(addPollenPlan(14, 5, 20, 30).pack?.amountUsd).toBe(20);
-        expect(addPollenPlan(30, 5, 20, 50).pack).toBeUndefined();
     });
     it("buys account Pollen without changing an app budget", () => {
         const start = {
@@ -677,159 +495,6 @@ describe("Connect lab journey", () => {
                 "Payment confirmed",
             ).paid,
         ).toBe(15);
-    });
-    it("increases a covered budget without moving or spending Pollen", () => {
-        const state = confirm({ ...startJourney("topup"), paid: 40 });
-        expect(state).toMatchObject({
-            paid: 40,
-            quest: 5,
-            budget: 25,
-            purchased: 0,
-            payment: "completed",
-            node: "app-connected",
-        });
-    });
-    it("saves reductions down to zero without changing the wallet", () => {
-        for (const amount of [-2, -5]) {
-            const editing = {
-                ...go(
-                    { ...startJourney("topup"), paid: 0, quest: 0 },
-                    "add-pollen-amount",
-                ),
-                amount,
-            };
-            const saved = go(editing, "add-pollen-covered");
-            expect(saved).toMatchObject({
-                node: "app-connected",
-                budget: 5 + amount,
-                paid: 0,
-                quest: 0,
-                purchased: 0,
-            });
-            expect(go(saved, "add-pollen-amount")).toMatchObject({
-                budget: 5 + amount,
-                amount: 5,
-            });
-        }
-    });
-    it("waits for payment confirmation, then credits the smallest pack exactly once", () => {
-        let state = confirm({ ...startJourney("topup"), quest: 0 });
-        expect(state).toMatchObject({
-            node: "add-pollen-checkout",
-            paid: 10,
-            budget: 5,
-        });
-        state = go(state, "add-pollen-pending", "pending");
-        state = go(state, "add-pollen-pending");
-        expect(state).toMatchObject({
-            paid: 10,
-            budget: 5,
-            payment: "pending",
-        });
-        const edge = journeyOptions(state).find(
-            (edge) => edge.to === "add-pollen-credited",
-        );
-        if (!edge) throw new Error("Missing payment confirmation route");
-        state = journeyStep(state, edge);
-        expect(state).toMatchObject({
-            paid: 30,
-            budget: 5,
-            purchased: 20,
-            payment: "completed",
-        });
-        expect(journeyStep(state, edge)).toEqual(state);
-        expect(state.node).toBe("add-pollen-amount");
-        expect(go(state, "add-pollen-covered")).toMatchObject({
-            node: "app-connected",
-            budget: 25,
-            paid: 30,
-        });
-    });
-    it("retains the reviewed pack if the account changes while checkout is pending", () => {
-        let state = confirm({ ...startJourney("topup"), quest: 0 });
-        state = go(state, "add-pollen-pending", "pending");
-        state = { ...state, paid: 40, budget: 4 };
-        state = go(state, "add-pollen-credited");
-        expect(state).toMatchObject({
-            paid: 60,
-            purchased: 20,
-            budget: 4,
-            payment: "completed",
-        });
-    });
-    it("keeps the chosen amount after a failed start", () => {
-        const state = {
-            ...go(startJourney("topup"), "add-pollen-amount"),
-            amount: 50,
-        };
-        expect(go(state, "add-pollen-amount")).toMatchObject({
-            amount: 50,
-            scenario: "start-error",
-        });
-    });
-    it("can top up a covered account without saving the selected app budget", () => {
-        let state = {
-            ...go(startJourney("topup"), "add-pollen-amount"),
-            amount: 5,
-            checkoutPack: 10,
-        };
-        state = go(state, "add-pollen-checkout");
-        expect(state).toMatchObject({
-            payment: "pending",
-            budget: 5,
-            checkoutPack: 10,
-        });
-        state = go(state, "add-pollen-credited");
-        expect(state).toMatchObject({
-            node: "add-pollen-amount",
-            paid: 20,
-            quest: 5,
-            budget: 5,
-            amount: 5,
-        });
-        const saved = go(state, "add-pollen-covered");
-        expect(saved).toMatchObject({
-            node: "app-connected",
-            paid: 20,
-            quest: 5,
-            budget: 10,
-        });
-    });
-    it("never credits or raises a canceled purchase", () => {
-        const state = go(
-            confirm(startJourney("topup")),
-            "add-pollen-unchanged",
-            "canceled",
-        );
-        expect(state).toMatchObject({
-            paid: 10,
-            quest: 5,
-            budget: 5,
-            payment: "canceled",
-            node: "app-connected",
-            connected: true,
-        });
-        expect(
-            journeyOptions(state).some(
-                (edge) => edge.to === "add-pollen-credited",
-            ),
-        ).toBe(false);
-        expect(go(state, "add-pollen-amount")).toMatchObject({
-            payment: "idle",
-            node: "add-pollen-amount",
-            budget: 5,
-        });
-    });
-    it("requires sign-in after an expired top-up session and returns to the hosted selector", () => {
-        let state = go(startJourney("topup"), "add-pollen-amount");
-        state = go(state, "github-session");
-        expect(state.signedIn).toBe(false);
-        state = go(go(go(state, "github-approval"), "loading"), "resume");
-        expect(state).toMatchObject({
-            node: "add-pollen-amount",
-            world: "topup",
-            signedIn: true,
-        });
     });
     it("keeps denied device results on the denied branch", () => {
         const state = go(
@@ -994,31 +659,12 @@ describe("automatic journey routing", () => {
                 });
             }
     });
-    it("takes admin identity sign-in straight through GitHub", () => {
-        const admin = { ...startJourney("admin"), node: "identity" };
-        expect(advance(admin, "github-session")).toMatchObject({
-            node: "dashboard-connected",
-            signedIn: true,
-        });
-        expect(
-            advance(admin, "github-session", {
-                ...defaultJourneySettings,
-                githubSignedIn: false,
-            }).node,
-        ).toBe("github-login");
-    });
     it("uses a Pollinations session without any intermediate decision screen", () => {
         expect(
             advance({ ...startJourney(), signedIn: true }, "loading").node,
         ).toBe("consent");
     });
     it("returns to the real app immediately on cancellation", () => {
-        expect(
-            advance(
-                { ...startJourney("topup"), node: "add-pollen-amount" },
-                "add-pollen-unchanged",
-            ).node,
-        ).toBe("app-connected");
         expect(
             advance({ ...startJourney(), node: "consent" }, "cancelled").node,
         ).toBe("app-callback-error");
@@ -1057,21 +703,7 @@ describe("automatic journey routing", () => {
             ),
         ).toBe("app-callback");
     });
-    it("resolves admin access and device validation automatically", () => {
-        const admin = {
-            ...startJourney("admin"),
-            node: "identity",
-            signedIn: true,
-        };
-        expect(advance(admin, "github-session").node).toBe(
-            "dashboard-connected",
-        );
-        expect(
-            advance(admin, "github-session", {
-                ...defaultJourneySettings,
-                adminAccess: false,
-            }).node,
-        ).toBe("dashboard-denied");
+    it("resolves device validation automatically", () => {
         expect(
             advance(
                 { ...startJourney("device"), node: "device-code" },

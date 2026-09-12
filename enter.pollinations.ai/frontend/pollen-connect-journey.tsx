@@ -1,4 +1,13 @@
-import { Button, Input, Surface, Switch, useColorMode } from "@pollinations/ui";
+import {
+    ArrowRightIcon,
+    Button,
+    Input,
+    ScrollArea,
+    Surface,
+    Switch,
+    Tooltip,
+    useColorMode,
+} from "@pollinations/ui";
 import { loginErrors } from "@shared/auth/login-errors.ts";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getPollenPackByKey } from "../../shared/pollen-packs";
@@ -46,6 +55,7 @@ import {
 } from "./pollen-connect-journey-state";
 import {
     Illustration,
+    JourneyPreview,
     ScreenOwnership,
     ScreenWindow,
 } from "./pollen-connect-preview";
@@ -53,8 +63,6 @@ import type { AppPreviewProps } from "./pollen-connect-request-config";
 import type { AuthorizeConsent } from "./src/components/auth/authorize";
 import { normalizeDeviceCode } from "./src/lib/device-request";
 import "./pollen-connect-journey.css";
-
-import { addPollenAmounts } from "./pollen-connect-add-pollen-data";
 
 const screens = canvasGroups.flatMap((group) => group.screens);
 const productActions: Record<string, Record<string, string>> = {
@@ -65,7 +73,6 @@ const productActions: Record<string, Record<string, string>> = {
     },
     "app-connect": { "Connect with Pollinations": "loading" },
     "app-connected": {
-        "Add Pollen": "add-pollen-amount",
         "Disconnect app": "app-connect",
     },
     "sign-in": {
@@ -78,19 +85,6 @@ const productActions: Record<string, Record<string, string>> = {
         "Allow access": "device-result",
         Cancel: "cancelled",
         "Back to app": "cancelled",
-    },
-    "add-pollen-amount": {
-        "Save budget": "add-pollen-covered",
-        Buy: "add-pollen-checkout",
-        Cancel: "add-pollen-unchanged",
-    },
-    "add-pollen-checkout": {
-        Pay: "add-pollen-pending",
-        Cancel: "add-pollen-unchanged",
-    },
-    "add-pollen-pending": {
-        "Back to app": "app-connected",
-        "Check top-up": "add-pollen-pending",
     },
     "enter-signed-out": {
         "Sign in": "github-session",
@@ -114,8 +108,8 @@ const productActions: Record<string, Record<string, string>> = {
         Edit: "key-edit",
         Delete: "key-delete",
     },
-    "api-key": { Create: "keys", Cancel: "keys", Close: "keys" },
-    "app-key": { Create: "keys", Cancel: "keys", Close: "keys" },
+    "api-key": { "Create key": "keys", Cancel: "keys", Close: "keys" },
+    "app-key": { "Create key": "keys", Cancel: "keys", Close: "keys" },
     "key-edit": {
         Save: "keys",
         "Save Changes": "keys",
@@ -123,23 +117,12 @@ const productActions: Record<string, Record<string, string>> = {
         Close: "keys",
     },
     "key-delete": { Delete: "keys", Cancel: "keys", Close: "keys" },
-    "dashboard-sign-in": { "Sign in with Pollinations": "identity" },
-    identity: {
-        "Continue with GitHub": "github-session",
-        "Sign in with GitHub": "github-session",
-    },
-    "dashboard-connected": {
-        "Sign out": "dashboard-sign-in",
-        Dashboard: "enter-connected",
-    },
     error: {
         "Try again": "github-session",
         Cancel: "cancelled",
         "Back to app": "cancelled",
     },
     blocked: { Cancel: "app-connect" },
-    "dashboard-denied": { "Sign in with Pollinations": "identity" },
-    "add-pollen-failed": { Cancel: "add-pollen-unchanged" },
 };
 
 export function Journey({
@@ -148,10 +131,12 @@ export function Journey({
     desktop,
     entrance,
     onLocationChange,
+    onOpenDashboard,
 }: {
     desktop: boolean;
     entrance: JourneySelection;
     onLocationChange: (location: JourneyLocation) => void;
+    onOpenDashboard: () => void;
 } & AppPreviewProps) {
     const [state, setState] = useState(() => startSelectedJourney(entrance));
     const [past, setPast] = useState<JourneyState[]>([]);
@@ -202,6 +187,7 @@ export function Journey({
         );
     }, [appLogin, appPreview.protocol]);
     const selectedSection = useRef(selectionKey);
+    const selectedRevision = useRef(entrance.revision);
     const savedSections = useRef(
         new Map<string, { state: JourneyState; past: JourneyState[] }>(),
     );
@@ -228,9 +214,7 @@ export function Journey({
     const settingsRef = useRef(settings);
     settingsRef.current = settings;
     const size = desktop ? "desktop" : "mobile";
-    const [scale, setScale] = useState(1);
     const frame = useRef<HTMLIFrameElement>(null);
-    const stage = useRef<HTMLDivElement>(null);
     const stateRef = useRef(state);
     const { mode } = useColorMode();
     stateRef.current = state;
@@ -246,8 +230,6 @@ export function Journey({
         {
             blocked: "consent",
             error: "sign-in",
-            "dashboard-denied": "dashboard-sign-in",
-            "add-pollen-failed": "add-pollen-amount",
         }[state.node] ?? node?.screen;
     const appEntry =
         state.world === "app" ? appLoginScreens.get(state.node) : undefined;
@@ -266,17 +248,13 @@ export function Journey({
           )
         : 0;
     const funding = journeyFunding(state);
-    const width = size === "mobile" ? 375 : 1280;
-    const height = size === "mobile" ? (375 * 2622) / 1206 : 800;
     const overrides: Record<string, string> = {
         journey: "1",
         theme: mode,
         sim_paid: `${state.paid}`,
         sim_quest: `${state.quest}`,
         sim_budget: `${state.budget}`,
-        sim_amount: `${state.amount}`,
         sim_payment: state.payment,
-        sim_purchased: `${state.purchased}`,
         sim_pack: `${state.checkoutPack}`,
         sim_usage: state.sharesUsage ? "1" : "0",
         badge: funding?.state ?? "none",
@@ -295,9 +273,13 @@ export function Journey({
             ? { model_catalog: settings.modelCatalog }
             : {}),
         ...(state.consent &&
-        ["consent", "app-connecting", "app-connection-failed"].includes(
-            state.node,
-        )
+        [
+            "consent",
+            "app-connecting",
+            "app-connection-failed",
+            "app-connected",
+            "app-account-error",
+        ].includes(state.node)
             ? { consent: JSON.stringify(state.consent) }
             : {}),
     };
@@ -316,24 +298,15 @@ export function Journey({
         state.world !== "device"
     )
         overrides.request_error = "redirect";
-    if (state.node === "dashboard-denied") {
-        overrides.screen = "dashboard-error";
-        overrides.app = "observability";
-        overrides.auth_error = "admin_required";
-    }
     if (state.node === "error" && state.world !== "app") {
         overrides.action = "sign-in";
         overrides.result = "error";
-        if (state.world === "admin") overrides.screen = "identity";
-        else if (state.world === "account")
-            overrides.screen = "enter-signed-out";
+        if (state.world === "account") overrides.screen = "enter-signed-out";
         else if (state.world === "device")
             overrides.screen = "device-signed-out";
         else if (state.method === "direct")
             overrides.screen = "direct-signed-out";
     }
-    if (state.node === "add-pollen-failed")
-        overrides.topup_case = "sign-in-error";
     if (
         state.node === "sign-in" &&
         state.world !== "device" &&
@@ -369,24 +342,6 @@ export function Journey({
         url.searchParams.set("theme", mode);
         history.replaceState({}, "", url);
     }, [mode]);
-    useEffect(() => {
-        const element = stage.current;
-        if (!element) return;
-        const observer = new ResizeObserver(([record]) => {
-            setScale(
-                Math.max(
-                    0.1,
-                    Math.min(
-                        1,
-                        (record.contentRect.width - 24) / width,
-                        (record.contentRect.height - 24) / height,
-                    ),
-                ),
-            );
-        });
-        observer.observe(element);
-        return () => observer.disconnect();
-    }, [width, height]);
 
     const readScreen = useCallback((current: JourneyState) => {
         const doc = frame.current?.contentDocument;
@@ -405,31 +360,6 @@ export function Journey({
                         "",
                 );
             if (pack) next = { ...next, checkoutPack: pack.amountUsd };
-        }
-        if (current.node === "add-pollen-amount") {
-            const allowance = Number(
-                doc
-                    .querySelector('[aria-label="New allowance"]')
-                    ?.getAttribute("aria-valuetext")
-                    ?.split(" ")[0],
-            );
-            const amount = allowance - current.budget;
-            if (
-                Number.isFinite(allowance) &&
-                allowance >= 0 &&
-                allowance <=
-                    Math.ceil(current.budget + Math.max(...addPollenAmounts))
-            )
-                next = { ...next, amount };
-            const selectedPack = Number(
-                doc.querySelector<HTMLInputElement>(
-                    'input[name="pollen-purchase-pack"]',
-                )?.value,
-            );
-            next = {
-                ...next,
-                checkoutPack: Number.isFinite(selectedPack) ? selectedPack : 0,
-            };
         }
         if (current.world === "device") {
             const input = doc.querySelector<HTMLInputElement>(
@@ -453,13 +383,20 @@ export function Journey({
     }, []);
 
     useEffect(() => {
-        if (selectedSection.current === selectionKey) return;
+        if (
+            selectedSection.current === selectionKey &&
+            selectedRevision.current === entrance.revision
+        )
+            return;
         const current = readScreen(stateRef.current);
         savedSections.current.set(selectedSection.current, {
             state: current,
             past,
         });
-        const saved = savedSections.current.get(selectionKey);
+        const saved =
+            entrance.world === "account" && entrance.section === "topup"
+                ? undefined
+                : savedSections.current.get(selectionKey);
         const initial = {
             ...startSelectedJourney(entrance),
             method: current.method,
@@ -482,8 +419,13 @@ export function Journey({
         );
         setPast(saved?.past ?? []);
         selectedSection.current = selectionKey;
+        selectedRevision.current = entrance.revision;
     }, [entrance, selectionKey, past, readScreen]);
     function step(edge: FlowEdge) {
+        if (edge.action === "dashboard") {
+            onOpenDashboard();
+            return;
+        }
         const current = readScreen(stateRef.current);
         if (
             current.world !== "device" ||
@@ -527,12 +469,7 @@ export function Journey({
     const githubScreen =
         githubSignedOutScreen || state.node === "github-authorize";
     const walletLocked =
-        !walletContext ||
-        [
-            "add-pollen-checkout",
-            "add-pollen-pending",
-            "account-checkout",
-        ].includes(state.node);
+        !walletContext || ["account-checkout"].includes(state.node);
     const switches = [
         {
             group: "Sign-in",
@@ -543,9 +480,6 @@ export function Journey({
                 "app-connected",
                 "device-start",
                 "enter-signed-out",
-                "dashboard-sign-in",
-                "identity",
-                "add-pollen-amount",
             ].includes(state.node),
             onChange: (signedIn: boolean) =>
                 updateScreen((old) => ({ ...old, signedIn })),
@@ -568,18 +502,6 @@ export function Journey({
             disabled: githubScreen,
             onChange: (githubApproved: boolean) =>
                 setSettings((old) => ({ ...old, githubApproved })),
-        },
-        {
-            group: "Sign-in",
-            label: "Admin access",
-            checked: settings.adminAccess,
-            disabled:
-                state.world !== "admin" ||
-                ["dashboard-connected", "dashboard-denied"].includes(
-                    state.node,
-                ),
-            onChange: (adminAccess: boolean) =>
-                setSettings((old) => ({ ...old, adminAccess })),
         },
         {
             group: "App & payment",
@@ -619,11 +541,7 @@ export function Journey({
             label: "Payment confirmed",
             checked: settings.paymentConfirmed,
             disabled:
-                ![
-                    "add-pollen-checkout",
-                    "add-pollen-pending",
-                    "account-checkout",
-                ].includes(state.node) ||
+                !["account-checkout"].includes(state.node) ||
                 ["completed", "canceled"].includes(state.payment) ||
                 settings.errors,
             onChange: (paymentConfirmed: boolean) =>
@@ -634,7 +552,6 @@ export function Journey({
         "keys",
         "key-delete",
         "enter-connected",
-        "dashboard-connected",
         "device-result",
         "device-done",
     ].includes(state.node);
@@ -686,17 +603,6 @@ export function Journey({
         };
         doc.addEventListener("pointerdown.outside", keepScreenOpen, true);
         doc.addEventListener("focus.outside", keepScreenOpen, true);
-        doc.addEventListener("connect-lab-close", () => {
-            const current = stateRef.current;
-            const destination =
-                current.node === "add-pollen-pending"
-                    ? "app-connected"
-                    : "add-pollen-unchanged";
-            const edge = journeyOptions(current, settingsRef.current).find(
-                (edge) => edge.to === destination,
-            );
-            if (edge) stepRef.current(edge);
-        });
         doc.addEventListener(
             "click",
             (event) => {
@@ -720,6 +626,12 @@ export function Journey({
                     .replace(/\s+/g, " ");
                 const edges = journeyOptions(current, settingsRef.current);
                 const action = target.getAttribute("data-pollinations-action");
+                if (action === "dashboard") {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    onOpenDashboard();
+                    return;
+                }
                 const destination = ["app", "device"].includes(current.world)
                     ? (edges.find((edge) => action && edge.action === action)
                           ?.to ??
@@ -749,62 +661,16 @@ export function Journey({
                     edge = edges.find((item) => item.label === outcome);
                 }
                 if (
-                    current.node === "add-pollen-checkout" &&
-                    label === "Cancel"
+                    edge &&
+                    label !== "Cancel" &&
+                    ["consent", "api-key", "app-key", "key-edit"].includes(
+                        current.node,
+                    ) &&
+                    !["app", "device"].includes(current.world) &&
+                    settingsRef.current.errors &&
+                    label !== "Close"
                 )
-                    edge = edges.find((item) =>
-                        item.label.includes("canceled"),
-                    );
-                if (edge && label !== "Cancel") {
-                    const currentSettings = settingsRef.current;
-                    if (
-                        current.node === "add-pollen-checkout" &&
-                        label === "Pay"
-                    )
-                        edge = edges.find(
-                            (item) =>
-                                item.to ===
-                                (currentSettings.paymentConfirmed &&
-                                !currentSettings.errors
-                                    ? "add-pollen-credited"
-                                    : "add-pollen-pending"),
-                        );
-                    if (
-                        current.node === "add-pollen-pending" &&
-                        label === "Check top-up"
-                    )
-                        edge = edges.find(
-                            (item) =>
-                                item.to ===
-                                (currentSettings.paymentConfirmed &&
-                                !currentSettings.errors
-                                    ? "add-pollen-credited"
-                                    : "add-pollen-pending"),
-                        );
-                    if (
-                        ["consent", "api-key", "app-key", "key-edit"].includes(
-                            current.node,
-                        ) &&
-                        !["app", "device"].includes(current.world) &&
-                        currentSettings.errors &&
-                        label !== "Close"
-                    )
-                        return;
-                    if (
-                        ["add-pollen-amount", "add-pollen-checkout"].includes(
-                            current.node,
-                        ) &&
-                        currentSettings.errors
-                    )
-                        edge = edges.find((item) => item.to === current.node);
-                    if (
-                        current.node === "add-pollen-amount" &&
-                        !current.signedIn
-                    )
-                        edge = edges.find(
-                            (item) => item.to === "github-session",
-                        );
-                }
+                    return;
                 if (!edge && target.tagName === "A") {
                     const href = target.getAttribute("href") ?? "";
                     if (
@@ -815,13 +681,6 @@ export function Journey({
                     )
                         edge = edges.find(
                             (item) => item.to === "enter-connected",
-                        );
-                    if (
-                        href.includes("/pollen#buy-pollen") &&
-                        current.node === "app-connected"
-                    )
-                        edge = edges.find(
-                            (item) => item.to === "add-pollen-amount",
                         );
                     if (href.includes("/keys"))
                         edge = edges.find((item) => item.to === "keys");
@@ -889,7 +748,7 @@ export function Journey({
             data-theme="accent"
             data-preview-size={size}
         >
-            <div className="journey-shell">
+            <ScrollArea className="journey-shell">
                 <main className="journey-layout">
                     <section
                         className="journey-preview"
@@ -901,7 +760,7 @@ export function Journey({
                                 <ScreenOwnership entry={entry} />
                             </div>
                         )}
-                        <div className="journey-stage" ref={stage}>
+                        <JourneyPreview desktop={desktop} framed={!!entry}>
                             {!entry && node?.kind === "outcome" && (
                                 <Surface
                                     variant="panel"
@@ -917,98 +776,70 @@ export function Journey({
                                 </Surface>
                             )}
                             {entry && (
-                                <div
-                                    className={`journey-device journey-device-${size}`}
-                                    style={{
-                                        width: width * scale,
-                                        height: height * scale,
-                                    }}
-                                >
-                                    <div
-                                        className="journey-screen"
-                                        style={{
-                                            width,
-                                            height,
-                                            transform: `scale(${scale})`,
-                                        }}
-                                    >
-                                        <ScreenWindow entry={entry}>
-                                            {src ? (
-                                                <iframe
-                                                    ref={frame}
-                                                    src={src}
-                                                    title={title}
-                                                    key={state.node}
-                                                    onLoad={attachScreen}
-                                                    sandbox="allow-scripts allow-same-origin allow-forms"
-                                                />
-                                            ) : entry?.illustration ? (
-                                                <Illustration
-                                                    name={entry.illustration}
-                                                    onAction={(label) => {
-                                                        if (
-                                                            state.world ===
-                                                            "device"
-                                                        ) {
-                                                            const edge =
-                                                                journeyOptions(
-                                                                    state,
-                                                                ).find(
-                                                                    (edge) =>
-                                                                        edge.label ===
-                                                                        label,
-                                                                );
-                                                            if (edge)
-                                                                step(edge);
-                                                            return;
-                                                        }
-                                                        const target =
-                                                            productActions[
-                                                                state.node
-                                                            ]?.[label] ??
-                                                            (label ===
-                                                            "Create an account"
-                                                                ? "github-signup"
-                                                                : label ===
-                                                                    "Cancel"
-                                                                  ? state.world ===
-                                                                    "app"
-                                                                      ? "login-failed"
-                                                                      : state.world ===
-                                                                          "topup"
-                                                                        ? "add-pollen-failed"
-                                                                        : "error"
-                                                                  : {
-                                                                        "github-login":
-                                                                            "github-approval",
-                                                                        "github-signup":
-                                                                            "github-authorize",
-                                                                        "github-authorize":
-                                                                            "loading",
-                                                                    }[
-                                                                        state
-                                                                            .node
-                                                                    ]);
-                                                        const edge =
-                                                            journeyOptions(
-                                                                state,
-                                                            ).find(
-                                                                (edge) =>
-                                                                    edge.to ===
-                                                                    target,
-                                                            );
-                                                        if (edge) step(edge);
-                                                    }}
-                                                />
-                                            ) : null}
-                                        </ScreenWindow>
-                                    </div>
-                                </div>
+                                <ScreenWindow entry={entry}>
+                                    {src ? (
+                                        <iframe
+                                            ref={frame}
+                                            src={src}
+                                            title={title}
+                                            key={state.node}
+                                            onLoad={attachScreen}
+                                            sandbox="allow-scripts allow-same-origin allow-forms"
+                                        />
+                                    ) : entry?.illustration ? (
+                                        <Illustration
+                                            name={entry.illustration}
+                                            onAction={(label) => {
+                                                if (state.world === "device") {
+                                                    const edge = journeyOptions(
+                                                        state,
+                                                    ).find(
+                                                        (edge) =>
+                                                            edge.label ===
+                                                            label,
+                                                    );
+                                                    if (edge) step(edge);
+                                                    return;
+                                                }
+                                                const target =
+                                                    productActions[
+                                                        state.node
+                                                    ]?.[label] ??
+                                                    (label ===
+                                                    "Create an account"
+                                                        ? "github-signup"
+                                                        : label === "Cancel"
+                                                          ? state.world ===
+                                                            "app"
+                                                              ? "login-failed"
+                                                              : "error"
+                                                          : {
+                                                                "github-login":
+                                                                    "github-approval",
+                                                                "github-signup":
+                                                                    "github-authorize",
+                                                                "github-authorize":
+                                                                    "loading",
+                                                            }[state.node]);
+                                                const edge = journeyOptions(
+                                                    state,
+                                                ).find(
+                                                    (edge) =>
+                                                        edge.to === target,
+                                                );
+                                                if (edge) step(edge);
+                                            }}
+                                        />
+                                    ) : null}
+                                </ScreenWindow>
                             )}
-                        </div>
+                        </JourneyPreview>
                     </section>
-                    <aside className="journey-controls">
-                        <div className="journey-switches">
+                    <ScrollArea className="journey-controls">
+                        <aside
+                            className="journey-switches"
+                            aria-label="Journey controls"
+                        >
                             {state.world === "device" &&
                                 [
                                     "device-start",
@@ -1723,26 +1554,33 @@ export function Journey({
                                         )}
                                 </div>
                             ))}
-                        </div>
-                    </aside>
+                        </aside>
+                    </ScrollArea>
                 </main>
-            </div>
+            </ScrollArea>
             <div className="journey-back-tools">
-                <Button
-                    data-theme="neutral"
-                    disabled={!past.length}
-                    onClick={() => {
-                        const previous = past.at(-1);
-                        if (previous) {
-                            setState(
-                                restoreJourney(previous, stateRef.current),
-                            );
-                            setPast(past.slice(0, -1));
-                        }
-                    }}
-                >
-                    ← Previous step
-                </Button>
+                <Tooltip content="Previous step" triggerAs="span">
+                    <Button
+                        data-theme="neutral"
+                        aria-label="Previous step"
+                        className="polli:gap-2"
+                        disabled={!past.length}
+                        onClick={() => {
+                            const previous = past.at(-1);
+                            if (previous) {
+                                setState(
+                                    restoreJourney(previous, stateRef.current),
+                                );
+                                setPast(past.slice(0, -1));
+                            }
+                        }}
+                    >
+                        <ArrowRightIcon className="polli:h-4 polli:w-4 polli:rotate-180" />
+                        <span className="journey-back-label">
+                            Previous step
+                        </span>
+                    </Button>
+                </Tooltip>
             </div>
         </div>
     );

@@ -1,0 +1,33 @@
+{
+  "pr_number": 14754,
+  "title": "Add ZapGaming to the list",
+  "author": "gggff123",
+  "url": "https://github.com/pollinations/pollinations/pull/14754",
+  "merged_at": "2026-09-12T11:54:16Z",
+  "labels": [],
+  "pr_body_excerpt": "Closes #14752",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One more bee in the hive",
+    "blurb": "ZapGaming has been added to the GitHub identity list. The garden gate recognizes another familiar face.",
+    "summary": "Added ZapGaming to the shared GitHub ID allowlist used by the project’s authentication tooling.",
+    "impact": "Project authentication can now recognize ZapGaming’s GitHub identity wherever this shared allowlist is used.",
+    "keywords": [
+      "github",
+      "authentication",
+      "allowlist",
+      "community",
+      "contributors"
+    ],
+    "visual_concept": "A cozy garden-gate welcome scene representing a newly recognized community contributor: Polli checks a tiny GitHub-style identity card against a glowing allowlist ledger while code-vines and flowers grow around the gate.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gatekeeper cap as she warmly stamps a little GitHub identity card beside a glowing lime green (#ecf874) garden gate and a retro terminal allowlist ledger; code-plants, flowers, and soft vines bloom around her. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"WELCOME, ZAPGAMING\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14754.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gatekeeper cap as she warmly stamps a little GitHub identity card beside a glowing lime green (#ecf874) garden gate and a retro terminal allowlist ledger; code-plants, flowers, and soft vines bloom around her. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"WELCOME, ZAPGAMING\"."
+  },
+  "generated_at": "2026-09-12T11:55:19.442899+00:00"
+}

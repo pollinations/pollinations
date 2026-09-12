@@ -1,0 +1,35 @@
+{
+  "pr_number": 14740,
+  "title": "feat: standalone top-up and key editor pages linked from 402 notices",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14740",
+  "merged_at": "2026-09-12T15:27:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `enter.pollinations.ai/top-up` (the pollen page's Wallet, compact, plus the Top-up section with pack slider, auto top-up and trust notes) and `/edit-key?id=<key>` (the existing key editor for one key). Both render on the auth-flow background with inline GitHub sign-in and the signed-in account shown in the header.\n- Gen's in-chat 402 notice now also covers `KEY_BUDGET_EXHAUSTED` (links to `/edit-key`, says a wallet top-up won't lift the limit) and drops the quest link for paid-only models, where quest Pollen can't pay. Links follow the gen environment, so staging gen points at staging enter.\n- Return to the app: links carry `redirect=` from the key's stored `redirectOrigin` or the request Referer, and the page stores its referrer in its own URL on first load so it survives the Stripe round trip. A same-origin referrer wins over the stored origin because it names the exact chat. It is only ever the href of a \"Back to <host>\" link the user clicks, never an automatic redirect.\n- Stripe returns are fixed pages, not caller paths: `return=top-up` is a token mapping to a hardcoded path, so the URL handed to Stripe is always this origin by construction and there is no URL to validate. Applies to both checkout and the billing portal.\n- Open WebUI worker sets `Referrer-Policy: no-referrer-when-downgrade` so the referrer carries the chat path, not just the origin. Websocket responses pass through untouched. Note this also exposes chat URLs to other sites linked from a chat.\n- Extracts `PollenPackPurchase` from `BuyPollenPanel`, adds `compact` to `PollenBalance` and `AccountIdentity` to the UI package; the keys page shares the new `updateApiKey` helper.\n\nTests: gen `text-balance-notice.test.ts` (27 pass, 4 new), enter `stripe.test.ts` + `top-up-search.test.ts` (81 pass, several new). Exercised on staging enter, staging gen and Open WebUI staging.\n\nCo-authored with elliot.fouchy, who added the account identity, the wallet retry, the billing-portal return and the search-pa",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The 402 gets a doorbell",
+    "blurb": "When a chat runs out of Pollen, the notice now points somewhere useful. Top up the wallet or tune the key budget, then take the exact route back to the conversation you were having.",
+    "summary": "Added standalone `/top-up` and `/edit-key?id=<key>` pages to enter, linked from gen's 402 notices for both low Pollen and `KEY_BUDGET_EXHAUSTED`, with signed-in account context and an optional user-clicked return link back to the originating chat.",
+    "impact": "Users hitting a paid-model balance notice can now open the compact wallet top-up flow or edit the specific exhausted key, complete Stripe checkout safely, and click back to the exact Open WebUI chat path they came from.",
+    "keywords": [
+      "top-up",
+      "wallet",
+      "api keys",
+      "402",
+      "Stripe",
+      "Open WebUI",
+      "Pollen"
+    ],
+    "visual_concept": "Depict a cozy fork in a garden path from a retro chat terminal's 402 notice: one sign leads to a small wallet-and-Pollen top-up kiosk, while another leads to a brass key workshop with a budget dial. Polli, wearing a tiny courier cap, holds a map labeled \"Back to chat\" and warmly guides the monitor robot between the two useful routes; code-plants and flowers make the flow feel like a garden rather than a payment funnel.",
+    "image_prompt": "A cozy pixel-art garden workspace where a retro chat terminal displays a small \"402\" notice and opens onto two friendly signposted paths: a lime-green (#ecf874) wallet top-up kiosk with Pollen coins and a tiny key editor bench with a brass key and budget dial. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny courier cap and holds a \"Back to chat\" map beside an eager CRT-monitor robot, surrounded by flowers and code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14740.jpg",
+    "prompt": "A cozy pixel-art garden workspace where a retro chat terminal displays a small \"402\" notice and opens onto two friendly signposted paths: a lime-green (#ecf874) wallet top-up kiosk with Pollen coins and a tiny key editor bench with a brass key and budget dial. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny courier cap and holds a \"Back to chat\" map beside an eager CRT-monitor robot, surrounded by flowers and code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-12T15:28:55.156071+00:00"
+}

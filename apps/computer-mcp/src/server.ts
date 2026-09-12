@@ -17,6 +17,7 @@ Import: \`curl -o <path> <url>\` downloads any public URL; \`git clone <https-ur
 
 export const HOME = "/workspace";
 
+const SCRATCH_DIR = "/tmp";
 const MAX_OUTPUT_BYTES = 64 * 1024;
 const COMMAND_TIMEOUT_MS = 60_000;
 
@@ -48,16 +49,32 @@ export function createComputerMcpServer(workspace: WorkspaceClient): McpServer {
             },
         },
         async ({ command, stdin, cwd = HOME }, context) => {
+            // stdin goes through a scratch file, not the runtime's stdin
+            // option: @cloudflare/computer 0.3.0 hands stdin to the shell as
+            // a latin1 byte string, and a `>` redirect then writes each UTF-8
+            // byte as its own character. A file read by `<` stays UTF-8.
+            const stdinPath =
+                stdin === undefined
+                    ? undefined
+                    : `${SCRATCH_DIR}/stdin-${crypto.randomUUID()}`;
             try {
                 await workspace.fs
                     .mkdir(cwd, { recursive: true })
                     .catch(() => undefined);
-                const handle = await workspace.runtime.exec(command, {
-                    cwd,
-                    stdin,
-                    encoding: "utf8",
-                    timeoutMs: COMMAND_TIMEOUT_MS,
-                });
+                if (stdinPath !== undefined) {
+                    await workspace.fs.mkdir(SCRATCH_DIR, { recursive: true });
+                    await workspace.fs.writeFile(stdinPath, stdin ?? "");
+                }
+                const handle = await workspace.runtime.exec(
+                    stdinPath === undefined
+                        ? command
+                        : `{\n${command}\n} < ${stdinPath}`,
+                    {
+                        cwd,
+                        encoding: "utf8",
+                        timeoutMs: COMMAND_TIMEOUT_MS,
+                    },
+                );
                 const onAbort = () => void handle.kill().catch(() => undefined);
                 context.signal.addEventListener("abort", onAbort, {
                     once: true,
@@ -79,6 +96,9 @@ export function createComputerMcpServer(workspace: WorkspaceClient): McpServer {
                     };
                 } finally {
                     context.signal.removeEventListener("abort", onAbort);
+                    if (stdinPath !== undefined) {
+                        await workspace.fs.rm(stdinPath).catch(() => undefined);
+                    }
                 }
             } catch (error) {
                 return {

@@ -94,7 +94,7 @@ describe("computer MCP worker", () => {
         const write = await bash(
             client,
             "cat > /workspace/memory/facts.md",
-            "favourite colour: 'blue' $HOME `date`\n",
+            "favourite colour: 'blue' $HOME `date` — “naïve” ✓\n",
         );
         expect(write.isError).toBe(false);
         const edit = await bash(
@@ -107,8 +107,10 @@ describe("computer MCP worker", () => {
         const again = await connect("user-files");
         const read = await bash(again, "grep -r green /workspace/memory");
         expect(read.text).toContain(
-            "facts.md:favourite colour: 'green' $HOME `date`",
+            "facts.md:favourite colour: 'green' $HOME `date` — “naïve” ✓",
         );
+        const scratch = await bash(again, "ls /tmp | wc -l");
+        expect(scratch.text.trim()).toBe("0");
         await again.close();
     });
 
@@ -167,7 +169,7 @@ describe("computer MCP worker", () => {
 
     it("publishes a file to media storage with assets publish", async () => {
         const client = await connect("user-publish");
-        const html = "<h1>hello</h1>\n";
+        const html = "<h1>héllo — “quotes”</h1>\n";
         await bash(client, "cat > /workspace/report.html", html);
         const publish = await bash(
             client,

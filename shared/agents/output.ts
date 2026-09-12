@@ -174,14 +174,16 @@ export function collectOutput(
                 type: "function_call_output",
                 id: `fco_${crypto.randomUUID()}`,
                 call_id: call.call_id,
-                output: JSON.stringify(result),
+                // Content parts rather than a bare string: Open WebUI iterates
+                // the output of every function_call_output item it receives.
+                output: [{ type: "input_text", text: JSON.stringify(result) }],
                 status: "completed",
             });
             items.push(item);
             const output_index = items.length - 1;
             send?.("response.output_item.added", {
                 output_index,
-                item: { ...item, output: "", status: "in_progress" },
+                item: { ...item, output: [], status: "in_progress" },
             });
             send?.("response.output_item.done", { output_index, item });
         },

@@ -1,17 +1,23 @@
+import { SELF } from "cloudflare:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import { SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
-import { MCP_USER_ID_HEADER } from "../../../shared/registry/mcp.ts";
+import {
+    MCP_USAGE_HEADERS,
+    MCP_USER_ID_HEADER,
+} from "../../../shared/registry/mcp.ts";
 
 const MCP_URL = "https://mcp.internal/";
 
+let lastResponse: Response | undefined;
+
 async function connect(userId: string): Promise<Client> {
     const transport = new StreamableHTTPClientTransport(new URL(MCP_URL), {
-        fetch: (input, init) => {
+        fetch: async (input, init) => {
             const headers = new Headers(init?.headers);
             headers.set(MCP_USER_ID_HEADER, userId);
-            return SELF.fetch(input, { ...init, headers });
+            lastResponse = await SELF.fetch(input, { ...init, headers });
+            return lastResponse;
         },
     });
     const client = new Client({ name: "test", version: "0.0.0" });
@@ -55,6 +61,21 @@ describe("computer MCP worker", () => {
         expect(tools.map((tool) => tool.name).sort()).toEqual(
             ["edit", "exec", "find", "grep", "ls", "read", "write"].sort(),
         );
+        expect(lastResponse?.headers.has(MCP_USAGE_HEADERS.cost)).toBe(false);
+        await client.close();
+    });
+
+    it("reports a flat usage receipt per tool call", async () => {
+        const client = await connect("user-billing");
+        await call(client, "ls", { path: "/workspace" });
+        const headers = lastResponse?.headers;
+        expect(headers?.get(MCP_USAGE_HEADERS.cost)).toBe("0.0002");
+        expect(headers?.get(MCP_USAGE_HEADERS.tool)).toBe("ls");
+        expect(headers?.get(MCP_USAGE_HEADERS.status)).toBe("200");
+        expect(headers?.get(MCP_USAGE_HEADERS.adjustmentId)).toBe(
+            "computer.tool_call.v1",
+        );
+        expect(headers?.get(MCP_USAGE_HEADERS.adjustmentUnits)).toBe("1");
         await client.close();
     });
 
@@ -120,7 +141,8 @@ describe("computer MCP worker", () => {
             content: "one\ntwo\nthree\n",
         });
         const exec = await call(client, "exec", {
-            command: "wc -l < /workspace/notes.txt && echo done >> /workspace/notes.txt",
+            command:
+                "wc -l < /workspace/notes.txt && echo done >> /workspace/notes.txt",
         });
         expect(exec.isError).toBe(false);
         const output = JSON.parse(exec.text) as {
@@ -130,7 +152,9 @@ describe("computer MCP worker", () => {
         expect(output.exitCode).toBe(0);
         expect(output.stdout.trim()).toBe("3");
 
-        const read = await call(client, "read", { path: "/workspace/notes.txt" });
+        const read = await call(client, "read", {
+            path: "/workspace/notes.txt",
+        });
         expect(read.text).toContain("done");
         await client.close();
     });

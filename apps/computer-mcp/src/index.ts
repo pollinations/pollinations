@@ -1,3 +1,4 @@
+import { DurableObject } from "cloudflare:workers";
 import {
     type DurableObjectStorageLike,
     getWorkspace,
@@ -9,9 +10,14 @@ import { WorkerShellBackend } from "@cloudflare/computer/backends/worker-shell";
 import jqModules from "@cloudflare/computer/shell/jq";
 import sqliteModules from "@cloudflare/computer/shell/sqlite";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
-import { DurableObject } from "cloudflare:workers";
-import { MCP_USER_ID_HEADER } from "../../../shared/registry/mcp.ts";
+import { withMcpUsageHeaders } from "../../../shared/mcp-usage.ts";
+import {
+    COMPUTER_TOOL_CALL_PRICE,
+    MCP_USER_ID_HEADER,
+} from "../../../shared/registry/mcp.ts";
 import { createComputerMcpServer } from "./server.ts";
+
+const TOOL_CALL_RATE = "computer.tool_call.v1";
 
 type Env = {
     COMPUTER: DurableObjectNamespace<Computer>;
@@ -67,13 +73,46 @@ export class Computer extends withWorkspace(
         if (request.method !== "POST") {
             return new Response("Method Not Allowed", { status: 405 });
         }
+        const payload = await readJsonRpc(request);
         const workspace = await getWorkspace(this);
         await seedReadme(workspace);
         const server = createComputerMcpServer(workspace);
-        const transport = new WebStandardStreamableHTTPServerTransport();
+        // JSON responses (not SSE) so the usage receipt can be attached once
+        // the tool has finished.
+        const transport = new WebStandardStreamableHTTPServerTransport({
+            enableJsonResponse: true,
+        });
         await server.connect(transport);
-        return transport.handleRequest(request);
+        const response = await transport.handleRequest(request, {
+            parsedBody: payload,
+        });
+        return withMcpUsageHeaders(response, toolCallUsage(payload, response));
     }
+}
+
+type JsonRpcPayload = {
+    method?: string;
+    params?: { name?: string };
+};
+
+async function readJsonRpc(request: Request): Promise<JsonRpcPayload> {
+    try {
+        return (await request.clone().json()) as JsonRpcPayload;
+    } catch {
+        return {};
+    }
+}
+
+// Flat rate per successful tool call; discovery requests are free.
+function toolCallUsage(payload: JsonRpcPayload, response: Response) {
+    if (payload.method !== "tools/call" || !response.ok) return undefined;
+    return {
+        cost: COMPUTER_TOOL_CALL_PRICE,
+        tool: payload.params?.name ?? "unknown",
+        status: response.status,
+        adjustmentId: TOOL_CALL_RATE,
+        adjustmentUnits: 1,
+    };
 }
 
 async function seedReadme(workspace: WorkspaceClient): Promise<void> {

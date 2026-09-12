@@ -12,7 +12,9 @@ access. No container, no Linux, no outbound network.
 
 ## Tools
 
-`read`, `write`, `edit`, `ls`, `find`, `grep`, `exec`. Memory is a convention,
+`read`, `write`, `edit`, `ls`, `find`, `grep`, `exec`. Every successful tool
+call is billed at one flat rate (`computer.tool_call.v1`, reported to gen as a
+usage receipt); discovery requests and storage are free. Memory is a convention,
 not a tool: a `/workspace/README.md` seeded on first use tells the agent to keep
 current facts in `memory/facts.md` and a dated append-only journal in
 `memory/log/`.

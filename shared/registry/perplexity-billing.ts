@@ -2,9 +2,7 @@ import type { BillingRules } from "./registry";
 
 type PerplexityCostOutput = {
     usage?: {
-        cost?: {
-            request_cost?: unknown;
-        };
+        cost?: number | { request_cost?: unknown };
         search_context_size?: unknown;
     };
     streamEvents?: unknown[];
@@ -17,6 +15,7 @@ const PROVIDER_COST_CLAMP_FACTOR = 10;
 // object present but request_cost malformed" (should alert louder).
 type ProviderRequestCostRead =
     | { status: "absent" }
+    | { status: "total" }
     | { status: "malformed"; raw: unknown }
     | { status: "ok"; value: number };
 
@@ -24,6 +23,11 @@ type ProviderRequestCostRead =
 function readProviderRequestCost(event: unknown): ProviderRequestCostRead {
     const cost = (event as PerplexityCostOutput | undefined)?.usage?.cost;
     if (cost == null) return { status: "absent" };
+    // OpenRouter reports the total charge here, including tokens. Its native
+    // Sonar search fees use the same context-tier rates as direct Perplexity.
+    if (typeof cost === "number" && Number.isFinite(cost) && cost >= 0) {
+        return { status: "total" };
+    }
     if (typeof cost !== "object") return { status: "malformed", raw: cost };
     if (!("request_cost" in cost)) return { status: "absent" };
     const value = cost.request_cost;
@@ -57,6 +61,7 @@ function getReportedSearchContextSize(output: unknown): string | undefined {
 }
 
 // Resolve the per-request cost via clamp-and-alert (never throws):
+//  - OpenRouter total cost      → static search fee (tokens billed separately)
 //  - absent provider cost       → static fee + WARN (Perplexity-regression signal)
 //  - malformed provider cost    → static fee + ERROR
 //  - provider cost > 10× static → clamp to static fee + ERROR
@@ -82,6 +87,7 @@ function resolvePerplexityRequestCost(args: {
     }
 
     const read = getPerplexityReportedRequestCost(output);
+    if (read.status === "total") return staticFee;
     if (read.status === "absent") {
         // Expected for non-stream Perplexity until the gateway cost-preserving
         // fix deploys. WARN so a persistent absence is visible without paging.

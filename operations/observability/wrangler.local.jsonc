@@ -1,0 +1,18 @@
+{
+  "name": "observability-local",
+  "main": "src/local.ts",
+  "compatibility_date": "2026-07-01",
+  "assets": {
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": [
+      "/auth/*",
+      "/grafana/*",
+      "/api/*"
+    ]
+  },
+  "vars": {
+    "POLLINATIONS_OAUTH_CLIENT_ID": "pk_vVa38CFt1R1gGScW",
+    "POLLINATIONS_AUTH_BASE_URL": "http://localhost:3000"
+  }
+}

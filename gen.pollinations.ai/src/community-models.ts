@@ -28,10 +28,7 @@ export type CommunityModelRegistryEntry = {
     agentConfig?: AgentCatalogConfig;
 };
 
-export type CommunityModelEnv = Pick<
-    CloudflareBindings,
-    "DB" | "AGENT_RUNTIME_BASE_URL"
->;
+export type CommunityModelEnv = Pick<CloudflareBindings, "DB">;
 
 export async function getCommunityModelRegistryEntries(
     env: CommunityModelEnv,
@@ -72,10 +69,7 @@ export async function getCommunityModelRegistryEntries(
 
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
         if (!row.ownerGithubUsername) return [];
-        const baseUrl =
-            row.type === "prompt_agent"
-                ? env.AGENT_RUNTIME_BASE_URL
-                : row.baseUrl;
+        const baseUrl = row.baseUrl;
         if (!baseUrl || !row.upstreamModel) return [];
         const modelId = communityModelId(row.ownerGithubUsername, row.name);
         let proxyState: ReturnType<typeof resolveEffectiveProxyListing> | null =
@@ -118,7 +112,7 @@ export async function getCommunityModelRegistryEntries(
             hiddenReason: row.hiddenReason,
         };
         // An agent charges nothing of its own and fans out to nothing: the
-        // caller pays for whatever it consumes downstream. Both agent kinds
+        // caller pays for whatever it consumes downstream. All agent kinds
         // share empty purchase fields; endpoint agents may override only the
         // gateway's per-user rate limit from their payload.
         const agentDefaults = {
@@ -151,7 +145,23 @@ export async function getCommunityModelRegistryEntries(
                     ...identity,
                     ...agentDefaults,
                     type: "prompt_agent",
-                    responsesUrl: communityResponsesUrl(baseUrl),
+                    baseUrl: communityResponsesUrl(baseUrl),
+                    api: "responses",
+                };
+                break;
+            }
+            case "code_agent": {
+                const payload = parseListingPayload("code_agent", row.payload);
+                if (!payload) return [];
+                // The catalog's publisher link points at the source
+                // repository: for a code agent the code is the provider.
+                communityEndpoint = {
+                    ...identity,
+                    ...agentDefaults,
+                    providerName: row.providerName ?? row.ownerGithubUsername,
+                    providerUrl: payload.repository,
+                    type: "code_agent",
+                    api: "responses",
                 };
                 break;
             }
@@ -166,7 +176,7 @@ export async function getCommunityModelRegistryEntries(
                     ...agentDefaults,
                     perUserRpm: payload.perUserRpm,
                     type: "endpoint_agent",
-                    responsesUrl: payload.responsesUrl,
+                    api: payload.api,
                 };
                 break;
             }
@@ -184,7 +194,7 @@ export async function getCommunityModelRegistryEntries(
                     perUserRpm: payload.perUserRpm,
                     fallbacks: payload.fallbacks,
                     advertised: payload.advertised,
-                    responsesUrl: payload.responsesUrl,
+                    api: payload.api,
                     ...payload.prices,
                 };
             }

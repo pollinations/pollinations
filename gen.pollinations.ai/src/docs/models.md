@@ -35,8 +35,30 @@ structured fields.
 Use `supported_endpoints` to discover which public API routes accept each
 model. `/v1/responses` identifies built-in models with a configured native
 Responses route, community text models and endpoint agents whose owner supplied
-an exact Responses URL, and managed prompt agents. Models with that capability
-also remain callable through `/v1/chat/completions` via the shared adapter.
+the Responses API and one exact URL, and managed prompt agents. These community
+models and agents also accept `/v1/chat/completions` through the shared adapter.
+Built-in models may use separate upstream routes for Chat and Responses.
+Supported media models also advertise both endpoints and return generated-file
+links as assistant text. Reference-required models return their normal missing-input
+error; use their native endpoint until attachments are supported here.
+
+### Chat parameters
+
+Official Chat models include `supported_parameters`: verified generation
+controls honored through `/v1/chat/completions` on the model's primary route.
+
+This field describes Pollinations' Chat behavior, not the native
+`/v1/responses` API. Unverified controls are omitted; inclusion does not mean
+every value or combination is supported. Provider fallback routes can have
+different controls. Community models omit this field.
+For example,
+`openai/gpt-5.4` omits sampling controls because its Chat transform removes
+them, while `openai/gpt-oss-20b` forwards `temperature` and `top_p`.
+On `anthropic/claude-sonnet-4.6`, those two controls are mutually exclusive
+(`temperature` wins), and both are disabled when `reasoning_effort` is enabled.
+Newer Claude and Gemini models may omit sampling controls entirely. On
+Sonnet 4.6, `response_format` supports `json_schema`, not `json_object`.
+Reasoning effort levels and forced-tool restrictions remain model-specific.
 
 ## Community Models
 

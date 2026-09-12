@@ -13,7 +13,7 @@ Canonical vendor: `e2b`
 - Collection method: dashboard
 - Billing currency: USD
 - Economics category: Infrastructure
-- Plan: Professional at $150/month, excluding usage
+- Check the subscription fee separately from usage.
 - The visible balance is usage credit, not prepaid cash.
 - Usage analytics use UTC.
 
@@ -21,8 +21,7 @@ Collection steps:
 
 1. Open Billing in the `myceli.ai` browser workspace.
 2. Record the remaining usage-credit balance and exact check time.
-3. Archive each new invoice separately; the project had no invoices at
-   verification time.
+3. Archive each new invoice separately; record explicit invoice-list coverage.
 4. Open Usage, select the complete calendar month in UTC, and record usage cost,
    started and resumed sandboxes, vCPU hours, and RAM hours.
 5. Preserve sandbox or template detail when the dashboard or API exposes it.
@@ -43,7 +42,6 @@ API and CLI:
 
 Known traps:
 
-- Credits apply to usage invoices; they do not cover the $150 monthly plan.
+- Credits apply to usage invoices, not the subscription fee; verify current terms.
 - A balance snapshot is not monthly usage evidence.
 - Do not classify credits as prepaid cash.
-- The project showed $0 usage for July 28–August 27 at verification time.

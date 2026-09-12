@@ -39,7 +39,9 @@ export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),
     category: z.enum(MODEL_CATEGORIES),
-    brand: z.string(),
+    publisher: z
+        .string()
+        .describe("Human-readable model publisher, not the inference provider"),
     brand_url: z.string().url().optional(),
     community: z.boolean(),
     agent: z.boolean().optional(),
@@ -99,6 +101,12 @@ export const ModelInfoSchema = z.object({
     max_reference_images: z.number().int().positive().optional(),
     max_reference_videos: z.number().int().positive().optional(),
     capabilities: z.array(ModelCapabilitySchema),
+    supported_parameters: z
+        .array(z.string())
+        .optional()
+        .describe(
+            "Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`.",
+        ),
     tools: z.boolean().optional(),
     reasoning: z.boolean().optional(),
     context_length: z.number().optional(),
@@ -165,7 +173,7 @@ export function modelInfoFromDefinition(
         name,
         aliases: service.aliases,
         category: service.category,
-        brand: service.brand,
+        publisher: service.publisher,
         brand_url: service.brandUrl,
         community: options.community ?? false,
         agent: options.agent || undefined,
@@ -216,6 +224,7 @@ export function modelInfoFromDefinition(
         max_reference_images: service.maxReferenceImages,
         max_reference_videos: service.maxReferenceVideos,
         capabilities: getCapabilities(service),
+        supported_parameters: service.supportedParameters,
         tools: service.tools,
         reasoning: service.reasoning,
         context_length: service.contextLength,

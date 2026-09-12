@@ -1,3 +1,7 @@
+export {
+    AccountMenu,
+    type AccountMenuProps,
+} from "./compositions/AccountMenu.tsx";
 export { Alert, type AlertProps } from "./compositions/Alert.tsx";
 export { AppHeader, type AppHeaderProps } from "./compositions/AppHeader.tsx";
 export { CodeBlock, type CodeBlockProps } from "./compositions/CodeBlock.tsx";
@@ -50,9 +54,12 @@ export { cn } from "./lib/cn-app.ts";
 export {
     currentPeriod,
     getPeriodBucketKeys,
+    isPeriodSelectable,
     type PeriodGranularity,
     type PeriodSelection,
     periodBucketKeyToDate,
+    periodFromDate,
+    periodToWindow,
 } from "./lib/period.ts";
 export { useScrollLock } from "./lib/use-scroll-lock.ts";
 export { Button, type ButtonProps } from "./primitives/Button.tsx";

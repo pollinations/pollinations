@@ -1,10 +1,9 @@
 /**
  * Managed prompt agents, as the model catalog sees them.
  *
- * Agents are community models whose upstream is Enter's own agent runtime, so
- * everything the catalog needs to know about them lives here rather than in
- * the generic registry: where their runtime is, what their stored config
- * means, and how they present the metadata of the base model they wrap.
+ * Agents are community models that Gen executes locally. Their catalog-specific
+ * details live here rather than in the generic registry: what their stored
+ * config means and how they present the metadata of the base model they wrap.
  */
 
 import type { McpServerId } from "@shared/registry/mcp.ts";
@@ -53,8 +52,8 @@ function applyBaseModelMetadata(
         pricing_default_label: base.pricing_default_label,
         pricing_adjustments: base.pricing_adjustments,
         input_modalities: base.input_modalities,
-        // The agent runtime always returns an OpenAI chat text response. Media
-        // produced by tools is represented as a link inside that response.
+        // The agent runtime returns text through the requested OpenAI-compatible
+        // envelope. Media produced by tools is represented as a link in that text.
         output_modalities: ["text"],
         capabilities: [
             ...new Set([...base.capabilities, ...agentCapabilities]),

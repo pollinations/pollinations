@@ -18,6 +18,7 @@ import {
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 import { TEXT_FALLBACKS } from "./text-fallbacks";
+import { CHAT_PARAMETERS } from "./text-parameters";
 
 // Voices available for openai-audio model - exported for schema validation
 export const AUDIO_VOICES = [
@@ -36,14 +37,15 @@ export const AUDIO_VOICES = [
     "dan",
 ] as const;
 
-export const DEFAULT_TEXT_MODEL = "openai" as const;
+export const DEFAULT_TEXT_MODEL = "openai/gpt-5.4-nano" as const;
 export type TextModelName = keyof typeof TEXT_SERVICES;
 
 const TEXT_BASE_SERVICES = {
-    "openai": {
-        aliases: ["gpt-5.4-nano", "openai/gpt-5.4-nano"],
+    "openai/gpt-5.4-nano": {
+        supportedParameters: CHAT_PARAMETERS.azureGpt,
+        aliases: ["gpt-5.4-nano", "openai"],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 0.75,
@@ -62,10 +64,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 400000,
         isSpecialized: false,
     },
-    "openai-fast": {
-        aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07", "openai/gpt-5-nano"],
+    "openai/gpt-5-nano": {
+        supportedParameters: CHAT_PARAMETERS.azureGpt,
+        aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07", "openai-fast"],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 0.75,
@@ -84,10 +87,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 400000,
         isSpecialized: false,
     },
-    "gpt-oss": {
-        aliases: ["gpt-oss-20b", "ovh-reasoning", "openai/gpt-oss-20b"],
+    "openai/gpt-oss-20b": {
+        supportedParameters: CHAT_PARAMETERS.ovhGptOss,
+        aliases: ["gpt-oss-20b", "ovh-reasoning", "gpt-oss"],
         provider: "ovhcloud",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
         priceMultiplier: 1,
@@ -105,15 +109,16 @@ const TEXT_BASE_SERVICES = {
         contextLength: 131072,
         isSpecialized: false,
     },
-    "gpt-5.4": {
+    "openai/gpt-5.4": {
+        supportedParameters: CHAT_PARAMETERS.azureGpt54,
         aliases: [
             "gpt-5.4-reasoning",
             "gpt-5.2",
             "gpt-5.2-reasoning",
-            "openai/gpt-5.4",
+            "gpt-5.4",
         ],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 0.75,
@@ -155,10 +160,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1050000,
         isSpecialized: false,
     },
-    "gpt-5.4-mini": {
-        aliases: ["gpt-5-mini", "openai-mini", "openai/gpt-5.4-mini"],
+    "openai/gpt-5.4-mini": {
+        supportedParameters: CHAT_PARAMETERS.azureGptMini,
+        aliases: ["gpt-5-mini", "openai-mini", "gpt-5.4-mini"],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-05-15").getTime(),
         priceMultiplier: 0.75,
@@ -177,15 +183,16 @@ const TEXT_BASE_SERVICES = {
         contextLength: 400000,
         isSpecialized: false,
     },
-    "openai-large": {
+    "openai/gpt-5.5": {
+        supportedParameters: CHAT_PARAMETERS.azureGpt,
         aliases: [
             "gpt-5.5",
             "gpt-5.5-reasoning",
             "openai-reasoning",
-            "openai/gpt-5.5",
+            "openai-large",
         ],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-05-02").getTime(),
         priceMultiplier: 0.75,
@@ -225,10 +232,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1050000,
         isSpecialized: false,
     },
-    "gpt-5.6-sol": {
-        aliases: ["chatgpt-sol", "chatgpt-5.6-sol", "openai/gpt-5.6-sol"],
+    "openai/gpt-5.6-sol": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: ["chatgpt-sol", "chatgpt-5.6-sol", "gpt-5.6-sol"],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
         // OpenRouter's standard OpenAI endpoint discounts Azure output more
@@ -270,10 +278,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1050000,
         isSpecialized: false,
     },
-    "gpt-5.6-terra": {
-        aliases: ["chatgpt-terra", "chatgpt-5.6-terra", "openai/gpt-5.6-terra"],
+    "openai/gpt-5.6-terra": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: ["chatgpt-terra", "chatgpt-5.6-terra", "gpt-5.6-terra"],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
         priceMultiplier: 0.75,
@@ -312,10 +321,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1050000,
         isSpecialized: false,
     },
-    "gpt-5.6-luna": {
-        aliases: ["chatgpt-luna", "chatgpt-5.6-luna", "openai/gpt-5.6-luna"],
+    "openai/gpt-5.6-luna": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: ["chatgpt-luna", "chatgpt-5.6-luna", "gpt-5.6-luna"],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
         priceMultiplier: 0.75,
@@ -354,15 +364,55 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1050000,
         isSpecialized: false,
     },
-    "mercury": {
-        aliases: [
-            "mercury-2",
-            "inception",
-            "inception-mercury",
-            "inception/mercury-2",
-        ],
+    "openai/gpt-6-astra": {
+        supportedParameters: CHAT_PARAMETERS.azureResponses,
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-09-04").getTime(),
+        priceMultiplier: 0.75,
+        cost: {
+            promptTextTokens: perMillion(10.0),
+            promptCachedTokens: perMillion(1.0),
+            promptCacheWriteTokens: perMillion(12.5),
+            completionTextTokens: perMillion(50.0),
+        },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(20.0),
+                    promptCachedTokens: perMillion(2.0),
+                    promptCacheWriteTokens: perMillion(25.0),
+                    completionTextTokens: perMillion(75.0),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+            "≤272K context",
+        ),
+        title: "GPT-6 Astra",
+        description:
+            "Frontier reasoning for complex agentic, coding, and multimodal work",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1050000,
+        isSpecialized: false,
+    },
+    "inception/mercury-2": {
+        supportedParameters: CHAT_PARAMETERS.mercury,
+        aliases: ["mercury-2", "inception", "inception-mercury", "mercury"],
         provider: "openrouter",
-        brand: "Inception",
+        publisher: "Inception",
         category: "text",
         addedDate: new Date("2026-06-23").getTime(),
         paidOnly: true,
@@ -382,9 +432,10 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "inception/mercury-2.5-preview": {
+        supportedParameters: CHAT_PARAMETERS.mercury25,
         aliases: [],
         provider: "openrouter",
-        brand: "Inception",
+        publisher: "Inception",
         category: "text",
         addedDate: new Date("2026-09-01").getTime(),
         paidOnly: true,
@@ -405,15 +456,16 @@ const TEXT_BASE_SERVICES = {
         contextLength: 260000,
         isSpecialized: false,
     },
-    "command-a-plus": {
+    "cohere/command-a-plus": {
+        supportedParameters: CHAT_PARAMETERS.azureOpenModels,
         aliases: [
             "cohere-command-a-plus",
             "command-a-plus-05-2026",
             "cohere-command-a-plus-05-2026",
-            "cohere/command-a-plus",
+            "command-a-plus",
         ],
         provider: "azure",
-        brand: "Cohere",
+        publisher: "Cohere",
         category: "text",
         addedDate: new Date("2026-07-30").getTime(),
         priceMultiplier: 0.75,
@@ -431,14 +483,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "qwen-coder": {
-        aliases: [
-            "qwen3-coder",
-            "qwen3-coder-30b-a3b-instruct",
-            "qwen/qwen3-coder-30b-a3b-instruct",
-        ],
+    "qwen/qwen3-coder-30b-a3b-instruct": {
+        supportedParameters: CHAT_PARAMETERS.ovhQwenCoder,
+        aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct", "qwen-coder"],
         provider: "ovhcloud",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
@@ -456,15 +505,16 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "mistral-small-3.2": {
+    "mistralai/mistral-small-3.2": {
+        supportedParameters: CHAT_PARAMETERS.openRouterMistralSmall32,
         aliases: [
             "mistral-small-3.1",
             "mistral-small-2503",
             "mistral-small-3.2-24b-instruct-2506",
-            "mistralai/mistral-small-3.2",
+            "mistral-small-3.2",
         ],
         provider: "openrouter",
-        brand: "Mistral",
+        publisher: "Mistral",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         paidOnly: true,
@@ -482,16 +532,17 @@ const TEXT_BASE_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "mistral": {
+    "mistralai/mistral-small-4": {
+        supportedParameters: CHAT_PARAMETERS.mistralSmall4,
         aliases: [
             "mistral-4",
             "mistral-small",
             "mistral-small-4",
             "mistral-small-2603",
-            "mistralai/mistral-small-4",
+            "mistral",
         ],
         provider: "openrouter",
-        brand: "Mistral",
+        publisher: "Mistral",
         category: "text",
         addedDate: new Date("2026-05-15").getTime(),
         paidOnly: true,
@@ -515,16 +566,17 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "openai-audio": {
+    "openai/gpt-audio-mini": {
+        supportedParameters: CHAT_PARAMETERS.azureAudio,
         aliases: [
             "gpt-audio-mini",
             "gpt-audio-mini-2025-12-15",
             "gpt-4o-mini-audio-preview",
             "gpt-4o-mini-audio-preview-2024-12-17",
-            "openai/gpt-audio-mini",
+            "openai-audio",
         ],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 0.75,
@@ -544,15 +596,16 @@ const TEXT_BASE_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "openai-audio-large": {
+    "openai/gpt-audio-1.5": {
+        supportedParameters: CHAT_PARAMETERS.azureAudio,
         aliases: [
             "gpt-audio",
             "gpt-audio-1.5",
             "gpt-audio-2025-12-15",
-            "openai/gpt-audio-1.5",
+            "openai-audio-large",
         ],
         provider: "azure",
-        brand: "OpenAI",
+        publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-04-02").getTime(),
         priceMultiplier: 0.75,
@@ -574,10 +627,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "gemini-3-flash": {
-        aliases: ["gemini-3-flash-preview", "google/gemini-3-flash-preview"],
+    "google/gemini-3-flash-preview": {
+        supportedParameters: CHAT_PARAMETERS.gemini3,
+        aliases: ["gemini-3-flash-preview", "gemini-3-flash"],
         provider: "openrouter",
-        brand: "Google",
+        publisher: "Google",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
@@ -607,14 +661,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini": {
-        aliases: [
-            "gemini-3.6-flash",
-            "gemini-3.5-flash",
-            "google/gemini-3.7-flash",
-        ],
+    "google/gemini-3.7-flash": {
+        supportedParameters: CHAT_PARAMETERS.gemini35,
+        aliases: ["gemini-3.6-flash", "gemini-3.5-flash", "gemini"],
         provider: "openrouter",
-        brand: "Google",
+        publisher: "Google",
         category: "text",
         addedDate: new Date("2026-05-19").getTime(),
         priceMultiplier: 1,
@@ -649,9 +700,10 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3.8-flash": {
+        supportedParameters: CHAT_PARAMETERS.gemini35,
         aliases: [],
         provider: "openrouter",
-        brand: "Google",
+        publisher: "Google",
         category: "text",
         addedDate: new Date("2026-09-02").getTime(),
         priceMultiplier: 1,
@@ -683,17 +735,18 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini-flash-lite-3.5": {
+    "google/gemini-3.5-flash-lite": {
+        supportedParameters: CHAT_PARAMETERS.gemini35,
         aliases: [
             "gemini-flash-lite-3.1",
             "gemini-3.1-flash-lite",
             "gemini-3.1-flash-lite-preview",
             "gemini-flash-lite",
             "gemini-3.5-flash-lite",
-            "google/gemini-3.5-flash-lite",
+            "gemini-flash-lite-3.5",
         ],
         provider: "openrouter",
-        brand: "Google",
+        publisher: "Google",
         category: "text",
         addedDate: new Date("2026-04-03").getTime(),
         priceMultiplier: 1,
@@ -723,10 +776,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini-fast": {
-        aliases: ["gemini-2.5-flash-lite", "google/gemini-2.5-flash-lite"],
+    "google/gemini-2.5-flash-lite": {
+        supportedParameters: CHAT_PARAMETERS.gemini25,
+        aliases: ["gemini-2.5-flash-lite", "gemini-fast"],
         provider: "openrouter",
-        brand: "Google",
+        publisher: "Google",
         category: "text",
         addedDate: new Date("2025-12-18").getTime(),
         priceMultiplier: 1,
@@ -756,17 +810,18 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "deepseek": {
+    "deepseek/deepseek-v4-flash": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
         aliases: [
             "deepseek-v4",
             "deepseek-v4-flash",
             "deepseek-v4-lite",
             "deepseek-lite",
             "deepseek-flash",
-            "deepseek/deepseek-v4-flash",
+            "deepseek",
         ],
         provider: "fireworks",
-        brand: "DeepSeek",
+        publisher: "DeepSeek",
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
         priceMultiplier: 1,
@@ -786,9 +841,10 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4-flash-vision-exp": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
         aliases: [],
         provider: "fireworks",
-        brand: "DeepSeek",
+        publisher: "DeepSeek",
         category: "text",
         addedDate: new Date("2026-09-02").getTime(),
         paidOnly: false,
@@ -811,17 +867,18 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemma": {
+    "google/gemma-4-26b-a4b-it": {
+        supportedParameters: CHAT_PARAMETERS.openRouterGemma,
         aliases: [
             "gemma-4",
             "gemma-4-26b",
             "gemma-4-26b-a4b",
             "gemma-4-26b-a4b-it",
-            "google/gemma-4-26b-a4b-it",
+            "gemma",
         ],
         provider: "openrouter",
         addedDate: new Date("2026-05-08").getTime(),
-        brand: "Google",
+        publisher: "Google",
         category: "text",
         paidOnly: true,
         priceMultiplier: 1,
@@ -841,11 +898,12 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "gemma-4-31b": {
-        aliases: ["gemma-large", "gemma-4-31b-it", "google/gemma-4-31b-it"],
+    "google/gemma-4-31b-it": {
+        supportedParameters: CHAT_PARAMETERS.openRouterGemma,
+        aliases: ["gemma-large", "gemma-4-31b-it", "gemma-4-31b"],
         provider: "openrouter",
         addedDate: new Date("2026-07-18").getTime(),
-        brand: "Google",
+        publisher: "Google",
         category: "text",
         paidOnly: true,
         priceMultiplier: 1,
@@ -865,10 +923,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "deepseek-pro": {
-        aliases: ["deepseek-v4-pro", "deepseek/deepseek-v4-pro"],
+    "deepseek/deepseek-v4-pro": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        aliases: ["deepseek-v4-pro", "deepseek-pro"],
         provider: "fireworks",
-        brand: "DeepSeek",
+        publisher: "DeepSeek",
         category: "text",
         addedDate: new Date("2026-04-24").getTime(),
         priceMultiplier: 1,
@@ -886,7 +945,8 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "grok": {
+    "x-ai/grok-4.20": {
+        supportedParameters: CHAT_PARAMETERS.azureGrokReasoning,
         aliases: [
             "grok-fast",
             "grok-4-1-fast",
@@ -899,10 +959,10 @@ const TEXT_BASE_SERVICES = {
             "grok-4-20-reasoning",
             "grok-4-20",
             "grok-4-1-fast-reasoning",
-            "x-ai/grok-4.20",
+            "grok",
         ],
         provider: "azure",
-        brand: "xAI",
+        publisher: "xAI",
         category: "text",
         addedDate: new Date("2025-11-10").getTime(),
         priceMultiplier: 0.75,
@@ -921,10 +981,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "grok-large": {
-        aliases: ["grok-4.3", "grok-4-3", "grok-reasoning", "x-ai/grok-4.3"],
+    "x-ai/grok-4.3": {
+        supportedParameters: CHAT_PARAMETERS.azureGrokReasoning,
+        aliases: ["grok-4.3", "grok-4-3", "grok-reasoning", "grok-large"],
         provider: "azure",
-        brand: "xAI",
+        publisher: "xAI",
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 0.75,
@@ -946,15 +1007,16 @@ const TEXT_BASE_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "grok-4.6": {
-        aliases: ["grok-4.5", "grok-4-5", "x-ai/grok-4.6"],
+    "x-ai/grok-4.6": {
+        supportedParameters: CHAT_PARAMETERS.azureGrok46,
+        aliases: ["grok-4.5", "grok-4-5", "grok-4.6"],
         provider: "azure",
-        brand: "xAI",
+        publisher: "xAI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
         paidOnly: false,
         priceMultiplier: 0.75,
-        // Provisional Azure sheet pending an exact public or account meter.
+        // Microsoft Foundry Global Standard rates, published August 26, 2026.
         // The direct route reports image tokens separately from text tokens.
         cost: {
             promptTextTokens: perMillion(2),
@@ -973,7 +1035,8 @@ const TEXT_BASE_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "gemini-search": {
+    "google/gemini-2.5-flash-lite:search": {
+        supportedParameters: CHAT_PARAMETERS.vertexGeminiSearch,
         aliases: [
             "gemini-2.5-flash-search",
             "gemini-2.5-flash-lite-search",
@@ -983,10 +1046,10 @@ const TEXT_BASE_SERVICES = {
             "gemini-search-large",
             "gemini-3.6-flash-search",
             "gemini-3.5-flash-search",
-            "google/gemini-2.5-flash-lite:search",
+            "gemini-search",
         ],
         provider: "google",
-        brand: "Google",
+        publisher: "Google",
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
         paidOnly: true,
@@ -1014,10 +1077,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "midijourney": {
-        aliases: ["pollinations/midijourney"],
+    "pollinations/midijourney": {
+        supportedParameters: CHAT_PARAMETERS.azureGptMini,
+        aliases: ["midijourney"],
         provider: "azure",
-        brand: "Pollinations",
+        publisher: "Pollinations",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 0.75,
@@ -1033,10 +1097,11 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         isSpecialized: true,
     },
-    "midijourney-large": {
-        aliases: ["pollinations/midijourney-large"],
+    "pollinations/midijourney-large": {
+        supportedParameters: CHAT_PARAMETERS.azureGpt,
+        aliases: ["midijourney-large"],
         provider: "azure",
-        brand: "Pollinations",
+        publisher: "Pollinations",
         category: "text",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 0.75,
@@ -1072,14 +1137,11 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         isSpecialized: true,
     },
-    "claude-fast": {
-        aliases: [
-            "claude-haiku-4.5",
-            "claude-haiku",
-            "anthropic/claude-haiku-4.5",
-        ],
-        provider: "bedrock",
-        brand: "Anthropic",
+    "anthropic/claude-haiku-4.5": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeSampling,
+        aliases: ["claude-haiku-4.5", "claude-haiku", "claude-fast"],
+        provider: "aws",
+        publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2025-12-01").getTime(),
         paidOnly: true,
@@ -1101,14 +1163,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "claude": {
-        aliases: [
-            "claude-sonnet-4.6",
-            "claude-sonnet",
-            "anthropic/claude-sonnet-4.6",
-        ],
-        provider: "bedrock",
-        brand: "Anthropic",
+    "anthropic/claude-sonnet-4.6": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeSampling,
+        aliases: ["claude-sonnet-4.6", "claude-sonnet", "claude"],
+        provider: "aws",
+        publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2025-11-05").getTime(),
         paidOnly: true,
@@ -1130,10 +1189,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1000000, // Bedrock global Claude Sonnet 4.6 context window.
         isSpecialized: false,
     },
-    "claude-sonnet-5": {
-        aliases: ["sonnet-5", "anthropic/claude-sonnet-5"],
-        provider: "bedrock",
-        brand: "Anthropic",
+    "anthropic/claude-sonnet-5": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoSampling,
+        aliases: ["sonnet-5", "claude-sonnet-5"],
+        provider: "aws",
+        publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-06-30").getTime(),
         paidOnly: true,
@@ -1155,10 +1215,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1000000, // Bedrock Claude Sonnet 5 context window.
         isSpecialized: false,
     },
-    "claude-opus-4.6": {
-        aliases: ["claude-opus-4.5", "anthropic/claude-opus-4.6"],
-        provider: "bedrock",
-        brand: "Anthropic",
+    "anthropic/claude-opus-4.6": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeSampling,
+        aliases: ["claude-opus-4.5", "claude-opus-4.6"],
+        provider: "aws",
+        publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2025-11-10").getTime(),
         paidOnly: true,
@@ -1180,10 +1241,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1000000, // Bedrock global Claude Opus 4.6 context window.
         isSpecialized: false,
     },
-    "claude-opus-4.7": {
-        aliases: ["anthropic/claude-opus-4.7"],
-        provider: "bedrock",
-        brand: "Anthropic",
+    "anthropic/claude-opus-4.7": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoSampling,
+        aliases: ["claude-opus-4.7"],
+        provider: "aws",
+        publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-04-22").getTime(),
         paidOnly: true,
@@ -1205,15 +1267,16 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1000000, // Bedrock global Claude Opus 4.7 context window.
         isSpecialized: false,
     },
-    "claude-large": {
+    "anthropic/claude-opus-5": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoSampling,
         aliases: [
             "claude-opus-5",
             "claude-opus-4.8",
             "claude-opus",
-            "anthropic/claude-opus-5",
+            "claude-large",
         ],
-        provider: "bedrock",
-        brand: "Anthropic",
+        provider: "aws",
+        publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
         paidOnly: true,
@@ -1235,10 +1298,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
-    "claude-fable-5": {
-        aliases: ["anthropic/claude-fable-5"],
-        provider: "bedrock",
-        brand: "Anthropic",
+    "anthropic/claude-fable-5": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoSampling,
+        aliases: ["claude-fable-5"],
+        provider: "aws",
+        publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-06-11").getTime(),
         paidOnly: true,
@@ -1261,9 +1325,10 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "anthropic/claude-fable-5.1": {
+        supportedParameters: CHAT_PARAMETERS.bedrockFable51,
         aliases: [],
-        provider: "bedrock",
-        brand: "Anthropic",
+        provider: "aws",
+        publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-09-01").getTime(),
         paidOnly: true,
@@ -1286,16 +1351,17 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
-    "perplexity-fast": {
+    "perplexity/sonar": {
+        supportedParameters: CHAT_PARAMETERS.sonar,
         aliases: [
             "sonar",
             "perplexity-high",
             "perplexity-deep",
             "sonar-deep",
-            "perplexity/sonar",
+            "perplexity-fast",
         ],
         provider: "perplexity",
-        brand: "Perplexity",
+        publisher: "Perplexity",
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
         priceMultiplier: 1,
@@ -1316,10 +1382,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "perplexity": {
-        aliases: ["sonar-pro", "perplexity-pro", "perplexity/sonar-pro"],
+    "perplexity/sonar-pro": {
+        supportedParameters: CHAT_PARAMETERS.sonar,
+        aliases: ["sonar-pro", "perplexity-pro", "perplexity"],
         provider: "perplexity",
-        brand: "Perplexity",
+        publisher: "Perplexity",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
         priceMultiplier: 1,
@@ -1339,14 +1406,15 @@ const TEXT_BASE_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "perplexity-reasoning": {
+    "perplexity/sonar-reasoning-pro": {
+        supportedParameters: CHAT_PARAMETERS.sonar,
         aliases: [
             "sonar-reasoning",
             "sonar-reasoning-pro",
-            "perplexity/sonar-reasoning-pro",
+            "perplexity-reasoning",
         ],
         provider: "perplexity",
-        brand: "Perplexity",
+        publisher: "Perplexity",
         category: "text",
         addedDate: new Date("2025-11-04").getTime(),
         priceMultiplier: 1,
@@ -1367,17 +1435,18 @@ const TEXT_BASE_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "kimi": {
+    "moonshotai/kimi-k2.6": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
         aliases: [
             "kimi-k2.6",
             "kimi-k2p6",
             "kimi-reasoning",
             "kimi-large",
             "kimi-thinking",
-            "moonshotai/kimi-k2.6",
+            "kimi",
         ],
         provider: "fireworks",
-        brand: "Moonshot AI",
+        publisher: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-04-22").getTime(),
         priceMultiplier: 1,
@@ -1398,15 +1467,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262000,
         isSpecialized: false,
     },
-    "kimi-code": {
-        aliases: [
-            "kimi-k2.7-code",
-            "kimi-k2.7",
-            "kimi-k2p7",
-            "moonshotai/kimi-k2.7-code",
-        ],
+    "moonshotai/kimi-k2.7-code": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        aliases: ["kimi-k2.7-code", "kimi-k2.7", "kimi-k2p7", "kimi-code"],
         provider: "fireworks",
-        brand: "Moonshot AI",
+        publisher: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-06-12").getTime(),
         priceMultiplier: 1,
@@ -1430,10 +1495,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "kimi-k3": {
-        aliases: ["moonshotai/kimi-k3"],
+    "moonshotai/kimi-k3": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        aliases: ["kimi-k3"],
         provider: "fireworks",
-        brand: "Moonshot AI",
+        publisher: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
         paidOnly: false,
@@ -1454,15 +1520,16 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "laguna": {
+    "poolside/laguna-s-2.1": {
+        supportedParameters: CHAT_PARAMETERS.laguna,
         aliases: [
             "laguna-s-2.1",
             "laguna-s2.1",
             "poolside-laguna-s-2.1",
-            "poolside/laguna-s-2.1",
+            "laguna",
         ],
         provider: "openrouter",
-        brand: "Poolside",
+        publisher: "Poolside",
         category: "text",
         addedDate: new Date("2026-07-22").getTime(),
         paidOnly: true,
@@ -1483,10 +1550,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "longcat": {
-        aliases: ["longcat-2.0", "longcat-2", "meituan/longcat-2.0"],
+    "meituan/longcat-2.0": {
+        supportedParameters: CHAT_PARAMETERS.longcat,
+        aliases: ["longcat-2.0", "longcat-2", "longcat"],
         provider: "openrouter",
-        brand: "Meituan",
+        publisher: "Meituan",
         category: "text",
         addedDate: new Date("2026-07-23").getTime(),
         paidOnly: true,
@@ -1507,14 +1575,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "inkling": {
-        aliases: [
-            "inkling-small",
-            "inkling-small-20260730",
-            "thinkingmachines/inkling-small",
-        ],
+    "thinkingmachines/inkling-small": {
+        supportedParameters: CHAT_PARAMETERS.inklingSmall,
+        aliases: ["inkling-small", "inkling-small-20260730", "inkling"],
         provider: "openrouter",
-        brand: "Thinking Machines",
+        publisher: "Thinking Machines",
         category: "text",
         addedDate: new Date("2026-08-01").getTime(),
         paidOnly: true,
@@ -1538,9 +1603,10 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "thinkingmachines/inkling": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
         aliases: [],
         provider: "fireworks",
-        brand: "Thinking Machines",
+        publisher: "Thinking Machines",
         category: "text",
         addedDate: new Date("2026-08-30").getTime(),
         paidOnly: true,
@@ -1563,15 +1629,16 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "nemotron": {
+    "nvidia/nemotron-3-ultra": {
+        supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: [
             "nemotron-3-ultra",
             "nvidia-nemotron-3-ultra",
             "nemotron-3-ultra-550b-a55b",
-            "nvidia/nemotron-3-ultra",
+            "nemotron",
         ],
         provider: "deepinfra",
-        brand: "NVIDIA",
+        publisher: "NVIDIA",
         category: "text",
         addedDate: new Date("2026-07-27").getTime(),
         paidOnly: true,
@@ -1593,10 +1660,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "nemotron-3.5-lightning": {
-        aliases: ["nvidia/nemotron-3.5-lightning"],
+    "nvidia/nemotron-3.5-lightning": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        aliases: ["nemotron-3.5-lightning"],
         provider: "fireworks",
-        brand: "NVIDIA",
+        publisher: "NVIDIA",
         category: "text",
         addedDate: new Date("2026-08-19").getTime(),
         paidOnly: false,
@@ -1618,10 +1686,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "mimo-v2.5": {
-        aliases: ["mimo", "mimo-2.5", "xiaomi/mimo-v2.5"],
+    "xiaomi/mimo-v2.5": {
+        supportedParameters: CHAT_PARAMETERS.mimo,
+        aliases: ["mimo", "mimo-2.5", "mimo-v2.5"],
         provider: "openrouter",
-        brand: "Xiaomi",
+        publisher: "Xiaomi",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
         paidOnly: true,
@@ -1641,10 +1710,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "mimo-v2.5-pro": {
-        aliases: ["mimo-pro", "mimo-2.5-pro", "xiaomi/mimo-v2.5-pro"],
+    "xiaomi/mimo-v2.5-pro": {
+        supportedParameters: CHAT_PARAMETERS.mimo,
+        aliases: ["mimo-pro", "mimo-2.5-pro", "mimo-v2.5-pro"],
         provider: "openrouter",
-        brand: "Xiaomi",
+        publisher: "Xiaomi",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
         paidOnly: true,
@@ -1664,14 +1734,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "gemini-large": {
-        aliases: [
-            "gemini-3.1-pro",
-            "gemini-2.5-pro",
-            "google/gemini-3.1-pro-preview",
-        ],
+    "google/gemini-3.1-pro-preview": {
+        supportedParameters: CHAT_PARAMETERS.gemini3,
+        aliases: ["gemini-3.1-pro", "gemini-2.5-pro", "gemini-large"],
         provider: "openrouter",
-        brand: "Google",
+        publisher: "Google",
         category: "text",
         addedDate: new Date("2025-11-19").getTime(),
         priceMultiplier: 1,
@@ -1729,10 +1796,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "nova-fast": {
-        aliases: ["amazon-nova-micro", "nova-micro", "amazon/nova-micro-v1"],
-        provider: "bedrock",
-        brand: "Amazon",
+    "amazon/nova-micro-v1": {
+        supportedParameters: CHAT_PARAMETERS.nova,
+        aliases: ["amazon-nova-micro", "nova-micro", "nova-fast"],
+        provider: "aws",
+        publisher: "Amazon",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
@@ -1753,15 +1821,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
-    "nova": {
-        aliases: [
-            "nova-2-lite",
-            "amazon-nova-2-lite",
-            "nova-2",
-            "amazon/nova-2-lite-v1",
-        ],
-        provider: "bedrock",
-        brand: "Amazon",
+    "amazon/nova-2-lite-v1": {
+        supportedParameters: CHAT_PARAMETERS.nova,
+        aliases: ["nova-2-lite", "amazon-nova-2-lite", "nova-2", "nova"],
+        provider: "aws",
+        publisher: "Amazon",
         category: "text",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
@@ -1784,10 +1848,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "glm": {
-        aliases: ["glm-5.2", "glm-5p2", "z-ai/glm-5.2"],
+    "z-ai/glm-5.2": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        aliases: ["glm-5.2", "glm-5p2", "glm"],
         provider: "fireworks",
-        brand: "Z.ai",
+        publisher: "Z.ai",
         category: "text",
         addedDate: new Date("2026-01-06").getTime(),
         priceMultiplier: 1,
@@ -1806,10 +1871,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "glm-5.3": {
-        aliases: ["z-ai/glm-5.3"],
+    "z-ai/glm-5.3": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        aliases: ["glm-5.3"],
         provider: "fireworks",
-        brand: "Z.ai",
+        publisher: "Z.ai",
         category: "text",
         addedDate: new Date("2026-08-19").getTime(),
         paidOnly: false,
@@ -1831,9 +1897,10 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "z-ai/glm-5.3-flash": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
         aliases: [],
         provider: "fireworks",
-        brand: "Z.ai",
+        publisher: "Z.ai",
         category: "text",
         addedDate: new Date("2026-08-27").getTime(),
         paidOnly: false,
@@ -1856,15 +1923,16 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "llama": {
+    "meta/llama-3.3-70b-instruct": {
+        supportedParameters: CHAT_PARAMETERS.azureOpenModels,
         aliases: [
             "llama-3.3",
             "llama-3.3-70b",
             "llama-v3p3-70b-instruct",
-            "meta/llama-3.3-70b-instruct",
+            "llama",
         ],
         provider: "azure",
-        brand: "Meta",
+        publisher: "Meta",
         category: "text",
         addedDate: new Date("2026-05-01").getTime(),
         priceMultiplier: 0.75,
@@ -1881,16 +1949,17 @@ const TEXT_BASE_SERVICES = {
         contextLength: 131072,
         isSpecialized: false,
     },
-    "llama-maverick": {
+    "meta/llama-4-maverick": {
+        supportedParameters: CHAT_PARAMETERS.azureOpenModels,
         aliases: [
             "llama-4",
             "llama-4-maverick",
             "llama-maverick-17b",
             "llama-4-maverick-17b-128e-instruct-fp8",
-            "meta/llama-4-maverick",
+            "llama-maverick",
         ],
         provider: "azure",
-        brand: "Meta",
+        publisher: "Meta",
         category: "text",
         addedDate: new Date("2026-05-04").getTime(),
         priceMultiplier: 0.75,
@@ -1908,15 +1977,16 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
         paidOnly: true,
     },
-    "llama-scout": {
+    "meta/llama-4-scout": {
+        supportedParameters: CHAT_PARAMETERS.openRouterMistralSmall32,
         aliases: [
             "llama-4-scout",
             "llama-scout-17b",
             "llama-4-scout-17b-16e-instruct",
-            "meta/llama-4-scout",
+            "llama-scout",
         ],
         provider: "openrouter",
-        brand: "Meta",
+        publisher: "Meta",
         category: "text",
         addedDate: new Date("2026-05-04").getTime(),
         paidOnly: true,
@@ -1938,15 +2008,16 @@ const TEXT_BASE_SERVICES = {
         contextLength: 327680,
         isSpecialized: false,
     },
-    "minimax-m2.7": {
+    "minimax/minimax-m2.7": {
+        supportedParameters: CHAT_PARAMETERS.openRouterMinimax27,
         aliases: [
             "minimax-m2p7",
             "minimax-m2.5",
             "minimax-m2p5",
-            "minimax/minimax-m2.7",
+            "minimax-m2.7",
         ],
         provider: "openrouter",
-        brand: "MiniMax",
+        publisher: "MiniMax",
         category: "text",
         addedDate: new Date("2026-01-06").getTime(),
         paidOnly: true,
@@ -1965,10 +2036,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 200000,
         isSpecialized: false,
     },
-    "minimax": {
-        aliases: ["minimax-m3", "minimax3", "minimax-3", "minimax/minimax-m3"],
+    "minimax/minimax-m3": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        aliases: ["minimax-m3", "minimax3", "minimax-3", "minimax"],
         provider: "fireworks",
-        brand: "MiniMax",
+        publisher: "MiniMax",
         category: "text",
         addedDate: new Date("2026-06-02").getTime(),
         priceMultiplier: 1,
@@ -1991,10 +2063,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 524288,
         isSpecialized: false,
     },
-    "muse-glimmer": {
-        aliases: ["meta/muse-glimmer-30b"],
+    "meta/muse-glimmer-30b": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        aliases: ["muse-glimmer"],
         provider: "fireworks",
-        brand: "Meta",
+        publisher: "Meta",
         category: "text",
         addedDate: new Date("2026-08-14").getTime(),
         paidOnly: false,
@@ -2017,16 +2090,17 @@ const TEXT_BASE_SERVICES = {
         contextLength: 131072,
         isSpecialized: false,
     },
-    "muse-spark-1.2": {
+    "meta/muse-spark-1.2": {
+        supportedParameters: CHAT_PARAMETERS.museSpark,
         aliases: [
             "muse-spark-1.1",
             "muse-spark",
             "spark",
             "spark-1.1",
-            "meta/muse-spark-1.2",
+            "muse-spark-1.2",
         ],
         provider: "vercel",
-        brand: "Meta",
+        publisher: "Meta",
         category: "text",
         addedDate: new Date("2026-08-14").getTime(),
         paidOnly: true,
@@ -2045,10 +2119,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    "mistral-large": {
-        aliases: ["mistral-large-3", "mistralai/mistral-large-3"],
+    "mistralai/mistral-large-3": {
+        supportedParameters: CHAT_PARAMETERS.azureOpenModels,
+        aliases: ["mistral-large-3", "mistral-large"],
         provider: "azure",
-        brand: "Mistral",
+        publisher: "Mistral",
         category: "text",
         addedDate: new Date("2026-04-09").getTime(),
         priceMultiplier: 0.75,
@@ -2067,10 +2142,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 256000,
         isSpecialized: false,
     },
-    "qwen-coder-large": {
-        aliases: ["qwen3-coder-next", "qwen/qwen3-coder-next"],
+    "qwen/qwen3-coder-next": {
+        supportedParameters: CHAT_PARAMETERS.qwenCoderNext,
+        aliases: ["qwen3-coder-next", "qwen-coder-large"],
         provider: "openrouter",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-03-22").getTime(),
         paidOnly: true,
@@ -2090,7 +2166,8 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "qwen-large": {
+    "qwen/qwen3.7-plus": {
+        supportedParameters: CHAT_PARAMETERS.qwen37,
         aliases: [
             "qwen3.7",
             "qwen3.7-plus",
@@ -2098,10 +2175,10 @@ const TEXT_BASE_SERVICES = {
             "qwen3.6",
             "qwen3.6-plus",
             "qwen3p6-plus",
-            "qwen/qwen3.7-plus",
+            "qwen-large",
         ],
         provider: "openrouter",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-06-12").getTime(),
         paidOnly: true,
@@ -2143,10 +2220,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
-    "qwen3.7-max": {
-        aliases: ["qwen-max", "qwen3p7-max", "qwen/qwen3.7-max"],
+    "qwen/qwen3.7-max": {
+        supportedParameters: CHAT_PARAMETERS.qwen37,
+        aliases: ["qwen-max", "qwen3p7-max", "qwen3.7-max"],
         provider: "openrouter",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
         paidOnly: true,
@@ -2167,10 +2245,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
-    "qwen3.8-2.4t-a95b": {
-        aliases: ["qwen/qwen3.8-2.4t-a95b"],
+    "qwen/qwen3.8-2.4t-a95b": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        aliases: ["qwen3.8-2.4t-a95b"],
         provider: "fireworks",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-08-14").getTime(),
         paidOnly: false,
@@ -2191,10 +2270,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "qwen3.8-27b": {
-        aliases: ["qwen/qwen3.8-27b"],
+    "qwen/qwen3.8-27b": {
+        supportedParameters: CHAT_PARAMETERS.qwen38,
+        aliases: ["qwen3.8-27b"],
         provider: "openrouter",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-08-18").getTime(),
         paidOnly: true,
@@ -2220,10 +2300,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "qwen3.8-max": {
-        aliases: ["qwen/qwen3.8-max"],
+    "qwen/qwen3.8-max": {
+        supportedParameters: CHAT_PARAMETERS.qwen38Max,
+        aliases: ["qwen3.8-max"],
         provider: "openrouter",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-08-04").getTime(),
         paidOnly: true,
@@ -2249,9 +2330,10 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.8-max-0902": {
+        supportedParameters: CHAT_PARAMETERS.alibabaQwenReasoning,
         aliases: [],
         provider: "alibaba",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-09-03").getTime(),
         paidOnly: true,
@@ -2278,10 +2360,43 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
-    "qwen3.7-flash": {
-        aliases: ["qwen/qwen3.7-flash"],
+    "qwen/qwen3.8-flash": {
+        supportedParameters: CHAT_PARAMETERS.qwen38Max,
+        aliases: [],
         provider: "openrouter",
-        brand: "Qwen",
+        publisher: "Qwen",
+        category: "text",
+        addedDate: new Date("2026-09-05").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter Alibaba route rates, equal to the Alibaba Singapore list
+        // price with a single 0-1M context tier (2026-09-05). OpenRouter
+        // publishes one prompt rate and no separate image/video rates.
+        cost: {
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.016),
+            promptCacheWriteTokens: perMillion(0.2),
+            promptImageTokens: perMillion(0.15),
+            promptVideoTokens: perMillion(0.15),
+            completionTextTokens: perMillion(0.47),
+        },
+        title: "Qwen3.8 Flash",
+        description:
+            "Low-cost multimodal reasoning with 1M context and 131K output for agents and coding",
+        inputModalities: ["text", "image", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        maxReferenceVideos: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
+    "qwen/qwen3.7-flash": {
+        supportedParameters: CHAT_PARAMETERS.openRouterQwen37Flash,
+        aliases: ["qwen3.7-flash"],
+        provider: "openrouter",
+        publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-07-30").getTime(),
         paidOnly: true,
@@ -2347,17 +2462,18 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
-    "qwen-vision": {
+    "qwen/qwen3-vl-30b-a3b-instruct": {
+        supportedParameters: CHAT_PARAMETERS.qwenVl,
         aliases: [
             "qwen3-vl",
             "qwen3-vl-30b-a3b-instruct",
             "qwen3-vl-instruct",
             "qwen3-vl-plus",
             "qwen-vl",
-            "qwen/qwen3-vl-30b-a3b-instruct",
+            "qwen-vision",
         ],
         provider: "openrouter",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-03-22").getTime(),
         paidOnly: true,
@@ -2376,16 +2492,17 @@ const TEXT_BASE_SERVICES = {
         contextLength: 131072,
         isSpecialized: false,
     },
-    "qwen-vision-pro": {
+    "qwen/qwen3-vl-235b-a22b-thinking": {
+        supportedParameters: CHAT_PARAMETERS.alibabaQwenVl,
         aliases: [
             "qwen3-vl-pro",
             "qwen3-vl-235b",
             "qwen3-vl-235b-a22b-thinking",
             "qwen-vl-pro",
-            "qwen/qwen3-vl-235b-a22b-thinking",
+            "qwen-vision-pro",
         ],
         provider: "alibaba",
-        brand: "Qwen",
+        publisher: "Qwen",
         addedDate: new Date("2026-05-15").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
@@ -2407,15 +2524,16 @@ const TEXT_BASE_SERVICES = {
         contextLength: 131072,
         isSpecialized: false,
     },
-    "step-flash": {
+    "stepfun/step-3.7-flash": {
+        supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: [
             "stepfun-flash",
             "step-3.7-flash",
             "step-flash-3.7",
-            "stepfun/step-3.7-flash",
+            "step-flash",
         ],
         provider: "deepinfra",
-        brand: "StepFun",
+        publisher: "StepFun",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
         paidOnly: true,
@@ -2439,14 +2557,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 256000,
         isSpecialized: false,
     },
-    "step-3.5-flash": {
-        aliases: [
-            "stepfun-3.5-flash",
-            "step-flash-3.5",
-            "stepfun/step-3.5-flash",
-        ],
+    "stepfun/step-3.5-flash": {
+        supportedParameters: CHAT_PARAMETERS.step35,
+        aliases: ["stepfun-3.5-flash", "step-flash-3.5", "step-3.5-flash"],
         provider: "openrouter",
-        brand: "StepFun",
+        publisher: "StepFun",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
         paidOnly: true,
@@ -2466,10 +2581,11 @@ const TEXT_BASE_SERVICES = {
         contextLength: 262144,
         isSpecialized: false,
     },
-    "qwen-safety": {
-        aliases: ["qwen3guard-gen-8b", "qwen/qwen3guard-gen-8b"],
+    "qwen/qwen3guard-gen-8b": {
+        supportedParameters: CHAT_PARAMETERS.qwenGuard,
+        aliases: ["qwen3guard-gen-8b", "qwen-safety"],
         provider: "ovhcloud",
-        brand: "Qwen",
+        publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-02-15").getTime(),
         priceMultiplier: 1,

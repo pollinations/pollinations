@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { Data, OpCloudRow, OpPollenRow } from "../types";
+import type { Data, OpPollenRow, VendorLedgerRow } from "../types";
 import { modelReconcileRows } from "./modelReconcile";
 import {
+    matchesSituation,
     meterMatchPct,
     providerCostCheck,
     type UnitEconomicsRow,
@@ -9,7 +10,7 @@ import {
     unitPerformancePct,
 } from "./unitEconomics";
 
-const cloud = (over: Partial<OpCloudRow> = {}): OpCloudRow => ({
+const cloud = (over: Partial<VendorLedgerRow> = {}): VendorLedgerRow => ({
     entry_id: "cloud-test",
     source: "provider",
     vendor: "aws",
@@ -50,7 +51,7 @@ const pollen = (over: Partial<OpPollenRow> = {}): OpPollenRow => ({
 
 const data = (over: Partial<Data>): Data => ({
     opTransactions: [],
-    opCloud: [],
+    vendorLedger: [],
     opPollen: [],
     ...over,
 });
@@ -91,8 +92,8 @@ describe("unitEconomicsRows", () => {
     it("shows every model directly and keeps provider rollups additive", () => {
         const providers = modelReconcileRows(
             data({
-                opCloud: [
-                    cloud({ paid: -80, credit: -20 }),
+                vendorLedger: [
+                    cloud({ model: "claude", paid: -80, credit: -20 }),
                     cloud({ vendor: "lambda", paid: -30, credit: -70 }),
                 ],
                 opPollen: [
@@ -120,7 +121,7 @@ describe("unitEconomicsRows", () => {
         expect(modelRows.map((row) => row.model)).toEqual([
             "claude",
             "llama",
-            "Unallocated vendor usage",
+            "Needs model mapping",
         ]);
 
         for (const provider of providerRows) {
@@ -144,12 +145,20 @@ describe("unitEconomicsRows", () => {
             expect(sum(models.map((row) => row.pollenMeterUsd))).toBeCloseTo(
                 provider.pollenMeterUsd ?? 0,
             );
-            expect(
-                sum(models.map((row) => row.netCashContributionUsd)),
-            ).toBeCloseTo(provider.netCashContributionUsd ?? 0);
-            expect(
-                sum(models.map((row) => row.economicContributionUsd)),
-            ).toBeCloseTo(provider.economicContributionUsd ?? 0);
+            if (models.every((row) => row.allocationStatus === "allocated")) {
+                expect(
+                    sum(models.map((row) => row.netCashContributionUsd)),
+                ).toBeCloseTo(provider.netCashContributionUsd ?? 0);
+                expect(
+                    sum(models.map((row) => row.economicContributionUsd)),
+                ).toBeCloseTo(provider.economicContributionUsd ?? 0);
+            } else {
+                const unmatched = models.find(
+                    (row) => row.paidPollenUsd != null,
+                );
+                expect(unmatched?.netCashContributionUsd).toBeNull();
+                expect(unmatched?.economicContributionUsd).toBeNull();
+            }
             expect(
                 (provider.netCashContributionUsd ?? 0) -
                     (provider.economicContributionUsd ?? 0),
@@ -168,11 +177,12 @@ describe("unitEconomicsRows", () => {
     it("keeps months separate in both grains", () => {
         const providers = modelReconcileRows(
             data({
-                opCloud: [
-                    cloud({ paid: -10 }),
+                vendorLedger: [
+                    cloud({ model: "claude", paid: -10 }),
                     cloud({
                         start: "2026-08-01 00:00:00",
                         end: "2026-09-01 00:00:00",
+                        model: "claude",
                         paid: -20,
                     }),
                 ],
@@ -254,5 +264,50 @@ describe("providerCostCheck", () => {
         expect(
             providerCostCheck(economicsRow({ vendor: "new-provider" })).kind,
         ).toBe("missing-mapping");
+    });
+});
+
+describe("matchesSituation", () => {
+    const row = (over: Partial<UnitEconomicsRow>): UnitEconomicsRow =>
+        ({
+            grain: "model",
+            month: "2026-08",
+            vendor: "azure",
+            model: "x",
+            allocationStatus: "allocated",
+            sourceStatus: "both sources",
+            members: null,
+            lines: null,
+            ...over,
+        }) as UnitEconomicsRow;
+
+    it("maps each chip to the rows it summarises", () => {
+        const assigned = row({ allocationStatus: "allocated" });
+        const grouped = row({
+            allocationStatus: "allocated",
+            members: ["openai-large", "midijourney-large"],
+        });
+        const breakdown = row({ allocationStatus: "missing breakdown" });
+        const mapping = row({ allocationStatus: "needs mapping" });
+        const noModel = row({ allocationStatus: "provider only" });
+        const rows = [assigned, grouped, breakdown, mapping, noModel];
+
+        expect(rows.filter((r) => matchesSituation(r, "all"))).toEqual(rows);
+        expect(rows.filter((r) => matchesSituation(r, "assigned"))).toEqual([
+            assigned,
+            grouped,
+        ]);
+        expect(rows.filter((r) => matchesSituation(r, "grouped"))).toEqual([
+            grouped,
+        ]);
+        expect(
+            rows.filter((r) => matchesSituation(r, "missing breakdown")),
+        ).toEqual([breakdown]);
+        expect(
+            rows.filter((r) => matchesSituation(r, "needs mapping")),
+        ).toEqual([mapping]);
+        expect(
+            rows.filter((r) => matchesSituation(r, "no Pollen model")),
+        ).toEqual([noModel]);
     });
 });

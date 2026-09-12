@@ -1,7 +1,6 @@
 import { getAuthHeaders } from "./authUtils.js";
 
 const DEFAULT_API_BASE_URL = "https://gen.pollinations.ai";
-const MEDIA_UPLOAD_URL = "https://media.pollinations.ai/upload";
 const configuredApiBaseUrl =
     typeof process !== "undefined"
         ? process.env?.POLLINATIONS_BASE_URL?.trim()
@@ -142,27 +141,20 @@ export async function postChatCompletion(body, context) {
 
 /**
  * @param {string} url - URL to fetch
- * @param {Object} options - Fetch options
- * @returns {Promise<{contentType: string, mediaUrl: string}>} - Content type and uploaded public URL
+ * @returns {Promise<{contentType: string, mediaUrl: string}>} - Content type and existing public URL
  */
-export async function fetchAndUploadMedia(url, options = {}, context) {
-    const response = await fetchResponseWithAuth(url, options, context);
+export async function fetchMediaLink(url, context) {
+    const response = await fetchResponseWithAuth(url, {}, context);
     const contentType =
         response.headers.get("content-type") || "application/octet-stream";
-    const form = new FormData();
-    form.append(
-        "file",
-        new Blob([await response.arrayBuffer()], { type: contentType }),
-        "generation",
-    );
-    const upload = await fetchResponseWithAuth(
-        MEDIA_UPLOAD_URL,
-        { method: "POST", body: form },
-        context,
-    );
-    const result = await upload.json();
-    if (!result?.url) throw new Error("Media upload returned no URL");
-    return { contentType, mediaUrl: result.url };
+
+    const mediaUrl = response.headers
+        .get("Link")
+        ?.match(/^<([^>]+)>; rel="enclosure"$/)?.[1];
+    await response.body?.cancel();
+    if (!mediaUrl)
+        throw new Error("Media generation returned no public file URL");
+    return { contentType, mediaUrl };
 }
 
 /**
@@ -191,7 +183,7 @@ export function parseApiError(status, errorText) {
             }
             return `Bad request: ${errorMessage}`;
         case 401:
-            return `Authentication failed. Please set a valid API key using setApiKey. Get your key at https://enter.pollinations.ai/keys`;
+            return `Authentication failed. Send a valid API key as an Authorization bearer token. Get your key at https://enter.pollinations.ai/keys`;
         case 403:
             return `Access forbidden. Your API key may not have permission for this operation.`;
         case 404:

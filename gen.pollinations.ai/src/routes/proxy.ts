@@ -18,9 +18,16 @@ import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
 import {
-    formatOpenAIImageGeneration,
-    handleImageEdit,
+    MediaChatCompletionSchema,
+    MediaResponseSchema,
+    mediaResponseDescription,
+} from "../media/response-output.ts";
+import { mediaResponses } from "../media/responses.ts";
+import { textBalanceNotice } from "../middleware/text-balance-notice.ts";
+import {
+    formatOpenAIImageResponse,
     handleImageGeneration,
+    prepareOpenAIImageEdit,
     prepareOpenAIImageGeneration,
 } from "./images.ts";
 
@@ -48,6 +55,7 @@ import {
 import {
     CreateChatCompletionRequestSchema,
     CreateChatCompletionResponseSchema,
+    CreateImageEditRequestSchema,
     CreateImageRequestSchema,
     CreateImageResponseSchema,
     CreateResponseRequestSchema,
@@ -56,7 +64,10 @@ import {
     GetModelsResponseSchema,
 } from "@shared/schemas/openai.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
-import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
+import {
+    errorResponseDescriptions,
+    mediaResponseHeaders,
+} from "@shared/utils/api-docs.ts";
 import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
@@ -104,6 +115,25 @@ const ModelInfoListSchema = z.array(ModelInfoSchema).meta({
     description: "List of models with pricing and metadata",
 });
 
+// Multipart edits are parsed manually; describe only the fields that parser reads.
+const ImageEditUploadSchema = z.union([
+    z.file(),
+    z.string(),
+    z.array(z.union([z.file(), z.string()])).min(1),
+]);
+const ImageEditMultipartSchema = z
+    .intersection(
+        CreateImageEditRequestSchema.omit({ image: true, n: true }),
+        z.union([
+            z.object({ image: ImageEditUploadSchema }).passthrough(),
+            z.object({ "image[]": ImageEditUploadSchema }).passthrough(),
+        ]),
+    )
+    .meta({
+        description:
+            "Provide source files or URLs using image or image[]. Repeat either field for multiple images.",
+    });
+
 // Build dynamic model lists from registry for use in API descriptions
 const imageModelNames = getImageModelIds()
     .map((id) => `\`${id}\``)
@@ -124,7 +154,7 @@ function describeRealtimeWebSocket(path: "/realtime" | "/v1/realtime") {
         description: [
             "OpenAI-compatible Realtime WebSocket for voice, multimodal, and transcription sessions.",
             "",
-            `Connect with \`wss://gen.pollinations.ai${path}?model=${DEFAULT_REALTIME_MODEL}\` and send/receive OpenAI Realtime JSON events over the socket. Selecting \`scribe-realtime\` creates a transcription session automatically.`,
+            `Connect with \`wss://gen.pollinations.ai${path}?model=${DEFAULT_REALTIME_MODEL}\` and send/receive OpenAI Realtime JSON events over the socket. Selecting \`elevenlabs/scribe-v2-realtime\` creates a transcription session automatically.`,
             "Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients can use `?key=pk_...` because they cannot set custom authorization headers.",
             "",
             `**Models:** ${REALTIME_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}.`,
@@ -172,14 +202,15 @@ const model3dHandlers = factory.createHandlers(
     generateModel3d,
 );
 
+// Group access/coordination to stay within Hono's typed handler-count limit.
 const chatCompletionHandlers = factory.createHandlers(
     textBodyLimit,
     validator("json", CreateChatCompletionRequestSchema),
+    mediaResponses("chat/completions"),
     resolveModel("generate.text"),
-    track("generate.text"),
+    every(textBalanceNotice, track("generate.text")),
     textCache,
-    generationAccess,
-    deduplicateGeneration,
+    every(generationAccess, deduplicateGeneration),
     apiKeyBudgetReservation,
     generateChatCompletion,
 );
@@ -187,11 +218,11 @@ const chatCompletionHandlers = factory.createHandlers(
 const responsesHandlers = factory.createHandlers(
     textBodyLimit,
     validator("json", CreateResponseRequestSchema),
+    mediaResponses("responses"),
     resolveModel("generate.text"),
-    track("generate.text"),
+    every(textBalanceNotice, track("generate.text")),
     textCache,
-    generationAccess,
-    deduplicateGeneration,
+    every(generationAccess, deduplicateGeneration),
     apiKeyBudgetReservation,
     generateCreateResponse,
 );
@@ -307,7 +338,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         id: entry.info.name,
         object: "model" as const,
         created: Math.floor(entry.definition.addedDate / 1000),
-        owned_by: entry.info.brand,
+        owned_by: entry.info.publisher,
         aliases: entry.info.aliases,
         category: entry.info.category,
         community: entry.info.community,
@@ -322,6 +353,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         }),
         pricing: entry.info.pricing,
         capabilities: entry.info.capabilities,
+        supported_parameters: entry.info.supported_parameters,
         ...(entry.info.tools && { tools: entry.info.tools }),
         ...(entry.info.reasoning && { reasoning: entry.info.reasoning }),
         ...(entry.info.context_length && {
@@ -638,22 +670,28 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.",
                 "",
-                "Successful JSON responses contain usage. Streaming responses contain a usage chunk before `[DONE]`; missing provider usage fails the response.",
+                "Successful text JSON responses contain usage. Text streams contain a usage chunk before `[DONE]`; missing text-provider usage fails the response.",
+                "",
+                mediaResponseDescription,
             ].join("\n"),
             responses: {
                 200: {
                     description: "Chat completion JSON or SSE stream",
+                    headers: mediaResponseHeaders,
                     content: {
                         "application/json": {
                             schema: resolver(
-                                CreateChatCompletionResponseSchema,
+                                z.union([
+                                    CreateChatCompletionResponseSchema,
+                                    MediaChatCompletionSchema,
+                                ]),
                             ),
                         },
                         "text/event-stream": {
                             schema: resolver(
                                 z.string().meta({
                                     description:
-                                        "OpenAI-compatible Chat Completions SSE events ending with a usage chunk and data: [DONE]",
+                                        "OpenAI-compatible Chat Completions SSE events ending with data: [DONE]. Text models include a usage chunk; media models omit it.",
                                 }),
                             ),
                         },
@@ -672,26 +710,34 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "Generate a stateless OpenAI-compatible Response through a model that advertises `/v1/responses` in `supported_endpoints`.",
                 "",
-                "Built-in models, community proxies, and external endpoint agents use their configured native Responses URL. Managed prompt agents serialize Responses JSON and SSE around their configured prompt and MCP tool loop. Chat Completions requests for these models are adapted to the same Responses route.",
+                "Built-in models use their configured Responses URL. Community text models and endpoint agents registered with the Responses API use their selected URL for both Responses and adapted Chat requests. Managed prompt agents serialize Responses JSON and SSE around their configured prompt and MCP tool loop. Built-in Chat routes may use a separate upstream API.",
                 "",
                 "OpenAI prompt_cache_options and prompt_cache_breakpoint controls pass through direct Responses requests and Chat requests adapted to Responses. Managed prompt agents preserve caller breakpoints or apply an explicit breakpoint after their configured static prompt.",
                 "",
-                "Response storage, previous response IDs, conversations, background execution, and encrypted or reusable state are not supported. Direct providers may accept caller-supplied function tools; managed prompt agents use only their configured MCP tools.",
+                "Response storage, previous response IDs, conversations, background execution, and encrypted or referenced state are not supported. Direct providers may accept caller-supplied function tools; managed prompt agents ignore these definitions and use only their configured MCP tools. Completed MCP output items can be replayed as history without executing them again.",
                 "",
-                "Successful JSON responses and terminal streaming events contain usage; missing provider usage fails the response.",
+                "Successful text JSON responses and terminal streaming events contain usage; missing text-provider usage fails the response.",
+                "",
+                mediaResponseDescription,
             ].join("\n"),
             responses: {
                 200: {
                     description: "Responses JSON or semantic Responses SSE",
+                    headers: mediaResponseHeaders,
                     content: {
                         "application/json": {
-                            schema: resolver(CreateResponseResponseSchema),
+                            schema: resolver(
+                                z.union([
+                                    CreateResponseResponseSchema,
+                                    MediaResponseSchema,
+                                ]),
+                            ),
                         },
                         "text/event-stream": {
                             schema: resolver(
                                 z.string().meta({
                                     description:
-                                        "Responses API SSE events ending with response.completed, response.incomplete, or response.failed; completed and incomplete responses contain usage, and a data: [DONE] marker may follow",
+                                        "Responses API SSE events ending with response.completed, response.incomplete, or response.failed. Text models include usage; media models return usage: null. A data: [DONE] marker may follow.",
                                 }),
                             ),
                         },
@@ -710,7 +756,7 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "Generate vector embeddings with an OpenAI-compatible response format.",
                 "",
-                "**Models:** `gemini-2` supports text, image, audio, and video. `cohere-embed-v4` supports text and one image. OpenAI and Qwen embedding models are text-only.",
+                "**Models:** `google/gemini-embedding-2` supports text, image, audio, and video. `cohere/embed-v4.0` supports text and one image. OpenAI and Qwen embedding models are text-only.",
                 "",
                 "**Input:** Pass a string, an array of up to 32 strings, or supported multimodal content parts (`text`, `image_url`, `input_audio`, `video_url`) in the `input` field.",
                 "",
@@ -718,7 +764,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "**Billing:** Gemini task instructions count toward prompt token usage. Cohere image requests expose one combined usage count, so text accompanying an image is billed at the image-input rate.",
                 "",
-                "**Gemini migration:** `gemini-2` uses the GA embedding space. Do not mix preview-era and GA vectors; re-embed stored `gemini-2` data before comparing it with new results.",
+                "**Gemini migration:** `google/gemini-embedding-2` uses the GA embedding space. Do not mix preview-era and GA vectors; re-embed stored `google/gemini-embedding-2` data before comparing it with new results.",
                 "",
                 "**Dimensions:** Defaults are model-specific. Qwen supports up to 4096; Gemini and OpenAI large up to 3072; OpenAI small up to 1536; Cohere supports 256, 512, 1024, or 1536.",
             ].join("\n"),
@@ -765,7 +811,7 @@ export const proxyRoutes = new Hono<Env>()
         textBodyLimit,
         validator("json", CreateChatCompletionRequestSchema),
         resolveModel("generate.text"),
-        track("generate.text"),
+        every(textBalanceNotice, track("generate.text")),
         textCache,
         generationAccess,
         deduplicateGeneration,
@@ -805,7 +851,7 @@ export const proxyRoutes = new Hono<Env>()
         ),
         validator("query", GenerateTextRequestQueryParamsSchema),
         resolveModel("generate.text"),
-        track("generate.text"),
+        every(textBalanceNotice, track("generate.text")),
         textCache,
         generationAccess,
         deduplicateGeneration,
@@ -830,6 +876,7 @@ export const proxyRoutes = new Hono<Env>()
             responses: {
                 200: {
                     description: "Success - Returns the generated image",
+                    headers: mediaResponseHeaders,
                     content: {
                         "image/jpeg": {
                             schema: {
@@ -888,6 +935,7 @@ export const proxyRoutes = new Hono<Env>()
             responses: {
                 200: {
                     description: "Success - Returns the generated video",
+                    headers: mediaResponseHeaders,
                     content: {
                         "video/mp4": {
                             schema: {
@@ -910,7 +958,7 @@ export const proxyRoutes = new Hono<Env>()
             }),
         ),
         validator("query", GenerateVideoRequestQueryParamsSchema),
-        resolveModel("generate.image", { defaultModel: "veo" }),
+        resolveModel("generate.image", { defaultModel: "google/veo-3.1-fast" }),
         ...imageVideoHandlers,
     )
     .get(
@@ -919,17 +967,18 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🧊 3D"],
             summary: "Generate 3D Model",
             description: [
-                "Generate a 3D model from a text prompt or reference image(s). Returns GLB by default.",
+                "Generate a 3D model from a text prompt or reference image(s). Returns GLB by default. `nvidia/asset-harvester` returns PLY.",
                 "",
                 `**Available models:** ${model3dModelNames}. \`${DEFAULT_3D_MODEL}\` is the default.`,
                 "",
-                "Pass reference image URL(s) via the `image` parameter for image-to-3D models (`trellis-2`). Separate multiple URLs with `|` or `,`. `hyper3d-rodin` accepts both images and a text prompt.",
+                "Pass reference image URL(s) via the `image` parameter for image-to-3D models (`microsoft/trellis-2`, `nvidia/asset-harvester`). Separate multiple URLs with `|` or `,`. `hyper3d/rodin-2.5` accepts both images and a text prompt.",
                 "",
                 "Browse all available models and their input requirements at [`/3d/models`](https://gen.pollinations.ai/3d/models).",
             ].join("\n"),
             responses: {
                 200: {
                     description: "Success - Returns the generated 3D model",
+                    headers: mediaResponseHeaders,
                     content: {
                         "model/gltf-binary": {
                             schema: {
@@ -961,10 +1010,11 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🧊 3D"],
             summary: "Generate 3D Model With JSON",
             description:
-                "Generate a 3D model from a text prompt or reference image using JSON parameters. `trellis-2` supports `low`, `medium`, and `high` resolution with variable pricing.",
+                "Generate a 3D model from a text prompt or reference image using JSON parameters. `microsoft/trellis-2` supports `low`, `medium`, and `high` resolution with variable pricing. `nvidia/asset-harvester` returns PLY.",
             responses: {
                 200: {
                     description: "Success - Returns the generated 3D model",
+                    headers: mediaResponseHeaders,
                     content: {
                         "model/gltf-binary": {
                             schema: {
@@ -1021,13 +1071,14 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "**Output formats:** mp3 (default), opus, aac, flac, wav, pcm",
                 "",
-                "**Dialogue:** The `eleven-dialogue` model expects one `<voice>: <text>` turn per line.",
+                "**Dialogue:** Set `model=elevenlabs/eleven-v3:dialogue`; provide one `<voice>: <text>` turn per line.",
                 "",
-                "**Music generation:** Set `model=elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `lyria-3-clip` returns a fixed 30-second MP3 clip; `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.",
+                "**Music generation:** Set `model=elevenlabs/music-v2`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music instead of speech. `google/lyria-3-clip-preview` returns a fixed 30-second MP3 clip; `elevenlabs/music-v2` supports `duration` (3-300 seconds) and `instrumental` mode; the Stable Audio models support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.",
             ].join("\n"),
             responses: {
                 200: {
                     description: "Success - Returns audio data",
+                    headers: mediaResponseHeaders,
                     content: {
                         "audio/mpeg": {
                             schema: { type: "string", format: "binary" },
@@ -1042,7 +1093,7 @@ export const proxyRoutes = new Hono<Env>()
             z.object({
                 text: z.string().min(1).meta({
                     description:
-                        "Text or prompt to generate. The `eleven-dialogue` model expects one `voice: text` turn per line.",
+                        "Text or prompt to generate. Dialogue operation expects one `voice: text` turn per line.",
                     example: "Hello, welcome to Pollinations!",
                 }),
             }),
@@ -1066,13 +1117,14 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "OpenAI-compatible image generation endpoint.",
                 "",
-                'Generate images from text prompts. Supports `response_format: "url"` (returns a pollinations.ai URL) or `"b64_json"` (returns base64-encoded image data, default).',
+                'Generate images from text prompts. Supports `response_format: "url"` (returns the stored media URL; fetching it never generates an image) or `"b64_json"` (returns base64-encoded image data, default).',
                 "",
                 "**Authentication:** Include your API key as `Authorization: Bearer YOUR_API_KEY`.",
             ].join("\n"),
             responses: {
                 200: {
                     description: "Success",
+                    headers: mediaResponseHeaders,
                     content: {
                         "application/json": {
                             schema: resolver(CreateImageResponseSchema),
@@ -1085,7 +1137,7 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", CreateImageRequestSchema),
         resolveModel("generate.image"),
         track("generate.image"),
-        every(prepareOpenAIImageGeneration, formatOpenAIImageGeneration),
+        every(prepareOpenAIImageGeneration, formatOpenAIImageResponse),
         prepareGenerationRequest,
         imageCache,
         generationAccess,
@@ -1097,11 +1149,29 @@ export const proxyRoutes = new Hono<Env>()
         describeRoute({
             tags: ["🖼️ Image"],
             summary: "Edit Image (OpenAI-compatible)",
+            requestBody: {
+                required: true,
+                content: {
+                    "application/json": {
+                        // @ts-expect-error hono-openapi's request-body types lag JSON Schema 2020-12.
+                        schema: z.toJSONSchema(CreateImageEditRequestSchema, {
+                            io: "input",
+                        }),
+                    },
+                    "multipart/form-data": {
+                        // @ts-expect-error hono-openapi's request-body types lag JSON Schema 2020-12.
+                        schema: z.toJSONSchema(ImageEditMultipartSchema, {
+                            io: "input",
+                        }),
+                    },
+                },
+            },
             description: [
                 "OpenAI-compatible image editing endpoint.",
                 "",
                 "Edit images using a text prompt and one or more source images.",
                 "Accepts JSON with image URLs or multipart/form-data with file uploads.",
+                'Set response_format to "url" for a stored media URL, or "b64_json" for base64 image data (default).',
                 "Community image models forward edits to the registrant's OpenAI-compatible endpoint as multipart form data.",
                 "",
                 "**Authentication:** Include your API key as `Authorization: Bearer YOUR_API_KEY`.",
@@ -1109,6 +1179,7 @@ export const proxyRoutes = new Hono<Env>()
             responses: {
                 200: {
                     description: "Success",
+                    headers: mediaResponseHeaders,
                     content: {
                         "application/json": {
                             schema: resolver(CreateImageResponseSchema),
@@ -1118,12 +1189,15 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
-        resolveModel("generate.image", { defaultModel: "flux" }),
+        resolveModel("generate.image", {
+            defaultModel: "black-forest-labs/flux.1-schnell",
+        }),
         track("generate.image"),
+        every(prepareOpenAIImageEdit, formatOpenAIImageResponse),
         prepareGenerationRequest,
-        textCache,
+        imageCache,
         generationAccess,
         deduplicateGeneration,
         apiKeyBudgetReservation,
-        handleImageEdit,
+        handleImageGeneration,
     );

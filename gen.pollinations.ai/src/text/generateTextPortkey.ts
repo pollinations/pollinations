@@ -66,6 +66,7 @@ export async function generateTextPortkey(
         string,
         string
     >;
+    const responsesFetcher = state.options.responsesFetcher;
     const requestConfig =
         typeof directEndpoint === "string"
             ? {
@@ -92,19 +93,22 @@ export async function generateTextPortkey(
         !modelDef &&
         typeof state.options.modelConfig?.responsesEndpoint === "string";
     if (modelDef?.useResponsesApi || communityResponsesEndpoint) {
-        return await callChatViaResponses(state.messages, state.options);
+        return await callChatViaResponses(
+            state.messages,
+            state.options,
+            responsesFetcher,
+        );
     }
 
-    // Only the Responses adapter owns this parameter. Keep generic provider
-    // requests unchanged because some OpenAI-compatible backends reject it.
-    delete state.options.parallel_tool_calls;
+    // This internal transport belongs only to the Responses adapter.
+    delete state.options.responsesFetcher;
 
     const completion = await genericOpenAIClient(
         state.messages,
         state.options,
         requestConfig,
     );
-    return modelDef?.name === "command-a-plus"
+    return modelDef?.name === "cohere/command-a-plus"
         ? sanitizeCohereResponse(completion)
         : completion;
 }

@@ -2,8 +2,10 @@ import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
 import { AUDIO_FALLBACKS } from "@shared/registry/audio-fallbacks.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { IMAGE_FALLBACKS } from "@shared/registry/image-fallbacks.ts";
+import { mergeFallbacks } from "@shared/registry/merge-fallbacks.ts";
 import { MODEL3D_SERVICES } from "@shared/registry/model3d.ts";
 import {
+    calculateUsageBilling,
     getVisibleAudioModels,
     getVisibleImageModels,
     getVisibleTextModels,
@@ -16,73 +18,96 @@ import { findModelByName } from "../src/text/availableModels.ts";
 import { supportsTextFallbackRequest } from "../src/text/fallbackCompatibility.ts";
 
 const OPENROUTER_ROUTES = [
-    ["qwen3.8-27b-openrouter-akashml", "qwen/qwen3.8-27b", "akashml/fp8"],
     [
-        "mistral-large-openrouter-zdr",
+        "perplexity/sonar:openrouter:perplexity",
+        "perplexity/sonar",
+        "perplexity",
+    ],
+    [
+        "perplexity/sonar-pro:openrouter:perplexity",
+        "perplexity/sonar-pro",
+        "perplexity",
+    ],
+    [
+        "perplexity/sonar-reasoning-pro:openrouter:perplexity",
+        "perplexity/sonar-reasoning-pro",
+        "perplexity",
+    ],
+    [
+        "qwen/qwen3.8-27b:openrouter:akashml-fp8",
+        "qwen/qwen3.8-27b",
+        "akashml/fp8",
+    ],
+    [
+        "mistralai/mistral-large-3:openrouter:mistral-zdr",
         "mistralai/mistral-large-2512",
         "mistral/zdr",
     ],
     [
-        "claude-opus-4.7-openrouter-vertex",
+        "anthropic/claude-opus-4.7:openrouter:vertex-global",
         "anthropic/claude-opus-4.7",
         "google-vertex/global",
     ],
     [
-        "llama-scout-openrouter-vertex",
+        "meta/llama-4-scout:openrouter:vertex-us-east5",
         "meta-llama/llama-4-scout",
         "google-vertex/us-east5",
     ],
-    ["grok-openrouter-xai-zdr", "x-ai/grok-4.20", "xai/zdr"],
-    ["grok-large-openrouter-xai-zdr", "x-ai/grok-4.3", "xai/zdr"],
+    ["x-ai/grok-4.20:openrouter:xai-zdr", "x-ai/grok-4.20", "xai/zdr"],
+    ["x-ai/grok-4.3:openrouter:xai-zdr", "x-ai/grok-4.3", "xai/zdr"],
     [
-        "claude-fast-openrouter-vertex",
+        "anthropic/claude-haiku-4.5:openrouter:vertex-global",
         "anthropic/claude-haiku-4.5",
         "google-vertex/global",
     ],
     [
-        "claude-fable-5-openrouter-vertex",
+        "anthropic/claude-fable-5:openrouter:vertex-global",
         "anthropic/claude-fable-5",
         "google-vertex/global",
     ],
     [
-        "muse-glimmer-openrouter-deepinfra",
+        "meta/muse-glimmer-30b:openrouter:deepinfra-bf16",
         "meta/muse-glimmer-30b",
         "deepinfra/bf16",
     ],
     [
-        "nemotron-3.5-lightning-openrouter-coreweave",
+        "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16",
         "nvidia/nemotron-3.5-lightning",
         "coreweave/bf16",
     ],
-    ["mistral-openrouter-eu", "mistralai/mistral-small-2603", "mistral/eu"],
     [
-        "gemini-openrouter-ai-studio-priority",
+        "mistralai/mistral-small-4:openrouter:mistral-eu",
+        "mistralai/mistral-small-2603",
+        "mistral/eu",
+    ],
+    [
+        "google/gemini-3.7-flash:openrouter:ai-studio-priority",
         "google/gemini-3.7-flash",
         "google-ai-studio/priority",
     ],
     [
-        "gemini-fast-openrouter-ai-studio",
+        "google/gemini-2.5-flash-lite:openrouter:ai-studio",
         "google/gemini-2.5-flash-lite",
         "google-ai-studio",
     ],
     [
-        "gemini-flash-lite-3.5-openrouter-ai-studio-flex",
+        "google/gemini-3.5-flash-lite:openrouter:ai-studio-flex",
         "google/gemini-3.5-flash-lite",
         "google-ai-studio/flex",
     ],
     [
-        "gemini-large-openrouter-ai-studio",
+        "google/gemini-3.1-pro-preview:openrouter:ai-studio",
         "google/gemini-3.1-pro-preview",
         "google-ai-studio",
     ],
     [
-        "qwen-vision-pro-openrouter-novita",
+        "qwen/qwen3-vl-235b-a22b-thinking:openrouter:novita-bf16",
         "qwen/qwen3-vl-235b-a22b-thinking",
         "novita/bf16",
     ],
-    ["glm-5.3-openrouter-friendli", "z-ai/glm-5.3", "friendli"],
+    ["z-ai/glm-5.3:openrouter:friendli", "z-ai/glm-5.3", "friendli"],
     [
-        "qwen-coder-large-openrouter-streamlake",
+        "qwen/qwen3-coder-next:openrouter:streamlake",
         "qwen/qwen3-coder-next",
         "streamlake",
     ],
@@ -104,12 +129,24 @@ function expectInheritedRoute(
 ) {
     const parent = services[parentId];
     const route = services[routeId];
+    expect(routeId).toBe(routeId.toLowerCase());
+    const routePrefix = `${parentId}:${route.provider}`;
+    expect(
+        routeId === routePrefix || routeId.startsWith(`${routePrefix}:`),
+    ).toBe(true);
+    const sameProviderRoutes = (parent.fallbacks ?? []).filter(
+        (id) => services[id]?.provider === route.provider,
+    ).length;
+    if (parent.provider === route.provider || sameProviderRoutes > 1) {
+        expect(routeId.startsWith(`${routePrefix}:`)).toBe(true);
+        expect(routeId.length).toBeGreaterThan(routePrefix.length + 1);
+    }
     expect(parent.fallbacks).toContain(routeId);
     expect(route).toMatchObject({
         aliases: [],
         hidden: true,
         fallbackOnly: true,
-        brand: parent.brand,
+        publisher: parent.publisher,
         category: parent.category,
         title: parent.title,
         inputModalities: parent.inputModalities,
@@ -126,6 +163,165 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
+    it.each([
+        "sonar",
+        "sonar-pro",
+        "sonar-reasoning-pro",
+    ] as const)("keeps %s on direct Perplexity with an OpenRouter fallback", (upstream) => {
+        const model = `perplexity/${upstream}` as const;
+        const primary: ModelDefinition = TEXT_SERVICES[model];
+        expect(primary).toMatchObject({
+            provider: "perplexity",
+            priceMultiplier: 1,
+            fallbacks: [`${model}:openrouter:perplexity`],
+        });
+        expect(primary.paidOnly).not.toBe(true);
+        expect(findModelByName(model)?.config()).toMatchObject({
+            provider: "perplexity-ai",
+            model: upstream,
+        });
+    });
+
+    it.each([
+        ["perplexity/sonar", "low", 0.005],
+        ["perplexity/sonar", "high", 0.012],
+        ["perplexity/sonar-pro", "high", 0.014],
+        ["perplexity/sonar-reasoning-pro", "high", 0.014],
+    ] as const)("bills %s %s search once when OpenRouter reports a total cost", (model, searchContextSize, searchFee) => {
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[`${model}:openrouter:perplexity`];
+        const usage = { promptTextTokens: 100, completionTextTokens: 20 };
+        const expected =
+            100 * primary.cost.promptTextTokens +
+            20 * primary.cost.completionTextTokens +
+            searchFee;
+        // OpenRouter's numeric cost already includes token and search costs.
+        const completion = { usage: { cost: expected } };
+        for (const output of [
+            completion,
+            { streamEvents: [{ choices: [] }, completion] },
+        ]) {
+            const billed = calculateUsageBilling({
+                model,
+                usage,
+                servedBy: fallback,
+                quotedBy: primary,
+                output,
+                input: { searchContextSize },
+            });
+            expect(billed.cost.totalCost).toBeCloseTo(expected, 12);
+            expect(billed.price.totalPrice).toBeCloseTo(expected, 12);
+            expect(billed.adjustments).toHaveLength(1);
+            expect(billed.adjustments[0]).toMatchObject({
+                kind: "search_request",
+                units: 1,
+                cost: searchFee,
+            });
+        }
+    });
+
+    it("preserves the Astra quote while recording Data Zone costs", () => {
+        const primary = TEXT_SERVICES["openai/gpt-6-astra"];
+        const fallback = TEXT_SERVICES["openai/gpt-6-astra:azure:datazone"];
+        expect(primary.cost).toEqual({
+            promptTextTokens: 10 / 1_000_000,
+            promptCachedTokens: 1 / 1_000_000,
+            promptCacheWriteTokens: 12.5 / 1_000_000,
+            completionTextTokens: 50 / 1_000_000,
+        });
+        expect(fallback.cost).toEqual({
+            promptTextTokens: 11 / 1_000_000,
+            promptCachedTokens: 1.1 / 1_000_000,
+            promptCacheWriteTokens: 13.75 / 1_000_000,
+            completionTextTokens: 55 / 1_000_000,
+        });
+        expect(fallback.costVariants?.long_context).toEqual({
+            promptTextTokens: 22 / 1_000_000,
+            promptCachedTokens: 2.2 / 1_000_000,
+            promptCacheWriteTokens: 27.5 / 1_000_000,
+            completionTextTokens: 82.5 / 1_000_000,
+        });
+        expect(fallback.selectCostVariant).toBe(primary.selectCostVariant);
+        expect(
+            fallback.selectCostVariant?.({
+                usage: { promptTextTokens: 272_000 },
+            }),
+        ).toBeUndefined();
+        expect(
+            fallback.selectCostVariant?.({
+                usage: { promptTextTokens: 272_000, promptCachedTokens: 1 },
+            }),
+        ).toBe("long_context");
+        expect(fallback.priceMultiplier).toBe(0.75);
+        expect(fallback.paidOnly).not.toBe(true);
+        const billing = calculateUsageBilling({
+            model: "openai/gpt-6-astra",
+            usage: { promptTextTokens: 11, completionTextTokens: 5 },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.000396, 12);
+        expect(billing.price.totalPrice).toBe(0.00027);
+        const model = findModelByName("openai/gpt-6-astra:azure:datazone");
+        expect(model?.useResponsesApi).toBe(true);
+        expect(model?.config()).toMatchObject({
+            "azure-deployment-id": "gpt-6-astra-datazone",
+            "azure-resource-name": "myceli-prod-eastus",
+            responsesEndpoint:
+                "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+        });
+    });
+
+    it("uses Fal first for Grok Video Pro without changing prices or access", () => {
+        const primary = IMAGE_SERVICES["x-ai/grok-imagine-video"];
+        const fallback = IMAGE_SERVICES["x-ai/grok-imagine-video:openrouter"];
+        expect(primary).toMatchObject({
+            provider: "fal",
+            paidOnly: true,
+            priceMultiplier: 1,
+            aliases: ["grok-imagine-video", "grok-video-pro"],
+            fallbacks: ["x-ai/grok-imagine-video:openrouter"],
+            cost: { promptImageTokens: 0.002, completionVideoSeconds: 0.07 },
+        });
+        expect(fallback.provider).toBe("openrouter");
+        expect(fallback.cost).toEqual(primary.cost);
+        expect(IMAGE_SERVICES).not.toHaveProperty(
+            "x-ai/grok-imagine-video:fal",
+        );
+        expect(IMAGE_SERVICES["x-ai/grok-imagine-video-1.5"]).toMatchObject({
+            provider: "openrouter",
+            fallbacks: ["x-ai/grok-imagine-video-1.5:fal"],
+        });
+    });
+
+    it("keeps same-provider routes distinct and ordered under a suffixed public ID", () => {
+        const parentId = "google/gemini-2.5-flash-lite:search";
+        const parent: ModelDefinition = TEXT_SERVICES[parentId];
+        const studioId = `${parentId}:openrouter:ai-studio`;
+        const vertexId = `${parentId}:openrouter:vertex`;
+        const services = mergeFallbacks(
+            { [parentId]: parent },
+            {
+                [parentId]: {
+                    [studioId]: { provider: "openrouter" },
+                    [vertexId]: { provider: "openrouter" },
+                },
+            },
+        );
+
+        expect(Object.keys(services)).toEqual([parentId, studioId, vertexId]);
+        expect(services[parentId]).toEqual({
+            ...parent,
+            fallbacks: [studioId, vertexId],
+        });
+        for (const routeId of [studioId, vertexId] as const) {
+            expectInheritedRoute(services, parentId, routeId);
+            expect(services[routeId].provider).toBe("openrouter");
+            expect(services[routeId].cost).toEqual(parent.cost);
+        }
+        expect(parent.fallbacks).toBeUndefined();
+    });
+
     it("registers exact text routes as fallback-only inherited models", () => {
         for (const [parent, routes] of Object.entries(
             fallbackRoutes(TEXT_FALLBACKS),
@@ -156,7 +352,11 @@ describe("static provider fallbacks", () => {
                 expectInheritedRoute(AUDIO_SERVICES, parent, route);
             }
         }
-        expectInheritedRoute(MODEL3D_SERVICES, "trellis-2", "trellis-2-fal");
+        expectInheritedRoute(
+            MODEL3D_SERVICES,
+            "microsoft/trellis-2",
+            "microsoft/trellis-2:fal",
+        );
     });
 
     it("keeps provider routes out of public model lists", () => {
@@ -178,42 +378,58 @@ describe("static provider fallbacks", () => {
     });
 
     it("keeps provider-specific fallback costs", () => {
-        expect(TEXT_SERVICES["deepseek-deepinfra"].cost).toMatchObject({
+        expect(TEXT_SERVICES["x-ai/grok-4.6"].fallbacks).toEqual([
+            "x-ai/grok-4.6:azure:sweden",
+        ]);
+        expect(TEXT_SERVICES["x-ai/grok-4.6:azure:sweden"].cost).toEqual(
+            TEXT_SERVICES["x-ai/grok-4.6"].cost,
+        );
+        expect(
+            TEXT_SERVICES["deepseek/deepseek-v4-flash:deepinfra"].cost,
+        ).toMatchObject({
             promptTextTokens: 0.08 / 1_000_000,
             completionTextTokens: 0.18 / 1_000_000,
         });
         expect(
-            TEXT_SERVICES["llama-scout-openrouter-vertex"].cost,
+            TEXT_SERVICES["meta/llama-4-scout:openrouter:vertex-us-east5"].cost,
         ).toMatchObject({
             promptTextTokens: 0.25 / 1_000_000,
             promptImageTokens: 0.25 / 1_000_000,
             completionTextTokens: 0.7 / 1_000_000,
         });
-        expect(IMAGE_SERVICES["qwen-image-3-replicate"].cost).toMatchObject({
+        expect(
+            IMAGE_SERVICES["qwen/qwen-image-3:replicate"].cost,
+        ).toMatchObject({
             promptImageTokens: 0,
             completionImageTokens: 0.03,
         });
         expect(
-            TEXT_SERVICES["gemini-openrouter-ai-studio-priority"].cost,
+            TEXT_SERVICES[
+                "google/gemini-3.7-flash:openrouter:ai-studio-priority"
+            ].cost,
         ).toMatchObject({
             promptCacheWriteTokens: 1.35 / 1_000_000,
         });
         expect(
-            TEXT_SERVICES["gemini-flash-lite-3.5-openrouter-ai-studio-flex"]
-                .cost,
+            TEXT_SERVICES[
+                "google/gemini-3.5-flash-lite:openrouter:ai-studio-flex"
+            ].cost,
         ).toMatchObject({
             promptCacheWriteTokens: 0.15 / 1_000_000,
         });
-        expect(TEXT_SERVICES["kimi-code-deepinfra"].cost).toMatchObject({
+        expect(
+            TEXT_SERVICES["moonshotai/kimi-k2.7-code:deepinfra"].cost,
+        ).toMatchObject({
             promptCacheWriteTokens: 0.85 / 1_000_000,
         });
-        expect(MODEL3D_SERVICES["trellis-2-fal"].cost).toEqual({
+        expect(MODEL3D_SERVICES["microsoft/trellis-2:fal"].cost).toEqual({
             completionImageTokens: 0.25,
         });
     });
 
     it("keeps Llama Vertex inside its verified request limits", () => {
-        const route = TEXT_SERVICES["llama-scout-openrouter-vertex"];
+        const route =
+            TEXT_SERVICES["meta/llama-4-scout:openrouter:vertex-us-east5"];
         expect(supportsTextFallbackRequest(route, {})).toBe(true);
         expect(
             supportsTextFallbackRequest(route, { tool_choice: "none" }),
@@ -265,12 +481,26 @@ describe("static provider fallbacks", () => {
     });
 
     it("binds fallback-only text ids to their exact provider routes", () => {
-        expect(findModelByName("deepseek-deepinfra")?.config()).toMatchObject({
+        expect(
+            findModelByName("x-ai/grok-4.6:azure:sweden")?.config(),
+        ).toMatchObject({
+            provider: "openai",
+            model: "grok-4.6",
+            directAuthHeader: "api-key",
+            directEndpoint:
+                "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/grok-4.6/chat/completions?api-version=2024-12-01-preview",
+            responsesEndpoint:
+                "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
+            responsesAuthHeader: "api-key",
+        });
+        expect(
+            findModelByName("deepseek/deepseek-v4-flash:deepinfra")?.config(),
+        ).toMatchObject({
             "custom-host": "https://api.deepinfra.com/v1/openai",
             model: "deepseek-ai/DeepSeek-V4-Flash-0731",
         });
         expect(
-            findModelByName("qwen3.7-flash-alibaba")?.config(),
+            findModelByName("qwen/qwen3.7-flash:alibaba")?.config(),
         ).toMatchObject({
             directEndpoint:
                 "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
@@ -278,7 +508,18 @@ describe("static provider fallbacks", () => {
             defaultOptions: { max_tokens: 64000 },
         });
         expect(
-            findModelByName("mistral-small-3.2-deepinfra")?.config(),
+            findModelByName("qwen/qwen3.8-flash:alibaba")?.config(),
+        ).toMatchObject({
+            directEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+            model: "qwen3.8-flash",
+            defaultOptions: { max_tokens: 64000 },
+        });
+        expect(TEXT_SERVICES["qwen/qwen3.8-flash:alibaba"].cost).toEqual(
+            TEXT_SERVICES["qwen/qwen3.8-flash"].cost,
+        );
+        expect(
+            findModelByName("mistralai/mistral-small-3.2:deepinfra")?.config(),
         ).toMatchObject({
             "custom-host": "https://api.deepinfra.com/v1/openai",
             model: "mistralai/Mistral-Small-3.2-24B-Instruct-2506",

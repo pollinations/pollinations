@@ -100,7 +100,7 @@ describe("Nova Reel frame mapping", () => {
         await callNovaReelAPI(
             "animate this frame",
             {
-                model: "nova-reel",
+                model: "amazon/nova-reel-v1",
                 width: 1280,
                 height: 720,
                 dimensionsExplicit: true,

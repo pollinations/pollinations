@@ -57,6 +57,51 @@ async function publishPendingModel(
 }
 
 describe("community endpoint configuration policy", () => {
+    test("rejects exact bundled ID collisions without reserving the publisher namespace", async ({
+        sessionToken,
+    }) => {
+        await drizzle(env.DB)
+            .update(schema.user)
+            .set({ githubUsername: "fish-audio" })
+            .where(eq(schema.user.githubUsername, "testuser"));
+        const create = (name: string) =>
+            SELF.fetch(`${endpointUrl}/endpoint-agents`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({
+                    name,
+                    title: "Test agent",
+                    api: "responses",
+                    url: "https://agent.example.com/responses",
+                }),
+            });
+        const conflict = await create("s2.1-pro");
+        expect(conflict.status).toBe(400);
+        expect(await conflict.text()).toContain(
+            "conflicts with a bundled model or alias",
+        );
+        const available = await create("my-own-agent");
+        expect(available.status).toBe(200);
+        const created = await available.json<{ id: string }>();
+        const renamed = await SELF.fetch(
+            `${endpointUrl}/${created.id}/update`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({ name: "s2.1-pro" }),
+            },
+        );
+        expect(renamed.status).toBe(400);
+        expect(await renamed.text()).toContain(
+            "conflicts with a bundled model or alias",
+        );
+    });
     test("creates a private endpoint agent without proxy credentials or pricing", async ({
         sessionToken,
     }) => {
@@ -64,9 +109,8 @@ describe("community endpoint configuration policy", () => {
             name: "external-agent",
             title: "External agent",
             description: "Runs on its owner's server",
-            baseUrl: "https://agent.example.com/v1/?ignored=yes",
-            responsesUrl:
-                "https://agent.example.com/custom/responses?version=1",
+            api: "responses",
+            url: "https://agent.example.com/custom/responses?version=1",
             requiredSafetyFeatures: ["sexual"],
         });
 
@@ -77,9 +121,8 @@ describe("community endpoint configuration policy", () => {
             title: "External agent",
             description: "Runs on its owner's server",
             visibility: "private",
-            baseUrl: "https://agent.example.com/v1/?ignored=yes",
-            responsesUrl:
-                "https://agent.example.com/custom/responses?version=1",
+            api: "responses",
+            url: "https://agent.example.com/custom/responses?version=1",
             upstreamModel: "external-agent",
             requiredSafetyFeatures: ["sexual"],
             perUserRpm: null,
@@ -95,7 +138,7 @@ describe("community endpoint configuration policy", () => {
         });
         expect(stored).toMatchObject({
             type: "endpoint_agent",
-            baseUrl: "https://agent.example.com/v1/?ignored=yes",
+            baseUrl: "https://agent.example.com/custom/responses?version=1",
             upstreamModel: "external-agent",
             requiredSafetyFeatures: ["sexual"],
             visibility: "private",
@@ -104,8 +147,7 @@ describe("community endpoint configuration policy", () => {
             parseListingPayload("endpoint_agent", stored?.payload ?? null),
         ).toEqual({
             perUserRpm: null,
-            responsesUrl:
-                "https://agent.example.com/custom/responses?version=1",
+            api: "responses",
         });
 
         const updated = await postModel(
@@ -114,7 +156,7 @@ describe("community endpoint configuration policy", () => {
             { requiredSafetyFeatures: ["violence"] },
         );
         expect(updated.requiredSafetyFeatures).toEqual(["violence"]);
-        expect(updated.responsesUrl).toBe(
+        expect(updated.url).toBe(
             "https://agent.example.com/custom/responses?version=1",
         );
     });
@@ -134,7 +176,8 @@ describe("community endpoint configuration policy", () => {
         const input = {
             name: "external-agent",
             title: "External agent",
-            baseUrl: "https://agent.example.com/v1",
+            api: "chat_completions",
+            url: "https://agent.example.com/v1/chat/completions",
         };
 
         const proxyField = await request({
@@ -254,7 +297,8 @@ describe("community endpoint configuration policy", () => {
             name: "cheaper-fallback",
             title: "Cheaper fallback",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "test-provider-token",
             promptTextPrice: 0.000001,
         });
@@ -263,7 +307,8 @@ describe("community endpoint configuration policy", () => {
             name: "expensive-fallback",
             title: "Expensive fallback",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "test-provider-token",
             promptTextPrice: 0.000003,
         });
@@ -274,7 +319,8 @@ describe("community endpoint configuration policy", () => {
             name: "primary-with-fallback",
             title: "Primary with fallback",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "test-provider-token",
             promptTextPrice: 0.000002,
             fallbacks: [cheaperModelId],
@@ -315,7 +361,8 @@ describe("community endpoint configuration policy", () => {
             name: "text-policy",
             title: "Text policy",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "test-provider-token",
             modality: "text",
             perUserRpm: 3,

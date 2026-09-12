@@ -5,8 +5,7 @@ These are strategic defaults. The user's explicit, confirmed contract for a spec
 ## Route selection
 
 - Prefer managed serverless inference.
-- For equivalent routes, prefer **Azure**, then **Fireworks**, then **OpenRouter** because of Pollinations' credit position and effective economics.
-- Treat **DeepInfra** as a parallel funded-balance lane. Use it when it is the best eligible route, but do not move a healthy Azure or Fireworks route there merely to consume balance.
+- For equivalent primary and fallback routes, prefer **Azure**, then **Fireworks**.
 - Before choosing a route, enumerate the exact model across the preferred providers, the current provider, and other already-integrated providers. Compare current posted price, credit eligibility, availability, quotas, capabilities, latency, and maturity.
 - Do not route to a provider solely because an old model name matches. Verify the exact canonical checkpoint, capabilities, limits, latency, and pricing.
 - Direct providers remain valid when the preferred platforms lack an equivalent route or the direct API has a material capability advantage.
@@ -43,5 +42,5 @@ These are strategic defaults. The user's explicit, confirmed contract for a spec
 - Keep aliases only when they serve a current compatibility purpose. Do not add speculative aliases.
 - Set `addedDate` once for a genuinely new public model; never refresh it for provider, price, or metadata updates.
 - Descriptions are user-facing for developers: state practical capabilities or differentiators, never repeat the model title, and never mention internal routing.
-- Every new brand must map to an existing catalog SVG and render correctly.
+- Every new publisher must map to an existing catalog SVG and render correctly.
 - One focused PR per model or tightly coupled family. Secret changes always use their own dedicated PR.

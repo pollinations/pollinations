@@ -36,23 +36,13 @@ const app = new Hono<GenerationCacheEnv>()
     .use("*", async (c, next) => {
         c.set("log", log);
         c.set("requestId", "migration-test");
-        // Image generations already supply this URL before the cache adapter runs.
-        if (c.req.path === "/v1/images/generations") {
-            c.set(
-                "generationCacheUrl",
-                new URL(
-                    "https://gen.pollinations.ai/image/wrapped?model=flux&seed=42",
-                ),
-            );
-        }
         await next();
     })
     .get("/image/:prompt", imageCache, generate)
     .get("/video/:prompt", imageCache, generate)
     .get("/audio/:prompt", audioCache, generate)
     .get("/3d/:prompt", model3dCache, generate)
-    .post("/v1/audio/speech", prepareGenerationRequest, audioCache, generate)
-    .post("/v1/images/generations", imageCache, generate);
+    .post("/v1/audio/speech", prepareGenerationRequest, audioCache, generate);
 
 async function request(path: string, init?: RequestInit) {
     const ctx = createExecutionContext();
@@ -69,43 +59,6 @@ async function request(path: string, init?: RequestInit) {
 afterEach(() => vi.restoreAllMocks());
 
 describe("temporary legacy media cache", () => {
-    it("promotes a legacy image through the real OpenAI route", async () => {
-        const url = new URL(
-            "https://gen.pollinations.ai/image/legacy-openai?model=black-forest-labs%2Fflux.1-schnell&quality=medium&seed=42&width=1024&height=1024",
-        );
-        const key = legacyMediaCacheKey(url);
-        await env.LEGACY_MEDIA_BUCKET.put(key, "image bytes", {
-            httpMetadata: { contentType: "image/png" },
-        });
-        const lookup = vi.spyOn(env.LEGACY_MEDIA_BUCKET, "get");
-        const ctx = createExecutionContext();
-        const response = await worker.fetch(
-            new Request("https://gen.pollinations.ai/v1/images/generations", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    model: "flux",
-                    prompt: "legacy-openai",
-                    seed: 42,
-                    response_format: "url",
-                }),
-            }),
-            env,
-            ctx,
-        );
-        const body = await response.json();
-        await waitOnExecutionContext(ctx);
-        expect(lookup).toHaveBeenCalledWith(key);
-        expect(response.status).toBe(200);
-        expect(body).toMatchObject({
-            data: [
-                {
-                    url: `https://media.pollinations.ai/${await generateCacheKey(url)}`,
-                },
-            ],
-        });
-    });
-
     fixtureTest(
         "serves a migrated hit through the real worker without spending",
         async ({ budgetedApiKey }) => {
@@ -257,25 +210,6 @@ describe("temporary legacy media cache", () => {
             .mockRejectedValue(new Error("old cache unavailable"));
         expect((await request(path)).body).toBe("current");
         expect(oldRead).not.toHaveBeenCalled();
-    });
-
-    it("uses the existing image-generation cache URL", async () => {
-        const url = new URL(
-            "https://gen.pollinations.ai/image/wrapped?model=flux&seed=42",
-        );
-        await env.LEGACY_MEDIA_BUCKET.put(
-            legacyMediaCacheKey(url),
-            "image bytes",
-            { httpMetadata: { contentType: "image/png" } },
-        );
-        const result = await request("/v1/images/generations", {
-            method: "POST",
-        });
-        expect(result.response.status).toBe(200);
-        expect(result.body).toBe("image bytes");
-        expect(result.response.headers.get("Link")).toBe(
-            `<https://media.pollinations.ai/${await generateCacheKey(url)}>; rel="enclosure"`,
-        );
     });
 
     it("includes normalized POST bodies in the old key", async () => {

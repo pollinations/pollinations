@@ -62,10 +62,8 @@ export function legacyMediaCacheKey(
 async function requestLegacyKey(
     c: Context<GenerationCacheEnv>,
 ): Promise<string> {
-    const url = new URL(
-        c.var.generationCacheUrl ?? c.var.generationRequestUrl ?? c.req.url,
-    );
-    if (!c.var.generationCacheUrl && c.var.generationCacheBody) {
+    const url = new URL(c.var.generationRequestUrl ?? c.req.url);
+    if (c.var.generationCacheBody) {
         url.searchParams.set(
             "__request_body",
             await hashGenerationCacheIdentity(
@@ -77,7 +75,7 @@ async function requestLegacyKey(
     const variables = c.var as typeof c.var & Partial<ModelVariables>;
     return legacyMediaCacheKey(
         url,
-        c.var.generationCacheUrl ? undefined : c.req.header(SAFETY_HEADER_NAME),
+        c.req.header(SAFETY_HEADER_NAME),
         getRequiredSafetyFeatures(variables.model),
     );
 }

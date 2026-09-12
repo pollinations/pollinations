@@ -1,0 +1,35 @@
+{
+  "pr_number": 14736,
+  "title": "feat: add DeepSeek V4.1 Flash",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/14736",
+  "merged_at": "2026-09-12T12:41:58Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds canonical `deepseek/deepseek-v4.1-flash` via Fireworks `accounts/fireworks/models/deepseek-v4p1-flash`.\n- Transfers `deepseek` and `deepseek-flash`; adds `deepseek-v4.1`, `deepseek-v4.1-flash`, `deepseek-v4p1`, and `deepseek-v4p1-flash` aliases.\n- Mirrors V4 Flash text-only capabilities, tools/reasoning, 1,048,576 context, 60 RPM, Quest Pollen eligibility, priceMultiplier 1, and $0.22/$0.007/$0.66 per million input/cached/output tokens; no fallback.\n- Updates the stored-permission migration and economics identity bridge for the transferred generic `deepseek` alias.\n- Tests: enter migration + aliases 479/479; effective-prices snapshot pass/update; gen resolver 62/62; reasoning transforms 38/38; model registry 2/2; gen typecheck passes; Biome and git diff --check pass.\n- Enter typecheck remains blocked by pre-existing frontend/@pollinations/ui API mismatches. Live provider/Tinybird checks were unavailable because this isolated worktree has no decrypted provider/local test credentials.\n\nNo APIDOCS.md changes.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A flash in the DeepSeek",
+    "blurb": "DeepSeek V4.1 Flash just landed in the hive: a fast text model with a truly unreasonable amount of room to think. Bring your tools, reasoning prompts, and very long context windows.",
+    "summary": "Added DeepSeek V4.1 Flash via Fireworks as `deepseek/deepseek-v4.1-flash`, with tool use, reasoning, a 1,048,576-token context window, 60 RPM, Quest Pollen eligibility, and aliases including `deepseek`, `deepseek-flash`, and `deepseek-v4.1`.",
+    "impact": "Developers can now call DeepSeek V4.1 Flash through the unified text API at $0.22/$0.007/$0.66 per million input/cached/output tokens, while existing generic DeepSeek aliases continue to resolve through the updated registry and permissions bridge.",
+    "keywords": [
+      "deepseek",
+      "deepseek-v4.1-flash",
+      "fireworks",
+      "text-api",
+      "reasoning",
+      "tool-calling",
+      "models"
+    ],
+    "visual_concept": "Depict Polli as a tiny librarian-bee with round reading glasses guiding a glowing DeepSeek V4.1 Flash book into a cozy retro terminal garden. The terminal displays an absurdly long scroll of code and reasoning that winds into blooming vines, representing the 1,048,576-token context window; a small eager Monitor Robot holds a tool-shaped wand beside it.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny librarian glasses as she files a glowing book labeled \"DEEPSEEK V4.1 FLASH\" into a retro terminal garden; an enormous scrolling code ribbon becomes flowering vines to show a huge context window, while a cute CRT Monitor Robot holds a little tool wand. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, subtle scanlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14736.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny librarian glasses as she files a glowing book labeled \"DEEPSEEK V4.1 FLASH\" into a retro terminal garden; an enormous scrolling code ribbon becomes flowering vines to show a huge context window, while a cute CRT Monitor Robot holds a little tool wand. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, subtle scanlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-12T12:43:06.678125+00:00"
+}

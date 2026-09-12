@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { savedEndpointPriceKeys } from "../frontend/src/components/community-endpoints/price-table.tsx";
 import {
     agentToForm,
+    type EndpointAgentCommunityEndpoint,
     emptyAgentForm,
     emptyForm,
     endpointToForm,
@@ -15,6 +16,35 @@ import {
 } from "../frontend/src/components/community-endpoints/types.ts";
 
 describe("community endpoint per-user RPM input", () => {
+    it("preserves endpoint-agent input and output modalities through the edit form", () => {
+        const endpoint: EndpointAgentCommunityEndpoint = {
+            id: "agent-id",
+            modelId: "community/owner/agent",
+            name: "agent",
+            title: "Agent",
+            description: null,
+            type: "endpoint_agent",
+            inputModalities: ["text", "image", "audio", "video"],
+            outputModalities: ["text", "image", "audio", "video"],
+            api: "chat_completions",
+            url: "https://agent.example.com/v1/chat/completions",
+            upstreamModel: "agent",
+            perUserRpm: null,
+            visibility: "private",
+            requiredSafetyFeatures: [],
+            pending: null,
+            hidden: false,
+            hiddenAt: null,
+            hiddenReason: null,
+        };
+        const payload = toEndpointPayload(endpointToForm(endpoint));
+        expect(payload.inputModalities).toEqual(endpoint.inputModalities);
+        expect(payload.outputModalities).toEqual(endpoint.outputModalities);
+        expect(toEndpointPayload(emptyForm)).not.toHaveProperty(
+            "outputModalities",
+        );
+    });
+
     it("serializes an exact limit or no limit", () => {
         expect(
             toEndpointPayload({ ...emptyForm, perUserRpm: "12" }).perUserRpm,

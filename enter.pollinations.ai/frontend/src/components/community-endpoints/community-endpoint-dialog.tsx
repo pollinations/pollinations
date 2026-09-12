@@ -15,7 +15,10 @@ import {
     TabButton,
 } from "@pollinations/ui";
 import { MAX_FALLBACK_TARGETS } from "@shared/community-endpoints.ts";
-import type { ModelInputModality } from "@shared/registry/registry.ts";
+import {
+    MODEL_INPUT_MODALITIES,
+    type ModelInputModality,
+} from "@shared/registry/registry.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
@@ -158,6 +161,20 @@ export function CommunityEndpointDialog({
             setModelListState(idleAction);
             setProviderModelMenuOpen(false);
         }
+    }
+
+    function toggleOutputModality(output: ModelInputModality): void {
+        setForm((current) => {
+            const outputs = current.outputModalities ?? ["text"];
+            const selected = outputs.includes(output);
+            if (selected && outputs.length === 1) return current;
+            return {
+                ...current,
+                outputModalities: MODEL_INPUT_MODALITIES.filter((value) =>
+                    value === output ? !selected : outputs.includes(value),
+                ),
+            };
+        });
     }
 
     async function handleFetchModels(): Promise<void> {
@@ -509,6 +526,42 @@ export function CommunityEndpointDialog({
                             }))
                         }
                     />
+
+                    {isEndpointAgent && (
+                        <FieldStack
+                            label="Produced outputs"
+                            helper="Select every output type returned by this agent. At least one is required."
+                            alignLabelRow
+                        >
+                            <ButtonGroup aria-label="Produced output modalities">
+                                {MODEL_INPUT_MODALITIES.map((output) => {
+                                    const outputs = form.outputModalities ?? [
+                                        "text",
+                                    ];
+                                    const selected = outputs.includes(output);
+                                    return (
+                                        <TabButton
+                                            key={output}
+                                            active={selected}
+                                            disabled={
+                                                selected && outputs.length === 1
+                                            }
+                                            onClick={() =>
+                                                toggleOutputModality(output)
+                                            }
+                                            size="sm"
+                                            className="min-w-20 gap-1.5 capitalize"
+                                        >
+                                            {selected && (
+                                                <CheckIcon className="h-3.5 w-3.5" />
+                                            )}
+                                            {output}
+                                        </TabButton>
+                                    );
+                                })}
+                            </ButtonGroup>
+                        </FieldStack>
+                    )}
 
                     {form.visibility === "public" && (
                         <Alert intent="warning" title="Public provider duties">

@@ -123,6 +123,8 @@ export type EndpointAgentCommunityEndpoint = CommunityEndpointBase & {
     url: string;
     upstreamModel: string;
     perUserRpm: number | null;
+    inputModalities?: ModelInputModality[];
+    outputModalities?: ModelInputModality[];
 };
 
 export type CommunityEndpoint =
@@ -212,6 +214,7 @@ export type ModelListingFormState = {
 };
 
 export type EndpointFormState = ModelListingFormState & {
+    outputModalities?: ModelInputModality[];
     modality: CommunityEndpointModality;
     // Detected by the endpoint test for image models; "request" until tested.
     imagePricing: CommunityEndpointImagePricing;
@@ -237,6 +240,7 @@ type ModelListingPayload = {
 };
 
 export type EndpointPayload = ModelListingPayload & {
+    outputModalities?: ModelInputModality[];
     imagePricing: CommunityEndpointImagePricing;
     upstreamModel: string;
     paidOnly: boolean;
@@ -384,6 +388,8 @@ export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
     if (endpoint.type === "endpoint_agent") {
         return {
             ...emptyForm,
+            inputModalities: endpoint.inputModalities ?? ["text"],
+            outputModalities: endpoint.outputModalities ?? ["text"],
             name: endpoint.name,
             title: endpoint.title,
             description: endpoint.description ?? "",
@@ -592,6 +598,9 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
     const imagePricing = modality === "image" ? form.imagePricing : "request";
     return {
         ...listingFieldsToPayload(form),
+        ...(form.outputModalities
+            ? { outputModalities: form.outputModalities }
+            : {}),
         ...(modality === "text"
             ? { modality, api: form.api, url: form.url.trim() }
             : { modality, baseUrl: form.url.trim() }),

@@ -131,6 +131,7 @@ def test_registration_namespaces_ids_without_hardcoded_list(monkeypatch, tmp_pat
             {
                 "id": "openai/gpt-5.4-nano",
                 "output_modalities": ["text"],
+                "supported_endpoints": ["/v1/chat/completions"],
                 "input_modalities": ["text", "image"],
                 "capabilities": ["tool_calling"],
                 "tools": True,
@@ -138,9 +139,22 @@ def test_registration_namespaces_ids_without_hardcoded_list(monkeypatch, tmp_pat
             {
                 "id": "some/image-model",
                 "output_modalities": ["image"],
+                "supported_endpoints": ["/v1/images/generations"],
                 "input_modalities": ["text"],
                 "capabilities": [],
             },
+            {
+                "id": "embedding-model",
+                "output_modalities": ["text"],
+                "supported_endpoints": ["/v1/embeddings"],
+            },
+            {
+                "id": "openai/gpt-5.4-nano",
+                "output_modalities": ["text"],
+                "supported_endpoints": ["/v1/chat/completions"],
+            },
+            None,
+            "malformed",
         ]
     }
 
@@ -156,7 +170,11 @@ def test_registration_namespaces_ids_without_hardcoded_list(monkeypatch, tmp_pat
     monkeypatch.setattr(plugin.httpx, "get", lambda *a, **k: FakeResponse())
     registered = []
     plugin.register_models(lambda *models: registered.extend(models))
-    assert len(registered) == 2  # sync + async for the one text model
+    assert len(registered) == 2  # sync + async; duplicate/non-chat entries skipped
+    assert [model.model_id for model in registered] == [
+        "pollinations/openai/gpt-5.4-nano",
+        "pollinations/openai/gpt-5.4-nano",
+    ]
     chat, async_chat = registered
     assert isinstance(chat, plugin.PollinationsChat)
     assert isinstance(async_chat, plugin.PollinationsAsyncChat)
@@ -237,3 +255,9 @@ def test_invalid_catalog_entries_are_ignored():
     assert plugin.is_compatible_text_model(None) is False
     assert plugin.is_compatible_text_model("not-a-model") is False
     assert plugin.is_compatible_text_model({"id": "text-model", "category": "text"}) is True
+    assert plugin.is_compatible_text_model(
+        {"id": "embedding", "output_modalities": ["text"], "supported_endpoints": ["/v1/embeddings"]}
+    ) is False
+    assert plugin.is_compatible_text_model(
+        {"id": "chat", "output_modalities": ["text"], "supported_endpoints": ["/v1/chat/completions"]}
+    ) is True

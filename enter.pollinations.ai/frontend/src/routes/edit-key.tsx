@@ -15,8 +15,8 @@ import { EditApiKeyDialog } from "../components/keys/edit-api-key-dialog.tsx";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 import {
     parseAppUrl,
+    preferredReturnUrl,
     ReturnToApp,
-    referrerAppUrl,
 } from "../lib/return-to-app.tsx";
 import { updateApiKey } from "../lib/update-api-key.ts";
 
@@ -51,8 +51,7 @@ function EditKeyPage() {
     const returnUrl = redirect ?? null;
 
     useEffect(() => {
-        if (redirect) return;
-        const from = referrerAppUrl();
+        const from = preferredReturnUrl(redirect);
         if (from) {
             void navigate({
                 search: (prev) => ({ ...prev, redirect: from }),

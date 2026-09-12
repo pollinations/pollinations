@@ -22,8 +22,8 @@ import type { BillingState } from "../components/pollen/auto-top-up-panel.tsx";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 import {
     parseAppUrl,
+    preferredReturnUrl,
     ReturnToApp,
-    referrerAppUrl,
 } from "../lib/return-to-app.tsx";
 
 type TopUpSearch = {
@@ -75,9 +75,8 @@ function TopUpPage() {
 
     // Remember which app sent us before Stripe overwrites the referrer.
     useEffect(() => {
-        if (search.redirect || search.stripe_success || search.stripe_canceled)
-            return;
-        const from = referrerAppUrl();
+        if (search.stripe_success || search.stripe_canceled) return;
+        const from = preferredReturnUrl(search.redirect);
         if (from) {
             void navigate({
                 search: (prev) => ({ ...prev, redirect: from }),

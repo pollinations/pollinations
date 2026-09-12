@@ -42,7 +42,7 @@ const BUILD_FOUNDATIONS: Feature[] = [
                       ? `more than ${threshold.toLocaleString()} models`
                       : `${modelCount.toLocaleString()} models`;
 
-            return `Build text, image, video, audio and multimodal features through one OpenAI-compatible API across ${catalogSize}.`;
+            return `Add text, image, video, audio and multimodal features with ${catalogSize}, through one OpenAI-compatible API.`;
         },
         linkLabel: "Explore the API",
         href: "https://gen.pollinations.ai/docs",
@@ -50,15 +50,15 @@ const BUILD_FOUNDATIONS: Feature[] = [
     },
     {
         title: "Ready-made agents",
-        body: "Use agents that already combine instructions, models and tools through the same OpenAI-compatible API.",
+        body: "Call ready-made agents through the same API. Their instructions, models and tools are already connected.",
         linkLabel: "Explore agents",
-        href: "https://enter.pollinations.ai/models?scope=community&category=agent",
+        href: "https://enter.pollinations.ai/models?category=agent",
         icon: RobotIcon,
     },
     {
-        title: "Connect Pollinations accounts",
-        body: "Let users connect securely through OAuth 2.1, approve access and a spending budget, and pay with their own Pollen—without you building account or payment infrastructure.",
-        linkLabel: "Connect an account",
+        title: "Connect user wallets",
+        body: "Let users approve access and a Pollen budget through OAuth 2.1. Their wallet pays for usage in your app.",
+        linkLabel: "Wallet integration guide",
         href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
         icon: WalletIcon,
     },
@@ -66,23 +66,23 @@ const BUILD_FOUNDATIONS: Feature[] = [
 
 const BUILD_TOOLS: Feature[] = [
     {
-        title: "Media hosting",
-        body: "Upload generated images, audio and video and receive reusable URLs for apps, agents and workflows.",
-        linkLabel: "Store media",
+        title: "Media storage",
+        body: "Upload images, audio and video for use in apps and workflows. Links are public, with a renewable 30-day storage period.",
+        linkLabel: "Media storage guide",
         href: "https://gen.pollinations.ai/docs#tag/media-storage",
         icon: CloudUploadIcon,
     },
     {
         title: "Pollinations CLI",
-        body: "Generate every modality, inspect models and manage access, published models and agents from the shell.",
-        linkLabel: "Use the CLI",
+        body: "Generate text, images, audio and video, transcribe audio, and manage keys, models and agents from your terminal.",
+        linkLabel: "CLI guide",
         href: "https://gen.pollinations.ai/docs#tag/cli",
         icon: TerminalIcon,
     },
     {
-        title: "MCP connectors",
-        body: "Connect generation, media processing and web search tools to agents—or use them from any MCP-compatible product.",
-        linkLabel: "Explore MCPs",
+        title: "MCP tools",
+        body: "Give agents tools for generation, search, media processing and connected apps. Use them from clients that support Streamable HTTP.",
+        linkLabel: "Explore MCP servers",
         href: "https://enter.pollinations.ai/models?category=mcp",
         icon: McpIcon,
     },
@@ -189,7 +189,7 @@ export function DevKit({ className }: { className?: string }) {
             >
                 <ContentHeader
                     eyebrow="Start free"
-                    title="Make your first API call"
+                    title="Start with Pollen and a key"
                 />
                 <div className="grid items-end gap-6 lg:grid-cols-[1fr_auto]">
                     <div className="flex flex-col gap-3">
@@ -202,9 +202,13 @@ export function DevKit({ className }: { className?: string }) {
                             </Heading>
                         </div>
                         <Text size="sm">
-                            Complete a Quest—a small contribution to the
-                            project—and spend the Pollen on any model with your
-                            own secret key.
+                            Complete Quests to earn Pollen—our platform credit,
+                            where 1 Pollen = $1 of usage. Some models require
+                            Paid Pollen.
+                        </Text>
+                        <Text size="xs" tone="muted">
+                            Personal secret keys stay on your server. Browser
+                            apps use Connect User Wallets.
                         </Text>
                     </div>
                     <div className="flex flex-wrap gap-2 lg:justify-end">
@@ -276,7 +280,7 @@ export function DevKit({ className }: { className?: string }) {
                     appearance="raised"
                     className="self-start whitespace-nowrap"
                 >
-                    Start publishing
+                    Open dashboard
                 </ExternalLinkButton>
             </FeatureGroup>
         </section>

@@ -36,6 +36,7 @@ const BRAND_LOGOS: Record<string, string> = {
     Sesame: "sesame",
     "Stability AI": "stability",
     StepFun: "stepfun",
+    Tencent: "tencent",
     "Thinking Machines": "thinking-machines",
     Xiaomi: "xiaomi",
     "Z.ai": "zai",

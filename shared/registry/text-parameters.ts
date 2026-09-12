@@ -292,6 +292,19 @@ export const CHAT_PARAMETERS = {
     ],
     museSpark: [...CHAT, "temperature", "tools"],
     openRouterMistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
+    // Tencent's only OpenRouter endpoint (2026-09-12): no top_p, penalties,
+    // seed or logprobs in supported_parameters. Forced tool_choice isn't
+    // supported (only "auto"/"none"), so "tools" is declared alone.
+    openRouterHy4Preview: [
+        ...CHAT,
+        "tools",
+        "response_format",
+        "structured_outputs",
+        "temperature",
+        "stop",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
     qwenCoderNext: [...EXTENDED_CHAT, "repetition_penalty", "logit_bias"],
     openRouterQwenCoderNext: [...SAMPLED_CHAT, "presence_penalty"],
     qwen37: [...EXTENDED_CHAT, ...OPENROUTER_REASONING],

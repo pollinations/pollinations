@@ -1571,6 +1571,31 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "tencent/hy4-preview": {
+        supportedParameters: CHAT_PARAMETERS.openRouterHy4Preview,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Tencent",
+        category: "text",
+        addedDate: new Date("2026-09-12").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Tencent (fp8) route rates (2026-09-12).
+            promptTextTokens: perMillion(0.834),
+            promptCachedTokens: perMillion(0.042),
+            completionTextTokens: perMillion(2.501),
+        },
+        title: "Hy4 Preview",
+        description:
+            "Mixture-of-experts model for coding agents and complex tool-use workflows",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "meituan/longcat-2.0": {
         supportedParameters: CHAT_PARAMETERS.longcat,
         aliases: ["longcat-2.0", "longcat-2", "longcat"],

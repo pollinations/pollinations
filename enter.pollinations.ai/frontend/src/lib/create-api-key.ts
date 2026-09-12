@@ -56,6 +56,7 @@ export async function createKeyWithPermissions({
         } | null;
         throw new Error(
             err?.message || err?.error?.message || "Failed to create API key",
+            { cause: response.status },
         );
     }
 

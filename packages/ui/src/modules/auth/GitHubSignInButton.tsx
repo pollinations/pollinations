@@ -5,7 +5,12 @@ import { ProviderSignInButton } from "./ProviderSignInButton.tsx";
 export type GitHubSignInButtonProps = Omit<
     ButtonProps<"button">,
     "as" | "children"
-> & { isSigningIn?: boolean; retry?: boolean; pendingLabel?: string };
+> & {
+    isSigningIn?: boolean;
+    retry?: boolean;
+    pendingLabel?: string;
+    retryLabel?: string;
+};
 
 /** GitHub authentication, before a user reviews a Pollen Connect request. */
 export function GitHubSignInButton({
@@ -13,6 +18,7 @@ export function GitHubSignInButton({
     isSigningIn = false,
     pendingLabel = "Signing in…",
     retry = false,
+    retryLabel = "Try again",
     disabled,
     type = "button",
     ...props
@@ -34,7 +40,7 @@ export function GitHubSignInButton({
             {isSigningIn
                 ? pendingLabel
                 : retry
-                  ? "Try again"
+                  ? retryLabel
                   : "Sign in with GitHub"}
         </ProviderSignInButton>
     );

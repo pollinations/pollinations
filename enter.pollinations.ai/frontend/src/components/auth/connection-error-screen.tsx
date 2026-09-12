@@ -7,17 +7,25 @@ export function ConnectionErrorScreen({
     account,
     error,
     verified,
+    operation = "connect",
     pending,
     onRetry,
     onBack,
+    retryLabel = "Try again",
+    backLabel = "Back to app",
+    recoveryHint = "Open this connection from the app.",
 }: {
     app: ReactNode;
     account?: ReactNode;
     error: string;
     verified: boolean;
+    operation?: "connect" | "decline";
     pending: boolean;
     onRetry?: () => void;
     onBack?: () => void;
+    retryLabel?: string;
+    backLabel?: string;
+    recoveryHint?: string;
 }) {
     return (
         <AuthFlowLayout
@@ -25,8 +33,12 @@ export function ConnectionErrorScreen({
             account={account}
             actions={
                 onRetry && (
-                    <Button onClick={onRetry} className="polli:rounded-md">
-                        Try again
+                    <Button
+                        onClick={onRetry}
+                        disabled={pending}
+                        className="polli:rounded-md"
+                    >
+                        {retryLabel}
                     </Button>
                 )
             }
@@ -34,10 +46,11 @@ export function ConnectionErrorScreen({
                 onBack && (
                     <Button
                         onClick={onBack}
+                        disabled={pending}
                         data-theme="neutral"
                         className="polli:rounded-md"
                     >
-                        Back to app
+                        {backLabel}
                     </Button>
                 )
             }
@@ -45,7 +58,12 @@ export function ConnectionErrorScreen({
             <div className="space-y-2 pt-3">
                 <div>{app}</div>
                 <p className="font-body text-xs font-semibold tracking-wide text-theme-text-soft">
-                    {verified ? "could not connect" : "cannot connect"} to your{" "}
+                    {operation === "decline"
+                        ? "requested access"
+                        : verified
+                          ? "could not connect"
+                          : "cannot connect"}{" "}
+                    to your{" "}
                     <InlineLink
                         href="https://pollinations.ai/"
                         className="polli:font-semibold"
@@ -58,7 +76,7 @@ export function ConnectionErrorScreen({
             <ErrorBanner>
                 {error}
                 {!pending && !onBack && !onRetry && (
-                    <p className="mt-2">Open this connection from the app.</p>
+                    <p className="mt-2">{recoveryHint}</p>
                 )}
             </ErrorBanner>
         </AuthFlowLayout>

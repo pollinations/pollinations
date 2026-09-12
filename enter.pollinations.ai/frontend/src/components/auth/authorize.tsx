@@ -1,5 +1,4 @@
 import {
-    AccountIdentity,
     Button,
     Chip,
     Collapsible,
@@ -17,10 +16,8 @@ import {
     GitHubSignInButton,
 } from "@pollinations/ui/auth";
 import {
-    formatPollen,
     PollenFundingAction,
     type PollenStatus,
-    WalletKindIcon,
 } from "@pollinations/ui/wallet";
 import {
     getAuthorizeInitialPermissions,
@@ -30,13 +27,18 @@ import {
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
-import { useLocation, useSearch } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
 import { config } from "../../config.ts";
 import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
+import {
+    deviceCodeMessages,
+    normalizeDeviceCode,
+    readDeviceRequest,
+} from "../../lib/device-request.ts";
 import {
     clearSignInContext,
     rememberAppPage,
@@ -55,6 +57,7 @@ import {
 import { useModelCategories } from "../models/use-model-categories.ts";
 import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
 import { AppAttribution } from "./app-attribution.tsx";
+import { AuthAccountIdentity } from "./auth-account-identity.tsx";
 import { ConnectionErrorScreen } from "./connection-error-screen";
 import { ConsentModelPicker } from "./consent-model-picker.tsx";
 import { SignInScreen } from "./sign-in-screen.tsx";
@@ -97,7 +100,7 @@ export function Authorize({
 } = {}) {
     const {
         redirect_url,
-        user_code,
+        user_code: rawUserCode,
         app_key,
         state,
         response_type,
@@ -109,6 +112,8 @@ export function Authorize({
         scope: urlScope,
         sign_in_error,
     } = useSearch({ from: "/authorize" });
+    const user_code = normalizeDeviceCode(rawUserCode ?? "");
+    const navigate = useNavigate();
     const location = useLocation();
     const requestUrl = new URL(location.href, window.location.origin);
     requestUrl.searchParams.delete("sign_in_error");
@@ -126,11 +131,24 @@ export function Authorize({
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user as User | undefined;
 
-    const [isAuthorizing, setIsAuthorizing] = useState(false);
+    const [pendingAction, setPendingAction] = useState<
+        "authorize" | "deny" | null
+    >(null);
+    const isAuthorizing = pendingAction !== null;
     const [lookupAttempt, setLookupAttempt] = useState(0);
     const [appLookupStatus, setAppLookupStatus] = useState<
         "idle" | "pending" | "valid" | "invalid" | "unavailable"
-    >(app_key && !isDeviceMode ? "pending" : "idle");
+    >(app_key || isDeviceMode ? "pending" : "idle");
+    const [deviceRequest, setDeviceRequest] = useState<{
+        code: string;
+        clientId: string | null;
+    } | null>(null);
+    const initializedDeviceCode = useRef<string | null>(
+        initialConsent?.accountPermissions !== undefined ? user_code : null,
+    );
+    const [deviceRecovery, setDeviceRecovery] = useState<
+        "code" | "retry" | "deny" | "sign-in" | null
+    >(null);
     const {
         isSigningIn,
         error: signInError,
@@ -224,7 +242,7 @@ export function Authorize({
               ? { state: "paid-required" }
               : undefined;
     // Preserve the caller's requested scopes for the authorization response.
-    // Sources: `scope` URL param (both flows) and /api/device/info fallback.
+    // App requests use the URL; device requests use the server record.
     const [requestedScopes, setRequestedScopes] = useState<Set<string>>(
         () => new Set(urlScope ?? []),
     );
@@ -238,9 +256,7 @@ export function Authorize({
         );
     };
     // Validation/lookup errors end the check even when no attribution arrived.
-    const isAttributionPending = isDeviceMode
-        ? !!app_key && !attribution && !error
-        : appLookupStatus === "pending";
+    const isAttributionPending = appLookupStatus === "pending";
     const requestValidationError = isDeviceMode
         ? null
         : getAuthorizeRequestError({
@@ -262,7 +278,9 @@ export function Authorize({
         (!generationEnabled || modelStatus === "ready") &&
         // The code flow only runs for registered clients with a validated
         // redirect — no hostname-only fallback like the legacy flow.
-        (isDeviceMode || !app_key || appLookupStatus === "valid");
+        (isDeviceMode
+            ? appLookupStatus === "valid" && deviceRequest?.code === user_code
+            : !app_key || appLookupStatus === "valid");
     const canRedirectOnDeny =
         !requestValidationError &&
         parsedRedirectUrl !== null &&
@@ -282,54 +300,67 @@ export function Authorize({
         setReturnTo(null);
         setAppLookupStatus("idle");
         if (isDeviceMode) {
-            // device.tsx forwards the server-stored scope as `scope=` in the
-            // URL, which flows into `urlScope` and preselects the
-            // Advanced toggles. Fallback for direct-link device URLs that
-            // skipped /device: fetch scope from the server and apply it.
-            if (!urlScope?.length) {
-                apiClient.device.info
-                    .$get({ query: { user_code } })
-                    .then((r) => {
-                        if (!r.ok) throw new Error("Invalid device code");
-                        return r.json() as Promise<{
-                            scope?: string;
-                            clientId?: string;
-                            status?: string;
-                        }>;
-                    })
-                    .then((data) => {
-                        if (data.scope) {
-                            const scopes = data.scope
-                                .split(" ")
-                                .filter(Boolean);
-                            setRequestedScopes(new Set(scopes));
-                            setAccountPermissions(
-                                sanitizeAuthorizeAccountPermissions(scopes),
-                            );
-                        }
-                    })
-                    .catch((e) => setError(e.message));
-            }
-            // Fetch app attribution if device flow has an app_key
-            if (app_key) {
-                apiClient["app-lookup"]
-                    .$get({ query: { app_key } })
-                    .then(readAttribution)
-                    .then((data) => {
-                        const attr = data as Attribution;
+            setError(null);
+            setDeviceRecovery(null);
+            setDeviceRequest(null);
+            setAttribution(null);
+            setAppLookupStatus("pending");
+            async function loadDeviceRequest() {
+                try {
+                    const response = await apiClient.device.info.$get({
+                        query: { user_code },
+                    });
+                    const device = await readDeviceRequest(response);
+                    if (!active) return;
+                    if (!device.ok) {
+                        setAppLookupStatus(
+                            device.error === "unavailable"
+                                ? "unavailable"
+                                : "invalid",
+                        );
+                        setDeviceRecovery(
+                            device.error === "unavailable" ? "retry" : "code",
+                        );
+                        setError(deviceCodeMessages[device.error]);
+                        return;
+                    }
+                    setDeviceRequest({
+                        code: user_code,
+                        clientId: device.clientId,
+                    });
+                    const scopes = device.scope.split(" ").filter(Boolean);
+                    setRequestedScopes(new Set(scopes));
+                    // Retrying a lookup must preserve the user's consent choices.
+                    if (initializedDeviceCode.current !== user_code) {
+                        initializedDeviceCode.current = user_code;
+                        setAccountPermissions(
+                            sanitizeAuthorizeAccountPermissions(scopes),
+                        );
+                    }
+                    if (device.clientId) {
+                        const response = await apiClient["app-lookup"].$get({
+                            query: { app_key: device.clientId },
+                        });
+                        const attr = await readAttribution(response);
+                        if (!active) return;
                         setAttribution(attr);
                         if (!attr.found) {
+                            setAppLookupStatus("invalid");
                             setError(
                                 "This app key could not be verified. Authorization blocked.",
                             );
+                            return;
                         }
-                    })
-                    .catch(() => {
-                        setError(
-                            "Could not verify this app key. Authorization blocked.",
-                        );
-                    });
+                    }
+                    setAppLookupStatus("valid");
+                } catch {
+                    if (!active) return;
+                    setAppLookupStatus("unavailable");
+                    setDeviceRecovery("retry");
+                    setError("Couldn’t check this connection. Try again.");
+                }
             }
+            loadDeviceRequest();
         } else {
             const validationError = requestValidationError;
             setError(validationError);
@@ -443,7 +474,8 @@ export function Authorize({
     async function handleAuthorize(): Promise<void> {
         if (!canAuthorize || isAuthorizing) return;
 
-        setIsAuthorizing(true);
+        setPendingAction("authorize");
+        if (isDeviceMode) setDeviceRecovery("retry");
         setError(null);
 
         try {
@@ -454,6 +486,9 @@ export function Authorize({
                 : [];
             const grantedAccountPermissions =
                 sanitizeAuthorizeAccountPermissions(accountPermissions) ?? [];
+            const requestedClientId = isDeviceMode
+                ? deviceRequest?.clientId
+                : app_key;
             const { key, id, expiresIn } = await createKeyWithPermissions({
                 name: isDeviceMode
                     ? `Device ${user_code}`
@@ -462,10 +497,7 @@ export function Authorize({
                 expiryDays: keyPermissions.permissions.expiryDays,
                 metadata: {
                     ...(isDeviceMode && { deviceUserCode: user_code }),
-                    ...(app_key &&
-                        (!isDeviceMode || attribution?.found) && {
-                            requestedClientId: app_key,
-                        }),
+                    ...(requestedClientId && { requestedClientId }),
                     ...(!isDeviceMode &&
                         parsedRedirectUrl && {
                             redirectOrigin: parsedRedirectUrl.origin,
@@ -502,6 +534,7 @@ export function Authorize({
                     throw new Error(
                         (data as { message?: string })?.message ||
                             "Failed to approve device",
+                        { cause: res.status },
                     );
                 }
                 setDeviceOutcome("approved");
@@ -561,23 +594,47 @@ export function Authorize({
                 window.location.href = url.toString();
             }
         } catch (e) {
-            setError(e instanceof Error ? e.message : "Authorization failed");
-            setIsAuthorizing(false);
+            const sessionExpired =
+                isDeviceMode && e instanceof Error && e.cause === 401;
+            if (sessionExpired) setDeviceRecovery("sign-in");
+            setError(
+                sessionExpired
+                    ? "Your Pollinations session expired. Sign in again to continue."
+                    : e instanceof Error
+                      ? e.message
+                      : "Authorization failed",
+            );
+            setPendingAction(null);
         }
     }
 
     async function handleDeny(): Promise<void> {
+        if (isAuthorizing) return;
         if (isDeviceMode) {
+            if (!user || deviceRequest?.code !== user_code) return;
+            setPendingAction("deny");
+            setError(null);
+            setDeviceRecovery("deny");
             try {
-                await apiClient.device.deny.$post({
-                    json: {
-                        userCode: user_code.toUpperCase(),
-                    },
+                const response = await apiClient.device.deny.$post({
+                    json: { userCode: user_code },
                 });
-            } catch {
-                // Best-effort deny
+                if (!response.ok)
+                    throw new Error("Device denial failed", {
+                        cause: response.status,
+                    });
+                setDeviceOutcome("denied");
+            } catch (e) {
+                const sessionExpired = e instanceof Error && e.cause === 401;
+                if (sessionExpired) setDeviceRecovery("sign-in");
+                setError(
+                    sessionExpired
+                        ? "Your Pollinations session expired. Sign in again to continue."
+                        : "Couldn’t decline this connection. Try again.",
+                );
+            } finally {
+                setPendingAction(null);
             }
-            setDeviceOutcome("denied");
         } else if (canRedirectOnDeny && parsedRedirectUrl) {
             const url = new URL(parsedRedirectUrl.href);
             if (isCodeFlow) {
@@ -597,74 +654,84 @@ export function Authorize({
         }
     }
 
+    const accountHeader = user ? (
+        <AuthAccountIdentity user={user} balances={balances} />
+    ) : undefined;
     if (deviceOutcome !== "pending") {
         return (
-            <DeviceAuthorizationResult denied={deviceOutcome === "denied"} />
+            <DeviceAuthorizationResult
+                denied={deviceOutcome === "denied"}
+                account={accountHeader}
+            />
         );
     }
 
-    const accountHeader = user ? (
-        <div
-            data-theme="neutral"
-            className="polli:inline-flex polli:min-w-0 polli:max-w-full polli:rounded-full polli:bg-theme-bg-subtle polli:p-1 polli:pr-3"
-        >
-            <AccountIdentity
-                name={user.githubUsername || user.name || user.email}
-                avatarUrl={user.image}
-                secondaryContent={
-                    <span className="inline-flex items-center gap-2 text-xs tabular-nums">
-                        <span className="inline-flex items-center gap-1">
-                            <WalletKindIcon kind="paid" />
-                            <span className="sr-only">Paid Pollen: </span>
-                            {balances === null
-                                ? "…"
-                                : formatPollen(Math.max(0, balances.paid))}
-                        </span>
-                        <span className="inline-flex items-center gap-1">
-                            <WalletKindIcon kind="tier" />
-                            <span className="sr-only">Quest Pollen: </span>
-                            {balances === null
-                                ? "…"
-                                : formatPollen(Math.max(0, balances.quest))}
-                        </span>
-                    </span>
-                }
-            />
-        </div>
-    ) : undefined;
-    if (error && !isDeviceMode) {
+    if (error && (!isDeviceMode || deviceRecovery !== "sign-in")) {
         return (
             <ConnectionErrorScreen
                 app={
                     <AppAttribution
                         titleId="connection-error-title"
                         attribution={attribution}
-                        isDeviceMode={false}
+                        isDeviceMode={isDeviceMode}
+                        userCode={user_code}
                         redirectHostname={redirectHostname}
                     />
                 }
                 account={accountHeader}
                 error={error}
                 verified={appLookupStatus === "valid"}
-                pending={isAttributionPending}
+                operation={deviceRecovery === "deny" ? "decline" : "connect"}
+                pending={isAttributionPending || isAuthorizing}
                 onRetry={
-                    appLookupStatus === "unavailable"
-                        ? () => setLookupAttempt((attempt) => attempt + 1)
+                    deviceRecovery === "code"
+                        ? () =>
+                              navigate({
+                                  to: "/device",
+                                  search: { user_code: "" },
+                              })
+                        : appLookupStatus === "unavailable" ||
+                            deviceRecovery === "retry" ||
+                            deviceRecovery === "deny"
+                          ? () => setLookupAttempt((attempt) => attempt + 1)
+                          : undefined
+                }
+                retryLabel={
+                    deviceRecovery === "code" ? "Enter another code" : undefined
+                }
+                onBack={
+                    isDeviceMode
+                        ? user && deviceRequest?.code === user_code
+                            ? handleDeny
+                            : undefined
+                        : returnTo || canRedirectOnDeny
+                          ? handleDeny
+                          : undefined
+                }
+                backLabel={exitLabel}
+                recoveryHint={
+                    isDeviceMode
+                        ? "Return to your device to start a new connection."
                         : undefined
                 }
-                onBack={returnTo || canRedirectOnDeny ? handleDeny : undefined}
             />
         );
     }
 
-    if (isPending || !user || signInError || isSigningIn) {
-        const displayedError = error ?? signInError;
+    if (
+        isPending ||
+        !user ||
+        signInError ||
+        isSigningIn ||
+        deviceRecovery === "sign-in"
+    ) {
+        const displayedError = signInError ?? error;
         return (
             <SignInScreen
-                appFirst={!isDeviceMode}
+                appFirst
                 app={
                     <AppAttribution
-                        titleId={isDeviceMode ? undefined : "sign-in-title"}
+                        titleId="sign-in-title"
                         attribution={attribution}
                         isDeviceMode={isDeviceMode}
                         userCode={user_code}
@@ -673,7 +740,7 @@ export function Authorize({
                 }
                 error={displayedError}
                 actions={
-                    !error && (
+                    (!error || deviceRecovery === "sign-in") && (
                         <GitHubSignInButton
                             onClick={signIn}
                             isSigningIn={
@@ -686,13 +753,22 @@ export function Authorize({
                                       ? "Checking app…"
                                       : undefined
                             }
-                            retry={!!signInError}
+                            retry={
+                                !!signInError || deviceRecovery === "sign-in"
+                            }
+                            retryLabel={
+                                deviceRecovery === "sign-in"
+                                    ? "Sign in again"
+                                    : undefined
+                            }
                         />
                     )
                 }
                 secondaryAction={
-                    (isDeviceMode ||
-                        (!isPending && !isSigningIn && hasAppExit)) && (
+                    !isDeviceMode &&
+                    !isPending &&
+                    !isSigningIn &&
+                    hasAppExit && (
                         <Button
                             as="button"
                             onClick={handleDeny}
@@ -718,7 +794,6 @@ export function Authorize({
         <AuthFlowLayout
             dialog={{ labelledBy: "authorize-dialog-title" }}
             account={accountHeader}
-            actionLayout="inline"
             actions={
                 !error && (
                     <Button
@@ -728,7 +803,7 @@ export function Authorize({
                         disabled={!canAuthorize || isAuthorizing}
                         aria-busy={isAuthorizing || isAttributionPending}
                     >
-                        {isAuthorizing
+                        {pendingAction === "authorize"
                             ? "Connecting…"
                             : isAttributionPending
                               ? "Checking app…"
@@ -737,7 +812,9 @@ export function Authorize({
                 )
             }
             secondaryAction={
-                (isDeviceMode || hasAppExit) && (
+                (isDeviceMode
+                    ? deviceRequest?.code === user_code
+                    : hasAppExit) && (
                     <Button
                         as="button"
                         onClick={handleDeny}
@@ -748,7 +825,7 @@ export function Authorize({
                             (!isDeviceMode && isAttributionPending && !returnTo)
                         }
                     >
-                        {exitLabel}
+                        {pendingAction === "deny" ? "Declining…" : exitLabel}
                     </Button>
                 )
             }
@@ -763,275 +840,239 @@ export function Authorize({
                         redirectHostname={redirectHostname}
                     />
                 </div>
-                {error ? (
-                    <ErrorBanner>Unable to connect. {error}</ErrorBanner>
-                ) : (
-                    <>
-                        <AuthAccessSummary
-                            title={
-                                <>
-                                    is requesting access to your{" "}
-                                    <InlineLink
-                                        href="https://pollinations.ai/"
-                                        className="polli:font-semibold"
-                                    >
-                                        pollinations.ai account
-                                    </InlineLink>
-                                    .
-                                </>
-                            }
-                        >
-                            <AuthAccessItem
-                                checked
-                                control={
-                                    <Chip intent="neutral" size="sm">
-                                        Required
-                                    </Chip>
-                                }
-                            >
-                                ID, username and picture.
-                            </AuthAccessItem>
-                            {requestedScopes.has("profile") && (
-                                <AuthAccessItem
-                                    ariaLabel="Share display name and email"
-                                    checked={
-                                        keyPermissions.permissions.accountPermissions?.includes(
-                                            "profile",
-                                        ) ?? false
-                                    }
-                                    onChange={(checked) =>
-                                        setOptionalPermission(
-                                            "profile",
-                                            checked,
-                                        )
-                                    }
-                                    disabled={isAuthorizing}
-                                >
-                                    Display name and email.
-                                </AuthAccessItem>
-                            )}
-                            {requestedScopes.has("usage") && (
-                                <AuthAccessItem
-                                    ariaLabel="Share account activity"
-                                    checked={
-                                        keyPermissions.permissions.accountPermissions?.includes(
-                                            "usage",
-                                        ) ?? false
-                                    }
-                                    onChange={(checked) =>
-                                        setOptionalPermission("usage", checked)
-                                    }
-                                    disabled={isAuthorizing}
-                                >
-                                    Balance, usage, earnings and quest status.
-                                </AuthAccessItem>
-                            )}
-                            {requestedScopes.has("keys") && (
-                                <AuthAccessItem
-                                    ariaLabel="Allow account management"
-                                    checked={
-                                        keyPermissions.permissions.accountPermissions?.includes(
-                                            "keys",
-                                        ) ?? false
-                                    }
-                                    onChange={(checked) =>
-                                        setOptionalPermission("keys", checked)
-                                    }
-                                    disabled={isAuthorizing}
-                                >
-                                    API keys, agents, models and connected apps.
-                                </AuthAccessItem>
-                            )}
-                        </AuthAccessSummary>
-                        <div className="mb-3">
-                            <AuthInfoCard title={null}>
-                                <ul className="space-y-3 text-sm text-theme-text-base">
-                                    <AuthAccessItem
-                                        ariaLabel="Allow AI generation"
-                                        checked={generationEnabled}
-                                        onChange={setGenerationEnabled}
-                                        disabled={isAuthorizing}
-                                        details={
-                                            generationEnabled && (
-                                                <div className="space-y-3">
-                                                    {modelStatus ===
-                                                    "loading" ? (
-                                                        <output>
-                                                            Loading models…
-                                                        </output>
-                                                    ) : modelStatus ===
-                                                      "error" ? (
-                                                        <ErrorBanner>
-                                                            <p>
-                                                                Couldn’t load
-                                                                models.
-                                                            </p>
-                                                            <Button
-                                                                size="sm"
-                                                                onClick={
-                                                                    retryModels
-                                                                }
-                                                                aria-label="Retry loading models"
-                                                                className="polli:mt-2"
-                                                            >
-                                                                Try again
-                                                            </Button>
-                                                        </ErrorBanner>
-                                                    ) : null}
-                                                    {(attribution?.earningsEnabled ||
-                                                        fundingStatus) && (
-                                                        <div className="flex flex-wrap items-center gap-2">
-                                                            {attribution?.earningsEnabled && (
-                                                                <Chip
-                                                                    intent="info"
-                                                                    size="sm"
-                                                                    title="The app earns 20% of the pollen you spend in it."
-                                                                >
-                                                                    <EarningsIcon
-                                                                        aria-hidden="true"
-                                                                        className="h-3.5 w-3.5"
-                                                                    />
-                                                                    App earns
-                                                                    20%
-                                                                </Chip>
-                                                            )}
-                                                            {fundingStatus && (
-                                                                <PollenFundingAction
-                                                                    status={
-                                                                        fundingStatus
-                                                                    }
-                                                                    enterUrl={
-                                                                        config.baseUrl
-                                                                    }
-                                                                />
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                    <PollenBudgetInput
-                                                        disabled={isAuthorizing}
-                                                        value={
-                                                            keyPermissions
-                                                                .permissions
-                                                                .pollenBudget
-                                                        }
-                                                        onChange={
-                                                            keyPermissions.setPollenBudget
-                                                        }
-                                                        inline
-                                                    />
-                                                    {modelStatus ===
-                                                        "ready" && (
-                                                        <Collapsible
-                                                            label={
-                                                                <span className="flex flex-wrap items-center gap-2">
-                                                                    <span>
-                                                                        Models
-                                                                    </span>
-                                                                    <span className="flex min-w-0 flex-wrap gap-1.5">
-                                                                        {selectedModelCounts.map(
-                                                                            ({
-                                                                                modality,
-                                                                                label,
-                                                                                count,
-                                                                            }) => (
-                                                                                <Chip
-                                                                                    key={
-                                                                                        modality
-                                                                                    }
-                                                                                    size="sm"
-                                                                                    intent="neutral"
-                                                                                >
-                                                                                    {
-                                                                                        label
-                                                                                    }{" "}
-                                                                                    ·{" "}
-                                                                                    {
-                                                                                        count
-                                                                                    }
-                                                                                </Chip>
-                                                                            ),
-                                                                        )}
-                                                                        {selectedModelCounts.length ===
-                                                                            0 && (
-                                                                            <Chip
-                                                                                size="sm"
-                                                                                intent="neutral"
-                                                                            >
-                                                                                None
-                                                                                selected
-                                                                            </Chip>
-                                                                        )}
-                                                                    </span>
-                                                                </span>
-                                                            }
-                                                            expanded={
-                                                                modelsExpanded
-                                                            }
-                                                            onToggle={() =>
-                                                                setModelsExpanded(
-                                                                    (value) =>
-                                                                        !value,
-                                                                )
-                                                            }
-                                                            disabled={
-                                                                isAuthorizing
-                                                            }
-                                                            wrapperClassName="polli:border-0"
-                                                            triggerClassName="polli:px-0 polli:text-sm polli:font-semibold"
-                                                            hoverClassName="polli:hover:bg-transparent"
-                                                            panelClassName="polli:pt-2"
-                                                        >
-                                                            <ConsentModelPicker
-                                                                catalog={
-                                                                    catalog
-                                                                }
-                                                                models={
-                                                                    requestedModels
-                                                                }
-                                                                selected={
-                                                                    allowedModels
-                                                                }
-                                                                onChange={
-                                                                    keyPermissions.setAllowedModels
-                                                                }
-                                                                disabled={
-                                                                    isAuthorizing
-                                                                }
-                                                            />
-                                                        </Collapsible>
-                                                    )}
-                                                </div>
-                                            )
-                                        }
-                                    >
-                                        AI generation
-                                    </AuthAccessItem>
-                                </ul>
-                            </AuthInfoCard>
-                        </div>
-
-                        <AuthInfoCard title={null}>
-                            <ExpiryDaysInput
-                                disabled={isAuthorizing}
-                                error={expiryError}
-                                value={keyPermissions.permissions.expiryDays}
-                                onChange={keyPermissions.setExpiryDays}
-                                inline
-                            />
-                        </AuthInfoCard>
-                        <p className="pt-3 text-xs text-theme-text-soft">
-                            Revoke access anytime in your{" "}
+                <AuthAccessSummary
+                    title={
+                        <>
+                            is requesting access to your{" "}
                             <InlineLink
-                                href={`${config.baseUrl}/`}
-                                external
-                                data-pollinations-action="dashboard"
+                                href="https://pollinations.ai/"
+                                className="polli:font-semibold"
                             >
-                                dashboard
+                                pollinations.ai account
                             </InlineLink>
                             .
-                        </p>
-                    </>
-                )}
+                        </>
+                    }
+                >
+                    <AuthAccessItem
+                        checked
+                        control={
+                            <Chip intent="neutral" size="sm">
+                                Required
+                            </Chip>
+                        }
+                    >
+                        ID, username and picture.
+                    </AuthAccessItem>
+                    {requestedScopes.has("profile") && (
+                        <AuthAccessItem
+                            ariaLabel="Share display name and email"
+                            checked={
+                                keyPermissions.permissions.accountPermissions?.includes(
+                                    "profile",
+                                ) ?? false
+                            }
+                            onChange={(checked) =>
+                                setOptionalPermission("profile", checked)
+                            }
+                            disabled={isAuthorizing}
+                        >
+                            Display name and email.
+                        </AuthAccessItem>
+                    )}
+                    {requestedScopes.has("usage") && (
+                        <AuthAccessItem
+                            ariaLabel="Share account activity"
+                            checked={
+                                keyPermissions.permissions.accountPermissions?.includes(
+                                    "usage",
+                                ) ?? false
+                            }
+                            onChange={(checked) =>
+                                setOptionalPermission("usage", checked)
+                            }
+                            disabled={isAuthorizing}
+                        >
+                            Balance, usage, earnings and quest status.
+                        </AuthAccessItem>
+                    )}
+                    {requestedScopes.has("keys") && (
+                        <AuthAccessItem
+                            ariaLabel="Allow account management"
+                            checked={
+                                keyPermissions.permissions.accountPermissions?.includes(
+                                    "keys",
+                                ) ?? false
+                            }
+                            onChange={(checked) =>
+                                setOptionalPermission("keys", checked)
+                            }
+                            disabled={isAuthorizing}
+                        >
+                            API keys, agents, models and connected apps.
+                        </AuthAccessItem>
+                    )}
+                </AuthAccessSummary>
+                <div className="mb-3">
+                    <AuthInfoCard title={null}>
+                        <ul className="space-y-3 text-sm text-theme-text-base">
+                            <AuthAccessItem
+                                ariaLabel="Allow AI generation"
+                                checked={generationEnabled}
+                                onChange={setGenerationEnabled}
+                                disabled={isAuthorizing}
+                                details={
+                                    generationEnabled && (
+                                        <div className="space-y-3">
+                                            {modelStatus === "loading" ? (
+                                                <output>Loading models…</output>
+                                            ) : modelStatus === "error" ? (
+                                                <ErrorBanner>
+                                                    <p>Couldn’t load models.</p>
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={retryModels}
+                                                        aria-label="Retry loading models"
+                                                        className="polli:mt-2"
+                                                    >
+                                                        Try again
+                                                    </Button>
+                                                </ErrorBanner>
+                                            ) : null}
+                                            {(attribution?.earningsEnabled ||
+                                                fundingStatus) && (
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    {attribution?.earningsEnabled && (
+                                                        <Chip
+                                                            intent="info"
+                                                            size="sm"
+                                                            title="The app earns 20% of the pollen you spend in it."
+                                                        >
+                                                            <EarningsIcon
+                                                                aria-hidden="true"
+                                                                className="h-3.5 w-3.5"
+                                                            />
+                                                            App earns 20%
+                                                        </Chip>
+                                                    )}
+                                                    {fundingStatus && (
+                                                        <PollenFundingAction
+                                                            status={
+                                                                fundingStatus
+                                                            }
+                                                            enterUrl={
+                                                                config.baseUrl
+                                                            }
+                                                        />
+                                                    )}
+                                                </div>
+                                            )}
+                                            <PollenBudgetInput
+                                                disabled={isAuthorizing}
+                                                value={
+                                                    keyPermissions.permissions
+                                                        .pollenBudget
+                                                }
+                                                onChange={
+                                                    keyPermissions.setPollenBudget
+                                                }
+                                                inline
+                                            />
+                                            {modelStatus === "ready" && (
+                                                <Collapsible
+                                                    label={
+                                                        <span className="flex flex-wrap items-center gap-2">
+                                                            <span>Models</span>
+                                                            <span className="flex min-w-0 flex-wrap gap-1.5">
+                                                                {selectedModelCounts.map(
+                                                                    ({
+                                                                        modality,
+                                                                        label,
+                                                                        count,
+                                                                    }) => (
+                                                                        <Chip
+                                                                            key={
+                                                                                modality
+                                                                            }
+                                                                            size="sm"
+                                                                            intent="neutral"
+                                                                        >
+                                                                            {
+                                                                                label
+                                                                            }{" "}
+                                                                            ·{" "}
+                                                                            {
+                                                                                count
+                                                                            }
+                                                                        </Chip>
+                                                                    ),
+                                                                )}
+                                                                {selectedModelCounts.length ===
+                                                                    0 && (
+                                                                    <Chip
+                                                                        size="sm"
+                                                                        intent="neutral"
+                                                                    >
+                                                                        None
+                                                                        selected
+                                                                    </Chip>
+                                                                )}
+                                                            </span>
+                                                        </span>
+                                                    }
+                                                    expanded={modelsExpanded}
+                                                    onToggle={() =>
+                                                        setModelsExpanded(
+                                                            (value) => !value,
+                                                        )
+                                                    }
+                                                    disabled={isAuthorizing}
+                                                    wrapperClassName="polli:border-0"
+                                                    triggerClassName="polli:px-0 polli:text-sm polli:font-semibold"
+                                                    hoverClassName="polli:hover:bg-transparent"
+                                                    panelClassName="polli:pt-2"
+                                                >
+                                                    <ConsentModelPicker
+                                                        catalog={catalog}
+                                                        models={requestedModels}
+                                                        selected={allowedModels}
+                                                        onChange={
+                                                            keyPermissions.setAllowedModels
+                                                        }
+                                                        disabled={isAuthorizing}
+                                                    />
+                                                </Collapsible>
+                                            )}
+                                        </div>
+                                    )
+                                }
+                            >
+                                AI generation
+                            </AuthAccessItem>
+                        </ul>
+                    </AuthInfoCard>
+                </div>
+
+                <AuthInfoCard title={null}>
+                    <ExpiryDaysInput
+                        disabled={isAuthorizing}
+                        error={expiryError}
+                        value={keyPermissions.permissions.expiryDays}
+                        onChange={keyPermissions.setExpiryDays}
+                        inline
+                    />
+                </AuthInfoCard>
+                <p className="pt-3 text-xs text-theme-text-soft">
+                    Revoke access anytime in your{" "}
+                    <InlineLink
+                        href={`${config.baseUrl}/`}
+                        external
+                        data-pollinations-action="dashboard"
+                    >
+                        dashboard
+                    </InlineLink>
+                    .
+                </p>
             </div>
         </AuthFlowLayout>
     );

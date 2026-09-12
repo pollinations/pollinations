@@ -7,7 +7,12 @@ the brain's system prompt and the `list_models` tool output.
 
 from __future__ import annotations
 
-from floret.registry import get_model_catalog, get_voices
+from floret.registry import (
+    auto_selection_summary,
+    find_model_meta,
+    get_model_catalog,
+    get_voices,
+)
 
 # Curated guidance, grounded in the live lineup (2026-07-10). Maintain this by hand.
 BEST_AT: dict[str, str] = {
@@ -38,7 +43,7 @@ BEST_AT: dict[str, str] = {
     "whisper": "speech-to-text",
     "scribe": "speech-to-text",
     # Text / brain
-    "glm": "agent brain (tool-calling)",
+    "z-ai/glm-5.3-flash": "agent brain (tool-calling)",
     "gemini-search": "web search with live results",
     "openai-large": "strong general reasoning/writing",
     "claude-large": "strong writing and reasoning",
@@ -69,11 +74,21 @@ def models_summary(kind: str | None = None) -> str:
 
 
 def _best_at_block() -> str:
-    return "\n".join(
-        f"  - {m}: {why}"
-        for m, why in BEST_AT.items()
-        if m in get_model_catalog() or True
-    )
+    catalog = get_model_catalog()
+    lines = []
+    for model, why in BEST_AT.items():
+        meta = find_model_meta(catalog, model)
+        if meta is not None:
+            model_id = next(
+                (
+                    candidate
+                    for candidate, candidate_meta in catalog.items()
+                    if candidate_meta is meta
+                ),
+                model,
+            )
+            lines.append(f"  - {model_id}: {why}")
+    return "\n".join(lines)
 
 
 def build_system_prompt() -> str:
@@ -85,6 +100,15 @@ def build_system_prompt() -> str:
             counts[mod] = counts.get(mod, 0) + 1
     inventory = ", ".join(f"{v} {k}" for k, v in sorted(counts.items())) or "loading"
 
+    automatic = auto_selection_summary()
+    guidance = (
+        "Global routing choices (catalog-based advice, not measured quality):\n"
+        + automatic
+        + "\nFor image/video generation omit model to use the current global choice. "
+        "For specialized tasks choose a compatible model; explicit user pins take precedence."
+        if automatic is not None
+        else "Model strengths (curated):\n" + _best_at_block()
+    )
     return f"""You are Polli, an autonomous creative agent running on Pollinations. You can \
 generate text, images, video, and speech, transcribe audio, search the web, and run shell \
 commands — and you chain these freely to fully satisfy a request.
@@ -117,6 +141,5 @@ start the next clip from it. When concatenating, first drop each later clip's fi
 - When done, write a clear final message. Reference the media you produced; it is attached \
 automatically for the user.
 
-Model strengths (curated):
-{_best_at_block()}
+{guidance}
 """

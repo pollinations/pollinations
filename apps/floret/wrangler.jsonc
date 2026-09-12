@@ -8,12 +8,25 @@
       "image": "./Dockerfile",
       "max_instances": 2,
       "instance_type": "standard-1"
+    },
+    {
+      "class_name": "FloretShellContainer",
+      "image": "./Dockerfile.shell",
+      "max_instances": 100,
+      "instance_type": "standard-1"
     }
   ],
   "durable_objects": {
-    "bindings": [{ "name": "FLORET", "class_name": "FloretContainer" }]
+    "bindings": [
+      { "name": "FLORET", "class_name": "FloretContainer" },
+      { "name": "FLORET_SHELL", "class_name": "FloretShellContainer" },
+      { "name": "FLORET_CATALOG", "class_name": "FloretCatalog" }
+    ]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["FloretContainer"] }],
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["FloretContainer"] },
+    { "tag": "v2", "new_sqlite_classes": ["FloretShellContainer", "FloretCatalog"] }
+  ],
   // Worker-backed apps bind their own hostnames; deploy.sh gates on the myceli
   // origin serving before it verifies the public URL, so both are needed.
   "routes": [

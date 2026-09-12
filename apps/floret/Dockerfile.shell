@@ -1,0 +1,15 @@
+FROM python:3.12-slim
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends bash ffmpeg curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd -m -u 10001 shell
+
+COPY shell-runner.py /app/shell-runner.py
+RUN chmod 0555 /app/shell-runner.py
+
+ENV FLORET_ISOLATED_CONTAINER=1
+USER shell
+WORKDIR /workspace
+EXPOSE 8080
+CMD ["python", "/app/shell-runner.py"]

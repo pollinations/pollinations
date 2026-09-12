@@ -63,6 +63,23 @@ class ModelAliasTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(registry.get_modalities_for_model("chosen"), ["text"])
             self.assertFalse(supports_end_frame("chosen"))
 
+    async def test_pick_model_handles_list_capabilities(self):
+        cache = registry._normalize(
+            {
+                "data": [
+                    {
+                        "id": "image",
+                        "category": "image",
+                        "output_modalities": ["image"],
+                        "supported_endpoints": ["/image/{prompt}"],
+                        "capabilities": ["image_generation"],
+                    }
+                ]
+            }
+        )
+        with patch.object(registry, "_registry_cache", cache):
+            self.assertEqual(registry.pick_model("image"), "image")
+
     async def test_typography_priority_survives_catalog_rename(self):
         for renamed in [False, True]:
             preferred = "openai/gpt-image-1" if renamed else "gptimage"

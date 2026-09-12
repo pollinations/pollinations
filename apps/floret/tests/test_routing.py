@@ -1,11 +1,10 @@
 import asyncio
 
-from pydantic import ValidationError
 import pytest
+from pydantic import ValidationError
 
-from floret import registry
+from floret import knowledge, registry, routing
 from floret.config import _api_key_override, _current_api_key
-import floret.routing as routing
 from floret.routing import (
     RoutingInput,
     RoutingPreferences,
@@ -98,6 +97,18 @@ def _use_catalog(monkeypatch, catalog=None):
         return _RICH_CATALOG if catalog is None else catalog
 
     monkeypatch.setattr(routing, "fetch_model_catalog", fetch_model_catalog)
+
+
+def test_curated_model_notes_resolve_available_aliases(monkeypatch):
+    monkeypatch.setattr(
+        knowledge,
+        "get_model_catalog",
+        lambda: {"openai/gpt-audio-mini": {"aliases": ["openai-audio"]}},
+    )
+
+    assert "openai/gpt-audio-mini: default TTS" in knowledge._best_at_block()
+    assert "openai-audio: default TTS" not in knowledge._best_at_block()
+    assert "flux: fast general-purpose image" not in knowledge._best_at_block()
 
 
 def test_omitted_and_auto_values_normalize_to_none():
@@ -215,6 +226,7 @@ async def test_validate_routing_accepts_all_capability_overrides(monkeypatch):
         image_editing="nanobanana",
         video="wan-fast",
         audio="openai-audio",
+        audio_endpoint="/v1/chat/completions",
     )
 
 
@@ -252,7 +264,16 @@ async def test_validate_routing_rejects_unknown_models(monkeypatch, model):
             "nanobanana",
             "requires endpoint '/image/{prompt}'",
         ),
-        ("image_editing", "opaque-image-model-7", "requires input modality 'image'"),
+        (
+            "image_editing",
+            "opaque-image-model-7",
+            "requires input modality 'image'",
+        ),
+        (
+            "image_editing",
+            "image-without-edit-endpoint",
+            "requires endpoint '/v1/images/edits'",
+        ),
         ("video", "opaque-image-model-7", "requires category 'video'"),
         ("audio", "glm", "requires output modality 'audio'"),
     ],
@@ -261,10 +282,17 @@ async def test_validate_routing_rejects_capability_mismatches(
     monkeypatch, field, model, reason
 ):
     catalog = {
-        key: ({**value, "supported_endpoints": ["/v1/images/edits"]})
-        if key == "nanobanana"
-        else value
+        key: (
+            ({**value, "supported_endpoints": ["/v1/images/edits"]})
+            if key == "nanobanana"
+            else value
+        )
         for key, value in _RICH_CATALOG.items()
+    }
+    catalog["image-without-edit-endpoint"] = {
+        **_RICH_CATALOG["nanobanana"],
+        "name": "image-without-edit-endpoint",
+        "supported_endpoints": ["/image/{prompt}"],
     }
     _use_catalog(monkeypatch, catalog)
 
@@ -274,6 +302,55 @@ async def test_validate_routing_rejects_capability_mismatches(
     assert error.value.field == field
     assert error.value.model == model
     assert error.value.reason == reason
+
+
+async def test_audio_routing_accepts_canonical_chat_audio_alias(monkeypatch):
+    catalog = {
+        "openai/gpt-audio-mini": {
+            **_RICH_CATALOG["openai-audio"],
+            "name": "openai/gpt-audio-mini",
+            "aliases": ["openai-audio"],
+        }
+    }
+    _use_catalog(monkeypatch, catalog)
+
+    preferences = await validate_routing(RoutingInput(audio="openai-audio"))
+
+    assert preferences.audio == "openai-audio"
+
+
+async def test_audio_routing_rejects_models_without_an_audio_endpoint(monkeypatch):
+    catalog = {
+        "invalid-audio": {
+            "category": "audio",
+            "input_modalities": ["text"],
+            "output_modalities": ["audio"],
+            "supported_endpoints": ["/image/{prompt}"],
+        }
+    }
+    _use_catalog(monkeypatch, catalog)
+
+    with pytest.raises(RoutingValidationError) as error:
+        await validate_routing(RoutingInput(audio="invalid-audio"))
+
+    assert error.value.reason == "requires an audio generation endpoint"
+
+
+async def test_validated_audio_endpoint_survives_cold_shared_registry(monkeypatch):
+    catalog = {
+        "openai/gpt-audio-mini": {
+            **_RICH_CATALOG["openai-audio"],
+            "name": "openai/gpt-audio-mini",
+            "aliases": ["openai-audio"],
+        }
+    }
+    _use_catalog(monkeypatch, catalog)
+    monkeypatch.setattr(registry, "_registry_cache", None)
+
+    preferences = await validate_routing(RoutingInput(audio="openai/gpt-audio-mini"))
+
+    assert preferences.audio_endpoint == "/v1/chat/completions"
+    assert registry._registry_cache is None
 
 
 async def test_explicit_validation_fetches_every_time_and_sees_catalog_changes(

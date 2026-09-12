@@ -5,7 +5,7 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, StringConstraints, model_validator
 
-from floret.registry import fetch_model_catalog, find_model_meta
+from floret.registry import fetch_model_catalog, find_model_meta, get_audio_endpoint
 
 ModelPreference = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
@@ -57,6 +57,7 @@ _REQUIREMENTS = {
         category="image",
         required_input="image",
         required_output="image",
+        endpoint_when_present="/v1/images/edits",
     ),
     "video": CapabilityRequirement(
         category="video",
@@ -66,7 +67,6 @@ _REQUIREMENTS = {
     "audio": CapabilityRequirement(
         required_input="text",
         required_output="audio",
-        endpoint_when_present="/v1/chat/completions",
     ),
 }
 
@@ -79,12 +79,14 @@ class RoutingPreferences:
     image_editing: str | None = None
     video: str | None = None
     audio: str | None = None
+    audio_endpoint: str | None = None
 
     def explicit(self) -> dict[str, str]:
         return {
             field.name: value
             for field in fields(self)
-            if (value := getattr(self, field.name)) is not None
+            if field.name != "audio_endpoint"
+            and (value := getattr(self, field.name)) is not None
         }
 
     def model_for_tool(self, tool_name: str) -> str | None:
@@ -194,6 +196,12 @@ def _validation_reason(
 
     endpoints = _string_values(meta, "supported_endpoints")
     if (
+        requirement is _REQUIREMENTS["audio"]
+        and endpoints
+        and get_audio_endpoint("", meta) is None
+    ):
+        return "requires an audio generation endpoint"
+    if (
         endpoints
         and requirement.endpoint_when_present
         and requirement.endpoint_when_present not in endpoints
@@ -220,4 +228,11 @@ async def validate_routing(value: RoutingInput | None) -> RoutingPreferences:
         reason = _validation_reason(meta, _REQUIREMENTS[field])
         if reason is not None:
             raise RoutingValidationError(field, model, reason)
+        if field == "audio":
+            preferences = RoutingPreferences(
+                **{
+                    **preferences.explicit(),
+                    "audio_endpoint": get_audio_endpoint(model, meta),
+                }
+            )
     return preferences

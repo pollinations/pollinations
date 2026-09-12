@@ -340,6 +340,19 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    // Azure primary, OpenAI fallback: both OpenRouter tags bill the same
+    // $0.15/$0.60/$0.075 per-M rate; azure/swedencentral bills 10% higher and
+    // is excluded by pinning the order and disabling further fallbacks.
+    "openai/gpt-4o-mini": () =>
+        createOpenRouterModelConfig({
+            model: "openai/gpt-4o-mini",
+            defaultOptions: {
+                provider: {
+                    order: ["azure", "openai"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
 
     // -- DeepInfra (NVIDIA) ---------------------------------------------------
     "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B": () =>

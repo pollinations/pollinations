@@ -585,6 +585,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["thinkingmachines/inkling-small"],
     },
     {
+        name: "openai/gpt-4o-mini",
+        config: portkeyConfig["openai/gpt-4o-mini"],
+    },
+    {
         name: "thinkingmachines/inkling",
         config: portkeyConfig["accounts/fireworks/models/inkling"],
         transform: pipe(inputAudioToFireworks, mandatoryReasoning),

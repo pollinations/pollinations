@@ -9,6 +9,7 @@ import {
 import type { WorkspaceLike } from "@cloudflare/computer/assets";
 import { WorkerShellBackend } from "@cloudflare/computer/backends/worker-shell";
 import { createGitClient } from "@cloudflare/computer/git";
+import curlModules from "@cloudflare/computer/shell/curl";
 import jqModules from "@cloudflare/computer/shell/jq";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { withMcpUsageHeaders } from "../../../shared/mcp-usage.ts";
@@ -49,10 +50,11 @@ with its own files. Without it you are in the default session.
 
 ## Shell
 
-The only tool is bash (no network, no Node, no Python; coreutils, grep,
-sed, awk, jq, tar and git are available). Write a file by passing its
+The only tool is bash (no Node, no Python; coreutils, grep, sed, awk,
+jq, tar, curl and git are available). Write a file by passing its
 content as stdin to \`cat > path\`. \`assets publish <path>\` copies a file
-to public media storage and prints its URL.
+to public media storage and prints its URL; \`curl -o path <url>\`
+downloads one back.
 `;
 
 // The Dynamic Worker running bash reaches this filesystem through the
@@ -82,8 +84,8 @@ export class Computer extends withWorkspace(
                     loader: env.LOADER,
                     workspace: { binding: "COMPUTER", id: ctx.id.toString() },
                     ctx,
-                    egress: { mode: "none" },
-                    commands: [jqModules],
+                    egress: { mode: "direct" },
+                    commands: [jqModules, curlModules],
                 }),
             ],
         };

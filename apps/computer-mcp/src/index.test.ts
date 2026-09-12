@@ -186,6 +186,17 @@ describe("computer MCP worker", () => {
         await client.close();
     });
 
+    it("downloads files with curl", async () => {
+        const client = await connect("user-curl");
+        const download = await bash(
+            client,
+            "curl -sS -o /workspace/example.html https://example.com/ && grep -c 'Example Domain' /workspace/example.html",
+        );
+        expect(download.isError).toBe(false);
+        expect(download.text.trim()).toBe("1");
+        await client.close();
+    });
+
     it("runs pipelines, jq and git", async () => {
         const client = await connect("user-shell");
         const result = await bash(

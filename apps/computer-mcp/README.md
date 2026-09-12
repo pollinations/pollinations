@@ -8,8 +8,10 @@ Built on [`@cloudflare/computer`](https://github.com/cloudflare/computer)
 (preview). Each user gets one Durable Object whose SQLite holds the
 filesystem. The single `bash` tool runs [just-bash](https://github.com/vercel-labs/just-bash)
 in a throwaway Dynamic Worker that talks back to the Durable Object for file
-access. No container, no Linux, no outbound network. The shell has coreutils,
-grep, sed, awk, jq, tar and git; no Node or Python.
+access. No container, no Linux. The shell has coreutils, grep, sed, awk, jq,
+tar, curl and git; no Node or Python. `curl` uses the Dynamic Worker's own
+`fetch`, so the shell can reach any public URL (egress `direct`); there is no
+host allowlist.
 
 ## The tool
 
@@ -22,7 +24,8 @@ is no session listing. Inside the shell, `assets publish <path>` copies a
 file to the Pollinations media service (`MEDIA` service binding, the same
 one ffmpeg-mcp uses) and prints its public `https://media.pollinations.ai/…`
 URL. It is a snapshot with media's 30-day retention, refreshed on reads; the
-command's expiry argument is ignored. Every successful call is billed at one flat rate (`computer.tool_call.v1`, reported to gen as a
+command's expiry argument is ignored. `curl -o <path> <url>` is the way back
+in, for media URLs or anything else public. Every successful call is billed at one flat rate (`computer.tool_call.v1`, reported to gen as a
 usage receipt); discovery requests and storage are free. Memory is a convention,
 not a tool: a `/workspace/README.md` seeded on first use tells the agent to keep
 current facts in `memory/facts.md` and a dated append-only journal in

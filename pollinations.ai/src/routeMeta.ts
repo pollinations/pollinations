@@ -37,12 +37,53 @@ export const NOT_FOUND_META: RouteMeta = {
     description: "The requested page could not be found.",
 };
 
-export function routeHead(path: keyof typeof ROUTE_META) {
-    const meta = ROUTE_META[path];
+export function routeHead(path?: string) {
+    const meta = (path && ROUTE_META[path]) || NOT_FOUND_META;
+    const canonical =
+        path && ROUTE_META[path]
+            ? `https://pollinations.ai${path === "/" ? "" : path}`
+            : null;
+    const jsonLd = path ? getJsonLd(path) : null;
     return {
         meta: [
             { title: meta.title },
             { name: "description", content: meta.description },
+            { property: "og:title", content: meta.title },
+            { property: "og:description", content: meta.description },
+            { name: "twitter:title", content: meta.title },
+            { name: "twitter:description", content: meta.description },
+            ...(canonical ? [{ property: "og:url", content: canonical }] : []),
         ],
+        links: canonical ? [{ rel: "canonical", href: canonical }] : [],
+        scripts: jsonLd
+            ? [{ type: "application/ld+json", children: jsonLd }]
+            : [],
     };
+}
+
+export function getJsonLd(path: string): string | null {
+    if (path === "/")
+        return JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: "pollinations.ai",
+            url: "https://pollinations.ai",
+            logo: "https://pollinations.ai/icon-512.png",
+            sameAs: [
+                "https://github.com/pollinations",
+                "https://discord.gg/pollinations-ai-885844321461485618",
+                "https://x.com/pollinations_ai",
+            ],
+            description: ROUTE_META["/"].description,
+        });
+    if (path === "/play")
+        return JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebApplication",
+            name: "Pollinations Play",
+            url: "https://pollinations.ai/play",
+            applicationCategory: "MultimediaApplication",
+            description: ROUTE_META["/play"].description,
+        });
+    return null;
 }

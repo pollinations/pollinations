@@ -8,7 +8,7 @@
  * cannot be read directly by browsers because it does not include CORS headers.
  */
 
-import { NOT_FOUND_META, ROUTE_META } from "./routeMeta";
+import { getJsonLd, NOT_FOUND_META, ROUTE_META } from "./routeMeta";
 
 // Cloudflare Workers types (minimal, avoids conflicts with DOM types)
 interface CfElement {
@@ -146,36 +146,6 @@ async function githubStars(request: Request, ctx: ExecutionContext) {
     });
 }
 
-const JSON_LD_HOME = JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    name: "pollinations.ai",
-    url: "https://pollinations.ai",
-    logo: "https://pollinations.ai/icon-512.png",
-    sameAs: [
-        "https://github.com/pollinations",
-        "https://discord.gg/pollinations-ai-885844321461485618",
-        "https://x.com/pollinations_ai",
-    ],
-    description:
-        "Open infrastructure for text, image, audio and video generation, with one wallet and one API.",
-});
-
-const JSON_LD_PLAY = JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    name: "Pollinations Play",
-    url: "https://pollinations.ai/play",
-    applicationCategory: "MultimediaApplication",
-    description: "Generate images, text, audio and video with AI models",
-});
-
-function getJsonLd(path: string): string | null {
-    if (path === "/") return JSON_LD_HOME;
-    if (path === "/play") return JSON_LD_PLAY;
-    return null;
-}
-
 export default {
     async fetch(
         request: Request,
@@ -276,7 +246,7 @@ export default {
                 element(el) {
                     if (jsonLd) {
                         el.append(
-                            `<script type="application/ld+json">${jsonLd}</script>`,
+                            `<script data-route-meta type="application/ld+json">${jsonLd}</script>`,
                             { html: true },
                         );
                     }

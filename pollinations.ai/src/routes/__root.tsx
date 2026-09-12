@@ -5,18 +5,13 @@ import {
     Outlet,
     useRouterState,
 } from "@tanstack/react-router";
-import { NOT_FOUND_META } from "../routeMeta";
+import { routeHead } from "../routeMeta";
 import { pageCardClassName } from "../ui/site/PageCard";
 import { SiteFooter } from "../ui/site/SiteFooter";
 import { SiteHeader } from "../ui/site/SiteHeader";
 
 export const Route = createRootRoute({
-    head: () => ({
-        meta: [
-            { title: NOT_FOUND_META.title },
-            { name: "description", content: NOT_FOUND_META.description },
-        ],
-    }),
+    head: () => routeHead(),
     component: RootLayout,
     notFoundComponent: NotFoundPage,
 });

@@ -473,16 +473,16 @@ describe("prompt-agent runtime", () => {
                 error: { message: "Upstream failed" },
             });
         } else {
-            expect(modelCalls).toBe(8);
-            expect(toolCalls).toBe(8);
+            expect(modelCalls).toBe(24);
+            expect(toolCalls).toBe(24);
             expect(body).toMatchObject({
                 status: "incomplete",
                 incomplete_details: { reason: "max_output_tokens" },
                 usage: {
-                    input_tokens: 8,
-                    output_tokens: 8,
-                    total_tokens: 16,
-                    tool_call_counts: { mcp_call: 8 },
+                    input_tokens: 24,
+                    output_tokens: 24,
+                    total_tokens: 48,
+                    tool_call_counts: { mcp_call: 24 },
                 },
             });
             expect(responseOutputText(body)).toBe(
@@ -553,7 +553,7 @@ describe("prompt-agent runtime", () => {
                                     role: "assistant",
                                     content: "",
                                     tool_calls: Array.from(
-                                        { length: 17 },
+                                        { length: 49 },
                                         (_, index) => ({
                                             id: `call-${index}`,
                                             type: "function",
@@ -601,8 +601,8 @@ describe("prompt-agent runtime", () => {
             usage: { tool_call_counts: { mcp_call: number } };
         };
         expect(response.status).toBe(200);
-        expect(mcpToolCalls).toBe(16);
-        expect(body.usage.tool_call_counts.mcp_call).toBe(16);
+        expect(mcpToolCalls).toBe(48);
+        expect(body.usage.tool_call_counts.mcp_call).toBe(48);
     });
 
     it.each([

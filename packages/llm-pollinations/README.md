@@ -49,7 +49,7 @@ Models only register when a key is configured, so the catalog reflects your key'
 \x60\x60\x60bash
 llm models list | grep pollinations
 llm -m pollinations/openai/gpt-5.4-nano "What is the capital of France?"
-llm -m pollinations/openai/gpt-5.4-nano "Stream this" --no-stream
+llm -m pollinations/openai/gpt-5.4-nano "Stream this"
 llm -m pollinations/anthropic/claude-haiku-4.5 --chat
 \x60\x60\x60
 

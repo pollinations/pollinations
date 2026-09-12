@@ -182,7 +182,7 @@ function TopUpPage() {
                 {search.stripe_canceled && (
                     <ErrorBanner>Checkout was cancelled.</ErrorBanner>
                 )}
-                <Section title="Wallet" framed>
+                <Section title="Wallet">
                     <PollenBalance {...wallet} compact />
                 </Section>
                 <Section title="Top-up" framed>

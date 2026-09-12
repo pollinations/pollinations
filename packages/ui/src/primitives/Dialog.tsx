@@ -67,7 +67,7 @@ export const Dialog: FC<DialogProps> = ({
                         // (near-white in dark) and would brighten the page.
                         // Fixed black + a soft blur dims and de-focuses.
                         className={cn(
-                            "polli:fixed polli:inset-0 polli:z-[100] polli:bg-black/50",
+                            "polli:fixed polli:inset-0 polli:z-[100] polli:bg-[#000]/50",
                             backdropBlur && "polli:backdrop-blur-sm",
                         )}
                     />

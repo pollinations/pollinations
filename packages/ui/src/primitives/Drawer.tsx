@@ -31,7 +31,7 @@ export const Drawer: FC<DrawerProps> = ({
             onOpenChange={(details) => onOpenChange(details.open)}
         >
             <Portal>
-                <ArkDialog.Backdrop className="polli:fixed polli:inset-0 polli:z-[100] polli:bg-black/40 polli:backdrop-blur-sm" />
+                <ArkDialog.Backdrop className="polli:fixed polli:inset-0 polli:z-[100] polli:bg-[#000]/40 polli:backdrop-blur-sm" />
                 <ArkDialog.Positioner className="polli:pointer-events-none polli:fixed polli:inset-0 polli:z-[110] polli:h-dvh polli:overflow-hidden">
                     <ArkDialog.Content
                         ref={contentRef}

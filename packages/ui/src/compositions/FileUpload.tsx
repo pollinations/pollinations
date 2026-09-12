@@ -368,6 +368,7 @@ export function FileUpload({
                                         <input
                                             id={addInputId}
                                             type="file"
+                                            aria-label="Add files"
                                             accept={accept}
                                             multiple
                                             disabled={disabled || !canAdd}

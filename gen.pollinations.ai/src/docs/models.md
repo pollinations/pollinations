@@ -13,19 +13,105 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 | `GET /embeddings/models` | Embedding models with supported modalities |
 | `GET /3d/models` | 3D Generation models with supported modalities |
 
-### Query Parameters
+### Discovery filters
 
-All model discovery endpoints accept an optional `community` query parameter:
+All list endpoints accept these query parameters and equivalent headers.
+Keep the base URL as `https://gen.pollinations.ai/v1` in OpenAI-compatible
+clients that append `/models`; put filters in headers instead of the base URL.
 
-| Parameter | Values | Behaviour |
-|-----------|--------|-----------|
-| *(omitted)* | | Returns all models (default, backward-compatible) |
-| `community=false` | `false`, `0` | Excludes community models — returns official models only |
-| `community=true` | `true`, `1` | Returns community models only |
+| Query | Header | Values |
+|-------|--------|--------|
+| `source` | `X-Pollinations-Model-Source` | `all`, `official`, `community` |
+| `reliability` | `X-Pollinations-Model-Reliability` | `all`, `reliable` |
 
-Any other value (e.g. `tru`, `yes`, `2`) returns **400 Bad Request**.
+Query parameters take precedence over the corresponding header. Invalid values
+return 400. Existing `community=true|1|false|0` is still accepted; combining it
+with a contradictory `source` returns 400. Omitted filters preserve the default
+list and response fields. Visibility, private-model ownership, API-key model
+permissions and paid-balance rules are applied before discovery filters.
+Filters do not change which known model IDs can be used for generation.
 
-Example: `GET /models?community=false`
+`reliability=all` includes a `health` object without excluding models.
+`reliability=reliable` additionally requires fresh observations and a final
+provider-failure rate below 5%, matching the model monitor's healthy threshold.
+Experimental/alpha status is independent: an experimental model can be reliable.
+
+| Health field | Meaning |
+|--------------|---------|
+| `success_rate` | Final 2xx / (final 2xx + final 5xx + image-provider 4xx), between 0 and 1; null when eligible counts are unknown |
+| `sample_count` | Number of final 2xx, 5xx and image-provider 4xx responses in the window (zero if eligible counts are unknown) |
+| `window_minutes` | Rolling observation window, 60 minutes |
+| `checked_at` | UTC timestamp of the health-feed fetch, or null when unavailable |
+| `last_request_at` | Latest observed final request timestamp, or null when unknown |
+| `stale` | True when the feed cannot refresh, is at least 60 seconds old, or the model has no request in the window |
+
+Successful fallback rescues count once as successes; intermediate failed
+attempts and caller-side 4xx are excluded from the ratio. For image events,
+final 4xx marked `Image provider error:` also count as provider failures,
+matching the community monitor's distinction between upstream failures and
+caller errors. Image feeds without this attribution produce an unknown rate,
+so they cannot incorrectly qualify as reliable. One eligible request
+is sufficient to calculate a rate; inspect `sample_count` when assessing how
+representative it is. Missing observations are unknown, never implicitly
+healthy. During a health-feed outage, `all` retains models with stale/unknown
+metadata and `reliable` excludes them. Discovery without a reliability option
+does not fetch health data.
+
+```sh
+curl 'https://gen.pollinations.ai/image/models?source=official&reliability=all'
+curl 'https://gen.pollinations.ai/v1/models' \
+  -H 'X-Pollinations-Model-Source: official' \
+  -H 'X-Pollinations-Model-Reliability: reliable'
+```
+
+### Client examples
+
+OpenAI JavaScript SDK:
+
+```js
+import OpenAI from "openai";
+const client = new OpenAI({
+  apiKey: process.env.POLLINATIONS_API_KEY,
+  baseURL: "https://gen.pollinations.ai/v1",
+  defaultHeaders: {
+    "X-Pollinations-Model-Source": "official",
+    "X-Pollinations-Model-Reliability": "reliable",
+  },
+});
+const { data } = await client.models.list();
+const selected = data.find(m => m.category === "text");
+if (!selected) throw new Error("No matching text models; try reliability=all.");
+const response = await client.chat.completions.create({
+  model: selected.id,
+  messages: [{ role: "user", content: "Hello" }],
+});
+```
+
+AI SDK with an OpenAI-compatible provider (discovery is performed by the app):
+
+```js
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { generateText } from "ai";
+const baseURL = "https://gen.pollinations.ai/v1";
+const apiKey = process.env.POLLINATIONS_API_KEY;
+const headers = { "X-Pollinations-Model-Source": "official" };
+const discovery = await fetch(`${baseURL}/models`, {
+  headers: { ...headers, Authorization: `Bearer ${apiKey}` },
+});
+if (!discovery.ok) throw new Error(`Discovery failed: ${discovery.status}`);
+const { data } = await discovery.json();
+const selected = data.find(m => m.category === "text");
+if (!selected) throw new Error("No matching text models.");
+const provider = createOpenAICompatible({ name: "pollinations", baseURL, apiKey, headers });
+const result = await generateText({ model: provider.chatModel(selected.id), prompt: "Hello" });
+```
+
+These two clients are exercised against the local gateway with a test upstream
+in the focused community-endpoint test, including discovery, successful
+completion, reused health caching, and stale-feed behavior. This is not a live
+provider or desktop-client end-to-end result. Open WebUI, LibreChat and Cline
+support custom headers; retain their plain `/v1` base URL. LibreChat headers
+are configured by its administrator in the custom endpoint configuration.
 
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.

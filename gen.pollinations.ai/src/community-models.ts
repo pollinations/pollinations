@@ -112,7 +112,7 @@ export async function getCommunityModelRegistryEntries(
             hiddenReason: row.hiddenReason,
         };
         // An agent charges nothing of its own and fans out to nothing: the
-        // caller pays for whatever it consumes downstream. Both agent kinds
+        // caller pays for whatever it consumes downstream. All agent kinds
         // share empty purchase fields; endpoint agents may override only the
         // gateway's per-user rate limit from their payload.
         const agentDefaults = {
@@ -146,6 +146,21 @@ export async function getCommunityModelRegistryEntries(
                     ...agentDefaults,
                     type: "prompt_agent",
                     baseUrl: communityResponsesUrl(baseUrl),
+                    api: "responses",
+                };
+                break;
+            }
+            case "code_agent": {
+                const payload = parseListingPayload("code_agent", row.payload);
+                if (!payload) return [];
+                // The catalog's publisher link points at the source
+                // repository: for a code agent the code is the provider.
+                communityEndpoint = {
+                    ...identity,
+                    ...agentDefaults,
+                    providerName: row.providerName ?? row.ownerGithubUsername,
+                    providerUrl: payload.repository,
+                    type: "code_agent",
                     api: "responses",
                 };
                 break;

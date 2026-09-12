@@ -19,6 +19,21 @@ import { supportsTextFallbackRequest } from "../src/text/fallbackCompatibility.t
 
 const OPENROUTER_ROUTES = [
     [
+        "perplexity/sonar:openrouter:perplexity",
+        "perplexity/sonar",
+        "perplexity",
+    ],
+    [
+        "perplexity/sonar-pro:openrouter:perplexity",
+        "perplexity/sonar-pro",
+        "perplexity",
+    ],
+    [
+        "perplexity/sonar-reasoning-pro:openrouter:perplexity",
+        "perplexity/sonar-reasoning-pro",
+        "perplexity",
+    ],
+    [
         "qwen/qwen3.8-27b:openrouter:akashml-fp8",
         "qwen/qwen3.8-27b",
         "akashml/fp8",
@@ -54,6 +69,11 @@ const OPENROUTER_ROUTES = [
         "meta/muse-glimmer-30b:openrouter:deepinfra-bf16",
         "meta/muse-glimmer-30b",
         "deepinfra/bf16",
+    ],
+    [
+        "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8",
+        "deepseek/deepseek-v4.1-flash",
+        "deepinfra/fp8",
     ],
     [
         "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16",
@@ -148,6 +168,63 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
+    it.each([
+        "sonar",
+        "sonar-pro",
+        "sonar-reasoning-pro",
+    ] as const)("keeps %s on direct Perplexity with an OpenRouter fallback", (upstream) => {
+        const model = `perplexity/${upstream}` as const;
+        const primary: ModelDefinition = TEXT_SERVICES[model];
+        expect(primary).toMatchObject({
+            provider: "perplexity",
+            priceMultiplier: 1,
+            fallbacks: [`${model}:openrouter:perplexity`],
+        });
+        expect(primary.paidOnly).not.toBe(true);
+        expect(findModelByName(model)?.config()).toMatchObject({
+            provider: "perplexity-ai",
+            model: upstream,
+        });
+    });
+
+    it.each([
+        ["perplexity/sonar", "low", 0.005],
+        ["perplexity/sonar", "high", 0.012],
+        ["perplexity/sonar-pro", "high", 0.014],
+        ["perplexity/sonar-reasoning-pro", "high", 0.014],
+    ] as const)("bills %s %s search once when OpenRouter reports a total cost", (model, searchContextSize, searchFee) => {
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES[`${model}:openrouter:perplexity`];
+        const usage = { promptTextTokens: 100, completionTextTokens: 20 };
+        const expected =
+            100 * primary.cost.promptTextTokens +
+            20 * primary.cost.completionTextTokens +
+            searchFee;
+        // OpenRouter's numeric cost already includes token and search costs.
+        const completion = { usage: { cost: expected } };
+        for (const output of [
+            completion,
+            { streamEvents: [{ choices: [] }, completion] },
+        ]) {
+            const billed = calculateUsageBilling({
+                model,
+                usage,
+                servedBy: fallback,
+                quotedBy: primary,
+                output,
+                input: { searchContextSize },
+            });
+            expect(billed.cost.totalCost).toBeCloseTo(expected, 12);
+            expect(billed.price.totalPrice).toBeCloseTo(expected, 12);
+            expect(billed.adjustments).toHaveLength(1);
+            expect(billed.adjustments[0]).toMatchObject({
+                kind: "search_request",
+                units: 1,
+                cost: searchFee,
+            });
+        }
+    });
+
     it("preserves the Astra quote while recording Data Zone costs", () => {
         const primary = TEXT_SERVICES["openai/gpt-6-astra"];
         const fallback = TEXT_SERVICES["openai/gpt-6-astra:azure:datazone"];
@@ -317,6 +394,15 @@ describe("static provider fallbacks", () => {
         ).toMatchObject({
             promptTextTokens: 0.08 / 1_000_000,
             completionTextTokens: 0.18 / 1_000_000,
+        });
+        expect(
+            TEXT_SERVICES[
+                "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8"
+            ].cost,
+        ).toMatchObject({
+            promptTextTokens: 0.2 / 1_000_000,
+            promptCachedTokens: 0.006 / 1_000_000,
+            completionTextTokens: 0.6 / 1_000_000,
         });
         expect(
             TEXT_SERVICES["meta/llama-4-scout:openrouter:vertex-us-east5"].cost,

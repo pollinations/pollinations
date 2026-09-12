@@ -12,6 +12,7 @@ import {
 import { DashboardAccountMenu, DashboardSignIn } from "@pollinations/ui/auth";
 import { useState } from "react";
 import { signIn, signOut, useDashboardSession } from "./auth";
+import { DailyComparisonChart } from "./components/DailyComparisonChart";
 import { FunnelBars } from "./components/FunnelBars";
 import { KPITrendTable } from "./components/KPITrendTable";
 import { KpiExplorer } from "./components/KpiExplorer";
@@ -179,6 +180,8 @@ function Dashboard({ accountUser }) {
         weeklyData,
         fullWeeks,
         historyWeeks,
+        dailyComparison,
+        signupsSyncedAt,
         retentionData,
         github,
         currentWeek,
@@ -353,6 +356,11 @@ function Dashboard({ accountUser }) {
                     onGraph={graphKpi}
                 />
 
+                <DailyComparisonChart
+                    data={dailyComparison}
+                    signupsSyncedAt={signupsSyncedAt}
+                />
+
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                     <LineChart
                         title="Acquisition & activation"
@@ -371,11 +379,13 @@ function Dashboard({ accountUser }) {
                                 key: "tokens",
                                 label: "Tokens",
                                 format: "compact",
+                                axis: 0,
                             },
                             {
                                 key: "revenue",
                                 label: "Revenue",
                                 format: "currency",
+                                axis: 1,
                             },
                         ]}
                         dualAxis

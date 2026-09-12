@@ -1,6 +1,6 @@
+import type { AgentOutputItem } from "@shared/agents/output.ts";
 import OpenAI from "openai";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AgentOutputItem } from "../../../src/text/agents/output.ts";
 import {
     handlePromptAgentResponsesRequest,
     PromptAgentResponsesRequestSchema,
@@ -304,6 +304,189 @@ describe("prompt-agent runtime", () => {
         for (const request of mcpRequests) {
             expect(request.headers.get("Authorization")).toBe(
                 `Bearer ${BASE_RUNTIME.apiKey}`,
+            );
+        }
+    });
+
+    it.each([
+        { stream: false, fail: false },
+        { stream: true, fail: false },
+        { stream: true, fail: true },
+    ])("preserves the step limit and session cleanup: $stream/$fail", async ({
+        stream,
+        fail,
+    }) => {
+        let modelCalls = 0;
+        let toolCalls = 0;
+        const closedSessions: (string | null)[] = [];
+        vi.stubGlobal(
+            "fetch",
+            async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (request.url === EXA_MCP_PROXY_URL) {
+                    if (request.method === "GET")
+                        return new Response(null, { status: 405 });
+                    if (request.method === "DELETE") {
+                        closedSessions.push(
+                            request.headers.get("Mcp-Session-Id"),
+                        );
+                        return new Response(null, { status: 200 });
+                    }
+                    const body = (await request.json()) as {
+                        id?: number;
+                        method: string;
+                    };
+                    if (body.method === "initialize") {
+                        return Response.json(
+                            {
+                                jsonrpc: "2.0",
+                                id: body.id,
+                                result: {
+                                    protocolVersion: "2025-06-18",
+                                    capabilities: { tools: {} },
+                                    serverInfo: {
+                                        name: "test-mcp",
+                                        version: "1.0.0",
+                                    },
+                                },
+                            },
+                            { headers: { "Mcp-Session-Id": "loop-session" } },
+                        );
+                    }
+                    if (body.method === "notifications/initialized")
+                        return new Response(null, { status: 202 });
+                    if (body.method === "tools/list")
+                        return Response.json({
+                            jsonrpc: "2.0",
+                            id: body.id,
+                            result: {
+                                tools: [
+                                    {
+                                        name: "echo",
+                                        inputSchema: { type: "object" },
+                                    },
+                                ],
+                            },
+                        });
+                    expect(body.method).toBe("tools/call");
+                    toolCalls++;
+                    return Response.json({
+                        jsonrpc: "2.0",
+                        id: body.id,
+                        result: { content: [{ type: "text", text: "ok" }] },
+                    });
+                }
+                modelCalls++;
+                if (fail && modelCalls === 2) {
+                    return new Response(
+                        new ReadableStream({
+                            start(controller) {
+                                controller.error(new Error("Upstream failed"));
+                            },
+                        }),
+                        {
+                            headers: { "content-type": "text/event-stream" },
+                        },
+                    );
+                }
+                const message = {
+                    role: "assistant",
+                    content: null,
+                    tool_calls: [
+                        {
+                            index: 0,
+                            id: `call-${modelCalls}`,
+                            type: "function",
+                            function: {
+                                name: "mcp__exa__echo",
+                                arguments: "{}",
+                            },
+                        },
+                    ],
+                };
+                const usage = {
+                    prompt_tokens: 1,
+                    completion_tokens: 1,
+                    total_tokens: 2,
+                };
+                if (!stream)
+                    return Response.json({
+                        choices: [
+                            { index: 0, message, finish_reason: "tool_calls" },
+                        ],
+                        usage,
+                    });
+                return new Response(
+                    `${[
+                        {
+                            choices: [
+                                {
+                                    index: 0,
+                                    delta: message,
+                                    finish_reason: null,
+                                },
+                            ],
+                        },
+                        {
+                            choices: [
+                                {
+                                    index: 0,
+                                    delta: {},
+                                    finish_reason: "tool_calls",
+                                },
+                            ],
+                            usage,
+                        },
+                    ]
+                        .map((chunk) => `data: ${JSON.stringify(chunk)}\n\n`)
+                        .join("")}data: [DONE]\n\n`,
+                    {
+                        headers: { "content-type": "text/event-stream" },
+                    },
+                );
+            },
+        );
+        const response = await runAgent(
+            {
+                messages: [{ role: "user", content: "Keep using tools" }],
+                stream,
+            },
+            {
+                ...BASE_RUNTIME,
+                config: { ...BASE_RUNTIME.config, mcpServers: ["exa"] },
+            },
+        );
+        expect(response.status).toBe(200);
+        const body = stream
+            ? responseStreamEvents(await response.text()).find(
+                  (event) =>
+                      event.type ===
+                      (fail ? "response.failed" : "response.incomplete"),
+              )?.response
+            : await response.json();
+        expect(closedSessions).toEqual(["loop-session"]);
+        if (fail) {
+            expect(modelCalls).toBe(2);
+            expect(toolCalls).toBe(1);
+            expect(body).toMatchObject({
+                status: "failed",
+                error: { message: "Upstream failed" },
+            });
+        } else {
+            expect(modelCalls).toBe(8);
+            expect(toolCalls).toBe(8);
+            expect(body).toMatchObject({
+                status: "incomplete",
+                incomplete_details: { reason: "max_output_tokens" },
+                usage: {
+                    input_tokens: 8,
+                    output_tokens: 8,
+                    total_tokens: 16,
+                    tool_call_counts: { mcp_call: 8 },
+                },
+            });
+            expect(responseOutputText(body)).toBe(
+                "\n\nThe agent reached its maximum number of tool-use steps without a final answer.",
             );
         }
     });

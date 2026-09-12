@@ -18,6 +18,13 @@ import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
 import {
+    MediaChatCompletionSchema,
+    MediaResponseSchema,
+    mediaResponseDescription,
+} from "../media/response-output.ts";
+import { mediaResponses } from "../media/responses.ts";
+import { textBalanceNotice } from "../middleware/text-balance-notice.ts";
+import {
     formatOpenAIImageResponse,
     handleImageGeneration,
     prepareOpenAIImageEdit,
@@ -195,14 +202,15 @@ const model3dHandlers = factory.createHandlers(
     generateModel3d,
 );
 
+// Group access/coordination to stay within Hono's typed handler-count limit.
 const chatCompletionHandlers = factory.createHandlers(
     textBodyLimit,
     validator("json", CreateChatCompletionRequestSchema),
+    mediaResponses("chat/completions"),
     resolveModel("generate.text"),
-    track("generate.text"),
+    every(textBalanceNotice, track("generate.text")),
     textCache,
-    generationAccess,
-    deduplicateGeneration,
+    every(generationAccess, deduplicateGeneration),
     apiKeyBudgetReservation,
     generateChatCompletion,
 );
@@ -210,11 +218,11 @@ const chatCompletionHandlers = factory.createHandlers(
 const responsesHandlers = factory.createHandlers(
     textBodyLimit,
     validator("json", CreateResponseRequestSchema),
+    mediaResponses("responses"),
     resolveModel("generate.text"),
-    track("generate.text"),
+    every(textBalanceNotice, track("generate.text")),
     textCache,
-    generationAccess,
-    deduplicateGeneration,
+    every(generationAccess, deduplicateGeneration),
     apiKeyBudgetReservation,
     generateCreateResponse,
 );
@@ -345,6 +353,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         }),
         pricing: entry.info.pricing,
         capabilities: entry.info.capabilities,
+        supported_parameters: entry.info.supported_parameters,
         ...(entry.info.tools && { tools: entry.info.tools }),
         ...(entry.info.reasoning && { reasoning: entry.info.reasoning }),
         ...(entry.info.context_length && {
@@ -661,22 +670,28 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.",
                 "",
-                "Successful JSON responses contain usage. Streaming responses contain a usage chunk before `[DONE]`; missing provider usage fails the response.",
+                "Successful text JSON responses contain usage. Text streams contain a usage chunk before `[DONE]`; missing text-provider usage fails the response.",
+                "",
+                mediaResponseDescription,
             ].join("\n"),
             responses: {
                 200: {
                     description: "Chat completion JSON or SSE stream",
+                    headers: mediaResponseHeaders,
                     content: {
                         "application/json": {
                             schema: resolver(
-                                CreateChatCompletionResponseSchema,
+                                z.union([
+                                    CreateChatCompletionResponseSchema,
+                                    MediaChatCompletionSchema,
+                                ]),
                             ),
                         },
                         "text/event-stream": {
                             schema: resolver(
                                 z.string().meta({
                                     description:
-                                        "OpenAI-compatible Chat Completions SSE events ending with a usage chunk and data: [DONE]",
+                                        "OpenAI-compatible Chat Completions SSE events ending with data: [DONE]. Text models include a usage chunk; media models omit it.",
                                 }),
                             ),
                         },
@@ -701,20 +716,28 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Response storage, previous response IDs, conversations, background execution, and encrypted or referenced state are not supported. Direct providers may accept caller-supplied function tools; managed prompt agents ignore these definitions and use only their configured MCP tools. Completed MCP output items can be replayed as history without executing them again.",
                 "",
-                "Successful JSON responses and terminal streaming events contain usage; missing provider usage fails the response.",
+                "Successful text JSON responses and terminal streaming events contain usage; missing text-provider usage fails the response.",
+                "",
+                mediaResponseDescription,
             ].join("\n"),
             responses: {
                 200: {
                     description: "Responses JSON or semantic Responses SSE",
+                    headers: mediaResponseHeaders,
                     content: {
                         "application/json": {
-                            schema: resolver(CreateResponseResponseSchema),
+                            schema: resolver(
+                                z.union([
+                                    CreateResponseResponseSchema,
+                                    MediaResponseSchema,
+                                ]),
+                            ),
                         },
                         "text/event-stream": {
                             schema: resolver(
                                 z.string().meta({
                                     description:
-                                        "Responses API SSE events ending with response.completed, response.incomplete, or response.failed; completed and incomplete responses contain usage, and a data: [DONE] marker may follow",
+                                        "Responses API SSE events ending with response.completed, response.incomplete, or response.failed. Text models include usage; media models return usage: null. A data: [DONE] marker may follow.",
                                 }),
                             ),
                         },
@@ -788,7 +811,7 @@ export const proxyRoutes = new Hono<Env>()
         textBodyLimit,
         validator("json", CreateChatCompletionRequestSchema),
         resolveModel("generate.text"),
-        track("generate.text"),
+        every(textBalanceNotice, track("generate.text")),
         textCache,
         generationAccess,
         deduplicateGeneration,
@@ -828,7 +851,7 @@ export const proxyRoutes = new Hono<Env>()
         ),
         validator("query", GenerateTextRequestQueryParamsSchema),
         resolveModel("generate.text"),
-        track("generate.text"),
+        every(textBalanceNotice, track("generate.text")),
         textCache,
         generationAccess,
         deduplicateGeneration,

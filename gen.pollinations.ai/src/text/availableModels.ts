@@ -289,6 +289,16 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
+        name: "deepseek/deepseek-v4.1-flash",
+        config: portkeyConfig["accounts/fireworks/models/deepseek-v4p1-flash"],
+        transform: fireworksThinking,
+    },
+    {
+        name: "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8",
+        config: portkeyConfig["deepseek-v41-flash-openrouter-deepinfra"],
+        transform: fireworksThinking,
+    },
+    {
         name: "deepseek/deepseek-v4-flash:deepinfra",
         config: portkeyConfig["deepseek-ai/DeepSeek-V4-Flash-0731"],
         transform: fireworksThinking,
@@ -516,12 +526,24 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["sonar"],
     },
     {
+        name: "perplexity/sonar:openrouter:perplexity",
+        config: portkeyConfig["perplexity/sonar"],
+    },
+    {
         name: "perplexity/sonar-pro",
         config: portkeyConfig["sonar-pro"],
     },
     {
+        name: "perplexity/sonar-pro:openrouter:perplexity",
+        config: portkeyConfig["perplexity/sonar-pro"],
+    },
+    {
         name: "perplexity/sonar-reasoning-pro",
         config: portkeyConfig["sonar-reasoning-pro"],
+    },
+    {
+        name: "perplexity/sonar-reasoning-pro:openrouter:perplexity",
+        config: portkeyConfig["perplexity/sonar-reasoning-pro"],
     },
     {
         name: "moonshotai/kimi-k2.6",

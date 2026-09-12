@@ -1,6 +1,6 @@
 import { env } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
-import migrationSql from "../drizzle/0064_community-model-permissions.sql?raw";
+import migrationSql from "../drizzle/0065_community-model-permissions.sql?raw";
 
 describe("community model permission migration", () => {
     it("renames only existing community IDs without widening access and is safe to retry", async () => {

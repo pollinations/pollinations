@@ -27,6 +27,7 @@ import {
     sendErrorEventToTinybird,
     sendToTinybird,
 } from "@shared/events.ts";
+import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
 import {
     collectRequestInputs,
     stringifyRequestInputs,
@@ -97,6 +98,7 @@ import {
     isResponsesFailure,
     normalizeResponsesTerminalEvent,
 } from "@/text/responses/tracking.ts";
+import { summarizeStreamForLog } from "@/text/streamSummary.ts";
 import { generateRandomId, parseBooleanLike } from "@/util.ts";
 import { releaseApiKeyBudgetReservation } from "@/utils/generation-access.ts";
 import {
@@ -191,6 +193,8 @@ export const track = (eventType: EventType) =>
         // Get model from resolveModel middleware
         const modelInfo = c.var.model;
         const requestTracking = await trackRequest(modelInfo, c.req);
+        requestTracking.modelRequested =
+            c.var.generationExecution?.originalModel ?? modelInfo.requested;
 
         const rawIp = getRealClientIp(c);
         const clientIp =
@@ -246,7 +250,8 @@ export const track = (eventType: EventType) =>
             const event = createTrackingEvent({
                 id: generateRandomId(),
                 requestId: c.get("requestId"),
-                requestPath: getRoutePath(c),
+                requestPath:
+                    c.var.generationExecution?.originalPath ?? getRoutePath(c),
                 environment: c.env.ENVIRONMENT,
                 eventType,
                 ipSubnet,
@@ -902,7 +907,7 @@ function finishReasonError(
 
 function stringifyErrorOutput(output: unknown): string {
     try {
-        return JSON.stringify(output).slice(0, 16_000);
+        return JSON.stringify(summarizeStreamForLog(output)).slice(0, 16_000);
     } catch (error) {
         return JSON.stringify({
             error: "error_output_json_stringify_failed",
@@ -969,19 +974,30 @@ function getContentTypeGuard(
     return null;
 }
 
+const STREAM_DONE = Symbol("stream-done");
+
 async function* extractResponseStream(
     response: Response,
 ): AsyncGenerator<unknown> {
     if (!response.body) return;
 
     const textDecoder = new TextDecoderStream();
+    // The parser only dispatches on a blank line; some providers close after
+    // a single newline, so terminate the last event ourselves.
+    const closeLastEvent = new TransformStream<string, string>({
+        flush: (controller) => controller.enqueue("\n\n"),
+    });
     const sseParser = new EventSourceParserStream();
     const eventStream = response.body
         .pipeThrough(textDecoder)
+        .pipeThrough(closeLastEvent)
         .pipeThrough(sseParser);
 
     for await (const event of asyncIteratorStream(eventStream)) {
-        if (event.data === "[DONE]") return;
+        if (event.data === "[DONE]") {
+            yield STREAM_DONE;
+            return;
+        }
 
         let data: unknown;
         try {
@@ -1321,9 +1337,16 @@ async function extractUsageAndContentFilterResultsStream(
     let hasExplicitCacheHit = false;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
+    // Every chunk is kept: billing rules scan them all (Gemini grounding
+    // metadata can sit on any chunk); only the error log is trimmed.
     const streamEvents: unknown[] = [];
+    let doneSeen = false;
 
     for await (const event of events) {
+        if (event === STREAM_DONE) {
+            doneSeen = true;
+            continue;
+        }
         const parseResult = EventSchema.safeParse(event);
         // Optional choice/filter metadata must not invalidate genuine usage.
         const usageResult = EventSchema.shape.usage.safeParse(
@@ -1379,16 +1402,13 @@ async function extractUsageAndContentFilterResultsStream(
     // community endpoint that name is its upstream's, and after a rescue it
     // belongs to a different owner's model than the one that served.
     const servedModel = servedModelId || model;
+    const output =
+        streamEvents.length > 0 ? { streamEvents, doneSeen } : undefined;
     if (!servedModel || !usage) {
         log.error("No usage object found in event stream");
-        return {
-            modelUsage: null,
-            output: streamEvents.length > 0 ? { streamEvents } : undefined,
-            contentFilterResults,
-        };
+        return { modelUsage: null, output, contentFilterResults };
     }
 
-    const output = streamEvents.length > 0 ? { streamEvents } : undefined;
     return {
         modelUsage: {
             model: servedModel,
@@ -1517,6 +1537,7 @@ export function collectErrorData(status: number, error?: Error): ErrorData {
         source = error.requestUrl?.hostname;
         explicitCode = error.errorCode;
     }
+    if (error instanceof PaymentRequiredError) explicitCode = error.errorCode;
     // Note: errorStack and errorDetails removed to reduce D1 memory usage
     // Stack traces and details are still logged but not stored in the database
     return {

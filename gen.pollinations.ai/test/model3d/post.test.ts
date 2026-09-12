@@ -106,11 +106,12 @@ afterEach(async () => {
 async function fetch3d(
     path: string,
     init: RequestInit = {},
+    bindings = withInlineGenerationCoordinator(env),
 ): Promise<Response> {
     const ctx = createExecutionContext();
     const response = await worker.fetch(
         new Request(`https://gen.pollinations.ai${path}`, init),
-        withInlineGenerationCoordinator(env),
+        bindings,
         ctx,
     );
     await response.clone().arrayBuffer();
@@ -221,6 +222,44 @@ test("POST /3d sends JSON image and seed to the existing Rodin provider path", a
         tokenPriceCompletionImage: 0.1,
         totalPrice: 0.1,
     });
+}, 10_000);
+
+test("media Responses and Chat reuse native text-to-3D generation", async () => {
+    const bindings = withInlineGenerationCoordinator({
+        ...env,
+        FAL_KEY: "fal_test_key",
+    });
+    await mocks.enable("tinybird", "fal");
+    const { key } = await createTestApiKey({ user: { packBalance: 1 } });
+    const prompt = `a model with literal %2F ${crypto.randomUUID()}`;
+    let link: string | null = null;
+    for (const protocol of ["responses", "chat/completions"]) {
+        const response = await fetch3d(
+            `/v1/${protocol}`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "hyper3d/rodin-2.5",
+                    ...(protocol === "responses"
+                        ? { input: prompt }
+                        : { messages: [{ role: "user", content: prompt }] }),
+                }),
+            },
+            bindings,
+        );
+        expect(response.status, await response.clone().text()).toBe(200);
+        expect(await response.text()).toContain("[3D model](https://media.");
+        if (link) expect(response.headers.get("Link")).toBe(link);
+        link = response.headers.get("Link");
+    }
+    expect(mocks.fal.state.bodies).toEqual([{ prompt }]);
+    expect(
+        mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
+    ).toHaveLength(1);
 }, 10_000);
 
 test("POST /3d preserves authentication and rejects ignored parameters", async ({

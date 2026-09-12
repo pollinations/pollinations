@@ -123,6 +123,14 @@ service = "pollinations-exa-mcp"
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp"
 
+[[env.production.dispatch_namespaces]]
+binding = "CODE_AGENTS"
+namespace = "pollinations-code-agents-production"
+
+[env.production.dispatch_namespaces.outbound]
+service = "pollinations-enter-production"
+parameters = ["CODE_AGENT_CONTEXT"]
+
 [[env.production.vpc_networks]]
 binding = "KLEIN_VPC"
 tunnel_id = "c340d8d9-c1f3-4a13-8115-38b59faac3d5"
@@ -213,7 +221,7 @@ service = "pollinations-enter-staging"
 
 [[env.staging.services]]
 binding = "POLLINATIONS_MCP"
-service = "pollinations-mcp"
+service = "pollinations-mcp-staging"
 
 [[env.staging.services]]
 binding = "FFMPEG_MCP"
@@ -226,6 +234,14 @@ service = "pollinations-exa-mcp-staging"
 [[env.staging.services]]
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp-staging"
+
+[[env.staging.dispatch_namespaces]]
+binding = "CODE_AGENTS"
+namespace = "pollinations-code-agents-staging"
+
+[env.staging.dispatch_namespaces.outbound]
+service = "pollinations-enter-staging"
+parameters = ["CODE_AGENT_CONTEXT"]
 
 [[env.staging.d1_databases]]
 binding = "DB"

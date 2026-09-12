@@ -604,6 +604,30 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000132,
     },
   },
+  "deepseek/deepseek-v4.1-flash": {
+    "cost": {
+      "completionTextTokens": 0.00000066,
+      "promptCachedTokens": 0.000000007,
+      "promptTextTokens": 0.00000022,
+    },
+    "price": {
+      "completionTextTokens": 0.00000066,
+      "promptCachedTokens": 0.000000007,
+      "promptTextTokens": 0.00000022,
+    },
+  },
+  "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8": {
+    "cost": {
+      "completionTextTokens": 0.0000006,
+      "promptCachedTokens": 0.000000006,
+      "promptTextTokens": 0.0000002,
+    },
+    "price": {
+      "completionTextTokens": 0.0000006,
+      "promptCachedTokens": 0.000000006,
+      "promptTextTokens": 0.0000002,
+    },
+  },
   "elevenlabs/eleven-flash-v2.5": {
     "cost": {
       "completionAudioTokens": 0.00005,
@@ -1391,6 +1415,9 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.00625,
     },
     "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.02,
+      },
       "768p": {
         "completionVideoSeconds": 0.01,
       },
@@ -2065,6 +2092,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000003,
     },
   },
+  "perplexity/sonar-pro:openrouter:perplexity": {
+    "cost": {
+      "completionTextTokens": 0.000015,
+      "promptTextTokens": 0.000003,
+    },
+    "price": {
+      "completionTextTokens": 0.000015,
+      "promptTextTokens": 0.000003,
+    },
+  },
   "perplexity/sonar-reasoning-pro": {
     "cost": {
       "completionTextTokens": 0.000008,
@@ -2073,6 +2110,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "price": {
       "completionTextTokens": 0.000008,
       "promptTextTokens": 0.000002,
+    },
+  },
+  "perplexity/sonar-reasoning-pro:openrouter:perplexity": {
+    "cost": {
+      "completionTextTokens": 0.000008,
+      "promptTextTokens": 0.000002,
+    },
+    "price": {
+      "completionTextTokens": 0.000008,
+      "promptTextTokens": 0.000002,
+    },
+  },
+  "perplexity/sonar:openrouter:perplexity": {
+    "cost": {
+      "completionTextTokens": 0.000001,
+      "promptTextTokens": 0.000001,
+    },
+    "price": {
+      "completionTextTokens": 0.000001,
+      "promptTextTokens": 0.000001,
     },
   },
   "pollinations/midijourney": {

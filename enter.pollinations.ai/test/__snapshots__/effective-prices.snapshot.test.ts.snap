@@ -1391,6 +1391,9 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.00625,
     },
     "costVariants": {
+      "1080p": {
+        "completionVideoSeconds": 0.02,
+      },
       "768p": {
         "completionVideoSeconds": 0.01,
       },

@@ -10,16 +10,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { authClient } from "../../auth.ts";
 import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
+import {
+    deviceCodeMessages,
+    normalizeDeviceCode,
+    readDeviceRequest,
+} from "../../lib/device-request.ts";
+import { AppAttribution } from "./app-attribution.tsx";
+import { AuthAccountIdentity } from "./auth-account-identity.tsx";
+import { SignInScreen } from "./sign-in-screen.tsx";
 
 type DeviceProps = {
     prefilledCode: string;
-};
-
-const verificationMessages = {
-    expired: "This code has expired. Get a new code from your device.",
-    used: "This code has already been used. Return to your device, or get a new code to reconnect.",
-    invalid: "Code not recognized. Check it and try again.",
-    unavailable: "Couldn’t verify the code. Try again.",
 };
 
 export function Device({ prefilledCode }: DeviceProps) {
@@ -31,16 +32,17 @@ export function Device({ prefilledCode }: DeviceProps) {
     const [userCode, setUserCode] = useState(prefilledCode);
     const [error, setError] = useState<{
         code: string;
-        kind: keyof typeof verificationMessages;
+        kind: keyof typeof deviceCodeMessages;
     } | null>(null);
     const [checking, setChecking] = useState(false);
     const [deviceApp, setDeviceApp] = useState<{
         code: string;
-        name: string;
+        appName: string;
+        githubUsername?: string;
     } | null>(null);
     const { isSigningIn, error: signInError, signIn } = useGitHubSignIn();
     const inputRef = useRef<HTMLInputElement>(null);
-    const normalizedCode = userCode.trim().toUpperCase();
+    const normalizedCode = normalizeDeviceCode(userCode);
     const currentError = error?.code === normalizedCode ? error : null;
     const cannotVerify =
         checking ||
@@ -55,7 +57,7 @@ export function Device({ prefilledCode }: DeviceProps) {
         async function loadAppName() {
             try {
                 const response = await apiClient.device.info.$get({
-                    query: { user_code: prefilledCode },
+                    query: { user_code: normalizeDeviceCode(prefilledCode) },
                 });
                 if (!response.ok) return;
                 const device = await response.json();
@@ -66,7 +68,11 @@ export function Device({ prefilledCode }: DeviceProps) {
                 if (!lookup.ok) return;
                 const app = await lookup.json();
                 if (active && app.found && app.appName) {
-                    setDeviceApp({ code: prefilledCode, name: app.appName });
+                    setDeviceApp({
+                        code: prefilledCode,
+                        appName: app.appName,
+                        githubUsername: app.githubUsername,
+                    });
                 }
             } catch {
                 // An unavailable app label must not prevent sign-in.
@@ -80,49 +86,21 @@ export function Device({ prefilledCode }: DeviceProps) {
 
     const verifyAndRedirect = useCallback(
         async (code: string) => {
-            code = code.trim().toUpperCase();
+            code = normalizeDeviceCode(code);
             setError(null);
             setChecking(true);
             try {
                 const res = await apiClient.device.info.$get({
                     query: { user_code: code },
                 });
-                if (!res.ok) {
-                    const failure = (await res.json().catch(() => null)) as {
-                        error?: string;
-                    } | null;
-                    setError({
-                        code,
-                        kind:
-                            failure?.error === "expired_token"
-                                ? "expired"
-                                : res.status === 400
-                                  ? "invalid"
-                                  : "unavailable",
-                    });
-                    return;
-                }
-                const data = (await res.json()) as {
-                    status: string;
-                    scope?: string;
-                    clientId?: string | null;
-                };
-                if (data.status !== "pending") {
-                    setError({
-                        code,
-                        kind: data.status === "expired" ? "expired" : "used",
-                    });
+                const data = await readDeviceRequest(res);
+                if (!data.ok) {
+                    setError({ code, kind: data.error });
                     return;
                 }
                 navigate({
                     to: "/authorize",
-                    search: {
-                        user_code: code.toUpperCase(),
-                        ...(data.scope && {
-                            scope: data.scope.split(" ").filter(Boolean),
-                        }),
-                        ...(data.clientId && { app_key: data.clientId }),
-                    },
+                    search: { user_code: code },
                 });
             } catch {
                 setError({ code, kind: "unavailable" });
@@ -138,11 +116,6 @@ export function Device({ prefilledCode }: DeviceProps) {
         if (prefilledCode && user) verifyAndRedirect(prefilledCode);
     }, [prefilledCode, user, verifyAndRedirect]);
 
-    // Focus input on mount
-    useEffect(() => {
-        inputRef.current?.focus();
-    }, []);
-
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         if (cannotVerify) return;
@@ -151,8 +124,20 @@ export function Device({ prefilledCode }: DeviceProps) {
 
     if (isPending || !user) {
         return (
-            <AuthFlowLayout
-                dialog={{ labelledBy: "device-sign-in-title" }}
+            <SignInScreen
+                appFirst
+                app={
+                    <AppAttribution
+                        titleId="sign-in-title"
+                        attribution={
+                            deviceApp?.code === prefilledCode ? deviceApp : null
+                        }
+                        isDeviceMode
+                        userCode={normalizeDeviceCode(prefilledCode)}
+                        redirectHostname=""
+                    />
+                }
+                error={signInError}
                 actions={
                     <GitHubSignInButton
                         onClick={signIn}
@@ -161,44 +146,26 @@ export function Device({ prefilledCode }: DeviceProps) {
                             isPending ? "Checking account…" : undefined
                         }
                         retry={!!signInError}
-                        className="w-full"
                     />
                 }
-            >
-                <div className="py-3">
-                    <Heading
-                        as="h1"
-                        size="section"
-                        id="device-sign-in-title"
-                        className="mb-3"
-                    >
-                        Sign in to pollinations.ai
-                    </Heading>
-                    <p className="mb-3 font-body text-xs font-semibold tracking-wide text-theme-text-soft">
-                        To connect:
-                    </p>
-                    <AuthInfoCard title={null}>
-                        <p className="font-semibold text-theme-text-strong">
-                            {deviceApp?.code === prefilledCode
-                                ? deviceApp.name
-                                : "Your device"}
-                        </p>
-                    </AuthInfoCard>
-                </div>
-                {signInError && <ErrorBanner>{signInError}</ErrorBanner>}
-            </AuthFlowLayout>
+            />
         );
     }
 
     return (
         <AuthFlowLayout
-            dialog={{ labelledBy: "device-code-title" }}
+            dialog={{
+                labelledBy: "device-code-title",
+                initialFocusEl: () => inputRef.current,
+            }}
+            account={<AuthAccountIdentity user={user} />}
             actions={
                 <Button
                     as="button"
                     type="submit"
                     form="device-code-form"
                     disabled={cannotVerify}
+                    aria-busy={checking}
                     className="polli:rounded-md whitespace-nowrap"
                 >
                     {checking
@@ -209,46 +176,60 @@ export function Device({ prefilledCode }: DeviceProps) {
                 </Button>
             }
         >
-            <Heading
-                as="h1"
-                size="section"
-                id="device-code-title"
-                className="pt-3"
-            >
-                Enter device code
-            </Heading>
+            <div className="space-y-2 pt-3">
+                <Heading as="h1" size="section" id="device-code-title">
+                    Connect your device
+                </Heading>
+                <p
+                    id="device-code-hint"
+                    className="font-body text-xs font-semibold tracking-wide text-theme-text-soft"
+                >
+                    using the code shown on it.
+                </p>
+            </div>
             <form
                 id="device-code-form"
                 onSubmit={handleSubmit}
-                className="space-y-4"
+                className="space-y-3"
             >
-                {currentError && (
-                    <ErrorBanner>
-                        {verificationMessages[currentError.kind]}
-                    </ErrorBanner>
-                )}
-
                 <AuthInfoCard title={null}>
-                    <div className="space-y-3">
-                        <p className="text-theme-text-strong">
-                            Enter the code from your device.
-                        </p>
-                        <Input
-                            type="text"
-                            aria-label="Device code"
-                            autoComplete="one-time-code"
-                            value={userCode}
-                            onChange={(e) =>
-                                setUserCode(e.target.value.toUpperCase())
-                            }
-                            placeholder="XXXX-XXXX"
-                            className="w-full border-2 border-theme-border bg-surface-white p-3 text-center font-mono text-2xl tracking-widest text-theme-text-strong"
-                            ref={inputRef}
-                            maxLength={20}
-                            disabled={checking}
-                        />
-                    </div>
+                    <Input
+                        type="text"
+                        aria-label="Device code"
+                        aria-describedby={
+                            currentError
+                                ? "device-code-hint device-code-error"
+                                : "device-code-hint"
+                        }
+                        aria-invalid={
+                            !!currentError &&
+                            currentError.kind !== "unavailable"
+                        }
+                        error={
+                            !!currentError &&
+                            currentError.kind !== "unavailable"
+                        }
+                        autoComplete="one-time-code"
+                        autoCapitalize="characters"
+                        spellCheck={false}
+                        value={userCode}
+                        onChange={(e) =>
+                            setUserCode(e.target.value.toUpperCase())
+                        }
+                        placeholder="XXXXXXXX"
+                        className="w-full text-center font-mono text-2xl tracking-widest"
+                        ref={inputRef}
+                        maxLength={20}
+                        disabled={checking}
+                    />
                 </AuthInfoCard>
+                {currentError && (
+                    <div id="device-code-error">
+                        <ErrorBanner>
+                            {deviceCodeMessages[currentError.kind]}
+                        </ErrorBanner>
+                    </div>
+                )}
             </form>
         </AuthFlowLayout>
     );

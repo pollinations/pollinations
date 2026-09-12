@@ -4,7 +4,7 @@ import { Device } from "../components/auth/device.tsx";
 export const Route = createFileRoute("/device")({
     component: RouteComponent,
     validateSearch: (search: Record<string, unknown>) => ({
-        user_code: (search.user_code as string) || "",
+        user_code: typeof search.user_code === "string" ? search.user_code : "",
     }),
 });
 

@@ -24,8 +24,7 @@ export function AppAttribution({
     // A callback hostname identifies the destination, not the app. Keep it in
     // the details row even when lookup has not supplied an app name.
     const displayName =
-        attribution?.appName ||
-        (isDeviceMode ? "Device connection" : "This app");
+        attribution?.appName || (isDeviceMode ? "Your device" : "This app");
     return (
         <>
             {titleId ? (

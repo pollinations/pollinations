@@ -78,7 +78,7 @@ export function QuestLeaderboardContent({
     return (
         <Section
             title="Quest leaderboard"
-            intro="Builders who completed public GitHub Pollen Quests."
+            intro="Top earners from public GitHub Pollen Quests."
             action={<LeaderboardAction />}
             className="gap-5"
             titleClassName="font-subheading text-3xl leading-tight sm:text-4xl"
@@ -107,7 +107,7 @@ export function QuestLeaderboardContent({
                 </Surface>
                 <Surface as="div" variant="card">
                     <StatCard
-                        label="Quest Pollen"
+                        label="Pollen earned"
                         value={formatNumber(data.totals.totalPollen)}
                         className="flex flex-col"
                         labelClassName="order-2 font-normal text-xs normal-case tracking-normal"
@@ -154,20 +154,32 @@ export function QuestLeaderboardContent({
                                     >
                                         @{entry.githubLogin}
                                     </Heading>
-                                    <Text as="span" size="xs" tone="muted">
-                                        {formatNumber(entry.completedQuests)}{" "}
-                                        completed
-                                    </Text>
+                                    <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                                        <Text
+                                            as="span"
+                                            size="xs"
+                                            tone="muted"
+                                            className="whitespace-nowrap"
+                                        >
+                                            {formatNumber(
+                                                entry.completedQuests,
+                                            )}{" "}
+                                            {entry.completedQuests === 1
+                                                ? "quest"
+                                                : "quests"}
+                                        </Text>
+                                        <Text
+                                            as="strong"
+                                            size="xs"
+                                            tone="strong"
+                                            weight="bold"
+                                            className="whitespace-nowrap tabular-nums"
+                                        >
+                                            {formatNumber(entry.totalPollen)}{" "}
+                                            Pollen earned
+                                        </Text>
+                                    </span>
                                 </span>
-                                <Text
-                                    as="strong"
-                                    size="xs"
-                                    tone="strong"
-                                    weight="bold"
-                                    className="shrink-0 tabular-nums"
-                                >
-                                    {formatNumber(entry.totalPollen)} Pollen
-                                </Text>
                             </Surface>
                         </li>
                     ))}

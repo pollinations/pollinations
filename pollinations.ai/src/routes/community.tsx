@@ -54,11 +54,11 @@ const WAYS_IN = [
     {
         label: "Apps",
         icon: AppIcon,
-        title: "Publish an app",
+        title: "List your app",
         body: "Share what you built, get feedback, and help users discover it.",
         links: [
             {
-                label: "Publish an app",
+                label: "List your app",
                 href: "https://github.com/pollinations/pollinations/issues/new?template=APP-SUBMISSION.yml",
             },
         ],
@@ -70,7 +70,7 @@ const WAYS_IN = [
         body: "Bring your own model or managed agent to the public catalog and make it available to builders.",
         links: [
             {
-                label: "Publish a model or agent",
+                label: "Request access",
                 href: "https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml",
             },
         ],
@@ -78,7 +78,7 @@ const WAYS_IN = [
     {
         label: "Code",
         icon: CodeIcon,
-        title: "Contribute code or improve the docs",
+        title: "Improve code and docs",
         body: "Fix a bug, propose a feature, improve an example, or open a pull request.",
         links: [
             {
@@ -175,7 +175,7 @@ function CommunityParticipation() {
                 : [
                       {
                           value: appsLoading ? null : String(appCount),
-                          label: "published apps",
+                          label: "listed apps",
                       },
                   ],
         },
@@ -189,7 +189,7 @@ function CommunityParticipation() {
                               platformLoading || platform === null
                                   ? null
                                   : compact(platform.community),
-                          label: "published models",
+                          label: "models and agents listed",
                       },
                   ],
         },
@@ -369,11 +369,11 @@ function CommunityParticipation() {
                                             <dl>
                                                 <div className="flex flex-col gap-0.5">
                                                     <dt className="font-heading text-3xl text-theme-text-soft tabular-nums">
-                                                        {issue.votes}
+                                                        {issue.reactions}
                                                     </dt>
                                                     <dd className="text-xs text-theme-text-muted">
-                                                        vote
-                                                        {issue.votes === 1
+                                                        reaction
+                                                        {issue.reactions === 1
                                                             ? ""
                                                             : "s"}
                                                     </dd>
@@ -567,8 +567,8 @@ function BuildDiary() {
         <section className="flex flex-col gap-5">
             <ContentHeader
                 eyebrow="Build diary"
-                title="What shipped, day by day"
-                subtitle="Pollinations’ build history from 2025 onward, told through merged pull requests and daily summaries."
+                title="Explore our build history"
+                subtitle="Follow Pollinations’ progress from 2025 onward through merged pull requests and monthly or daily updates."
             />
             {diary.updatedAt && (
                 <p className="text-xs text-theme-text-muted">
@@ -884,7 +884,7 @@ function Contributors() {
         <section className="flex flex-col gap-5">
             <ContentHeader
                 eyebrow="Contributors"
-                title="Top contributors"
+                title="Top code contributors"
                 subtitle="These contributors have helped build and improve the platform. Want to join them?"
                 action={
                     <InlineLink href={REPO_URL}>Open the repository</InlineLink>
@@ -945,7 +945,7 @@ function CommunityPage() {
                 <ContentHeader
                     eyebrow="Supporters"
                     title="Who keeps the GPUs warm"
-                    subtitle="Their credits and infrastructure help people start building with free Pollen earned through Quests."
+                    subtitle="Their credits and infrastructure help keep Pollinations running."
                 />
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-3.5">
                     {SUPPORTERS.map((supporter) => (

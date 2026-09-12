@@ -110,7 +110,7 @@ type VotingIssue = {
     number: number;
     title: string;
     url: string;
-    votes: number;
+    reactions: number;
 };
 
 /**
@@ -124,25 +124,28 @@ type GhSearch = {
         number: number;
         title: string;
         html_url: string;
-        reactions: { "+1": number };
+        reactions: { total_count: number };
     }[];
 };
 
+export async function loadVotingIssues(limit = 3): Promise<VotingIssue[]> {
+    const query = encodeURIComponent(
+        `repo:${REPO} is:issue is:open "${VOTE_MARKER}" in:title`,
+    );
+    const found = await github<GhSearch>(
+        `/search/issues?q=${query}&sort=reactions&order=desc&per_page=${limit}`,
+    );
+    return found.items.map((item) => ({
+        number: item.number,
+        title: item.title.replace(VOTE_MARKER, "").trim(),
+        url: item.html_url,
+        // Each emoji represents a different answer; these are not unique voters.
+        reactions: item.reactions.total_count,
+    }));
+}
+
 export function useVotingIssues(limit = 3) {
-    return useAsync<VotingIssue[]>(async () => {
-        const query = encodeURIComponent(
-            `repo:${REPO} is:issue is:open "${VOTE_MARKER}" in:title`,
-        );
-        const found = await github<GhSearch>(
-            `/search/issues?q=${query}&sort=reactions-%2B1&order=desc&per_page=${limit}`,
-        );
-        return found.items.map((item) => ({
-            number: item.number,
-            title: item.title.replace(VOTE_MARKER, "").trim(),
-            url: item.html_url,
-            votes: item.reactions["+1"],
-        }));
-    }, []);
+    return useAsync(() => loadVotingIssues(limit), []);
 }
 
 /* ── Build diary ────────────────────────────────────────────────────────── */

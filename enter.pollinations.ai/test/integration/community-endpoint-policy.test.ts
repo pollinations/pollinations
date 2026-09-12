@@ -289,6 +289,82 @@ describe("community endpoint configuration policy", () => {
         }
     });
 
+    test("creates hidden models by owner choice and rejects non-boolean values", async ({
+        sessionToken,
+    }) => {
+        const created = await postModel(sessionToken, "", {
+            name: "visible-by-default",
+            title: "Visible by default",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
+            bearerToken: "test-provider-token",
+        });
+        expect(created).toMatchObject({
+            visibility: "private",
+            hidden: false,
+            hiddenAt: null,
+            hiddenReason: null,
+        });
+
+        await approveCommunityModels();
+        const hidden = await postModel(sessionToken, "", {
+            name: "hidden-on-create",
+            title: "Hidden on create",
+            visibility: "public",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
+            bearerToken: "test-provider-token",
+            hidden: true,
+        });
+        expect(hidden).toMatchObject({
+            visibility: "private",
+            hidden: true,
+            hiddenReason: "Hidden by owner",
+            pending: { visibility: "public" },
+        });
+        expect(hidden.hiddenAt).toEqual(expect.any(String));
+        const hiddenRow = await drizzle(env.DB, {
+            schema,
+        }).query.communityEndpoint.findFirst({
+            where: eq(schema.communityEndpoint.id, hidden.id as string),
+        });
+        expect(hiddenRow).toMatchObject({
+            hiddenBy: "owner",
+            hiddenReason: "Hidden by owner",
+        });
+        expect(hiddenRow?.hiddenAt).not.toBeNull();
+
+        const modelsResponse = await SELF.fetch(endpointUrl, {
+            headers: {
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+        });
+        expect(modelsResponse.status).toBe(200);
+        const models = await modelsResponse.json<{
+            data: { id: string; hidden: boolean }[];
+        }>();
+        expect(
+            models.data.find((model) => model.id === hidden.id),
+        ).toMatchObject({ hidden: true });
+
+        const invalid = await SELF.fetch(endpointUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                name: "invalid-hidden-type",
+                title: "Invalid hidden type",
+                api: "chat_completions",
+                url: "https://text.example.com/v1/chat/completions",
+                bearerToken: "test-provider-token",
+                hidden: "true",
+            }),
+        });
+        expect(invalid.status).toBe(400);
+    });
+
     test("keeps fallback writes and candidate discovery aligned", async ({
         sessionToken,
     }) => {

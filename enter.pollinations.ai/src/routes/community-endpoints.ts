@@ -601,6 +601,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         : null,
                     pendingVisibility: queuesPublication ? "public" : null,
                     pendingAt: queuesPublication ? new Date() : null,
+                    hiddenAt: input.hidden ? new Date() : null,
+                    hiddenReason: input.hidden ? "Hidden by owner" : null,
+                    hiddenBy: input.hidden ? "owner" : null,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })

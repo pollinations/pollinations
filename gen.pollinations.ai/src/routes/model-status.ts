@@ -78,13 +78,22 @@ function parseMinutes(value: string | undefined): number | null {
     return minutes;
 }
 
-type FetchResult = {
+export type ModelHealthFetch = {
     data: ModelHealthResponse;
     timestamp: number;
     stale: boolean;
 };
 
-async function fetchModelHealth(minutes: number): Promise<FetchResult | null> {
+// Health window shared by /v1/models/status and the model listing health
+// enrichment, so both surfaces describe the same data.
+export const MODEL_HEALTH_WINDOW_MINUTES = DEFAULT_MINUTES;
+
+// Fetch the cached Tinybird model health rows. Returns null when the fetch
+// fails and no stale cache exists. Shared by /v1/models/status and the model
+// listing health enrichment.
+export async function fetchModelHealthData(
+    minutes: number = DEFAULT_MINUTES,
+): Promise<ModelHealthFetch | null> {
     const now = Date.now();
     const cached = cache.get(minutes);
     if (cached && now - cached.timestamp < CACHE_TTL_MS) {
@@ -92,18 +101,15 @@ async function fetchModelHealth(minutes: number): Promise<FetchResult | null> {
         setCacheEntry(minutes, cached);
         return { data: cached.data, timestamp: cached.timestamp, stale: false };
     }
-
     try {
         const url = new URL("/v0/pipes/model_health.json", TINYBIRD_HOST);
         url.searchParams.set("token", TINYBIRD_PUBLIC_TOKEN);
         url.searchParams.set("minutes", String(minutes));
         log("Fetching model health from Tinybird: %s", url.toString());
-
         const response = await fetch(url.toString());
         if (!response.ok) {
             throw new Error(`Tinybird responded with ${response.status}`);
         }
-
         const tinybirdData = (await response.json()) as ModelHealthResponse;
         const timestamp = Date.now();
         setCacheEntry(minutes, { data: tinybirdData, timestamp });
@@ -114,40 +120,10 @@ async function fetchModelHealth(minutes: number): Promise<FetchResult | null> {
         if (stale) {
             log("Falling back to stale cache for %d minutes", minutes);
             setCacheEntry(minutes, stale);
-            return {
-                data: stale.data,
-                timestamp: stale.timestamp,
-                stale: true,
-            };
+            return { data: stale.data, timestamp: stale.timestamp, stale: true };
         }
         return null;
     }
-}
-
-export type ModelHealthSnapshot = {
-    rows: z.infer<typeof ModelHealthRowSchema>[];
-    windowMinutes: number;
-    checkedAt: number;
-    stale: boolean;
-};
-
-export async function getModelHealthSnapshot(
-    minutes: number,
-): Promise<ModelHealthSnapshot | null> {
-    const result = await fetchModelHealth(minutes);
-    if (!result) return null;
-    return {
-        rows: result.data.data,
-        windowMinutes: minutes,
-        checkedAt: result.timestamp,
-        stale: result.stale,
-    };
-}
-
-// Test-only: drop the module-level health cache so tests can install a new
-// mocked Tinybird response without waiting out the TTL.
-export function resetModelHealthCache(): void {
-    cache.clear();
 }
 
 export const modelStatusRoutes = new Hono<Env>().get(
@@ -216,11 +192,10 @@ export const modelStatusRoutes = new Hono<Env>().get(
             );
         }
 
-        const result = await fetchModelHealth(minutes);
+        const result = await fetchModelHealthData(minutes);
         if (!result) {
             return c.json({ error: "Failed to fetch model health data" }, 502);
         }
-
         c.header(
             DATA_TIMESTAMP_HEADER,
             new Date(result.timestamp).toISOString(),

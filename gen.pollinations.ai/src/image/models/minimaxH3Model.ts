@@ -23,6 +23,7 @@ const H3_RESOLUTIONS = {
 const H3_MAX_TURBO_RESOLUTIONS = {
     "480p": "480P",
     "768p": "768P",
+    "1080p": "1080P",
 } as const;
 const H3_MAX_TURBO_DURATIONS = [5, 10, 15] as const;
 const H3_MAX_TURBO_ASPECT_RATIOS = [

@@ -347,7 +347,7 @@ export const CreateChatCompletionRequestSchema = z
                 search_context_size: z.enum(["low", "medium", "high"]),
             })
             .describe(
-                "Controls Perplexity Sonar search context. Pollinations currently supports low and high.",
+                "Perplexity Sonar search context size, forwarded as-is. Low is the default and the request fee rises with the size.",
             )
             .optional(),
         temperature: z

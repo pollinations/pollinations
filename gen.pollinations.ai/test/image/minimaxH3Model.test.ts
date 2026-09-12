@@ -144,10 +144,13 @@ describe("callMinimaxH3MaxTurboAPI", () => {
     it.each([
         [5, "480p", "480P"],
         [5, "768p", "768P"],
+        [5, "1080p", "1080P"],
         [10, "480p", "480P"],
         [10, "768p", "768P"],
+        [10, "1080p", "1080P"],
         [15, "480p", "480P"],
         [15, "768p", "768P"],
+        [15, "1080p", "1080P"],
     ] as const)("routes %ss at %s with deterministic billing", async (duration, resolution, upstreamResolution) => {
         const requests: ProviderRequest[] = [];
         mockH3Fetch(requests);
@@ -205,7 +208,10 @@ describe("callMinimaxH3MaxTurboAPI", () => {
         expect(requests[0]?.body?.aspect_ratio).toBe(expectedAspectRatio);
     });
 
-    it("forwards first and last frame URLs to the image route", async () => {
+    it.each([
+        ["768p", "768P"],
+        ["1080p", "1080P"],
+    ] as const)("forwards first and last frame URLs at %s to the image route", async (resolution, upstreamResolution) => {
         const requests: ProviderRequest[] = [];
         mockH3Fetch(requests);
         const start = "https://media.pollinations.ai/start.png";
@@ -215,7 +221,7 @@ describe("callMinimaxH3MaxTurboAPI", () => {
             ...baseParams,
             model: "minimax/minimax-h3-max-turbo",
             duration: 10,
-            resolution: "768p",
+            resolution,
             image: [start, end],
         });
 
@@ -224,7 +230,7 @@ describe("callMinimaxH3MaxTurboAPI", () => {
             body: {
                 prompt: "a seamless camera move",
                 duration: 10,
-                resolution: "768P",
+                resolution: upstreamResolution,
                 seed: 42,
                 enable_safety_checker: true,
                 prompt_expansion_mode: "balanced",

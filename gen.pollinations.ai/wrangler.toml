@@ -226,7 +226,7 @@ service = "pollinations-enter-staging"
 
 [[env.staging.services]]
 binding = "POLLINATIONS_MCP"
-service = "pollinations-mcp"
+service = "pollinations-mcp-staging"
 
 [[env.staging.services]]
 binding = "FFMPEG_MCP"

@@ -9,6 +9,7 @@ shell environment.
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import mimetypes
 import os
@@ -54,7 +55,7 @@ def _name_for_bytes(data: bytes) -> str:
         ext = ".ogg"
     elif data.startswith(b"fLaC"):
         ext = ".flac"
-    elif data.startswith(b"ID3") or data.startswith(b"\xff\xfb"):
+    elif data.startswith((b"ID3", b"\xff\xfb")):
         ext = ".mp3"
     elif data.startswith(b"RIFF") and data[8:12] == b"WAVE":
         ext = ".wav"
@@ -88,8 +89,12 @@ async def _read_source(source: str, filename: str | None) -> tuple[bytes, str]:
         raise ValueError(f"workspace file not found: {source!r}")
     if os.path.getsize(full) > MAX_UPLOAD_BYTES:
         raise ValueError(f"media exceeds {MAX_UPLOAD_BYTES} byte upload limit")
-    with open(full, "rb") as f:
-        data = f.read(MAX_UPLOAD_BYTES + 1)
+
+    def read_file() -> bytes:
+        with open(full, "rb") as file:
+            return file.read(MAX_UPLOAD_BYTES + 1)
+
+    data = await asyncio.to_thread(read_file)
     if len(data) > MAX_UPLOAD_BYTES:
         raise ValueError(f"media exceeds {MAX_UPLOAD_BYTES} byte upload limit")
     return data, filename or os.path.basename(full)
@@ -120,6 +125,10 @@ async def fetch_media(url: str, filename: str | None = None) -> str:
     name = filename or os.path.basename(url.split("?", 1)[0]) or "media.bin"
     full = _workspace_path(name)
     data = await _fetch_bytes(url)
-    with open(full, "wb") as f:
-        f.write(data)
+
+    def write_file() -> None:
+        with open(full, "wb") as file:
+            file.write(data)
+
+    await asyncio.to_thread(write_file)
     return os.path.relpath(full, os.path.realpath(_workdir()))

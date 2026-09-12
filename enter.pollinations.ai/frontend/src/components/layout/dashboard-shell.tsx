@@ -611,7 +611,12 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
     links = [],
     className,
 }) => (
-    <AccountMenu name={username} avatarUrl={avatarUrl} className={className}>
+    <AccountMenu
+        name={username}
+        avatarUrl={avatarUrl}
+        dashboardHref="/pollen"
+        className={className}
+    >
         {(close) => (
             <>
                 {links.map((link) => (

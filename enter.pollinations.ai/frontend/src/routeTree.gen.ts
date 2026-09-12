@@ -9,11 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TopUpRouteImport } from './routes/top-up'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as RefundsRouteImport } from './routes/refunds'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ErrorRouteImport } from './routes/error'
+import { Route as EditKeyRouteImport } from './routes/edit-key'
 import { Route as DeviceRouteImport } from './routes/device'
 import { Route as AuthorizeRouteImport } from './routes/authorize'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
@@ -25,9 +27,16 @@ import { Route as DashboardNewsRouteImport } from './routes/_dashboard.news'
 import { Route as DashboardMyModelsRouteImport } from './routes/_dashboard.my-models'
 import { Route as DashboardModelsRouteImport } from './routes/_dashboard.models'
 import { Route as DashboardKeysRouteImport } from './routes/_dashboard.keys'
+import { Route as DashboardAppsRouteImport } from './routes/_dashboard.apps'
+import { Route as DashboardAgentsRouteImport } from './routes/_dashboard.agents'
 import { Route as DashboardActivityRouteImport } from './routes/_dashboard.activity'
 import { Route as DashboardAccountRouteImport } from './routes/_dashboard.account'
 
+const TopUpRoute = TopUpRouteImport.update({
+  id: '/top-up',
+  path: '/top-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -51,6 +60,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const ErrorRoute = ErrorRouteImport.update({
   id: '/error',
   path: '/error',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EditKeyRoute = EditKeyRouteImport.update({
+  id: '/edit-key',
+  path: '/edit-key',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DeviceRoute = DeviceRouteImport.update({
@@ -107,6 +121,16 @@ const DashboardKeysRoute = DashboardKeysRouteImport.update({
   path: '/keys',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardAppsRoute = DashboardAppsRouteImport.update({
+  id: '/apps',
+  path: '/apps',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardAgentsRoute = DashboardAgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardActivityRoute = DashboardActivityRouteImport.update({
   id: '/activity',
   path: '/activity',
@@ -122,13 +146,17 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/authorize': typeof AuthorizeRoute
   '/device': typeof DeviceRoute
+  '/edit-key': typeof EditKeyRoute
   '/error': typeof ErrorRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
+  '/top-up': typeof TopUpRoute
   '/account': typeof DashboardAccountRoute
   '/activity': typeof DashboardActivityRoute
+  '/agents': typeof DashboardAgentsRoute
+  '/apps': typeof DashboardAppsRoute
   '/keys': typeof DashboardKeysRoute
   '/models': typeof DashboardModelsRoute
   '/my-models': typeof DashboardMyModelsRoute
@@ -141,13 +169,17 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/authorize': typeof AuthorizeRoute
   '/device': typeof DeviceRoute
+  '/edit-key': typeof EditKeyRoute
   '/error': typeof ErrorRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
+  '/top-up': typeof TopUpRoute
   '/account': typeof DashboardAccountRoute
   '/activity': typeof DashboardActivityRoute
+  '/agents': typeof DashboardAgentsRoute
+  '/apps': typeof DashboardAppsRoute
   '/keys': typeof DashboardKeysRoute
   '/models': typeof DashboardModelsRoute
   '/my-models': typeof DashboardMyModelsRoute
@@ -162,13 +194,17 @@ export interface FileRoutesById {
   '/_dashboard': typeof DashboardRouteWithChildren
   '/authorize': typeof AuthorizeRoute
   '/device': typeof DeviceRoute
+  '/edit-key': typeof EditKeyRoute
   '/error': typeof ErrorRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
+  '/top-up': typeof TopUpRoute
   '/_dashboard/account': typeof DashboardAccountRoute
   '/_dashboard/activity': typeof DashboardActivityRoute
+  '/_dashboard/agents': typeof DashboardAgentsRoute
+  '/_dashboard/apps': typeof DashboardAppsRoute
   '/_dashboard/keys': typeof DashboardKeysRoute
   '/_dashboard/models': typeof DashboardModelsRoute
   '/_dashboard/my-models': typeof DashboardMyModelsRoute
@@ -183,13 +219,17 @@ export interface FileRouteTypes {
     | '/'
     | '/authorize'
     | '/device'
+    | '/edit-key'
     | '/error'
     | '/privacy'
     | '/refunds'
     | '/sign-in'
     | '/terms'
+    | '/top-up'
     | '/account'
     | '/activity'
+    | '/agents'
+    | '/apps'
     | '/keys'
     | '/models'
     | '/my-models'
@@ -202,13 +242,17 @@ export interface FileRouteTypes {
     | '/'
     | '/authorize'
     | '/device'
+    | '/edit-key'
     | '/error'
     | '/privacy'
     | '/refunds'
     | '/sign-in'
     | '/terms'
+    | '/top-up'
     | '/account'
     | '/activity'
+    | '/agents'
+    | '/apps'
     | '/keys'
     | '/models'
     | '/my-models'
@@ -222,13 +266,17 @@ export interface FileRouteTypes {
     | '/_dashboard'
     | '/authorize'
     | '/device'
+    | '/edit-key'
     | '/error'
     | '/privacy'
     | '/refunds'
     | '/sign-in'
     | '/terms'
+    | '/top-up'
     | '/_dashboard/account'
     | '/_dashboard/activity'
+    | '/_dashboard/agents'
+    | '/_dashboard/apps'
     | '/_dashboard/keys'
     | '/_dashboard/models'
     | '/_dashboard/my-models'
@@ -243,16 +291,25 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRouteWithChildren
   AuthorizeRoute: typeof AuthorizeRoute
   DeviceRoute: typeof DeviceRoute
+  EditKeyRoute: typeof EditKeyRoute
   ErrorRoute: typeof ErrorRoute
   PrivacyRoute: typeof PrivacyRoute
   RefundsRoute: typeof RefundsRoute
   SignInRoute: typeof SignInRoute
   TermsRoute: typeof TermsRoute
+  TopUpRoute: typeof TopUpRoute
   AppSignInRoute: typeof AppSignInRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/top-up': {
+      id: '/top-up'
+      path: '/top-up'
+      fullPath: '/top-up'
+      preLoaderRoute: typeof TopUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -286,6 +343,13 @@ declare module '@tanstack/react-router' {
       path: '/error'
       fullPath: '/error'
       preLoaderRoute: typeof ErrorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/edit-key': {
+      id: '/edit-key'
+      path: '/edit-key'
+      fullPath: '/edit-key'
+      preLoaderRoute: typeof EditKeyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/device': {
@@ -365,6 +429,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardKeysRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/_dashboard/apps': {
+      id: '/_dashboard/apps'
+      path: '/apps'
+      fullPath: '/apps'
+      preLoaderRoute: typeof DashboardAppsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/agents': {
+      id: '/_dashboard/agents'
+      path: '/agents'
+      fullPath: '/agents'
+      preLoaderRoute: typeof DashboardAgentsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/_dashboard/activity': {
       id: '/_dashboard/activity'
       path: '/activity'
@@ -385,6 +463,8 @@ declare module '@tanstack/react-router' {
 interface DashboardRouteChildren {
   DashboardAccountRoute: typeof DashboardAccountRoute
   DashboardActivityRoute: typeof DashboardActivityRoute
+  DashboardAgentsRoute: typeof DashboardAgentsRoute
+  DashboardAppsRoute: typeof DashboardAppsRoute
   DashboardKeysRoute: typeof DashboardKeysRoute
   DashboardModelsRoute: typeof DashboardModelsRoute
   DashboardMyModelsRoute: typeof DashboardMyModelsRoute
@@ -396,6 +476,8 @@ interface DashboardRouteChildren {
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardAccountRoute: DashboardAccountRoute,
   DashboardActivityRoute: DashboardActivityRoute,
+  DashboardAgentsRoute: DashboardAgentsRoute,
+  DashboardAppsRoute: DashboardAppsRoute,
   DashboardKeysRoute: DashboardKeysRoute,
   DashboardModelsRoute: DashboardModelsRoute,
   DashboardMyModelsRoute: DashboardMyModelsRoute,
@@ -413,11 +495,13 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRouteWithChildren,
   AuthorizeRoute: AuthorizeRoute,
   DeviceRoute: DeviceRoute,
+  EditKeyRoute: EditKeyRoute,
   ErrorRoute: ErrorRoute,
   PrivacyRoute: PrivacyRoute,
   RefundsRoute: RefundsRoute,
   SignInRoute: SignInRoute,
   TermsRoute: TermsRoute,
+  TopUpRoute: TopUpRoute,
   AppSignInRoute: AppSignInRoute,
 }
 export const routeTree = rootRouteImport

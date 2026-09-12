@@ -16,5 +16,5 @@ export const Route = createFileRoute("/_dashboard/my-models")({
 
 function MyModelsPage() {
     const { communityEndpointsAllowed } = DashboardRoute.useLoaderData();
-    return <Deployments canPublish={communityEndpointsAllowed} />;
+    return <Deployments kind="models" canPublish={communityEndpointsAllowed} />;
 }

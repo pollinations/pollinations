@@ -1,5 +1,4 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
-import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import {
     ApiKeyList,
@@ -7,6 +6,7 @@ import {
     type CreateApiKeyResponse,
 } from "../components/keys";
 import { createKeyWithPermissions } from "../lib/create-api-key.ts";
+import { updateApiKey } from "../lib/update-api-key.ts";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/_dashboard/keys")({
@@ -22,6 +22,10 @@ export const Route = createFileRoute("/_dashboard/keys")({
 });
 
 function KeysPage() {
+    return <KeyManagement kind="keys" />;
+}
+
+export function KeyManagement({ kind }: { kind: "keys" | "apps" }) {
     const router = useRouter();
     const { apiKeys } = DashboardRoute.useLoaderData();
 
@@ -63,7 +67,8 @@ function KeysPage() {
 
     async function handleDeleteApiKey(id: string): Promise<void> {
         const result = await authClient.apiKey.delete({ keyId: id });
-        if (result.error) console.error(result.error);
+        if (result.error)
+            throw new Error("Couldn’t delete this key. Try again.");
         await router.invalidate();
     }
 
@@ -77,27 +82,13 @@ function KeysPage() {
             expiresAt?: Date | null;
         },
     ): Promise<void> {
-        const response = await apiClient["api-keys"][":id"].update.$post({
-            param: { id },
-            json: {
-                ...updates,
-                expiresAt:
-                    updates.expiresAt instanceof Date
-                        ? updates.expiresAt.toISOString()
-                        : updates.expiresAt,
-            },
-        });
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(
-                (error as { message?: string }).message || "Update failed",
-            );
-        }
+        await updateApiKey(id, updates);
         await router.invalidate();
     }
 
     return (
         <ApiKeyList
+            kind={kind}
             apiKeys={apiKeys}
             onCreate={handleCreateApiKey}
             onUpdate={handleUpdateApiKey}

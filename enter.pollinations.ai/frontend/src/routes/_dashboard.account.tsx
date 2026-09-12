@@ -3,16 +3,19 @@ import {
     Button,
     CopyButton,
     Dialog,
+    DialogTitle,
     DiscordIcon,
     FieldStack,
     GitHubIcon,
     Heading,
     Input,
+    ScrollArea,
     Section,
     Surface,
     Text,
     TrashIcon,
 } from "@pollinations/ui";
+import { AuthActionButtons } from "@pollinations/ui/auth";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
@@ -185,7 +188,7 @@ function AccountPage() {
                         {(copied) => (
                             <>
                                 <span className="truncate">{user.id}</span>
-                                <span className="shrink-0 font-sans font-medium">
+                                <span className="shrink-0 font-body font-medium">
                                     {copied ? "Copied" : "Copy"}
                                 </span>
                             </>
@@ -242,6 +245,7 @@ function AccountPage() {
                                 connectionPending
                             }
                             onClick={() => void handleDiscordConnection()}
+                            intent={discordConnection ? "danger" : undefined}
                         >
                             {connectionPending
                                 ? "Working..."
@@ -335,80 +339,94 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
         <Dialog
             open={open}
             onOpenChange={handleOpenChange}
-            title="Delete Pollinations account?"
-            size="sm"
+            closeOnInteractOutside={!isDeleting}
+            layout="flow"
         >
-            <div className="mt-4 flex flex-col gap-5 px-6 pb-6">
-                <Alert intent="danger" title="This cannot be undone">
-                    <div className="flex flex-col gap-3">
-                        <p>Deleting your Pollinations account removes:</p>
-                        <ul className="list-disc space-y-1 pl-5">
-                            <li>
-                                Profile, sessions, GitHub connection, and API
-                                keys
-                            </li>
-                            <li>
-                                Pollen balances, access to reward history,
-                                agents, and community models
-                            </li>
-                            <li>Published media listings and tags</li>
-                        </ul>
-                        <p>
-                            We retain only your immutable GitHub user ID with
-                            records of rewards already issued to prevent
-                            duplicate quest payouts.
-                        </p>
-                        <p>
-                            Cached copies of uploaded and generated media may
-                            remain temporarily until their retention period
-                            ends. Required billing and usage records may also be
-                            retained.
-                        </p>
-                    </div>
-                </Alert>
+            <div className="shrink-0 p-6 pb-4">
+                <Heading as={DialogTitle} size="section">
+                    Delete Pollinations account?
+                </Heading>
+            </div>
+            <ScrollArea className="min-h-0 flex-1 overscroll-contain px-6 pb-2">
+                <div className="flex flex-col gap-5">
+                    <Alert intent="danger" title="This cannot be undone">
+                        <div className="flex flex-col gap-3">
+                            <p>Deleting your Pollinations account removes:</p>
+                            <ul className="list-disc space-y-1 pl-5">
+                                <li>
+                                    Profile, sessions, GitHub connection, and
+                                    API keys
+                                </li>
+                                <li>
+                                    Pollen balances, access to reward history,
+                                    agents, and community models
+                                </li>
+                                <li>Published media listings and tags</li>
+                            </ul>
+                            <p>
+                                We retain only your immutable GitHub user ID
+                                with records of rewards already issued to
+                                prevent duplicate quest payouts.
+                            </p>
+                            <p>
+                                Cached copies of uploaded and generated media
+                                may remain temporarily until their retention
+                                period ends. Required billing and usage records
+                                may also be retained.
+                            </p>
+                        </div>
+                    </Alert>
 
-                <FieldStack
-                    label={
-                        <>
-                            Type{" "}
-                            <span className="font-mono font-semibold text-intent-danger-text">
-                                {DELETE_CONFIRMATION}
-                            </span>{" "}
-                            to confirm
-                        </>
-                    }
-                    error={error}
-                >
-                    <Input
-                        value={confirmation}
-                        onChange={(event) =>
-                            setConfirmation(event.currentTarget.value)
+                    <FieldStack
+                        label={
+                            <>
+                                Type{" "}
+                                <span className="font-mono font-semibold text-intent-danger-text">
+                                    {DELETE_CONFIRMATION}
+                                </span>{" "}
+                                to confirm
+                            </>
                         }
-                        autoComplete="off"
-                        spellCheck={false}
-                        disabled={isDeleting}
-                    />
-                </FieldStack>
-
-                <div className="flex justify-end gap-2">
-                    <Button
-                        type="button"
-                        onClick={() => handleOpenChange(false)}
-                        disabled={isDeleting}
+                        error={error}
                     >
-                        Cancel
-                    </Button>
-                    <Button
-                        type="button"
-                        intent="danger"
-                        onClick={() => void handleDelete()}
-                        disabled={
-                            confirmation !== DELETE_CONFIRMATION || isDeleting
-                        }
-                    >
-                        {isDeleting ? "Deleting..." : "Delete account"}
-                    </Button>
+                        <Input
+                            value={confirmation}
+                            onChange={(event) =>
+                                setConfirmation(event.currentTarget.value)
+                            }
+                            autoComplete="off"
+                            spellCheck={false}
+                            disabled={isDeleting}
+                        />
+                    </FieldStack>
                 </div>
+            </ScrollArea>
+            <div className="shrink-0 p-6 pt-4">
+                <AuthActionButtons
+                    secondaryAction={
+                        <Button
+                            type="button"
+                            data-theme="neutral"
+                            onClick={() => handleOpenChange(false)}
+                            disabled={isDeleting}
+                        >
+                            Cancel
+                        </Button>
+                    }
+                    actions={
+                        <Button
+                            type="button"
+                            intent="danger"
+                            onClick={() => void handleDelete()}
+                            disabled={
+                                confirmation !== DELETE_CONFIRMATION ||
+                                isDeleting
+                            }
+                        >
+                            {isDeleting ? "Deleting..." : "Delete account"}
+                        </Button>
+                    }
+                />
             </div>
         </Dialog>
     );

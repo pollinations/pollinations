@@ -5,7 +5,12 @@ import {
     ErrorBanner,
     GitHubSignInButton,
 } from "@pollinations/ui/auth";
-import { Await, createFileRoute, Outlet } from "@tanstack/react-router";
+import {
+    Await,
+    createFileRoute,
+    Outlet,
+    useRouter,
+} from "@tanstack/react-router";
 import { useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
@@ -64,12 +69,14 @@ export const Route = createFileRoute("/_dashboard")({
             .catch(() => null);
         const [apiKeysResult, d1BalanceResult, profileResult] =
             await Promise.all([
-                apiClient["api-keys"]
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : { data: [] })),
-                apiClient.customer.balance
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null)),
+                apiClient["api-keys"].$get().then((r) => {
+                    if (!r.ok) throw new Error("Couldn’t load your API keys.");
+                    return r.json();
+                }),
+                apiClient.customer.balance.$get().then((r) => {
+                    if (!r.ok) throw new Error("Couldn’t load your balance.");
+                    return r.json();
+                }),
                 apiClient.account.profile
                     .$get()
                     .then((r) => (r.ok ? r.json() : null)),
@@ -85,8 +92,8 @@ export const Route = createFileRoute("/_dashboard")({
                 sessionUser.githubUsername ??
                 "",
             apiKeys: (apiKeysResult.data || []) as ApiKey[],
-            tierBalance: d1BalanceResult?.tierBalance ?? 0,
-            packBalance: d1BalanceResult?.packBalance ?? 0,
+            tierBalance: d1BalanceResult.tierBalance,
+            packBalance: d1BalanceResult.packBalance,
             communityEndpointsAllowed:
                 profileResult?.communityEndpointsAllowed ?? false,
             discordAvailable: profileResult?.discordAvailable ?? false,
@@ -99,23 +106,24 @@ export const Route = createFileRoute("/_dashboard")({
             message="Loading your account…"
         />
     ),
-    errorComponent: () => (
-        <AuthFlowLayout
-            dialog={{ label: "Your account" }}
-            actions={
-                <Button onClick={() => window.location.reload()}>
-                    Try again
-                </Button>
-            }
-        >
-            <Heading as="h1" size="section">
-                Your account
-            </Heading>
-            <ErrorBanner>
-                We couldn’t load your account. Please try again.
-            </ErrorBanner>
-        </AuthFlowLayout>
-    ),
+    errorComponent: () => {
+        const router = useRouter();
+        return (
+            <AuthFlowLayout
+                dialog={{ label: "Account unavailable" }}
+                actions={
+                    <Button onClick={() => void router.invalidate()}>
+                        Try again
+                    </Button>
+                }
+            >
+                <Heading as="h1" size="section">
+                    Account unavailable
+                </Heading>
+                <ErrorBanner>Please try again.</ErrorBanner>
+            </AuthFlowLayout>
+        );
+    },
     component: DashboardLayout,
 });
 

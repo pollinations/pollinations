@@ -40,15 +40,13 @@ export function AuthModal({
     return (
         <Dialog
             open
+            layout="flow"
             showBackdrop={false}
             ariaLabel={dialog?.label}
             labelledBy={dialog?.labelledBy}
             initialFocusEl={dialog?.initialFocusEl}
-            positionerClassName="polli:items-start polli:overflow-y-auto polli:bg-app-bg polli:p-0 polli:sm:p-4"
-            contentClassName={cn(
-                "polli:bg-surface-white polli:border-0 polli:rounded-none polli:shadow-none polli:max-w-xl polli:w-full polli:my-0 polli:min-h-dvh polli:max-h-dvh polli:sm:rounded-2xl polli:sm:shadow-container polli:sm:my-auto polli:sm:min-h-0 polli:sm:max-h-[calc(100dvh-2rem)]",
-                contentClassName,
-            )}
+            positionerClassName="polli:bg-app-bg"
+            contentClassName={contentClassName}
         >
             {children}
         </Dialog>
@@ -75,10 +73,7 @@ export function AuthFlowLayout({
     dialog?: AuthModalProps["dialog"];
 }) {
     return (
-        <AuthModal
-            dialog={dialog}
-            contentClassName="polli:flex polli:h-dvh polli:flex-col polli:sm:h-[calc(100dvh-2rem)]"
-        >
+        <AuthModal dialog={dialog}>
             <ScrollArea className="polli:min-h-0 polli:flex-1 polli:overscroll-contain polli:scroll-pt-28 polli:scroll-pb-4 polli:sm:rounded-t-2xl">
                 <div className="polli:flex polli:min-h-full polli:flex-col">
                     <div className="polli:sticky polli:top-0 polli:z-10 polli:shrink-0 polli:bg-surface-white/80 polli:pb-3 polli:backdrop-blur-md">
@@ -97,7 +92,53 @@ export function AuthFlowLayout({
     );
 }
 
-/** Center lone actions; keep paired actions and terms in stable, responsive slots. */
+/** Shared responsive action row for consent and dashboard key dialogs. */
+export function AuthActionButtons({
+    actions,
+    secondaryAction,
+}: {
+    actions: ReactNode;
+    secondaryAction?: ReactNode;
+}) {
+    if (!actions && !secondaryAction) return null;
+    const primarySlot = (
+        <div
+            data-auth-slot="primary"
+            data-theme="accent"
+            className={cn(
+                "polli:order-first polli:flex polli:min-h-12 polli:min-w-0 polli:w-full polli:items-center polli:justify-center polli:@min-[320px]/auth-footer:order-none polli:@min-[320px]/auth-footer:row-start-1 polli:[&_button]:h-12 polli:[&_button]:w-full polli:[&_a]:h-12 polli:[&_a]:w-full",
+                secondaryAction
+                    ? "polli:@min-[320px]/auth-footer:col-start-2"
+                    : "polli:@min-[320px]/auth-footer:col-span-full polli:@min-[320px]/auth-footer:w-[calc(100%_-_8.25rem)] polli:justify-self-center",
+            )}
+        >
+            {actions}
+        </div>
+    );
+    const secondarySlot = (
+        <div
+            data-auth-slot="secondary"
+            data-theme="neutral"
+            className={cn(
+                "polli:flex polli:min-h-9 polli:items-center polli:justify-center polli:@min-[320px]/auth-footer:row-start-1 polli:[&_button]:h-9 polli:[&_a]:h-9",
+                actions
+                    ? "polli:@min-[320px]/auth-footer:col-start-1"
+                    : "polli:@min-[320px]/auth-footer:col-span-full",
+            )}
+        >
+            {secondaryAction}
+        </div>
+    );
+    return (
+        <div className="polli:@container/auth-footer polli:w-full polli:[&_button]:rounded-md polli:[&_a]:rounded-md polli:[&_button]:font-body polli:[&_a]:font-body polli:[&_button]:text-sm polli:[&_a]:text-sm">
+            <div className="polli:grid polli:w-full polli:grid-cols-1 polli:gap-3 polli:@min-[320px]/auth-footer:grid-cols-[minmax(7.5rem,max-content)_minmax(0,1fr)]">
+                {secondaryAction && secondarySlot}
+                {actions && primarySlot}
+            </div>
+        </div>
+    );
+}
+
 export function AuthActionFooter({
     actions,
     secondaryAction,
@@ -107,45 +148,17 @@ export function AuthActionFooter({
     secondaryAction?: ReactNode;
     className?: string;
 }) {
-    const primarySlot = (
-        <div
-            data-auth-slot="primary"
-            className={cn(
-                "polli:order-first polli:flex polli:min-h-12 polli:min-w-0 polli:w-full polli:items-center polli:justify-center polli:@min-[320px]/auth-footer:order-none polli:@min-[320px]/auth-footer:row-start-1 polli:[&>button]:h-12 polli:[&>button]:w-full polli:[&>a]:h-12 polli:[&>a]:w-full",
-                secondaryAction
-                    ? "polli:@min-[320px]/auth-footer:col-start-2"
-                    : "polli:@min-[320px]/auth-footer:col-span-full polli:@min-[320px]/auth-footer:w-[calc(100%_-_8.25rem)] polli:justify-self-center",
-                !actions && "polli:pointer-events-none",
-            )}
-        >
-            {actions}
-        </div>
-    );
-    const secondarySlot = (
-        <div
-            data-auth-slot="secondary"
-            className={cn(
-                "polli:flex polli:min-h-9 polli:items-center polli:justify-center polli:@min-[320px]/auth-footer:row-start-1 polli:[&>button]:h-9 polli:[&>a]:h-9",
-                actions
-                    ? "polli:@min-[320px]/auth-footer:col-start-1"
-                    : "polli:@min-[320px]/auth-footer:col-span-full",
-                !secondaryAction && "polli:pointer-events-none",
-            )}
-        >
-            {secondaryAction}
-        </div>
-    );
     return (
         <div
             className={cn(
-                "polli:@container/auth-footer polli:sticky polli:bottom-0 polli:z-10 polli:flex polli:shrink-0 polli:flex-col polli:items-center polli:gap-3 polli:bg-surface-white/80 polli:p-6 polli:pt-4 polli:backdrop-blur-md",
+                "polli:sticky polli:bottom-0 polli:z-10 polli:flex polli:shrink-0 polli:flex-col polli:items-center polli:gap-3 polli:bg-surface-white/80 polli:p-6 polli:pt-4 polli:backdrop-blur-md",
                 className,
             )}
         >
-            <div className="polli:grid polli:w-full polli:grid-cols-1 polli:gap-3 polli:@min-[320px]/auth-footer:grid-cols-[minmax(7.5rem,max-content)_minmax(0,1fr)]">
-                {secondarySlot}
-                {primarySlot}
-            </div>
+            <AuthActionButtons
+                actions={actions}
+                secondaryAction={secondaryAction}
+            />
             <InlineLink
                 href="https://pollinations.ai/terms"
                 external
@@ -233,11 +246,9 @@ export function ErrorBanner({ children }: { children: ReactNode }) {
     return (
         <div
             role="alert"
-            className="polli:rounded-lg polli:bg-intent-danger-bg-light polli:p-4"
+            className="polli:rounded-lg polli:bg-intent-danger-bg-light polli:p-4 polli:text-sm polli:text-intent-danger-text"
         >
-            <p className="polli:text-sm polli:text-intent-danger-text">
-                {children}
-            </p>
+            {children}
         </div>
     );
 }

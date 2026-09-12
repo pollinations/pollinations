@@ -7,6 +7,7 @@ import {
     useState,
 } from "react";
 import { cn } from "../lib/cn.ts";
+import { Button } from "../primitives/Button.tsx";
 import { Tooltip } from "../primitives/Tooltip.tsx";
 
 type CopyValue = string | (() => string | Promise<string>);
@@ -25,6 +26,7 @@ export type CopyButtonProps = Omit<
     copiedTooltip?: ReactNode;
     tooltipClassName?: string;
     className?: string | ((copied: boolean) => string);
+    variant?: "plain" | "button";
     onCopied?: () => void;
     onCopyError?: (error: unknown) => void;
 };
@@ -40,6 +42,7 @@ export function CopyButton({
     copiedTooltip = "✅ Copied!",
     tooltipClassName,
     className,
+    variant = "plain",
     onCopied,
     onCopyError,
     ...buttonProps
@@ -71,8 +74,9 @@ export function CopyButton({
         }
     }
 
+    const Control = variant === "button" ? Button : "button";
     const button = (
-        <button
+        <Control
             {...buttonProps}
             type="button"
             onClick={handleCopy}
@@ -82,7 +86,7 @@ export function CopyButton({
             )}
         >
             {typeof children === "function" ? children(copied) : children}
-        </button>
+        </Control>
     );
 
     // A copy button with its own visible label doesn't need a hover tooltip —

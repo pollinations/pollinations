@@ -6,9 +6,9 @@ type ButtonIntent = "danger" | "info";
 
 const sizes = {
     xs: "polli:h-5 polli:px-1.5 polli:py-0 polli:text-[11px] polli:leading-none",
-    sm: "polli:px-2 polli:pt-0.5 polli:pb-1",
-    md: "polli:px-4 polli:pt-1.5 polli:pb-2",
-    lg: "polli:px-6 polli:py-3",
+    sm: "polli:min-h-7 polli:px-2 polli:pt-0.5 polli:pb-1",
+    md: "polli:min-h-9 polli:px-4 polli:pt-1.5 polli:pb-2",
+    lg: "polli:min-h-12 polli:px-6 polli:py-3",
 } as const;
 
 // Cascade-driven base — reads [data-theme] vars.
@@ -43,7 +43,7 @@ const buttonClasses = ({
 }: BaseButtonProps & { disabled?: boolean }) => {
     const colorClasses = intent ? intentClasses[intent] : themeClasses;
     return cn(
-        "polli-control polli:inline-flex polli:items-center polli:justify-center polli:rounded-full polli:self-center polli:font-medium polli:leading-normal polli:box-border",
+        "polli-control polli:inline-flex polli:items-center polli:justify-center polli:rounded-full polli:self-center polli:font-body polli:text-sm polli:font-medium polli:leading-normal polli:box-border",
         disabled
             ? "polli:opacity-50 polli:cursor-not-allowed"
             : "polli:hover:filter polli:hover:brightness-105 polli:cursor-pointer",

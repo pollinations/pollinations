@@ -1,6 +1,7 @@
 export {
     AuthAccessItem,
     AuthAccessSummary,
+    AuthActionButtons,
     AuthActionFooter,
     AuthFlowLayout,
     AuthInfoCard,

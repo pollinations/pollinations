@@ -21,6 +21,8 @@ export type EditableComboboxProps = Omit<InputProps, "onChange" | "value"> & {
     align?: "start" | "end";
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
+    /** Controlled filter inputs can keep incomplete selections open. */
+    closeOnSelect?: boolean;
     /**
      * Content rendered inside the input shell before the text field. Enables
      * the wrapped shell layout and replaces the standalone chevron trigger.
@@ -72,6 +74,7 @@ export function EditableCombobox({
     align = "start",
     open,
     onOpenChange,
+    closeOnSelect,
     startContent,
     className,
     disabled,
@@ -116,6 +119,7 @@ export function EditableCombobox({
             openOnClick={hasOptions}
             openOnChange={() => hasOptions}
             open={open}
+            closeOnSelect={closeOnSelect}
             disabled={disabled}
             name={name}
             required={required}

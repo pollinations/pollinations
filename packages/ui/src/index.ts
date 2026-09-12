@@ -11,6 +11,10 @@ export {
     type CollapsibleProps,
 } from "./compositions/Collapsible.tsx";
 export {
+    ConfirmationDialog,
+    type ConfirmationDialogProps,
+} from "./compositions/ConfirmationDialog.tsx";
+export {
     CopyButton,
     type CopyButtonProps,
 } from "./compositions/CopyButton.tsx";

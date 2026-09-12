@@ -18,12 +18,7 @@ import {
     MCP_USER_ID_HEADER,
 } from "../../../shared/registry/mcp.ts";
 import { createMediaAssets, type MediaService } from "./assets.ts";
-import {
-    createComputerMcpServer,
-    isPublicPath,
-    PRIVATE_ROOT,
-    PUBLIC_ROOT,
-} from "./server.ts";
+import { createComputerMcpServer, HOME } from "./server.ts";
 
 const TOOL_CALL_RATE = "computer.tool_call.v1";
 
@@ -33,24 +28,12 @@ type Env = {
     MEDIA: MediaService;
 };
 
-const SHELL_NOTES = `## Shell
+const README_PATH = `${HOME}/README.md`;
+const README = `# Your computer
 
-The only tool is bash (no Node, no Python; coreutils, grep, sed, awk,
-jq, tar, curl and git are available). Write a file by passing its
-content as stdin to \`cat > path\`. \`assets publish <path>\` copies a file
-to public media storage and prints its URL; \`curl -o path <url>\`
-downloads one back. That pair is also how files move between this
-computer and the other one (private /workspace, shared /public): a
-command only sees the computer its cwd is on.
-`;
-
-const PRIVATE_README = `# Your computer
-
-This is your private, persistent computer. Everything under /workspace
-survives between runs. Keep one folder per project (for example
-/workspace/thesis) and pass it as cwd. /public is a separate computer
-shared with every Pollinations user; use a cwd under /public to work
-there.
+This is your private, persistent computer. Everything you write survives
+between runs. /workspace is your home folder: keep one folder per project
+in it (for example /workspace/thesis) and pass that folder as cwd.
 
 ## Memory convention
 
@@ -60,18 +43,23 @@ there.
   entry at the end of each run: what happened, what was decided, open items.
 - Before answering questions about earlier work, grep /workspace/memory.
 
-${SHELL_NOTES}`;
+## Shell
 
-const PUBLIC_README = `# The public computer
+The only tool is bash (no Node, no Python; coreutils, grep, sed, awk,
+jq, tar, curl and git are available). Write a file by passing its
+content as stdin to \`cat > path\`.
 
-Everything under /public is shared with every Pollinations user and their
-agents. Anyone can read, change or delete these files; nothing here is
-private, so never store secrets or personal data. Keep one folder per
-topic, prefer appending (>>) to rewriting shared files, and commit with
-git if history matters. Your private computer is /workspace, reachable
-with a cwd under /workspace.
+## Importing and sharing
 
-${SHELL_NOTES}`;
+- In: \`curl -o path <url>\` for any public URL; \`git clone <https-url>\`
+  for any public repository.
+- Out: \`assets publish <path>\` copies one file to public media storage
+  and prints an unlisted URL that stays valid 30 days; tar a folder first.
+  For anything the user wants to keep, \`git push\` to a repository they
+  own: they give you a token scoped to that one repository and you put it
+  in the remote URL (https://x:TOKEN@github.com/user/repo.git). The token
+  is stored in this computer's git config, nowhere else.
+`;
 
 // The Dynamic Worker running bash reaches this filesystem through the
 // service proxy, so the loader loopback needs the class exported here.
@@ -113,7 +101,7 @@ export class Computer extends withWorkspace(
         }
         const payload = await readJsonRpc(request);
         const workspace = await getWorkspace(this);
-        await seedReadme(workspace, isPublicPath(cwdOf(payload)));
+        await seedReadme(workspace);
         const server = createComputerMcpServer(workspace);
         // JSON responses (not SSE) so the usage receipt can be attached once
         // the tool has finished.
@@ -131,7 +119,7 @@ export class Computer extends withWorkspace(
 type JsonRpcPayload = {
     id?: string | number | null;
     method?: string;
-    params?: { name?: string; arguments?: { cwd?: unknown } };
+    params?: { name?: string };
 };
 
 async function readJsonRpc(request: Request): Promise<JsonRpcPayload> {
@@ -154,27 +142,12 @@ function toolCallUsage(payload: JsonRpcPayload, response: Response) {
     };
 }
 
-function cwdOf(payload: JsonRpcPayload): string {
-    const cwd = payload.params?.arguments?.cwd;
-    return typeof cwd === "string" ? cwd : PRIVATE_ROOT;
-}
-
-async function seedReadme(
-    workspace: WorkspaceClient,
-    isPublic: boolean,
-): Promise<void> {
-    const root = isPublic ? PUBLIC_ROOT : PRIVATE_ROOT;
-    const readmePath = `${root}/README.md`;
+async function seedReadme(workspace: WorkspaceClient): Promise<void> {
     try {
-        await workspace.fs.stat(readmePath);
+        await workspace.fs.stat(README_PATH);
     } catch {
-        await workspace.fs.mkdir(isPublic ? root : `${root}/memory/log`, {
-            recursive: true,
-        });
-        await workspace.fs.writeFile(
-            readmePath,
-            isPublic ? PUBLIC_README : PRIVATE_README,
-        );
+        await workspace.fs.mkdir(`${HOME}/memory/log`, { recursive: true });
+        await workspace.fs.writeFile(README_PATH, README);
     }
 }
 
@@ -191,25 +164,9 @@ export default {
                 { status: 401 },
             );
         }
-        const payload = await readJsonRpc(request);
-        const cwd = cwdOf(payload);
-        if (!cwd.startsWith("/")) {
-            return Response.json({
-                jsonrpc: "2.0",
-                id: payload.id ?? null,
-                error: {
-                    code: -32602,
-                    message: `cwd must be an absolute path under ${PRIVATE_ROOT} or ${PUBLIC_ROOT}`,
-                },
-            });
-        }
-        // The cwd picks the computer: one Durable Object per user for
-        // /workspace, a single shared one for /public. A command can only
-        // see the computer it runs on, so the two never leak into each other.
+        // One Durable Object per user; its SQLite holds the whole filesystem.
         const stub = env.COMPUTER.get(
-            env.COMPUTER.idFromName(
-                isPublicPath(cwd) ? "shared:public" : `user:${userId}`,
-            ),
+            env.COMPUTER.idFromName(`user:${userId}`),
         );
         return stub.fetch(request);
     },

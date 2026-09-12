@@ -6,7 +6,7 @@ idle.
 
 Built on [`@cloudflare/computer`](https://github.com/cloudflare/computer)
 (preview). Each user gets one Durable Object whose SQLite holds the
-filesystem, plus one shared Durable Object for `/public`. The single `bash` tool runs [just-bash](https://github.com/vercel-labs/just-bash)
+whole filesystem. The single `bash` tool runs [just-bash](https://github.com/vercel-labs/just-bash)
 in a throwaway Dynamic Worker that talks back to the Durable Object for file
 access. No container, no Linux. The shell has coreutils, grep, sed, awk, jq,
 tar, curl and git; no Node or Python. `curl` uses the Dynamic Worker's own
@@ -17,20 +17,16 @@ host allowlist.
 
 One tool, `bash`, with `command`, optional `stdin` (file content for
 `cat > path`, passed as-is, no quoting) and optional `cwd`, created if
-missing. The `cwd` picks the computer: anything under `/workspace` (the
-default) runs on the caller's private Durable Object, anything under `/public`
-runs on one Durable Object shared by every Pollinations user. A command only
-sees the computer its cwd is on, so the two cannot leak into each other and no
-chroot is needed. Projects are folders (`/workspace/thesis`), listable with
-`ls`. The shared computer has no access control and no attribution: last
-writer wins, same as two chats of one user today; its README asks agents to
-append rather than rewrite and to commit with git if history matters. Inside
-the shell, `assets publish <path>` copies a
-file to the Pollinations media service (`MEDIA` service binding, the same
-one ffmpeg-mcp uses) and prints its public `https://media.pollinations.ai/…`
-URL. It is a snapshot with media's 30-day retention, refreshed on reads; the
-command's expiry argument is ignored. `curl -o <path> <url>` is the way back
-in, for media URLs or anything else public. Every successful call is billed at one flat rate (`computer.tool_call.v1`, reported to gen as a
+missing and defaulting to `/workspace`. The whole tree persists; `/workspace`
+is only the home folder, and projects are folders in it. Nothing is shared
+between users. Files come in with `curl -o` (any public URL) or `git clone`
+(any public repository) and go out with `assets publish <path>`, which copies
+one file to the Pollinations media service (`MEDIA` service binding, the same
+one ffmpeg-mcp uses) and prints its unlisted `https://media.pollinations.ai/…`
+URL (a snapshot with media's 30-day retention, refreshed on reads; the
+command's expiry argument is ignored), or with `git push` to a repository the
+user owns, using a token they provide in the remote URL. The service mints no
+credentials of its own. Every successful call is billed at one flat rate (`computer.tool_call.v1`, reported to gen as a
 usage receipt); discovery requests and storage are free. Memory is a convention,
 not a tool: a `/workspace/README.md` seeded on first use tells the agent to keep
 current facts in `memory/facts.md` and a dated append-only journal in
@@ -41,8 +37,8 @@ current facts in `memory/facts.md` and a dated append-only journal in
 The Worker is private (`workers_dev: false`, no routes). Gen's
 `/mcp/computer` route authenticates the caller, then calls this Worker through
 the `COMPUTER_MCP` service binding with the `x-pollinations-user-id` header
-set. That header selects the private Durable Object (`user:<userId>`); a `cwd`
-under `/public` selects `shared:public` instead. A missing header is a 401.
+set. That header selects the Durable Object (`user:<userId>`), so a missing header
+is a 401 here.
 The registry entry lives in `shared/registry/mcp.ts`.
 
 ## Local

@@ -143,7 +143,7 @@ describe("computer MCP worker", () => {
         expect(write.isError).toBe(false);
         const ls = await bash(
             client,
-            "ls /workspace/thesis && cat ../README.md | head -1",
+            "ls /workspace/thesis && head -1 ../README.md",
             undefined,
             "/workspace/thesis",
         );
@@ -152,40 +152,16 @@ describe("computer MCP worker", () => {
         await client.close();
     });
 
-    it("shares /public between users and keeps it apart from /workspace", async () => {
-        const alice = await connect("user-public-alice");
-        const write = await bash(
-            alice,
-            "echo 'from alice' > /public/notes/hello.md && cat /public/README.md | head -1",
+    it("clones a public repository", async () => {
+        const client = await connect("user-clone");
+        const clone = await bash(
+            client,
+            "git clone https://github.com/octocat/Hello-World.git hello >/dev/null 2>&1 && cat hello/README",
             undefined,
-            "/public/notes",
+            "/workspace/import",
         );
-        expect(write.isError).toBe(false);
-        expect(write.text).toContain("# The public computer");
-        const alicePrivate = await bash(alice, "ls /public");
-        expect(alicePrivate.isError).toBe(true);
-        await alice.close();
-
-        const bob = await connect("user-public-bob");
-        const read = await bash(
-            bob,
-            "cat hello.md && ls /workspace",
-            undefined,
-            "/public/notes",
-        );
-        expect(read.text).toContain("from alice");
-        expect(read.text).not.toContain("README.md");
-        await bob.close();
-    });
-
-    it("rejects a relative cwd", async () => {
-        const client = await connect("user-cwd");
-        await expect(
-            client.callTool({
-                name: "bash",
-                arguments: { command: "ls", cwd: "notes" },
-            }),
-        ).rejects.toThrow(/cwd must be an absolute path/);
+        expect(clone.isError).toBe(false);
+        expect(clone.text).toContain("Hello World!");
         await client.close();
     });
 

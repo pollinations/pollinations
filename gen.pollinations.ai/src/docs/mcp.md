@@ -129,9 +129,9 @@ while idle. There is one tool, `bash`, with `command`, optional `stdin` (for
 example file content for `cat > path`) and optional `cwd`. The shell cannot run Node or Python; curl, coreutils,
 `grep`, `sed`, `awk`, `jq`, `tar`, and `git` are available. A `/workspace/README.md` is created on first use and
 describes a simple memory layout (`memory/facts.md` plus a dated
-`memory/log/`). `cwd` under `/workspace` (the default) is the account's private computer, with one folder per project; `cwd` under `/public` is a single computer shared with every Pollinations user, where anyone can read, change or delete files. A command sees only the computer its `cwd` is on. Inside the shell, `assets publish <path>` copies a file to
+`memory/log/`). `cwd` defaults to `/workspace`, with one folder per project. Nothing is shared between accounts. Files come in with `curl` or `git clone` and go out with `assets publish <path>`, which copies a file to
 [media.pollinations.ai](https://media.pollinations.ai) and prints its public
-URL. Every call costs the same flat rate; see the catalog.
+URL, or with `git push` to a repository the caller owns. Every call costs the same flat rate; see the catalog.
 
 ### Billing and permissions
 

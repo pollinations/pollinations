@@ -23,6 +23,7 @@ import {
     MegaphoneIcon,
     Surface,
     TabButton,
+    useColorMode,
 } from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -145,6 +146,8 @@ function FeedState({
 }
 
 function CommunityParticipation() {
+    const { isDark } = useColorMode();
+    const votesScene = `/heroes/community-votes-${isDark ? "night" : "day"}`;
     const { data: issues, loading, failed } = useVotingIssues();
     const {
         data: online,
@@ -322,8 +325,21 @@ function CommunityParticipation() {
 
                 <Surface
                     variant="card-themed"
-                    className="flex flex-col gap-5 p-5 sm:p-6"
+                    className="relative isolate flex flex-col gap-5 overflow-hidden p-5 pb-40 sm:p-6 sm:pb-56"
                 >
+                    <img
+                        src={`${votesScene}.webp`}
+                        srcSet={`${votesScene}-1024.webp 1024w, ${votesScene}.webp 2048w`}
+                        sizes="(max-width: 1440px) 100vw, 1200px"
+                        alt=""
+                        aria-hidden="true"
+                        width={2048}
+                        height={854}
+                        loading="lazy"
+                        decoding="async"
+                        fetchPriority="low"
+                        className="bottom-scene pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-[clamp(16rem,32vw,24rem)] w-full select-none object-cover object-bottom"
+                    />
                     <div className="flex flex-wrap items-start justify-between gap-4">
                         <div className="flex max-w-xl flex-col gap-2">
                             <Eyebrow>Have your say</Eyebrow>

@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🖼️",
+    "name": "Pollination_chatbot",
+    "url": "https://pollinations-chatbot.vercel.app",
+    "description": "Ek simple aur friendly AI chatbot jo Pollinations ke text generation API (openai, mistral, gemini models) se power hota hai. Users apni Pollinations account se secure \"Login with Pollinations\" (BYOP a",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "zeroxmanhwa053-rgb",
+    "githubUserId": "311867849",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-11",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14739",
+    "approvedDate": "2026-09-12",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🖼️",
     "name": "Ziban",
     "url": "https://ziban.pages.dev",
     "description": "Want to see how a fashion item will fit you before you buy? Ziban uses AI to help you visualize your style, so you can shop with more confidence.",

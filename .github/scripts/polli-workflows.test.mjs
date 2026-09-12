@@ -31,10 +31,8 @@ test("read execution and publication have separate permissions", () => {
     );
     const publish = workflow.split("  publish:")[1];
     assert.match(publish, /issues: write/);
-    assert.doesNotMatch(
-        publish,
-        /checkout|POLLY_BOT|contents: write|pull-requests: write/,
-    );
+    assert.match(publish, /pull-requests: write/);
+    assert.doesNotMatch(publish, /checkout|POLLY_BOT|contents: write/);
     assert.doesNotMatch(full, /allowed_non_write_users/);
     assert.match(full, /needs: authorize-write/);
     assert.match(
@@ -55,6 +53,116 @@ test("write assistant starts on trusted code before handling the target PR", () 
     );
     assert.doesNotMatch(checkouts[1], /pull_request\.head|refs\/pull\//);
     assert.match(full, /uses: anthropics\/claude-code-action@v1/);
+});
+
+test("askpolli uses the Polli Claude Code runtime with every read-only tool", () => {
+    const answer = workflow.split(/^  answer:\r?$/m)[1].split(/^  publish:\r?$/m)[0];
+    assert.match(answer, /uses: anthropics\/claude-code-action@v1/);
+    assert.match(answer, /--model pollinations-router\/polli/);
+    assert.match(
+        answer,
+        /body\.model === "pollinations-router\/polli"[\s\S]*body\.agent_model = "openai\/gpt-5\.6-terra"/,
+    );
+    assert.match(answer, /--setting-sources user/);
+    assert.match(answer, /--strict-mcp-config/);
+    assert.match(answer, /allowed_non_write_users: \$\{\{ github\.actor \}\}/);
+    assert.match(answer, /github_token: \$\{\{ github\.token \}\}/);
+    assert.match(answer, /outputs\.structured_output/);
+    assert.doesNotMatch(answer, /askpolli-run|askModel/);
+    assert.match(
+        full,
+        /body\.model === "pollinations-router\/polli"[\s\S]*body\.agent_model = "openai\/gpt-6-astra"/,
+    );
+    assert.match(full, /default: "pollinations,pollinations-router\/polli"/);
+
+    const allowedTools = answer.match(/--allowedTools ([^\r\n]+)/)?.[1] ?? "";
+    assert.match(allowedTools, /^"Read\(\$\{\{ github\.workspace \}\}\/\*\*\)"/);
+    for (const tool of [
+        "AskUserQuestion",
+        "CronList",
+        "Glob",
+        "Grep",
+        "ListAgents",
+        "ListMcpResourcesTool",
+        "LSP",
+        "ReadMcpResourceTool",
+        "TaskGet",
+        "TaskList",
+        "TaskOutput",
+        "WaitForMcpServers",
+        "WebFetch",
+        "WebSearch",
+        "mcp__github__get_code_scanning_alert",
+        "mcp__github__get_commit",
+        "mcp__github__get_dependabot_alert",
+        "mcp__github__get_file_contents",
+        "mcp__github__get_issue",
+        "mcp__github__get_issue_comments",
+        "mcp__github__get_me",
+        "mcp__github__get_notification_details",
+        "mcp__github__get_project",
+        "mcp__github__get_project_field",
+        "mcp__github__get_project_item",
+        "mcp__github__get_pull_request",
+        "mcp__github__get_pull_request_diff",
+        "mcp__github__get_pull_request_files",
+        "mcp__github__get_pull_request_review_comments",
+        "mcp__github__get_pull_request_reviews",
+        "mcp__github__get_pull_request_status",
+        "mcp__github__get_release_by_tag",
+        "mcp__github__get_tag",
+        "mcp__github__get_team_members",
+        "mcp__github__get_teams",
+        "mcp__github__list_branches",
+        "mcp__github__list_code_scanning_alerts",
+        "mcp__github__list_commits",
+        "mcp__github__list_dependabot_alerts",
+        "mcp__github__list_issue_types",
+        "mcp__github__list_issues",
+        "mcp__github__list_notifications",
+        "mcp__github__list_project_fields",
+        "mcp__github__list_project_items",
+        "mcp__github__list_projects",
+        "mcp__github__list_pull_requests",
+        "mcp__github__list_starred_repositories",
+        "mcp__github__list_sub_issues",
+        "mcp__github__list_tags",
+        "mcp__github__search_code",
+        "mcp__github__search_issues",
+        "mcp__github__search_pull_requests",
+        "mcp__github__search_repositories",
+        "mcp__github__search_users",
+        "mcp__github_ci__get_ci_status",
+        "mcp__github_ci__get_workflow_run_details",
+    ]) {
+        assert.ok(allowedTools.split(" ").includes(tool), `missing ${tool}`);
+    }
+    assert.doesNotMatch(
+        allowedTools,
+        /(?:^|[ ,])(?:Agent|Artifact|Bash|Edit|NotebookEdit|PowerShell|Skill|TaskStop|TodoWrite|Write)(?:[ ,]|$)/,
+    );
+    const availableTools = answer.match(/--tools ([^\r\n]+)/)?.[1] ?? "";
+    const exposed = new Set(availableTools.split(","));
+    const approved = new Set(
+        allowedTools
+            .replace(/^"Read\([^\r\n]+?\)" /, "Read ")
+            .split(" "),
+    );
+    assert.deepEqual(exposed, approved);
+    for (const tool of [
+        "Agent",
+        "Artifact",
+        "Bash",
+        "Edit",
+        "NotebookEdit",
+        "PowerShell",
+        "Skill",
+        "TaskStop",
+        "TodoWrite",
+        "Write",
+    ]) {
+        assert.ok(!exposed.has(tool), `${tool} must be unavailable`);
+    }
 });
 
 test("both first jobs whitelist callers before allocating a runner", () => {
@@ -163,8 +271,8 @@ for (const [name, source, command, ids] of [
 
 const publisher = workflow
     .split("  publish:")[1]
-    .split("<<'NODE'\n")[1]
-    .split("\n          NODE")[0]
+    .split(/<<'NODE'\r?\n/)[1]
+    .split(/\r?\n          NODE/)[0]
     .replace('import { readFile } from "node:fs/promises";', "");
 async function publish(answer) {
     const calls = [];

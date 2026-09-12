@@ -8,7 +8,7 @@
   "main": "src/index.ts",
   "workers_dev": false,
   "compatibility_date": "2026-06-17",
-  "compatibility_flags": ["nodejs_compat", "experimental"],
+  "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
   // Dynamic Worker loader: each shell exec runs just-bash in a fresh isolate.
   "worker_loaders": [{ "binding": "LOADER" }],

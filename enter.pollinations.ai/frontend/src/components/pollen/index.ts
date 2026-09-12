@@ -4,3 +4,4 @@ export {
     PollenBalance,
     SidebarWallet,
 } from "./pollen-balance.tsx";
+export { PollenPackPurchase } from "./pollen-pack-purchase.tsx";

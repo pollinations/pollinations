@@ -11,13 +11,29 @@ export const ResponseFunctionCallSchema = z.object({
     status: ItemStatusSchema.optional(),
 });
 
+// Tool output is a string or content parts, as in the OpenAI Responses API.
+// Non-text parts (input_image, input_file) are accepted but carry no text.
+const FunctionOutputPartSchema = z.union([
+    z.object({ type: z.literal("input_text"), text: z.string() }),
+    z.object({ type: z.string() }).loose(),
+]);
+
 export const ResponseFunctionCallOutputSchema = z.object({
     type: z.literal("function_call_output"),
     id: z.string().min(1).optional(),
     call_id: z.string().min(1),
-    output: z.string(),
+    output: z.union([z.string(), z.array(FunctionOutputPartSchema)]),
     status: ItemStatusSchema.optional(),
 });
+
+export function functionOutputText(
+    output: z.infer<typeof ResponseFunctionCallOutputSchema>["output"],
+): string {
+    if (typeof output === "string") return output;
+    return output
+        .map((part) => (part.type === "input_text" ? String(part.text) : ""))
+        .join("");
+}
 
 export type ResponseFunctionCall = z.infer<typeof ResponseFunctionCallSchema>;
 export type ResponseFunctionCallOutput = z.infer<

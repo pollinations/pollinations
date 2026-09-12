@@ -1,0 +1,34 @@
+{
+  "pr_number": 14786,
+  "title": "fix: derive monitor model category from catalog metadata",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14786",
+  "merged_at": "2026-09-12T16:20:27Z",
+  "labels": [],
+  "pr_body_excerpt": "The `community/` prefix rename (#14621) turned every legacy community ID into an alias, so all pre-rename traffic now arrives in the model monitor as a historical alias row. Those rows took their category from the recorded event type instead of the catalog.\n\n- Endpoints are coarser than categories: video and 3D both record `generate.image`, so `NamanSoni78/Seedance-2.5` showed under Image instead of Video\n- `mergeModelHealth` now reads `type`, `endpointType` and `community` from the aliased catalog entry\n- Event type stays the fallback for genuinely unregistered traffic (deleted community endpoints)\n- Recorded health is still kept separate from the canonical model, unchanged\n\nVerified against the live catalog and `/v1/models/status`: 225 alias-resolvable rows, one category mismatch before the fix, none after. Scope (Official/Community) was already correct via `provider`.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01WKMPrAfe4wMNBNdZ96Yqmr",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The catalog knows best",
+    "blurb": "The model monitor stopped guessing what kind of flower it was looking at. Historical community aliases now consult the catalog, so Seedance-2.5 can bloom under Video instead of wandering into Image.",
+    "summary": "Fixed model-monitor category resolution for legacy `community/` aliases by reading `type`, `endpointType`, and `community` from the aliased catalog entry, while retaining recorded event type as a fallback for unregistered endpoints.",
+    "impact": "`/v1/models/status` now categorizes alias-resolvable models from catalog metadata—correcting the Seedance-2.5 Video-versus-Image mismatch and bringing the verified mismatch count from one to zero across 225 alias rows.",
+    "keywords": [
+      "model-monitor",
+      "model-catalog",
+      "community-aliases",
+      "model-status",
+      "categories",
+      "video"
+    ],
+    "visual_concept": "A cozy model catalog garden where labeled seed packets represent model categories: a Seedance-2.5 video flower is gently moved from an Image shelf to its correct Video trellis. Polli, wearing tiny librarian glasses and carrying a catalog card, notices the correct metadata; a friendly CRT monitor robot confirms the classification while code-vines and flowers make the catalog feel alive.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-library model catalog: Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a happy smile, rounded light-blue translucent wings, and tiny librarian glasses, files a glowing Seedance-2.5 seed packet onto a \"VIDEO\" trellis instead of an \"IMAGE\" shelf while a chunky CRT monitor robot happily checks a catalog card; code-plants, flowers, and prominent lime green #ecf874 glow around them. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT scanlines, dark purple #110518 pixel-font labels, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14786.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-library model catalog: Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a happy smile, rounded light-blue translucent wings, and tiny librarian glasses, files a glowing Seedance-2.5 seed packet onto a \"VIDEO\" trellis instead of an \"IMAGE\" shelf while a chunky CRT monitor robot happily checks a catalog card; code-plants, flowers, and prominent lime green #ecf874 glow around them. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT scanlines, dark purple #110518 pixel-font labels, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-12T16:21:29.974456+00:00"
+}

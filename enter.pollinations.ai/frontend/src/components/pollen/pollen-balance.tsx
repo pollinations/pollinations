@@ -279,7 +279,10 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 checkoutReturnPath={checkoutReturnPath}
             />
             <Surface>
-                <AutoTopUpPanel initialBillingState={initialBillingState} />
+                <AutoTopUpPanel
+                    initialBillingState={initialBillingState}
+                    returnPath={checkoutReturnPath}
+                />
             </Surface>
             <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                 <PaymentTrustBadge className="mt-0 pt-0" />

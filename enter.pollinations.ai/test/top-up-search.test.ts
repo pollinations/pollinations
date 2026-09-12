@@ -5,6 +5,7 @@ import { validateTopUpSearch } from "../frontend/src/lib/top-up-search.ts";
 test.each([
     "stripe_success",
     "stripe_canceled",
+    "stripe_billing_return",
 ])("preserves %s after the router parses a Stripe return URL", (flag) => {
     const search = validateTopUpSearch(
         defaultParseSearch(

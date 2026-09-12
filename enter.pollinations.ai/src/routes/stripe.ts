@@ -222,8 +222,18 @@ export const stripeRoutes = new Hono<Env>()
     .post("/billing/portal", async (c) => {
         const user = await requireSessionUser(c);
 
+        const body = (await c.req.json().catch(() => null)) as {
+            return?: unknown;
+        } | null;
+        const returnPath =
+            typeof body?.return === "string" ? body.return : undefined;
+
         try {
-            const session = await createBillingPortalSession(c.env, user.id);
+            const session = await createBillingPortalSession(
+                c.env,
+                user.id,
+                returnPath,
+            );
 
             if (!session.url) {
                 return c.json(

@@ -6,12 +6,17 @@ type TopUpSearch = {
     redirect?: string;
     stripe_success?: boolean;
     stripe_canceled?: boolean;
+    stripe_billing_return?: boolean;
 };
 
 export function validateTopUpSearch(
     search: Record<string, unknown>,
 ): TopUpSearch {
     return {
+        stripe_billing_return:
+            search.stripe_billing_return === true ||
+            search.stripe_billing_return === "true" ||
+            undefined,
         pack:
             typeof search.pack === "string" && isPollenPackKey(search.pack)
                 ? search.pack

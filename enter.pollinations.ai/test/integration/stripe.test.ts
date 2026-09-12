@@ -612,6 +612,69 @@ test("POST /api/stripe/billing/portal creates a Stripe Portal session", async ({
     });
 });
 
+test("POST /api/stripe/billing/portal returns to standalone top-up without changing the shared default", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const response = await SELF.fetch(`${base}/billing/portal`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            cookie: `better-auth.session_token=${sessionToken}`,
+        },
+        body: JSON.stringify({
+            return: "/top-up?redirect=https%3A%2F%2Fapp.example%2Fchat",
+        }),
+    });
+    expect(response.status).toBe(200);
+    const request = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/billing_portal/sessions",
+    );
+    const url = new URL(String(request?.body.return_url));
+    expect(url.origin).toBe(new URL(env.STRIPE_SUCCESS_URL).origin);
+    expect(url.pathname).toBe("/top-up");
+    expect(url.searchParams.get("redirect")).toBe("https://app.example/chat");
+    expect(url.searchParams.get("stripe_billing_return")).toBe("true");
+    const defaultUrl = new URL(
+        String(mocks.stripe.state.portalConfigurations[0].default_return_url),
+    );
+    expect(defaultUrl.pathname).toBe("/pollen");
+    expect(defaultUrl.searchParams.has("redirect")).toBe(false);
+});
+
+test("POST /api/stripe/billing/portal ignores off-site return paths", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    for (const returnPath of [
+        "//evil.example",
+        "/\t/evil.example",
+        "https://evil.example",
+        123,
+        null,
+    ]) {
+        mocks.stripe.state.requests.length = 0;
+        const response = await SELF.fetch(`${base}/billing/portal`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({ return: returnPath }),
+        });
+        expect(response.status).toBe(200);
+        const request = mocks.stripe.state.requests.find(
+            (request) => request.path === "/v1/billing_portal/sessions",
+        );
+        const url = new URL(String(request?.body.return_url));
+        expect(url.origin).toBe(new URL(env.STRIPE_SUCCESS_URL).origin);
+        expect(url.pathname).toBe("/pollen");
+        expect(url.searchParams.get("stripe_billing_return")).toBe("true");
+    }
+});
+
 test("POST /api/stripe/billing/portal updates existing Stripe Portal headline", async ({
     sessionToken,
     mocks,

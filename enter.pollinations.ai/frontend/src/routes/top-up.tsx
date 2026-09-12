@@ -56,7 +56,12 @@ function TopUpPage() {
 
     // Remember which app sent us before Stripe overwrites the referrer.
     useEffect(() => {
-        if (search.stripe_success || search.stripe_canceled) return;
+        if (
+            search.stripe_success ||
+            search.stripe_canceled ||
+            search.stripe_billing_return
+        )
+            return;
         const from = preferredReturnUrl(search.redirect);
         if (from) {
             void navigate({
@@ -69,6 +74,7 @@ function TopUpPage() {
         search.redirect,
         search.stripe_success,
         search.stripe_canceled,
+        search.stripe_billing_return,
     ]);
 
     useEffect(() => {

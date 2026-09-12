@@ -355,6 +355,7 @@ export default defineConfig(async ({ mode }) => {
                             },
                             COMPUTER_MCP: async (request: Request) => {
                                 if (
+                                    request.headers.has("authorization") ||
                                     request.headers.has("cookie") ||
                                     !request.headers.has(
                                         "x-pollinations-user-id",
@@ -368,19 +369,46 @@ export default defineConfig(async ({ mode }) => {
                                 const payload = (await request.json()) as {
                                     jsonrpc: string;
                                     id?: string | number;
+                                    method?: string;
                                 };
-                                return Response.json({
-                                    jsonrpc: payload.jsonrpc,
-                                    id: payload.id,
-                                    result: {
-                                        content: [
-                                            {
-                                                type: "text",
-                                                text: `computer:${request.headers.get("x-pollinations-user-id")}`,
-                                            },
-                                        ],
+                                const headers = new Headers();
+                                if (payload.method === "tools/call") {
+                                    headers.set(
+                                        "x-pollinations-mcp-cost",
+                                        "0.0002",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-tool",
+                                        "exec",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-status",
+                                        "200",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-adjustment-id",
+                                        "computer.tool_call.v1",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-adjustment-units",
+                                        "1",
+                                    );
+                                }
+                                return Response.json(
+                                    {
+                                        jsonrpc: payload.jsonrpc,
+                                        id: payload.id,
+                                        result: {
+                                            content: [
+                                                {
+                                                    type: "text",
+                                                    text: `computer:${request.headers.get("x-pollinations-user-id")}`,
+                                                },
+                                            ],
+                                        },
                                     },
-                                });
+                                    { headers },
+                                );
                             },
                         },
                     },

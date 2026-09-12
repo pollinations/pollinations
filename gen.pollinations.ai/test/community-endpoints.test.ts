@@ -4274,8 +4274,8 @@ fixtureTest(
             promptTextPrice: 0.1 / 1_000_000,
             completionTextPrice: 0.2 / 1_000_000,
             hiddenAt: new Date(),
-            hiddenReason: "repeated upstream 500s",
-            hiddenBy: "monitor",
+            hiddenReason: "Hidden by owner",
+            hiddenBy: "owner",
             createdAt: new Date(),
             updatedAt: new Date(),
         });
@@ -4494,7 +4494,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "routes canonical and aliased calls to a hidden community model with a canonical-only key",
+    "routes canonical and aliased calls to an owner-hidden community model with a canonical-only key",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `disabled-call-${crypto.randomUUID().slice(0, 8)}`;
@@ -4522,8 +4522,8 @@ fixtureTest(
             promptTextPrice: 0.1 / 1_000_000,
             completionTextPrice: 0.2 / 1_000_000,
             hiddenAt: new Date(),
-            hiddenReason: "repeated upstream 500s",
-            hiddenBy: "monitor",
+            hiddenReason: "Hidden by owner",
+            hiddenBy: "owner",
             createdAt: new Date(),
             updatedAt: new Date(),
         });

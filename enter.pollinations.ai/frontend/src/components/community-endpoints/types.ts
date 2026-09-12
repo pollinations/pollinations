@@ -219,6 +219,7 @@ export type EndpointFormState = ModelListingFormState & {
     url: string;
     upstreamModel: string;
     bearerToken: string;
+    hidden: boolean;
     // Callers may only spend Paid Pollen. Useful for pay-as-you-go upstreams.
     paidOnly: boolean;
     requiredSafetyFeatures: SafetyFeature[];
@@ -237,6 +238,7 @@ type ModelListingPayload = {
 };
 
 export type EndpointPayload = ModelListingPayload & {
+    hidden?: boolean;
     imagePricing: CommunityEndpointImagePricing;
     upstreamModel: string;
     paidOnly: boolean;
@@ -293,6 +295,7 @@ export const emptyForm: EndpointFormState = {
     url: "",
     upstreamModel: "",
     bearerToken: "",
+    hidden: false,
     paidOnly: false,
     requiredSafetyFeatures: [],
     fallbacks: [],
@@ -412,6 +415,7 @@ export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
         title: endpoint.title,
         description: endpoint.description ?? "",
         visibility,
+        hidden: endpoint.hiddenAt !== null,
         perUserRpm: endpoint.perUserRpm?.toString() ?? "",
         api: endpoint.modality === "text" ? endpoint.api : "chat_completions",
         url: endpoint.modality === "text" ? endpoint.url : endpoint.baseUrl,
@@ -587,11 +591,17 @@ function listingFieldsToPayload(form: ModelListingFormState) {
     };
 }
 
-export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
+export function toEndpointPayload(
+    form: EndpointFormState,
+    includeHidden = false,
+): EndpointPayload {
     const modality = form.modality;
     const imagePricing = modality === "image" ? form.imagePricing : "request";
     return {
         ...listingFieldsToPayload(form),
+        ...(includeHidden && form.visibility === "public"
+            ? { hidden: form.hidden }
+            : {}),
         ...(modality === "text"
             ? { modality, api: form.api, url: form.url.trim() }
             : { modality, baseUrl: form.url.trim() }),

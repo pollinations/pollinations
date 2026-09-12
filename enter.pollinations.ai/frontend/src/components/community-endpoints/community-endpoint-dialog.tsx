@@ -286,6 +286,7 @@ export function CommunityEndpointDialog({
         try {
             const payload = toEndpointPayload(
                 formWithVisiblePrices(form, visiblePriceKeys),
+                !isEdit,
             );
             await onSubmit(payload, form.bearerToken.trim());
             onOpenChange(false);
@@ -509,6 +510,29 @@ export function CommunityEndpointDialog({
                             }))
                         }
                     />
+
+                    {!isEdit &&
+                        !isEndpointAgent &&
+                        form.visibility === "public" && (
+                            <FieldStack
+                                label="Catalog visibility"
+                                helper="Unlisted models are excluded from public catalogs and search but remain callable by exact model ID. Public listing still follows the 3-hour approval delay."
+                            >
+                                <label className="flex items-center gap-2 text-sm">
+                                    <input
+                                        type="checkbox"
+                                        checked={form.hidden}
+                                        onChange={(event) =>
+                                            setForm((current) => ({
+                                                ...current,
+                                                hidden: event.target.checked,
+                                            }))
+                                        }
+                                    />
+                                    Publish as hidden
+                                </label>
+                            </FieldStack>
+                        )}
 
                     {form.visibility === "public" && (
                         <Alert intent="warning" title="Public provider duties">

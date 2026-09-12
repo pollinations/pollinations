@@ -1,0 +1,37 @@
+{
+  "pr_number": 14750,
+  "title": "Add Pollination_chatbot to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14750",
+  "merged_at": "2026-09-12T08:08:10Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Pollination_chatbot](https://pollinations-chatbot.vercel.app) to image\n- Ek simple aur friendly AI chatbot jo Pollinations ke text generation API (openai, mistral, gemini models) se power hota hai. Users apni Pollinations account se secure \"Login with Pollinations\" (BYOP a\n\nFixes #14739",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A friendly chat flower",
+    "blurb": "Pollination_chatbot has joined the garden: a simple, friendly chat app powered by Pollinations text models. Bring a Pollinations account and let openai, mistral, and gemini do the talking.",
+    "summary": "Added Pollination_chatbot to the app registry, giving users a friendly chatbot powered by Pollinations text generation models including OpenAI, Mistral, and Gemini with Login with Pollinations support.",
+    "impact": "Users can now discover and use Pollination_chatbot as a secure Pollinations-powered chat interface for conversations across several text-model providers.",
+    "keywords": [
+      "community-app",
+      "chatbot",
+      "text-generation",
+      "openai",
+      "mistral",
+      "gemini",
+      "login"
+    ],
+    "visual_concept": "Depict Polli welcoming a small friendly chatbot app into a cozy garden hackerspace: a retro CRT terminal shows rounded chat bubbles while model-themed flowers bloom around it. Polli should wear tiny headset headphones and warmly help the eager Monitor Robot connect the chat screen, representing the app's multi-model conversation and Pollinations login.",
+    "image_prompt": "A cozy garden hackerspace scene where the cute pixel art bee mascot, with a tiny headset, warmly helps a chunky CRT-monitor robot open a friendly chatbot window with simple pixel chat bubbles; nearby flower pots grow little labels reading “OpenAI”, “Mistral”, and “Gemini” around a prominently glowing lime green (#ecf874) login key. The bee has a yellow body with dark brown stripes, black antennae and oval eyes, bright pink rectangular cheek blush, a small smile, and rounded light-blue translucent wings; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14750.jpg",
+    "prompt": "A cozy garden hackerspace scene where the cute pixel art bee mascot, with a tiny headset, warmly helps a chunky CRT-monitor robot open a friendly chatbot window with simple pixel chat bubbles; nearby flower pots grow little labels reading “OpenAI”, “Mistral”, and “Gemini” around a prominently glowing lime green (#ecf874) login key. The bee has a yellow body with dark brown stripes, black antennae and oval eyes, bright pink rectangular cheek blush, a small smile, and rounded light-blue translucent wings; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-09-12T08:09:05.775539+00:00",
+  "app_name": "Pollination_chatbot",
+  "app_url": "https://pollinations-chatbot.vercel.app"
+}

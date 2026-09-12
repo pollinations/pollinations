@@ -197,7 +197,9 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
   the migration; verify no audited old IDs remain. Do not rewrite historical
   analytics using today's mutable aliases.
 - Update every consumer of a changed public ID at once.
-- Add aliases only for existing compatibility contracts or explicit approval.
+- New models, including new versions and checkpoints, must have no aliases.
+- Preserve existing alias targets until removal.
+- Retire all legacy aliases through explicit migrations.
 - Keep model names and aliases in `shared/registry/`; use the live model
   catalog for public listings rather than maintaining a duplicate Markdown list.
 - Keep one PR per model or tightly coupled model-family change.

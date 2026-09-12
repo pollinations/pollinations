@@ -1,10 +1,19 @@
 import {
+    AppIcon,
     Button,
+    CheckIcon,
+    ChevronIcon,
     ColorModeToggle,
     Dialog,
+    Dropdown,
+    DropdownItem,
     ExternalLinkIcon,
+    GitBranchIcon,
+    GridIcon,
     IconButton,
+    RouteIcon,
     ScrollArea,
+    SmartphoneIcon,
     setColorMode,
     TabButton,
     useColorMode,
@@ -13,6 +22,7 @@ import {
 import logoUrl from "@pollinations/ui/brand/mark.svg";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { AccountJourney } from "./pollen-connect-account-journey";
 import { appLoginScreens } from "./pollen-connect-app-login";
 import {
     appVariantSupportsProtocol,
@@ -24,6 +34,11 @@ import {
     ConnectionBlockedControls,
     ConsentPreviewControls,
 } from "./pollen-connect-consent-controls";
+import {
+    type DashboardPreviewSelection,
+    type DashboardSection,
+    dashboardSections,
+} from "./pollen-connect-dashboard";
 import { getDeviceFlow } from "./pollen-connect-device";
 import {
     edgeLabelPosition,
@@ -38,10 +53,7 @@ import {
 } from "./pollen-connect-diagram";
 import { FlowSwitch } from "./pollen-connect-flow-controls";
 import { ScreenGallery } from "./pollen-connect-gallery";
-import {
-    galleryCardsForFlow,
-    galleryScreensForFlow,
-} from "./pollen-connect-gallery-data";
+import { galleryScreensForFlow } from "./pollen-connect-gallery-data";
 import { Journey } from "./pollen-connect-journey";
 import {
     entrances,
@@ -50,11 +62,7 @@ import {
     type JourneySection,
     type JourneySelection,
 } from "./pollen-connect-journey-state";
-import {
-    InventoryCount,
-    ScreenContent,
-    ScreenOwnership,
-} from "./pollen-connect-preview";
+import { ScreenContent, ScreenOwnership } from "./pollen-connect-preview";
 import {
     type AppPreviewProps,
     defaultAppPreview,
@@ -63,6 +71,20 @@ import "./src/style.css";
 import "./pollen-connect-canvas.css";
 
 const screens = canvasGroups.flatMap((group) => group.screens);
+const flowOptions: Record<
+    Exclude<JourneyEntrance, "admin">,
+    { id: JourneySection; label: string }[]
+> = {
+    app: [
+        { id: "main", label: "Login" },
+        { id: "topup", label: "Top up" },
+    ],
+    device: [
+        { id: "main", label: "Enter Code" },
+        { id: "link", label: "Open Device Link" },
+    ],
+    account: dashboardSections,
+};
 
 const requestedMode = new URLSearchParams(location.search).get("theme");
 if (requestedMode === "light" || requestedMode === "dark")
@@ -73,11 +95,15 @@ function Canvas({
     onAppPreviewChange,
     entrance,
     location: journeyLocation,
+    dashboardSelection,
+    onDashboardSelect,
     gallery = false,
     desktop,
 }: {
     entrance: JourneySelection;
     location: JourneyLocation;
+    dashboardSelection?: DashboardPreviewSelection;
+    onDashboardSelect?: (screen: string, variant: number) => void;
     gallery?: boolean;
     desktop: boolean;
 } & AppPreviewProps) {
@@ -101,7 +127,11 @@ function Canvas({
         selected?.variants?.[variant]?.params?.action !== "authorize";
     const optionsKey = `${entrance.world}:${selected?.id ?? ""}`;
     const isAppLogin = entrance.world === "app" && entrance.section === "main";
-    const showOwnership = isAppLogin || entrance.world === "device";
+    const routeJourney =
+        ["account", "admin"].includes(entrance.world) ||
+        (entrance.world === "app" && entrance.section === "topup");
+    const showOwnership =
+        isAppLogin || ["device", "admin"].includes(entrance.world);
     const previewOptions = {
         screen:
             selected?.variants?.[variant]?.screen ??
@@ -149,7 +179,11 @@ function Canvas({
                     key={index}
                     size="sm"
                     active={variant === index}
-                    onClick={() => setVariant(index)}
+                    onClick={() => {
+                        setVariant(index);
+                        if (routeJourney)
+                            onDashboardSelect?.(selected.id, index);
+                    }}
                 >
                     {selected.variants?.[index].label}
                 </TabButton>
@@ -190,9 +224,11 @@ function Canvas({
             if (!next) return;
             visitedVariants.current.set(selected.id, variant);
             setSelected(next);
-            setVariant(visitedVariants.current.get(next.id) ?? 0);
+            const nextVariant = visitedVariants.current.get(next.id) ?? 0;
+            setVariant(nextVariant);
+            if (routeJourney) onDashboardSelect?.(next.id, nextVariant);
         },
-        [selected, variant],
+        [selected, variant, routeJourney, onDashboardSelect],
     );
     useEffect(() => {
         if (!selected) return;
@@ -280,15 +316,17 @@ function Canvas({
         return entry ? [entry] : [];
     });
     const mapSections =
-        (entrance.world === "device" ||
+        (["device", "admin"].includes(entrance.world) ||
             (entrance.world === "app" && entrance.section === "main")) &&
         focus
             ? [
                   {
                       title:
-                          entrance.world === "device"
-                              ? `Devices · ${entrance.section === "link" ? "Open Device Link" : "Enter Code"}`
-                              : "Apps · Login",
+                          entrance.world === "admin"
+                              ? "Admin"
+                              : entrance.world === "device"
+                                ? `Devices · ${entrance.section === "link" ? "Open Device Link" : "Enter Code"}`
+                                : "Apps · Login",
                       note: "Shared screen states · external provider and app handoffs",
                       x: focus.bounds.x - 30,
                       y: focus.bounds.y - 80,
@@ -352,10 +390,16 @@ function Canvas({
                     overrides={isAppLogin ? appPreview : {}}
                     entrance={entrance}
                     desktop={desktop}
+                    selection={routeJourney ? dashboardSelection : undefined}
+                    onVariantChange={
+                        routeJourney ? onDashboardSelect : undefined
+                    }
                     onSelect={(entry, example, order) => {
                         navigationOrder.current = order;
                         setSelected(entry);
                         setVariant(example);
+                        if (routeJourney)
+                            onDashboardSelect?.(entry.id, example);
                     }}
                 />
             ) : (
@@ -603,8 +647,18 @@ function Canvas({
                                                 onClick={() => {
                                                     navigationOrder.current =
                                                         mapScreens;
-                                                    setVariant(0);
+                                                    const variant =
+                                                        dashboardSelection?.screen ===
+                                                        entry.id
+                                                            ? dashboardSelection.variant
+                                                            : 0;
+                                                    setVariant(variant);
                                                     setSelected(entry);
+                                                    if (routeJourney)
+                                                        onDashboardSelect?.(
+                                                            entry.id,
+                                                            variant,
+                                                        );
                                                 }}
                                                 onFocus={() =>
                                                     setHighlight(node.id)
@@ -619,18 +673,6 @@ function Canvas({
                                                             <span>
                                                                 {entry.title}
                                                             </span>
-                                                            <InventoryCount
-                                                                count={Math.max(
-                                                                    1,
-                                                                    screenVariantIndices(
-                                                                        entry,
-                                                                        isAppLogin
-                                                                            ? appPreview.protocol
-                                                                            : undefined,
-                                                                    ).length,
-                                                                )}
-                                                                unit="state"
-                                                            />
                                                         </span>
                                                         {showOwnership && (
                                                             <ScreenOwnership
@@ -648,6 +690,13 @@ function Canvas({
                                                                 : {}
                                                         }
                                                         entry={entry}
+                                                        variant={
+                                                            routeJourney &&
+                                                            dashboardSelection?.screen ===
+                                                                entry.id
+                                                                ? dashboardSelection.variant
+                                                                : 0
+                                                        }
                                                     />
                                                 </span>
                                             </Button>
@@ -682,10 +731,6 @@ function Canvas({
                                 className={`canvas-inspector-title${showOwnership ? " has-owner" : ""}`}
                             >
                                 <strong>{selected.title}</strong>
-                                <InventoryCount
-                                    count={Math.max(1, statusIndices.length)}
-                                    unit="state"
-                                />
                                 {showOwnership && (
                                     <ScreenOwnership entry={selected} />
                                 )}
@@ -780,7 +825,9 @@ function ConnectLab() {
             );
             return {
                 app: saved?.app === "topup" ? "topup" : "main",
-                account: saved?.account === "topup" ? "topup" : "main",
+                account:
+                    dashboardSections.find((s) => s.id === saved?.account)
+                        ?.id ?? "main",
                 device: saved?.device === "link" ? "link" : "main",
             };
         } catch {
@@ -793,19 +840,11 @@ function ConnectLab() {
             entrances.find((item) => item.id === params.get("flow"))?.id ??
             "app";
         const section =
-            world === "app" || world === "account"
-                ? params.get("section") === "topup"
-                    ? "topup"
-                    : params.get("section") === "main"
-                      ? "main"
-                      : subsections[world]
-                : world === "device"
-                  ? params.get("section") === "link"
-                      ? "link"
-                      : params.get("section") === "main"
-                        ? "main"
-                        : subsections.device
-                  : "main";
+            world === "admin"
+                ? "main"
+                : (flowOptions[world].find(
+                      (s) => s.id === params.get("section"),
+                  )?.id ?? subsections[world]);
         return { world, section, revision: 0 };
     });
     useEffect(() => {
@@ -827,16 +866,74 @@ function ConnectLab() {
             }
         }
     }, [entrance.world, entrance.section, subsections]);
-    const chooseFlow = (world: JourneyEntrance) =>
+    const chooseFlow = (
+        world: JourneyEntrance,
+        section: JourneySection = "main",
+    ) =>
         setEntrance((old) => ({
             world,
-            section: world !== "admin" ? subsections[world] : "main",
+            section,
             revision: old.revision + 1,
         }));
+    const openDashboard = () =>
+        setEntrance((old) => ({
+            world: "account",
+            section: "topup",
+            revision: old.revision + 1,
+        }));
+    const onDashboardNavigate = useCallback((section: DashboardSection) => {
+        setEntrance((old) =>
+            old.world === "account" && old.section !== section
+                ? { ...old, section }
+                : old,
+        );
+    }, []);
     const [journeyLocation, setJourneyLocation] = useState<JourneyLocation>({
         world: "app",
         node: "app-connect",
     });
+    const [previewSelections, setPreviewSelections] = useState<
+        Partial<Record<JourneyEntrance, DashboardPreviewSelection>>
+    >({});
+    const dashboardSelection = previewSelections[entrance.world];
+    const setDashboardSelection = useCallback(
+        (
+            update: (
+                old: DashboardPreviewSelection | undefined,
+            ) => DashboardPreviewSelection,
+        ) => {
+            setPreviewSelections((all) => ({
+                ...all,
+                [entrance.world]: update(all[entrance.world]),
+            }));
+        },
+        [entrance.world],
+    );
+    const selectDashboardPreview = useCallback(
+        (screen: string, variant: number) => {
+            setDashboardSelection((old) => ({
+                screen,
+                variant,
+                revision: (old?.revision ?? 0) + 1,
+            }));
+        },
+        [setDashboardSelection],
+    );
+    const reportDashboardPreview = useCallback(
+        (screen: string, variant?: number) => {
+            setDashboardSelection((old) =>
+                old?.screen === screen &&
+                (variant === undefined || old.variant === variant)
+                    ? old
+                    : {
+                          screen,
+                          variant: variant ?? 0,
+                          revision: old?.revision ?? 0,
+                      },
+            );
+        },
+        [setDashboardSelection],
+    );
     const changeView = (next: string) => {
         const url = new URL(location.href);
         url.searchParams.set("view", next);
@@ -858,157 +955,207 @@ function ConnectLab() {
                         />
                         <span>Connect</span>
                     </div>
-                    <div className="connect-navigation">
-                        <nav className="connect-view-tabs" aria-label="View">
-                            <div className="connect-navigation-buttons">
-                                <TabButton
-                                    size="sm"
-                                    active={view === "journey"}
-                                    onClick={() => changeView("journey")}
-                                >
-                                    Journey
-                                </TabButton>
-                                <TabButton
-                                    size="sm"
-                                    active={view === "map"}
-                                    onClick={() => changeView("map")}
-                                >
-                                    Map
-                                </TabButton>
-                                <TabButton
-                                    size="sm"
-                                    active={view === "screens"}
-                                    ariaLabel="Screens"
-                                    onClick={() => changeView("screens")}
-                                >
-                                    Screens
-                                    <InventoryCount
-                                        count={
-                                            galleryCardsForFlow(
-                                                entrance.world,
-                                                entrance.section,
-                                            ).length
-                                        }
-                                        unit="screen"
-                                    />
-                                </TabButton>
-                            </div>
-                        </nav>
-                    </div>
-                    <div className="connect-display-controls">
-                        <ColorModeToggle />
-                    </div>
+                    <ColorModeToggle />
                 </div>
-                <div className="connect-header-flows">
-                    <div className="connect-flow-navigation">
+                <ScrollArea axis="x" className="connect-header-secondary">
+                    <nav
+                        className="connect-view-tabs"
+                        aria-label="View"
+                        data-theme="neutral"
+                    >
+                        <IconButton
+                            size="md"
+                            variant={view === "journey" ? "tile" : "ghost"}
+                            pressed={view === "journey"}
+                            title="Journey"
+                            onClick={() => changeView("journey")}
+                        >
+                            <RouteIcon className="polli:h-4 polli:w-4" />
+                        </IconButton>
+                        <IconButton
+                            size="md"
+                            variant={view === "map" ? "tile" : "ghost"}
+                            pressed={view === "map"}
+                            title="Map"
+                            onClick={() => changeView("map")}
+                        >
+                            <GitBranchIcon className="polli:h-4 polli:w-4" />
+                        </IconButton>
+                        <IconButton
+                            size="md"
+                            variant={view === "screens" ? "tile" : "ghost"}
+                            pressed={view === "screens"}
+                            title="Screens"
+                            onClick={() => changeView("screens")}
+                        >
+                            <GridIcon className="polli:h-4 polli:w-4" />
+                        </IconButton>
+                    </nav>
+                    <div className="connect-navigation">
                         <nav
                             className="connect-entrances"
                             aria-label="Choose a flow"
                         >
                             <div className="connect-navigation-buttons">
-                                {entrances.map((item) => (
-                                    <TabButton
-                                        key={item.id}
-                                        size="sm"
-                                        variant="ghost"
-                                        active={entrance.world === item.id}
-                                        onClick={() => chooseFlow(item.id)}
-                                    >
-                                        {item.label}
-                                    </TabButton>
-                                ))}
+                                {entrances.map((item) => {
+                                    const active = entrance.world === item.id;
+                                    if (item.id === "admin")
+                                        return (
+                                            <TabButton
+                                                key={item.id}
+                                                size="sm"
+                                                variant="ghost"
+                                                active={active}
+                                                onClick={() =>
+                                                    chooseFlow(item.id)
+                                                }
+                                            >
+                                                {item.label}
+                                            </TabButton>
+                                        );
+                                    const options = flowOptions[item.id];
+                                    const section = active
+                                        ? entrance.section
+                                        : subsections[item.id];
+                                    const selected = options.find(
+                                        (option) => option.id === section,
+                                    );
+                                    return (
+                                        <Dropdown
+                                            key={item.id}
+                                            className="polli:min-w-44 polli:p-1"
+                                            trigger={(open) => (
+                                                <Button
+                                                    type="button"
+                                                    size="md"
+                                                    aria-current={
+                                                        active
+                                                            ? "page"
+                                                            : undefined
+                                                    }
+                                                    className={`polli:gap-2 polli:whitespace-nowrap polli:text-sm ${active ? "" : "polli:bg-transparent polli:text-theme-text-base polli:hover:bg-theme-bg-subtle"}`}
+                                                >
+                                                    {item.label}
+                                                    {active &&
+                                                        selected &&
+                                                        ` — ${selected.label}`}
+                                                    <ChevronIcon
+                                                        expanded={open}
+                                                        className="polli:h-3 polli:w-3"
+                                                    />
+                                                </Button>
+                                            )}
+                                        >
+                                            {(close) => (
+                                                <nav
+                                                    aria-label={`${item.label} flow`}
+                                                    data-theme="accent"
+                                                >
+                                                    {options.map((option) => (
+                                                        <DropdownItem
+                                                            key={option.id}
+                                                            aria-current={
+                                                                active &&
+                                                                section ===
+                                                                    option.id
+                                                                    ? "page"
+                                                                    : undefined
+                                                            }
+                                                            onClick={() => {
+                                                                chooseFlow(
+                                                                    item.id,
+                                                                    option.id,
+                                                                );
+                                                                close();
+                                                            }}
+                                                        >
+                                                            {option.label}
+                                                            {section ===
+                                                                option.id && (
+                                                                <CheckIcon className="polli:ml-auto polli:h-4 polli:w-4" />
+                                                            )}
+                                                        </DropdownItem>
+                                                    ))}
+                                                </nav>
+                                            )}
+                                        </Dropdown>
+                                    );
+                                })}
                             </div>
                         </nav>
-                        {entrance.world !== "admin" && (
-                            <nav
-                                className="connect-subflows"
-                                aria-label={
-                                    entrance.world === "app"
-                                        ? "Apps flow"
-                                        : entrance.world === "device"
-                                          ? "Devices flow"
-                                          : "Dashboard flow"
-                                }
-                            >
-                                <TabButton
-                                    size="sm"
-                                    variant="ghost"
-                                    active={entrance.section === "main"}
-                                    onClick={() =>
-                                        setEntrance((old) => ({
-                                            ...old,
-                                            section: "main",
-                                            revision: old.revision + 1,
-                                        }))
-                                    }
-                                >
-                                    {entrance.world === "app"
-                                        ? "Login"
-                                        : entrance.world === "device"
-                                          ? "Enter Code"
-                                          : "Account"}
-                                </TabButton>
-                                <TabButton
-                                    size="sm"
-                                    variant="ghost"
-                                    active={
-                                        entrance.section ===
-                                        (entrance.world === "device"
-                                            ? "link"
-                                            : "topup")
-                                    }
-                                    ariaLabel={
-                                        entrance.world === "app"
-                                            ? "Top up (Alpha)"
-                                            : entrance.world === "device"
-                                              ? "Open Device Link"
-                                              : "Top up"
-                                    }
-                                    onClick={() =>
-                                        setEntrance((old) => ({
-                                            ...old,
-                                            section:
-                                                old.world === "device"
-                                                    ? "link"
-                                                    : "topup",
-                                            revision: old.revision + 1,
-                                        }))
-                                    }
-                                >
-                                    {entrance.world === "device"
-                                        ? "Open Device Link"
-                                        : "Top up"}
-                                    {entrance.world === "app" && (
-                                        <span className="connect-alpha-badge">
-                                            Alpha
-                                        </span>
-                                    )}
-                                </TabButton>
-                            </nav>
-                        )}
                     </div>
-                    <div className="connect-device-control">
-                        {view !== "map" && (
-                            <TabButton
-                                size="sm"
-                                active={desktop}
-                                onClick={() => setDesktop((value) => !value)}
-                            >
-                                Desktop
-                            </TabButton>
-                        )}
-                    </div>
-                </div>
+                    <fieldset
+                        className="connect-device-control"
+                        aria-label="Preview size"
+                        data-theme="neutral"
+                    >
+                        <IconButton
+                            size="md"
+                            variant={!desktop ? "tile" : "ghost"}
+                            pressed={!desktop}
+                            disabled={view === "map"}
+                            title="Mobile"
+                            tooltip={
+                                view === "map"
+                                    ? "Mobile preview — unavailable in Map"
+                                    : "Mobile"
+                            }
+                            onClick={() => setDesktop(false)}
+                        >
+                            <SmartphoneIcon className="polli:h-4 polli:w-4" />
+                        </IconButton>
+                        <IconButton
+                            size="md"
+                            variant={desktop ? "tile" : "ghost"}
+                            pressed={desktop}
+                            disabled={view === "map"}
+                            title="Desktop"
+                            tooltip={
+                                view === "map"
+                                    ? "Desktop preview — unavailable in Map"
+                                    : "Desktop"
+                            }
+                            onClick={() => setDesktop(true)}
+                        >
+                            <AppIcon className="polli:h-4 polli:w-4" />
+                        </IconButton>
+                    </fieldset>
+                </ScrollArea>
             </header>
-            <div className="connect-journey-view" hidden={view !== "journey"}>
-                <Journey
-                    appPreview={appPreview}
-                    onAppPreviewChange={onAppPreviewChange}
-                    desktop={desktop}
-                    entrance={entrance}
-                    onLocationChange={setJourneyLocation}
-                />
-            </div>
+            <ScrollArea
+                className="connect-journey-view"
+                hidden={view !== "journey"}
+            >
+                {(entrance.world === "app" && entrance.section === "topup") ||
+                ["account", "admin"].includes(entrance.world) ? (
+                    <AccountJourney
+                        active={view === "journey"}
+                        admin={entrance.world === "admin"}
+                        key={entrance.world}
+                        dashboard={
+                            entrance.world === "account"
+                                ? (entrance.section as DashboardSection)
+                                : undefined
+                        }
+                        revision={entrance.revision}
+                        onDashboardNavigate={onDashboardNavigate}
+                        selection={dashboardSelection}
+                        onPreviewChange={reportDashboardPreview}
+                        desktop={desktop}
+                        onLocationChange={setJourneyLocation}
+                        onOpenDashboard={openDashboard}
+                    />
+                ) : (
+                    <Journey
+                        appPreview={appPreview}
+                        onAppPreviewChange={onAppPreviewChange}
+                        desktop={desktop}
+                        entrance={entrance}
+                        onLocationChange={setJourneyLocation}
+                        onOpenDashboard={openDashboard}
+                    />
+                )}
+            </ScrollArea>
             {(view === "map" || view === "screens") && (
                 <div className="connect-map-view">
                     <Canvas
@@ -1018,6 +1165,8 @@ function ConnectLab() {
                         key={view}
                         entrance={entrance}
                         location={journeyLocation}
+                        dashboardSelection={dashboardSelection}
+                        onDashboardSelect={selectDashboardPreview}
                         gallery={view === "screens"}
                     />
                 </div>

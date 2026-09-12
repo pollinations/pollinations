@@ -1,5 +1,5 @@
-import { Button, Chip } from "@pollinations/ui";
-import { type ReactNode, useRef } from "react";
+import { Button } from "@pollinations/ui";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import {
     type CanvasScreen,
     canvasScreenUrl,
@@ -8,24 +8,56 @@ import { illustrations } from "./pollen-connect-illustrations";
 import { ProviderScreen } from "./pollen-connect-provider";
 import "./pollen-connect-window.css";
 
-export function InventoryCount({
-    count,
-    unit,
+// Match the fixed viewports used by Screens and the expanded previews.
+export function JourneyPreview({
+    desktop,
+    framed = true,
+    children,
 }: {
-    count: number;
-    unit: "screen" | "state";
+    desktop: boolean;
+    framed?: boolean;
+    children: ReactNode;
 }) {
-    const label = `${count} ${unit}${count === 1 ? "" : "s"}`;
+    const stage = useRef<HTMLDivElement>(null);
+    const [scale, setScale] = useState(1);
+    const width = desktop ? 1280 : 375;
+    const height = desktop ? 800 : (375 * 2622) / 1206;
+    useEffect(() => {
+        const element = stage.current;
+        if (!element) return;
+        const observer = new ResizeObserver(([{ contentRect }]) => {
+            setScale(
+                Math.max(
+                    0,
+                    Math.min(
+                        1,
+                        contentRect.width / width,
+                        contentRect.height / height,
+                    ),
+                ),
+            );
+        });
+        observer.observe(element);
+        return () => observer.disconnect();
+    }, [width, height]);
     return (
-        <Chip
-            size="sm"
-            data-theme="neutral"
-            className="connect-count-badge"
-            title={label}
-            aria-label={label}
-        >
-            {count}
-        </Chip>
+        <div className="journey-stage" ref={stage}>
+            {framed ? (
+                <div
+                    className={`journey-device journey-device-${desktop ? "desktop" : "mobile"}`}
+                    style={{ width: width * scale, height: height * scale }}
+                >
+                    <div
+                        className="journey-screen"
+                        style={{ width, height, transform: `scale(${scale})` }}
+                    >
+                        {children}
+                    </div>
+                </div>
+            ) : (
+                children
+            )}
+        </div>
     );
 }
 
@@ -59,7 +91,7 @@ export function ScreenWindow({
     const terminal = isTerminalScreen(entry);
     const content = (
         <div
-            className={`connect-screen-window ${terminal ? "connect-terminal-window" : "connect-browser-window"}`}
+            className={`connect-screen-window ${terminal ? "connect-terminal-window" : "connect-browser-window connect-screen-viewport"}`}
         >
             {terminal && (
                 <div className="connect-window-bar">
@@ -72,7 +104,9 @@ export function ScreenWindow({
         </div>
     );
     return terminal ? (
-        <div className="connect-terminal-device">{content}</div>
+        <div className="connect-terminal-device connect-screen-viewport">
+            {content}
+        </div>
     ) : (
         content
     );

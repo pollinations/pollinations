@@ -4,22 +4,23 @@ import {
     type CanvasScreen,
     screenVariantIndices,
 } from "./pollen-connect-canvas-data";
+import type { DashboardPreviewSelection } from "./pollen-connect-dashboard";
 import { galleryCardsForFlow } from "./pollen-connect-gallery-data";
 import type { JourneySelection } from "./pollen-connect-journey-state";
-import {
-    InventoryCount,
-    ScreenContent,
-    ScreenOwnership,
-} from "./pollen-connect-preview";
+import { ScreenContent, ScreenOwnership } from "./pollen-connect-preview";
 
 export function ScreenGallery({
     entrance,
     desktop,
     onSelect,
+    selection,
+    onVariantChange,
     overrides = {},
 }: {
     entrance: JourneySelection;
     desktop: boolean;
+    selection?: DashboardPreviewSelection;
+    onVariantChange?: (screen: string, variant: number) => void;
     overrides?: Record<string, string>;
     onSelect: (
         entry: CanvasScreen,
@@ -39,7 +40,7 @@ export function ScreenGallery({
     }, [selectionKey]);
     const pages = galleryCardsForFlow(entrance.world, entrance.section);
     const showOwnership =
-        entrance.world === "device" ||
+        ["device", "admin"].includes(entrance.world) ||
         (entrance.world === "app" && entrance.section === "main");
     return (
         <div className="screens-gallery">
@@ -64,17 +65,21 @@ export function ScreenGallery({
                             const optionCount = Math.max(1, indices.length);
                             const key = `${selectionKey}:${entry.id}`;
                             const variant =
-                                indices[(variants[key] ?? 0) % optionCount] ??
-                                0;
-                            const changeVariant = (direction: number) =>
+                                selection?.screen === entry.id
+                                    ? selection.variant
+                                    : (indices[
+                                          (variants[key] ?? 0) % optionCount
+                                      ] ?? 0);
+                            const changeVariant = (direction: number) => {
+                                const next =
+                                    (variant + direction + optionCount) %
+                                    optionCount;
                                 setVariants((current) => ({
                                     ...current,
-                                    [key]:
-                                        ((current[key] ?? 0) +
-                                            direction +
-                                            optionCount) %
-                                        optionCount,
+                                    [key]: next,
                                 }));
+                                onVariantChange?.(entry.id, next);
+                            };
                             return (
                                 <article
                                     key={entry.id}
@@ -91,10 +96,6 @@ export function ScreenGallery({
                                         )}
                                         <div className="screens-gallery-title">
                                             <strong>{entry.title}</strong>
-                                            <InventoryCount
-                                                count={optionCount}
-                                                unit="state"
-                                            />
                                         </div>
                                         <div className="screens-gallery-options">
                                             {optionCount > 1 && (

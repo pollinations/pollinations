@@ -324,10 +324,27 @@ describe("text balance notice", () => {
     });
 });
 
-it("keeps API key budget exhaustion as HTTP 402", async () => {
+it.each([
+    { metadata: undefined, referer: undefined, redirect: null },
+    {
+        metadata: { redirectOrigin: "https://app.example" },
+        referer: "https://chat.example/c/1",
+        redirect: "https://app.example",
+    },
+    {
+        metadata: undefined,
+        referer: "https://chat.example/c/1",
+        redirect: "https://chat.example",
+    },
+])("links key budget exhaustion to the key editor (redirect=$redirect)", async ({
+    metadata,
+    referer,
+    redirect,
+}) => {
     const caller = await createTestApiKey({
         user: { packBalance: 10 },
         pollenBudget: 0,
+        metadata,
     });
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
         Response.json({ data: [] }),
@@ -339,6 +356,7 @@ it("keeps API key budget exhaustion as HTTP 402", async () => {
             headers: {
                 Authorization: `Bearer ${caller.key}`,
                 "Content-Type": "application/json",
+                ...(referer && { Referer: referer }),
             },
             body: JSON.stringify({
                 model,
@@ -348,7 +366,19 @@ it("keeps API key budget exhaustion as HTTP 402", async () => {
         env,
         ctx,
     );
-    expect(response.status).toBe(402);
-    expect(await response.text()).toContain("KEY_BUDGET_EXHAUSTED");
+    const text = await response.text();
+    if (!TEXT_BALANCE_NOTICE_ENABLED) {
+        expect(response.status, text).toBe(402);
+        expect(text).toContain("KEY_BUDGET_EXHAUSTED");
+    } else {
+        expect(response.status, text).toBe(200);
+        const link = new URL(
+            `https://enter.pollinations.ai/edit-key?id=${caller.id}&ref=agent_key_budget`,
+        );
+        if (redirect) link.searchParams.set("redirect", redirect);
+        expect(text).toContain(`[raise the key budget](${link})`);
+        expect(text).toContain("Topping up the wallet does not raise");
+        expect(text).not.toContain("complete a quest");
+    }
     await waitOnExecutionContext(ctx);
 });

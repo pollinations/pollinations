@@ -2,14 +2,12 @@ import {
     CardIcon,
     ClockIcon,
     CopyButton,
-    ExternalLinkButton,
     GlobeIcon,
     InfoTip,
     InlineLink,
     MailIcon,
     SproutIcon,
     Surface,
-    Tooltip,
     WalletIcon,
 } from "@pollinations/ui";
 import {
@@ -17,16 +15,11 @@ import {
     WalletBalanceCard,
     WalletKindIcon,
 } from "@pollinations/ui/wallet";
-import {
-    calculateServiceFeeCents,
-    formatUsdCentsCompact,
-    POLLEN_PACKS,
-} from "@shared/pollen-packs.ts";
 import { Link } from "@tanstack/react-router";
 import type { FC, ReactNode } from "react";
 import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
-import { PollenPackSlider } from "./pollen-pack-controls.tsx";
+import { PollenPackPurchase } from "./pollen-pack-purchase.tsx";
 
 type PollenBalanceProps = {
     tierBalance: number;
@@ -268,65 +261,12 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     selectedPackAmount,
     onSelectedPackAmountChange,
 }) => {
-    const selectedPackIndex = Math.max(
-        0,
-        POLLEN_PACKS.findIndex((pack) => pack.amountUsd === selectedPackAmount),
-    );
-    const selectedPack = POLLEN_PACKS[selectedPackIndex] ?? POLLEN_PACKS[0];
-    const serviceFeeCents = selectedPack
-        ? calculateServiceFeeCents(selectedPack.amountUsd * 100)
-        : 0;
-    const subtotalBeforeTaxCents =
-        (selectedPack?.amountUsd ?? 0) * 100 + serviceFeeCents;
-    const chargeLabel = selectedPack
-        ? formatUsdCentsCompact(subtotalBeforeTaxCents)
-        : "$0";
-
     return (
         <>
-            <Surface>
-                {selectedPack && (
-                    <div className="flex w-full flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-4 sm:pb-20">
-                        <div className="w-full min-w-0 flex-1 pb-20 sm:pb-0">
-                            <PollenPackSlider
-                                value={selectedPack.amountUsd}
-                                onChange={onSelectedPackAmountChange}
-                                selectedBadgeLabel={chargeLabel}
-                                selectedBadgeDetail={`incl. ${formatUsdCentsCompact(serviceFeeCents)} fee`}
-                            />
-                        </div>
-                        <Tooltip
-                            content={
-                                <span className="block">
-                                    Buy{" "}
-                                    <span className="font-semibold text-theme-text-strong">
-                                        {selectedPack.amountUsd} pollen
-                                    </span>{" "}
-                                    for{" "}
-                                    <span className="font-semibold text-theme-text-strong">
-                                        {chargeLabel}
-                                    </span>
-                                    <span className="mt-1 block text-theme-text-muted">
-                                        Tax calculated at checkout
-                                    </span>
-                                </span>
-                            }
-                            displayContents
-                        >
-                            <ExternalLinkButton
-                                href={`/api/stripe/checkout/${selectedPack.packKey}`}
-                                target="_self"
-                                className="w-28 min-w-0 gap-1.5 self-start text-center shadow-none sm:shrink-0 sm:self-center"
-                            >
-                                <span className="inline-flex items-center gap-1.5">
-                                    <WalletIcon className="h-4 w-4 shrink-0" />
-                                    Buy
-                                </span>
-                            </ExternalLinkButton>
-                        </Tooltip>
-                    </div>
-                )}
-            </Surface>
+            <PollenPackPurchase
+                selectedPackAmount={selectedPackAmount}
+                onSelectedPackAmountChange={onSelectedPackAmountChange}
+            />
             <Surface>
                 <AutoTopUpPanel initialBillingState={initialBillingState} />
             </Surface>

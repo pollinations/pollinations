@@ -3382,3 +3382,63 @@ test("POST /api/webhooks/stripe emits checkout.session.expired to Tinybird witho
     // payment methods, so the shared mapper must not synthesize them here.
     expect(emitted.payment_methods_offered).toBe("");
 });
+
+test("GET /api/stripe/checkout/p5?return= sends Stripe back to that path", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const returnPath = "/top-up?redirect=https%3A%2F%2Fapp.example";
+
+    const response = await SELF.fetch(
+        `${base}/checkout/p5?return=${encodeURIComponent(returnPath)}`,
+        {
+            method: "GET",
+            headers: { cookie: `better-auth.session_token=${sessionToken}` },
+            redirect: "manual",
+        },
+    );
+    expect(response.status).toBe(302);
+
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    const successUrl = new URL(String(body?.success_url));
+    expect(successUrl.pathname).toBe("/top-up");
+    expect(successUrl.searchParams.get("redirect")).toBe("https://app.example");
+    expect(successUrl.searchParams.get("pack")).toBe("p5");
+    expect(successUrl.searchParams.get("stripe_success")).toBe("true");
+    expect(new URL(String(body?.cancel_url)).pathname).toBe("/top-up");
+});
+
+test("GET /api/stripe/checkout/p5?return= ignores off-site values", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+
+    for (const value of [
+        "//evil.example",
+        "https://evil.example/x",
+        "top-up",
+    ]) {
+        mocks.stripe.state.requests.length = 0;
+        const response = await SELF.fetch(
+            `${base}/checkout/p5?return=${encodeURIComponent(value)}`,
+            {
+                method: "GET",
+                headers: {
+                    cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                redirect: "manual",
+            },
+        );
+        expect(response.status).toBe(302);
+        const body = mocks.stripe.state.requests.find(
+            (request) => request.path === "/v1/checkout/sessions",
+        )?.body;
+        expect(new URL(String(body?.success_url)).pathname, value).toBe(
+            "/pollen",
+        );
+    }
+});

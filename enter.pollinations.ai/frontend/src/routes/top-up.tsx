@@ -9,9 +9,7 @@ import {
 import {
     getPollenPackByAmount,
     getPollenPackByKey,
-    isPollenPackKey,
     POLLEN_PACKS,
-    type PollenPackKey,
 } from "@shared/pollen-packs.ts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -20,18 +18,9 @@ import { authClient } from "../auth.ts";
 import { BuyPollenPanel, PollenBalance } from "../components/pollen";
 import type { BillingState } from "../components/pollen/auto-top-up-panel.tsx";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
-import {
-    parseAppUrl,
-    preferredReturnUrl,
-    ReturnToApp,
-} from "../lib/return-to-app.tsx";
+import { preferredReturnUrl, ReturnToApp } from "../lib/return-to-app.tsx";
 
-type TopUpSearch = {
-    pack?: PollenPackKey;
-    redirect?: string;
-    stripe_success?: boolean;
-    stripe_canceled?: boolean;
-};
+import { validateTopUpSearch } from "../lib/top-up-search.ts";
 
 type WalletState = {
     tierBalance: number;
@@ -47,15 +36,7 @@ type WalletState = {
  * go back to the app.
  */
 export const Route = createFileRoute("/top-up")({
-    validateSearch: (search: Record<string, unknown>): TopUpSearch => ({
-        pack:
-            typeof search.pack === "string" && isPollenPackKey(search.pack)
-                ? search.pack
-                : undefined,
-        redirect: parseAppUrl(search.redirect) ?? undefined,
-        stripe_success: search.stripe_success === "true" || undefined,
-        stripe_canceled: search.stripe_canceled === "true" || undefined,
-    }),
+    validateSearch: validateTopUpSearch,
     component: TopUpPage,
 });
 

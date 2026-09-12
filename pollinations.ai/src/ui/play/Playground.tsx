@@ -15,7 +15,7 @@ import {
     ButtonGroup,
     ChevronIcon,
     cn,
-    DownloadIcon,
+    Dialog,
     Dropdown,
     FieldStack,
     FileUpload,
@@ -30,12 +30,13 @@ import {
     Textarea,
     Tooltip,
     VideoIcon,
+    XIcon,
 } from "@pollinations/ui";
 import { categoryLabel, ModelAccessIcon } from "@pollinations/ui/gen";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import { Chat } from "./Chat";
 import { API_BASE_URL, errorMessage } from "./chat-models";
+import { MediaDownloadButton } from "./MediaDownloadButton";
 
 type PlaygroundModel = {
     id: string;
@@ -166,20 +167,6 @@ function promptPlaceholder(
     if (audioTask === "music-and-sound-effects")
         return "Describe the music or sound you want…";
     return "Describe what you want…";
-}
-
-const EXTENSIONS: Record<string, string> = {
-    "image/jpeg": "jpg",
-    "image/svg+xml": "svg",
-    "audio/mpeg": "mp3",
-    "audio/x-wav": "wav",
-    "video/quicktime": "mov",
-};
-
-function getResultExtension(result: PlaygroundResult): string {
-    if (result.type === "text") return "txt";
-    const type = result.contentType.split(";")[0].trim().toLowerCase();
-    return EXTENSIONS[type] ?? type.split("/")[1] ?? result.type;
 }
 
 function bytesToObjectUrl(buffer: ArrayBuffer, contentType: string): string {
@@ -414,88 +401,76 @@ function downloadHref(result: PlaygroundResult): string {
 function ResultDownloadButton({
     result,
     className,
+    onError,
 }: {
     result: PlaygroundResult;
     className?: string;
+    onError: (message: string | null) => void;
 }) {
     return (
-        <Button
-            as="a"
-            href={downloadHref(result)}
-            download={`pollinations-playground.${getResultExtension(result)}`}
-            aria-label={`Download ${result.type}`}
-            title={`Download ${result.type}`}
-            size="sm"
+        <MediaDownloadButton
+            source={downloadHref(result)}
+            filename="pollinations-playground"
+            label={`Download ${result.type}`}
+            onError={onError}
             className={cn(
                 "h-10 w-10 shrink-0 self-auto rounded-full p-0 shadow-sm",
                 className,
             )}
-        >
-            <DownloadIcon className="h-4 w-4" />
-        </Button>
+        />
     );
 }
 
-/**
- * The full-screen look at a picture or clip. Escape or the backdrop closes.
- *
- * Portalled to <body>: it renders from inside the output panel, whose
- * position:sticky always creates a stacking context — left in place, the
- * overlay can never paint above the site header no matter its z-index.
- */
 function Lightbox({
     result,
+    open,
     onClose,
 }: {
     result: PlaygroundResult;
+    open: boolean;
     onClose: () => void;
 }) {
-    useEffect(() => {
-        const onKey = (event: KeyboardEvent) => {
-            if (event.key === "Escape") onClose();
-        };
-        window.addEventListener("keydown", onKey);
-        const previousOverflow = document.body.style.overflow;
-        document.body.style.overflow = "hidden";
-        return () => {
-            window.removeEventListener("keydown", onKey);
-            document.body.style.overflow = previousOverflow;
-        };
-    }, [onClose]);
-
     if (result.type !== "image" && result.type !== "video") return null;
 
-    return createPortal(
-        // biome-ignore lint/a11y/useKeyWithClickEvents: Escape closes via the window listener above.
-        <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Enlarged result — press Escape to close"
-            className="fixed inset-0 z-[130] flex cursor-zoom-out items-center justify-center bg-brand-dark/85 p-6"
-            onClick={onClose}
+    return (
+        <Dialog
+            open={open}
+            onOpenChange={(nextOpen) => {
+                if (!nextOpen) onClose();
+            }}
+            ariaLabel={`Enlarged ${result.type}`}
+            size="xl"
+            backdropBlur={false}
+            contentClassName="relative border-0 p-3 sm:p-4"
         >
-            {result.type === "image" ? (
-                <img
-                    src={result.url}
-                    alt="Generated, enlarged"
-                    className="max-h-full max-w-full rounded-xl object-contain"
-                />
-            ) : (
-                // The enlarged clip gets the controls the inline preview gave
-                // up, and stopPropagation so using them doesn't close it.
-                <video
-                    src={result.url}
-                    controls
-                    autoPlay
-                    loop
-                    className="max-h-full max-w-full cursor-auto rounded-xl"
-                    onClick={(event) => event.stopPropagation()}
-                >
-                    <track kind="captions" />
-                </video>
-            )}
-        </div>,
-        document.body,
+            <Button
+                type="button"
+                aria-label="Close media preview"
+                onClick={onClose}
+                className="absolute top-5 right-5 z-10 h-10 w-10 min-w-10 p-0 [&>svg]:size-5"
+            >
+                <XIcon />
+            </Button>
+            {open &&
+                (result.type === "image" ? (
+                    <img
+                        src={result.url}
+                        alt="Generated, enlarged"
+                        className="max-h-[calc(100dvh-5rem)] w-full rounded-lg object-contain"
+                    />
+                ) : (
+                    <video
+                        src={result.url}
+                        controls
+                        autoPlay
+                        loop
+                        playsInline
+                        className="max-h-[calc(100dvh-5rem)] w-full rounded-lg"
+                    >
+                        <track kind="captions" />
+                    </video>
+                ))}
+        </Dialog>
     );
 }
 
@@ -507,32 +482,46 @@ function ResultPanel({
     className?: string;
 }) {
     const [expanded, setExpanded] = useState(false);
+    const [downloadError, setDownloadError] = useState<string | null>(null);
 
     // A new result is a new picture — never inherit the previous zoom.
     // biome-ignore lint/correctness/useExhaustiveDependencies: runs off the result changing, not its value
-    useEffect(() => setExpanded(false), [result]);
+    useEffect(() => {
+        setExpanded(false);
+        setDownloadError(null);
+    }, [result]);
 
     const zoomButtonClass =
         "flex h-full w-full cursor-zoom-in items-center justify-center border-0 bg-transparent p-0";
 
     if (result.type === "audio") {
         return (
-            <div
-                className={cn(
-                    "flex items-center gap-3 bg-surface-white p-4",
-                    className,
+            <>
+                <div
+                    className={cn(
+                        "flex items-center gap-3 bg-surface-white p-4",
+                        className,
+                    )}
+                >
+                    {/* biome-ignore lint/a11y/useMediaCaption: Generated audio has no timed caption file; an empty track creates a broken native menu. */}
+                    <audio
+                        src={result.url}
+                        controls
+                        controlsList="nodownload noplaybackrate"
+                        autoPlay
+                        className="polli-playground-audio min-w-0 flex-1"
+                    />
+                    <ResultDownloadButton
+                        result={result}
+                        onError={setDownloadError}
+                    />
+                </div>
+                {downloadError && (
+                    <Text size="xs" role="alert">
+                        {downloadError}
+                    </Text>
                 )}
-            >
-                {/* biome-ignore lint/a11y/useMediaCaption: Generated audio has no timed caption file; an empty track creates a broken native menu. */}
-                <audio
-                    src={result.url}
-                    controls
-                    controlsList="nodownload noplaybackrate"
-                    autoPlay
-                    className="polli-playground-audio min-w-0 flex-1"
-                />
-                <ResultDownloadButton result={result} />
-            </div>
+            </>
         );
     }
 
@@ -542,6 +531,7 @@ function ResultPanel({
                 <div className="relative min-h-0 flex-1 overflow-auto rounded-xl bg-surface-white p-4 pr-16 text-theme-text-strong">
                     <ResultDownloadButton
                         result={result}
+                        onError={setDownloadError}
                         className="absolute top-3 right-3"
                     />
                     <Text
@@ -556,6 +546,7 @@ function ResultPanel({
                 <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl bg-surface-white p-3 text-theme-text-strong">
                     <ResultDownloadButton
                         result={result}
+                        onError={setDownloadError}
                         className="absolute top-3 right-3 z-10"
                     />
                     {result.type === "image" && (
@@ -600,9 +591,16 @@ function ResultPanel({
                 </div>
             )}
 
-            {expanded && (
-                <Lightbox result={result} onClose={() => setExpanded(false)} />
+            {downloadError && (
+                <Text size="xs" role="alert">
+                    {downloadError}
+                </Text>
             )}
+            <Lightbox
+                result={result}
+                open={expanded}
+                onClose={() => setExpanded(false)}
+            />
         </div>
     );
 }
@@ -1069,7 +1067,7 @@ export function Playground() {
                 onSelectCategory={selectCategory}
             />
 
-            {activeCategory === "text" && <Chat catalog={catalog} />}
+            <Chat catalog={catalog} active={activeCategory === "text"} />
 
             {activeCategory !== "text" && (
                 <div className="grid overflow-clip">

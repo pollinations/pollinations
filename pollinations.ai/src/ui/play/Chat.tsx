@@ -33,7 +33,6 @@ import {
     CopyButton,
     cn,
     Dialog,
-    DownloadIcon,
     Dropdown,
     ExpandIcon,
     FileUpload,
@@ -80,6 +79,7 @@ import {
     type RoutingSelection,
     routingChoices,
 } from "./chat-models";
+import { MediaDownloadButton } from "./MediaDownloadButton";
 import {
     PollinationsChatTransport,
     type PollinationsUIMessage,
@@ -259,6 +259,7 @@ function AttachmentView({ attachment }: { attachment: PreparedAttachment }) {
 
 function MediaView({ media }: { media: RenderedMedia }) {
     const [open, setOpen] = useState(false);
+    const [downloadError, setDownloadError] = useState<string | null>(null);
 
     if (media.kind === "audio") {
         return <AudioPlayer media={media} />;
@@ -303,21 +304,20 @@ function MediaView({ media }: { media: RenderedMedia }) {
                     >
                         <ExpandIcon />
                     </Button>
-                    <Button
-                        as="a"
-                        href={media.url}
-                        download={`pollinations-${media.kind}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        size="sm"
-                        aria-label={`Download ${media.kind}`}
-                        title={`Download ${media.kind}`}
+                    <MediaDownloadButton
+                        source={media.url}
+                        filename={`pollinations-${media.kind}`}
+                        label={`Download ${media.kind}`}
+                        onError={setDownloadError}
                         className="h-9 w-9 min-w-9 rounded-full bg-surface-opaque p-0 shadow-well [&>svg]:size-4"
-                    >
-                        <DownloadIcon />
-                    </Button>
+                    />
                 </div>
             </div>
+            {downloadError && (
+                <Text size="xs" role="alert">
+                    {downloadError}
+                </Text>
+            )}
             <Dialog
                 open={open}
                 onOpenChange={setOpen}
@@ -356,6 +356,7 @@ function AudioPlayer({ media }: { media: RenderedMedia }) {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
+    const [downloadError, setDownloadError] = useState<string | null>(null);
 
     const togglePlayback = () => {
         const audio = audioRef.current;
@@ -368,73 +369,77 @@ function AudioPlayer({ media }: { media: RenderedMedia }) {
     };
 
     return (
-        <div className="flex w-full max-w-sm items-center gap-3 rounded-xl bg-theme-bg-pale p-2 shadow-well">
-            {/* biome-ignore lint/a11y/useMediaCaption: Generated media does not include a caption track. */}
-            <audio
-                ref={audioRef}
-                src={media.url}
-                preload="metadata"
-                onLoadedMetadata={(event) => {
-                    const nextDuration = event.currentTarget.duration;
-                    setDuration(
-                        Number.isFinite(nextDuration) ? nextDuration : 0,
-                    );
-                }}
-                onTimeUpdate={(event) =>
-                    setCurrentTime(event.currentTarget.currentTime)
-                }
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-                onEnded={() => setIsPlaying(false)}
-                className="hidden"
-            />
-            <button
-                type="button"
-                aria-label={isPlaying ? "Pause audio" : "Play audio"}
-                onClick={togglePlayback}
-                className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-well transition-colors hover:bg-theme-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-border"
-            >
-                {isPlaying ? (
-                    <PauseIcon className="size-4" />
-                ) : (
-                    <PlayIcon className="size-4" />
-                )}
-            </button>
-            <Slider
-                aria-label="Audio timeline"
-                min={0}
-                max={duration || 0}
-                step={0.01}
-                value={Math.min(currentTime, duration || 0)}
-                disabled={duration <= 0}
-                onChange={(event) => {
-                    const nextTime = Number(event.currentTarget.value);
-                    if (audioRef.current)
-                        audioRef.current.currentTime = nextTime;
-                    setCurrentTime(nextTime);
-                }}
-                style={
-                    {
-                        "--polli-slider-fill":
-                            "var(--polli-color-brand-accent)",
-                        "--polli-slider-track": "var(--polli-color-bg-active)",
-                        "--polli-slider-thumb-border":
-                            "var(--polli-color-brand-accent)",
-                    } as CSSProperties
-                }
-            />
-            <Button
-                as="a"
-                href={media.url}
-                download="pollinations-audio"
-                size="sm"
-                aria-label="Download audio"
-                title="Download audio"
-                className="h-9 w-9 min-w-9 shrink-0 rounded-full bg-surface-opaque p-0 shadow-well [&>svg]:size-4"
-            >
-                <DownloadIcon />
-            </Button>
-        </div>
+        <>
+            <div className="flex w-full max-w-sm items-center gap-3 rounded-xl bg-theme-bg-pale p-2 shadow-well">
+                {/* biome-ignore lint/a11y/useMediaCaption: Generated media does not include a caption track. */}
+                <audio
+                    ref={audioRef}
+                    src={media.url}
+                    preload="metadata"
+                    onLoadedMetadata={(event) => {
+                        const nextDuration = event.currentTarget.duration;
+                        setDuration(
+                            Number.isFinite(nextDuration) ? nextDuration : 0,
+                        );
+                    }}
+                    onTimeUpdate={(event) =>
+                        setCurrentTime(event.currentTarget.currentTime)
+                    }
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                    onEnded={() => setIsPlaying(false)}
+                    className="hidden"
+                />
+                <button
+                    type="button"
+                    aria-label={isPlaying ? "Pause audio" : "Play audio"}
+                    onClick={togglePlayback}
+                    className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-well transition-colors hover:bg-theme-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-border"
+                >
+                    {isPlaying ? (
+                        <PauseIcon className="size-4" />
+                    ) : (
+                        <PlayIcon className="size-4" />
+                    )}
+                </button>
+                <Slider
+                    aria-label="Audio timeline"
+                    min={0}
+                    max={duration || 0}
+                    step={0.01}
+                    value={Math.min(currentTime, duration || 0)}
+                    disabled={duration <= 0}
+                    onChange={(event) => {
+                        const nextTime = Number(event.currentTarget.value);
+                        if (audioRef.current)
+                            audioRef.current.currentTime = nextTime;
+                        setCurrentTime(nextTime);
+                    }}
+                    style={
+                        {
+                            "--polli-slider-fill":
+                                "var(--polli-color-brand-accent)",
+                            "--polli-slider-track":
+                                "var(--polli-color-bg-active)",
+                            "--polli-slider-thumb-border":
+                                "var(--polli-color-brand-accent)",
+                        } as CSSProperties
+                    }
+                />
+                <MediaDownloadButton
+                    source={media.url}
+                    filename="pollinations-audio"
+                    label="Download audio"
+                    onError={setDownloadError}
+                    className="h-9 w-9 min-w-9 shrink-0 rounded-full bg-surface-opaque p-0 shadow-well [&>svg]:size-4"
+                />
+            </div>
+            {downloadError && (
+                <Text size="xs" role="alert">
+                    {downloadError}
+                </Text>
+            )}
+        </>
     );
 }
 
@@ -931,7 +936,13 @@ function RoutingPanel({
     );
 }
 
-export function Chat({ catalog }: { catalog: UseModelCatalogValue }) {
+export function Chat({
+    catalog,
+    active,
+}: {
+    catalog: UseModelCatalogValue;
+    active: boolean;
+}) {
     const { apiKey, isLoggedIn, isHydrated } = useAuthState();
     const { login } = useAuthActions();
     const agents = useMemo(
@@ -1008,7 +1019,13 @@ export function Chat({ catalog }: { catalog: UseModelCatalogValue }) {
         [catalog.models, catalog.allowedModelIds],
     );
 
-    useEffect(() => () => uploadAbortRef.current?.abort(), []);
+    useEffect(
+        () => () => {
+            uploadAbortRef.current?.abort();
+            void stop();
+        },
+        [stop],
+    );
     useEffect(() => {
         if (!selectedAgent || activeAgentRef.current === selectedAgent.id)
             return;
@@ -1045,10 +1062,14 @@ export function Chat({ catalog }: { catalog: UseModelCatalogValue }) {
         }
     }, [messages]);
     useEffect(() => {
-        if (isLoggedIn) return;
+        if (isLoggedIn && active) return;
         uploadAbortRef.current?.abort();
         void stop();
-    }, [isLoggedIn, stop]);
+        for (const media of transcriptRef.current?.querySelectorAll<HTMLMediaElement>(
+            "audio, video",
+        ) ?? [])
+            media.pause();
+    }, [isLoggedIn, active, stop]);
     useEffect(() => {
         if (!advancedOpen) return;
         const closeOnEscape = (event: KeyboardEvent) => {
@@ -1059,7 +1080,7 @@ export function Chat({ catalog }: { catalog: UseModelCatalogValue }) {
     }, [advancedOpen]);
 
     async function send(messageText = draft) {
-        if (sending || !isHydrated) return;
+        if (sending || !isHydrated || !active) return;
         if (!isLoggedIn || !client) {
             login();
             return;
@@ -1080,6 +1101,7 @@ export function Chat({ catalog }: { catalog: UseModelCatalogValue }) {
                     prepareAttachment(client, file, controller.signal),
                 ),
             );
+            controller.signal.throwIfAborted();
             setDraft("");
             setFiles([]);
             followOutputRef.current = true;
@@ -1186,7 +1208,11 @@ export function Chat({ catalog }: { catalog: UseModelCatalogValue }) {
 
     if (!selectedAgent) {
         return (
-            <section className="min-w-0" aria-label="Agent chat">
+            <section
+                hidden={!active}
+                className="min-w-0"
+                aria-label="Agent chat"
+            >
                 <div className="pt-6 pb-3">
                     <AgentPicker
                         agents={agents}
@@ -1222,7 +1248,11 @@ export function Chat({ catalog }: { catalog: UseModelCatalogValue }) {
     }
 
     return (
-        <section className="min-w-0" aria-label={`${assistantName} chat`}>
+        <section
+            hidden={!active}
+            className="min-w-0"
+            aria-label={`${assistantName} chat`}
+        >
             <div className="play-chat-window flex min-h-0 flex-col">
                 <div className="pt-6 pb-3">
                     <AgentPicker

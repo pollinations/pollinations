@@ -4307,191 +4307,152 @@ fixtureTest(
     },
 );
 
-fixtureTest(
-    "filters model catalogs with ?community query parameter",
-    async () => {
-        const suffix = crypto.randomUUID().slice(0, 8);
-        const textOwner = `filter-text-${suffix}`;
-        const imageOwner = `filter-img-${suffix}`;
-        const textName = `qp-text-${suffix}`;
-        const imageName = `qp-img-${suffix}`;
-        const textModelId = communityModelId(textOwner, textName);
-        const imageModelId = communityModelId(imageOwner, imageName);
+fixtureTest("filters model catalogs with ?source query parameter", async () => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const textOwner = `filter-text-${suffix}`;
+    const imageOwner = `filter-img-${suffix}`;
+    const textName = `qp-text-${suffix}`;
+    const imageName = `qp-img-${suffix}`;
+    const textModelId = communityModelId(textOwner, textName);
+    const imageModelId = communityModelId(imageOwner, imageName);
 
-        const textUserId = await createTestUser({
-            githubId: nextAllowedGithubId(),
-            githubUsername: textOwner,
-        });
-        const imageUserId = await createTestUser({
-            githubId: nextAllowedGithubId(),
-            githubUsername: imageOwner,
-        });
+    const textUserId = await createTestUser({
+        githubId: nextAllowedGithubId(),
+        githubUsername: textOwner,
+    });
+    const imageUserId = await createTestUser({
+        githubId: nextAllowedGithubId(),
+        githubUsername: imageOwner,
+    });
 
-        await insertCommunityEndpoints([
-            {
-                id: `endpoint-${crypto.randomUUID()}`,
-                ownerUserId: textUserId,
-                visibility: "public",
-                name: textName,
-                description: "Community text filter test model",
-                baseUrl: "https://api.example.com/v1",
-                upstreamModel: "gpt-4.1-mini",
-                bearerTokenCiphertext: await encryptSecret(
-                    "sk_saved_token",
-                    env.BETTER_AUTH_SECRET,
-                ),
-                promptTextPrice: 0,
-                completionTextPrice: 0,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            },
-            {
-                id: `endpoint-${crypto.randomUUID()}`,
-                ownerUserId: imageUserId,
-                visibility: "public",
-                name: imageName,
-                description: "Community image filter test model",
-                modality: "image",
-                baseUrl: "https://img.example.com/v1",
-                upstreamModel: "flux-1",
-                bearerTokenCiphertext: await encryptSecret(
-                    "sk_saved_token",
-                    env.BETTER_AUTH_SECRET,
-                ),
-                promptTextPrice: 0,
-                completionTextPrice: 0,
-                completionImagePrice: 0.01,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            },
-        ]);
-
-        type ListedModel = { name: string; community?: boolean };
-
-        const [
-            allDefault,
-            allExclude,
-            allOnly,
-            textExclude,
-            textOnly,
-            openaiExclude,
-            openaiOnly,
-            imageExclude,
-            imageOnly,
-            allExcludeNumeric,
-            allOnlyNumeric,
-        ] = await Promise.all([
-            SELF.fetch("https://gen.pollinations.ai/models"),
-            SELF.fetch("https://gen.pollinations.ai/models?community=false"),
-            SELF.fetch("https://gen.pollinations.ai/models?community=true"),
-            SELF.fetch(
-                "https://gen.pollinations.ai/text/models?community=false",
+    await insertCommunityEndpoints([
+        {
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId: textUserId,
+            visibility: "public",
+            name: textName,
+            description: "Community text filter test model",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "gpt-4.1-mini",
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_saved_token",
+                env.BETTER_AUTH_SECRET,
             ),
-            SELF.fetch(
-                "https://gen.pollinations.ai/text/models?community=true",
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+        {
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId: imageUserId,
+            visibility: "public",
+            name: imageName,
+            description: "Community image filter test model",
+            modality: "image",
+            baseUrl: "https://img.example.com/v1",
+            upstreamModel: "flux-1",
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_saved_token",
+                env.BETTER_AUTH_SECRET,
             ),
-            SELF.fetch("https://gen.pollinations.ai/v1/models?community=false"),
-            SELF.fetch("https://gen.pollinations.ai/v1/models?community=true"),
-            SELF.fetch(
-                "https://gen.pollinations.ai/image/models?community=false",
-            ),
-            SELF.fetch(
-                "https://gen.pollinations.ai/image/models?community=true",
-            ),
-            SELF.fetch("https://gen.pollinations.ai/models?community=0"),
-            SELF.fetch("https://gen.pollinations.ai/models?community=1"),
-        ]);
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            completionImagePrice: 0.01,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
+    ]);
 
-        for (const r of [
-            allDefault,
-            allExclude,
-            allOnly,
-            textExclude,
-            textOnly,
-            openaiExclude,
-            openaiOnly,
-            imageExclude,
-            imageOnly,
-            allExcludeNumeric,
-            allOnlyNumeric,
-        ]) {
-            expect(r.status).toBe(200);
-        }
+    type ListedModel = { name: string; community?: boolean };
 
-        const defaultModels = (await allDefault.json()) as ListedModel[];
-        const excludeModels = (await allExclude.json()) as ListedModel[];
-        const onlyModels = (await allOnly.json()) as ListedModel[];
-        const textExcludeModels = (await textExclude.json()) as ListedModel[];
-        const textOnlyModels = (await textOnly.json()) as ListedModel[];
-        const openaiExcludeData = (await openaiExclude.json()) as {
-            data: { id: string; community: boolean }[];
-        };
-        const openaiOnlyData = (await openaiOnly.json()) as {
-            data: { id: string; community: boolean }[];
-        };
-        const imageExcludeModels = (await imageExclude.json()) as ListedModel[];
-        const imageOnlyModels = (await imageOnly.json()) as ListedModel[];
-        const excludeNumeric =
-            (await allExcludeNumeric.json()) as ListedModel[];
-        const onlyNumeric = (await allOnlyNumeric.json()) as ListedModel[];
+    const [
+        allDefault,
+        allExclude,
+        allOnly,
+        textExclude,
+        textOnly,
+        openaiExclude,
+        openaiOnly,
+        imageExclude,
+        imageOnly,
+    ] = await Promise.all([
+        SELF.fetch("https://gen.pollinations.ai/models"),
+        SELF.fetch("https://gen.pollinations.ai/models?source=official"),
+        SELF.fetch("https://gen.pollinations.ai/models?source=community"),
+        SELF.fetch("https://gen.pollinations.ai/text/models?source=official"),
+        SELF.fetch("https://gen.pollinations.ai/text/models?source=community"),
+        SELF.fetch("https://gen.pollinations.ai/v1/models?source=official"),
+        SELF.fetch("https://gen.pollinations.ai/v1/models?source=community"),
+        SELF.fetch("https://gen.pollinations.ai/image/models?source=official"),
+        SELF.fetch("https://gen.pollinations.ai/image/models?source=community"),
+    ]);
 
-        expect(defaultModels.some((m) => m.community)).toBe(true);
-        expect(defaultModels.some((m) => !m.community)).toBe(true);
+    for (const r of [
+        allDefault,
+        allExclude,
+        allOnly,
+        textExclude,
+        textOnly,
+        openaiExclude,
+        openaiOnly,
+        imageExclude,
+        imageOnly,
+    ]) {
+        expect(r.status).toBe(200);
+    }
 
-        expect(excludeModels.every((m) => !m.community)).toBe(true);
-        expect(
-            excludeModels.find((m) => m.name === textModelId),
-        ).toBeUndefined();
+    const defaultModels = (await allDefault.json()) as ListedModel[];
+    const excludeModels = (await allExclude.json()) as ListedModel[];
+    const onlyModels = (await allOnly.json()) as ListedModel[];
+    const textExcludeModels = (await textExclude.json()) as ListedModel[];
+    const textOnlyModels = (await textOnly.json()) as ListedModel[];
+    const openaiExcludeData = (await openaiExclude.json()) as {
+        data: { id: string }[];
+    };
+    const openaiOnlyData = (await openaiOnly.json()) as {
+        data: { id: string }[];
+    };
+    const imageExcludeModels = (await imageExclude.json()) as ListedModel[];
+    const imageOnlyModels = (await imageOnly.json()) as ListedModel[];
 
-        expect(onlyModels.every((m) => m.community === true)).toBe(true);
-        expect(onlyModels.find((m) => m.name === textModelId)).toBeDefined();
+    expect(defaultModels.some((m) => m.community)).toBe(true);
+    expect(defaultModels.some((m) => !m.community)).toBe(true);
 
-        expect(textExcludeModels.every((m) => !m.community)).toBe(true);
-        expect(textOnlyModels.every((m) => m.community === true)).toBe(true);
+    expect(excludeModels.every((m) => !m.community)).toBe(true);
+    expect(excludeModels.find((m) => m.name === textModelId)).toBeUndefined();
 
-        expect(
-            openaiExcludeData.data.find((m) => m.id === textModelId),
-        ).toBeUndefined();
-        expect(openaiExcludeData.data.every((m) => m.community === false)).toBe(
-            true,
-        );
-        expect(
-            openaiOnlyData.data.find((m) => m.id === textModelId),
-        ).toBeDefined();
-        expect(openaiOnlyData.data.every((m) => m.community === true)).toBe(
-            true,
-        );
+    expect(onlyModels.every((m) => m.community === true)).toBe(true);
+    expect(onlyModels.find((m) => m.name === textModelId)).toBeDefined();
 
-        expect(imageExcludeModels.every((m) => !m.community)).toBe(true);
-        expect(
-            imageExcludeModels.find((m) => m.name === imageModelId),
-        ).toBeUndefined();
+    expect(textExcludeModels.every((m) => !m.community)).toBe(true);
+    expect(textOnlyModels.every((m) => m.community === true)).toBe(true);
 
-        expect(imageOnlyModels.every((m) => m.community === true)).toBe(true);
-        expect(
-            imageOnlyModels.find((m) => m.name === imageModelId),
-        ).toBeDefined();
+    expect(
+        openaiExcludeData.data.find((m) => m.id === textModelId),
+    ).toBeUndefined();
+    expect(openaiOnlyData.data.find((m) => m.id === textModelId)).toBeDefined();
 
-        expect(excludeNumeric.map((m) => m.name)).toEqual(
-            excludeModels.map((m) => m.name),
-        );
-        expect(onlyNumeric.map((m) => m.name)).toEqual(
-            onlyModels.map((m) => m.name),
-        );
+    expect(imageExcludeModels.every((m) => !m.community)).toBe(true);
+    expect(
+        imageExcludeModels.find((m) => m.name === imageModelId),
+    ).toBeUndefined();
 
-        const invalidResponses = await Promise.all([
-            SELF.fetch("https://gen.pollinations.ai/models?community=tru"),
-            SELF.fetch("https://gen.pollinations.ai/models?community=yes"),
-            SELF.fetch("https://gen.pollinations.ai/v1/models?community=2"),
-            SELF.fetch(
-                "https://gen.pollinations.ai/image/models?community=nope",
-            ),
-        ]);
-        for (const r of invalidResponses) {
-            expect(r.status).toBe(400);
-        }
-    },
-);
+    expect(imageOnlyModels.every((m) => m.community === true)).toBe(true);
+    expect(imageOnlyModels.find((m) => m.name === imageModelId)).toBeDefined();
+
+    const invalidResponses = await Promise.all([
+        SELF.fetch("https://gen.pollinations.ai/models?source=officials"),
+        SELF.fetch("https://gen.pollinations.ai/models?source=true"),
+        SELF.fetch("https://gen.pollinations.ai/v1/models?source=2"),
+        SELF.fetch(
+            "https://gen.pollinations.ai/image/models?reliability=unreliable",
+        ),
+    ]);
+    for (const r of invalidResponses) {
+        expect(r.status).toBe(400);
+    }
+});
 
 fixtureTest(
     "routes canonical and aliased calls to a hidden community model with a canonical-only key",

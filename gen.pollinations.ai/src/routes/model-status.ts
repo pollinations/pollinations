@@ -1,3 +1,9 @@
+import { validator } from "@shared/middleware/validator.ts";
+import {
+    type ModelHealthResponse,
+    ModelHealthResponseSchema,
+    TINYBIRD_HOST,
+} from "@shared/registry/model-health.ts";
 import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
 import debug from "debug";
 import { Hono } from "hono";
@@ -7,7 +13,6 @@ import type { Env } from "@/env.ts";
 
 const log = debug("pollinations:model-status");
 
-const TINYBIRD_HOST = "https://api.europe-west2.gcp.tinybird.co";
 const TINYBIRD_PUBLIC_TOKEN =
     "p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICI5ZWZmMGM3Ni1kOTZkLTQwYjgtYWQwOC1mNDFlMmRiYjBmYTIiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.6VnVkAQ5h_fkcDZVDUoU38dzTxaw0xo3DnmKkhECbA8";
 
@@ -18,46 +23,31 @@ const MAX_MINUTES = 7 * 24 * 60;
 const DATA_TIMESTAMP_HEADER = "X-Model-Status-Timestamp";
 const STALE_HEADER = "X-Model-Status-Stale";
 
-const ModelHealthRowSchema = z.object({
-    model: z.string(),
-    event_type: z.string(),
-    provider: z.string(),
-    model_used: z.string(),
-    total_requests: z.number().int().nonnegative(),
-    status_2xx: z.number().int().nonnegative(),
-    errors_4xx: z.number().int().nonnegative(),
-    errors_5xx: z.number().int().nonnegative(),
-    own_calls: z.number().int().nonnegative(),
-    own_calls_ok: z.number().int().nonnegative(),
-    primary_5xx: z.number().int().nonnegative(),
-    primary_retried_503s: z.number().int().nonnegative(),
-    fallback_rescues: z.number().int().nonnegative(),
-    last_error_at: z.string(),
-    latency_p50_ms: z.number().nonnegative().nullable(),
-    latency_p95_ms: z.number().nonnegative().nullable(),
-    avg_latency_ms: z.number().nonnegative().nullable(),
-    last_request_at: z.string(),
-    tokens_per_second: z.number().nonnegative().nullable(),
+const ModelHealthQuerySchema = z.object({
+    minutes: z.coerce
+        .number()
+        .int()
+        .min(1)
+        .max(MAX_MINUTES)
+        .default(DEFAULT_MINUTES)
+        .meta({
+            description: `Rolling window in minutes (default ${DEFAULT_MINUTES}, maximum ${MAX_MINUTES}).`,
+        }),
+    format: z.string().optional(),
 });
 
-const ModelHealthResponseSchema = z.object({
-    data: z.array(ModelHealthRowSchema),
-    meta: z.array(z.object({ name: z.string(), type: z.string() })).optional(),
-    rows: z.number().int().nonnegative().optional(),
-    statistics: z
-        .object({
-            elapsed: z.number().nonnegative(),
-            rows_read: z.number().int().nonnegative(),
-            bytes_read: z.number().int().nonnegative(),
-        })
-        .optional(),
-});
-
-type ModelHealthResponse = z.infer<typeof ModelHealthResponseSchema>;
-
-type CacheEntry = { data: ModelHealthResponse; timestamp: number };
+type CacheEntry = {
+    data: ModelHealthResponse;
+    timestamp: number;
+};
 
 const cache = new Map<number, CacheEntry>();
+
+/** Test hook: clears the snapshot cache so each test sees fresh data. */
+export function resetModelHealthCacheForTest(): void {
+    cache.clear();
+    inFlight.clear();
+}
 
 function setCacheEntry(minutes: number, entry: CacheEntry) {
     cache.delete(minutes);
@@ -69,13 +59,89 @@ function setCacheEntry(minutes: number, entry: CacheEntry) {
     }
 }
 
-function parseMinutes(value: string | undefined): number | null {
-    if (value === undefined) return DEFAULT_MINUTES;
-    if (!/^\d+$/.test(value)) return null;
+export type ModelHealthSnapshot = {
+    data: ModelHealthResponse;
+    checkedAt: string;
+    stale: boolean;
+};
 
-    const minutes = Number(value);
-    if (minutes < 1 || minutes > MAX_MINUTES) return null;
-    return minutes;
+// One shared in-flight read per window: parallel catalog requests on a cache
+// miss join the same fetch instead of stampeding Tinybird.
+const inFlight = new Map<number, Promise<ModelHealthSnapshot | null>>();
+
+const FETCH_TIMEOUT_MS = 3_000;
+
+/**
+ * Cached Tinybird model_health read shared by the /v1/models/status route and
+ * catalog health enrichment. Falls back to a stale cache entry when Tinybird
+ * is unreachable, and returns null when there is no data at all — callers must
+ * treat null as "unknown", never block on it.
+ */
+export function getModelHealthSnapshot(
+    minutes = DEFAULT_MINUTES,
+): Promise<ModelHealthSnapshot | null> {
+    const now = Date.now();
+    const cached = cache.get(minutes);
+    if (cached && now - cached.timestamp < CACHE_TTL_MS) {
+        setCacheEntry(minutes, cached);
+        return Promise.resolve({
+            data: cached.data,
+            checkedAt: new Date(cached.timestamp).toISOString(),
+            stale: false,
+        });
+    }
+
+    const pending = inFlight.get(minutes);
+    if (pending) return pending;
+
+    const read = (async () => {
+        try {
+            const url = new URL("/v0/pipes/model_health.json", TINYBIRD_HOST);
+            url.searchParams.set("token", TINYBIRD_PUBLIC_TOKEN);
+            url.searchParams.set("minutes", String(minutes));
+            log("Fetching model health from Tinybird: %s", url.toString());
+
+            const response = await fetch(url.toString(), {
+                signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+            });
+            if (!response.ok) {
+                throw new Error(`Tinybird responded with ${response.status}`);
+            }
+
+            const parsed = ModelHealthResponseSchema.safeParse(
+                await response.json(),
+            );
+            if (!parsed.success) {
+                throw new Error(
+                    `Tinybird response failed schema validation: ${parsed.error.message}`,
+                );
+            }
+            const timestamp = Date.now();
+            setCacheEntry(minutes, { data: parsed.data, timestamp });
+            return {
+                data: parsed.data,
+                checkedAt: new Date(timestamp).toISOString(),
+                stale: false,
+            } satisfies ModelHealthSnapshot;
+        } catch (error) {
+            log("Error fetching model health: %O", error);
+            const stale = cache.get(minutes);
+            if (stale) {
+                log("Falling back to stale cache for %d minutes", minutes);
+                setCacheEntry(minutes, stale);
+                return {
+                    data: stale.data,
+                    checkedAt: new Date(stale.timestamp).toISOString(),
+                    stale: true,
+                } satisfies ModelHealthSnapshot;
+            }
+            return null;
+        } finally {
+            inFlight.delete(minutes);
+        }
+    })();
+    inFlight.set(minutes, read);
+    return read;
 }
 
 export const modelStatusRoutes = new Hono<Env>().get(
@@ -123,8 +189,11 @@ export const modelStatusRoutes = new Hono<Env>().get(
             ...errorResponseDescriptions(400, 502),
         },
     }),
+    validator("query", ModelHealthQuerySchema),
     async (c) => {
-        const format = c.req.query("format");
+        const { minutes, format } = c.req.valid("query" as never) as z.infer<
+            typeof ModelHealthQuerySchema
+        >;
         if (format !== undefined && format !== "raw") {
             return c.json(
                 {
@@ -134,61 +203,13 @@ export const modelStatusRoutes = new Hono<Env>().get(
             );
         }
 
-        const minutes = parseMinutes(c.req.query("minutes"));
-        if (minutes === null) {
-            return c.json(
-                {
-                    error: `minutes must be an integer between 1 and ${MAX_MINUTES}`,
-                },
-                400,
-            );
-        }
-
-        const now = Date.now();
-        const cached = cache.get(minutes);
-        if (cached && now - cached.timestamp < CACHE_TTL_MS) {
-            log(
-                "Returning cached model health response for %d minutes",
-                minutes,
-            );
-            setCacheEntry(minutes, cached);
-            c.header(
-                DATA_TIMESTAMP_HEADER,
-                new Date(cached.timestamp).toISOString(),
-            );
-            return c.json(cached.data);
-        }
-
-        try {
-            const url = new URL("/v0/pipes/model_health.json", TINYBIRD_HOST);
-            url.searchParams.set("token", TINYBIRD_PUBLIC_TOKEN);
-            url.searchParams.set("minutes", String(minutes));
-            log("Fetching model health from Tinybird: %s", url.toString());
-
-            const response = await fetch(url.toString());
-            if (!response.ok) {
-                throw new Error(`Tinybird responded with ${response.status}`);
-            }
-
-            const tinybirdData = (await response.json()) as ModelHealthResponse;
-            const timestamp = Date.now();
-            setCacheEntry(minutes, { data: tinybirdData, timestamp });
-            c.header(DATA_TIMESTAMP_HEADER, new Date(timestamp).toISOString());
-            return c.json(tinybirdData);
-        } catch (error) {
-            log("Error fetching model health: %O", error);
-            const stale = cache.get(minutes);
-            if (stale) {
-                log("Falling back to stale cache for %d minutes", minutes);
-                setCacheEntry(minutes, stale);
-                c.header(
-                    DATA_TIMESTAMP_HEADER,
-                    new Date(stale.timestamp).toISOString(),
-                );
-                c.header(STALE_HEADER, "true");
-                return c.json(stale.data);
-            }
+        const snapshot = await getModelHealthSnapshot(minutes);
+        if (!snapshot) {
             return c.json({ error: "Failed to fetch model health data" }, 502);
         }
+
+        c.header(DATA_TIMESTAMP_HEADER, snapshot.checkedAt);
+        if (snapshot.stale) c.header(STALE_HEADER, "true");
+        return c.json(snapshot.data);
     },
 );

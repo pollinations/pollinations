@@ -307,7 +307,7 @@ test("proxies discovery and reuses audio, video, and 3D links without uploads", 
             authorization: new Headers(init.headers).get("authorization"),
         });
 
-        if (url.endsWith("/audio/models?community=false")) {
+        if (url.endsWith("/audio/models?source=official")) {
             return Response.json([
                 { name: "speech-test" },
                 { name: "audio-agent", agent: true },
@@ -381,13 +381,13 @@ test("proxies discovery and reuses audio, video, and 3D links without uploads", 
     });
     const models = await client.callTool({
         name: "listModels",
-        arguments: { type: "audio", community: false },
+        arguments: { type: "audio", source: "official" },
     });
     assert.match(models.content[0].text, /speech-test/);
 
     const agents = await client.callTool({
         name: "listModels",
-        arguments: { type: "audio", community: false, agent: true },
+        arguments: { type: "audio", source: "official", agent: true },
     });
     assert.match(agents.content[0].text, /audio-agent/);
     assert.match(agents.content[0].text, /"agent": true/);

@@ -1,4 +1,5 @@
 import { env } from "cloudflare:test";
+import { computeModelHealth } from "@shared/registry/model-health.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CommunityModelEnv } from "../src/community-models.ts";
 import {
@@ -161,5 +162,59 @@ describe("getGenerationModelRegistry", () => {
             "Community model registry unavailable",
             expect.any(Error),
         );
+    });
+});
+
+describe("computeModelHealth", () => {
+    const checkedAt = "2026-09-07T12:00:00.000Z";
+    const baseRow = {
+        model: "test-model",
+        event_type: "generate.text",
+        provider: "p",
+        model_used: "test-model",
+        total_requests: 0,
+        errors_4xx: 0,
+        own_calls: 0,
+        own_calls_ok: 0,
+        primary_5xx: 0,
+        primary_retried_503s: 0,
+        fallback_rescues: 0,
+        last_error_at: "",
+        latency_p50_ms: null,
+        latency_p95_ms: null,
+        avg_latency_ms: null,
+        last_request_at: "",
+        tokens_per_second: null,
+    } as const;
+
+    function row(ok: number, fail: number) {
+        return { ...baseRow, status_2xx: ok, errors_5xx: fail };
+    }
+
+    it("classifies healthy, degraded, and unavailable by 5xx share", () => {
+        expect(
+            computeModelHealth(row(100, 0), 1440, checkedAt, false).status,
+        ).toBe("healthy");
+        expect(
+            computeModelHealth(row(95, 5), 1440, checkedAt, false).status,
+        ).toBe("degraded");
+        expect(
+            computeModelHealth(row(50, 50), 1440, checkedAt, false).status,
+        ).toBe("unavailable");
+    });
+
+    it("reports unknown below the minimum sample size", () => {
+        const health = computeModelHealth(row(1, 0), 1440, checkedAt, false);
+        expect(health.status).toBe("unknown");
+        expect(health.sample_size).toBe(1);
+        expect(health.success_rate).toBe(1);
+    });
+
+    it("propagates window, freshness, and success rate", () => {
+        const health = computeModelHealth(row(99, 1), 60, checkedAt, true);
+        expect(health.success_rate).toBeCloseTo(0.99, 5);
+        expect(health.window_minutes).toBe(60);
+        expect(health.checked_at).toBe(checkedAt);
+        expect(health.stale).toBe(true);
     });
 });

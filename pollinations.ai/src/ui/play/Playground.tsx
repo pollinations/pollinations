@@ -22,6 +22,7 @@ import {
     ImageIcon,
     Input,
     LockIcon,
+    MicIcon,
     RobotIcon,
     ScrollArea,
     Slider,
@@ -37,6 +38,7 @@ import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { Chat } from "./Chat";
 import { API_BASE_URL, errorMessage } from "./chat-models";
 import { MediaDownloadButton } from "./MediaDownloadButton";
+import { UploadPrivacyNote } from "./UploadPrivacyNote";
 
 type PlaygroundModel = {
     id: string;
@@ -749,7 +751,9 @@ export function Playground() {
         .map((modality) => UPLOAD_ACCEPT[modality])
         .join(",");
     const mediaUploadLabel = mediaList(uploadMedia);
-    const MediaUploadIcon = CATEGORY_ICON[uploadMedia[0] ?? "audio"];
+    const MediaUploadIcon = isAudioTranscription
+        ? MicIcon
+        : CATEGORY_ICON[uploadMedia[0] ?? "audio"];
     const showPromptInput =
         currentModel?.category !== "audio" ||
         isAudioTranscription ||
@@ -853,7 +857,11 @@ export function Playground() {
         const audioFile = audioFiles[0];
 
         if (!apiKey) {
-            setError("Connect before generating.");
+            setError(
+                isAudioTranscription
+                    ? "Connect before transcribing."
+                    : "Connect before generating.",
+            );
             return;
         }
         if (!currentModel) {
@@ -998,12 +1006,16 @@ export function Playground() {
               : currentModel?.category === "text"
                 ? "Generate text"
                 : "Generate image";
-    const GenerateIcon = CATEGORY_ICON[activeCategory];
+    const GenerateIcon = isAudioTranscription
+        ? MicIcon
+        : CATEGORY_ICON[activeCategory];
     const connectLabel =
         currentModel?.category === "video"
             ? "Connect to create video"
             : currentModel?.category === "audio"
-              ? "Connect to create audio"
+              ? isAudioTranscription
+                  ? "Connect to transcribe audio"
+                  : "Connect to create audio"
               : currentModel?.category === "text"
                 ? "Connect to chat"
                 : "Connect to generate image";
@@ -1058,6 +1070,11 @@ export function Playground() {
                         }
                     }}
                 />
+                {isAudioTranscription && (
+                    <Text size="xs" tone="muted">
+                        Audio is sent to the selected model for transcription.
+                    </Text>
+                )}
             </FieldStack>
         ) : null;
     return (
@@ -1166,6 +1183,7 @@ export function Playground() {
                                         }
                                     }}
                                 />
+                                <UploadPrivacyNote />
                             </FieldStack>
                         )}
 
@@ -1254,6 +1272,8 @@ export function Playground() {
                                 )}
                             </div>
                         )}
+
+                        {isVideoReferenceMode && <UploadPrivacyNote />}
 
                         {(currentModel?.category === "image" ||
                             currentModel?.category === "video") && (
@@ -1508,7 +1528,9 @@ export function Playground() {
                                     <GenerateIcon className="mr-2 h-4 w-4" />
                                 )}
                                 {isGenerating
-                                    ? "Generating…"
+                                    ? isAudioTranscription
+                                        ? "Transcribing…"
+                                        : "Generating…"
                                     : needsSignIn
                                       ? connectLabel
                                       : generateLabel}

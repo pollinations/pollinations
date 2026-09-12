@@ -96,19 +96,9 @@ function PlayPage() {
                     compactBottom
                 >
                     <ContentHeader
-                        eyebrow="Official models, in the browser"
+                        eyebrow="Models and agents, in the browser"
                         title="Try it out."
-                        subtitle={
-                            <>
-                                Choose an agent for chat, or choose a media mode
-                                for direct model controls. Connect and it runs
-                                on your own Pollen, through{" "}
-                                <strong>
-                                    the same endpoints your app will call
-                                </strong>
-                                .
-                            </>
-                        }
+                        subtitle="Chat with an agent or create images, video and audio. Connect your account to use your own Pollen."
                         variant="page"
                     />
                     <AccountAction />

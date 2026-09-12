@@ -85,6 +85,7 @@ import {
     type PollinationsUIMessage,
     type PreparedAttachment,
 } from "./pollinations-chat-transport";
+import { UploadPrivacyNote } from "./UploadPrivacyNote";
 
 const ROUTING_LABELS: Record<ChatRoutingCapability, string> = {
     text: "Text",
@@ -1262,6 +1263,10 @@ export function Chat({
                         disabled={sending}
                         onSelectAgent={selectAgent}
                     />
+                    <Text size="xs" tone="muted" className="mt-2">
+                        Agents may use external models and tools. Avoid
+                        sensitive data.
+                    </Text>
                 </div>
                 <ChatConversation
                     ref={transcriptRef}
@@ -1432,6 +1437,11 @@ export function Chat({
                                 <input
                                     ref={fileInputRef}
                                     type="file"
+                                    aria-describedby={
+                                        supportsAttachments
+                                            ? "play-chat-upload-privacy"
+                                            : undefined
+                                    }
                                     accept={attachmentAccept}
                                     multiple
                                     hidden
@@ -1449,6 +1459,11 @@ export function Chat({
                                     size="lg"
                                     intent="info"
                                     aria-label="Add media"
+                                    aria-describedby={
+                                        supportsAttachments
+                                            ? "play-chat-upload-privacy"
+                                            : undefined
+                                    }
                                     title={
                                         !supportsAttachments
                                             ? `${assistantName} accepts text only`
@@ -1542,6 +1557,12 @@ export function Chat({
                                 )}
                             </div>
                         </ChatPromptInputFooter>
+                        {supportsAttachments && (
+                            <UploadPrivacyNote
+                                id="play-chat-upload-privacy"
+                                className="px-3 pb-3"
+                            />
+                        )}
                     </ChatPromptInput>
                 </form>
             </div>

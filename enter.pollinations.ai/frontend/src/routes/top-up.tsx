@@ -1,4 +1,4 @@
-import { Button, InlineLink } from "@pollinations/ui";
+import { Button, Section } from "@pollinations/ui";
 import {
     AuthInfoCard,
     AuthModal,
@@ -6,7 +6,6 @@ import {
     AuthModalLoading,
     ErrorBanner,
 } from "@pollinations/ui/auth";
-import { formatPollen } from "@pollinations/ui/wallet";
 import {
     getPollenPackByAmount,
     getPollenPackByKey,
@@ -18,12 +17,13 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
-import { PollenPackPurchase } from "../components/pollen";
+import { BuyPollenPanel, PollenBalance } from "../components/pollen";
+import type { BillingState } from "../components/pollen/auto-top-up-panel.tsx";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 import {
     parseAppUrl,
     ReturnToApp,
-    resolveReturnUrl,
+    referrerAppUrl,
 } from "../lib/return-to-app.tsx";
 
 type TopUpSearch = {
@@ -33,10 +33,18 @@ type TopUpSearch = {
     stripe_canceled?: boolean;
 };
 
+type WalletState = {
+    tierBalance: number;
+    packBalance: number;
+    paidWeek?: number;
+    tierWeek?: number;
+};
+
 /**
- * Standalone top-up: the pack slider and nothing else, shown on the auth-flow
- * background. Linked from the low-balance notice gen returns inside chats,
- * so the user can pay and go back to the app without touring the dashboard.
+ * Standalone top-up: the wallet and top-up sections of the pollen page on
+ * the auth-flow background, without the dashboard around them. Linked from
+ * the low-balance notice gen returns inside chats, so the user can pay and
+ * go back to the app.
  */
 export const Route = createFileRoute("/top-up")({
     validateSearch: (search: Record<string, unknown>): TopUpSearch => ({
@@ -57,21 +65,58 @@ function TopUpPage() {
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user;
     const { isSigningIn, error: signInError, signIn } = useGitHubSignIn();
-    const [balance, setBalance] = useState<number | null>(null);
-    const returnUrl = resolveReturnUrl(search.redirect ?? null);
+    const [wallet, setWallet] = useState<WalletState | null>(null);
+    const [billing, setBilling] = useState<BillingState | null | undefined>(
+        undefined,
+    );
+    const returnUrl = search.redirect ?? null;
     const selectedPack =
         getPollenPackByKey(search.pack ?? "p5") ?? POLLEN_PACKS[0];
+
+    // Remember which app sent us before Stripe overwrites the referrer.
+    useEffect(() => {
+        if (search.redirect || search.stripe_success || search.stripe_canceled)
+            return;
+        const from = referrerAppUrl();
+        if (from) {
+            void navigate({
+                search: (prev) => ({ ...prev, redirect: from }),
+                replace: true,
+            });
+        }
+    }, [
+        navigate,
+        search.redirect,
+        search.stripe_success,
+        search.stripe_canceled,
+    ]);
 
     useEffect(() => {
         if (!user) return;
         apiClient.customer.balance
             .$get()
-            .then((response) => (response.ok ? response.json() : null))
+            .then((r) => (r.ok ? r.json() : null))
             .then((data) => {
                 if (!data) return;
-                setBalance((data.tierBalance ?? 0) + (data.packBalance ?? 0));
+                setWallet({
+                    tierBalance: data.tierBalance ?? 0,
+                    packBalance: data.packBalance ?? 0,
+                });
+                return apiClient.customer.balance.today
+                    .$get()
+                    .then((r) => (r.ok ? r.json() : null))
+                    .then((earnings) => {
+                        if (earnings) {
+                            setWallet((w) => (w ? { ...w, ...earnings } : w));
+                        }
+                    });
             })
             .catch(() => {});
+        apiClient.stripe.billing
+            .$get()
+            .then((r) => (r.ok ? r.json() : null))
+            .then(setBilling)
+            .catch(() => setBilling(null));
     }, [user]);
 
     if (isPending) return <AuthModalLoading />;
@@ -117,69 +162,49 @@ function TopUpPage() {
                     <AuthInfoCard title="Pollen added">
                         <p className="text-sm text-theme-text-base">
                             Your payment went through.
-                            {balance != null && (
-                                <>
-                                    {" "}
-                                    Wallet balance:{" "}
-                                    <span className="font-semibold text-theme-text-strong">
-                                        {formatPollen(balance)} pollen
-                                    </span>
-                                    .
-                                </>
-                            )}
                         </p>
                     </AuthInfoCard>
-                    <ReturnToApp returnUrl={returnUrl} />
+                    {wallet && <PollenBalance {...wallet} />}
+                    <ReturnToApp returnUrl={returnUrl} autoReturn />
                 </div>
             </AuthModal>
         );
     }
 
+    if (!wallet || billing === undefined) return <AuthModalLoading />;
+
     // Stripe comes back here; the server re-adds the pack it was sent.
     const returnPath = `/top-up${search.redirect ? `?redirect=${encodeURIComponent(search.redirect)}` : ""}`;
 
     return (
-        <AuthModal dialog={{ label: "Top up" }}>
+        <AuthModal dialog={{ label: "Top up" }} contentClassName="max-w-2xl">
             <AuthModalHeader />
-            <div className="px-6 pb-6 pt-4 space-y-4">
+            <div className="flex flex-col gap-6 px-6 pb-6 pt-4">
                 {search.stripe_canceled && (
                     <ErrorBanner>Checkout was cancelled.</ErrorBanner>
                 )}
-                <AuthInfoCard title="Top up">
-                    <p className="text-sm text-theme-text-base">
-                        {balance != null ? (
-                            <>
-                                Your wallet holds{" "}
-                                <span className="font-semibold text-theme-text-strong">
-                                    {formatPollen(balance)} pollen
-                                </span>
-                                . Pick a pack to add more.
-                            </>
-                        ) : (
-                            "Pick a pack to add Pollen to your wallet."
-                        )}
-                    </p>
-                </AuthInfoCard>
-                <PollenPackPurchase
-                    selectedPackAmount={selectedPack?.amountUsd ?? 5}
-                    onSelectedPackAmountChange={(amount) => {
-                        const pack = getPollenPackByAmount(amount);
-                        if (pack) {
-                            void navigate({
-                                search: (prev) => ({
-                                    ...prev,
-                                    pack: pack.packKey,
-                                }),
-                            });
-                        }
-                    }}
-                    checkoutReturnPath={returnPath}
-                />
-                <p className="text-sm text-theme-text-muted">
-                    Prefer not to pay?{" "}
-                    <InlineLink href="/quests">Complete a quest</InlineLink> to
-                    earn Pollen instead.
-                </p>
+                <Section title="Wallet" framed>
+                    <PollenBalance {...wallet} />
+                </Section>
+                <Section title="Top-up" framed>
+                    <BuyPollenPanel
+                        initialBillingState={billing}
+                        selectedPackAmount={selectedPack?.amountUsd ?? 5}
+                        onSelectedPackAmountChange={(amount) => {
+                            const pack = getPollenPackByAmount(amount);
+                            if (pack) {
+                                void navigate({
+                                    search: (prev) => ({
+                                        ...prev,
+                                        pack: pack.packKey,
+                                    }),
+                                });
+                            }
+                        }}
+                        checkoutReturnPath={returnPath}
+                    />
+                </Section>
+                <ReturnToApp returnUrl={returnUrl} />
             </div>
         </AuthModal>
     );

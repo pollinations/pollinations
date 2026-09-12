@@ -6,7 +6,7 @@ import {
     AuthModalLoading,
     ErrorBanner,
 } from "@pollinations/ui/auth";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
@@ -16,7 +16,7 @@ import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 import {
     parseAppUrl,
     ReturnToApp,
-    resolveReturnUrl,
+    referrerAppUrl,
 } from "../lib/return-to-app.tsx";
 import { updateApiKey } from "../lib/update-api-key.ts";
 
@@ -42,12 +42,24 @@ type Outcome = "editing" | "saved" | "closed";
 
 function EditKeyPage() {
     const { id, redirect } = Route.useSearch();
+    const navigate = useNavigate({ from: "/edit-key" });
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user;
     const { isSigningIn, error: signInError, signIn } = useGitHubSignIn();
     const [apiKey, setApiKey] = useState<ApiKey | null | undefined>(undefined);
     const [outcome, setOutcome] = useState<Outcome>("editing");
-    const returnUrl = resolveReturnUrl(redirect ?? null);
+    const returnUrl = redirect ?? null;
+
+    useEffect(() => {
+        if (redirect) return;
+        const from = referrerAppUrl();
+        if (from) {
+            void navigate({
+                search: (prev) => ({ ...prev, redirect: from }),
+                replace: true,
+            });
+        }
+    }, [navigate, redirect]);
 
     useEffect(() => {
         if (!user || !id) return;
@@ -112,7 +124,7 @@ function EditKeyPage() {
                                 : "The key was left as it is."}
                         </p>
                     </AuthInfoCard>
-                    <ReturnToApp returnUrl={returnUrl} />
+                    <ReturnToApp returnUrl={returnUrl} autoReturn />
                 </div>
             </AuthModal>
         );

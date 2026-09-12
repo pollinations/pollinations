@@ -1,0 +1,34 @@
+{
+  "pr_number": 14764,
+  "title": "fix: staging pollinations MCP worker",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14764",
+  "merged_at": "2026-09-12T13:53:50Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a `staging` env to `apps/mcp` (Worker `pollinations-mcp-staging`, no routes, `POLLINATIONS_BASE_URL` = staging gen)\n- Points gen staging's `POLLINATIONS_MCP` binding at it\n- Before: gen staging called the production `pollinations-mcp` Worker, which called production gen with a staging-signed `ag_` run token, so every staging agent using the `pollinations` MCP got `Authentication failed`\n- Production unchanged; staging Worker already deployed by hand\n- Adds `deploy:staging` script to `apps/mcp`\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01WaGsSAmrHYji69S1Hw2EjV",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The staging hive connects",
+    "blurb": "Staging agents can talk to their own MCP worker again. The bees have stopped trying to enter the production garden with a staging badge.",
+    "summary": "Added a dedicated pollinations-mcp-staging Worker pointing at staging gen and rebound gen staging's POLLINATIONS_MCP binding, so staging agent run tokens authenticate correctly while production remains unchanged.",
+    "impact": "Developers using the pollinations MCP in staging can now complete agent calls instead of receiving Authentication failed from the production worker.",
+    "keywords": [
+      "mcp",
+      "staging",
+      "authentication",
+      "workers",
+      "agents",
+      "cloudflare"
+    ],
+    "visual_concept": "A cozy staging garden has its own small MCP relay hut connected by a glowing path to a staging terminal, rather than a tangled path leading into the production garden. Polli, wearing a tiny deployment helmet, checks a staging badge beside the eager CRT monitor robot; code-plants and two clearly separate garden gates represent the corrected worker binding.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black antennae, oval black eyes, pink rectangular cheek blushes, a happy smile, light blue rounded wings, and a tiny deployment helmet, guiding a cheerful CRT monitor robot through a lime green (#ecf874) staging garden gate toward a little MCP worker hut and glowing terminal; code-plants, flowers, and a separate distant production gate show the paths are finally correctly connected. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"STAGING CONNECTED\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14764.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black antennae, oval black eyes, pink rectangular cheek blushes, a happy smile, light blue rounded wings, and a tiny deployment helmet, guiding a cheerful CRT monitor robot through a lime green (#ecf874) staging garden gate toward a little MCP worker hut and glowing terminal; code-plants, flowers, and a separate distant production gate show the paths are finally correctly connected. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"STAGING CONNECTED\"."
+  },
+  "generated_at": "2026-09-12T13:55:24.081602+00:00"
+}

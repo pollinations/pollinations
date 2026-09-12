@@ -6,12 +6,6 @@ import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import {
-    computeModelHealth,
-    type ModelHealth,
-    type ModelHealthWindow,
-    unknownModelHealth,
-} from "@shared/registry/model-health.ts";
-import {
     type ModelInfo,
     modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
@@ -36,7 +30,6 @@ import {
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
 import { linkFallbackEntries } from "./fallback.ts";
-import { getModelHealthSnapshot } from "./routes/model-status.ts";
 import { mediaPromptRoute } from "./media/prompt-route.ts";
 import { supportsDirectResponses } from "./text/availableModels.ts";
 
@@ -262,8 +255,6 @@ function buildRegistry(
     };
 }
 
-const CATALOG_HEALTH_WINDOW_MINUTES = 24 * 60;
-
 async function loadGenerationModelRegistry(
     env: CommunityModelEnv,
 ): Promise<{ registry: GenerationModelRegistry; degraded: boolean }> {
@@ -283,42 +274,8 @@ async function loadGenerationModelRegistry(
         degraded = true;
         console.error("Community model registry unavailable", error);
     }
-
-    // One shared health snapshot per rebuild. The 24h window keeps lower-traffic
-    // models populated. A Tinybird outage never blocks model listing — entries
-    // fall back to "unknown" health instead.
-    const snapshot = await getModelHealthSnapshot(
-        CATALOG_HEALTH_WINDOW_MINUTES,
-    );
-    const healthWindow: ModelHealthWindow = snapshot
-        ? {
-              windowMinutes: snapshot.windowMinutes,
-              checkedAt: snapshot.checkedAt,
-              stale: snapshot.stale,
-          }
-        : {
-              windowMinutes: CATALOG_HEALTH_WINDOW_MINUTES,
-              checkedAt: Date.now(),
-              stale: true,
-          };
-    const healthByModel = new Map<string, ModelHealth>();
-    if (snapshot) {
-        for (const row of snapshot.rows) {
-            healthByModel.set(row.model, computeModelHealth(row, healthWindow));
-        }
-    }
-    const unknownHealth = unknownModelHealth(healthWindow);
-
-    const entries = [...STATIC_ENTRIES, ...communityEntries].map((entry) => ({
-        ...entry,
-        info: {
-            ...entry.info,
-            health: healthByModel.get(entry.id) ?? unknownHealth,
-        },
-    }));
-
     return {
-        registry: buildRegistry(entries),
+        registry: buildRegistry([...STATIC_ENTRIES, ...communityEntries]),
         degraded,
     };
 }

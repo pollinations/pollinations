@@ -26,7 +26,7 @@ const COLUMNS = [
         heading: "Build",
         links: [
             { href: "https://gen.pollinations.ai/docs", label: "Docs" },
-            { href: "https://gen.pollinations.ai/models", label: "Models" },
+            { href: "https://enter.pollinations.ai/models", label: "Models" },
             { href: "https://enter.pollinations.ai", label: "Dashboard" },
         ],
     },
@@ -69,7 +69,7 @@ const SOCIAL = [
     },
     {
         href: "https://x.com/pollinations_ai",
-        label: "Twitter",
+        label: "X",
         Icon: XSocialIcon,
     },
     {

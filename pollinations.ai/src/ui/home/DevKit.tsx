@@ -1,6 +1,7 @@
 import {
     AppIcon,
     BeakerIcon,
+    BookIcon,
     CloudUploadIcon,
     ContentHeader,
     cn,
@@ -58,7 +59,7 @@ const BUILD_FOUNDATIONS: Feature[] = [
     {
         title: "Connect user wallets",
         body: "Let users approve access and a Pollen budget through OAuth 2.1. Their wallet pays for usage in your app.",
-        linkLabel: "Wallet integration guide",
+        linkLabel: "Integration guide",
         href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
         icon: WalletIcon,
     },
@@ -142,7 +143,17 @@ function FeatureCard({
                     href={feature.href}
                     size="sm"
                     appearance="raised"
-                    className="self-start whitespace-nowrap"
+                    icon={
+                        feature.href.startsWith(
+                            "https://gen.pollinations.ai/docs",
+                        ) ? (
+                            <BookIcon
+                                aria-hidden="true"
+                                className="size-4 shrink-0"
+                            />
+                        ) : undefined
+                    }
+                    className="max-w-full self-start whitespace-normal text-left"
                 >
                     {feature.linkLabel}
                 </ExternalLinkButton>

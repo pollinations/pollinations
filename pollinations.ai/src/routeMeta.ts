@@ -4,19 +4,22 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     "/": {
         title: "pollinations.ai — Every model, one wallet.",
         description:
-            "Open infrastructure for text, image, audio and video generation, with one wallet and one API.",
+            "Build with AI models and ready-made agents through one platform, one API and a shared Pollen wallet.",
     },
     "/play": {
         title: "Play | pollinations.ai",
-        description: "Generate images, text, audio and video with AI models",
+        description:
+            "Chat with agents or generate images, video and audio in your browser using your own Pollen.",
     },
     "/apps": {
         title: "Apps | pollinations.ai",
-        description: "Community-built apps powered by Pollinations AI",
+        description:
+            "Discover apps listed by the Pollinations community, from creative experiments to tools used at scale.",
     },
     "/community": {
         title: "Community | pollinations.ai",
-        description: "Contributors, voting, and build diary",
+        description:
+            "Contribute to Pollinations, vote on ideas and explore monthly and daily build updates.",
     },
     "/terms": {
         title: "Terms | pollinations.ai",

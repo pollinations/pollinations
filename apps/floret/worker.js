@@ -4,6 +4,7 @@ import { catalogOutbound, createGateway } from "./gateway.js";
 import { FloretCatalogCore } from "./model-catalog.js";
 import { attachShellOutbound } from "./shell-container.js";
 
+export { ContainerProxy } from "@cloudflare/containers";
 export { FloretShellContainer } from "./shell-container.js";
 
 export class FloretContainer extends Container {

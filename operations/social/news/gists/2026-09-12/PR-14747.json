@@ -1,0 +1,34 @@
+{
+  "pr_number": 14747,
+  "title": "feat(image): add 1080p support for minimax h3 max turbo",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/14747",
+  "merged_at": "2026-09-12T10:26:43Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds 1080p to `minimax/minimax-h3-max-turbo` for text-to-video and first/last-frame image-to-video, including catalog resolution and billing variants.\n- Uses fal's current $0.02/s 1080p promotion; retains 480p/768p rates, paid-only access, multiplier 1, existing fal routes, and no fallback. fal refines 1080p from a native 768p source.\n- Corrects the promotion end to September 14; [fal lists regular rates from September 15](https://fal.ai/minimax-h3-max). Deferred pricing PR #14431 includes 1080p at $0.08/s and must follow this PR.\n- Extends the existing first/last-frame regression test to 1080p. Focused Gen tests: 187 passed; pricing tests: 109 passed; both worker typechecks and Biome pass.\n- Live verification: direct fal text/frame requests passed with 16 billable units × $0.00625 = $0.10 per five-second 1080p clip. Local native generation, `/v1/images/generations`, `/v1/images/edits`, all six aspect ratios, 5/10/15s, audio, 480p/768p regressions, 4xx validation, and paid-only denial passed. Wallet debits and staging Tinybird events reconcile. Disconnect/rejoin passed: one fal request, one 15s/$0.30 billing event, byte-identical cached retry, no second debit. Longest measured local completion: 28.34s. No production deployment performed.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Turbo grows 1080p wings",
+    "blurb": "MiniMax H3 Max Turbo can now carry videos all the way to 1080p. Polli checked the frames, the billing, and the cached retries; the pixels made it home safely.",
+    "summary": "Added 1080p output for `minimax/minimax-h3-max-turbo` text-to-video and first/last-frame image-to-video across the image catalog, resolution-specific billing variants, and API validation, using fal's current $0.02/s 1080p promotion.",
+    "impact": "Paid users can now generate 5-, 10-, and 15-second MiniMax H3 Max Turbo clips in 1080p through the existing generation and edit routes, with the current promotional rate and the same supported aspect ratios, audio, and caching behavior.",
+    "keywords": [
+      "minimax",
+      "h3-max-turbo",
+      "1080p",
+      "video-generation",
+      "fal",
+      "image-api"
+    ],
+    "visual_concept": "Depict MiniMax H3 Max Turbo as a cozy retro video workshop: Polli, wearing tiny director headphones, guides a film strip from a 768p projector through a softly glowing 1080p upgrade lens. A CRT robot monitors the finished high-resolution clip while code-plants and small flowers grow around the equipment, representing the existing API routes and dependable billing/caching path.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny director headphones, guiding a glowing film strip through a chunky retro projector labeled \"1080P\" while a helpful CRT-monitor robot watches the crisp video preview; lime green (#ecf874) shines prominently from the projector and code-plants bloom around the studio. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, simple pixel-font text: \"1080P\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14747.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny director headphones, guiding a glowing film strip through a chunky retro projector labeled \"1080P\" while a helpful CRT-monitor robot watches the crisp video preview; lime green (#ecf874) shines prominently from the projector and code-plants bloom around the studio. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, simple pixel-font text: \"1080P\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-12T10:27:40.333240+00:00"
+}

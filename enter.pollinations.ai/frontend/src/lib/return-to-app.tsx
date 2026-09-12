@@ -72,13 +72,7 @@ export const ReturnToApp: FC<ReturnToAppProps> = ({
         return () => clearTimeout(timer);
     }, [counting, secondsLeft, returnUrl]);
 
-    if (!returnUrl) {
-        return (
-            <p className="text-sm text-theme-text-base">
-                You can close this tab and return to the app.
-            </p>
-        );
-    }
+    if (!returnUrl) return null;
 
     const host = new URL(returnUrl).hostname;
     return (

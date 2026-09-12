@@ -1,4 +1,4 @@
-import { Button } from "@pollinations/ui";
+import { AccountIdentity, Button } from "@pollinations/ui";
 import {
     AuthInfoCard,
     AuthModal,
@@ -107,10 +107,19 @@ function EditKeyPage() {
         );
     }
 
+    const accountHeader = (
+        <AuthModalHeader>
+            <AccountIdentity
+                name={user.githubUsername || user.name}
+                avatarUrl={user.image}
+            />
+        </AuthModalHeader>
+    );
+
     if (outcome !== "editing") {
         return (
             <AuthModal dialog={{ label: "Key updated" }}>
-                <AuthModalHeader />
+                {accountHeader}
                 <div className="px-6 pb-6 pt-4 space-y-4">
                     <AuthInfoCard
                         title={
@@ -132,7 +141,7 @@ function EditKeyPage() {
     if (!id || apiKey === null) {
         return (
             <AuthModal dialog={{ label: "Key not found" }} tone="error">
-                <AuthModalHeader />
+                {accountHeader}
                 <div className="px-6 pb-6 pt-4 space-y-4">
                     <ErrorBanner>
                         This key doesn't exist or belongs to another account.
@@ -147,7 +156,9 @@ function EditKeyPage() {
 
     return (
         <EditApiKeyDialog
+            key={apiKey.id}
             apiKey={apiKey}
+            header={accountHeader}
             onUpdate={async (keyId, updates) => {
                 await updateApiKey(keyId, updates);
                 setOutcome("saved");

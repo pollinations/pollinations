@@ -1,4 +1,4 @@
-import { Button, Section } from "@pollinations/ui";
+import { AccountIdentity, Button, Section } from "@pollinations/ui";
 import {
     AuthInfoCard,
     AuthModal,
@@ -153,10 +153,17 @@ function TopUpPage() {
         );
     }
 
+    const accountIdentity = (
+        <AccountIdentity
+            name={user.githubUsername || user.name}
+            avatarUrl={user.image}
+        />
+    );
+
     if (search.stripe_success) {
         return (
             <AuthModal dialog={{ label: "Pollen added" }}>
-                <AuthModalHeader />
+                <AuthModalHeader>{accountIdentity}</AuthModalHeader>
                 <div className="px-6 pb-6 pt-4 space-y-4">
                     <AuthInfoCard title="Pollen added">
                         <p className="text-sm text-theme-text-base">
@@ -177,7 +184,7 @@ function TopUpPage() {
 
     return (
         <AuthModal dialog={{ label: "Top up" }} contentClassName="max-w-2xl">
-            <AuthModalHeader />
+            <AuthModalHeader>{accountIdentity}</AuthModalHeader>
             <div className="flex flex-col gap-6 px-6 pb-6 pt-4">
                 {search.stripe_canceled && (
                     <ErrorBanner>Checkout was cancelled.</ErrorBanner>

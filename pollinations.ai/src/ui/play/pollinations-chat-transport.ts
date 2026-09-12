@@ -182,6 +182,9 @@ export class PollinationsChatTransport
                 let textId: string | null = null;
                 let finalReason: FinishReason = "stop";
                 let contentBuffer = "";
+                let linePrefix = "";
+                let codeFence: string | null = null;
+                let inlineCode: string | null = null;
                 const emittedMedia = new Set<string>();
 
                 const endText = () => {
@@ -263,17 +266,78 @@ export class PollinationsChatTransport
                     }
                     return 0;
                 };
+                const consume = (length: number) => {
+                    const source = contentBuffer.slice(0, length);
+                    contentBuffer = contentBuffer.slice(length);
+                    const newline = source.lastIndexOf("\n");
+                    linePrefix =
+                        newline < 0
+                            ? linePrefix + source
+                            : source.slice(newline + 1);
+                    return source;
+                };
                 // A markdown link cannot span a raw newline, so text held
                 // back for a possible link is released at the next one.
                 const releaseThroughNewline = () => {
                     const newline = contentBuffer.indexOf("\n");
                     if (newline < 0) return false;
-                    emitText(contentBuffer.slice(0, newline + 1));
-                    contentBuffer = contentBuffer.slice(newline + 1);
+                    emitText(consume(newline + 1));
                     return true;
                 };
                 const flushContent = (final = false) => {
                     while (contentBuffer) {
+                        // Code is literal content: do not turn example links or
+                        // tool markup into media/tool parts. Keep delimiters across
+                        // provider chunks, including a split closing fence.
+                        if (codeFence) {
+                            const newline = contentBuffer.indexOf("\n");
+                            if (/^ {0,3}$/.test(linePrefix)) {
+                                if (newline < 0 && !final) return;
+                                const line =
+                                    linePrefix +
+                                    contentBuffer.slice(
+                                        0,
+                                        newline < 0 ? undefined : newline,
+                                    );
+                                if (
+                                    new RegExp(
+                                        `^ {0,3}${codeFence[0]}{${codeFence.length},}[\\t \\r]*$`,
+                                    ).test(line)
+                                )
+                                    codeFence = null;
+                            }
+                            emitText(
+                                consume(
+                                    newline < 0
+                                        ? contentBuffer.length
+                                        : newline + 1,
+                                ),
+                            );
+                            continue;
+                        }
+                        if (inlineCode) {
+                            const nextTick = contentBuffer.indexOf("`");
+                            if (nextTick !== 0) {
+                                emitText(
+                                    consume(
+                                        nextTick < 0
+                                            ? contentBuffer.length
+                                            : nextTick,
+                                    ),
+                                );
+                                continue;
+                            }
+                            const delimiter = contentBuffer.match(/^`+/)?.[0];
+                            if (!delimiter) return;
+                            if (
+                                delimiter.length === contentBuffer.length &&
+                                !final
+                            )
+                                return;
+                            if (delimiter === inlineCode) inlineCode = null;
+                            emitText(consume(delimiter.length));
+                            continue;
+                        }
                         const lower = contentBuffer.toLowerCase();
                         const toolIndex = lower.indexOf("<details");
                         const bracketIndex = contentBuffer.indexOf("[");
@@ -282,9 +346,12 @@ export class PollinationsChatTransport
                             contentBuffer[bracketIndex - 1] === "!"
                                 ? bracketIndex - 1
                                 : bracketIndex;
-                        const starts = [toolIndex, linkIndex].filter(
-                            (index) => index >= 0,
-                        );
+                        const literalIndex = contentBuffer.search(/[`~\\]/);
+                        const starts = [
+                            toolIndex,
+                            linkIndex,
+                            literalIndex,
+                        ].filter((index) => index >= 0);
                         const specialIndex =
                             starts.length > 0 ? Math.min(...starts) : -1;
 
@@ -301,15 +368,40 @@ export class PollinationsChatTransport
                                   );
                             const safeLength =
                                 contentBuffer.length - pendingLength;
-                            emitText(contentBuffer.slice(0, safeLength));
-                            contentBuffer = contentBuffer.slice(safeLength);
+                            emitText(consume(safeLength));
                             return;
                         }
 
                         if (specialIndex > 0) {
-                            const prefix = contentBuffer.slice(0, specialIndex);
+                            const prefix = consume(specialIndex);
                             if (textId || prefix.trim()) emitText(prefix);
-                            contentBuffer = contentBuffer.slice(specialIndex);
+                            continue;
+                        }
+
+                        if (contentBuffer.startsWith("\\")) {
+                            if (contentBuffer.length === 1 && !final) return;
+                            emitText(
+                                consume(Math.min(2, contentBuffer.length)),
+                            );
+                            continue;
+                        }
+                        if (/^[`~]/.test(contentBuffer)) {
+                            const delimiter =
+                                contentBuffer.match(/^(`+|~+)/)?.[0];
+                            if (!delimiter) return;
+                            if (
+                                delimiter.length === contentBuffer.length &&
+                                !final
+                            )
+                                return;
+                            if (
+                                delimiter.length >= 3 &&
+                                /^ {0,3}$/.test(linePrefix)
+                            )
+                                codeFence = delimiter;
+                            else if (delimiter[0] === "`")
+                                inlineCode = delimiter;
+                            emitText(consume(delimiter.length));
                             continue;
                         }
 
@@ -321,31 +413,29 @@ export class PollinationsChatTransport
                                 .indexOf("</details>");
                             if (closeIndex < 0) {
                                 if (final) {
-                                    emitText(contentBuffer);
-                                    contentBuffer = "";
+                                    emitText(consume(contentBuffer.length));
                                 }
                                 return;
                             }
                             const end = closeIndex + "</details>".length;
-                            emitParsedContent(contentBuffer.slice(0, end));
-                            contentBuffer = contentBuffer.slice(end);
+                            emitParsedContent(consume(end));
                             continue;
                         }
 
                         const labelEnd = contentBuffer.indexOf("]");
                         if (labelEnd < 0) {
                             if (final) {
-                                emitText(contentBuffer);
-                                contentBuffer = "";
+                                emitText(consume(contentBuffer.length));
                             } else if (releaseThroughNewline()) {
                                 continue;
                             }
                             return;
                         }
+                        if (labelEnd + 1 === contentBuffer.length && !final)
+                            return;
                         if (contentBuffer[labelEnd + 1] !== "(") {
                             const end = labelEnd + 1;
-                            emitText(contentBuffer.slice(0, end));
-                            contentBuffer = contentBuffer.slice(end);
+                            emitText(consume(end));
                             continue;
                         }
                         const linkEnd = contentBuffer.indexOf(
@@ -354,15 +444,14 @@ export class PollinationsChatTransport
                         );
                         if (linkEnd < 0) {
                             if (final) {
-                                emitText(contentBuffer);
-                                contentBuffer = "";
+                                emitText(consume(contentBuffer.length));
                             } else if (releaseThroughNewline()) {
                                 continue;
                             }
                             return;
                         }
                         const end = linkEnd + 1;
-                        const candidate = contentBuffer.slice(0, end);
+                        const candidate = consume(end);
                         const extracted = extractStreamedMedia(candidate);
                         if (extracted.media.length === 0) {
                             emitText(candidate);
@@ -372,7 +461,6 @@ export class PollinationsChatTransport
                                 emitMedia(media, `media:${media.url}`);
                             }
                         }
-                        contentBuffer = contentBuffer.slice(end);
                     }
                 };
 

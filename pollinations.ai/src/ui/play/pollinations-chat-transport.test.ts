@@ -236,4 +236,134 @@ describe("PollinationsChatTransport", () => {
             chunks.filter((chunk) => chunk.type === "text-delta"),
         ).toHaveLength(0);
     });
+
+    it.each([
+        "![Result](https://example.test/result.png)",
+        "[Video](<https://example.test/result.mp4>)",
+    ])("renders media independently of every chunk boundary: %s", async (content) => {
+        const expected = await chunksFrom([contentChunk(content, "whole")]);
+        const expectedMedia = expected.flatMap((chunk) =>
+            chunk.type === "data-media" && "data" in chunk ? [chunk.data] : [],
+        );
+        const partitions = [
+            ...Array.from({ length: content.length - 1 }, (_, index) => [
+                content.slice(0, index + 1),
+                content.slice(index + 1),
+            ]),
+            [...content],
+        ];
+        for (const partition of partitions) {
+            const chunks = await chunksFrom(
+                partition.map((text, index) =>
+                    contentChunk(text, String(index)),
+                ),
+            );
+            expect(
+                chunks.flatMap((chunk) =>
+                    chunk.type === "data-media" && "data" in chunk
+                        ? [chunk.data]
+                        : [],
+                ),
+            ).toEqual(expectedMedia);
+            expect(
+                chunks.filter((chunk) => chunk.type === "text-delta"),
+            ).toHaveLength(0);
+        }
+    });
+
+    it.each([
+        "```markdown\n![Result](https://example.test/result.png)\n```",
+        "~~~markdown\n![Result](https://example.test/result.png)\n~~~",
+        "Use `![Result](https://example.test/result.png)` in Markdown.",
+        "Use ``a ` tick and ![Result](https://example.test/result.png)``.",
+        '```html\n<details type="tool_calls" done="true" id="sample" name="EXAMPLE" arguments="{}"><summary>Tool Executed</summary>{}</details>\n```',
+    ])("preserves literal code at every chunk boundary: %s", async (content) => {
+        const media = "![Actual result](https://example.test/actual.png)";
+        const source = `${content}\n\n${media}`;
+        const partitions = [
+            [source],
+            ...Array.from({ length: source.length - 1 }, (_, index) => [
+                source.slice(0, index + 1),
+                source.slice(index + 1),
+            ]),
+            [...source],
+        ];
+        for (const partition of partitions) {
+            const chunks = await chunksFrom(
+                partition.map((text, index) =>
+                    contentChunk(text, String(index)),
+                ),
+            );
+            expect(
+                chunks
+                    .filter((chunk) => chunk.type === "text-delta")
+                    .map((chunk) => chunk.delta)
+                    .join(""),
+            ).toBe(`${content}\n\n`);
+            expect(
+                chunks.flatMap((chunk) =>
+                    chunk.type === "data-media" && "data" in chunk
+                        ? [chunk.data]
+                        : [],
+                ),
+            ).toEqual([
+                {
+                    kind: "image",
+                    url: "https://example.test/actual.png",
+                    label: "Actual result",
+                },
+            ]);
+            expect(
+                chunks.filter((chunk) => chunk.type === "tool-input-available"),
+            ).toHaveLength(0);
+        }
+    });
+
+    it("marks an aborted response stopped while preserving received text", async () => {
+        const controller = new AbortController();
+        const client = {
+            async *chatStream(
+                _messages: unknown,
+                options: { signal: AbortSignal },
+            ) {
+                yield contentChunk("Partial answer", "partial");
+                await new Promise<void>((_resolve, reject) => {
+                    if (options.signal.aborted) reject(options.signal.reason);
+                    else
+                        options.signal.addEventListener(
+                            "abort",
+                            () => reject(options.signal.reason),
+                            { once: true },
+                        );
+                });
+            },
+        } as unknown as Pick<Pollinations, "chatStream">;
+        const stream = await new PollinationsChatTransport({
+            client,
+            model: "floret",
+        }).sendMessages({
+            messages: [],
+            abortSignal: controller.signal,
+            trigger: "submit-message",
+            chatId: "cancel-test",
+            messageId: undefined,
+        });
+        const chunks = [];
+        const reader = stream.getReader();
+        while (true) {
+            const { done, value: chunk } = await reader.read();
+            if (done) break;
+            chunks.push(chunk);
+            if (chunk.type === "text-delta") controller.abort();
+        }
+        expect(
+            chunks.find((chunk) => chunk.type === "text-delta"),
+        ).toMatchObject({ delta: "Partial answer" });
+        expect(
+            chunks.find((chunk) => chunk.type === "data-responseStatus"),
+        ).toMatchObject({ data: { status: "cancelled" } });
+        expect(chunks.find((chunk) => chunk.type === "abort")).toMatchObject({
+            reason: "cancelled",
+        });
+    });
 });

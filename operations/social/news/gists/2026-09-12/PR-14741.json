@@ -1,0 +1,35 @@
+{
+  "pr_number": 14741,
+  "title": "feat: computer MCP (persistent per-user filesystem + bash)",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14741",
+  "merged_at": "2026-09-12T14:55:03Z",
+  "labels": [],
+  "pr_body_excerpt": "**What:** every Pollinations user gets a private, persistent computer as a builtin MCP server (`/mcp/computer`): a filesystem plus a bash shell that survive between agent runs.\n\n- Adds `apps/computer-mcp`: a private Worker on `@cloudflare/computer`. One Durable Object per user holds the files; bash (just-bash) runs in a throwaway Worker. Coreutils, grep, sed, awk, jq, tar, curl, git.\n- One tool, `bash`: `command`, optional `stdin` (file content for `cat > path`, no quoting), optional `cwd` (default `/workspace`, created if missing; projects are folders).\n- In: `curl -o` any public URL, `git clone` any public repo. Out: `assets publish <path>` copies a file to the media service and prints its unlisted URL (`MEDIA` service binding, same as ffmpeg-mcp), or `git push` to a repo the user owns with their token in the remote URL. The service mints no credentials and shares nothing between users.\n- Memory is a convention, not a tool: a seeded `/workspace/README.md` tells the agent to keep `memory/facts.md` and a dated `memory/log/`.\n- Billing: flat 0.0002 Pollen per successful call via usage receipt; storage and discovery free.\n- Wiring: registry entry `computer` (enter's agent form picks it up), `COMPUTER_MCP` service binding in gen, docs section, tests.\n\nAlternative on #14742: same wiring, upstream Code Mode example instead of a bash tool.\n\nStaging Worker deployed; production only via `Deploy / Cloudflare production` after promotion. Needs a paid Workers plan (`worker_loaders`).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01WaGsSAmrHYji69S1Hw2EjV\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A computer for every bee",
+    "blurb": "Agents can now keep a little private workshop between runs: files stay put, bash does the chores, and no one has to pretend a README is long-term memory. The new built-in computer MCP brings a persistent workspace to the hive.",
+    "summary": "Added the built-in `/mcp/computer` MCP server, giving every user a private persistent filesystem and a `bash` tool with core utilities, public `curl`/`git clone`, asset publishing, and authenticated pushes to their own repositories.",
+    "impact": "Agents can now carry projects, notes, and generated files across runs in a per-user `/workspace`, then publish assets or push completed work to repositories the user owns.",
+    "keywords": [
+      "mcp",
+      "computer",
+      "bash",
+      "persistent-storage",
+      "agents",
+      "filesystem",
+      "durable-objects"
+    ],
+    "visual_concept": "A cozy shared-but-private garden workshop represents the per-user computer: Polli tends a labeled workspace planter where code-files and memory notes grow permanently, while a small retro terminal runs bash commands. A file cabinet, shell prompt, tiny git branch, and an asset crate headed toward a glowing public URL sign represent persistent files, repository work, and publishing; the scene should make the workspace feel safe, personal, and useful.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny tool belt while tending a private `/workspace` garden shed; persistent code-plants grow from labeled `memory` folders beside a retro CRT terminal showing a bash prompt, with a tiny git branch and asset crate nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, warm lighting, subtle scanlines, pixel-font text: `bash`, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14741.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny tool belt while tending a private `/workspace` garden shed; persistent code-plants grow from labeled `memory` folders beside a retro CRT terminal showing a bash prompt, with a tiny git branch and asset crate nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, warm lighting, subtle scanlines, pixel-font text: `bash`, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-12T14:56:02.218568+00:00"
+}

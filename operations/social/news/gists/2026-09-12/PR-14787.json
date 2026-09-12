@@ -1,0 +1,35 @@
+{
+  "pr_number": 14787,
+  "title": "fix: isolate Floret shell execution on Cloudflare",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/14787",
+  "merged_at": "2026-09-12T18:54:51Z",
+  "labels": [],
+  "pr_body_excerpt": "- Keeps Floret on Cloudflare with disposable Bash containers, preserved workspace files, and caller credentials excluded from the shell.\n- Fixes private handler registration, redirect handling, unsupported AbortSignal RPC, media responses, and terminal stream usage; live production checks passed for text, Bash, images, and audio.\n- Reuses Deploy / Applications on production promotion with the confirmed account, locked Wrangler, Docker checks, and existing domains preserved. No additional deployment workflow or secret changes.\n- Adds deployment regressions and a CI dry run building both Containers; 29 Worker tests, 9 deployment tests, 193 Linux tests pass, with 8 live-gated skips and clean production-source typechecking.\n- Syncs main, fixes formatting, and passes all GitHub checks. Merging into main does not deploy until promotion to production.",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Floret gets a tiny airlock",
+    "blurb": "Floret’s Bash work now runs in its own disposable Cloudflare container, while workspace files stay put and caller credentials stay outside. Text, terminal streams, images, and audio all made it through the garden gate.",
+    "summary": "Floret now isolates Bash execution in disposable Cloudflare containers with preserved workspace files and no caller credentials in the shell, while fixing private handler registration, redirects, media responses, terminal streaming, and unsupported AbortSignal RPC behavior.",
+    "impact": "Floret users gain safer, more reliable agent shell work on Cloudflare, with text, Bash, image, audio, redirects, and streamed terminal output working through the same production-checked path.",
+    "keywords": [
+      "floret",
+      "cloudflare",
+      "bash",
+      "containers",
+      "shell-isolation",
+      "media",
+      "streaming"
+    ],
+    "visual_concept": "Depict Floret as a cozy little garden workstation: a retro terminal sits inside a clear, friendly disposable-container greenhouse, while a separate flowerpot holds the persistent workspace files. Polli, wearing a tiny tool belt, carefully passes a code sprout through an airlock; a small CRT monitor robot watches the terminal stream, making the isolation boundary feel safe and useful rather than ominous.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval black eyes, bright pink rectangular cheek blushes, a small smile, light blue translucent wings, and a tiny tool belt, tending a lime green (#ecf874) code-flower garden beside a clear Cloudflare-style container greenhouse holding a retro Bash terminal; preserved workspace files grow in a flowerpot outside the airlock while a cute CRT monitor robot watches warmly. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow and pixel-font text: \"SHELL, BUT TIDY\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14787.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval black eyes, bright pink rectangular cheek blushes, a small smile, light blue translucent wings, and a tiny tool belt, tending a lime green (#ecf874) code-flower garden beside a clear Cloudflare-style container greenhouse holding a retro Bash terminal; preserved workspace files grow in a flowerpot outside the airlock while a cute CRT monitor robot watches warmly. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow and pixel-font text: \"SHELL, BUT TIDY\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-12T18:55:54.114585+00:00"
+}

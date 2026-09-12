@@ -19,7 +19,6 @@ import {
     normalizeCommunityEndpointInputModalities,
     normalizeCommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
-import type { CommunityProviderIconPreset } from "@shared/community-provider-icon.ts";
 import type { McpServerId } from "@shared/registry/mcp.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 import type { SafetyFeature } from "@shared/schemas/safety.ts";
@@ -66,9 +65,7 @@ export type AgentFormState = AgentFields &
 export type CommunityProviderProfile = {
     name: string | null;
     url: string | null;
-    iconPreset?: CommunityProviderIconPreset | null;
-    hasCustomIcon?: boolean;
-    iconUrl?: string;
+    iconUrl: string | null;
 };
 
 type PendingCommunityEndpointChange = Partial<CommunityEndpointPrices> & {

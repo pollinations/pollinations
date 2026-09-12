@@ -60,6 +60,7 @@ import {
 import {
     communityEndpoint as communityEndpointTable,
     session as sessionTable,
+    user as userTable,
 } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
@@ -6495,7 +6496,7 @@ fixtureTest(
         expect(listResponse.status).toBe(200);
         await expect(listResponse.json()).resolves.toEqual({
             data: [],
-            provider: { name: null, url: null },
+            provider: { name: null, url: null, iconUrl: null },
         });
 
         const incompleteProviderResponse = await fetchEnterApi(
@@ -6533,20 +6534,7 @@ fixtureTest(
         );
         expect(insecureProviderResponse.status).toBe(400);
 
-        const oversizedChunkPayload = JSON.stringify({
-            name: "Example AI",
-            url: "https://example.com",
-            iconSvg: "x".repeat(81 * 1024),
-        });
-        const oversizedChunk = new ReadableStream<Uint8Array>({
-            start(controller) {
-                controller.enqueue(
-                    new TextEncoder().encode(oversizedChunkPayload),
-                );
-                controller.close();
-            },
-        });
-        const chunkedProviderResponse = await fetchEnterApi(
+        const invalidIconResponse = await fetchEnterApi(
             enterApi,
             new Request(
                 "http://localhost:3000/api/account/my-models/provider",
@@ -6556,12 +6544,15 @@ fixtureTest(
                         Authorization: `Bearer ${key}`,
                         "Content-Type": "application/json",
                     },
-                    body: oversizedChunk,
-                    duplex: "half",
-                } as RequestInit,
+                    body: JSON.stringify({
+                        name: "Example AI",
+                        url: "https://example.com",
+                        iconUrl: "https://tracker.test/icon.svg",
+                    }),
+                },
             ),
         );
-        expect(chunkedProviderResponse.status).not.toBe(200);
+        expect(invalidIconResponse.status).toBe(400);
 
         const providerResponse = await fetchEnterApi(
             enterApi,
@@ -6584,6 +6575,7 @@ fixtureTest(
         await expect(providerResponse.json()).resolves.toEqual({
             name: "Example AI",
             url: "https://example.com/",
+            iconUrl: null,
         });
 
         const iconProviderResponse = await fetchEnterApi(
@@ -6599,31 +6591,19 @@ fixtureTest(
                     body: JSON.stringify({
                         name: "Example AI",
                         url: "https://example.com",
-                        iconPreset: "openai",
-                        iconSvg:
-                            '<svg viewBox="0 0 1 1"><path d="M0 0h1v1H0z" fill="#000"/></svg>',
+                        iconUrl:
+                            "https://media.pollinations.ai/123e4567-e89b-12d3-a456-426614174000",
                     }),
                 },
             ),
         );
-        const iconProviderBody = await iconProviderResponse.text();
         expect(iconProviderResponse.status).toBe(200);
-        expect(JSON.parse(iconProviderBody)).toEqual({
+        await expect(iconProviderResponse.json()).resolves.toEqual({
             name: "Example AI",
             url: "https://example.com/",
-            iconPreset: "openai",
-            hasCustomIcon: true,
+            iconUrl:
+                "https://media.pollinations.ai/123e4567-e89b-12d3-a456-426614174000",
         });
-
-        const iconResponse = await fetchEnterApi(
-            enterApi,
-            new Request(
-                `http://localhost:3000/api/community-icons/${userId}.svg`,
-            ),
-        );
-        const iconBody = await iconResponse.text();
-        expect(iconResponse.status).toBe(404);
-        expect(iconBody).toBe("");
 
         const createResponse = await fetchEnterApi(
             enterApi,
@@ -6793,13 +6773,6 @@ fixtureTest(
             hidden: true,
             hiddenReason: "Hidden by owner",
         });
-        const hiddenIconResponse = await fetchEnterApi(
-            enterApi,
-            new Request(
-                `http://localhost:3000/api/community-icons/${userId}.svg`,
-            ),
-        );
-        expect(hiddenIconResponse.status).toBe(404);
         await maturePendingCommunityEndpoint(secondCreated.id as string);
 
         // Minimum-price policy is independent of visibility: any non-negative
@@ -6952,32 +6925,15 @@ fixtureTest(
                 hiddenBy: null,
             })
             .where(eq(communityEndpointTable.id, createdId));
-        const publicIconResponse = await fetchEnterApi(
-            enterApi,
-            new Request(
-                `http://localhost:3000/api/community-icons/${userId}.svg`,
-            ),
-        );
-        const publicIconBody = await publicIconResponse.text();
-        expect(publicIconResponse.status, publicIconBody).toBe(200);
-        expect(publicIconResponse.headers.get("content-type")).toContain(
-            "image/svg+xml",
-        );
-        expect(publicIconResponse.headers.get("x-content-type-options")).toBe(
-            "nosniff",
-        );
-        expect(publicIconBody).toContain('xmlns="http://www.w3.org/2000/svg"');
         await db
             .update(communityEndpointTable)
             .set({ visibility: "public" })
             .where(eq(communityEndpointTable.id, secondCreated.id as string));
 
-        const genIconResponse = await fetchGen(
+        const removedIconProxy = await fetchGen(
             `https://gen.pollinations.ai/api/community-icons/${userId}.svg`,
         );
-        const genIconBody = await genIconResponse.text();
-        expect(genIconResponse.status, genIconBody).toBe(200);
-        expect(genIconBody).toBe("enter test stub");
+        expect(removedIconProxy.status).toBe(404);
 
         const secondListResponse = await fetchEnterApi(
             enterApi,
@@ -6990,15 +6946,18 @@ fixtureTest(
         expect(secondListResponse.status).toBe(200);
         const secondList = (await secondListResponse.json()) as {
             data: Record<string, unknown>[];
-            provider: { name: string | null; url: string | null };
+            provider: {
+                name: string | null;
+                url: string | null;
+                iconUrl: string | null;
+            };
         };
         expect(secondList.data).toHaveLength(2);
         expect(secondList.provider).toEqual({
             name: "Example AI",
             url: "https://example.com/",
-            iconPreset: "openai",
-            hasCustomIcon: true,
-            iconUrl: `/api/community-icons/${userId}.svg`,
+            iconUrl:
+                "https://media.pollinations.ai/123e4567-e89b-12d3-a456-426614174000",
         });
         expect(
             secondList.data.find(
@@ -7011,14 +6970,36 @@ fixtureTest(
         expect(secondList.data[0]).not.toHaveProperty("bearerToken");
         expect(secondList.data[0]).not.toHaveProperty("bearerTokenCiphertext");
 
+        await db
+            .update(userTable)
+            .set({ communityProviderIconUrl: "https://tracker.test/icon.svg" })
+            .where(eq(userTable.id, userId));
+        const unsafeStoredIconResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                headers: { Authorization: `Bearer ${key}` },
+            }),
+        );
+        expect(unsafeStoredIconResponse.status).toBe(200);
+        await expect(unsafeStoredIconResponse.json()).resolves.toMatchObject({
+            provider: { iconUrl: null },
+        });
+        await db
+            .update(userTable)
+            .set({
+                communityProviderIconUrl:
+                    "https://media.pollinations.ai/123e4567-e89b-12d3-a456-426614174000",
+            })
+            .where(eq(userTable.id, userId));
+
         const registryEntry = (
             await getCommunityModelRegistryEntries(env)
         ).find((entry) => entry.id === `${ownerGithubUsername}/my-test-model`);
         expect(registryEntry?.info).toMatchObject({
             publisher: "Example AI",
             brand_url: "https://example.com/",
-            brand_icon_preset: "openai",
-            brand_icon_url: `/api/community-icons/${userId}.svg`,
+            brand_icon_url:
+                "https://media.pollinations.ai/123e4567-e89b-12d3-a456-426614174000",
         });
         expect(registryEntry?.communityEndpoint.perUserRpm).toBe(0.5);
 
@@ -7038,8 +7019,8 @@ fixtureTest(
             ].includes(entry.id),
         )) {
             expect(entry.info).toMatchObject({
-                brand_icon_preset: "openai",
-                brand_icon_url: `/api/community-icons/${userId}.svg`,
+                brand_icon_url:
+                    "https://media.pollinations.ai/123e4567-e89b-12d3-a456-426614174000",
             });
         }
 
@@ -7056,8 +7037,7 @@ fixtureTest(
                     body: JSON.stringify({
                         name: "Example AI",
                         url: "https://example.com",
-                        iconPreset: "google",
-                        iconSvg: null,
+                        iconUrl: null,
                     }),
                 },
             ),
@@ -7066,8 +7046,7 @@ fixtureTest(
         await expect(removeIconResponse.json()).resolves.toEqual({
             name: "Example AI",
             url: "https://example.com/",
-            iconPreset: "google",
-            hasCustomIcon: false,
+            iconUrl: null,
         });
 
         const clearLimitResponse = await fetchEnterApi(

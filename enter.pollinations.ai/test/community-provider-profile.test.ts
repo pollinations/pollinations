@@ -1,81 +1,88 @@
-import {
-    isCommunityProviderIconPreset,
-    sanitizeCommunityProviderSvg,
-} from "@shared/community-provider-profile.ts";
+import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
+import { ModelInfoSchema } from "@shared/registry/model-info.ts";
 import { expect, test } from "vitest";
-import {
-    getModelBrandLogoPath,
-    isSafeCommunityProviderIconUrl,
-} from "../frontend/src/components/models/model-info.ts";
+import { getCommunityModelIcon } from "../frontend/src/components/models/model-icons.tsx";
+import { getModelBrandLogoPath } from "../frontend/src/components/models/model-info.ts";
 import type { ModelPrice } from "../frontend/src/components/models/types.ts";
 
-const VALID_SVG =
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#000" d="M1 1h22v22H1z"/></svg>';
+const VALID_ICON_URL =
+    "https://media.pollinations.ai/123e4567-e89b-12d3-a456-426614174000";
 
-test("sanitizes a valid publisher SVG by rebuilding an allowlisted tree", () => {
-    const result = sanitizeCommunityProviderSvg(VALID_SVG);
-
-    expect(result).toContain('xmlns="http://www.w3.org/2000/svg"');
-    expect(result).toContain("<path");
-    expect(result).toContain('fill="#000"');
-    expect(result?.match(/xmlns=/gu)).toHaveLength(1);
-});
-
-test.each([
-    ["script", '<svg viewBox="0 0 1 1"><script>alert(1)</script></svg>'],
-    [
-        "event",
-        '<svg viewBox="0 0 1 1" onload="alert(1)"><path d="M0 0"/></svg>',
-    ],
-    [
-        "external",
-        '<svg viewBox="0 0 1 1"><path fill="url(https://evil.test/x)" d="M0 0"/></svg>',
-    ],
-    ["doctype", '<!DOCTYPE svg><svg viewBox="0 0 1 1"><path d="M0 0"/></svg>'],
-    ["processing instruction", '<?xml version="1.0"?><svg viewBox="0 0 1 1"/>'],
-    ["entity", '<svg viewBox="0 0 1 1">&amp;</svg>'],
-    ["style", '<svg viewBox="0 0 1 1"><style>.x{fill:red}</style></svg>'],
-    ["use", '<svg viewBox="0 0 1 1"><use href="#x"/></svg>'],
-    ["href", '<svg viewBox="0 0 1 1"><path href="https://evil.test"/></svg>'],
-    [
-        "foreign object",
-        '<svg viewBox="0 0 1 1"><foreignObject><div>x</div></foreignObject></svg>',
-    ],
-    ["invalid viewBox", '<svg viewBox="0 0 0 1"><path d="M0 0"/></svg>'],
-] as const)("rejects unsafe %s SVG", (_name, input) => {
-    expect(sanitizeCommunityProviderSvg(input)).toBeNull();
-});
-
-test("resolves custom, preset, and generic community icons safely", () => {
-    const custom = {
-        community: true,
-        brandIconPreset: "openai",
-        brandIconUrl: "/api/community-icons/user_1.svg",
-    } as ModelPrice;
-    expect(getModelBrandLogoPath(custom)).toBe(
-        "/api/community-icons/user_1.svg",
-    );
+test("accepts canonical media object URLs and rejects other origins or paths", () => {
+    expect(isCommunityProviderIconUrl(VALID_ICON_URL)).toBe(true);
     expect(
-        isSafeCommunityProviderIconUrl("https://tracker.test/icon.svg"),
-    ).toBe(false);
+        isCommunityProviderIconUrl(
+            `https://media.pollinations.ai/${"a".repeat(195)}`,
+        ),
+    ).toBe(true);
+    expect(
+        isCommunityProviderIconUrl(
+            `https://media.pollinations.ai/u_${"a".repeat(64)}_my_icon.svg`,
+        ),
+    ).toBe(true);
 
-    const preset = {
-        community: true,
-        brandIconPreset: "google",
-        brandIconUrl: "/api/community-icons/bad id.svg",
-    } as ModelPrice;
-    expect(getModelBrandLogoPath(preset)).toBe("/brand-logos/google.svg");
+    for (const value of [
+        null,
+        undefined,
+        "",
+        "https://tracker.test/icon.svg",
+        "http://media.pollinations.ai/icon.svg",
+        "https://user@media.pollinations.ai/icon.svg",
+        "https://user:password@media.pollinations.ai/icon.svg",
+        "https://media.pollinations.ai:443/icon.svg",
+        "https://MEDIA.POLLINATIONS.AI/icon.svg",
+        "https://media.pollinations.ai.evil.test/icon.svg",
+        "https://media.pollinations.ai/icon.svg?redirect=https://evil.test",
+        "https://media.pollinations.ai/icon.svg#fragment",
+        "https://media.pollinations.ai/a/b",
+        "https://media.pollinations.ai/a%2Fb",
+        "https://media.pollinations.ai/a\\b",
+        `https://media.pollinations.ai/${"a".repeat(196)}`,
+    ]) {
+        expect(isCommunityProviderIconUrl(value)).toBe(false);
+    }
+});
+
+test("model metadata accepts only canonical media icon URLs", () => {
+    expect(
+        ModelInfoSchema.shape.brand_icon_url.safeParse(VALID_ICON_URL).success,
+    ).toBe(true);
+    expect(
+        ModelInfoSchema.shape.brand_icon_url.safeParse(
+            "https://tracker.test/icon.svg",
+        ).success,
+    ).toBe(false);
+});
+
+test("catalog uses the direct media URL and falls back for unsafe icon metadata", () => {
+    expect(
+        getModelBrandLogoPath({
+            community: true,
+            brandIconUrl: VALID_ICON_URL,
+        } as ModelPrice),
+    ).toBe(VALID_ICON_URL);
+    expect(
+        getModelBrandLogoPath({
+            community: true,
+            brandIconUrl: "https://tracker.test/icon.svg",
+        } as ModelPrice),
+    ).toBeUndefined();
     expect(
         getModelBrandLogoPath({ community: true } as ModelPrice),
     ).toBeUndefined();
 });
 
-test("rejects oversized SVG and recognizes only approved presets", () => {
+test("community models keep a generic icon available when a custom mask is unavailable", () => {
     expect(
-        sanitizeCommunityProviderSvg(
-            `<svg viewBox="0 0 1 1">${'<path d="M0 0"/>'.repeat(5000)}</svg>`,
-        ),
-    ).toBeNull();
-    expect(isCommunityProviderIconPreset("openai")).toBe(true);
-    expect(isCommunityProviderIconPreset("custom")).toBe(false);
+        getCommunityModelIcon({ community: true, type: "text" } as ModelPrice),
+    ).toBeDefined();
+    expect(
+        getCommunityModelIcon({ community: true, type: "image" } as ModelPrice),
+    ).toBeDefined();
+    expect(
+        getCommunityModelIcon({ community: true, type: "audio" } as ModelPrice),
+    ).toBeDefined();
+    expect(
+        getCommunityModelIcon({ community: false, type: "text" } as ModelPrice),
+    ).toBeUndefined();
 });

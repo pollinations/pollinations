@@ -15,17 +15,7 @@ import {
     COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
     COMMUNITY_PROVIDER_URL_MAX_LENGTH,
 } from "@shared/community-endpoints.ts";
-import {
-    COMMUNITY_PROVIDER_ICON_PRESETS,
-    type CommunityProviderIconPreset,
-} from "@shared/community-provider-icon.ts";
-import {
-    type ChangeEvent,
-    type FormEvent,
-    useCallback,
-    useEffect,
-    useState,
-} from "react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { AgentDeleteConfirmation } from "./agent-delete-confirmation.tsx";
 import { AgentDialog } from "./agent-dialog.tsx";
@@ -69,29 +59,18 @@ export function CommunityEndpoints({
     const [error, setError] = useState<string | null>(null);
     const [providerName, setProviderName] = useState("");
     const [providerUrl, setProviderUrl] = useState("");
-    const [providerIconPreset, setProviderIconPreset] =
-        useState<CommunityProviderIconPreset | null>(null);
-    const [providerIconSvg, setProviderIconSvg] = useState<string | null>(null);
-    const [removeProviderIcon, setRemoveProviderIcon] = useState(false);
+    const [providerIconUrl, setProviderIconUrl] = useState("");
     const [savedProvider, setSavedProvider] =
         useState<CommunityProviderProfile>({
             name: null,
             url: null,
-            iconPreset: null,
-            hasCustomIcon: false,
+            iconUrl: null,
         });
     const [isSavingProvider, setIsSavingProvider] = useState(false);
     const providerIsSaved =
         providerName === (savedProvider.name ?? "") &&
         providerUrl === (savedProvider.url ?? "") &&
-        providerIconPreset === savedProvider.iconPreset &&
-        !removeProviderIcon &&
-        !providerIconSvg;
-    const customIconPreviewUrl = providerIconSvg
-        ? `data:image/svg+xml,${encodeURIComponent(providerIconSvg)}`
-        : !removeProviderIcon && savedProvider.hasCustomIcon
-          ? savedProvider.iconUrl
-          : undefined;
+        providerIconUrl === (savedProvider.iconUrl ?? "");
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState<EditableEndpoint | null>(null);
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
@@ -129,13 +108,10 @@ export function CommunityEndpoints({
         setAgents(agentBody.data);
         setProviderName(endpointBody.provider.name ?? "");
         setProviderUrl(endpointBody.provider.url ?? "");
-        setProviderIconPreset(endpointBody.provider.iconPreset ?? null);
-        setProviderIconSvg(null);
-        setRemoveProviderIcon(false);
+        setProviderIconUrl(endpointBody.provider.iconUrl ?? "");
         setSavedProvider({
             ...endpointBody.provider,
-            iconPreset: endpointBody.provider.iconPreset ?? null,
-            hasCustomIcon: endpointBody.provider.hasCustomIcon ?? false,
+            iconUrl: endpointBody.provider.iconUrl ?? null,
         });
         setIsLoading(false);
     }, []);
@@ -273,25 +249,17 @@ export function CommunityEndpoints({
                 json: {
                     name: providerName,
                     url: providerUrl,
-                    iconPreset: providerIconPreset,
-                    ...(removeProviderIcon
-                        ? { iconSvg: null }
-                        : providerIconSvg
-                          ? { iconSvg: providerIconSvg }
-                          : {}),
+                    iconUrl: providerIconUrl.trim() || null,
                 },
             });
             if (!response.ok) throw new Error(await readError(response));
             const profile = (await response.json()) as CommunityProviderProfile;
             setProviderName(profile.name ?? "");
             setProviderUrl(profile.url ?? "");
-            setProviderIconPreset(profile.iconPreset ?? null);
-            setProviderIconSvg(null);
-            setRemoveProviderIcon(false);
+            setProviderIconUrl(profile.iconUrl ?? "");
             setSavedProvider({
                 ...profile,
-                iconPreset: profile.iconPreset ?? null,
-                hasCustomIcon: profile.hasCustomIcon ?? false,
+                iconUrl: profile.iconUrl ?? null,
             });
             await onChange?.();
         } catch (thrown) {
@@ -305,34 +273,10 @@ export function CommunityEndpoints({
         }
     }
 
-    async function handleProviderIconChange(
-        event: ChangeEvent<HTMLInputElement>,
-    ): Promise<void> {
-        const file = event.currentTarget.files?.[0];
-        event.currentTarget.value = "";
-        if (!file) return;
-        if (file.size > 64 * 1024) {
-            setError("Custom icon must be 64 KiB or smaller");
-            return;
-        }
-        if (
-            file.type !== "image/svg+xml" &&
-            !file.name.toLowerCase().endsWith(".svg")
-        ) {
-            setError("Custom icon must be an SVG file");
-            return;
-        }
-        setProviderIconSvg(await file.text());
-        setRemoveProviderIcon(false);
-        setError(null);
-    }
-
     function resetProviderChanges(): void {
         setProviderName(savedProvider.name ?? "");
         setProviderUrl(savedProvider.url ?? "");
-        setProviderIconPreset(savedProvider.iconPreset ?? null);
-        setProviderIconSvg(null);
-        setRemoveProviderIcon(false);
+        setProviderIconUrl(savedProvider.iconUrl ?? "");
         setError(null);
     }
 
@@ -473,112 +417,33 @@ export function CommunityEndpoints({
                                         }
                                     />
                                 </FieldStack>
-                                <FieldStack label="Icon preset">
-                                    <select
-                                        name="community-provider-icon-preset"
-                                        value={providerIconPreset ?? ""}
-                                        className="h-10 rounded-md border border-divider bg-surface px-3 text-sm text-theme-text-base"
+                                <FieldStack label="Brand icon URL">
+                                    <Input
+                                        type="url"
+                                        name="community-provider-icon-url"
+                                        value={providerIconUrl}
+                                        placeholder="https://media.pollinations.ai/…"
+                                        autoComplete="url"
+                                        aria-describedby="community-provider-icon-help"
                                         onChange={(event) =>
-                                            setProviderIconPreset(
-                                                (event.target.value ||
-                                                    null) as CommunityProviderIconPreset | null,
+                                            setProviderIconUrl(
+                                                event.target.value,
                                             )
                                         }
-                                    >
-                                        <option value="">
-                                            Generic community icon
-                                        </option>
-                                        {COMMUNITY_PROVIDER_ICON_PRESETS.map(
-                                            (preset) => (
-                                                <option
-                                                    key={preset}
-                                                    value={preset}
-                                                >
-                                                    {preset[0].toUpperCase() +
-                                                        preset.slice(1)}
-                                                </option>
-                                            ),
-                                        )}
-                                    </select>
-                                    {customIconPreviewUrl ? (
-                                        <img
-                                            src={customIconPreviewUrl}
-                                            alt=""
-                                            aria-hidden="true"
-                                            className="mt-2 h-8 w-8 object-contain"
-                                        />
-                                    ) : providerIconPreset ? (
-                                        <span
-                                            aria-hidden="true"
-                                            className="mt-2 block h-8 w-8 bg-current text-ink-900 opacity-55"
-                                            style={{
-                                                maskImage: `url(/brand-logos/${providerIconPreset ?? "community"}.svg)`,
-                                                WebkitMaskImage: `url(/brand-logos/${providerIconPreset ?? "community"}.svg)`,
-                                                maskRepeat: "no-repeat",
-                                                WebkitMaskRepeat: "no-repeat",
-                                                maskPosition: "center",
-                                                WebkitMaskPosition: "center",
-                                                maskSize: "contain",
-                                                WebkitMaskSize: "contain",
-                                            }}
-                                        />
-                                    ) : (
-                                        <BotIcon
-                                            aria-hidden="true"
-                                            className="mt-2 h-8 w-8 text-ink-900 opacity-55"
-                                        />
-                                    )}
-                                    {!removeProviderIcon &&
-                                        (savedProvider.hasCustomIcon ||
-                                            providerIconSvg) && (
-                                            <span className="text-xs text-theme-text-muted">
-                                                Custom SVG{" "}
-                                                {providerIconSvg
-                                                    ? "pending"
-                                                    : savedProvider.iconUrl
-                                                      ? "active"
-                                                      : "saved (preview unavailable until a public model)"}{" "}
-                                                (overrides preset)
-                                            </span>
-                                        )}
-                                </FieldStack>
-                                <FieldStack label="Custom SVG icon">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <Input
-                                            type="file"
-                                            accept="image/svg+xml,.svg"
-                                            name="community-provider-icon-svg"
-                                            aria-describedby="community-provider-icon-help"
-                                            onChange={(event) =>
-                                                void handleProviderIconChange(
-                                                    event,
-                                                )
-                                            }
-                                        />
-                                        {!removeProviderIcon &&
-                                            (savedProvider.hasCustomIcon ||
-                                                providerIconSvg) && (
-                                                <Button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setProviderIconSvg(
-                                                            null,
-                                                        );
-                                                        setRemoveProviderIcon(
-                                                            true,
-                                                        );
-                                                    }}
-                                                >
-                                                    Remove custom
-                                                </Button>
-                                            )}
-                                    </div>
+                                    />
                                     <span
                                         id="community-provider-icon-help"
                                         className="text-xs text-theme-text-muted"
                                     >
-                                        Safe SVG, up to 64 KiB. Custom icons
-                                        override presets.
+                                        Upload an SVG with{" "}
+                                        <code>polli upload icon.svg</code> or
+                                        POST it to{" "}
+                                        <code>
+                                            https://media.pollinations.ai/upload
+                                        </code>
+                                        , then paste the returned URL. Uploads
+                                        expire after 30 days unless fetched
+                                        after day 15.
                                     </span>
                                 </FieldStack>
                             </div>

@@ -65,7 +65,6 @@ export type ModelPrice = {
     description?: string;
     publisher?: string;
     brandUrl?: string;
-    brandIconPreset?: string;
     brandIconUrl?: string;
     inputModalities?: string[];
     outputModalities?: string[];

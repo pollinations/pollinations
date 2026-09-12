@@ -1,29 +1,7 @@
-export const COMMUNITY_PROVIDER_ICON_PRESETS = [
-    "google",
-    "openai",
-    "anthropic",
-    "deepseek",
-    "qwen",
-    "zai",
-    "meta",
-    "moonshot",
-    "xai",
-    "minimax",
-    "cohere",
-    "nvidia",
-    "poolside",
-] as const;
+const COMMUNITY_PROVIDER_ICON_URL =
+    /^https:\/\/media\.pollinations\.ai\/[A-Za-z0-9][A-Za-z0-9._-]{0,194}$/u;
 
-export type CommunityProviderIconPreset =
-    (typeof COMMUNITY_PROVIDER_ICON_PRESETS)[number];
-
-export const COMMUNITY_PROVIDER_ICON_MAX_BYTES = 64 * 1024;
-
-export function isCommunityProviderIconPreset(
-    value: unknown,
-): value is CommunityProviderIconPreset {
-    return (
-        typeof value === "string" &&
-        (COMMUNITY_PROVIDER_ICON_PRESETS as readonly string[]).includes(value)
-    );
+/** Only canonical object URLs from the public media service are safe as icons. */
+export function isCommunityProviderIconUrl(value: unknown): value is string {
+    return typeof value === "string" && COMMUNITY_PROVIDER_ICON_URL.test(value);
 }

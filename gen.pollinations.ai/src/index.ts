@@ -118,10 +118,6 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .all("/api/docs", redirectLegacyDocs)
     .all("/api/docs/", redirectLegacyDocs)
     .all("/api/docs/*", redirectLegacyDocs)
-    .all("/api/community-icons/*", (c) => {
-        const url = new URL(c.req.url);
-        return fetchEnter(c, url);
-    })
     .all("/api", () => notFound())
     .all("/api/*", () => notFound())
     .all("/account", (c) => fetchEnter(c, new URL(c.req.url)))

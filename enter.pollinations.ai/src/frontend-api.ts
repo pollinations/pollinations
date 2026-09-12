@@ -4,7 +4,6 @@ import { accountRoutes } from "./routes/account.ts";
 import { publicAgentSyncRoutes } from "./routes/agents.ts";
 import { apiKeysRoutes } from "./routes/api-keys.ts";
 import { appLookupRoutes } from "./routes/app-lookup.ts";
-import { communityProviderIconRoutes } from "./routes/community-provider-icon.ts";
 import { customerRoutes } from "./routes/customer.ts";
 import { deviceRoutes } from "./routes/device.ts";
 import { integrationsRoutes } from "./routes/integrations.ts";
@@ -16,7 +15,6 @@ import { statusNoticeRoutes } from "./routes/status-notice.ts";
 import { stripeRoutes } from "./routes/stripe.ts";
 
 export const frontendApi = new Hono<Env>()
-    .route("/community-icons", communityProviderIconRoutes)
     .route("/customer", customerRoutes)
     .route("/stripe", stripeRoutes)
     .route("/api-keys", apiKeysRoutes)

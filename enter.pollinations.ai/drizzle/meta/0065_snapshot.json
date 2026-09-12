@@ -1965,15 +1965,8 @@
           "notNull": false,
           "autoincrement": false
         },
-        "community_provider_icon_preset": {
-          "name": "community_provider_icon_preset",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "community_provider_icon_svg": {
-          "name": "community_provider_icon_svg",
+        "community_provider_icon_url": {
+          "name": "community_provider_icon_url",
           "type": "text",
           "primaryKey": false,
           "notNull": false,

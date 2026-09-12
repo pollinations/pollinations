@@ -21,6 +21,7 @@ export type DialogProps = {
     title?: ReactNode;
     ariaLabel?: string;
     labelledBy?: string;
+    initialFocusEl?: () => HTMLElement | null;
     size?: keyof typeof sizeClasses;
     showBackdrop?: boolean;
     positionerClassName?: string;
@@ -38,6 +39,7 @@ export const Dialog: FC<DialogProps> = ({
     title,
     ariaLabel,
     labelledBy,
+    initialFocusEl,
     size = "md",
     showBackdrop = true,
     positionerClassName,
@@ -50,7 +52,7 @@ export const Dialog: FC<DialogProps> = ({
         <ArkDialog.Root
             open={open}
             closeOnInteractOutside={closeOnInteractOutside}
-            initialFocusEl={() => contentRef.current}
+            initialFocusEl={initialFocusEl ?? (() => contentRef.current)}
             onOpenChange={(details) => onOpenChange?.(details.open)}
         >
             {trigger && (

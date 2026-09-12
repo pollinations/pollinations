@@ -28,6 +28,7 @@ export type AuthModalProps = {
     dialog?: {
         label?: string;
         labelledBy?: string;
+        initialFocusEl?: () => HTMLElement | null;
     };
 };
 
@@ -42,6 +43,7 @@ export function AuthModal({
             showBackdrop={false}
             ariaLabel={dialog?.label}
             labelledBy={dialog?.labelledBy}
+            initialFocusEl={dialog?.initialFocusEl}
             positionerClassName="polli:items-start polli:overflow-y-auto polli:bg-app-bg polli:p-0 polli:sm:p-4"
             contentClassName={cn(
                 "polli:bg-surface-white polli:border-0 polli:rounded-none polli:shadow-none polli:max-w-xl polli:w-full polli:my-0 polli:min-h-dvh polli:max-h-dvh polli:sm:rounded-2xl polli:sm:shadow-container polli:sm:my-auto polli:sm:min-h-0 polli:sm:max-h-[calc(100dvh-2rem)]",

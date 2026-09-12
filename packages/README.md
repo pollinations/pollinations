@@ -30,6 +30,12 @@ A small set of helper scripts for exposing a self-hosted [n8n](https://n8n.io) a
 
 **Who it's for:** the Pollinations team and self-hosters running n8n alongside Pollinations.
 
+### [llm-pollinations/](./llm-pollinations) — the `llm` CLI plugin
+
+A native Pollinations provider for Simon Willison's [llm](https://llm.datasette.io/) tool. Install it, set your key once, and prompt any Pollinations text model from the terminal or Python as `pollinations/<model-id>`.
+
+**Who it's for:** terminal-first developers and scripters who already use `llm` and want Pollinations models inside it.
+
 ## How they relate
 
 - **SDK** and **CLI** are two different doorways into the same Pollinations API — one for code, one for terminals.

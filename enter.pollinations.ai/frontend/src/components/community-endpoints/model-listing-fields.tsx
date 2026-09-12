@@ -1,6 +1,7 @@
 import {
     ButtonGroup,
     CheckIcon,
+    Field,
     FieldStack,
     InlineLink,
     Input,
@@ -77,11 +78,11 @@ export function ModelListingFields({
     const canAdvertise = modality === "text";
 
     return (
-        <>
+        <div className="space-y-3">
             {!isAgent && (
                 <FieldStack
                     label="Accepted inputs"
-                    helper="Select every input type supported by this model. At least one is required."
+                    helper="Select supported inputs. At least one is required."
                     alignLabelRow
                 >
                     <ButtonGroup aria-label="Accepted input modalities">
@@ -133,57 +134,63 @@ export function ModelListingFields({
                     }
                     alignLabelRow
                 >
-                    <Input
-                        name="community-model-name"
-                        value={form.name}
-                        placeholder={isAgent ? "my-agent" : "my-model"}
-                        autoComplete="off"
-                        autoCapitalize="none"
-                        spellCheck={false}
-                        required={required}
-                        onChange={(event) =>
-                            onChange("name", event.target.value)
-                        }
-                    />
+                    <Field.Input asChild>
+                        <Input
+                            name="community-model-name"
+                            value={form.name}
+                            placeholder={isAgent ? "my-agent" : "my-model"}
+                            autoComplete="off"
+                            autoCapitalize="none"
+                            spellCheck={false}
+                            required={required}
+                            onChange={(event) =>
+                                onChange("name", event.target.value)
+                            }
+                        />
+                    </Field.Input>
                 </FieldStack>
-                <FieldStack
-                    label="Title"
-                    helper="Display name shown in the Models list."
-                    alignLabelRow
-                >
-                    <Input
-                        name="community-model-title"
-                        value={form.title}
-                        placeholder={isAgent ? "My Agent" : "My Model"}
-                        autoComplete="off"
-                        maxLength={COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH}
-                        required={required}
-                        onChange={(event) =>
-                            onChange("title", event.target.value)
-                        }
-                    />
+                <FieldStack label="Title" alignLabelRow>
+                    <Field.Input asChild>
+                        <Input
+                            name="community-model-title"
+                            value={form.title}
+                            placeholder={isAgent ? "My Agent" : "My Model"}
+                            autoComplete="off"
+                            maxLength={COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH}
+                            required={required}
+                            onChange={(event) =>
+                                onChange("title", event.target.value)
+                            }
+                        />
+                    </Field.Input>
                 </FieldStack>
             </div>
 
             <FieldStack
                 label="Description"
-                helper="Optional. One line about what the model is good at."
+                helper={
+                    isAgent
+                        ? "Optional. What the agent does."
+                        : "Optional. What the model does."
+                }
                 alignLabelRow
             >
-                <Input
-                    name="community-model-description"
-                    value={form.description}
-                    placeholder={
-                        isAgent
-                            ? "Research assistant with web tools"
-                            : "Fast coding model, long context"
-                    }
-                    autoComplete="off"
-                    maxLength={COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH}
-                    onChange={(event) =>
-                        onChange("description", event.target.value)
-                    }
-                />
+                <Field.Input asChild>
+                    <Input
+                        name="community-model-description"
+                        value={form.description}
+                        placeholder={
+                            isAgent
+                                ? "Research assistant with web tools"
+                                : "Fast coding model, long context"
+                        }
+                        autoComplete="off"
+                        maxLength={COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH}
+                        onChange={(event) =>
+                            onChange("description", event.target.value)
+                        }
+                    />
+                </Field.Input>
             </FieldStack>
 
             <FieldStack
@@ -191,11 +198,11 @@ export function ModelListingFields({
                 helper={
                     isPublic
                         ? isAgent
-                            ? "Public: listed in /models and callable by anyone. Calls use the caller's Pollinations balance and API-key permissions."
-                            : "Public: listed in /models and callable by anyone. Set optional prices below, or leave them at 0 for free."
+                            ? "Listed in /models. Calls use the caller's Pollen and API permissions."
+                            : "Listed in /models. Set prices below, or leave them at 0 for free."
                         : canPublish
-                          ? "Private: callable only by you and shown only in model lists authenticated with your API key."
-                          : "Private: callable only by you. Publishing publicly requires approval."
+                          ? "Only you can use it."
+                          : "Only you can use it. Public publishing requires approval."
                 }
                 alignLabelRow
             >
@@ -257,17 +264,19 @@ export function ModelListingFields({
                     helper="Context window in tokens. Leave blank to advertise none."
                     alignLabelRow
                 >
-                    <Input
-                        name="community-model-context-length"
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={form.contextLength}
-                        placeholder="Not advertised"
-                        onChange={(event) =>
-                            onChange("contextLength", event.target.value)
-                        }
-                    />
+                    <Field.Input asChild>
+                        <Input
+                            name="community-model-context-length"
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={form.contextLength}
+                            placeholder="Not advertised"
+                            onChange={(event) =>
+                                onChange("contextLength", event.target.value)
+                            }
+                        />
+                    </Field.Input>
                 </FieldStack>
             )}
 
@@ -276,18 +285,20 @@ export function ModelListingFields({
                     label="Per-user RPM"
                     helper="Optional. Maximum requests each Pollinations user can send per minute. Decimals are supported (0.5 = one request every 2 minutes). Leave blank for no Pollinations-side limit."
                 >
-                    <Input
-                        name="community-per-user-rpm"
-                        type="number"
-                        step="any"
-                        value={form.perUserRpm}
-                        placeholder="No limit"
-                        onChange={(event) =>
-                            onChange("perUserRpm", event.target.value)
-                        }
-                    />
+                    <Field.Input asChild>
+                        <Input
+                            name="community-per-user-rpm"
+                            type="number"
+                            step="any"
+                            value={form.perUserRpm}
+                            placeholder="No limit"
+                            onChange={(event) =>
+                                onChange("perUserRpm", event.target.value)
+                            }
+                        />
+                    </Field.Input>
                 </FieldStack>
             )}
-        </>
+        </div>
     );
 }

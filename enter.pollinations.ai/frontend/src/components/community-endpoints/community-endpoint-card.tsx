@@ -88,7 +88,6 @@ export function CommunityEndpointCard({
                     <Button
                         type="button"
                         size="sm"
-                        intent={endpoint.hidden ? "info" : "danger"}
                         disabled={isToggling}
                         onClick={onToggle}
                     >
@@ -109,8 +108,8 @@ export function CommunityEndpointCard({
                     </IconButton>
                     <IconButton
                         intent="danger"
-                        title="Delete model"
-                        tooltip="Delete model"
+                        title={isAgent ? "Delete agent" : "Delete model"}
+                        tooltip={isAgent ? "Delete agent" : "Delete model"}
                         tooltipAlign="center"
                         onClick={onDelete}
                     >
@@ -122,7 +121,9 @@ export function CommunityEndpointCard({
             {endpoint.hidden && (
                 <Alert intent="danger" className="mt-3">
                     <div className="flex flex-col gap-1">
-                        <span className="font-semibold">Model hidden</span>
+                        <span className="font-semibold">
+                            {isAgent ? "Agent hidden" : "Model hidden"}
+                        </span>
                         <span className="text-sm">
                             {endpoint.hiddenReason ??
                                 "Hidden due to repeated failures."}

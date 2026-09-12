@@ -272,6 +272,7 @@ export const Models: FC = () => {
     const previousPrimaryTabRef = useRef(activePrimaryTab);
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
+    const [catalogPending, setCatalogPending] = useState(true);
     const { stats } = useModelStats();
     const allModels = useMemo(
         () => getModelPricesFromCatalog(catalogModels, stats),
@@ -378,20 +379,20 @@ export const Models: FC = () => {
         }
     }, [draftFilterKey, searchOptions.length]);
 
-    const loadModelCatalog = useCallback(
-        () =>
-            fetchModelCatalog()
-                .then((models) => {
-                    setCatalogModels(models);
-                    setCatalogError(null);
-                })
-                .catch((error) => {
-                    console.error("Model catalog fetch failed:", error);
-                    setCatalogModels([]);
-                    setCatalogError("Could not load models.");
-                }),
-        [],
-    );
+    const loadModelCatalog = useCallback(() => {
+        setCatalogPending(true);
+        return fetchModelCatalog()
+            .then((models) => {
+                setCatalogModels(models);
+                setCatalogError(null);
+            })
+            .catch((error) => {
+                console.error("Model catalog fetch failed:", error);
+                setCatalogModels([]);
+                setCatalogError("Could not load models.");
+            })
+            .finally(() => setCatalogPending(false));
+    }, []);
 
     useEffect(() => {
         void loadModelCatalog();
@@ -448,12 +449,26 @@ export const Models: FC = () => {
                   .filter(Boolean)
                   .join(" ");
 
-        const nextDraftFilter = nextSearch.endsWith(" ")
-            ? undefined
-            : getModelQueryDraftFilter(nextQuery, true, supportedFilterKeys);
+        const nextDraftFilter =
+            nextSearch.trim() === "" || nextSearch.endsWith(" ")
+                ? undefined
+                : getModelQueryDraftFilter(
+                      nextQuery,
+                      true,
+                      supportedFilterKeys,
+                  );
         setDraftFilter(nextDraftFilter);
         if (!nextDraftFilter) setEditingFilterToken(undefined);
         setSearch(nextQuery);
+        setSearchOpen(
+            !nextSearch.endsWith(" ") &&
+                (!!nextDraftFilter ||
+                    getModelQuerySuggestions(
+                        nextSearch,
+                        activeTabModels,
+                        supportedFilterKeys,
+                    ).length > 0),
+        );
     };
 
     const removeFilter = (filterToken: ModelQueryFilterToken) => {
@@ -685,6 +700,7 @@ export const Models: FC = () => {
                                     onChange={setVisibleSearch}
                                     open={searchOpen}
                                     onOpenChange={setSearchOpen}
+                                    closeOnSelect={false}
                                     onClick={() =>
                                         setPendingRemovalIndex(undefined)
                                     }
@@ -818,7 +834,18 @@ export const Models: FC = () => {
                 )}
                 {catalogError && activeTab !== "mcp" && (
                     <Alert intent="danger" className="mb-4">
-                        {catalogError}
+                        <div className="flex items-center justify-between gap-3">
+                            <span>{catalogError}</span>
+                            <Button
+                                type="button"
+                                size="sm"
+                                data-theme="neutral"
+                                disabled={catalogPending}
+                                onClick={() => void loadModelCatalog()}
+                            >
+                                {catalogPending ? "Retrying…" : "Try again"}
+                            </Button>
+                        </div>
                     </Alert>
                 )}
                 {activeTab === "mcp" ? (

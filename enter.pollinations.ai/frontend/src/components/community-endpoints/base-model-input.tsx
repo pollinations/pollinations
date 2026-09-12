@@ -44,6 +44,7 @@ export function BaseModelInput({
     return (
         <EditableCombobox
             name="prompt-agent-base-model"
+            aria-label="Base model"
             value={value}
             options={modelOptions}
             placeholder="openai"

@@ -1,11 +1,11 @@
 import {
-    Alert,
-    Chip,
+    Field,
     FieldStack,
     InlineLink,
-    Switch,
+    Text,
     Textarea,
 } from "@pollinations/ui";
+import { AuthAccessItem, AuthInfoCard } from "@pollinations/ui/auth";
 import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { config } from "../../config.ts";
 import { BaseModelInput } from "./base-model-input.tsx";
@@ -24,58 +24,59 @@ export function PromptAgentFields({
     ) => void;
 }) {
     return (
-        <div className="space-y-4">
-            <FieldStack
-                label="System prompt"
-                helper="The agent's instructions, sent as the system message on every call."
-                alignLabelRow
-            >
-                <Textarea
-                    name="prompt-agent-system-prompt"
-                    value={form.systemPrompt}
-                    placeholder="You are a helpful assistant that…"
-                    rows={6}
-                    maxLength={8000}
-                    disabled={disabled}
-                    onChange={(e) => onChange("systemPrompt", e.target.value)}
-                />
-            </FieldStack>
-
-            <Alert intent="warning" title="Public instructions are not secret">
-                Users may infer or extract these instructions. Do not include
-                credentials, personal data, or confidential information.
-            </Alert>
-
-            <FieldStack
-                label="Base model"
-                helper="Pick a Pollinations text model or type any model ID. Accepted inputs are inherited from this model."
-                alignLabelRow
-            >
-                <BaseModelInput
-                    value={form.baseModel}
-                    disabled={disabled}
-                    onChange={(value) => onChange("baseModel", value)}
-                />
-            </FieldStack>
-
-            <div className="space-y-3">
-                {MCP_SERVERS.map((server) => {
-                    const selected = form.mcpServers.includes(server.id);
-                    return (
-                        <div
+        <>
+            <AuthInfoCard title={null}>
+                <FieldStack
+                    label="System prompt"
+                    helper="Sent on every call. Users may extract these instructions; do not include credentials, personal data, or confidential information."
+                >
+                    <Field.Textarea asChild>
+                        <Textarea
+                            name="prompt-agent-system-prompt"
+                            value={form.systemPrompt}
+                            placeholder="You are a helpful assistant that…"
+                            rows={6}
+                            maxLength={8000}
+                            disabled={disabled}
+                            onChange={(e) =>
+                                onChange("systemPrompt", e.target.value)
+                            }
+                        />
+                    </Field.Textarea>
+                </FieldStack>
+            </AuthInfoCard>
+            <AuthInfoCard title={null}>
+                <FieldStack
+                    label="Base model"
+                    helper="Choose a Pollinations text model or enter its ID. Accepted inputs are inherited from this model."
+                >
+                    <BaseModelInput
+                        value={form.baseModel}
+                        disabled={disabled}
+                        onChange={(value) => onChange("baseModel", value)}
+                    />
+                </FieldStack>
+            </AuthInfoCard>
+            <AuthInfoCard title="Tools">
+                <ul className="space-y-3">
+                    {MCP_SERVERS.map((server) => (
+                        <AuthAccessItem
                             key={server.id}
-                            className="flex items-start justify-between gap-3"
-                        >
-                            <div className="space-y-1">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <span className="font-medium">
-                                        {server.name} MCP
-                                    </span>
-                                    <Chip size="sm" intent="neutral">
-                                        Built-in
-                                    </Chip>
-                                </div>
-                                <p className="text-xs text-theme-text-muted">
+                            checked={form.mcpServers.includes(server.id)}
+                            disabled={disabled}
+                            ariaLabel={`Allow ${server.name} tools`}
+                            onChange={(selected) =>
+                                onChange(
+                                    "mcpServers",
+                                    selected
+                                        ? [...form.mcpServers, server.id]
+                                        : form.mcpServers.filter(
+                                              (id) => id !== server.id,
+                                          ),
+                                )
+                            }
+                            details={
+                                <Text size="xs" tone="muted">
                                     {server.description}{" "}
                                     {"accountPath" in server && (
                                         <InlineLink
@@ -84,39 +85,14 @@ export function PromptAgentFields({
                                             Manage connectors
                                         </InlineLink>
                                     )}
-                                </p>
-                            </div>
-                            <Switch
-                                checked={selected}
-                                disabled={disabled}
-                                ariaLabel={`Allow ${server.name} tools`}
-                                onChange={(value) =>
-                                    onChange(
-                                        "mcpServers",
-                                        value
-                                            ? [...form.mcpServers, server.id]
-                                            : form.mcpServers.filter(
-                                                  (id) => id !== server.id,
-                                              ),
-                                    )
-                                }
-                            />
-                        </div>
-                    );
-                })}
-                <p className="text-xs text-theme-text-muted">
-                    Uses the caller's Pollinations API access. See the{" "}
-                    <a
-                        href="https://gen.pollinations.ai/docs#tag/mcp-servers"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
-                    >
-                        API docs
-                    </a>
-                    .
-                </p>
-            </div>
-        </div>
+                                </Text>
+                            }
+                        >
+                            {server.name} MCP
+                        </AuthAccessItem>
+                    ))}
+                </ul>
+            </AuthInfoCard>
+        </>
     );
 }

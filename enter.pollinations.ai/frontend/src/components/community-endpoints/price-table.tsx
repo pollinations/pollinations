@@ -68,7 +68,7 @@ export function PriceGroups({
     if (rows.length === 0) return null;
 
     return (
-        <Surface className="overflow-hidden p-0">
+        <Surface variant="card-themed" className="overflow-hidden p-0">
             <div className="overflow-x-auto">
                 <Table className="min-w-[32rem]">
                     <TableHead>

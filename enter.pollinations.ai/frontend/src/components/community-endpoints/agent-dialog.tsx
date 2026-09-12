@@ -1,12 +1,18 @@
 import {
-    Alert,
     Button,
     Dialog,
     DialogTitle,
+    Heading,
     ScrollArea,
+    Text,
 } from "@pollinations/ui";
+import {
+    AuthActionButtons,
+    AuthInfoCard,
+    ErrorBanner,
+} from "@pollinations/ui/auth";
 import type { FormEvent, ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ModelListingFields } from "./model-listing-fields.tsx";
 import { PromptAgentFields } from "./prompt-agent-fields.tsx";
 import { SafetyFeatureSelector } from "./safety-feature-selector.tsx";
@@ -53,6 +59,11 @@ export function AgentDialog({
     }));
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const errorRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (error) errorRef.current?.scrollIntoView({ block: "nearest" });
+    }, [error]);
 
     useEffect(() => {
         setForm({
@@ -108,77 +119,95 @@ export function AgentDialog({
     return (
         <Dialog
             open={open}
-            onOpenChange={onOpenChange}
-            size="lg"
+            onOpenChange={(nextOpen) => {
+                if (nextOpen || !isSubmitting) onOpenChange(nextOpen);
+            }}
+            size="md"
             trigger={trigger}
             triggerAsChild
-            contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
+            layout="flow"
         >
             <div className="shrink-0 p-6 pb-4">
-                <DialogTitle className="text-lg font-semibold">
+                <Heading as={DialogTitle} size="section">
                     {agent ? "Edit Agent" : "Add Agent"}
-                </DialogTitle>
-                <p className="mt-1 text-sm text-theme-text-muted">
-                    Configure and list an agent as a{" "}
-                    <code>
-                        {"{username}"}/{"{model-id}"}
-                    </code>{" "}
-                    model.
-                </p>
+                </Heading>
+                <Text
+                    size="xs"
+                    tone="soft"
+                    weight="semibold"
+                    className="polli:mt-1 polli:tracking-wide"
+                >
+                    Choose its instructions, model, and tools.
+                </Text>
             </div>
             <form
                 onSubmit={handleSubmit}
                 className="flex min-h-0 flex-1 flex-col"
                 autoComplete="off"
             >
-                <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2">
-                    {error && <Alert intent="danger">{error}</Alert>}
-
-                    <ModelListingFields
-                        form={form}
-                        modality="text"
-                        canPublish={canPublish}
-                        isAgent
-                        allowPerUserRpm={false}
-                        required
-                        onChange={(key, value) =>
-                            setForm((current) => ({
-                                ...current,
-                                [key]: value,
-                            }))
-                        }
-                    />
-
-                    <SafetyFeatureSelector
-                        value={form.requiredSafetyFeatures}
+                <ScrollArea className="min-h-0 flex-1 overscroll-contain px-6 pb-2 touch-pan-y [-webkit-overflow-scrolling:touch]">
+                    <fieldset
                         disabled={isSubmitting}
-                        onChange={(requiredSafetyFeatures) =>
-                            setForm((current) => ({
-                                ...current,
-                                requiredSafetyFeatures,
-                            }))
-                        }
-                    />
-
-                    <div className="border-t border-divider pt-4">
+                        className="min-w-0 space-y-3"
+                    >
+                        {error && (
+                            <div ref={errorRef}>
+                                <ErrorBanner>{error}</ErrorBanner>
+                            </div>
+                        )}
+                        <AuthInfoCard title={null}>
+                            <ModelListingFields
+                                form={form}
+                                modality="text"
+                                canPublish={canPublish}
+                                isAgent
+                                allowPerUserRpm={false}
+                                required
+                                onChange={(key, value) =>
+                                    setForm((current) => ({
+                                        ...current,
+                                        [key]: value,
+                                    }))
+                                }
+                            />
+                        </AuthInfoCard>
                         <PromptAgentFields
                             form={form}
                             disabled={isSubmitting}
                             onChange={updateAgentForm}
                         />
-                    </div>
+                        <AuthInfoCard title={null}>
+                            <SafetyFeatureSelector
+                                value={form.requiredSafetyFeatures}
+                                disabled={isSubmitting}
+                                onChange={(requiredSafetyFeatures) =>
+                                    setForm((current) => ({
+                                        ...current,
+                                        requiredSafetyFeatures,
+                                    }))
+                                }
+                            />
+                        </AuthInfoCard>
+                    </fieldset>
                 </ScrollArea>
-                <div className="flex shrink-0 justify-end gap-2 border-t border-divider p-6 pt-4">
-                    <Button
-                        type="button"
-                        intent="danger"
-                        onClick={() => onOpenChange(false)}
-                    >
-                        Cancel
-                    </Button>
-                    <Button type="submit" disabled={!canSubmit}>
-                        {isSubmitting ? "Saving…" : submitLabel}
-                    </Button>
+                <div className="p-6 pt-4 shrink-0">
+                    <AuthActionButtons
+                        secondaryAction={
+                            <Button
+                                type="button"
+                                data-theme="neutral"
+                                disabled={isSubmitting}
+                                onClick={() => onOpenChange(false)}
+                            >
+                                Cancel
+                            </Button>
+                        }
+                        actions={
+                            <Button type="submit" disabled={!canSubmit}>
+                                {isSubmitting ? "Saving…" : submitLabel}
+                            </Button>
+                        }
+                    />
                 </div>
             </form>
         </Dialog>

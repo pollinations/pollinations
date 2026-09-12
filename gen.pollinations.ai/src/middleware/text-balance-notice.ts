@@ -57,11 +57,11 @@ function appOrigin(c: Context<Env>): string | null {
 
 export function balanceNoticeMessage(
     environment: string,
-    errorCode: PaymentRequiredError["errorCode"],
+    error: Pick<PaymentRequiredError, "errorCode" | "paidOnly">,
     keyId: string | undefined,
     redirect: string | null,
 ): string {
-    if (errorCode === "KEY_BUDGET_EXHAUSTED") {
+    if (error.errorCode === "KEY_BUDGET_EXHAUSTED") {
         return (
             "The API key used for this request has reached its budget. " +
             "Please " +
@@ -69,12 +69,13 @@ export function balanceNoticeMessage(
             `Topping up the wallet does not raise this limit. ${NOT_YOUR_ACCOUNT}`
         );
     }
+    const topUp = `[top up](${enterLink(environment, "/top-up", { ref: "agent_low_balance_topup", redirect })})`;
+    const remedy = error.paidOnly
+        ? `This model needs paid Pollen. Please ${topUp}, then try again.`
+        : `Please ${topUp} or [complete a quest](${enterLink(environment, "/quests", { ref: "agent_low_balance_quests" })}), then try again.`;
     return (
         "The account behind this API key doesn't have enough credits. " +
-        "Please " +
-        `[top up](${enterLink(environment, "/top-up", { ref: "agent_low_balance_topup", redirect })}) or ` +
-        `[complete a quest](${enterLink(environment, "/quests", { ref: "agent_low_balance_quests" })}), then try again.\n\n` +
-        NOT_YOUR_ACCOUNT
+        `${remedy}\n\n${NOT_YOUR_ACCOUNT}`
     );
 }
 
@@ -91,7 +92,7 @@ export const textBalanceNotice = createMiddleware<Env>(async (c, next) => {
         return;
     const message = balanceNoticeMessage(
         c.env.ENVIRONMENT,
-        error.errorCode,
+        error,
         c.var.auth?.apiKey?.id,
         appOrigin(c),
     );

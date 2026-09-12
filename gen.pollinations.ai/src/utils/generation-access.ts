@@ -59,6 +59,7 @@ export async function checkBalance(
         throw new PaymentRequiredError(
             "INSUFFICIENT_BALANCE",
             `Insufficient balance. This request costs ~${estimatedCost.toFixed(4)} pollen, but your available ${isPaidOnly ? "paid " : ""}balance is ${Math.max(0, available).toFixed(4)}. Top up at https://enter.pollinations.ai/top-up.`,
+            isPaidOnly,
         );
     }
 

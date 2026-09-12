@@ -1,137 +1,137 @@
+import { SELF } from "cloudflare:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import { SELF } from "cloudflare:test";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { MCP_USER_ID_HEADER } from "../../../shared/registry/mcp.ts";
 
 const MCP_URL = "https://mcp.internal/";
 
+let client: Client | undefined;
+
+afterEach(async () => {
+    await client?.close();
+    client = undefined;
+});
+
 async function connect(userId: string): Promise<Client> {
     const transport = new StreamableHTTPClientTransport(new URL(MCP_URL), {
-        fetch: (input, init) => {
-            const headers = new Headers(init?.headers);
+        fetch: (input, init = {}) => {
+            const headers = new Headers(init.headers);
             headers.set(MCP_USER_ID_HEADER, userId);
             return SELF.fetch(input, { ...init, headers });
         },
     });
-    const client = new Client({ name: "test", version: "0.0.0" });
-    await client.connect(transport);
-    return client;
+    const next = new Client({ name: "computer-mcp-test", version: "1.0.0" });
+    await next.connect(transport);
+    client = next;
+    return next;
 }
 
-async function call(
-    client: Client,
-    name: string,
-    args: Record<string, unknown>,
-): Promise<{ text: string; isError: boolean }> {
-    const result = await client.callTool({ name, arguments: args });
-    const content = result.content as { type: string; text?: string }[];
-    const text = content
-        .filter((part) => part.type === "text")
-        .map((part) => part.text ?? "")
-        .join("\n");
-    return { text, isError: result.isError === true };
+async function runCode(mcp: Client, code: string) {
+    const result = await mcp.callTool({ name: "code", arguments: { code } });
+    return { result, value: readTextResult(result) };
 }
 
-describe("computer MCP worker", () => {
-    it("answers health without a user", async () => {
-        const response = await SELF.fetch("https://mcp.internal/health");
-        expect(response.status).toBe(200);
-        expect(await response.text()).toBe("ok\n");
+describe("Computer Code Mode MCP", () => {
+    it("serves health and keeps the container callback private", async () => {
+        const health = await SELF.fetch("https://mcp.internal/health");
+        expect(health.status).toBe(200);
+        expect(await health.text()).toBe("ok\n");
+
+        const internal = await SELF.fetch("https://mcp.internal/api");
+        expect(internal.status).toBe(404);
     });
 
-    it("rejects requests without the user header", async () => {
-        const response = await SELF.fetch(MCP_URL, {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: "{}",
+    it("requires the user header set by the gen proxy", async () => {
+        const missing = await SELF.fetch(MCP_URL, { method: "POST" });
+        expect(missing.status).toBe(401);
+
+        const get = await SELF.fetch(MCP_URL, {
+            headers: { [MCP_USER_ID_HEADER]: "user-get" },
         });
-        expect(response.status).toBe(401);
+        expect(get.status).toBe(405);
+        expect(get.headers.get("allow")).toBe("POST");
     });
 
-    it("exposes plain file and shell tools", async () => {
-        const client = await connect("user-tools");
-        const { tools } = await client.listTools();
-        expect(tools.map((tool) => tool.name).sort()).toEqual(
-            ["edit", "exec", "find", "grep", "ls", "read", "write"].sort(),
+    it("exposes durable Computer tools through one Code Mode tool", async () => {
+        const mcp = await connect("user-code");
+
+        const listed = await mcp.listTools();
+        expect(listed.tools.map((tool) => tool.name)).toEqual(["code"]);
+        const description = listed.tools[0]?.description;
+        expect(description).toContain("codemode.read");
+        expect(description).toContain('"worker-shell"');
+        expect(description).toContain('"container-shell"');
+
+        const { result, value } = await runCode(
+            mcp,
+            `async () => {
+          await codemode.write({ path: "/workspace/message.txt", content: "hello" });
+          await codemode.edit({
+            path: "/workspace/message.txt",
+            edits: [{ oldText: "hello", newText: "hello from Code Mode" }]
+          });
+          const file = await codemode.read({ path: "/workspace/message.txt" });
+          const listing = await codemode.ls({ path: "/workspace" });
+          const shell = await codemode.exec({ command: "pwd" });
+          return {
+            content: file.content,
+            listed: listing.entries.some((entry) => entry.name === "message.txt"),
+            backend: shell.backend,
+            cwd: shell.stdout.trim()
+          };
+        }`,
         );
-        await client.close();
+        expect(result.isError, JSON.stringify(result)).not.toBe(true);
+        expect(value).toEqual({
+            content: "hello from Code Mode",
+            listed: true,
+            backend: "worker-shell",
+            cwd: "/workspace",
+        });
+
+        const outbound = await runCode(
+            mcp,
+            `async () => {
+          const response = await fetch("https://example.com");
+          return response.status;
+        }`,
+        );
+        expect(outbound.result.isError).toBe(true);
     });
 
-    it("seeds a README that explains the memory convention", async () => {
-        const client = await connect("user-readme");
-        const readme = await call(client, "read", {
-            path: "/workspace/README.md",
-        });
-        expect(readme.isError).toBe(false);
-        expect(readme.text).toContain("/workspace/memory/facts.md");
-        await client.close();
-    });
-
-    it("writes, edits, reads and greps files that persist across connections", async () => {
-        const client = await connect("user-files");
-        const write = await call(client, "write", {
-            path: "/workspace/memory/facts.md",
-            content: "favourite colour: blue\n",
-        });
-        expect(write.isError).toBe(false);
-
-        const edit = await call(client, "edit", {
-            path: "/workspace/memory/facts.md",
-            edits: [{ oldText: "blue", newText: "green" }],
-        });
-        expect(edit.isError).toBe(false);
-        await client.close();
-
-        const again = await connect("user-files");
-        const read = await call(again, "read", {
-            path: "/workspace/memory/facts.md",
-        });
-        expect(read.text).toContain("favourite colour: green");
-
-        const grep = await call(again, "grep", {
-            query: "green",
-            path: "/workspace/memory",
-        });
-        expect(grep.text).toContain("facts.md");
-        await again.close();
-    });
-
-    it("keeps users isolated", async () => {
+    it("persists per user and isolates users from each other", async () => {
         const alice = await connect("user-alice");
-        await call(alice, "write", {
-            path: "/workspace/secret.txt",
-            content: "alice only\n",
-        });
+        await runCode(
+            alice,
+            `async () => codemode.write({ path: "/workspace/secret.txt", content: "alice only" })`,
+        );
         await alice.close();
 
+        const aliceAgain = await connect("user-alice");
+        const persisted = await runCode(
+            aliceAgain,
+            `async () => (await codemode.read({ path: "/workspace/secret.txt" })).content`,
+        );
+        expect(persisted.value).toBe("alice only");
+        await aliceAgain.close();
+
         const bob = await connect("user-bob");
-        const read = await call(bob, "read", { path: "/workspace/secret.txt" });
-        expect(read.text).not.toContain("alice only");
-        const ls = await call(bob, "ls", { path: "/workspace" });
-        expect(ls.text).not.toContain("secret.txt");
-        await bob.close();
-    });
-
-    it("runs bash against the persistent filesystem", async () => {
-        const client = await connect("user-shell");
-        await call(client, "write", {
-            path: "/workspace/notes.txt",
-            content: "one\ntwo\nthree\n",
-        });
-        const exec = await call(client, "exec", {
-            command: "wc -l < /workspace/notes.txt && echo done >> /workspace/notes.txt",
-        });
-        expect(exec.isError).toBe(false);
-        const output = JSON.parse(exec.text) as {
-            exitCode: number | null;
-            stdout: string;
-        };
-        expect(output.exitCode).toBe(0);
-        expect(output.stdout.trim()).toBe("3");
-
-        const read = await call(client, "read", { path: "/workspace/notes.txt" });
-        expect(read.text).toContain("done");
-        await client.close();
+        const listing = await runCode(
+            bob,
+            `async () => (await codemode.ls({ path: "/workspace" })).entries.map((e) => e.name)`,
+        );
+        expect(listing.value).not.toContain("secret.txt");
     });
 });
+
+function readTextResult(result: Awaited<ReturnType<Client["callTool"]>>) {
+    const content = result.content as Array<{ type: string; text?: string }>;
+    const text = content.find((item) => item.type === "text");
+    if (!text?.text) throw new Error("Expected a text MCP result.");
+    try {
+        return JSON.parse(text.text) as unknown;
+    } catch {
+        return text.text;
+    }
+}

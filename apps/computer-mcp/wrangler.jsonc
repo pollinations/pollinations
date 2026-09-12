@@ -1,7 +1,7 @@
 {
-  // Private per-user computer for Pollinations agents. Reachable only through
-  // gen.pollinations.ai's /mcp/computer proxy (service binding COMPUTER_MCP),
-  // which authenticates the caller and sets x-pollinations-user-id.
+  // Upstream cloudflare/computer examples/mcp, adapted for Pollinations:
+  // private Worker reachable only through gen.pollinations.ai's /mcp/computer
+  // proxy (service binding COMPUTER_MCP), one Durable Object per user id.
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "pollinations-computer-mcp",
   "account_id": "b6ec751c0862027ba269faf7029b2501",
@@ -10,23 +10,41 @@
   "compatibility_date": "2026-06-17",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
-  // Dynamic Worker loader: each shell exec runs just-bash in a fresh isolate.
   "worker_loaders": [{ "binding": "LOADER" }],
-  // One Durable Object per Pollinations user id; its SQLite holds the filesystem.
+  "containers": [
+    {
+      "class_name": "ComputerMCP",
+      "image": "./Dockerfile",
+      "instance_type": "standard-2",
+      "max_instances": 20,
+      "rollout_active_grace_period": 0,
+      "rollout_step_percentage": [100]
+    }
+  ],
   "durable_objects": {
-    "bindings": [{ "name": "COMPUTER", "class_name": "Computer" }]
+    "bindings": [{ "name": "COMPUTER_MCP", "class_name": "ComputerMCP" }]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Computer"] }],
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ComputerMCP"] }],
   "env": {
     "staging": {
       "name": "pollinations-computer-mcp-staging",
       "workers_dev": false,
       "observability": { "enabled": true },
       "worker_loaders": [{ "binding": "LOADER" }],
+      "containers": [
+        {
+          "class_name": "ComputerMCP",
+          "image": "./Dockerfile",
+          "instance_type": "standard-2",
+          "max_instances": 5,
+          "rollout_active_grace_period": 0,
+          "rollout_step_percentage": [100]
+        }
+      ],
       "durable_objects": {
-        "bindings": [{ "name": "COMPUTER", "class_name": "Computer" }]
+        "bindings": [{ "name": "COMPUTER_MCP", "class_name": "ComputerMCP" }]
       },
-      "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Computer"] }]
+      "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ComputerMCP"] }]
     }
   }
 }

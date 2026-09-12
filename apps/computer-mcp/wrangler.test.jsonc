@@ -6,7 +6,7 @@
   "compatibility_flags": ["nodejs_compat"],
   "worker_loaders": [{ "binding": "LOADER" }],
   "durable_objects": {
-    "bindings": [{ "name": "COMPUTER", "class_name": "Computer" }]
+    "bindings": [{ "name": "COMPUTER_MCP", "class_name": "ComputerMCP" }]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Computer"] }]
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ComputerMCP"] }]
 }

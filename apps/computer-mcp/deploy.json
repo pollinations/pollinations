@@ -1,6 +1,7 @@
 {
   "target": "worker",
   "credentials": "myceli",
+  "docker": true,
   "sops": "none",
   "install": "npm ci",
   "build": "npm test",

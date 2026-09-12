@@ -1,37 +1,43 @@
-# Computer MCP
+# Computer MCP (Code Mode)
 
-A private, persistent computer for every Pollinations account: a filesystem
-plus a bash shell, exposed as a Streamable HTTP MCP server. Nothing runs while
-idle.
+A private, persistent computer for every Pollinations account, exposed as a
+Streamable HTTP MCP server. This is the upstream
+[`cloudflare/computer` MCP example](https://github.com/cloudflare/computer/tree/main/examples/mcp)
+(preview) with one change: requests are routed to a Durable Object per
+Pollinations user instead of one shared workspace behind a bearer token.
 
-Built on [`@cloudflare/computer`](https://github.com/cloudflare/computer)
-(preview). Each user gets one Durable Object whose SQLite holds the
-filesystem. `exec` runs [just-bash](https://github.com/vercel-labs/just-bash)
-in a throwaway Dynamic Worker that talks back to the Durable Object for file
-access. No container, no Linux, no outbound network.
+`src/server.ts` and `Dockerfile` are verbatim upstream. `src/index.ts`
+differs from upstream only in the Worker entry: it reads
+`x-pollinations-user-id`, rejects requests without it, and serves the MCP
+endpoint at `/` (gen rewrites `/mcp/computer` to `/`).
 
-## Tools
+## What the client sees
 
-`read`, `write`, `edit`, `ls`, `find`, `grep`, `exec`. Memory is a convention,
-not a tool: a `/workspace/README.md` seeded on first use tells the agent to keep
-current facts in `memory/facts.md` and a dated append-only journal in
-`memory/log/`.
+One tool, `code`. The model writes JavaScript that calls `codemode.read`,
+`codemode.write`, `codemode.edit`, `codemode.ls`, `codemode.find`,
+`codemode.grep`, `codemode.delete`, and `codemode.exec`; the script runs in a
+Dynamic Worker with no outbound network. Files under `/workspace` persist
+between requests and agent runs.
+
+Two shell backends: `worker-shell` (just-bash in a Dynamic Worker, default,
+no network, no Node or Python) and `container-shell` (Debian with Node.js,
+git, and outbound network in a Cloudflare Container, one container per active
+user, cold start on first use).
 
 ## How requests reach it
 
 The Worker is private (`workers_dev: false`, no routes). Gen's
 `/mcp/computer` route authenticates the caller, then calls this Worker through
 the `COMPUTER_MCP` service binding with the `x-pollinations-user-id` header
-set. That header selects the Durable Object, so a missing header is a 401 here.
-The registry entry lives in `shared/registry/mcp.ts`.
+set. The registry entry lives in `shared/registry/mcp.ts`.
 
 ## Local
 
 ```bash
 npm install
-npm test          # workers pool, includes a real bash exec
+npm test          # workers pool, runs real code through the loader
 npm run typecheck
-npm run dev       # http://localhost:8787
+npm run dev       # http://localhost:8787 (container backend needs Docker)
 ```
 
 Call it directly with the user header (the gen proxy sets it in production):
@@ -41,12 +47,13 @@ curl -s http://localhost:8787/ \
   -H 'content-type: application/json' \
   -H 'accept: application/json, text/event-stream' \
   -H 'x-pollinations-user-id: local-test' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"exec","arguments":{"command":"ls /workspace"}}}'
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"code","arguments":{"code":"async () => (await codemode.exec({ command: \"ls /workspace\" })).stdout"}}}'
 ```
 
 ## Deploy
 
-Staging: `npm run deploy:staging` (Worker `pollinations-computer-mcp-staging`).
-Production deploys only through the `Deploy / Cloudflare production` workflow,
-which handles `apps/*-mcp` before gen so the binding target exists. Requires a
-paid Workers plan for `worker_loaders`.
+Staging: `npm run deploy:staging` (Worker `pollinations-computer-mcp-staging`;
+needs Docker to build the container image). Production deploys only through
+the `Deploy / Cloudflare production` workflow, which builds the image and
+deploys `apps/*-mcp` before gen. Requires a paid Workers plan for
+`worker_loaders` and Containers.

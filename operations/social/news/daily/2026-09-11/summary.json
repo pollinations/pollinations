@@ -1,0 +1,55 @@
+{
+  "date": "2026-09-11",
+  "period_start": "2026-09-11",
+  "period_end": "2026-09-11",
+  "title": "Managed code agents can now ship straight from GitHub",
+  "summary": "A busy agent day: GitHub-backed code agents, inspectable chat-model parameters, clearer Pollen paths, and several new things to build or talk to.\n\nDevelopers can deploy a public repository's commit-pinned root agent.ts as a managed agent from the dashboard or Polli CLI, with AI SDK helpers, MCP tools, and consistent chat and Responses-format tool results included. Agent ownership and debugging also got less surprising: making an agent private cancels queued publication, and JSON plus streaming failures preserve actionable safe SDK error messages.\n\nAll 84 public Chat models and 34 fallback routes now publish verified supported-parameter metadata through every major model-listing endpoint and alias lookup. You can inspect a model before asking it to honor a parameter; software briefly becomes more honest.\n\nLow-balance text responses, including streams, now point people to Top Up and Quest paths without caching or charging for the notice. The model catalog also keeps verified free models clearly marked while showing unmeasured agent run costs as unknown rather than making promises on behalf of downstream tools.",
+  "pr_count": 11,
+  "prs": [
+    {
+      "number": 14622,
+      "date": "2026-09-11"
+    },
+    {
+      "number": 14640,
+      "date": "2026-09-11"
+    },
+    {
+      "number": 14700,
+      "date": "2026-09-11"
+    },
+    {
+      "number": 14709,
+      "date": "2026-09-11"
+    },
+    {
+      "number": 14710,
+      "date": "2026-09-11"
+    },
+    {
+      "number": 14711,
+      "date": "2026-09-11"
+    },
+    {
+      "number": 14718,
+      "date": "2026-09-11"
+    },
+    {
+      "number": 14722,
+      "date": "2026-09-11"
+    },
+    {
+      "number": 14724,
+      "date": "2026-09-11"
+    },
+    {
+      "number": 14725,
+      "date": "2026-09-11"
+    },
+    {
+      "number": 14733,
+      "date": "2026-09-11"
+    }
+  ],
+  "generated_at": "2026-09-12T06:26:29.349394+00:00"
+}

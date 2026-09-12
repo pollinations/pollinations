@@ -6,6 +6,8 @@ const encoder = new TextEncoder();
 const delta = 'data: {"choices":[{"delta":{"content":"🌼"}}]}\n\n';
 const chatUsage =
     'data: {"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}\n\n';
+const costTrailer =
+    'data: {"choices":[],"usage":{"cost_usd":"0.00010310","prompt_tokens_details":{"cached_tokens":0}}}\n\n';
 const responseDelta =
     'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"🌼"}\n\n';
 const responseUsage =
@@ -23,6 +25,12 @@ function splitStream(bytes: Uint8Array<ArrayBuffer>, split: number) {
 
 describe.each([
     ["Chat", requireChatStreamUsage, delta, `${chatUsage}data: [DONE]\n\n`],
+    [
+        "Chat",
+        requireChatStreamUsage,
+        delta,
+        `${chatUsage}${costTrailer}data: [DONE]\n\n`,
+    ],
     ["Responses", requireResponsesStreamUsage, responseDelta, responseUsage],
 ] as const)("%s stream usage framing", (_name, validate, content, terminal) => {
     it.each([
@@ -61,10 +69,11 @@ describe.each([
                 .split(/\r\n|\r|\n/)
                 .filter((line) => line.startsWith("data:"))
                 .map((line) => JSON.parse(line.slice(5)));
-            expect(events).toHaveLength(2);
-            expect(events[1].error?.code ?? events[1].code).toBe(
-                "usage_missing",
-            );
+            // Chat forwards provisional usage and validates it at DONE;
+            // Responses validates its terminal event before forwarding it.
+            expect(events).toHaveLength(_name === "Chat" ? 3 : 2);
+            const error = events.at(-1);
+            expect(error.error?.code ?? error.code).toBe("usage_missing");
             expect(output).not.toContain("[DONE]");
         }
     });
@@ -92,5 +101,22 @@ describe.each([
                 validate(splitStream(bytes, bytes.length - 5)),
             ).text(),
         ).toBe(input);
+    });
+});
+
+describe("Chat token usage followed by accounting metadata", () => {
+    it.each([
+        "",
+        'data: {"usage":{"prompt_tokens":1}}\n\n',
+        `${chatUsage}data: {"usage":{"completion_tokens":-1}}\n\n`,
+    ])("does not let a cost-only trailer hide missing or invalid token counts (%j)", async (usage) => {
+        const bytes = encoder.encode(
+            `${delta}${usage}${costTrailer}data: [DONE]\n\n`,
+        );
+        const output = await new Response(
+            requireChatStreamUsage(splitStream(bytes, bytes.length - 5)),
+        ).text();
+        expect(output).toContain('"code":"usage_missing"');
+        expect(output).not.toContain("[DONE]");
     });
 });

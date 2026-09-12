@@ -7,8 +7,8 @@ const QUALITIES = ["low", "medium", "high", "hd"] as const;
 const MAX_SEED_VALUE = 2147483647; // INT32_MAX (2^31 - 1)
 
 const NOVA_REEL_MODELS = new Set([
-    "nova-reel",
-    ...IMAGE_SERVICES["nova-reel"].aliases,
+    "amazon/nova-reel-v1",
+    ...IMAGE_SERVICES["amazon/nova-reel-v1"].aliases,
 ]);
 
 const modelSchema = (defaultModel: string) =>
@@ -19,7 +19,7 @@ const modelSchema = (defaultModel: string) =>
         )
         .meta({
             description:
-                "Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, seedream5-pro, nanobanana, nanobanana-pro, klein. **Video:** veo, seedance-pro, wan, wan-pro, p-video, nova-reel. See /image/models for full list.",
+                "Model to use. See /image/models for the current canonical IDs and aliases.",
         });
 
 const GenerateImageRequestQueryParamsBaseSchema = z.object({
@@ -48,7 +48,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .default(0)
         .meta({
             description:
-                "Seed for reproducible results. Supported by: flux, zimage, seedream, klein, seedance, nova-reel. Other models ignore this parameter.",
+                "Seed for reproducible results. Use -1 for random. Supported by: black-forest-labs/flux.1-schnell, tongyi-mai/z-image-turbo, bytedance/seedream-4.0, black-forest-labs/flux.2-klein-4b, bytedance/seedance-2.0, amazon/nova-reel-v1. Other models ignore this parameter.",
         }),
     safe: SafeSchema,
     quality: z
@@ -140,7 +140,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         }),
     duration: z.coerce.number().int().min(1).max(120).optional().meta({
         description:
-            "Video duration in seconds. Only applies to video models. `google/gemini-omni-1.1-flash`: 3-10s. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `minimax/minimax-h3-max-turbo`: 5, 10, or 15s. `wan`: 2-15s. `wan-3.0`: exactly 5s. `nova-reel`: 6-120s (multiples of 6).",
+            "Video duration in seconds. Only applies to video models. Community models may omit this if the provider reports generated seconds; billing prefers reported duration and otherwise uses this value. `google/gemini-omni-1.1-flash`: 3-10s. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `minimax/minimax-h3-max-turbo`: 5, 10, or 15s. `wan`: 2-15s. `wan-3.0`: exactly 5s. `nova-reel`: 6-120s (multiples of 6).",
     }),
     aspectRatio: z.string().optional().meta({
         description:
@@ -175,5 +175,5 @@ export const GenerateImageRequestQueryParamsSchema =
 
 export const GenerateVideoRequestQueryParamsSchema =
     GenerateImageRequestQueryParamsBaseSchema.extend({
-        model: modelSchema("veo"),
+        model: modelSchema("google/veo-3.1-fast"),
     }).superRefine(validateDuration);

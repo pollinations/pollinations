@@ -39,7 +39,7 @@ export function getAuthorizeUrl() {
         redirect_url: redirect,
         app_key: APP_KEY,
         budget: "5",
-        models: "gptimage,nanobanana,claude-fast",
+        models: "openai/gpt-image-1-mini,google/gemini-2.5-flash-image,anthropic/claude-haiku-4.5",
         permissions: "profile,usage",
     })}`;
 }
@@ -135,8 +135,13 @@ export async function pickModel(apiKey) {
         });
         if (!res.ok) return { model: FALLBACK_MODEL, isPremium: false };
         const models = await res.json();
-        const names = models.map((m) => m.name);
-        if (names.includes(PREFERRED_MODEL)) {
+        if (
+            models.some(
+                (model) =>
+                    model.name === PREFERRED_MODEL ||
+                    model.aliases?.includes(PREFERRED_MODEL),
+            )
+        ) {
             return { model: PREFERRED_MODEL, isPremium: true };
         }
         return { model: FALLBACK_MODEL, isPremium: false };

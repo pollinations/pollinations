@@ -7,6 +7,7 @@ import {
 import { loadEnv } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { configDefaults } from "vitest/config";
+import { codeAgentSdk } from "./scripts/code-agent-sdk.mjs";
 
 const sharedSrc = fileURLToPath(new URL("../shared/", import.meta.url));
 const frontendSrc = fileURLToPath(new URL("./frontend/src/", import.meta.url));
@@ -18,7 +19,7 @@ export default defineWorkersConfig(async ({ mode }) => {
     const env = loadEnv(mode, process.cwd(), "");
 
     return {
-        plugins: [tsconfigPaths()],
+        plugins: [tsconfigPaths(), codeAgentSdk()],
         resolve: {
             dedupe: ["react", "react-dom", "zod"],
             alias: [

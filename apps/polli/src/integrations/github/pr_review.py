@@ -8,9 +8,9 @@ Mixed into GitHubPRManager; relies on the host class for `get_pr` and `get_pr_di
 """
 
 import asyncio
+import contextvars
 import logging
 
-from ...core.config import config
 from ...utils.regex import re
 
 logger = logging.getLogger(__name__)
@@ -48,6 +48,9 @@ HIGH_PRIORITY_PATTERNS = [
 ]
 
 
+_review_complexity: contextvars.ContextVar[str | None] = contextvars.ContextVar("review_complexity", default=None)
+
+
 class PRReviewMixin:
     """Concurrent per-file review plus synthesis into a single report."""
 
@@ -55,7 +58,9 @@ class PRReviewMixin:
     # AI-POWERED PR REVIEW
     # ============================================================
 
-    async def review_pr(self, pr_number: int, post_to_github: bool = False, author: str = "Discord User") -> dict:
+    async def review_pr(
+        self, pr_number: int, post_to_github: bool = False, author: str = "Discord User", complexity: str | None = None
+    ) -> dict:
         """
         Generate an AI-powered code review for a PR.
 
@@ -74,6 +79,13 @@ class PRReviewMixin:
         Returns:
             dict with 'review' text and optionally 'posted_to_github'
         """
+        complexity_token = _review_complexity.set(complexity)
+        try:
+            return await self._review_pr(pr_number, post_to_github, author)
+        finally:
+            _review_complexity.reset(complexity_token)
+
+    async def _review_pr(self, pr_number: int, post_to_github: bool, author: str) -> dict:
         # Get PR details
         pr = await self.get_pr(pr_number)
         if pr.get("error"):
@@ -94,21 +106,29 @@ class PRReviewMixin:
 
         try:
             file_findings = await self._review_files_concurrently(files)
-        except Exception as e:
-            logger.error(f"Error generating PR review: {e}")
-            return {"error": f"Failed to generate review: {str(e)}"}
+        except Exception:
+            logger.exception("PR review generation failed")
+            return {"error": "Failed to generate review", "error_category": "review_execution_failed"}
 
-        reviewed = [f for f in file_findings if f["findings"] and not f.get("error")]
+        successful = [f for f in file_findings if not f.get("error")]
+        reviewed = [f for f in successful if f["findings"]]
         errored = [f for f in file_findings if f.get("error")]
 
-        if not reviewed and errored:
-            return {"error": f"Failed to review any files ({len(errored)} errors)"}
+        if not successful:
+            return {
+                "error": "No files were successfully reviewed",
+                "error_category": "all_file_reviews_failed",
+                "files_requested": len(files),
+                "files_successfully_reviewed": 0,
+                "successful_batches": 0,
+                "failed_batches": len(errored),
+            }
 
         try:
             review_text = await self._synthesize_review(pr, reviewed, errored)
-        except Exception as e:
-            logger.error(f"Error synthesizing PR review: {e}")
-            return {"error": f"Failed to synthesize review: {str(e)}"}
+        except Exception:
+            logger.exception("PR review synthesis failed")
+            return {"error": "Failed to synthesize review", "error_category": "synthesis_failed"}
 
         if not review_text:
             return {"error": "Failed to generate review"}
@@ -119,7 +139,11 @@ class PRReviewMixin:
             "pr_title": pr["title"],
             "pr_url": pr["url"],
             "review": review_text,
-            "files_reviewed": len(files),
+            "files_requested": len(files),
+            "files_successfully_reviewed": sum(len(f["filenames"]) for f in successful),
+            "successful_batches": len(successful),
+            "failed_batches": len(errored),
+            "file_review_errors": [f["error"] for f in errored],
             "posted_to_github": False,
         }
 
@@ -226,22 +250,37 @@ class PRReviewMixin:
 
             async with semaphore:
                 try:
+                    from ...ai.complexity import model_for_complexity
+
                     response = await pollinations_client.generate_text(
                         system_prompt=self._get_file_review_system_prompt(),
                         user_prompt=combined_diff,
-                        model=config.ai.model,
+                        model=model_for_complexity(_review_complexity.get()),
                         temperature=0.2,
-                        max_tokens=1024,
+                        max_tokens=4096,
                     )
-                except Exception as e:
-                    return {"filenames": filenames, "findings": "", "high_priority": high_priority, "error": str(e)}
+                except TimeoutError:
+                    return {
+                        "filenames": filenames,
+                        "findings": "",
+                        "high_priority": high_priority,
+                        "error": "review_timeout",
+                    }
+                except Exception:
+                    logger.exception("Per-file PR review failed")
+                    return {
+                        "filenames": filenames,
+                        "findings": "",
+                        "high_priority": high_priority,
+                        "error": "review_request_failed",
+                    }
 
             if not response:
                 return {
                     "filenames": filenames,
                     "findings": "",
                     "high_priority": high_priority,
-                    "error": "empty response",
+                    "error": "empty_review_response",
                 }
 
             findings = self._parse_review(response)
@@ -257,7 +296,7 @@ class PRReviewMixin:
         if not clean:
             summary = "**LGTM** - No major issues found across reviewed files."
             if errored:
-                summary += f"\n\n_Note: {len(errored)} file(s)/batch(es) could not be reviewed due to an error._"
+                summary += f"\n\n_Note: {len(errored)} review batch(es) did not complete._"
             return summary
 
         findings_blob = "\n\n".join(
@@ -277,10 +316,12 @@ Merge these into ONE review. Deduplicate overlapping points, drop anything trivi
 order by severity (bugs/security first), keep file:line references. Security-sensitive files
 should be called out first if they have any findings."""
 
+        from ...ai.complexity import model_for_complexity
+
         response = await pollinations_client.generate_text(
             system_prompt=self._get_review_system_prompt(),
             user_prompt=user_prompt,
-            model=config.ai.model,
+            model=model_for_complexity(_review_complexity.get()),
             temperature=0.3,
             max_tokens=1200,
         )

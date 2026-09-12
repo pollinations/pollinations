@@ -50,9 +50,8 @@ import {
     textBodyLimit,
 } from "./generation-handlers.ts";
 import {
-    formatOpenAIImageGeneration,
-    handleImageEdit,
     handleImageGeneration,
+    prepareOpenAIImageEditReplay,
     prepareOpenAIImageGeneration,
 } from "./images.ts";
 
@@ -189,7 +188,6 @@ generationExecutorRoutes.post(
     resolveModel("generate.image"),
     track("generate.image"),
     prepareOpenAIImageGeneration,
-    formatOpenAIImageGeneration,
     prepareGenerationRequest,
     imageExecutionCache,
     apiKeyBudgetReservation,
@@ -200,16 +198,17 @@ generationExecutorRoutes.post(
     "/v1/images/edits",
     resolveModel("generate.image", { defaultModel: "flux" }),
     track("generate.image"),
+    prepareOpenAIImageEditReplay,
     prepareGenerationRequest,
-    textExecutionCache,
+    imageExecutionCache,
     apiKeyBudgetReservation,
-    handleImageEdit,
+    handleImageGeneration,
 );
 
 generationExecutorRoutes.post(
     "/v1/audio/voice-changer",
     resolveModel("generate.audio", {
-        defaultModel: "eleven-voice-changer",
+        defaultModel: "elevenlabs/eleven-multilingual-sts-v2",
         supportedEndpoint: "/v1/audio/voice-changer",
     }),
     track("generate.audio"),
@@ -222,7 +221,7 @@ generationExecutorRoutes.post(
 generationExecutorRoutes.post(
     "/v1/audio/voice-isolator",
     resolveModel("generate.audio", {
-        defaultModel: "eleven-voice-isolator",
+        defaultModel: "elevenlabs/voice-isolator",
         supportedEndpoint: "/v1/audio/voice-isolator",
     }),
     track("generate.audio"),

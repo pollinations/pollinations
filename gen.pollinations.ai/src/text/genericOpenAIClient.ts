@@ -134,6 +134,7 @@ function responseBodyError(
 
 function createApiError(
     response: Response,
+    responseBody: string,
     details: unknown,
     modelName: string,
     requestUrl: URL,
@@ -146,6 +147,7 @@ function createApiError(
     error.status = apiErrorStatus(details, response.status);
     error.upstreamStatus = response.status;
     error.details = details;
+    error.responseBody = responseBody;
     error.model = modelName;
     error.requestUrl = requestUrl;
     error.upstreamHeaders = collectUpstreamHeaders(response.headers);
@@ -262,7 +264,13 @@ export async function genericOpenAIClient(
                 `[${requestId}] API error (${response.status}):`,
                 errorDetails,
             );
-            throw createApiError(response, errorDetails, modelName, requestUrl);
+            throw createApiError(
+                response,
+                errorText,
+                errorDetails,
+                modelName,
+                requestUrl,
+            );
         }
 
         if (options.stream) {
@@ -298,10 +306,16 @@ export async function genericOpenAIClient(
         }
 
         let data: ChatCompletion;
+        let responseBody: string | undefined;
         try {
-            data = (await response.json()) as ChatCompletion;
+            responseBody = await response.text();
+            data = JSON.parse(responseBody) as ChatCompletion;
         } catch (thrown: unknown) {
-            throw withUpstreamContext(thrown, requestUrl);
+            const error = withUpstreamContext(thrown, requestUrl);
+            error.responseBody = responseBody;
+            error.upstreamStatus = response.status;
+            error.upstreamHeaders = collectUpstreamHeaders(response.headers);
+            throw error;
         }
         const responseError = responseBodyError(data);
         if (responseError) {
@@ -323,6 +337,7 @@ export async function genericOpenAIClient(
             error.status = apiErrorStatus(errorDetails, upstreamStatus ?? 502);
             error.upstreamStatus = upstreamStatus;
             error.details = errorDetails.details ?? errorDetails;
+            error.responseBody = responseBody;
             error.model = modelName;
             error.requestUrl = requestUrl;
             error.upstreamHeaders = collectUpstreamHeaders(response.headers);

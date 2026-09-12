@@ -1,6 +1,6 @@
 ## Account
 
-Self-service endpoints for the authenticated user. All endpoints require authentication (API key or session). API keys need the relevant `account:<scope>` permission. Base path: `/account`.
+Self-service endpoints for the authenticated user. Endpoints require authentication (API key or session) unless their schema says otherwise. API keys need the relevant `account:<scope>` permission. Base path: `/account`.
 
 `account:usage` is the read-only account-state scope for balances, usage, quests, and earnings. `account:keys` manages keys and, where enabled, my-models. These permissions are independent; request both when a client needs both. Newly created child keys cannot receive `account:keys` through this API.
 
@@ -12,7 +12,7 @@ Self-service endpoints for the authenticated user. All endpoints require authent
 | `GET /account/usage` | Per-request usage history with costs (account-wide) |
 | `GET /account/usage/daily` | Daily aggregated usage for dashboards |
 | `GET /account/key/usage` | Usage history for the calling API key only |
-| `/account/agents` | Managed prompt-agent configuration |
+| `/account/agents` | Managed agent configuration |
 | `/account/my-models` | Private community model registration and allowlisted public publishing |
 | `GET /account/key` | API key validity, type, and permissions |
 
@@ -51,14 +51,23 @@ Returns the current API key's validity, type, and permissions.
 
 ### /account/agents
 
-Create and manage prompt agents and their callable `owner/name` model listings in one operation. `POST /account/agents` requires `name`, `title`, `systemPrompt`, and `baseModel`; `description`, `visibility`, and `mcpServers` are optional. `PATCH /account/agents/{id}` replaces the runtime configuration and can update listing fields. Managed agents are text-only and free, with no owner-set prices, fallbacks, or per-user request limit. Calls still consume Pollen for the base model and tool generations. API keys require `account:keys`.
+Create and manage managed agents and their callable `owner/name` model listings. Private agents are available to any account with linked GitHub; public listing requires community publisher access. Managed agents are text-only and free at the outer layer; their model and tool calls consume the caller's Pollen.
 
-See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for dashboard, CLI, and API examples.
+- **Prompt agent**: instructions, a base model, and optional MCP servers.
+- **Code agent**: a public GitHub repository with `agent.ts` at its root. Pollinations deploys the current default-branch revision; the repository name becomes the model ID and title. The bundled Vercel AI SDK (`ai`, `@ai-sdk/openai-compatible`) is importable; other dependencies are not installed. The callback receives `model(id)`, `mcp.tools(server)`, `respond(config)`, `pollinations(path, init)`, `mcp.listTools(server)`, and `mcp(server, tool, arguments)`.
+
+`POST /account/agents/{id}/sync` redeploys a code agent's latest revision and bundled runtime. It needs no authentication, is limited to once every 30 seconds, and cannot change the stored repository. To deploy after every push, add a GitHub Action step (replace `AGENT_ID`):
+
+```yaml
+- run: curl --fail --retry 2 --retry-delay 30 -X POST https://gen.pollinations.ai/account/agents/AGENT_ID/sync
+```
+
+See [Publish an Agent](/docs#tag/publish-an-agent) for dashboard, CLI, and API examples, or [fork a code agent example](https://github.com/orgs/pollinations/repositories?q=topic%3Apollinations-code-agent-example) to get started.
 
 ### /account/my-models
 
 Community text, image, video, speech-to-text, and text-to-speech model management. Any authenticated account can list, create, update, delete, and call its private owner-only models. Text providers and endpoint agents declare one `api` (`chat_completions` or `responses`) and its exact `url`. Responses listings support both public text APIs through Gen; Chat Completions listings support Chat Completions only. Managed prompt agents use the local Responses runtime and require no endpoint URL. The text endpoint test checks JSON and streaming usage for the selected API; `/models` discovery is optional.
 
-Other model families retain `baseUrl`. Image providers expose `/v1/images/generations` and may also expose `/v1/images/edits`; transcription providers expose `/v1/audio/transcriptions`; speech providers expose `/v1/audio/speech` and must return binary audio, which is billed by input character count. Video providers enter an exact endpoint URL that accepts `{ prompt, duration }` plus optional `image` and `reference_*` URL arrays, then synchronously returns completed MP4 media as `data[].b64_json` or `data[].url`; Pollinations bills the requested duration. The endpoint test detects image-edit support and selects image pricing: valid OpenAI image token usage enables per-1M-token pricing, otherwise a fixed Pollen price is charged once per successful generated image.
+Other model families retain `baseUrl`. Image providers expose `/v1/images/generations` and may also expose `/v1/images/edits`; transcription providers expose `/v1/audio/transcriptions`; speech providers expose `/v1/audio/speech` and must return binary audio, which is billed by input character count. Video providers enter an exact endpoint URL that accepts `prompt`, optional `duration`, and optional `image` and `reference_*` URL arrays. Omitted duration uses the provider's default. Return completed MP4 media as `data[].b64_json` or `data[].url`, plus `usage.duration` in generated seconds. Billing uses reported duration, falling back to requested duration when usage is missing; at least one is required. The endpoint test detects image-edit support and selects image pricing: valid OpenAI image token usage enables per-1M-token pricing, otherwise a fixed Pollen price is charged once per successful generated image.
 
 Public publishing requires `communityEndpointsAllowed: true`; [request account-level publisher access](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml) with the allowlist form. Inspecting and testing an upstream endpoint is open to every account, limited to one probe every 30 seconds. The form does not register individual models. API keys require `account:keys`. The dashboard, Account API, and `polli my-models` support text, image, video, transcription, and speech registration. See [Publish a Model](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_MODEL.md) for setup, publishing, pricing, fallbacks, and health monitoring.

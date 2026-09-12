@@ -19,6 +19,7 @@ import { Route as BuyRouteImport } from './routes/buy'
 import { Route as AuthorizeRouteImport } from './routes/authorize'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppSignInRouteImport } from './routes/app.sign-in'
 import { Route as DashboardQuestsRouteImport } from './routes/_dashboard.quests'
 import { Route as DashboardPollenRouteImport } from './routes/_dashboard.pollen'
 import { Route as DashboardNewsRouteImport } from './routes/_dashboard.news'
@@ -75,6 +76,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppSignInRoute = AppSignInRouteImport.update({
+  id: '/app/sign-in',
+  path: '/app/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardQuestsRoute = DashboardQuestsRouteImport.update({
@@ -136,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/news': typeof DashboardNewsRoute
   '/pollen': typeof DashboardPollenRoute
   '/quests': typeof DashboardQuestsRoute
+  '/app/sign-in': typeof AppSignInRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -155,6 +162,7 @@ export interface FileRoutesByTo {
   '/news': typeof DashboardNewsRoute
   '/pollen': typeof DashboardPollenRoute
   '/quests': typeof DashboardQuestsRoute
+  '/app/sign-in': typeof AppSignInRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -176,6 +184,7 @@ export interface FileRoutesById {
   '/_dashboard/news': typeof DashboardNewsRoute
   '/_dashboard/pollen': typeof DashboardPollenRoute
   '/_dashboard/quests': typeof DashboardQuestsRoute
+  '/app/sign-in': typeof AppSignInRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -197,6 +206,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/pollen'
     | '/quests'
+    | '/app/sign-in'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -216,6 +226,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/pollen'
     | '/quests'
+    | '/app/sign-in'
   id:
     | '__root__'
     | '/'
@@ -236,6 +247,7 @@ export interface FileRouteTypes {
     | '/_dashboard/news'
     | '/_dashboard/pollen'
     | '/_dashboard/quests'
+    | '/app/sign-in'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -249,6 +261,7 @@ export interface RootRouteChildren {
   RefundsRoute: typeof RefundsRoute
   SignInRoute: typeof SignInRoute
   TermsRoute: typeof TermsRoute
+  AppSignInRoute: typeof AppSignInRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -321,6 +334,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/sign-in': {
+      id: '/app/sign-in'
+      path: '/app/sign-in'
+      fullPath: '/app/sign-in'
+      preLoaderRoute: typeof AppSignInRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_dashboard/quests': {
@@ -419,6 +439,7 @@ const rootRouteChildren: RootRouteChildren = {
   RefundsRoute: RefundsRoute,
   SignInRoute: SignInRoute,
   TermsRoute: TermsRoute,
+  AppSignInRoute: AppSignInRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

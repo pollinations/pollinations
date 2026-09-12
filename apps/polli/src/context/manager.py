@@ -40,7 +40,7 @@ class SessionManager:
 
         self._sessions[thread_id] = session
 
-        logger.info(f"Created session for thread {thread_id} - topic: '{topic_summary}'")
+        logger.info(f"Created session for thread {thread_id}")
         return session
 
     def add_to_session(

@@ -86,7 +86,6 @@ export async function generateTextPortkey(
 
     delete state.options.additionalHeaders;
     delete state.options.portkeyGatewayUrl;
-    delete state.options.responsesFetcher;
 
     // Models marked for Responses use their declared direct Responses target;
     // the adapter keeps the public Chat Completions contract stateless.
@@ -101,16 +100,15 @@ export async function generateTextPortkey(
         );
     }
 
-    // Only the Responses adapter owns this parameter. Keep generic provider
-    // requests unchanged because some OpenAI-compatible backends reject it.
-    delete state.options.parallel_tool_calls;
+    // This internal transport belongs only to the Responses adapter.
+    delete state.options.responsesFetcher;
 
     const completion = await genericOpenAIClient(
         state.messages,
         state.options,
         requestConfig,
     );
-    return modelDef?.name === "command-a-plus"
+    return modelDef?.name === "cohere/command-a-plus"
         ? sanitizeCohereResponse(completion)
         : completion;
 }

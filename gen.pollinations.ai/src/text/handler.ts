@@ -22,6 +22,7 @@ import { fixWavHeader } from "../routes/audio.js";
 import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { createPromptAgentResponsesClient } from "./agents/client.ts";
+import { createCodeAgentResponsesClient } from "./agents/code-client.ts";
 import {
     requireChatCompletionUsage,
     requireChatStreamUsage,
@@ -103,17 +104,24 @@ async function gatewayContext(
         parentRequestId: c.get("requestId"),
         parentApiKeyId: c.var.auth?.apiKey?.id,
     });
-    if (communityEndpoint.type !== "prompt_agent") return context;
+    if (
+        communityEndpoint.type !== "prompt_agent" &&
+        communityEndpoint.type !== "code_agent"
+    )
+        return context;
 
     const apiKey = context.modelConfig?.authKey;
     if (typeof apiKey !== "string" || !apiKey) {
         throw new Error("Managed agent request has no agent run token");
     }
-    const client = await createPromptAgentResponsesClient(
-        c,
-        communityEndpoint,
-        apiKey,
-    );
+    const client =
+        communityEndpoint.type === "prompt_agent"
+            ? await createPromptAgentResponsesClient(
+                  c,
+                  communityEndpoint,
+                  apiKey,
+              )
+            : createCodeAgentResponsesClient(c, communityEndpoint, apiKey);
     return {
         ...context,
         responsesFetcher: client.fetcher,
@@ -381,8 +389,11 @@ async function generateTextResponse(
             if (!completion.responseStream) {
                 return sendTextStreamResponse(completion, servedModelId);
             }
-            const [clientBody, trackingBody] = completion.responseStream.tee();
-            completion.responseStream = requireChatStreamUsage(clientBody);
+            // Client and billing must see the same validation errors.
+            const [clientBody, trackingBody] = requireChatStreamUsage(
+                completion.responseStream,
+            ).tee();
+            completion.responseStream = clientBody;
             const response = sendTextStreamResponse(completion, servedModelId);
             c.var.track?.overrideResponseTracking(
                 new Response(trackingBody, { headers: response.headers }),

@@ -15,6 +15,7 @@ import {
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import { resolveModelName } from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -24,6 +25,7 @@ import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import { deleteCodeAgent } from "../services/code-agent.ts";
 import {
     type CommunityEndpointTestResult,
     listCommunityEndpointModels,
@@ -156,9 +158,24 @@ async function requireOwnedEndpoint(db: Db, id: string, ownerUserId: string) {
 async function ensureModelNameAvailable(
     db: Db,
     ownerUserId: string,
+    ownerGithubUsername: string,
     name: string,
     currentId?: string,
 ): Promise<void> {
+    const modelId = communityModelId(ownerGithubUsername, name);
+    let bundledModelExists = false;
+    try {
+        resolveModelName(modelId);
+        bundledModelExists = true;
+    } catch {
+        // Unknown IDs remain available within the owner's namespace.
+    }
+    if (bundledModelExists) {
+        throw new HTTPException(400, {
+            message:
+                "Community model ID conflicts with a bundled model or alias",
+        });
+    }
     const existing = await db.query.communityEndpoint.findFirst({
         columns: { id: true },
         where: and(
@@ -455,7 +472,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 db,
                 user.id,
             );
-            await ensureModelNameAvailable(db, user.id, input.name);
+            await ensureModelNameAvailable(
+                db,
+                user.id,
+                ownerGithubUsername,
+                input.name,
+            );
             await enforcePublishingAccess(db, user.id, input.visibility);
             const queuesPublication = input.visibility === "public";
             const payload: EndpointAgentListingPayload = {
@@ -520,7 +542,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 db,
                 user.id,
             );
-            await ensureModelNameAvailable(db, user.id, input.name);
+            await ensureModelNameAvailable(
+                db,
+                user.id,
+                ownerGithubUsername,
+                input.name,
+            );
             const targetPolicy = deriveCreateProxyPolicy(input);
             const queuesPublication = input.visibility === "public";
             const policy = queuesPublication
@@ -705,7 +732,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         input.modality === "image"
                             ? result.inputModalities?.includes("image")
                                 ? "Generation and editing endpoints responded with image data"
-                                : "Generation endpoint responded; editing is not supported"
+                                : `Generation endpoint responded; editing test failed: ${result.imageEditError}`
                             : input.modality === "video"
                               ? "Endpoint responded with playable video"
                               : input.modality === "transcription"
@@ -728,7 +755,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Update My Model",
             description:
-                "Update a community model owned by the authenticated account. Changing visibility to public requires an allowlisted account and takes effect after 3 hours; public models may be free or priced. API keys require `account:keys`.",
+                "Update a community model owned by the authenticated account. Code-agent names, titles, and descriptions come from GitHub; an empty description is ignored. Changing visibility to public requires an allowlisted account and takes effect after 3 hours; public models may be free or priced. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Updated community model",
@@ -763,6 +790,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             await ensureModelNameAvailable(
                 db,
                 user.id,
+                ownerGithubUsername,
                 input.name ?? endpoint.name,
                 id,
             );
@@ -787,7 +815,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
             let pendingAt = pendingReady ? null : endpoint.pendingAt;
             if (input.name !== undefined) update.name = input.name;
             if (input.title !== undefined) update.title = input.title;
-            if (input.description !== undefined) {
+            if (
+                endpoint.type !== "code_agent" &&
+                input.description !== undefined
+            ) {
                 update.description = input.description || null;
             }
             if (input.requiredSafetyFeatures !== undefined) {
@@ -830,8 +861,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 pendingAt ??= new Date();
             }
             update.visibility = nextVisibility;
-            if (endpoint.type === "prompt_agent") {
-                // Prompt configuration is edited through /account/agents.
+            if (
+                endpoint.type === "prompt_agent" ||
+                endpoint.type === "code_agent"
+            ) {
+                // Managed configuration is edited through /account/agents.
                 // This route only updates shared listing state such as hidden.
             } else if (endpoint.type === "endpoint_agent") {
                 const current = parseListingPayload(
@@ -1010,7 +1044,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
             requireAccountPermission(c.var.auth.apiKey, "keys");
-            await requireOwnedEndpoint(db, id, user.id);
+            const endpoint = await requireOwnedEndpoint(db, id, user.id);
             await db
                 .delete(schema.communityEndpoint)
                 .where(
@@ -1019,6 +1053,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         eq(schema.communityEndpoint.ownerUserId, user.id),
                     ),
                 );
+            if (endpoint.type === "code_agent") {
+                await deleteCodeAgent(c.env, id).catch((error) => {
+                    console.error("Failed to remove code agent Worker", error);
+                });
+            }
             return c.json({ id });
         },
     );

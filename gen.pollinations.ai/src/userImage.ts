@@ -1,5 +1,5 @@
 import type { ImageInputErrorCode } from "@shared/error.ts";
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
 import { readResponseBytes } from "@shared/response-bytes.ts";
 import { validateUserMediaUrl } from "@shared/user-media-url.ts";
@@ -12,13 +12,11 @@ import { validateUserMediaUrl } from "@shared/user-media-url.ts";
  * `upstreamStatus` for observability only — surfacing it as ours would make a
  * dead link return 404 and a rate-limiting image CDN return 429.
  *
- * Extends HttpError so the image and 3d funnels catch it by the check they
- * already make, while the text funnel reads it structurally as a ServiceError.
+ * Carries the public status and original image-host diagnostics directly.
  */
-export class UserImageError extends HttpError {
+export class UserImageError extends UpstreamError {
+    override readonly name = "UserImageError";
     readonly errorCode: ImageInputErrorCode;
-    upstreamStatus?: number;
-    requestUrl?: URL;
 
     constructor(
         message: string,
@@ -26,11 +24,8 @@ export class UserImageError extends HttpError {
         requestUrl?: URL,
         upstreamStatus?: number,
     ) {
-        super(message, 400, { validation: true }, undefined, errorCode);
-        this.name = "UserImageError";
+        super(400, { message, errorCode, requestUrl, upstreamStatus });
         this.errorCode = errorCode;
-        this.requestUrl = requestUrl;
-        this.upstreamStatus = upstreamStatus;
     }
 }
 

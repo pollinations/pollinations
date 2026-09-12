@@ -43,6 +43,11 @@ export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     24752658, // zero2launch
     170070104, // NamanSoni78
     63298614, // xiaotian1171
+    84572851, // immature-yt
+    177411725, // Davizigjojo
+    251958874, // scriptsnsenses-sys
+    313017538, // lolyeon2011-oss
+    160404236, // ZapGaming
 ] as const;
 
 const COMMUNITY_MODEL_ALLOWED_GITHUB_ID_SET = new Set<number>(

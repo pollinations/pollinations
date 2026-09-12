@@ -26,6 +26,8 @@ const SKIPPED_CONFIG_KEYS = new Set([
     "useUserApiKey",
     "defaultOptions",
     "requiresBase64ImageUrls",
+    "supportsMaxCompletionTokens",
+    "supportsStreamOptions",
 ]);
 
 export async function generatePortkeyHeaders(

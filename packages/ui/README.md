@@ -33,7 +33,7 @@ export function App() {
     return (
         <PolliProvider appKey="pk_your_publishable_key" permissions={["profile"]}>
             <Surface>
-                <AppUserMenu dashboardHref="https://enter.pollinations.ai" />
+                <AppUserMenu />
             </Surface>
         </PolliProvider>
     );
@@ -132,7 +132,11 @@ Wallet colors and utilities are bundled into the main stylesheet
 
 - `@pollinations/ui` exports SDK-free design primitives, helpers, and
   compositions. These can be used without Pollinations auth.
-- `@pollinations/ui/auth` exports SDK-free auth modal pieces:
+- `@pollinations/ui/auth` exports `PollinationsSignInButton` (official brand
+  asset, outlined amber styling, accessible provider label) and `DashboardSignIn`
+  (the shared satellite-app sign-in page). Apps supply the sign-in action; these
+  components do not issue credentials or choose an authentication method.
+- `@pollinations/ui/auth` also exports SDK-free auth modal pieces:
   `AuthModal`, `AuthModalHeader`, `AuthModalLoading`, `AuthInfoCard`, and
   `ErrorBanner`.
 - `@pollinations/ui/auth/sdk` exports identity/session components that read

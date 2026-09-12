@@ -20,6 +20,7 @@ import {
     validateCommunityEndpointUrl,
 } from "@shared/community-endpoint-urls.ts";
 import {
+    CODE_AGENT_BASE_URL_PLACEHOLDER,
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointApi,
@@ -99,6 +100,7 @@ import {
     callCommunityVideoEndpoint,
 } from "../src/image/communityEndpoint.ts";
 import worker from "../src/index.ts";
+import { TEXT_BALANCE_NOTICE_ENABLED } from "../src/middleware/text-balance-notice.ts";
 import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
@@ -638,6 +640,24 @@ describe("community endpoint helpers", () => {
         ).toBeNull();
         expect(
             parseListingPayload(
+                "code_agent",
+                JSON.stringify({
+                    repository: "https://github.com/example/agents",
+                    deployedCommitSha: "a".repeat(40),
+                }),
+            ),
+        ).toEqual({
+            repository: "https://github.com/example/agents",
+            deployedCommitSha: "a".repeat(40),
+        });
+        expect(
+            parseListingPayload(
+                "code_agent",
+                JSON.stringify({ repository: "https://example.com/agents" }),
+            ),
+        ).toBeNull();
+        expect(
+            parseListingPayload(
                 "endpoint_agent",
                 JSON.stringify({ perUserRpm: -1 }),
             ),
@@ -916,7 +936,7 @@ describe("community endpoint helpers", () => {
         );
     });
 
-    it("projects a provider profile onto the community model brand", () => {
+    it("projects a provider profile onto the community model publisher", () => {
         const modelDefinition = communityModelDefinition({
             modelId: "voodoohop/openai",
             title: "OpenAI Fast",
@@ -926,7 +946,7 @@ describe("community endpoint helpers", () => {
             ...communityEndpointPrices({}),
         });
 
-        expect(modelDefinition.brand).toBe("Example AI");
+        expect(modelDefinition.publisher).toBe("Example AI");
         expect(modelDefinition.brandUrl).toBe("https://example.com/");
     });
 
@@ -1548,7 +1568,7 @@ describe("community endpoint helpers", () => {
             };
         }
 
-        it("calls the configured URL and bills the requested duration", async () => {
+        it("forwards the requested duration but bills provider-reported seconds", async () => {
             const fetchMock = vi.fn(async (input, init) => {
                 const request = new Request(input, init);
                 expect(request.url).toBe(
@@ -1570,6 +1590,7 @@ describe("community endpoint helpers", () => {
                 });
                 return Response.json({
                     data: [{ b64_json: TEST_MP4_BASE64 }],
+                    usage: { duration: 3.5 },
                 });
             });
             vi.stubGlobal("fetch", fetchMock);
@@ -1591,9 +1612,9 @@ describe("community endpoint helpers", () => {
             );
 
             expect(result.mimeType).toBe("video/mp4");
-            expect(result.durationSeconds).toBe(4);
+            expect(result.durationSeconds).toBe(3.5);
             expect(result.trackingData.usage).toEqual({
-                completionVideoSeconds: 4,
+                completionVideoSeconds: 3.5,
             });
             expect(Array.from(result.buffer)).toEqual(TEST_MP4_BYTES);
         });
@@ -1612,6 +1633,7 @@ describe("community endpoint helpers", () => {
                                 url: "https://api.example.com/assets/clip.mp4",
                             },
                         ],
+                        usage: { duration: 3 },
                     });
                 }
                 expect(request.url).toBe(
@@ -1646,6 +1668,7 @@ describe("community endpoint helpers", () => {
                                 url: "https://api.example.com/assets/clip.mp4",
                             },
                         ],
+                        usage: { duration: 3 },
                     });
                 }
                 return new Response(
@@ -1679,6 +1702,7 @@ describe("community endpoint helpers", () => {
                 vi.fn(async () =>
                     Response.json({
                         data: [{ b64_json: TEST_INVALID_IMAGE_BASE64 }],
+                        usage: { duration: 2 },
                     }),
                 ),
             );
@@ -1699,6 +1723,7 @@ describe("community endpoint helpers", () => {
                 vi.fn(async () =>
                     Response.json({
                         data: [{ b64_json: TEST_BARE_MP4_BASE64 }],
+                        usage: { duration: 2 },
                     }),
                 ),
             );
@@ -1713,8 +1738,14 @@ describe("community endpoint helpers", () => {
             ).rejects.toMatchObject({ status: 502 });
         });
 
-        it("requires a request duration before calling the endpoint", async () => {
-            const fetchMock = vi.fn();
+        it("leaves an omitted duration to the provider and bills its usage", async () => {
+            const fetchMock = vi.fn(async (_input, init) => {
+                expect(JSON.parse(init.body)).toEqual({ prompt: "a sprout" });
+                return Response.json({
+                    data: [{ b64_json: TEST_MP4_BASE64 }],
+                    usage: { duration: 6.25 },
+                });
+            });
             vi.stubGlobal("fetch", fetchMock);
 
             await expect(
@@ -1724,8 +1755,66 @@ describe("community endpoint helpers", () => {
                     {},
                     secret,
                 ),
-            ).rejects.toMatchObject({ status: 400 });
-            expect(fetchMock).not.toHaveBeenCalled();
+            ).resolves.toMatchObject({
+                durationSeconds: 6.25,
+                trackingData: { usage: { completionVideoSeconds: 6.25 } },
+            });
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        });
+
+        it.each([
+            undefined,
+            null,
+            {},
+            { duration: null },
+        ])("falls back to requested duration when usage is missing: %j", async (usage) => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        data: [{ b64_json: TEST_MP4_BASE64 }],
+                        usage,
+                    }),
+                ),
+            );
+            await expect(
+                callCommunityVideoEndpoint(
+                    await videoEndpoint(),
+                    "a sprout",
+                    { duration: 5 },
+                    secret,
+                ),
+            ).resolves.toMatchObject({
+                durationSeconds: 5,
+                trackingData: { usage: { completionVideoSeconds: 5 } },
+            });
+        });
+
+        it.each([
+            { duration: 0 },
+            { duration: -1 },
+            { duration: "5" },
+        ])("rejects invalid reported usage %j even when duration was requested", async (usage) => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        data: [{ b64_json: TEST_MP4_BASE64 }],
+                        usage,
+                    }),
+                ),
+            );
+            await expect(
+                callCommunityVideoEndpoint(
+                    await videoEndpoint(),
+                    "a sprout",
+                    { duration: 5 },
+                    secret,
+                ),
+            ).rejects.toMatchObject({
+                status: 502,
+                message: expect.stringContaining("usage.duration"),
+            });
         });
 
         it("preserves upstream video failures", async () => {
@@ -2828,9 +2917,28 @@ fixtureTest(
         const { key: zeroBalanceCallerKey } = await createTestApiKey({
             user: { tierBalance: 0, packBalance: 0 },
         });
-        expect((await callFreePublicModel(zeroBalanceCallerKey)).status).toBe(
-            402,
+        const zeroBalanceResponse =
+            await callFreePublicModel(zeroBalanceCallerKey);
+        expect(zeroBalanceResponse.status).toBe(
+            TEXT_BALANCE_NOTICE_ENABLED ? 200 : 402,
         );
+        if (TEXT_BALANCE_NOTICE_ENABLED) {
+            await expect(zeroBalanceResponse.json()).resolves.toMatchObject({
+                choices: [
+                    {
+                        message: {
+                            content: expect.stringContaining(
+                                "?ref=agent_low_balance_topup",
+                            ),
+                        },
+                    },
+                ],
+                usage: { total_tokens: 0 },
+            });
+            expect(zeroBalanceResponse.headers.get("cache-control")).toBe(
+                "private, no-store",
+            );
+        }
         const { key: fundedCallerKey } = await createTestApiKey({
             user: { tierBalance: 1, packBalance: 0 },
         });
@@ -3170,9 +3278,19 @@ fixtureTest.each(
     },
 );
 
-fixtureTest(
-    "runs managed Responses and Chat through Gen and bills each inner model call once",
-    async () => {
+fixtureTest.each(
+    ["responses", "chat/completions"].flatMap((route) =>
+        [false, true].flatMap((stream) =>
+            ["valid", "missing", "malformed"].map((usageKind) => ({
+                route,
+                stream,
+                usageKind,
+            })),
+        ),
+    ),
+)(
+    "bills managed $route stream=$stream with $usageKind final usage and a paid MCP call",
+    async ({ route, stream, usageKind }) => {
         const ownerGithubUsername = `agent-owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `managed-${crypto.randomUUID().slice(0, 8)}`;
         const agentId = crypto.randomUUID();
@@ -3190,9 +3308,9 @@ fixtureTest(
             baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
             upstreamModel: agentId,
             agentConfig: {
-                systemPrompt: "Reply tersely.",
+                systemPrompt: "Search once, then reply tersely.",
                 baseModel: "openai-fast",
-                mcpServers: [],
+                mcpServers: ["exa"],
             },
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -3200,32 +3318,100 @@ fixtureTest(
         resetGenerationModelRegistryCache();
 
         const caller = await createTestApiKey({
-            name: "managed-responses-billing",
-            user: { packBalance: 100 },
+            name: "managed-responses-mcp-billing",
+            user: { tierBalance: 0, packBalance: 100 },
         });
         const balanceBefore = await getUserBalance(db, caller.userId);
         const expectedInnerPrice = calculateUsageBilling({
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             usage: { promptTextTokens: 10, completionTextTokens: 5 },
-            servedBy: getRegistryModelDefinition("openai-fast"),
+            servedBy: getRegistryModelDefinition("openai/gpt-5-nano"),
         }).price.totalPrice;
+        const expectedMcpPrice = 0.007;
         const tinybirdEvents: Record<string, unknown>[] = [];
         const testClientIp = "203.0.113.42";
         const runtimeClientIps: string[] = [];
         let runtimeToken = "";
+        let modelCalls = 0;
+        let mcpCalls = 0;
+
+        // The shared Exa fixture supplies paid tools/call receipts. Give its
+        // handshake the tool schema needed by the real managed-agent loop.
+        const mcpBinding = {
+            async fetch(request: Request): Promise<Response> {
+                if (request.method === "GET")
+                    return new Response(null, { status: 405 });
+                if (request.method === "DELETE")
+                    return new Response(null, { status: 200 });
+                const rpc = (await request.clone().json()) as {
+                    id?: number;
+                    method: string;
+                };
+                if (rpc.method === "initialize")
+                    return Response.json({
+                        jsonrpc: "2.0",
+                        id: rpc.id,
+                        result: {
+                            protocolVersion: "2025-06-18",
+                            capabilities: { tools: {} },
+                            serverInfo: { name: "exa", version: "1.0.0" },
+                        },
+                    });
+                if (rpc.method === "notifications/initialized")
+                    return new Response(null, { status: 202 });
+                if (rpc.method === "tools/list")
+                    return Response.json({
+                        jsonrpc: "2.0",
+                        id: rpc.id,
+                        result: {
+                            tools: [
+                                {
+                                    name: "web_search_exa",
+                                    inputSchema: {
+                                        type: "object",
+                                        properties: {
+                                            query: { type: "string" },
+                                        },
+                                        required: ["query"],
+                                    },
+                                },
+                            ],
+                        },
+                    });
+                expect(rpc.method).toBe("tools/call");
+                mcpCalls++;
+                return env.EXA_MCP.fetch(request);
+            },
+        } as unknown as typeof env.EXA_MCP;
+        const dispatch = async (request: Request): Promise<Response> => {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                request,
+                withInlineGenerationCoordinator({
+                    ...env,
+                    EXA_MCP: mcpBinding,
+                }),
+                ctx,
+            );
+            const body = response.body ? await response.arrayBuffer() : null;
+            await waitOnExecutionContext(ctx);
+            return new Response(body, response);
+        };
         vi.stubGlobal(
             "fetch",
             vi.fn(async (input, init) => {
                 const request = new Request(input, init);
                 if (isBillingFetch(request)) {
-                    tinybirdEvents.push(
-                        ...parseIngestedEvents(await request.text()),
-                    );
+                    if (new URL(request.url).pathname === "/v0/events") {
+                        tinybirdEvents.push(
+                            ...parseIngestedEvents(await request.text()),
+                        );
+                    }
                     return Response.json({ data: [] });
                 }
                 if (
-                    request.url ===
-                    "https://gen.pollinations.ai/v1/chat/completions"
+                    new URL(request.url).origin ===
+                    "https://gen.pollinations.ai"
                 ) {
                     runtimeClientIps.push(
                         request.headers.get("x-real-ip") ?? "",
@@ -3234,82 +3420,132 @@ fixtureTest(
                         request.headers
                             .get("authorization")
                             ?.replace(/^Bearer\s+/i, "") ?? "";
-                    return fetchGen(request);
+                    return dispatch(request);
                 }
                 if (isChatCompletionsRequest(request)) {
-                    return Response.json({
-                        id: "chatcmpl-managed",
-                        object: "chat.completion",
-                        created: 1,
-                        model: "openai-fast",
-                        choices: [
-                            {
-                                index: 0,
-                                message: {
-                                    role: "assistant",
-                                    content: "managed answer",
+                    modelCalls++;
+                    const upstream = (await request.json()) as {
+                        messages: { role: string; content: string }[];
+                        reasoning_effort?: string;
+                    };
+                    expect(upstream.reasoning_effort).toBe("low");
+                    if (modelCalls === 2) {
+                        expect(
+                            upstream.messages.some(
+                                (message) =>
+                                    message.role === "tool" &&
+                                    message.content.includes("exa proxied"),
+                            ),
+                        ).toBe(true);
+                    }
+                    const message =
+                        modelCalls === 1
+                            ? {
+                                  role: "assistant",
+                                  content: "checking ",
+                                  tool_calls: [
+                                      {
+                                          id: "managed-search",
+                                          type: "function",
+                                          function: {
+                                              name: "mcp__exa__web_search_exa",
+                                              arguments: '{"query":"hello"}',
+                                          },
+                                      },
+                                  ],
+                              }
+                            : { role: "assistant", content: "managed answer" };
+                    const finishReason =
+                        modelCalls === 1 ? "tool_calls" : "stop";
+                    const usage =
+                        modelCalls === 2 && usageKind === "missing"
+                            ? undefined
+                            : {
+                                  prompt_tokens: 10,
+                                  completion_tokens: 5,
+                                  total_tokens: 15,
+                                  ...(modelCalls === 2 &&
+                                  usageKind === "malformed"
+                                      ? {
+                                            prompt_tokens_details: {
+                                                cache_write_tokens: -1,
+                                            },
+                                        }
+                                      : {}),
+                              };
+                    if (!stream)
+                        return Response.json({
+                            id: `chatcmpl-managed-${modelCalls}`,
+                            object: "chat.completion",
+                            created: 1,
+                            model: "openai-fast",
+                            choices: [
+                                {
+                                    index: 0,
+                                    message,
+                                    finish_reason: finishReason,
                                 },
-                                finish_reason: "stop",
+                            ],
+                            ...(usage ? { usage } : {}),
+                        });
+                    return new Response(
+                        `${[
+                            {
+                                id: `chatcmpl-managed-${modelCalls}`,
+                                object: "chat.completion.chunk",
+                                created: 1,
+                                model: "openai-fast",
+                                choices: [
+                                    {
+                                        index: 0,
+                                        delta: {
+                                            ...message,
+                                            ...(message.tool_calls
+                                                ? {
+                                                      tool_calls:
+                                                          message.tool_calls.map(
+                                                              (
+                                                                  call,
+                                                                  index,
+                                                              ) => ({
+                                                                  ...call,
+                                                                  index,
+                                                              }),
+                                                          ),
+                                                  }
+                                                : {}),
+                                        },
+                                        finish_reason: null,
+                                    },
+                                ],
                             },
-                        ],
-                        usage: {
-                            prompt_tokens: 10,
-                            completion_tokens: 5,
-                            total_tokens: 15,
+                            {
+                                model: "openai-fast",
+                                choices: [
+                                    {
+                                        index: 0,
+                                        delta: {},
+                                        finish_reason: finishReason,
+                                    },
+                                ],
+                                ...(usage ? { usage } : {}),
+                            },
+                        ]
+                            .map(
+                                (event) => `data: ${JSON.stringify(event)}\n\n`,
+                            )
+                            .join("")}data: [DONE]\n\n`,
+                        {
+                            headers: { "Content-Type": "text/event-stream" },
                         },
-                    });
+                    );
                 }
                 throw new Error(`Unexpected fetch: ${request.url}`);
             }),
         );
 
-        const response = await fetchGen(
-            new Request("https://gen.pollinations.ai/v1/responses", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${caller.key}`,
-                    "Content-Type": "application/json",
-                    "cf-connecting-ip": testClientIp,
-                },
-                body: JSON.stringify({ model: modelId, input: "hello" }),
-            }),
-        );
-
-        expect(response.status).toBe(200);
-        await expect(response.json()).resolves.toMatchObject({
-            object: "response",
-            model: agentId,
-            output: [
-                {
-                    type: "message",
-                    content: [{ type: "output_text", text: "managed answer" }],
-                },
-            ],
-            usage: { input_tokens: 10, output_tokens: 5, total_tokens: 15 },
-        });
-        expect(runtimeToken).toMatch(/^ag_/);
-        await expect(
-            verifyAgentRunToken(runtimeToken, env.BETTER_AUTH_SECRET),
-        ).resolves.toMatchObject({
-            parentApiKeyId: caller.id,
-            managedAgentId: agentId,
-        });
-        expect(runtimeClientIps).toEqual([testClientIp]);
-        const balanceAfter = await getUserBalance(db, caller.userId);
-        expect(balanceAfter.packBalance).toBeCloseTo(
-            balanceBefore.packBalance - expectedInnerPrice,
-            8,
-        );
-        expect(
-            tinybirdEvents.filter(
-                (event) =>
-                    event.modelRequested === "openai-fast" &&
-                    event.isBilledUsage === true,
-            ),
-        ).toHaveLength(1);
-
-        const chatResponse = await fetchGen(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+        const response = await dispatch(
+            new Request(`https://gen.pollinations.ai/v1/${route}`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${caller.key}`,
@@ -3318,62 +3554,99 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     model: modelId,
-                    messages: [{ role: "user", content: "different prompt" }],
+                    stream,
+                    ...(route === "responses"
+                        ? { input: "hello", reasoning: { effort: "low" } }
+                        : {
+                              messages: [{ role: "user", content: "hello" }],
+                              reasoning_effort: "low",
+                          }),
                 }),
             }),
         );
-        expect(chatResponse.status).toBe(200);
-        await expect(chatResponse.json()).resolves.toMatchObject({
-            object: "chat.completion",
-            choices: [
-                {
-                    message: {
-                        role: "assistant",
-                        content: "managed answer",
-                    },
-                },
-            ],
-            usage: {
-                prompt_tokens: 10,
-                completion_tokens: 5,
-                total_tokens: 15,
-            },
+        const body = await response.text();
+        expect(modelCalls).toBe(2);
+        expect(mcpCalls).toBe(1);
+        expect(runtimeClientIps.every((ip) => ip === testClientIp)).toBe(true);
+        expect(runtimeToken).toMatch(/^ag_/);
+        const runToken = await verifyAgentRunToken(
+            runtimeToken,
+            env.BETTER_AUTH_SECRET,
+        );
+        expect(runToken).toMatchObject({
+            parentApiKeyId: caller.id,
+            managedAgentId: agentId,
         });
-        expect(runtimeClientIps).toEqual([testClientIp, testClientIp]);
-        const balanceAfterChat = await getUserBalance(db, caller.userId);
-        expect(balanceAfterChat.packBalance).toBeCloseTo(
-            balanceBefore.packBalance - 2 * expectedInnerPrice,
+        if (usageKind === "valid") {
+            expect(response.status, body).toBe(200);
+            expect(body).toContain("managed answer");
+            if (route === "responses") {
+                expect(body).toContain('"type":"function_call"');
+                expect(body).toContain('"type":"function_call_output"');
+                expect(body).not.toContain('"type":"mcp_call"');
+            } else {
+                expect(body).toContain("Tool Executed");
+                expect(body).not.toContain('"tool_calls":[');
+            }
+        } else {
+            expect(response.status).toBe(stream ? 200 : 502);
+            expect(body).toContain('"error"');
+            expect(body).not.toContain('"type":"response.completed"');
+        }
+
+        const expectedBilledModelCalls = usageKind === "valid" ? 2 : 1;
+        const balanceAfter = await getUserBalance(db, caller.userId);
+        expect(
+            balanceBefore.packBalance - balanceAfter.packBalance,
+        ).toBeCloseTo(
+            expectedBilledModelCalls * expectedInnerPrice + expectedMcpPrice,
             8,
         );
-        const billedInnerEvents = tinybirdEvents.filter(
+        const billed = tinybirdEvents.filter(
             (event) =>
-                event.modelRequested === "openai-fast" &&
-                event.isBilledUsage === true,
+                event.isBilledUsage === true &&
+                event.modelRequested !== modelId,
         );
-        expect(billedInnerEvents).toHaveLength(2);
-        for (const event of billedInnerEvents) {
+        const modelEvents = billed.filter(
+            (event) => event.modelRequested === "openai-fast",
+        );
+        expect(modelEvents).toHaveLength(expectedBilledModelCalls);
+        for (const event of modelEvents) {
             expect(event).toMatchObject({
                 tokenCountPromptText: 10,
                 tokenCountCompletionText: 5,
                 totalPrice: expectedInnerPrice,
             });
         }
+        const mcpEvents = billed.filter(
+            (event) => event.eventType === "mcp.call",
+        );
+        expect(mcpEvents).toHaveLength(1);
+        expect(mcpEvents[0]).toMatchObject({
+            requestPath: "/mcp/exa",
+            modelRequested: "exa",
+            totalCost: expectedMcpPrice,
+            totalPrice: expectedMcpPrice,
+            adjustmentCosts: { "exa.search.v1": expectedMcpPrice },
+            adjustmentUnits: { "exa.search.v1": 1 },
+        });
         const outerEvents = tinybirdEvents.filter(
             (event) => event.modelRequested === modelId,
         );
-        expect(outerEvents).toHaveLength(2);
-        for (const event of outerEvents) {
-            expect(event).toMatchObject({
-                totalCost: 0,
-                totalPrice: 0,
-                devPrice: 0,
-            });
+        expect(outerEvents).toHaveLength(1);
+        expect(outerEvents[0]).toMatchObject({
+            totalCost: 0,
+            totalPrice: 0,
+            devPrice: 0,
+        });
+        expect(billed).toHaveLength(expectedBilledModelCalls + 1);
+        expect(new Set(billed.map((event) => event.requestId)).size).toBe(
+            billed.length,
+        );
+        for (const event of billed) {
+            expect(event.parentRequestId).toBe(outerEvents[0].requestId);
         }
-        const outerRequestIds = outerEvents.map((event) => event.requestId);
-        expect(new Set(outerRequestIds).size).toBe(2);
-        expect(
-            billedInnerEvents.map((event) => event.parentRequestId).sort(),
-        ).toEqual([...outerRequestIds].sort());
+        expect(runToken?.parentRequestId).toBe(outerEvents[0].requestId);
     },
 );
 
@@ -4221,8 +4494,8 @@ fixtureTest(
 );
 
 fixtureTest(
-    "routes direct calls to a hidden community model",
-    async ({ apiKey }) => {
+    "routes canonical and aliased calls to a hidden community model with a canonical-only key",
+    async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `disabled-call-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
@@ -4253,6 +4526,10 @@ fixtureTest(
             hiddenBy: "monitor",
             createdAt: new Date(),
             updatedAt: new Date(),
+        });
+        const { key: apiKey } = await createTestApiKey({
+            allowedModels: [modelId],
+            user: { packBalance: 100 },
         });
 
         const fetchMock = vi.fn(async (input, init) => {
@@ -5136,6 +5413,33 @@ fixtureTest(
             },
         });
 
+        // Changing the response format does not create another edit, even
+        // for multipart requests without an explicit seed or authentication.
+        editFormData.set("response_format", "url");
+        const cachedEditResponse = await fetchGen(
+            new Request("https://gen.pollinations.ai/v1/images/edits", {
+                method: "POST",
+                body: editFormData,
+            }),
+        );
+        expect(cachedEditResponse.status).toBe(200);
+        expect(cachedEditResponse.headers.get("x-cache")).toBe("HIT");
+        const cachedEdit = await cachedEditResponse.json<{
+            data: Array<{ url: string }>;
+            usage: { total_tokens: number };
+        }>();
+        expect(cachedEdit.usage.total_tokens).toBe(1);
+        expect(cachedEdit.data[0].url).toMatch(
+            /^https:\/\/media\.pollinations\.ai\/[a-f0-9]{64}$/,
+        );
+        const storedEdit = await env.MEDIA.get(
+            new URL(cachedEdit.data[0].url).pathname.slice(1),
+        );
+        if (!storedEdit) throw new Error("Edited image was not stored");
+        expect(
+            Array.from(new Uint8Array(await storedEdit.arrayBuffer())),
+        ).toEqual(TEST_PNG_BYTES);
+
         const simpleEditResponse = await fetchGen(
             new Request(
                 `https://gen.pollinations.ai/image/turn%20it%20red?model=${encodeURIComponent(
@@ -5174,9 +5478,10 @@ fixtureTest(
         await expect(urlImageResponse.json()).resolves.toMatchObject({
             data: [
                 {
-                    url: expect.stringContaining(
-                        `/image/blue%20flower?model=${encodeURIComponent(registered.modelId)}`,
+                    url: expect.stringMatching(
+                        /^https:\/\/media\.pollinations\.ai\/[a-f0-9]{64}$/,
                     ),
+                    media_type: "image/png",
                 },
             ],
         });
@@ -5323,9 +5628,9 @@ fixtureTest(
     },
 );
 
-fixtureTest(
-    "registers, catalogs, and serves a billed community video model",
-    async () => {
+fixtureTest.each(["video", "image", "v1/images/generations"])(
+    "registers and bills provider-default video duration through /%s",
+    async (route) => {
         const ownerGithubUsername = `video-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `clip-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
@@ -5363,9 +5668,14 @@ fixtureTest(
                 );
                 const body = (await request.json()) as {
                     prompt: string;
-                    duration: number;
+                    duration?: number;
                     reference_images?: string[];
                 };
+                if (body.prompt === "missing usage") {
+                    return Response.json({
+                        data: [{ b64_json: TEST_MP4_BASE64 }],
+                    });
+                }
                 const isProbe =
                     body.prompt ===
                     "A green sprout gently moving in the breeze.";
@@ -5377,16 +5687,22 @@ fixtureTest(
                 expect(body).toEqual(
                     isProbe
                         ? { prompt: body.prompt, duration: 5 }
-                        : {
-                              prompt: "green sprout",
-                              duration: 4,
-                              reference_images: [
-                                  "https://media.example.com/style.jpg",
-                              ],
-                          },
+                        : body.prompt === "media video prompt"
+                          ? { prompt: body.prompt }
+                          : {
+                                prompt: "green sprout",
+                                ...(route !== "v1/images/generations"
+                                    ? {
+                                          reference_images: [
+                                              "https://media.example.com/style.jpg",
+                                          ],
+                                      }
+                                    : {}),
+                            },
                 );
                 return Response.json({
                     data: [{ b64_json: TEST_MP4_BASE64 }],
+                    usage: { duration: 4.5 },
                 });
             }
             if (isBillingFetch(request)) {
@@ -5416,8 +5732,8 @@ fixtureTest(
         expect(probeResponse.status).toBe(200);
         await expect(probeResponse.json()).resolves.toMatchObject({
             message: "Endpoint responded with playable video",
-            usage: { duration: 5 },
-            billableUsage: { completionVideoSeconds: 5 },
+            usage: { duration: 4.5 },
+            billableUsage: { completionVideoSeconds: 4.5 },
         });
 
         const registerResponse = await fetchEnterApi(
@@ -5456,11 +5772,26 @@ fixtureTest(
         });
         const balanceBefore = await getUserBalance(db, caller.userId);
         const coordinatedEnv = withInlineGenerationCoordinator(env);
+        const isPost = route === "v1/images/generations";
         const generationRequest = () =>
-            new Request(
-                `https://gen.pollinations.ai/video/green%20sprout?model=${encodeURIComponent(registered.modelId)}&duration=4&reference_images=${encodeURIComponent("https://media.example.com/style.jpg")}`,
-                { headers: { Authorization: `Bearer ${caller.key}` } },
-            );
+            isPost
+                ? new Request(`https://gen.pollinations.ai/${route}`, {
+                      method: "POST",
+                      headers: {
+                          Authorization: `Bearer ${caller.key}`,
+                          "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({
+                          model: registered.modelId,
+                          prompt: "green sprout",
+                          seed: 42,
+                          response_format: "b64_json",
+                      }),
+                  })
+                : new Request(
+                      `https://gen.pollinations.ai/${route}/green%20sprout?model=${encodeURIComponent(registered.modelId)}&reference_images=${encodeURIComponent("https://media.example.com/style.jpg")}`,
+                      { headers: { Authorization: `Bearer ${caller.key}` } },
+                  );
         const disconnectedContext = createExecutionContext();
         const abort = new AbortController();
         const disconnected = Promise.resolve(
@@ -5470,7 +5801,14 @@ fixtureTest(
                 disconnectedContext,
             ),
         ).catch(() => null);
-        await generationStarted;
+        await Promise.race([
+            generationStarted,
+            disconnected.then((response) => {
+                throw new Error(
+                    `Generation returned before reaching the provider: ${response?.status}`,
+                );
+            }),
+        ]);
         abort.abort();
 
         const rejoinedContext = createExecutionContext();
@@ -5484,16 +5822,24 @@ fixtureTest(
         expect(generationResponse.status).toBe(200);
         expect(generationResponse.headers.get("x-cache")).toBe("HIT");
         expect(generationResponse.headers.get("content-type")).toBe(
-            "video/mp4",
+            isPost ? "application/json" : "video/mp4",
         );
         expect(
             generationResponse.headers.get(
                 USAGE_TYPE_HEADERS.completionVideoSeconds,
             ),
-        ).toBe("4");
-        expect(
-            Array.from(new Uint8Array(await generationResponse.arrayBuffer())),
-        ).toEqual(TEST_MP4_BYTES);
+        ).toBe("4.5");
+        if (isPost) {
+            await expect(generationResponse.json()).resolves.toMatchObject({
+                data: [{ b64_json: TEST_MP4_BASE64 }],
+            });
+        } else {
+            expect(
+                Array.from(
+                    new Uint8Array(await generationResponse.arrayBuffer()),
+                ),
+            ).toEqual(TEST_MP4_BYTES);
+        }
         const disconnectedResponse = await disconnected;
         if (disconnectedResponse) {
             await disconnectedResponse.arrayBuffer();
@@ -5511,16 +5857,22 @@ fixtureTest(
         );
         expect(cachedResponse.status).toBe(200);
         expect(cachedResponse.headers.get("x-cache")).toBe("HIT");
-        expect(
-            Array.from(new Uint8Array(await cachedResponse.arrayBuffer())),
-        ).toEqual(TEST_MP4_BYTES);
+        if (isPost) {
+            await expect(cachedResponse.json()).resolves.toMatchObject({
+                data: [{ b64_json: TEST_MP4_BASE64 }],
+            });
+        } else {
+            expect(
+                Array.from(new Uint8Array(await cachedResponse.arrayBuffer())),
+            ).toEqual(TEST_MP4_BYTES);
+        }
         await waitOnExecutionContext(cachedContext);
 
         expect(generationCalls).toBe(1);
         const balanceAfter = await getUserBalance(db, caller.userId);
         expect(
             balanceBefore.tierBalance - balanceAfter.tierBalance,
-        ).toBeCloseTo(0.32, 10);
+        ).toBeCloseTo(0.36, 10);
         await vi.waitFor(() =>
             expect(
                 ingestedEvents.filter(
@@ -5530,6 +5882,29 @@ fixtureTest(
                 ),
             ).toHaveLength(1),
         );
+
+        const failedContext = createExecutionContext();
+        const failedResponse = await worker.fetch(
+            new Request(
+                `https://gen.pollinations.ai/video/missing%20usage?model=${encodeURIComponent(registered.modelId)}`,
+                {
+                    headers: { Authorization: `Bearer ${caller.key}` },
+                },
+            ),
+            coordinatedEnv,
+            failedContext,
+        );
+        expect(failedResponse.status).toBe(502);
+        expect(await failedResponse.text()).toContain("usage.duration");
+        await waitOnExecutionContext(failedContext);
+        expect(await getUserBalance(db, caller.userId)).toEqual(balanceAfter);
+        expect(
+            ingestedEvents.filter(
+                (event) =>
+                    event.modelUsed === registered.modelId &&
+                    event.isBilledUsage === true,
+            ),
+        ).toHaveLength(1);
 
         const invalidDurationResponse = await fetchGen(
             new Request(
@@ -5570,7 +5945,59 @@ fixtureTest(
         expect(
             openaiCatalog.data.find((model) => model.id === registered.modelId)
                 ?.supported_endpoints,
-        ).toEqual(communityEndpointSupportedEndpoints("video", ["text"]));
+        ).toEqual([
+            ...communityEndpointSupportedEndpoints("video", ["text"]),
+            "/v1/responses",
+            "/v1/chat/completions",
+        ]);
+
+        // Text protocols leave duration to the provider and only wrap its URL.
+        let mediaLink: string | null = null;
+        for (const protocol of ["responses", "chat/completions"]) {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request(`https://gen.pollinations.ai/v1/${protocol}`, {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${caller.key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: registered.modelId,
+                        ...(protocol === "responses"
+                            ? { input: "media video prompt" }
+                            : {
+                                  messages: [
+                                      {
+                                          role: "user",
+                                          content: "media video prompt",
+                                      },
+                                  ],
+                                  stream: true,
+                              }),
+                    }),
+                }),
+                coordinatedEnv,
+                ctx,
+            );
+            expect(response.status, await response.clone().text()).toBe(200);
+            expect(await response.text()).toContain("[Video](https://media.");
+            if (mediaLink) expect(response.headers.get("Link")).toBe(mediaLink);
+            mediaLink = response.headers.get("Link");
+            await waitOnExecutionContext(ctx);
+        }
+        expect(generationCalls).toBe(2);
+        expect(
+            balanceAfter.tierBalance -
+                (await getUserBalance(db, caller.userId)).tierBalance,
+        ).toBeCloseTo(0.36, 10);
+        expect(
+            ingestedEvents.filter(
+                (event) =>
+                    event.modelUsed === registered.modelId &&
+                    event.isBilledUsage === true,
+            ),
+        ).toHaveLength(2);
 
         const excessivePriceResponse = await fetchEnterApi(
             enterApi,
@@ -6440,7 +6867,7 @@ fixtureTest(
             await getCommunityModelRegistryEntries(env)
         ).find((entry) => entry.id === `${ownerGithubUsername}/my-test-model`);
         expect(registryEntry?.info).toMatchObject({
-            brand: "Example AI",
+            publisher: "Example AI",
             brand_url: "https://example.com/",
         });
         expect(registryEntry?.communityEndpoint.perUserRpm).toBe(0.5);
@@ -6764,7 +7191,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     );
     const promptAgent = {
         systemPrompt: "You are a terse SQL tutor.",
-        baseModel: "openai-fast",
+        baseModel: "openai/gpt-5-nano",
         requiredSafetyFeatures: ["sexual"],
         mcpServers: ["pollinations"],
     };
@@ -6793,7 +7220,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     };
     expect(agent).toMatchObject({
         systemPrompt: "You are a terse SQL tutor.",
-        baseModel: "openai-fast",
+        baseModel: "openai/gpt-5-nano",
         mcpServers: ["pollinations"],
     });
     expect(agent).not.toHaveProperty("apiKeyId");
@@ -7165,6 +7592,360 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
             .from(communityEndpointTable)
             .where(eq(communityEndpointTable.id, agent.id)),
     ).resolves.toEqual([]);
+});
+
+fixtureTest("creates, updates, lists, and deletes code agents", async () => {
+    const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+    const ownerUserId = await createTestUser({
+        githubId: COMMUNITY_ENDPOINT_DENIED_TEST_GITHUB_ID,
+        githubUsername: ownerGithubUsername,
+    });
+    const sessionToken = `session-${crypto.randomUUID()}`;
+    await db.insert(sessionTable).values({
+        id: `session-${crypto.randomUUID()}`,
+        token: sessionToken,
+        userId: ownerUserId,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+
+    const enterApi = await createEnterFrontendApi();
+    const cookie = (await signedSessionCookie(sessionToken)).replace(
+        "better-auth.session_token",
+        "__Secure-better-auth.session_token",
+    );
+    let commit = "a".repeat(40);
+    let repositoryDescription: string | null = "Example code agents";
+    let source = `export default async ({ request, pollinations, mcp }) => {
+        const input = await request.json();
+        await mcp("pollinations", "listModels", {});
+        return pollinations("/v1/responses", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ model: "openai-fast", input: input.input })
+        });
+    };`;
+    const deploymentFetch = vi.fn(
+        async (input: RequestInfo | URL, _init?: RequestInit) => {
+            const url = String(input);
+            if (url.endsWith("/repos/example/agents")) {
+                return Response.json({
+                    name: "agents",
+                    full_name: "example/agents",
+                    description: repositoryDescription,
+                    private: false,
+                });
+            }
+            if (url.endsWith("/repos/example/agents/commits/HEAD")) {
+                return Response.json({ sha: commit });
+            }
+            if (
+                url ===
+                `https://raw.githubusercontent.com/example/agents/${commit}/agent.ts`
+            ) {
+                return new Response(source);
+            }
+            return Response.json({ success: true });
+        },
+    );
+    vi.stubGlobal("fetch", deploymentFetch);
+    const enterEnv = {
+        ...env,
+        BETTER_AUTH_URL: "https://enter.test",
+        GEN_BASE_URL: "https://gen.pollinations.ai",
+        CODE_AGENT_DEPLOY_API_TOKEN: "test-deploy-token",
+        CODE_AGENT_DISPATCH_NAMESPACE: "code-agents-test",
+    };
+    const createResponse = await fetchEnterApi(
+        enterApi,
+        new Request("https://enter.test/api/account/agents", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Cookie: cookie },
+            body: JSON.stringify({
+                type: "code_agent",
+                repository: "https://github.com/example/agents.git",
+                description: "",
+            }),
+        }),
+        enterEnv,
+    );
+    expect(createResponse.status).toBe(200);
+    const agent = (await createResponse.json()) as {
+        id: string;
+        type: string;
+        repository: string;
+        deployedCommitSha: string;
+    };
+    expect(agent).toMatchObject({
+        type: "code_agent",
+        name: "agents",
+        title: "agents",
+        description: "Example code agents",
+        repository: "https://github.com/example/agents",
+        deployedCommitSha: commit,
+        visibility: "private",
+    });
+    expect(deploymentFetch).toHaveBeenCalledTimes(4);
+
+    const [stored] = await db
+        .select()
+        .from(communityEndpointTable)
+        .where(eq(communityEndpointTable.id, agent.id));
+    expect(stored).toMatchObject({
+        type: "code_agent",
+        baseUrl: CODE_AGENT_BASE_URL_PLACEHOLDER,
+        upstreamModel: agent.id,
+    });
+    expect(JSON.parse(stored.payload)).toEqual({
+        repository: "https://github.com/example/agents",
+        deployedCommitSha: commit,
+    });
+
+    const registryEntry = (await getCommunityModelRegistryEntries(env)).find(
+        (entry) => entry.communityEndpoint.id === agent.id,
+    );
+    expect(registryEntry?.communityEndpoint).toMatchObject({
+        type: "code_agent",
+        api: "responses",
+        baseUrl: CODE_AGENT_BASE_URL_PLACEHOLDER,
+        upstreamModel: agent.id,
+    });
+    expect(registryEntry?.info.agent).toBe(true);
+    expect(registryEntry?.definition.brandUrl).toBe(
+        "https://github.com/example/agents",
+    );
+    if (!registryEntry) throw new Error("Code agent was not registered");
+    const gatewayContext = await communityEndpointGatewayContext({
+        endpoint: registryEntry.communityEndpoint,
+        modelDefinition: registryEntry.definition,
+        requestData: { messages: [{ role: "user", content: "hello" }] },
+        secret: env.BETTER_AUTH_SECRET,
+        portkeyGatewayUrl: env.PORTKEY_GATEWAY_URL,
+        userApiKey: "sk_user_key",
+        parentRequestId: "caller-request-id",
+        parentApiKeyId: "caller-api-key-id",
+    });
+    await expect(
+        verifyAgentRunToken(
+            String(gatewayContext.modelConfig?.authKey),
+            env.BETTER_AUTH_SECRET,
+        ),
+    ).resolves.toMatchObject({
+        parentApiKeyId: "caller-api-key-id",
+        parentRequestId: "caller-request-id",
+        managedAgentId: agent.id,
+    });
+
+    for (const [method, path] of [
+        ["PATCH", `/api/account/agents/${agent.id}`],
+        ["POST", `/api/account/my-models/${agent.id}/update`],
+    ]) {
+        for (const body of [
+            { name: "renamed-agent" },
+            { title: "Updated Code Agent" },
+            { description: "Locally edited description" },
+        ]) {
+            const updateResponse = await fetchEnterApi(
+                enterApi,
+                new Request(`https://enter.test${path}`, {
+                    method,
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: cookie,
+                    },
+                    body: JSON.stringify(body),
+                }),
+                enterEnv,
+            );
+            expect(updateResponse.status).toBe(400);
+        }
+
+        for (const body of [
+            { description: "" },
+            { requiredSafetyFeatures: ["violence"] },
+            { visibility: "private" },
+        ]) {
+            const updateResponse = await fetchEnterApi(
+                enterApi,
+                new Request(`https://enter.test${path}`, {
+                    method,
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: cookie,
+                    },
+                    body: JSON.stringify(body),
+                }),
+                enterEnv,
+            );
+            expect(updateResponse.status).toBe(200);
+            await expect(updateResponse.json()).resolves.toMatchObject({
+                id: agent.id,
+                name: stored.name,
+                title: stored.title,
+                description: stored.description,
+                visibility: "private",
+                ...(body.requiredSafetyFeatures && {
+                    requiredSafetyFeatures: body.requiredSafetyFeatures,
+                }),
+            });
+            const [updated] = await db
+                .select()
+                .from(communityEndpointTable)
+                .where(eq(communityEndpointTable.id, agent.id));
+            expect(updated).toMatchObject({
+                name: stored.name,
+                title: stored.title,
+                description: stored.description,
+                payload: stored.payload,
+                baseUrl: stored.baseUrl,
+                upstreamModel: stored.upstreamModel,
+                visibility: "private",
+            });
+        }
+    }
+    const hideResponse = await fetchEnterApi(
+        enterApi,
+        new Request(
+            `https://enter.test/api/account/my-models/${agent.id}/update`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Cookie: cookie },
+                body: JSON.stringify({ hidden: true, description: "" }),
+            },
+        ),
+        enterEnv,
+    );
+    expect(hideResponse.status).toBe(200);
+    await expect(hideResponse.json()).resolves.toMatchObject({
+        hidden: true,
+        description: stored.description,
+    });
+    const noOpResponse = await fetchEnterApi(
+        enterApi,
+        new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", Cookie: cookie },
+            body: "{}",
+        }),
+        enterEnv,
+    );
+    expect(noOpResponse.status).toBe(200);
+    const [afterNoOp] = await db
+        .select()
+        .from(communityEndpointTable)
+        .where(eq(communityEndpointTable.id, agent.id));
+    expect(afterNoOp).toMatchObject({
+        name: stored.name,
+        title: stored.title,
+        description: stored.description,
+        payload: stored.payload,
+        requiredSafetyFeatures: ["violence"],
+        hiddenAt: expect.any(Date),
+        hiddenReason: "Hidden by owner",
+        hiddenBy: "owner",
+    });
+    expect(deploymentFetch).toHaveBeenCalledTimes(4);
+
+    const publishResponse = await fetchEnterApi(
+        enterApi,
+        new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", Cookie: cookie },
+            body: JSON.stringify({ visibility: "public" }),
+        }),
+        enterEnv,
+    );
+    expect(publishResponse.status).toBe(403);
+
+    commit = "b".repeat(40);
+    repositoryDescription = "Updated on GitHub";
+    source = "export default async () => new Response('updated');";
+    const syncResponse = await fetchEnterApi(
+        enterApi,
+        new Request(`https://enter.test/api/account/agents/${agent.id}/sync`, {
+            method: "POST",
+        }),
+        enterEnv,
+    );
+    expect(syncResponse.status, await syncResponse.clone().text()).toBe(200);
+    await expect(syncResponse.json()).resolves.toEqual({
+        updated: true,
+        deployedCommitSha: commit,
+    });
+    expect(deploymentFetch).toHaveBeenCalledTimes(8);
+
+    await enterEnv.KV.delete(`code-agent-sync:throttle:${agent.id}`);
+    const unchangedSyncResponse = await fetchEnterApi(
+        enterApi,
+        new Request(`https://enter.test/api/account/agents/${agent.id}/sync`, {
+            method: "POST",
+        }),
+        enterEnv,
+    );
+    expect(unchangedSyncResponse.status).toBe(200);
+    await expect(unchangedSyncResponse.json()).resolves.toEqual({
+        updated: true,
+        deployedCommitSha: commit,
+    });
+    expect(deploymentFetch).toHaveBeenCalledTimes(12);
+    expect(deploymentFetch.mock.calls[11][1]?.method).toBe("PUT");
+
+    const listResponse = await fetchEnterApi(
+        enterApi,
+        new Request("https://enter.test/api/account/agents", {
+            headers: { Cookie: cookie },
+        }),
+        enterEnv,
+    );
+    expect(listResponse.status).toBe(200);
+    await expect(listResponse.json()).resolves.toMatchObject({
+        data: [
+            expect.objectContaining({
+                id: agent.id,
+                type: "code_agent",
+                repository: "https://github.com/example/agents",
+                deployedCommitSha: commit,
+                description: "Updated on GitHub",
+            }),
+        ],
+    });
+
+    const deleteResponse = await fetchEnterApi(
+        enterApi,
+        new Request(`https://enter.test/api/account/agents/${agent.id}`, {
+            method: "DELETE",
+            headers: { Cookie: cookie },
+        }),
+        enterEnv,
+    );
+    expect(deleteResponse.status).toBe(200);
+    expect(deploymentFetch).toHaveBeenCalledTimes(13);
+    expect(deploymentFetch.mock.calls[12][1]?.method).toBe("DELETE");
+
+    repositoryDescription = null;
+    const createWithoutDescriptionResponse = await fetchEnterApi(
+        enterApi,
+        new Request("https://enter.test/api/account/agents", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Cookie: cookie },
+            body: JSON.stringify({
+                type: "code_agent",
+                repository: "https://github.com/example/agents",
+            }),
+        }),
+        enterEnv,
+    );
+    expect(createWithoutDescriptionResponse.status).toBe(200);
+    await expect(
+        createWithoutDescriptionResponse.json(),
+    ).resolves.toMatchObject({
+        type: "code_agent",
+        name: "agents",
+        description: null,
+        repository: "https://github.com/example/agents",
+        deployedCommitSha: commit,
+    });
 });
 
 fixtureTest("validates community fallback targets on write", async () => {
@@ -7703,7 +8484,9 @@ fixtureTest(
             updatedAt: new Date(),
         });
 
-        const source = getRegistryModelDefinition("qwen-coder");
+        const source = getRegistryModelDefinition(
+            "qwen/qwen3-coder-30b-a3b-instruct",
+        );
         const previousFallbacks = source.fallbacks;
         try {
             source.fallbacks = [fallbackModelId];

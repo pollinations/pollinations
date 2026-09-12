@@ -1,4 +1,4 @@
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
@@ -23,6 +23,7 @@ const H3_RESOLUTIONS = {
 const H3_MAX_TURBO_RESOLUTIONS = {
     "480p": "480P",
     "768p": "768P",
+    "1080p": "1080P",
 } as const;
 const H3_MAX_TURBO_DURATIONS = [5, 10, 15] as const;
 const H3_MAX_TURBO_ASPECT_RATIOS = [
@@ -55,14 +56,16 @@ async function readJson<T>(response: Response, message: string): Promise<T> {
     try {
         return (await response.json()) as T;
     } catch {
-        throw new HttpError(message, 502);
+        throw UpstreamError.fromProvider(502, { message });
     }
 }
 
 function remainingTime(deadline: number, title: string): number {
     const remaining = deadline - Date.now();
     if (remaining <= 0) {
-        throw new HttpError(`${title} generation timed out`, 504);
+        throw UpstreamError.fromProvider(504, {
+            message: `${title} generation timed out`,
+        });
     }
     return remaining;
 }
@@ -75,7 +78,10 @@ async function callFalH3API(
     actualModel: string,
 ): Promise<VideoGenerationResult> {
     const apiKey = getImageEnv("FAL_KEY");
-    if (!apiKey) throw new HttpError(`${title} is not configured`, 500);
+    if (!apiKey)
+        throw UpstreamError.fromProvider(500, {
+            message: `${title} is not configured`,
+        });
 
     const deadline = Date.now() + H3_TIMEOUT_MS;
     const authorization = { Authorization: `Key ${apiKey}` };
@@ -91,7 +97,9 @@ async function callFalH3API(
         `${title} returned an invalid submission`,
     );
     if (!submission.status_url || !submission.response_url) {
-        throw new HttpError(`${title} returned an invalid submission`, 502);
+        throw UpstreamError.fromProvider(502, {
+            message: `${title} returned an invalid submission`,
+        });
     }
 
     while (true) {
@@ -106,13 +114,14 @@ async function callFalH3API(
         );
         if (status.status === "COMPLETED") break;
         if (status.status === "FAILED") {
-            throw new HttpError(
-                status.error || `${title} generation failed`,
-                502,
-            );
+            throw UpstreamError.fromProvider(502, {
+                message: status.error || `${title} generation failed`,
+            });
         }
         if (status.status !== "IN_QUEUE" && status.status !== "IN_PROGRESS") {
-            throw new HttpError(`${title} returned an invalid status`, 502);
+            throw UpstreamError.fromProvider(502, {
+                message: `${title} returned an invalid status`,
+            });
         }
         await sleep(
             Math.min(H3_POLL_INTERVAL_MS, remainingTime(deadline, title)),
@@ -129,7 +138,9 @@ async function callFalH3API(
         `${title} returned an invalid result`,
     );
     if (!result.video?.url) {
-        throw new HttpError(`${title} returned no video`, 502);
+        throw UpstreamError.fromProvider(502, {
+            message: `${title} returned no video`,
+        });
     }
 
     const videoResponse = await fetchUpstream(result.video.url, {
@@ -158,7 +169,9 @@ export async function callMinimaxH3API(
     const upstreamResolution =
         H3_RESOLUTIONS[resolution as keyof typeof H3_RESOLUTIONS];
     if (!upstreamResolution) {
-        throw new HttpError(`MiniMax H3 does not support ${resolution}`, 400);
+        throw UpstreamError.fromProvider(400, {
+            message: `MiniMax H3 does not support ${resolution}`,
+        });
     }
 
     return callFalH3API(
@@ -172,7 +185,7 @@ export async function callMinimaxH3API(
             seed: safeParams.seed,
         },
         H3_DURATION_SECONDS,
-        "minimax-h3",
+        "minimax/minimax-h3",
     );
 }
 
@@ -182,10 +195,9 @@ export async function callMinimaxH3MaxTurboAPI(
 ): Promise<VideoGenerationResult> {
     const duration = safeParams.duration ?? H3_MAX_TURBO_DURATIONS[0];
     if (!(H3_MAX_TURBO_DURATIONS as readonly number[]).includes(duration)) {
-        throw new HttpError(
-            "MiniMax H3 Max Turbo supports 5, 10, or 15 seconds",
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: "MiniMax H3 Max Turbo supports 5, 10, or 15 seconds",
+        });
     }
 
     const resolution = safeParams.resolution ?? "480p";
@@ -194,10 +206,9 @@ export async function callMinimaxH3MaxTurboAPI(
             resolution as keyof typeof H3_MAX_TURBO_RESOLUTIONS
         ];
     if (!upstreamResolution) {
-        throw new HttpError(
-            `MiniMax H3 Max Turbo does not support ${resolution}`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `MiniMax H3 Max Turbo does not support ${resolution}`,
+        });
     }
 
     const images = safeParams.image ?? [];
@@ -213,10 +224,9 @@ export async function callMinimaxH3MaxTurboAPI(
             requestedAspectRatio as (typeof H3_MAX_TURBO_ASPECT_RATIOS)[number],
         )
     ) {
-        throw new HttpError(
-            `MiniMax H3 Max Turbo does not support aspectRatio ${requestedAspectRatio}`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `MiniMax H3 Max Turbo does not support aspectRatio ${requestedAspectRatio}`,
+        });
     }
 
     return callFalH3API(

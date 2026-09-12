@@ -6,6 +6,7 @@ type ButtonIntent = "danger" | "info" | "neutral";
 export type ButtonAppearance = "pill" | "raised";
 
 const pillSizes = {
+    icon: "polli:h-12 polli:w-12 polli:p-0",
     xs: "polli:h-5 polli:px-1.5 polli:py-0 polli:text-[11px] polli:leading-none",
     sm: "polli:px-2 polli:pt-0.5 polli:pb-1",
     md: "polli:px-4 polli:pt-1.5 polli:pb-2",
@@ -13,6 +14,7 @@ const pillSizes = {
 } as const;
 
 const raisedSizes = {
+    icon: "polli:h-12 polli:w-12 polli:p-0",
     xs: "polli:px-2 polli:py-1 polli:text-xs",
     sm: "polli:px-4 polli:py-2 polli:text-sm",
     md: "polli:px-7 polli:py-3.5 polli:text-base",

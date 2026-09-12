@@ -59,6 +59,7 @@ import {
     resetGenerationModelRegistryCache,
 } from "../src/model-registry.ts";
 import { requireChatStreamUsage } from "../src/text/chat/usage.ts";
+import { summarizeStreamForLog } from "../src/text/streamSummary.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 afterEach(() => {
@@ -72,9 +73,9 @@ function createTestApp(
     consumePollen: (amount: number) => Promise<void>,
     user: AuthUser | undefined = trackingUser,
     model: ModelVariables["model"] = {
-        requested: "openai",
-        resolved: "openai",
-        definition: getRegistryModelDefinition("openai"),
+        requested: "openai/gpt-5.4-nano",
+        resolved: "openai/gpt-5.4-nano",
+        definition: getRegistryModelDefinition("openai/gpt-5.4-nano"),
     },
     finalEntry?: GenerationModelEntry,
     responseHeaders: Record<string, string> = {},
@@ -192,7 +193,7 @@ function createTrackedResponseApp(
     consumePollen: (amount: number) => Promise<void>,
     eventType: "generate.image" | "generate.text" | "generate.audio",
     result: Response | Error,
-    model: ModelName = "openai",
+    model: ModelName = "openai/gpt-5.4-nano",
 ) {
     const app = new Hono<Env>();
 
@@ -230,9 +231,9 @@ function createTrackedResponseApp(
 function createSseStreamApp(
     chunkDelayMs: number,
     model: ModelVariables["model"] = {
-        requested: "openai",
-        resolved: "openai",
-        definition: getRegistryModelDefinition("openai"),
+        requested: "openai/gpt-5.4-nano",
+        resolved: "openai/gpt-5.4-nano",
+        definition: getRegistryModelDefinition("openai/gpt-5.4-nano"),
     },
     includeUsage = true,
     user: AuthUser = trackingUser,
@@ -307,7 +308,7 @@ function createHeaderApp(
     user: AuthUser | null = trackingUser,
     status = 200,
     consumePollen: (amount: number) => Promise<void> = async () => {},
-    model: ModelName = "openai",
+    model: ModelName = "openai/gpt-5.4-nano",
     finalEntry?: GenerationModelEntry,
 ) {
     const app = new Hono<Env>();
@@ -396,7 +397,7 @@ async function captureFallbackEvent(extraHeaders: Record<string, string>) {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
-                model: "openai",
+                model: "openai/gpt-5.4-nano",
                 stream: false,
                 messages: [{ role: "user", content: "test" }],
             }),
@@ -477,7 +478,7 @@ describe("tracking observability", () => {
                     referer: "https://example.com/app",
                 },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -511,8 +512,8 @@ describe("tracking observability", () => {
             environment: "test",
             eventType: "generate.text",
             responseStatus: 200,
-            modelRequested: "openai",
-            resolvedModelRequested: "openai",
+            modelRequested: "openai/gpt-5.4-nano",
+            resolvedModelRequested: "openai/gpt-5.4-nano",
             modelUsed: "gpt-5-nano-2025-08-07",
             modelProviderUsed: expect.any(String),
             userId: trackingUser.id,
@@ -562,7 +563,7 @@ describe("tracking observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -642,7 +643,7 @@ describe("tracking observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -685,7 +686,7 @@ describe("tracking observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -729,7 +730,7 @@ describe("tracking observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -766,7 +767,7 @@ describe("tracking observability", () => {
             error_class: "UpstreamUsageError",
             upstream_body: expect.any(String),
         });
-        expect(event.modelUsed).toBe("openai");
+        expect(event.modelUsed).toBe("openai/gpt-5.4-nano");
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
@@ -805,7 +806,7 @@ describe("tracking observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     stream: true,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -854,14 +855,14 @@ describe("tracking observability", () => {
             error_code: "upstream_finish_reason_error",
             error_class: "UpstreamFinishReasonError",
             message: "Upstream ended generation with finish_reason=error",
-            model_requested: "openai",
-            resolved_model_requested: "openai",
+            model_requested: "openai/gpt-5.4-nano",
+            resolved_model_requested: "openai/gpt-5.4-nano",
             request_inputs: expect.any(String),
             upstream_body: expect.any(String),
         });
         expect(JSON.parse(errorEvent.request_inputs as string)).toMatchObject({
             body: {
-                model: "openai",
+                model: "openai/gpt-5.4-nano",
                 stream: true,
                 messages: [{ role: "user", content: "test" }],
             },
@@ -869,6 +870,7 @@ describe("tracking observability", () => {
         const loggedOutput = JSON.parse(errorEvent.upstream_body as string) as {
             streamEvents: unknown[];
         };
+        expect(loggedOutput).toMatchObject({ chunks: 3, doneSeen: true });
         expect(loggedOutput.streamEvents).toHaveLength(3);
         expect(loggedOutput.streamEvents[1]).toMatchObject({
             choices: [
@@ -879,6 +881,95 @@ describe("tracking observability", () => {
             ],
         });
         expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
+    it("logs the head and tail of a long stream that ends without usage", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const chunks = Array.from({ length: 50 }, (_, index) =>
+            JSON.stringify({
+                id: `chunk-${index}`,
+                model: "gpt-5-nano",
+                choices: [
+                    {
+                        index: 0,
+                        delta: { content: "x", reasoning_content: "yy" },
+                        finish_reason: null,
+                    },
+                ],
+            }),
+        );
+        const upstreamBody = [...chunks, "[DONE]"]
+            .map((data) => `data: ${data}\n\n`)
+            .join("");
+        const upstream = new Response(upstreamBody, {
+            headers: { "content-type": "text/event-stream" },
+        });
+
+        const ctx = createExecutionContext();
+        const response = await createTrackedResponseApp(
+            async () => {},
+            "generate.text",
+            upstream,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai/gpt-5.4-nano",
+                    stream: true,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        await expect(response.text()).resolves.toBe(upstreamBody);
+        await waitOnExecutionContext(ctx);
+
+        const generationRequest = tinybirdRequests.find(
+            (request) =>
+                new URL(request.url).searchParams.get("name") ===
+                "generation_event_v2",
+        );
+        await expect(generationRequest?.json()).resolves.toMatchObject({
+            responseStatus: 502,
+            isBilledUsage: false,
+            errorResponseCode: "usage_missing",
+        });
+        const errorRequest = tinybirdRequests.find(
+            (request) =>
+                new URL(request.url).searchParams.get("name") === "error_event",
+        );
+        const errorEvent = (await errorRequest?.json()) as Record<
+            string,
+            unknown
+        >;
+        const loggedOutput = JSON.parse(errorEvent.upstream_body as string) as {
+            streamEvents: { id: string }[];
+        };
+        expect(loggedOutput).toMatchObject({ chunks: 50, doneSeen: true });
+        expect(loggedOutput.streamEvents.map((event) => event.id)).toEqual([
+            "chunk-0",
+            "chunk-1",
+            ...Array.from({ length: 30 }, (_, index) => `chunk-${index + 20}`),
+        ]);
     });
 
     it.each([
@@ -914,7 +1005,7 @@ describe("tracking observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     stream: true,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -968,7 +1059,7 @@ describe("tracking observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     messages: [{ role: "user", content: "test" }],
                 }),
             }),
@@ -1057,7 +1148,7 @@ describe("tracking observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     stream: true,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -1106,13 +1197,13 @@ describe("tracking observability", () => {
             trackingUser,
             200,
             consumePollen,
-            "perplexity-fast",
+            "perplexity/sonar",
         ).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "perplexity-fast",
+                    model: "perplexity/sonar",
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -1138,7 +1229,7 @@ describe("tracking observability", () => {
         expect(event).toMatchObject({
             responseStatus: 502,
             isBilledUsage: false,
-            modelUsed: "perplexity-fast",
+            modelUsed: "perplexity/sonar",
             totalCost: 0.005,
             totalPrice: 0,
             errorResponseCode: "usage_missing",
@@ -1168,20 +1259,20 @@ describe("tracking observability", () => {
         await createHeaderApp(
             {
                 "x-usage-missing": "true",
-                "x-model-used": "openai",
+                "x-model-used": "openai/gpt-5.4-nano",
                 "x-fallback-target": "config.targets[1]",
             },
             trackingUser,
             200,
             consumePollen,
-            "perplexity-fast",
-            createStaticEntry("openai"),
+            "perplexity/sonar",
+            createStaticEntry("openai/gpt-5.4-nano"),
         ).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "perplexity-fast",
+                    model: "perplexity/sonar",
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -1207,7 +1298,7 @@ describe("tracking observability", () => {
             responseStatus: 502,
             errorResponseCode: "usage_missing",
             fallbackUsed: true,
-            modelUsed: "openai",
+            modelUsed: "openai/gpt-5.4-nano",
             totalCost: 0,
             totalPrice: 0,
             devPrice: 0.005,
@@ -1231,20 +1322,20 @@ describe("tracking observability", () => {
         await createHeaderApp(
             {
                 "x-usage-missing": "true",
-                "x-model-used": "perplexity-fast",
+                "x-model-used": "perplexity/sonar",
                 "x-fallback-target": "config.targets[1]",
             },
             trackingUser,
             200,
             consumePollen,
-            "openai",
-            createStaticEntry("perplexity-fast"),
+            "openai/gpt-5.4-nano",
+            createStaticEntry("perplexity/sonar"),
         ).fetch(
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -1268,7 +1359,7 @@ describe("tracking observability", () => {
         expect(event).toMatchObject({
             isBilledUsage: false,
             fallbackUsed: true,
-            modelUsed: "perplexity-fast",
+            modelUsed: "perplexity/sonar",
             totalCost: 0.005,
             totalPrice: 0,
             devPrice: 0,
@@ -1288,9 +1379,9 @@ describe("tracking observability", () => {
             async () => {},
         );
         const model: ModelVariables["model"] = {
-            requested: "gpt-5.4",
-            resolved: "gpt-5.4",
-            definition: getRegistryModelDefinition("gpt-5.4"),
+            requested: "openai/gpt-5.4",
+            resolved: "openai/gpt-5.4",
+            definition: getRegistryModelDefinition("openai/gpt-5.4"),
         };
 
         const ctx = createExecutionContext();
@@ -1300,7 +1391,7 @@ describe("tracking observability", () => {
             model,
             undefined,
             {
-                "x-model-used": "gpt-5.4",
+                "x-model-used": "openai/gpt-5.4",
                 "x-usage-prompt-text-tokens": "272001",
                 "x-usage-completion-text-tokens": "1000",
             },
@@ -1309,7 +1400,7 @@ describe("tracking observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "gpt-5.4",
+                    model: "openai/gpt-5.4",
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -1335,8 +1426,8 @@ describe("tracking observability", () => {
         const expectedCost = 272_001 * (5 / 1e6) + 1_000 * (22.5 / 1e6);
         const expectedPrice = expectedCost * 0.75;
         expect(event).toMatchObject({
-            modelRequested: "gpt-5.4",
-            resolvedModelRequested: "gpt-5.4",
+            modelRequested: "openai/gpt-5.4",
+            resolvedModelRequested: "openai/gpt-5.4",
             costVariant: "long_context",
             tokenPricePromptText: (5 / 1e6) * 0.75,
             tokenPriceCompletionText: (22.5 / 1e6) * 0.75,
@@ -1366,7 +1457,7 @@ describe("tracking observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -1413,7 +1504,7 @@ describe("tracking observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -1440,8 +1531,8 @@ describe("tracking observability", () => {
         // falling back to the datasource DEFAULT 'undefined'.
         await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
             responseStatus: 502,
-            resolvedModelRequested: "openai",
-            modelUsed: "openai",
+            resolvedModelRequested: "openai/gpt-5.4-nano",
+            modelUsed: "openai/gpt-5.4-nano",
             isBilledUsage: false,
         });
     });
@@ -1457,7 +1548,7 @@ describe("tracking observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -1519,7 +1610,7 @@ describe("tracking observability", () => {
                     "cf-connecting-ip": "203.0.113.42",
                 },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -1914,7 +2005,7 @@ describe("tracking observability", () => {
             eventType: "generate.image",
             responseStatus: 200,
             isBilledUsage: false,
-            modelUsed: "openai",
+            modelUsed: "openai/gpt-5.4-nano",
         });
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
@@ -1937,7 +2028,7 @@ describe("tracking observability", () => {
             },
             {
                 headers: {
-                    "x-model-used": "elevenlabs",
+                    "x-model-used": "elevenlabs/eleven-v3",
                     "x-usage-completion-audio-tokens": "2",
                     "x-pollinations-response-format": "audio-with-timestamps",
                 },
@@ -1949,7 +2040,7 @@ describe("tracking observability", () => {
             consumePollen,
             "generate.audio",
             upstream,
-            "elevenlabs",
+            "elevenlabs/eleven-v3",
         ).fetch(
             new Request("https://gen.pollinations.ai/upstream", {
                 method: "POST",
@@ -1998,7 +2089,7 @@ describe("tracking observability", () => {
         const upstream = new Response("hello world", {
             headers: {
                 "content-type": "text/plain; charset=utf-8",
-                "x-model-used": "universal-3.5-pro",
+                "x-model-used": "assemblyai/universal-3.5-pro",
                 "x-usage-prompt-audio-seconds": "6",
             },
         });
@@ -2008,7 +2099,7 @@ describe("tracking observability", () => {
             consumePollen,
             "generate.audio",
             upstream,
-            "universal-3.5-pro",
+            "assemblyai/universal-3.5-pro",
         ).fetch(
             new Request("https://gen.pollinations.ai/upstream", {
                 method: "POST",
@@ -2055,7 +2146,7 @@ describe("tracking observability", () => {
             { error: "unexpected provider response" },
             {
                 headers: {
-                    "x-model-used": "elevenlabs",
+                    "x-model-used": "elevenlabs/eleven-v3",
                     "x-usage-completion-audio-tokens": "2",
                 },
             },
@@ -2066,7 +2157,7 @@ describe("tracking observability", () => {
             consumePollen,
             "generate.audio",
             upstream,
-            "elevenlabs",
+            "elevenlabs/eleven-v3",
         ).fetch(
             new Request("https://gen.pollinations.ai/upstream", {
                 method: "POST",
@@ -2181,7 +2272,7 @@ describe("tracking observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     stream: true,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -2227,7 +2318,7 @@ describe("tracking observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     stream: true,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -2271,7 +2362,8 @@ describe("tracking observability", () => {
         "valid",
         "missing",
         "malformed",
-    ])("settles native community Chat streaming with %s usage and no model metadata", async (usageKind) => {
+        "recovered",
+    ])("settles community Chat with %s usage/delivery and no model metadata", async (usageKind) => {
         const caller = await createTestApiKey({
             user: { tierBalance: 0, packBalance: 10 },
         });
@@ -2333,6 +2425,21 @@ describe("tracking observability", () => {
                                       total_tokens: 15,
                                   },
                               };
+                    if (usageKind === "recovered") {
+                        return Response.json({
+                            choices: [
+                                {
+                                    index: 0,
+                                    message: {
+                                        role: "assistant",
+                                        content: "saved result",
+                                    },
+                                    finish_reason: "stop",
+                                },
+                            ],
+                            ...terminal,
+                        });
+                    }
                     return new Response(
                         'data: {"choices":[{"index":0,"delta":{"content":"streamed"},"finish_reason":null}]}\n\n' +
                             `data: ${JSON.stringify(terminal)}\n\ndata: [DONE]\n\n`,
@@ -2350,8 +2457,23 @@ describe("tracking observability", () => {
                 return Response.json({ data: [] });
             },
         );
+        const bindings = withInlineGenerationCoordinator(env);
+        const getByName = bindings.GENERATION_COORDINATOR.getByName.bind(
+            bindings.GENERATION_COORDINATOR,
+        );
+        const startAndWait = vi.fn(async (job) => {
+            await getByName("recovery-test").startAndWait(job);
+            throw new Error(
+                "RPC connection lost after cache write and settlement",
+            );
+        });
+        if (usageKind === "recovered") {
+            bindings.GENERATION_COORDINATOR = {
+                getByName: () => ({ startAndWait }),
+            } as unknown as CloudflareBindings["GENERATION_COORDINATOR"];
+        }
         const ctx = createExecutionContext();
-        const response = await worker.fetch(
+        const request = (): Parameters<typeof worker.fetch>[0] =>
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -2360,21 +2482,31 @@ describe("tracking observability", () => {
                 },
                 body: JSON.stringify({
                     model,
-                    stream: true,
+                    stream: usageKind !== "recovered",
                     messages: [{ role: "user", content: "stream usage check" }],
                 }),
-            }),
-            withInlineGenerationCoordinator(env),
-            ctx,
-        );
+            });
+        const response = await worker.fetch(request(), bindings, ctx);
         const body = await response.text();
         await waitOnExecutionContext(ctx);
         expect(response.status, body).toBe(200);
+        if (usageKind === "recovered") {
+            expect(
+                await env.TEXT_BUCKET.head(
+                    startAndWait.mock.calls[0][0].cache.key,
+                ),
+            ).not.toBeNull();
+            const rejoinCtx = createExecutionContext();
+            const rejoined = await worker.fetch(request(), bindings, rejoinCtx);
+            expect(rejoined.headers.get("x-cache")).toBe("HIT");
+            expect(await rejoined.text()).toBe(body);
+            await waitOnExecutionContext(rejoinCtx);
+        }
         expect(upstreamCalls).toBe(1);
         const after = await getUserBalance(db, caller.userId);
         const rows = events.filter((event) => event.modelRequested === model);
         expect(rows).toHaveLength(1);
-        if (usageKind === "valid") {
+        if (usageKind === "valid" || usageKind === "recovered") {
             const expectedPrice = calculateUsageBilling({
                 model,
                 usage: { promptTextTokens: 10, completionTextTokens: 5 },
@@ -2393,6 +2525,14 @@ describe("tracking observability", () => {
                 expectedPrice,
                 9,
             );
+            if (usageKind === "recovered") {
+                expect(startAndWait).toHaveBeenCalledTimes(1);
+                expect(response.headers.get("x-cache")).toBe("HIT");
+                expect(body).toContain("saved result");
+                expect(
+                    events.filter((event) => event.kind === "server_error"),
+                ).toHaveLength(0);
+            }
         } else {
             expect(body).toContain('"error"');
             expect(rows[0]).toMatchObject({
@@ -2412,7 +2552,7 @@ describe("tracking observability", () => {
             },
         );
         const consumePollen = vi.fn(async (_amount: number) => {});
-        const model = "claude-fast";
+        const model = "anthropic/claude-haiku-4.5";
         const usage = {
             prompt_tokens: 1_000,
             prompt_tokens_details: {
@@ -2516,7 +2656,7 @@ describe("tracking observability", () => {
             {
                 headers: {
                     "content-type": "text/event-stream",
-                    "x-model-used": "openai",
+                    "x-model-used": "openai/gpt-5.4-nano",
                 },
             },
         );
@@ -2530,7 +2670,7 @@ describe("tracking observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     input: "test",
                     stream: true,
                 }),
@@ -2553,7 +2693,7 @@ describe("tracking observability", () => {
         expect(tinybirdRequests).toHaveLength(1);
         await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
             eventType: "generate.text",
-            modelUsed: "openai",
+            modelUsed: "openai/gpt-5.4-nano",
             tokenCountPromptText: 800,
             tokenCountPromptCached: 200,
             tokenCountCompletionText: 400,
@@ -2684,7 +2824,7 @@ describe("tracking observability", () => {
 
 function requestTrackingFixture(
     streamRequested = false,
-    model: ModelName = "openai",
+    model: ModelName = "openai/gpt-5.4-nano",
 ) {
     const definition = getRegistryModelDefinition(model);
     const modelCostDefinition = definition.cost;
@@ -2704,7 +2844,9 @@ function requestTrackingFixture(
     };
 }
 
-function candidateFixture(model: ModelName = "openai"): FallbackCandidate {
+function candidateFixture(
+    model: ModelName = "openai/gpt-5.4-nano",
+): FallbackCandidate {
     return {
         id: model,
         definition: getRegistryModelDefinition(model),
@@ -2723,7 +2865,7 @@ describe("trackResponse modelUsed", () => {
             responseStatus: 502,
             cacheHit: false,
             isBilledUsage: false,
-            modelUsed: "openai",
+            modelUsed: "openai/gpt-5.4-nano",
         });
     });
 
@@ -2757,7 +2899,7 @@ describe("trackResponse modelUsed", () => {
         expect(tracking).toMatchObject({
             responseStatus: 502,
             isBilledUsage: false,
-            modelUsed: "openai",
+            modelUsed: "openai/gpt-5.4-nano",
             errorTracking: { errorResponseCode: "usage_missing" },
         });
     });
@@ -2778,18 +2920,18 @@ describe("trackResponse modelUsed", () => {
     it("prices an Alibaba explicit-cache hit from response metadata", async () => {
         const tracking = await trackResponse(
             "generate.text",
-            requestTrackingFixture(false, "qwen3.7-flash"),
+            requestTrackingFixture(false, "qwen/qwen3.7-flash"),
             Response.json(
                 { choices: [] },
                 {
                     headers: {
-                        "x-model-used": "qwen3.7-flash-alibaba",
+                        "x-model-used": "qwen/qwen3.7-flash:alibaba",
                         "x-usage-prompt-cached-tokens": "1000000",
                         "x-usage-prompt-cache-type": "ephemeral",
                     },
                 },
             ),
-            candidateFixture("qwen3.7-flash-alibaba"),
+            candidateFixture("qwen/qwen3.7-flash:alibaba"),
         );
 
         // The reported variant is the caller's unchanged public tier; the
@@ -2802,17 +2944,17 @@ describe("trackResponse modelUsed", () => {
     it("uses Alibaba's implicit rate unless the response confirms an explicit hit", async () => {
         const tracking = await trackResponse(
             "generate.text",
-            requestTrackingFixture(false, "qwen3.7-flash"),
+            requestTrackingFixture(false, "qwen/qwen3.7-flash"),
             Response.json(
                 { choices: [] },
                 {
                     headers: {
-                        "x-model-used": "qwen3.7-flash-alibaba",
+                        "x-model-used": "qwen/qwen3.7-flash:alibaba",
                         "x-usage-prompt-cached-tokens": "1000000",
                     },
                 },
             ),
-            candidateFixture("qwen3.7-flash-alibaba"),
+            candidateFixture("qwen/qwen3.7-flash:alibaba"),
             // Even a stale request-side hint must not override what the
             // provider actually reported on the response.
             { hasExplicitCacheHit: true },
@@ -2824,7 +2966,7 @@ describe("trackResponse modelUsed", () => {
 
     it("prices a streamed Alibaba explicit-cache hit from terminal usage", async () => {
         const usageEvent = JSON.stringify({
-            model: "qwen3.7-flash",
+            model: "qwen/qwen3.7-flash",
             choices: [],
             usage: {
                 prompt_tokens: 1_000_000,
@@ -2838,14 +2980,14 @@ describe("trackResponse modelUsed", () => {
         });
         const tracking = await trackResponse(
             "generate.text",
-            requestTrackingFixture(true, "qwen3.7-flash"),
+            requestTrackingFixture(true, "qwen/qwen3.7-flash"),
             new Response(`data: ${usageEvent}\n\ndata: [DONE]\n\n`, {
                 headers: {
                     "content-type": "text/event-stream",
-                    "x-model-used": "qwen3.7-flash-alibaba",
+                    "x-model-used": "qwen/qwen3.7-flash:alibaba",
                 },
             }),
-            candidateFixture("qwen3.7-flash-alibaba"),
+            candidateFixture("qwen/qwen3.7-flash:alibaba"),
         );
 
         expect(tracking.costVariant).toBe("context_256k");
@@ -2857,7 +2999,7 @@ describe("trackResponse modelUsed", () => {
 describe("trackResponse missing usage", () => {
     it("does not bill earlier usage when the stream subsequently fails validation", async () => {
         const event = {
-            model: "openai",
+            model: "openai/gpt-5.4-nano",
             usage: { prompt_tokens: 2, completion_tokens: 1, total_tokens: 3 },
         };
         // Usage arrived, but the provider disconnected without [DONE].
@@ -2876,6 +3018,34 @@ describe("trackResponse missing usage", () => {
         expect(tracking.isBilledUsage).toBe(false);
         expect(tracking.cost?.totalCost).toBeGreaterThan(0);
         expect(tracking.errorTracking?.errorResponseCode).toBe("usage_missing");
+        expect(summarizeStreamForLog(tracking.errorOutput)).toMatchObject({
+            chunks: 2,
+            doneSeen: false,
+        });
+    });
+
+    it("records that [DONE] arrived when the validator rejects a stream there", async () => {
+        const chunk = {
+            choices: [{ delta: { content: "partial" }, finish_reason: null }],
+        };
+        // The validator swallows this [DONE]; the tracker must still see it.
+        const upstream = new Blob([
+            `data: ${JSON.stringify(chunk)}\n\ndata: [DONE]\n\n`,
+        ]).stream();
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            new Response(requireChatStreamUsage(upstream), {
+                headers: { "content-type": "text/event-stream" },
+            }),
+            candidateFixture(),
+        );
+        expect(tracking.responseStatus).toBe(502);
+        expect(tracking.errorTracking?.errorResponseCode).toBe("usage_missing");
+        expect(summarizeStreamForLog(tracking.errorOutput)).toMatchObject({
+            chunks: 2,
+            doneSeen: true,
+        });
     });
 
     it.each([
@@ -2884,7 +3054,7 @@ describe("trackResponse missing usage", () => {
         { prompt_filter_results: [{}] },
     ])("does not mistake valid usage for a failure because of unrelated metadata: %j", async (metadata) => {
         const event = {
-            model: "openai",
+            model: "openai/gpt-5.4-nano",
             ...metadata,
             usage: { prompt_tokens: 2, completion_tokens: 1, total_tokens: 3 },
         };
@@ -2924,9 +3094,9 @@ describe("trackResponse missing usage", () => {
     it("retains a knowable provider fee without billing incomplete text", async () => {
         const tracking = await trackResponse(
             "generate.text",
-            requestTrackingFixture(true, "perplexity-fast"),
+            requestTrackingFixture(true, "perplexity/sonar"),
             emptyStream(),
-            candidateFixture("perplexity-fast"),
+            candidateFixture("perplexity/sonar"),
         );
         expect(tracking.isBilledUsage).toBe(false);
         expect(tracking.responseStatus).toBe(502);

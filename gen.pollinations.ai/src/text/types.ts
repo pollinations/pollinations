@@ -114,6 +114,8 @@ export interface ServiceError extends Error {
      */
     errorCode?: string;
     details?: unknown;
+    /** Original provider response, retained independently of parsed routing details. */
+    responseBody?: string;
     model?: string;
     provider?: string;
     response?: { data?: unknown };

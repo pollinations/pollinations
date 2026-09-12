@@ -11,7 +11,7 @@ type TabButtonOwnProps = {
     /** Omit when rendering as a link (`as`) and navigation carries the change. */
     onClick?: () => void;
     children: ReactNode;
-    size?: "lg" | "md" | "sm";
+    size?: "lg" | "md" | "sm" | "xs";
     variant?: "soft" | "ghost";
     intent?: "neutral";
     ariaLabel?: string;
@@ -42,6 +42,7 @@ const tabButtonBaseClass =
     "polli-control polli:inline-flex polli:items-center polli:justify-center polli:rounded-full polli:font-medium polli:leading-normal polli:transition-colors polli:duration-200";
 
 const tabButtonSizeClass = {
+    xs: "polli:px-3 polli:py-1.5 polli:text-xs",
     lg: "polli:px-5 polli:py-2 polli:text-lg",
     md: "polli:px-4 polli:py-1.5 polli:text-base",
     sm: "polli:px-3 polli:py-1.5 polli:text-sm",

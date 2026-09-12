@@ -5,7 +5,11 @@ import { config } from "./config";
 import { routeTree } from "./routeTree.gen";
 
 const ref = new URLSearchParams(window.location.search).get("ref");
-if (ref === "image") {
+if (
+    ref === "image" ||
+    ref === "agent_low_balance_topup" ||
+    ref === "agent_low_balance_quests"
+) {
     navigator.sendBeacon(`${config.apiBaseUrl}/referral?ref=${ref}`);
 }
 

@@ -41,7 +41,7 @@ Collection steps:
 Known traps:
 
 - A current balance snapshot does not prove historical monthly burn.
-- A top-up is cash funding, not usage. Do not add it to `economics_compute_ledger` cost.
+- A top-up is cash funding, not usage. Do not add it to `economics_vendor_ledger` cost.
 - A zero prepaid statement must not verify a nonzero legacy usage row.
 - Pruna billing cycles can run from the 26th to the 26th; do not silently map
   them to calendar months.

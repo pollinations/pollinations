@@ -1,25 +1,26 @@
-import { useAuthActions } from "@pollinations/sdk/react";
+import {
+    useAccountProfile,
+    useAuthActions,
+    useAuthState,
+} from "@pollinations/sdk/react";
+import { AccountMenu } from "../../compositions/AccountMenu.tsx";
 import { cn } from "../../lib/cn.ts";
-import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
-import { Dropdown } from "../../primitives/Dropdown.tsx";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
 import {
+    ExternalLinkIcon,
     KeyIcon,
     LogInIcon,
-    LogOutIcon,
+    SignOutIcon,
+    SproutIcon,
+    WalletIcon,
 } from "../../primitives/icons/index.tsx";
-import {
-    LoginButton,
-    UserAvatar,
-    UserName,
-    WhenLoggedIn,
-    WhenLoggedOut,
-} from "../auth/sdk.ts";
+import { LoginButton } from "../auth/sdk.ts";
 import { Balance } from "../wallet/sdk.ts";
 
 export type AppUserMenuLabels = {
     authorize: string;
     appUserMenu: string;
+    getFreePollen: string;
     topUpAccount: string;
     logout: string;
 };
@@ -33,10 +34,11 @@ export type AppUserMenuProps = {
 };
 
 const defaultLabels: AppUserMenuLabels = {
-    authorize: "Connect",
+    authorize: "Connect Pollen",
     appUserMenu: "App user menu",
-    topUpAccount: "Top up account",
-    logout: "Log out",
+    getFreePollen: "Get free Pollen",
+    topUpAccount: "Buy Pollen",
+    logout: "Disconnect",
 };
 
 const actionTriggerClass =
@@ -48,34 +50,17 @@ export function AppUserMenu({
     triggerVariant = "pill",
     onTopUpKey,
 }: AppUserMenuProps) {
-    return (
-        <AppUserMenuContent
-            dashboardHref={dashboardHref}
-            labels={labelOverrides}
-            triggerVariant={triggerVariant}
-            onTopUpKey={onTopUpKey}
-        />
-    );
-}
-
-function AppUserMenuContent({
-    dashboardHref,
-    labels: labelOverrides,
-    triggerVariant,
-    onTopUpKey,
-}: Required<Pick<AppUserMenuProps, "triggerVariant">> &
-    Pick<AppUserMenuProps, "dashboardHref" | "labels" | "onTopUpKey">) {
     const labels = { ...defaultLabels, ...labelOverrides };
-    const { logout } = useAuthActions();
+    const { logout, enterUrl } = useAuthActions();
+    const { isLoggedIn } = useAuthState();
+    const profile = useAccountProfile({ enabled: isLoggedIn });
 
     return (
-        // shrink-0 so the account control never gets squeezed (and its label
-        // never wraps) when it sits next to flexible content in a header row.
         <div
             data-theme="accent"
             className="polli:flex polli:shrink-0 polli:justify-end"
         >
-            <WhenLoggedOut>
+            {!isLoggedIn ? (
                 <LoginButton
                     appearance={triggerVariant === "action" ? "raised" : "pill"}
                     className={cn(
@@ -84,42 +69,29 @@ function AppUserMenuContent({
                             `${actionTriggerClass} polli:px-4`,
                     )}
                 >
-                    <LogInIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
+                    <LogInIcon
+                        className="polli:h-4 polli:w-4 polli:shrink-0"
+                        aria-hidden="true"
+                    />
                     {labels.authorize}
                 </LoginButton>
-            </WhenLoggedOut>
-
-            <WhenLoggedIn>
-                <Dropdown
-                    align="end"
-                    className="polli:w-max polli:bg-surface-opaque! polli:p-1"
-                    trigger={(open) => (
-                        <button
-                            type="button"
-                            data-theme="accent"
-                            aria-label={labels.appUserMenu}
-                            className="polli-control polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:bg-theme-bg-active polli:py-1 polli:pl-1 polli:pr-3 polli:text-theme-text-base polli:transition-colors polli:hover:bg-theme-bg-hover"
-                        >
-                            <UserAvatar
-                                size="md"
-                                className="polli:h-8 polli:w-8"
-                            />
-                            <span className="polli:flex polli:min-w-0 polli:flex-col polli:items-start polli:leading-tight">
-                                <UserName className="polli:max-w-32 polli:truncate polli:text-sm polli:font-semibold" />
-                                <Balance className="polli:bg-transparent polli:px-0 polli:py-0 polli:text-xs polli:text-theme-text-base" />
-                            </span>
-                            <ChevronIcon
-                                expanded={open}
-                                className="polli:h-4 polli:w-4 polli:text-theme-text-base"
-                            />
-                        </button>
-                    )}
+            ) : (
+                <AccountMenu
+                    name={
+                        profile.data?.name ||
+                        profile.data?.githubUsername ||
+                        "Connected user"
+                    }
+                    avatarUrl={profile.data?.image}
+                    menuLabel={labels.appUserMenu}
+                    className="polli:max-w-64"
+                    menuClassName="polli:w-max polli:min-w-0"
+                    secondaryContent={
+                        <Balance className="polli:bg-transparent polli:px-0 polli:py-0 polli:text-xs polli:text-theme-text-base" />
+                    }
                 >
                     {(close) => (
-                        <div
-                            data-theme="accent"
-                            className="polli:flex polli:flex-col"
-                        >
+                        <>
                             {onTopUpKey && (
                                 <DropdownItem
                                     onClick={() => {
@@ -127,7 +99,10 @@ function AppUserMenuContent({
                                         onTopUpKey();
                                     }}
                                 >
-                                    <KeyIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
+                                    <KeyIcon
+                                        className="polli:h-4 polli:w-4 polli:shrink-0"
+                                        aria-hidden="true"
+                                    />
                                     Add Pollen
                                 </DropdownItem>
                             )}
@@ -139,9 +114,54 @@ function AppUserMenuContent({
                                     rel="noopener noreferrer"
                                     onClick={close}
                                 >
-                                    <KeyIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
+                                    <KeyIcon
+                                        className="polli:h-4 polli:w-4 polli:shrink-0"
+                                        aria-hidden="true"
+                                    />
                                     {labels.topUpAccount}
+                                    <ExternalLinkIcon
+                                        className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
+                                        aria-hidden="true"
+                                    />
                                 </DropdownItem>
+                            )}
+                            {!onTopUpKey && !dashboardHref && (
+                                <>
+                                    <DropdownItem
+                                        as="a"
+                                        href={new URL("/quests", enterUrl).href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={close}
+                                    >
+                                        <SproutIcon
+                                            className="polli:h-4 polli:w-4 polli:shrink-0"
+                                            aria-hidden="true"
+                                        />
+                                        {labels.getFreePollen}
+                                        <ExternalLinkIcon
+                                            className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
+                                            aria-hidden="true"
+                                        />
+                                    </DropdownItem>
+                                    <DropdownItem
+                                        as="a"
+                                        href={new URL("/pollen", enterUrl).href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={close}
+                                    >
+                                        <WalletIcon
+                                            className="polli:h-4 polli:w-4 polli:shrink-0"
+                                            aria-hidden="true"
+                                        />
+                                        {labels.topUpAccount}
+                                        <ExternalLinkIcon
+                                            className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
+                                            aria-hidden="true"
+                                        />
+                                    </DropdownItem>
+                                </>
                             )}
                             <DropdownItem
                                 type="button"
@@ -151,13 +171,16 @@ function AppUserMenuContent({
                                     logout();
                                 }}
                             >
-                                <LogOutIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
+                                <SignOutIcon
+                                    className="polli:h-4 polli:w-4 polli:shrink-0"
+                                    aria-hidden="true"
+                                />
                                 {labels.logout}
                             </DropdownItem>
-                        </div>
+                        </>
                     )}
-                </Dropdown>
-            </WhenLoggedIn>
+                </AccountMenu>
+            )}
         </div>
     );
 }

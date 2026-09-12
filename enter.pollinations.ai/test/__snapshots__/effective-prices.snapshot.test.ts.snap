@@ -1220,6 +1220,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000004,
     },
   },
+  "inferenceport-ai/lightning-image-turbo": {
+    "cost": {
+      "completionImageTokens": 0.02,
+    },
+    "price": {
+      "completionImageTokens": 0.02,
+    },
+  },
   "krea/krea-2-medium": {
     "cost": {
       "completionImageTokens": 0.03,

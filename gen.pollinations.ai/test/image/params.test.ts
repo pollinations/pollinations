@@ -302,4 +302,41 @@ describe("ImageParamsSchema", () => {
         });
         expect(invalidUrl.success).toBe(false);
     });
+
+    it("accepts inferenceport-ai/lightning-image-turbo", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "inferenceport-ai/lightning-image-turbo",
+            }).success,
+        ).toBe(true);
+    });
+
+    it("resolves lightning-image-turbo alias to canonical ID", () => {
+        const result = ImageParamsSchema.safeParse({
+            model: "lightning-image-turbo",
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it("parses up to four image references for lightning-image-turbo", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "inferenceport-ai/lightning-image-turbo",
+                image: [
+                    "https://example.com/a.png",
+                    "https://example.com/b.png",
+                    "https://example.com/c.png",
+                    "https://example.com/d.png",
+                ],
+            }).success,
+        ).toBe(true);
+    });
+
+    it("rejects resolution on lightning-image-turbo", () => {
+        const result = ImageParamsSchema.safeParse({
+            model: "inferenceport-ai/lightning-image-turbo",
+            resolution: "720p",
+        });
+        expect(result.success).toBe(false);
+    });
 });

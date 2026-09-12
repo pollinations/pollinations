@@ -23,11 +23,11 @@ describe("paid model notice", () => {
     });
 
     it("links to top-up only for an all-paid selection", () => {
-        expect(renderNotice(0)).toContain("Paid Pollen needed");
+        expect(renderNotice(0)).toContain("Paid required");
         expect(renderNotice(0)).toContain(
-            'href="https://enter.pollinations.ai/pollen#buy-pollen"',
+            'href="https://enter.pollinations.ai/top-up"',
         );
         expect(renderNotice(0, "some")).toBe("");
-        expect(renderNotice(-1)).toContain("Paid Pollen needed");
+        expect(renderNotice(-1)).toContain("Paid required");
     });
 });

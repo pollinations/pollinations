@@ -1,4 +1,5 @@
 import { Chip } from "../../primitives/Chip.tsx";
+import { InlineLink } from "../../primitives/InlineLink.tsx";
 import { KeyIcon, WalletIcon } from "../../primitives/icons/index.tsx";
 import { WalletKindIcon } from "./wallet-display.tsx";
 
@@ -18,7 +19,8 @@ export function PollenStatusBadge({
     state,
     wallet,
     showIcon = true,
-}: PollenStatus & { showIcon?: boolean }) {
+    topUpHref,
+}: PollenStatus & { showIcon?: boolean; topUpHref?: string }) {
     const allowance = state === "limit-reached";
     const kind = state === "paid-required" ? "paid" : wallet;
     const Icon = allowance ? KeyIcon : WalletIcon;
@@ -47,6 +49,21 @@ export function PollenStatusBadge({
                     />
                 ))}
             {label}
+            {!allowance && topUpHref && (
+                <>
+                    <span aria-hidden="true">·</span>
+                    <InlineLink
+                        href={topUpHref}
+                        external
+                        showIcon={false}
+                        data-pollinations-action="fund-account"
+                        aria-label={`${label}. Top up (opens in a new tab)`}
+                        className="polli:text-current polli:hover:text-current"
+                    >
+                        Top up
+                    </InlineLink>
+                </>
+            )}
         </Chip>
     );
 }

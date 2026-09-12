@@ -25,6 +25,7 @@ import {
     getStripeNewCardGateStatus,
     stripeNewCardGateMetadata,
 } from "../utils/stripe-card-gate.ts";
+import { stripeCheckoutReturn } from "../utils/stripe-checkout-return.ts";
 
 /**
  * Stripe pack configuration
@@ -32,6 +33,23 @@ import {
  * localize buyer presentment where supported.
  */
 export const stripeRoutes = new Hono<Env>()
+    .get("/checkout-status/:sessionId", async (c) => {
+        const user = await requireSessionUser(c);
+        // Only the credit ledger proves that funds reached this user's wallet.
+        const credit = await c.env.DB.prepare(
+            "SELECT pollen_credited FROM stripe_checkout_credits WHERE session_id = ? AND user_id = ?",
+        )
+            .bind(c.req.param("sessionId"), user.id)
+            .first<{ pollen_credited: number }>();
+        return c.json(
+            credit
+                ? {
+                      status: "credited" as const,
+                      pollen: credit.pollen_credited,
+                  }
+                : { status: "pending" as const },
+        );
+    })
     /**
      * GET /api/stripe/checkout/:packKey
      * Create a Stripe Checkout Session for pack purchases.
@@ -72,9 +90,11 @@ export const stripeRoutes = new Hono<Env>()
         // Return checkout sessions to the Pollen page for this environment.
         const baseUrl =
             c.env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
-        const pollenUrl = new URL("/pollen", baseUrl);
-        pollenUrl.searchParams.set("pack", pack.packKey);
-        const pollenReturnUrl = pollenUrl.toString();
+        const pollenReturnUrl = stripeCheckoutReturn(
+            baseUrl,
+            c.req.query("return"),
+            pack.packKey,
+        );
 
         // Resolve cohort from buyer IP for analytics. Checkout stays USD-native
         // and does not call FX at runtime.

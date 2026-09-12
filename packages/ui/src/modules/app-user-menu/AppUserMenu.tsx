@@ -4,6 +4,7 @@ import {
     useAuthActions,
     useAuthState,
 } from "@pollinations/sdk/react";
+import { useEffect } from "react";
 import { LoginButton } from "../auth/sdk.ts";
 import {
     type AppUserMenuLabels,
@@ -16,15 +17,29 @@ export type { AppUserMenuLabels } from "./AppUserMenuView.tsx";
 
 export type AppUserMenuProps = {
     labels?: Partial<AppUserMenuLabels>;
-    onTopUpKey?: () => void;
 };
 
 /** SDK adapter; rendering is shared with apps that supply their own data. */
-export function AppUserMenu({ labels, onTopUpKey }: AppUserMenuProps) {
+export function AppUserMenu({ labels }: AppUserMenuProps) {
     const { logout, enterUrl, retryConnection } = useAuthActions();
     const { isLoggedIn, isHydrated, error } = useAuthState();
     const profile = useAccountProfile({ enabled: isLoggedIn });
     const key = useAccountKey({ enabled: isLoggedIn });
+    useEffect(() => {
+        if (!isLoggedIn) return;
+        const refresh = () => void key.refresh();
+        window.addEventListener("focus", refresh);
+        return () => window.removeEventListener("focus", refresh);
+    }, [isLoggedIn, key.refresh]);
+    const redirect: Record<string, string> =
+        typeof window === "undefined"
+            ? {}
+            : {
+                  redirect: new URL(
+                      window.location.pathname,
+                      window.location.origin,
+                  ).href,
+              };
     return (
         <PollinationsConnectionPanel
             accountState={
@@ -49,10 +64,25 @@ export function AppUserMenu({ labels, onTopUpKey }: AppUserMenuProps) {
                     }
                     avatarUrl={profile.data?.image}
                     remaining={key.data?.pollenBudget}
+                    generationEnabled={
+                        key.data?.permissions?.models?.length !== 0
+                    }
                     onDisconnect={logout}
-                    onAddPollen={onTopUpKey}
                     dashboardHref={new URL("/pollen", enterUrl).href}
-                    raiseLimitHref={new URL("/keys", enterUrl).href}
+                    editKeyHref={
+                        key.data?.id
+                            ? new URL(
+                                  `/edit-key?${new URLSearchParams({ id: key.data.id, ...redirect })}`,
+                                  enterUrl,
+                              ).href
+                            : undefined
+                    }
+                    walletHref={
+                        new URL(
+                            `/top-up?${new URLSearchParams(redirect)}`,
+                            enterUrl,
+                        ).href
+                    }
                     labels={labels}
                 />
             )}

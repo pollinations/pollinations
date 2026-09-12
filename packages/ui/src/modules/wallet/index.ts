@@ -1,7 +1,8 @@
 export {
-    AddPollenDialog,
-    type AddPollenDialogProps,
-} from "./AddPollenDialog.tsx";
+    AccountPollen,
+    type AccountPollenSource,
+    getAccountPollenStatus,
+} from "./AccountPollen.tsx";
 export { PaidChip, TierChip, type WalletChipProps } from "./chips.tsx";
 export {
     PAID_BALANCE_CHART_COLOR,

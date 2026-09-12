@@ -3382,3 +3382,84 @@ test("POST /api/webhooks/stripe emits checkout.session.expired to Tinybird witho
     // payment methods, so the shared mapper must not synthesize them here.
     expect(emitted.payment_methods_offered).toBe("");
 });
+
+test("checkout status only confirms credits belonging to the signed-in owner", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    const [user] = await drizzle(env.DB)
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+    await env.DB.prepare(
+        "INSERT INTO stripe_checkout_credits (session_id, event_id, event_type, user_id, pollen_credited, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+    )
+        .bind(
+            "cs_owner_credit",
+            "evt_owner_credit",
+            "checkout.session.completed",
+            user.id,
+            5,
+            Date.now(),
+        )
+        .run();
+    const request = (session: string) =>
+        SELF.fetch(`${base}/checkout-status/${session}`, {
+            headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        });
+    const confirmed = await request("cs_owner_credit");
+    expect(confirmed.status).toBe(200);
+    expect(await confirmed.json()).toEqual({ status: "credited", pollen: 5 });
+    const unknown = await request("cs_uncredited");
+    expect(await unknown.json()).toEqual({ status: "pending" });
+    await drizzle(env.DB).insert(userTable).values({
+        id: "another-owner",
+        name: "Other owner",
+        email: "other-owner@example.test",
+        emailVerified: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+    await env.DB.prepare(
+        "UPDATE stripe_checkout_credits SET user_id = ? WHERE session_id = ?",
+    )
+        .bind("another-owner", "cs_owner_credit")
+        .run();
+    expect(await (await request("cs_owner_credit")).json()).toEqual({
+        status: "pending",
+    });
+    const anonymous = await SELF.fetch(
+        `${base}/checkout-status/cs_owner_credit`,
+    );
+    expect(anonymous.status).toBe(401);
+});
+
+test("wallet checkout returns to the wallet while preserving the explicit app link", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const returnPath = "/top-up?redirect=https%3A%2F%2Fapp.example%2F";
+    const response = await SELF.fetch(
+        `${base}/checkout/p5?return=${encodeURIComponent(returnPath)}`,
+        {
+            headers: { cookie: `better-auth.session_token=${sessionToken}` },
+            redirect: "manual",
+        },
+    );
+    expect(response.status).toBe(302);
+    const checkout = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    );
+    if (!checkout) throw new Error("Checkout was not requested");
+    const success = new URL(checkout.body.success_url);
+    expect(success.pathname).toBe("/top-up");
+    expect(success.searchParams.get("redirect")).toBe("https://app.example/");
+    expect(success.searchParams.get("session_id")).toBe(
+        "{CHECKOUT_SESSION_ID}",
+    );
+    const canceled = new URL(checkout.body.cancel_url);
+    expect(canceled.pathname).toBe("/top-up");
+    expect(canceled.searchParams.get("stripe_canceled")).toBe("true");
+});

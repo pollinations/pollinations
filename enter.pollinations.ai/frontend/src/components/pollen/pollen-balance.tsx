@@ -29,6 +29,7 @@ import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 
 type PollenBalanceProps = {
+    compact?: boolean;
     tierBalance: number;
     packBalance: number;
     paidWeek?: number;
@@ -73,6 +74,7 @@ const TooltipList: FC<{
 );
 
 export const PollenBalance: FC<PollenBalanceProps> = ({
+    compact = false,
     tierBalance,
     packBalance,
     paidWeek = 0,
@@ -155,49 +157,53 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 />
             </div>
 
-            {/* Total + 7d earnings below */}
-            <div className="flex items-start justify-between gap-3 pt-3">
-                <span className="text-sm font-bold uppercase tracking-wide text-theme-text-soft pt-1">
-                    Total
-                </span>
-                <div className="flex flex-col items-end leading-tight">
-                    <span className="flex items-baseline gap-1.5">
-                        <span className="text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight text-theme-text-soft">
-                            {formatPollen(totalPollen)}
+            {!compact && (
+                <>
+                    {/* Total + 7d earnings below */}
+                    <div className="flex items-start justify-between gap-3 pt-3">
+                        <span className="text-sm font-bold uppercase tracking-wide text-theme-text-soft pt-1">
+                            Total
                         </span>
-                        <span className="text-xs font-bold text-theme-text-soft">
-                            pollen
-                        </span>
-                    </span>
-                    {totalWeek > 0 && (
-                        <span className="mt-1 text-sm font-bold tabular-nums text-intent-success-text">
-                            +{formatPollen(totalWeek)}{" "}
-                            <span className="font-medium text-theme-text-muted">
-                                / 7d
+                        <div className="flex flex-col items-end leading-tight">
+                            <span className="flex items-baseline gap-1.5">
+                                <span className="text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight text-theme-text-soft">
+                                    {formatPollen(totalPollen)}
+                                </span>
+                                <span className="text-xs font-bold text-theme-text-soft">
+                                    pollen
+                                </span>
                             </span>
-                        </span>
-                    )}
-                </div>
-            </div>
+                            {totalWeek > 0 && (
+                                <span className="mt-1 text-sm font-bold tabular-nums text-intent-success-text">
+                                    +{formatPollen(totalWeek)}{" "}
+                                    <span className="font-medium text-theme-text-muted">
+                                        / 7d
+                                    </span>
+                                </span>
+                            )}
+                        </div>
+                    </div>
 
-            {/* Footer: learn more */}
-            <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                <p className="flex items-start gap-1.5">
-                    <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Your wallet holds Pollen you've purchased plus Pollen
-                        you've earned.{" "}
-                        <InlineLink
-                            as={Link}
-                            to="/news"
-                            hash="how-does-my-pollen-wallet-work"
-                            external={false}
-                        >
-                            How it works
-                        </InlineLink>
-                    </span>
-                </p>
-            </div>
+                    {/* Footer: learn more */}
+                    <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                        <p className="flex items-start gap-1.5">
+                            <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                Your wallet holds Pollen you've purchased plus
+                                Pollen you've earned.{" "}
+                                <InlineLink
+                                    as={Link}
+                                    to="/news"
+                                    hash="how-does-my-pollen-wallet-work"
+                                    external={false}
+                                >
+                                    How it works
+                                </InlineLink>
+                            </span>
+                        </p>
+                    </div>
+                </>
+            )}
         </div>
     );
 };
@@ -251,12 +257,14 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
 
 type BuyPollenPanelProps = {
     initialBillingState: BillingState | null;
+    checkoutReturnPath?: string;
     selectedPackAmount: number;
     onSelectedPackAmountChange: (amount: number) => void;
 };
 
 export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     initialBillingState,
+    checkoutReturnPath,
     selectedPackAmount,
     onSelectedPackAmountChange,
 }) => {
@@ -306,7 +314,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             displayContents
                         >
                             <ExternalLinkButton
-                                href={`/api/stripe/checkout/${selectedPack.packKey}`}
+                                href={`/api/stripe/checkout/${selectedPack.packKey}${checkoutReturnPath ? `?return=${encodeURIComponent(checkoutReturnPath)}` : ""}`}
                                 target="_self"
                                 className="w-28 min-w-0 gap-1.5 self-start text-center shadow-none sm:shrink-0 sm:self-center"
                             >

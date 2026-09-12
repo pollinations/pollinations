@@ -3,22 +3,20 @@ import { AccountMenu } from "../../compositions/AccountMenu.tsx";
 import { cn } from "../../lib/cn.ts";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
 import {
-    AppIcon,
     ExternalLinkIcon,
     KeyIcon,
     SignOutIcon,
+    WalletIcon,
 } from "../../primitives/icons/index.tsx";
 import { Surface } from "../../primitives/Surface.tsx";
 import { PollinationsSignInButton } from "../auth/PollinationsSignInButton.tsx";
-import { formatPollen } from "../wallet/format-pollen.ts";
-import { PollenStatusBadge } from "../wallet/PollenStatusBadge.tsx";
+import { AccountPollen } from "../wallet/AccountPollen.tsx";
 
 export type AppUserMenuLabels = {
     authorize: string;
-    addPollen: string;
+    editAppAccess: string;
+    wallet: string;
     appUserMenu: string;
-    dashboard: string;
-    raiseLimit: string;
     logout: string;
     connectionError: string;
     checkingConnection: string;
@@ -27,10 +25,9 @@ export type AppUserMenuLabels = {
 };
 const defaultLabels: AppUserMenuLabels = {
     authorize: "Connect with Pollinations",
-    addPollen: "Add Pollen",
+    editAppAccess: "App access",
+    wallet: "Account wallet",
     appUserMenu: "App user menu",
-    dashboard: "Dashboard",
-    raiseLimit: "Raise limit",
     logout: "Disconnect app",
     connectionError: "Connection was not completed. Please try again.",
     checkingConnection: "Checking connection…",
@@ -123,12 +120,11 @@ export type AppUserMenuViewProps = {
     name: string;
     avatarUrl?: string | null;
     remaining?: number | null;
-    /** Confirmed account funding state, when the app has balance access. */
-    pollenStatus?: "no-pollen";
+    generationEnabled?: boolean;
     onDisconnect: () => void;
-    onAddPollen?: () => void;
+    editKeyHref?: string;
+    walletHref?: string;
     dashboardHref?: string;
-    raiseLimitHref?: string;
     labels?: Partial<AppUserMenuLabels>;
 };
 
@@ -137,87 +133,71 @@ export function AppUserMenuView({
     name,
     avatarUrl,
     remaining,
-    pollenStatus,
+    generationEnabled,
     onDisconnect,
-    onAddPollen,
+    editKeyHref,
+    walletHref,
     dashboardHref,
-    raiseLimitHref,
     labels: overrides,
 }: AppUserMenuViewProps) {
     const labels = { ...defaultLabels, ...overrides };
-    const limitReached = remaining != null && remaining <= 0;
     return (
         <AccountMenu
             name={name}
             avatarUrl={avatarUrl}
+            dashboardHref={dashboardHref}
             menuLabel={labels.appUserMenu}
             layout="stacked"
             className="polli:max-w-64 polli:shrink-0"
             menuClassName="polli:w-max polli:min-w-48"
             secondaryContent={
-                pollenStatus ? (
-                    <PollenStatusBadge state={pollenStatus} showIcon={false} />
-                ) : remaining == null ? undefined : limitReached ? (
-                    <PollenStatusBadge state="limit-reached" showIcon={false} />
-                ) : (
-                    <span
-                        title="Available app Pollen"
-                        className="polli:tabular-nums"
-                    >
-                        {formatPollen(remaining)} Pollen
-                    </span>
-                )
+                generationEnabled !== false &&
+                remaining != null &&
+                Number.isFinite(remaining) ? (
+                    <AccountPollen
+                        source={{
+                            type: "allowance",
+                            remaining,
+                            generationEnabled,
+                        }}
+                    />
+                ) : undefined
             }
         >
             {(close) => (
                 <>
-                    {onAddPollen && (
+                    {editKeyHref && (
                         <DropdownItem
-                            onClick={() => {
-                                close();
-                                onAddPollen();
-                            }}
+                            as="a"
+                            href={editKeyHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={close}
                         >
                             <KeyIcon
                                 aria-hidden="true"
                                 className="polli:h-4 polli:w-4 polli:shrink-0"
                             />
-                            {labels.addPollen}
-                        </DropdownItem>
-                    )}
-                    {dashboardHref && (
-                        <DropdownItem
-                            as="a"
-                            href={dashboardHref}
-                            data-pollinations-action="dashboard"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={close}
-                        >
-                            <AppIcon
-                                aria-hidden="true"
-                                className="polli:h-4 polli:w-4 polli:shrink-0"
-                            />
-                            {labels.dashboard}
+                            {labels.editAppAccess}
                             <ExternalLinkIcon
                                 aria-hidden="true"
                                 className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
                             />
                         </DropdownItem>
                     )}
-                    {!onAddPollen && limitReached && raiseLimitHref && (
+                    {walletHref && (
                         <DropdownItem
                             as="a"
-                            href={raiseLimitHref}
+                            href={walletHref}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={close}
                         >
-                            <KeyIcon
+                            <WalletIcon
                                 aria-hidden="true"
                                 className="polli:h-4 polli:w-4 polli:shrink-0"
                             />
-                            {labels.raiseLimit}
+                            {labels.wallet}
                             <ExternalLinkIcon
                                 aria-hidden="true"
                                 className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"

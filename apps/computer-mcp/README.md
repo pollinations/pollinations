@@ -13,7 +13,9 @@ endpoint at `/` (gen rewrites `/mcp/computer` to `/`).
 
 ## What the client sees
 
-One tool, `code`. The model writes JavaScript that calls `codemode.read`,
+One tool, `code`, billed at one flat rate per successful call
+(`computer.tool_call.v1`, reported to gen as a usage receipt); discovery
+requests and storage are free. The model writes JavaScript that calls `codemode.read`,
 `codemode.write`, `codemode.edit`, `codemode.ls`, `codemode.find`,
 `codemode.grep`, `codemode.delete`, and `codemode.exec`; the script runs in a
 Dynamic Worker with no outbound network. Files under `/workspace` persist

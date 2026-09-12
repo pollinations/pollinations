@@ -15,8 +15,14 @@ import { WorkerShellBackend } from "@cloudflare/computer/backends/worker-shell";
 import { createGitClient } from "@cloudflare/computer/git";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 
-import { MCP_USER_ID_HEADER } from "../../../shared/registry/mcp.ts";
+import { withMcpUsageHeaders } from "../../../shared/mcp-usage.ts";
+import {
+  COMPUTER_TOOL_CALL_PRICE,
+  MCP_USER_ID_HEADER,
+} from "../../../shared/registry/mcp.ts";
 import { createComputerMCPServer } from "./server.js";
+
+const TOOL_CALL_RATE = "computer.tool_call.v1";
 
 interface Env {
   LOADER: WorkerLoader;
@@ -62,11 +68,42 @@ export class ComputerMCP extends withWorkspace(ComputerMCPBase, workspaceOptions
     if (path !== "/") return new Response("not found", { status: 404 });
     if (request.method !== "POST") return methodNotAllowed();
 
+    const payload = await readJsonRpc(request);
     const server = await createComputerMCPServer(await getWorkspace(this), this.env.LOADER);
-    const transport = new WebStandardStreamableHTTPServerTransport();
+    // JSON responses (not SSE) so the usage receipt can be attached once the
+    // code has finished running.
+    const transport = new WebStandardStreamableHTTPServerTransport({
+      enableJsonResponse: true,
+    });
     await server.connect(transport);
-    return transport.handleRequest(request);
+    const response = await transport.handleRequest(request, { parsedBody: payload });
+    return withMcpUsageHeaders(response, toolCallUsage(payload, response));
   }
+}
+
+type JsonRpcPayload = {
+  method?: string;
+  params?: { name?: string };
+};
+
+async function readJsonRpc(request: Request): Promise<JsonRpcPayload> {
+  try {
+    return (await request.clone().json()) as JsonRpcPayload;
+  } catch {
+    return {};
+  }
+}
+
+// Flat rate per successful `code` call; discovery requests are free.
+function toolCallUsage(payload: JsonRpcPayload, response: Response) {
+  if (payload.method !== "tools/call" || !response.ok) return undefined;
+  return {
+    cost: COMPUTER_TOOL_CALL_PRICE,
+    tool: payload.params?.name ?? "unknown",
+    status: response.status,
+    adjustmentId: TOOL_CALL_RATE,
+    adjustmentUnits: 1,
+  };
 }
 
 export default {

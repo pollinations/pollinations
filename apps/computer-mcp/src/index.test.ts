@@ -2,11 +2,15 @@ import { SELF } from "cloudflare:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { afterEach, describe, expect, it } from "vitest";
-import { MCP_USER_ID_HEADER } from "../../../shared/registry/mcp.ts";
+import {
+    MCP_USAGE_HEADERS,
+    MCP_USER_ID_HEADER,
+} from "../../../shared/registry/mcp.ts";
 
 const MCP_URL = "https://mcp.internal/";
 
 let client: Client | undefined;
+let lastResponse: Response | undefined;
 
 afterEach(async () => {
     await client?.close();
@@ -15,10 +19,11 @@ afterEach(async () => {
 
 async function connect(userId: string): Promise<Client> {
     const transport = new StreamableHTTPClientTransport(new URL(MCP_URL), {
-        fetch: (input, init = {}) => {
+        fetch: async (input, init = {}) => {
             const headers = new Headers(init.headers);
             headers.set(MCP_USER_ID_HEADER, userId);
-            return SELF.fetch(input, { ...init, headers });
+            lastResponse = await SELF.fetch(input, { ...init, headers });
+            return lastResponse;
         },
     });
     const next = new Client({ name: "computer-mcp-test", version: "1.0.0" });
@@ -58,6 +63,7 @@ describe("Computer Code Mode MCP", () => {
 
         const listed = await mcp.listTools();
         expect(listed.tools.map((tool) => tool.name)).toEqual(["code"]);
+        expect(lastResponse?.headers.has(MCP_USAGE_HEADERS.cost)).toBe(false);
         const description = listed.tools[0]?.description;
         expect(description).toContain("codemode.read");
         expect(description).toContain('"worker-shell"');
@@ -89,6 +95,13 @@ describe("Computer Code Mode MCP", () => {
             backend: "worker-shell",
             cwd: "/workspace",
         });
+        const receipt = lastResponse?.headers;
+        expect(receipt?.get(MCP_USAGE_HEADERS.cost)).toBe("0.0002");
+        expect(receipt?.get(MCP_USAGE_HEADERS.tool)).toBe("code");
+        expect(receipt?.get(MCP_USAGE_HEADERS.adjustmentId)).toBe(
+            "computer.tool_call.v1",
+        );
+        expect(receipt?.get(MCP_USAGE_HEADERS.adjustmentUnits)).toBe("1");
 
         const outbound = await runCode(
             mcp,

@@ -320,6 +320,16 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "tencent/hy4-preview": () =>
+        createOpenRouterModelConfig({
+            model: "tencent/hy4-preview",
+            defaultOptions: {
+                provider: {
+                    only: ["tencent/fp8"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "meituan/longcat-2.0": () =>
         createOpenRouterModelConfig({
             model: "meituan/longcat-2.0",

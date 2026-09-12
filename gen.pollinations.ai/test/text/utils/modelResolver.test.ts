@@ -105,6 +105,18 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Hy4 Preview to Tencent on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "tencent/hy4-preview",
+        });
+
+        expect(result.options.model).toBe("tencent/hy4-preview");
+        expect(result.options.provider).toEqual({
+            only: ["tencent/fp8"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Inkling to Together on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "thinkingmachines/inkling-small",

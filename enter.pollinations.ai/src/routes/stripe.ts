@@ -25,20 +25,13 @@ import {
     getStripeNewCardGateStatus,
     stripeNewCardGateMetadata,
 } from "../utils/stripe-card-gate.ts";
+import { getStripeReturnUrl } from "../utils/stripe-return-url.ts";
 
 /**
  * Stripe pack configuration
  * Checkout keeps pack pricing USD-native and lets Stripe Adaptive Pricing
  * localize buyer presentment where supported.
  */
-/** Same-origin path only: no scheme, no protocol-relative or backslash tricks. */
-function parseReturnPath(value: string | undefined): string | null {
-    if (!value || !/^\/(?![/\\])/.test(value) || value.includes("\\")) {
-        return null;
-    }
-    return value;
-}
-
 export const stripeRoutes = new Hono<Env>()
     /**
      * GET /api/stripe/checkout/:packKey
@@ -81,10 +74,7 @@ export const stripeRoutes = new Hono<Env>()
         // this origin, e.g. the standalone /top-up page), else to Pollen.
         const baseUrl =
             c.env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
-        const pollenUrl = new URL(
-            parseReturnPath(c.req.query("return")) ?? "/pollen",
-            baseUrl,
-        );
+        const pollenUrl = getStripeReturnUrl(baseUrl, c.req.query("return"));
         pollenUrl.searchParams.set("pack", pack.packKey);
         const pollenReturnUrl = pollenUrl.toString();
 

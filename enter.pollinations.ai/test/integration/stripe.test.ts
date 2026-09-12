@@ -3388,7 +3388,7 @@ test("GET /api/stripe/checkout/p5?return= sends Stripe back to that path", async
     mocks,
 }) => {
     await mocks.enable("stripe", "tinybird");
-    const returnPath = "/top-up?redirect=https%3A%2F%2Fapp.example";
+    const returnPath = "/top-up?redirect=https%3A%2F%2Fapp.example#wallet";
 
     const response = await SELF.fetch(
         `${base}/checkout/p5?return=${encodeURIComponent(returnPath)}`,
@@ -3419,6 +3419,10 @@ test("GET /api/stripe/checkout/p5?return= ignores off-site values", async ({
 
     for (const value of [
         "//evil.example",
+        "/\t/evil.example",
+        "/\n/evil.example",
+        "/\r/evil.example",
+        "/\\evil.example",
         "https://evil.example/x",
         "top-up",
     ]) {
@@ -3437,8 +3441,11 @@ test("GET /api/stripe/checkout/p5?return= ignores off-site values", async ({
         const body = mocks.stripe.state.requests.find(
             (request) => request.path === "/v1/checkout/sessions",
         )?.body;
-        expect(new URL(String(body?.success_url)).pathname, value).toBe(
-            "/pollen",
-        );
+        const expectedOrigin = new URL(env.STRIPE_SUCCESS_URL).origin;
+        for (const target of [body?.success_url, body?.cancel_url]) {
+            const url = new URL(String(target));
+            expect(url.origin, value).toBe(expectedOrigin);
+            expect(url.pathname, value).toBe("/pollen");
+        }
     }
 });

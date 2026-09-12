@@ -47,6 +47,8 @@ function TopUpPage() {
     const user = session?.user;
     const { isSigningIn, error: signInError, signIn } = useGitHubSignIn();
     const [wallet, setWallet] = useState<WalletState | null>(null);
+    const [walletError, setWalletError] = useState(false);
+    const [loadAttempt, setLoadAttempt] = useState(0);
     const [billing, setBilling] = useState<BillingState | null | undefined>(
         undefined,
     );
@@ -77,33 +79,51 @@ function TopUpPage() {
         search.stripe_billing_return,
     ]);
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: loadAttempt retries the requests when the user selects Try again.
     useEffect(() => {
         if (!user) return;
+        let canceled = false;
+        setWallet(null);
+        setWalletError(false);
+        setBilling(undefined);
+
         apiClient.customer.balance
             .$get()
-            .then((r) => (r.ok ? r.json() : null))
+            .then((r) => {
+                if (!r.ok) throw new Error("Failed to load wallet");
+                return r.json();
+            })
             .then((data) => {
-                if (!data) return;
+                if (canceled) return;
                 setWallet({
                     tierBalance: data.tierBalance ?? 0,
                     packBalance: data.packBalance ?? 0,
                 });
-                return apiClient.customer.balance.today
+                // Earnings are optional; their failure must not hide the wallet.
+                void apiClient.customer.balance.today
                     .$get()
                     .then((r) => (r.ok ? r.json() : null))
                     .then((earnings) => {
-                        if (earnings) {
+                        if (!canceled && earnings) {
                             setWallet((w) => (w ? { ...w, ...earnings } : w));
                         }
-                    });
+                    })
+                    .catch(() => {});
             })
-            .catch(() => {});
+            .catch(() => {
+                if (!canceled) setWalletError(true);
+            });
         apiClient.stripe.billing
             .$get()
             .then((r) => (r.ok ? r.json() : null))
-            .then(setBilling)
-            .catch(() => setBilling(null));
-    }, [user]);
+            .catch(() => null)
+            .then((data) => {
+                if (!canceled) setBilling(data);
+            });
+        return () => {
+            canceled = true;
+        };
+    }, [user, loadAttempt]);
 
     if (isPending) return <AuthModalLoading />;
 
@@ -159,6 +179,25 @@ function TopUpPage() {
                     </AuthInfoCard>
                     {wallet && <PollenBalance {...wallet} compact />}
                     <ReturnToApp returnUrl={returnUrl} autoReturn />
+                </div>
+            </AuthModal>
+        );
+    }
+
+    if (walletError) {
+        return (
+            <AuthModal dialog={{ label: "Top up" }} tone="error">
+                <AuthModalHeader>{accountIdentity}</AuthModalHeader>
+                <div className="px-6 pb-6 pt-4 space-y-4">
+                    <ErrorBanner>
+                        Could not load your wallet. Please try again.
+                    </ErrorBanner>
+                    <Button
+                        as="button"
+                        onClick={() => setLoadAttempt((attempt) => attempt + 1)}
+                    >
+                        Try again
+                    </Button>
                 </div>
             </AuthModal>
         );

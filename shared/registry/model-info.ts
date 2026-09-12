@@ -110,6 +110,12 @@ export const ModelInfoSchema = z.object({
     max_reference_images: z.number().int().positive().optional(),
     max_reference_videos: z.number().int().positive().optional(),
     capabilities: z.array(ModelCapabilitySchema),
+    supported_parameters: z
+        .array(z.string())
+        .optional()
+        .describe(
+            "Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`.",
+        ),
     tools: z.boolean().optional(),
     reasoning: z.boolean().optional(),
     context_length: z.number().optional(),
@@ -233,6 +239,7 @@ export function modelInfoFromDefinition(
         max_reference_images: service.maxReferenceImages,
         max_reference_videos: service.maxReferenceVideos,
         capabilities: getCapabilities(service),
+        supported_parameters: service.supportedParameters,
         tools: service.tools,
         reasoning: service.reasoning,
         context_length: service.contextLength,

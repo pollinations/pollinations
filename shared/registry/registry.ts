@@ -200,6 +200,8 @@ export type ModelDefinition = {
     tools?: boolean;
     /** Internal route limitation: false when forced/named tool selection fails. */
     supportsForcedToolChoice?: boolean;
+    /** Controls honored by this model through `/v1/chat/completions`. */
+    supportedParameters?: string[];
     reasoning?: boolean;
     search?: boolean;
     // Supported Perplexity search-context sizes; first entry is the default.

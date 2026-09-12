@@ -1,0 +1,33 @@
+{
+  "pr_number": 14790,
+  "title": "refactor: key image generations on their own request",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14790",
+  "merged_at": "2026-09-12T16:51:34Z",
+  "labels": [],
+  "pr_body_excerpt": "POST `/v1/images/generations` used to rebuild its request as a synthetic `GET /image/{prompt}?...` URL purely so its cache key would collide with the native route. That meant a hand-maintained param allowlist, URL encoding, `getPublicOrigin`, and a `generationCacheUrl` variable with special branches in two cache adapters.\n\n- Hashes the request itself — its own path plus a normalized body identity — the way `/v1/images/edits` and `/v1/audio/speech` already do\n- Deletes `generationCacheUrl`, the URL builder, and the `setUrlParam` helper\n- `prepareGenerationRequest` no longer overwrites an identity a route already declared\n- Identity covers prompt, model and generation params only, so `url` and `b64_json` still share one image\n\n### Cost\n\n- Every cached POST `/v1/images/generations` entry gets a new key, so those `media.pollinations.ai` ids change and the endpoint regenerates once at GPU cost. `GET /image` and chat/responses image entries are untouched.\n- POST no longer promotes objects out of the retired binary cache under the `/image` identity. GET `/image` promotion and POST-body promotion (`/v1/audio/speech`) still work.\n- GET and POST no longer share a cache entry for the same image.\n\nConflicts with #14784 on one line in `prepareOpenAIImageGeneration`; whichever merges first, the other keeps `listedModels?.join(\",\") ?? resolved` as the identity's model.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_0161ggPVjwNMTu6oaevEScZw\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Each request gets its own hive",
+    "blurb": "Image-generation POSTs now carry their own tidy cache identity instead of borrowing one from the GET route. Same pixels, fewer cache-adapter acrobatics.",
+    "summary": "POST /v1/images/generations now hashes its normalized request body and own route path for caching, replacing the synthetic GET /image/{prompt} URL identity while keeping prompt, model, and generation parameters shared between url and b64_json output formats.",
+    "impact": "The image API has clearer route-specific cache behavior: GET /image remains unchanged, while POST image generations receive independent cache entries and regenerate once under their new keys.",
+    "keywords": [
+      "image-generation",
+      "cache",
+      "openai-api",
+      "request-identity",
+      "gen-api"
+    ],
+    "visual_concept": "Depict Polli as a careful librarian or postal worker giving the POST image-generation route its own labeled seed packet/cache jar, while a nearby retro terminal shows separate GET and POST paths leading to distinct but cozy image gardens. The visual metaphor is request identity becoming self-contained rather than borrowing another route's label.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny librarian visor, carefully labeling a lime green (#ecf874) cache jar \"POST\" beside a separate \"GET\" jar; both grow the same gentle code-flower image from matching seeds while a retro terminal glows nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, pixel flowers and vines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14790.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny librarian visor, carefully labeling a lime green (#ecf874) cache jar \"POST\" beside a separate \"GET\" jar; both grow the same gentle code-flower image from matching seeds while a retro terminal glows nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, pixel flowers and vines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-12T16:52:36.156742+00:00"
+}

@@ -1,12 +1,16 @@
 import { Button, IconButton, ScrollArea, useColorMode } from "@pollinations/ui";
 import { useEffect, useRef, useState } from "react";
 import {
-    appVariantSupportsProtocol,
     type CanvasScreen,
+    screenVariantIndices,
 } from "./pollen-connect-canvas-data";
 import { galleryCardsForFlow } from "./pollen-connect-gallery-data";
 import type { JourneySelection } from "./pollen-connect-journey-state";
-import { ScreenContent } from "./pollen-connect-preview";
+import {
+    InventoryCount,
+    ScreenContent,
+    ScreenOwnership,
+} from "./pollen-connect-preview";
 
 export function ScreenGallery({
     entrance,
@@ -34,6 +38,9 @@ export function ScreenGallery({
         root.current?.scrollTo({ top: 0, left: 0 });
     }, [selectionKey]);
     const pages = galleryCardsForFlow(entrance.world, entrance.section);
+    const showOwnership =
+        entrance.world === "device" ||
+        (entrance.world === "app" && entrance.section === "main");
     return (
         <div className="screens-gallery">
             <ScrollArea
@@ -47,17 +54,13 @@ export function ScreenGallery({
                 >
                     <div
                         className={`screens-gallery-grid ${desktop ? "screens-gallery-desktop" : ""}`}
+                        data-show-owner={showOwnership || undefined}
                     >
                         {pages.map((entry) => {
-                            const indices = entry.variants
-                                ?.map((variant, index) => ({ variant, index }))
-                                .filter(({ variant }) =>
-                                    appVariantSupportsProtocol(
-                                        variant,
-                                        overrides.protocol,
-                                    ),
-                                )
-                                .map(({ index }) => index) ?? [0];
+                            const indices = screenVariantIndices(
+                                entry,
+                                overrides.protocol,
+                            );
                             const optionCount = Math.max(1, indices.length);
                             const key = `${selectionKey}:${entry.id}`;
                             const variant =
@@ -77,8 +80,22 @@ export function ScreenGallery({
                                     key={entry.id}
                                     className="screens-gallery-item"
                                 >
-                                    <div className="screens-gallery-caption">
-                                        <strong>{entry.title}</strong>
+                                    <div
+                                        className="screens-gallery-caption"
+                                        data-show-owner={
+                                            showOwnership || undefined
+                                        }
+                                    >
+                                        {showOwnership && (
+                                            <ScreenOwnership entry={entry} />
+                                        )}
+                                        <div className="screens-gallery-title">
+                                            <strong>{entry.title}</strong>
+                                            <InventoryCount
+                                                count={optionCount}
+                                                unit="state"
+                                            />
+                                        </div>
                                         <div className="screens-gallery-options">
                                             {optionCount > 1 && (
                                                 <>

@@ -1,4 +1,4 @@
-import { Button } from "@pollinations/ui";
+import { Button, Chip } from "@pollinations/ui";
 import { type ReactNode, useRef } from "react";
 import {
     type CanvasScreen,
@@ -8,10 +8,44 @@ import { illustrations } from "./pollen-connect-illustrations";
 import { ProviderScreen } from "./pollen-connect-provider";
 import "./pollen-connect-window.css";
 
+export function InventoryCount({
+    count,
+    unit,
+}: {
+    count: number;
+    unit: "screen" | "state";
+}) {
+    const label = `${count} ${unit}${count === 1 ? "" : "s"}`;
+    return (
+        <Chip
+            size="sm"
+            data-theme="neutral"
+            className="connect-count-badge"
+            title={label}
+            aria-label={label}
+        >
+            {count}
+        </Chip>
+    );
+}
+
 export function isTerminalScreen(entry?: CanvasScreen) {
     return (
         entry?.illustration === "device" ||
+        entry?.illustration === "device-link" ||
         entry?.illustration === "device-done"
+    );
+}
+
+export function ScreenOwnership({ entry }: { entry: CanvasScreen }) {
+    return (
+        <small className="connect-screen-owner">
+            {isTerminalScreen(entry)
+                ? "On your device"
+                : entry.owner === "Developer app"
+                  ? "In your app · optional UI"
+                  : `On ${entry.owner}`}
+        </small>
     );
 }
 
@@ -51,29 +85,33 @@ export function Illustration({
     name: string;
     onAction?: (label: string) => void;
 }) {
-    if (name === "device" || name === "device-done") {
+    if (["device", "device-link", "device-done"].includes(name)) {
+        const linked = name === "device-link";
+        const url = `https://enter.pollinations.ai/device${linked ? "?user_code=ABCD-EFGH" : ""}`;
         return (
             <div className="connect-terminal-output">
                 <pre>
-                    {name === "device"
+                    {name !== "device-done"
                         ? "$ my-app connect\n\nOpen this URL in your browser:\n"
                         : "$ my-app connect\n\nConnected.\nYou can return to your app."}
                 </pre>
-                {name === "device" && (
+                {name !== "device-done" && (
                     <>
                         {onAction ? (
                             <Button
                                 className="connect-terminal-link"
                                 onClick={() =>
-                                    onAction?.("Open verification URL")
+                                    onAction?.(
+                                        linked
+                                            ? "Open link with code"
+                                            : "Open verification URL",
+                                    )
                                 }
                             >
-                                https://enter.pollinations.ai/device
+                                {url}
                             </Button>
                         ) : (
-                            <span className="connect-terminal-link">
-                                https://enter.pollinations.ai/device
-                            </span>
+                            <span className="connect-terminal-link">{url}</span>
                         )}
                         <pre>
                             {

@@ -15,6 +15,12 @@ const query = new URLSearchParams(location.search);
 if (query.get("thumbnail") === "1") document.documentElement.inert = true;
 const screen = query.get("screen") || "kpi";
 const appRequest = readPreviewRequest(query);
+const previewAppName =
+    screen.startsWith("device") || query.get("login_flow") === "device"
+        ? "Example CLI"
+        : /^(oauth|direct)/.test(screen) || query.get("login_flow") === "app"
+          ? "Example web app"
+          : "App example";
 // These examples own their viewport spacing; the document shell must not add padding.
 document.body.classList.toggle(
     "connect-example-page",
@@ -114,6 +120,34 @@ window.fetch = async (input, init) => {
                 name: "Example key",
             });
         }
+        if (screen.startsWith("device")) {
+            const failure = query.get("device_submit");
+            if (
+                [
+                    "/api/api-keys",
+                    "/api/device/approve",
+                    "/api/device/deny",
+                ].includes(url.pathname)
+            ) {
+                if (failure === "session")
+                    return json({ message: "Unauthorized" }, 401);
+                if (
+                    (failure === "key" && url.pathname === "/api/api-keys") ||
+                    (failure === "approve" &&
+                        url.pathname === "/api/device/approve") ||
+                    (failure === "deny" && url.pathname === "/api/device/deny")
+                )
+                    return json({ message: "Request failed. Try again." }, 503);
+                return json(
+                    url.pathname === "/api/api-keys"
+                        ? {
+                              id: "preview-device-key",
+                              key: "preview-only-not-a-valid-credential",
+                          }
+                        : { success: true },
+                );
+            }
+        }
         // The app was verified during lookup, then revoked before Allow access.
         // POST /api/api-keys revalidates it in validateClientRedirectBinding.
         if (
@@ -198,7 +232,7 @@ window.fetch = async (input, init) => {
                 found: false,
                 error: "redirect_uri_mismatch",
                 redirectUris: ["https://app.example/callback"],
-                appName: appRequest.attribution ? "App example" : undefined,
+                appName: appRequest.attribution ? previewAppName : undefined,
                 githubUsername: appRequest.attribution
                     ? "developer"
                     : undefined,
@@ -207,7 +241,7 @@ window.fetch = async (input, init) => {
         return json({
             found: true,
             earningsEnabled: appRequest.earnings,
-            appName: appRequest.attribution ? "App example" : undefined,
+            appName: appRequest.attribution ? previewAppName : undefined,
             githubUsername: appRequest.attribution ? "developer" : undefined,
             redirectUris: [
                 `${location.origin}/callback`,
@@ -237,19 +271,21 @@ window.fetch = async (input, init) => {
     if (url.pathname === "/api/device/info") {
         if (query.get("verify") === "waiting")
             return new Promise<Response>(() => {});
-        if (screen === "device-error")
+        const codeError = query.get("device_info");
+        if (codeError === "expired")
             return json(
                 { error: "expired_token", error_description: "Code expired" },
                 400,
             );
-        if (screen === "device-invalid")
+        if (codeError === "invalid")
             return json({ error_description: "Invalid code" }, 400);
-        if (screen === "device-unavailable")
+        if (codeError === "unavailable")
             throw new Error("Preview network failure");
-        if (screen === "device-used") return json({ status: "approved" });
+        if (codeError === "used") return json({ status: "approved" });
         return json({
             status: "pending",
-            clientId: "pk_ui_preview",
+            clientId:
+                query.get("device_client") === "none" ? null : "pk_ui_preview",
             scope: query.get("scope") ?? appRequest.scopes.join(" "),
         });
     }
@@ -303,8 +339,24 @@ if (screen.startsWith("add-pollen-") || screen === "account-checkout") {
         />
     );
 } else if (screen === "device-result") {
+    const { AuthAccountIdentity } = await import(
+        "./src/components/auth/auth-account-identity.tsx"
+    );
     content = (
-        <DeviceAuthorizationResult denied={query.get("outcome") === "denied"} />
+        <DeviceAuthorizationResult
+            denied={query.get("outcome") === "denied"}
+            account={
+                <AuthAccountIdentity
+                    user={{
+                        name,
+                        email: "user@example.test",
+                        image: avatar,
+                        githubUsername: username,
+                    }}
+                    balances={{ paid, quest }}
+                />
+            }
+        />
     );
 } else if (screen === "key-edit" || screen === "key-delete") {
     const { PreviewKeyDialog } = await import("./pollen-connect-key-dialog");
@@ -376,10 +428,11 @@ if (screen.startsWith("add-pollen-") || screen === "account-checkout") {
         ),
     });
     let path = "/keys";
-    if (
+    if (screen.startsWith("device-consent")) {
+        path = `/authorize?${new URLSearchParams({ user_code: query.get("user_code") || "ABCDEFGH" })}`;
+    } else if (
         screen.startsWith("direct") ||
         screen.startsWith("oauth") ||
-        screen === "device-consent" ||
         (screen === "login-failed" && query.get("login_flow") === "app")
     ) {
         let params: URLSearchParams;
@@ -450,7 +503,6 @@ if (screen.startsWith("add-pollen-") || screen === "account-checkout") {
             if (value === null) params.delete(key);
             else params.set(key, value);
         }
-        if (screen === "device-consent") params.set("user_code", "ABCD-EFGH");
         path = `/authorize?${params}`;
         if (screen === "login-failed") {
             rememberSignIn(path);
@@ -470,14 +522,12 @@ if (screen.startsWith("add-pollen-") || screen === "account-checkout") {
             "/device" +
             (query.has("user_code")
                 ? `?${new URLSearchParams({ user_code: query.get("user_code") ?? "" })}`
-                : [
-                        "device-error",
-                        "device-used",
-                        "device-invalid",
-                        "device-unavailable",
-                    ].includes(screen)
-                  ? "?user_code=ABCD-EFGH"
-                  : "");
+                : "");
+    if (screen === "login-failed" && query.get("login_flow") === "device") {
+        rememberSignIn(
+            `/${query.get("device_route") === "authorize" ? "authorize" : "device"}?${new URLSearchParams({ user_code: query.get("user_code") ?? "" })}`,
+        );
+    }
     if (query.get("origin") === "none") {
         if (!(screen === "login-failed" && query.get("login_flow") === "app"))
             clearSignInContext();
@@ -491,7 +541,7 @@ if (screen.startsWith("add-pollen-") || screen === "account-checkout") {
             });
         } else if (
             screen === "login-failed" &&
-            query.get("login_flow") !== "app"
+            !["app", "device"].includes(query.get("login_flow") ?? "")
         )
             clearSignInContext();
     }
@@ -558,6 +608,7 @@ if (
     const labels: Record<string, string> = {
         "sign-in": "Sign in with GitHub",
         authorize: "Allow access",
+        deny: "Cancel",
         create: "Create",
         save: "Save",
     };

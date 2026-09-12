@@ -16,6 +16,14 @@ import {
     modelCatalogStates,
 } from "./pollen-connect-canvas-data";
 import { ConsentPreviewControls } from "./pollen-connect-consent-controls";
+import {
+    deviceAutomaticDestination,
+    deviceCodeResults,
+    devicePreviewOverrides,
+    deviceRequestResults,
+    deviceSubmitResults,
+    getDeviceFlow,
+} from "./pollen-connect-device";
 import { type FlowEdge, flowNodes } from "./pollen-connect-diagram";
 import {
     AppRequestSelect,
@@ -36,9 +44,14 @@ import {
     restoreJourney,
     startSelectedJourney,
 } from "./pollen-connect-journey-state";
-import { Illustration, ScreenWindow } from "./pollen-connect-preview";
+import {
+    Illustration,
+    ScreenOwnership,
+    ScreenWindow,
+} from "./pollen-connect-preview";
 import type { AppPreviewProps } from "./pollen-connect-request-config";
 import type { AuthorizeConsent } from "./src/components/auth/authorize";
+import { normalizeDeviceCode } from "./src/lib/device-request";
 import "./pollen-connect-journey.css";
 
 import { addPollenAmounts } from "./pollen-connect-add-pollen-data";
@@ -79,7 +92,6 @@ const productActions: Record<string, Record<string, string>> = {
         "Back to app": "app-connected",
         "Check top-up": "add-pollen-pending",
     },
-    "device-code": { Continue: "code-valid" },
     "enter-signed-out": {
         "Sign in": "github-session",
         "Sign in with GitHub": "github-session",
@@ -143,6 +155,9 @@ export function Journey({
 } & AppPreviewProps) {
     const [state, setState] = useState(() => startSelectedJourney(entrance));
     const [past, setPast] = useState<JourneyState[]>([]);
+    const [devicePreview, setDevicePreview] = useState<Record<string, string>>(
+        {},
+    );
     const selectionKey = `${entrance.world}:${entrance.section}`;
     const appLogin =
         entrance.world === "app" &&
@@ -219,9 +234,14 @@ export function Journey({
     const stateRef = useRef(state);
     const { mode } = useColorMode();
     stateRef.current = state;
-    const node = (state.world === "app" ? appLoginNodes : flowNodes).find(
-        (item) => item.id === state.node,
-    );
+    const deviceFlow = getDeviceFlow(state.deviceEntry);
+    const node = (
+        state.world === "app"
+            ? appLoginNodes
+            : state.world === "device"
+              ? deviceFlow.nodes
+              : flowNodes
+    ).find((item) => item.id === state.node);
     const entryId =
         {
             blocked: "consent",
@@ -231,7 +251,12 @@ export function Journey({
         }[state.node] ?? node?.screen;
     const appEntry =
         state.world === "app" ? appLoginScreens.get(state.node) : undefined;
-    const entry = appEntry ?? screens.find((item) => item.id === entryId);
+    const entry =
+        appEntry ??
+        (state.world === "device"
+            ? deviceFlow.screens.get(state.node)
+            : undefined) ??
+        screens.find((item) => item.id === entryId);
     const variantIndex = appEntry
         ? appLoginVariant(
               appEntry,
@@ -263,9 +288,10 @@ export function Journey({
         request_budget: `${state.budget}`,
         request_models: state.paidOnly ? "paid" : "all",
         ...(appLogin ? appPreview : {}),
+        ...(state.world === "device" ? devicePreview : {}),
         protocol: state.method,
-        ...(state.world === "app" &&
-        ["consent", "app-checking"].includes(state.node)
+        ...(["app", "device"].includes(state.world) &&
+        ["consent", "app-checking", "device-checking"].includes(state.node)
             ? { model_catalog: settings.modelCatalog }
             : {}),
         ...(state.consent &&
@@ -284,7 +310,11 @@ export function Journey({
     if (state.node === "app-callback-error" && state.scenario === "key-check")
         overrides.app_callback = "check-error";
     if (state.scenario) overrides.topup_case = state.scenario;
-    if (state.node === "blocked" && state.world !== "app")
+    if (
+        state.node === "blocked" &&
+        state.world !== "app" &&
+        state.world !== "device"
+    )
         overrides.request_error = "redirect";
     if (state.node === "dashboard-denied") {
         overrides.screen = "dashboard-error";
@@ -318,14 +348,8 @@ export function Journey({
         state.method === "direct"
     )
         overrides.screen = "direct";
-    if (state.node === "sign-in" && state.world === "device")
-        overrides.screen = "device-signed-out";
-    if (state.node === "consent" && state.world === "device")
-        overrides.screen = "device-consent";
-    if (state.node === "device-code" && state.scenario)
-        overrides.screen = state.scenario;
-    if (state.node === "device-result")
-        overrides.outcome = state.denied ? "denied" : "authorized";
+    if (state.world === "device")
+        Object.assign(overrides, devicePreviewOverrides(state));
     if (appEntry) {
         const screen = appLoginPreviewScreen(
             appEntry,
@@ -407,6 +431,16 @@ export function Journey({
                 checkoutPack: Number.isFinite(selectedPack) ? selectedPack : 0,
             };
         }
+        if (current.world === "device") {
+            const input = doc.querySelector<HTMLInputElement>(
+                'input[aria-label="Device code"]',
+            );
+            if (input)
+                next = {
+                    ...next,
+                    deviceCode: normalizeDeviceCode(input.value),
+                };
+        }
         if (current.node === "consent") {
             const value = doc.documentElement.dataset.consent;
             if (value)
@@ -451,7 +485,11 @@ export function Journey({
     }, [entrance, selectionKey, past, readScreen]);
     function step(edge: FlowEdge) {
         const current = readScreen(stateRef.current);
-        setPast((history) => [...history, current]);
+        if (
+            current.world !== "device" ||
+            !deviceAutomaticDestination(current, settingsRef.current)
+        )
+            setPast((history) => [...history, current]);
         if (
             (current.node === "github-login" &&
                 edge.to === "github-approval") ||
@@ -572,7 +610,7 @@ export function Journey({
             group: "App & payment",
             label: "App requests paid-only models",
             checked: state.paidOnly,
-            disabled: !["app", "device", "topup"].includes(state.world),
+            disabled: !["app", "topup"].includes(state.world),
             onChange: (paidOnly: boolean) =>
                 updateScreen((old) => ({ ...old, paidOnly })),
         },
@@ -608,17 +646,26 @@ export function Journey({
         if (!doc) return;
         const currentNode = stateRef.current.node;
         if (
-            stateRef.current.world === "app" &&
-            appLoginAutomaticDestination(stateRef.current, settingsRef.current)
+            ["app", "device"].includes(stateRef.current.world) &&
+            (stateRef.current.world === "device"
+                ? deviceAutomaticDestination
+                : appLoginAutomaticDestination)(
+                stateRef.current,
+                settingsRef.current,
+            )
         ) {
             const timer = window.setTimeout(() => {
                 const current = stateRef.current;
-                if (current.world !== "app" || current.node !== currentNode)
+                if (
+                    !["app", "device"].includes(current.world) ||
+                    current.node !== currentNode
+                )
                     return;
-                const destination = appLoginAutomaticDestination(
-                    current,
-                    settingsRef.current,
-                );
+                const destination = (
+                    current.world === "device"
+                        ? deviceAutomaticDestination
+                        : appLoginAutomaticDestination
+                )(current, settingsRef.current);
                 const edge = journeyOptions(current, settingsRef.current).find(
                     (edge) => edge.to === destination && !edge.action,
                 );
@@ -673,22 +720,20 @@ export function Journey({
                     .replace(/\s+/g, " ");
                 const edges = journeyOptions(current, settingsRef.current);
                 const action = target.getAttribute("data-pollinations-action");
-                const destination =
-                    current.world === "app"
-                        ? (edges.find(
-                              (edge) => action && edge.action === action,
-                          )?.to ??
-                          edges.find((edge) => edge.label === label)?.to ??
-                          (label === "Cancel" ||
-                          label === "Open dashboard" ||
-                          target.getAttribute("title") === "Open dashboard"
-                              ? edges.find((edge) => edge.to === "app-home")?.to
-                              : undefined))
-                        : Object.values(loginErrors).some(
-                                (error) => error.id === current.node,
-                            )
-                          ? edges.find((edge) => edge.label === label)?.to
-                          : productActions[current.node]?.[label];
+                const destination = ["app", "device"].includes(current.world)
+                    ? (edges.find((edge) => action && edge.action === action)
+                          ?.to ??
+                      edges.find((edge) => edge.label === label)?.to ??
+                      (label === "Cancel" ||
+                      label === "Open dashboard" ||
+                      target.getAttribute("title") === "Open dashboard"
+                          ? edges.find((edge) => edge.to === "app-home")?.to
+                          : undefined))
+                    : Object.values(loginErrors).some(
+                            (error) => error.id === current.node,
+                        )
+                      ? edges.find((edge) => edge.label === label)?.to
+                      : productActions[current.node]?.[label];
                 let edge = destination
                     ? edges.find((item) => item.to === destination)
                     : undefined;
@@ -740,7 +785,7 @@ export function Journey({
                         ["consent", "api-key", "app-key", "key-edit"].includes(
                             current.node,
                         ) &&
-                        current.world !== "app" &&
+                        !["app", "device"].includes(current.world) &&
                         currentSettings.errors &&
                         label !== "Close"
                     )
@@ -811,7 +856,30 @@ export function Journey({
             },
             true,
         );
-        doc.addEventListener("submit", (event) => event.preventDefault(), true);
+        doc.addEventListener(
+            "submit",
+            (event) => {
+                event.preventDefault();
+                const current = stateRef.current;
+                if (
+                    current.world !== "device" ||
+                    (event.target as HTMLFormElement).id !== "device-code-form"
+                )
+                    return;
+                const button = doc.querySelector<HTMLButtonElement>(
+                    'button[form="device-code-form"]',
+                );
+                if (!button || button.disabled) return;
+                const edge = journeyOptions(current).find(
+                    (edge) => edge.to === "device-verifying",
+                );
+                if (edge) {
+                    event.stopImmediatePropagation();
+                    stepRef.current(edge);
+                }
+            },
+            true,
+        );
     }
 
     const title = entry?.title ?? node?.label ?? "Choose a path";
@@ -827,6 +895,12 @@ export function Journey({
                         className="journey-preview"
                         aria-label="Screen preview"
                     >
+                        {entry && (appLogin || state.world === "device") && (
+                            <div className="journey-screen-caption">
+                                <strong>{title}</strong>
+                                <ScreenOwnership entry={entry} />
+                            </div>
+                        )}
                         <div className="journey-stage" ref={stage}>
                             {!entry && node?.kind === "outcome" && (
                                 <Surface
@@ -872,6 +946,22 @@ export function Journey({
                                                 <Illustration
                                                     name={entry.illustration}
                                                     onAction={(label) => {
+                                                        if (
+                                                            state.world ===
+                                                            "device"
+                                                        ) {
+                                                            const edge =
+                                                                journeyOptions(
+                                                                    state,
+                                                                ).find(
+                                                                    (edge) =>
+                                                                        edge.label ===
+                                                                        label,
+                                                                );
+                                                            if (edge)
+                                                                step(edge);
+                                                            return;
+                                                        }
                                                         const target =
                                                             productActions[
                                                                 state.node
@@ -895,8 +985,6 @@ export function Journey({
                                                                             "github-authorize",
                                                                         "github-authorize":
                                                                             "loading",
-                                                                        "device-start":
-                                                                            "session",
                                                                     }[
                                                                         state
                                                                             .node
@@ -921,6 +1009,42 @@ export function Journey({
                     </section>
                     <aside className="journey-controls">
                         <div className="journey-switches">
+                            {state.world === "device" &&
+                                [
+                                    "device-start",
+                                    "device-result",
+                                    "device-declined",
+                                    "device-stopped",
+                                    "device-home",
+                                ].includes(state.node) && (
+                                    <Surface
+                                        variant="panel"
+                                        className="polli:p-4"
+                                    >
+                                        <fieldset className="journey-switch-group">
+                                            <legend>Outside the browser</legend>
+                                            {journeyOptions(state)
+                                                .filter(
+                                                    (edge) =>
+                                                        state.node !==
+                                                            "device-start" ||
+                                                        edge.to ===
+                                                            "device-stopped",
+                                                )
+                                                .map((edge) => (
+                                                    <Button
+                                                        key={edge.label}
+                                                        data-theme="neutral"
+                                                        onClick={() =>
+                                                            step(edge)
+                                                        }
+                                                    >
+                                                        {edge.label}
+                                                    </Button>
+                                                ))}
+                                        </fieldset>
+                                    </Surface>
+                                )}
                             {(entrance.section === "topup"
                                 ? ["App & payment", "Pollen"]
                                 : ["Sign-in", "App & payment", "Pollen"]
@@ -935,10 +1059,14 @@ export function Journey({
                                     >
                                         <fieldset className="journey-switch-group">
                                             <legend>
-                                                {appLogin &&
-                                                group === "App & payment"
-                                                    ? "App"
-                                                    : group}
+                                                {group === "App & payment" &&
+                                                state.world === "device"
+                                                    ? "Device request"
+                                                    : appLogin &&
+                                                        group ===
+                                                            "App & payment"
+                                                      ? "App"
+                                                      : group}
                                             </legend>
                                             {group === "Sign-in" && (
                                                 <label className="journey-switch-row">
@@ -965,7 +1093,9 @@ export function Journey({
                                                         <option value="ready">
                                                             Account ready
                                                         </option>
-                                                        {appLogin && (
+                                                        {(appLogin ||
+                                                            state.world ===
+                                                                "device") && (
                                                             <option value="start">
                                                                 Cannot start
                                                                 sign-in
@@ -988,6 +1118,97 @@ export function Journey({
                                                     </select>
                                                 </label>
                                             )}
+                                            {group === "App & payment" &&
+                                                state.world === "device" && (
+                                                    <ConsentPreviewControls
+                                                        device
+                                                        values={devicePreview}
+                                                        showPollen={false}
+                                                        onChange={(patch) => {
+                                                            setDevicePreview(
+                                                                (old) => ({
+                                                                    ...old,
+                                                                    ...patch,
+                                                                }),
+                                                            );
+                                                            setPast([]);
+                                                            setState((old) => ({
+                                                                ...old,
+                                                                consent: null,
+                                                            }));
+                                                        }}
+                                                    />
+                                                )}
+                                            {group === "App & payment" &&
+                                                ["app", "device"].includes(
+                                                    state.world,
+                                                ) && (
+                                                    <FlowSelect
+                                                        label="Model catalogue"
+                                                        value={
+                                                            settings.modelCatalog
+                                                        }
+                                                        options={
+                                                            modelCatalogStates
+                                                        }
+                                                        onChange={(
+                                                            modelCatalog,
+                                                        ) => {
+                                                            setState(
+                                                                readScreen(
+                                                                    stateRef.current,
+                                                                ),
+                                                            );
+                                                            setSettings(
+                                                                (old) => ({
+                                                                    ...old,
+                                                                    modelCatalog:
+                                                                        modelCatalog as JourneySettings["modelCatalog"],
+                                                                }),
+                                                            );
+                                                        }}
+                                                    />
+                                                )}
+                                            {group === "App & payment" &&
+                                                state.world === "device" &&
+                                                (
+                                                    [
+                                                        [
+                                                            "Code verification",
+                                                            "deviceCodeResult",
+                                                            deviceCodeResults,
+                                                        ],
+                                                        [
+                                                            "Request verification",
+                                                            "deviceRequestResult",
+                                                            deviceRequestResults,
+                                                        ],
+                                                        [
+                                                            "Approval / decline",
+                                                            "deviceSubmitResult",
+                                                            deviceSubmitResults,
+                                                        ],
+                                                    ] as const
+                                                ).map(
+                                                    ([label, key, options]) => (
+                                                        <FlowSelect
+                                                            key={key}
+                                                            label={label}
+                                                            value={
+                                                                settings[key]
+                                                            }
+                                                            options={options}
+                                                            onChange={(value) =>
+                                                                setSettings(
+                                                                    (old) => ({
+                                                                        ...old,
+                                                                        [key]: value,
+                                                                    }),
+                                                                )
+                                                            }
+                                                        />
+                                                    ),
+                                                )}
                                             {group === "App & payment" &&
                                                 state.world === "app" && (
                                                     <>
@@ -1036,31 +1257,6 @@ export function Journey({
                                                                                 : "app-sign-in-checking",
                                                                         }),
                                                                     );
-                                                            }}
-                                                        />
-                                                        <FlowSelect
-                                                            label="Model catalogue"
-                                                            value={
-                                                                settings.modelCatalog
-                                                            }
-                                                            options={
-                                                                modelCatalogStates
-                                                            }
-                                                            onChange={(
-                                                                modelCatalog,
-                                                            ) => {
-                                                                setState(
-                                                                    readScreen(
-                                                                        stateRef.current,
-                                                                    ),
-                                                                );
-                                                                setSettings(
-                                                                    (old) => ({
-                                                                        ...old,
-                                                                        modelCatalog:
-                                                                            modelCatalog as JourneySettings["modelCatalog"],
-                                                                    }),
-                                                                );
                                                             }}
                                                         />
                                                         <FlowSelect
@@ -1439,6 +1635,10 @@ export function Journey({
                                                 .filter(
                                                     (item) =>
                                                         item.group === group &&
+                                                        (state.world !==
+                                                            "device" ||
+                                                            item.label ===
+                                                                "Signed in to Pollinations") &&
                                                         !(
                                                             state.world ===
                                                                 "app" &&
@@ -1471,44 +1671,56 @@ export function Journey({
                                                 ))}
                                         </fieldset>
                                     </Surface>
-                                    {group === "Pollen" && !appLogin && (
-                                        <Surface
-                                            variant="card-themed"
-                                            className="journey-error-card"
-                                        >
-                                            {" "}
-                                            <div
-                                                className="journey-switch-row"
-                                                data-disabled={
-                                                    errorsDisabled || undefined
-                                                }
+                                    {group === "Pollen" &&
+                                        !appLogin &&
+                                        state.world !== "device" && (
+                                            <Surface
+                                                variant="card-themed"
+                                                className="journey-error-card"
                                             >
-                                                <span>Request fails</span>
-                                                <Switch
-                                                    ariaLabel="Request fails"
-                                                    checked={settings.errors}
-                                                    disabled={errorsDisabled}
-                                                    status={
-                                                        settings.errors
-                                                            ? "invalid"
-                                                            : undefined
+                                                {" "}
+                                                <div
+                                                    className="journey-switch-row"
+                                                    data-disabled={
+                                                        errorsDisabled ||
+                                                        undefined
                                                     }
-                                                    onChange={(errors) => {
-                                                        setSettings((old) => ({
-                                                            ...old,
-                                                            errors,
-                                                        }));
-                                                        if (!errors)
-                                                            setState((old) => ({
-                                                                ...old,
-                                                                scenario: "",
-                                                                notice: "",
-                                                            }));
-                                                    }}
-                                                />
-                                            </div>
-                                        </Surface>
-                                    )}
+                                                >
+                                                    <span>Request fails</span>
+                                                    <Switch
+                                                        ariaLabel="Request fails"
+                                                        checked={
+                                                            settings.errors
+                                                        }
+                                                        disabled={
+                                                            errorsDisabled
+                                                        }
+                                                        status={
+                                                            settings.errors
+                                                                ? "invalid"
+                                                                : undefined
+                                                        }
+                                                        onChange={(errors) => {
+                                                            setSettings(
+                                                                (old) => ({
+                                                                    ...old,
+                                                                    errors,
+                                                                }),
+                                                            );
+                                                            if (!errors)
+                                                                setState(
+                                                                    (old) => ({
+                                                                        ...old,
+                                                                        scenario:
+                                                                            "",
+                                                                        notice: "",
+                                                                    }),
+                                                                );
+                                                        }}
+                                                    />
+                                                </div>
+                                            </Surface>
+                                        )}
                                 </div>
                             ))}
                         </div>

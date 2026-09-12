@@ -9,6 +9,7 @@ import {
 } from "./pollen-connect-request-config";
 
 type PreviewControlsProps = {
+    device?: boolean;
     showPollen?: boolean;
     values: Record<string, string>;
     onChange: (patch: Record<string, string>) => void;
@@ -42,6 +43,7 @@ export function ConsentPreviewControls({
     values,
     onChange,
     showPollen = true,
+    device = false,
 }: PreviewControlsProps) {
     const scopes = new Set(
         (values.request_scope ?? "profile usage keys")
@@ -72,13 +74,27 @@ export function ConsentPreviewControls({
                 ))}
             </fieldset>
             <fieldset>
-                <legend>AI generation</legend>
-                <FlowSelect
-                    label="Models"
-                    value={values.request_models ?? "all"}
-                    options={previewModelOptions}
-                    onChange={(request_models) => onChange({ request_models })}
-                />
+                <legend className={device ? "polli:sr-only" : undefined}>
+                    AI generation
+                </legend>
+                {device ? (
+                    <FlowSwitch
+                        label="AI generation"
+                        checked={values.request_models !== "none"}
+                        onChange={(on) =>
+                            onChange({ request_models: on ? "all" : "none" })
+                        }
+                    />
+                ) : (
+                    <FlowSelect
+                        label="Models"
+                        value={values.request_models ?? "all"}
+                        options={previewModelOptions}
+                        onChange={(request_models) =>
+                            onChange({ request_models })
+                        }
+                    />
+                )}
                 {values.request_models !== "none" && (
                     <FlowSwitch
                         label="App earns 20%"

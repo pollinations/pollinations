@@ -18,7 +18,7 @@ const MAX_MINUTES = 7 * 24 * 60;
 const DATA_TIMESTAMP_HEADER = "X-Model-Status-Timestamp";
 const STALE_HEADER = "X-Model-Status-Stale";
 
-const ModelHealthRowSchema = z.object({
+export const ModelHealthRowSchema = z.object({
     model: z.string(),
     event_type: z.string(),
     provider: z.string(),
@@ -55,6 +55,13 @@ const ModelHealthResponseSchema = z.object({
 
 type ModelHealthResponse = z.infer<typeof ModelHealthResponseSchema>;
 
+export type ModelHealthSnapshot = {
+    rows: z.infer<typeof ModelHealthRowSchema>[];
+    windowMinutes: number;
+    checkedAt: number;
+    stale: boolean;
+};
+
 type CacheEntry = { data: ModelHealthResponse; timestamp: number };
 
 const cache = new Map<number, CacheEntry>();
@@ -76,6 +83,64 @@ function parseMinutes(value: string | undefined): number | null {
     const minutes = Number(value);
     if (minutes < 1 || minutes > MAX_MINUTES) return null;
     return minutes;
+}
+
+async function fetchModelHealth(minutes: number): Promise<{
+    data: ModelHealthResponse;
+    timestamp: number;
+    stale: boolean;
+} | null> {
+    const now = Date.now();
+    const cached = cache.get(minutes);
+    if (cached && now - cached.timestamp < CACHE_TTL_MS) {
+        log("Returning cached model health response for %d minutes", minutes);
+        setCacheEntry(minutes, cached);
+        return { ...cached, stale: false };
+    }
+
+    try {
+        const url = new URL("/v0/pipes/model_health.json", TINYBIRD_HOST);
+        url.searchParams.set("token", TINYBIRD_PUBLIC_TOKEN);
+        url.searchParams.set("minutes", String(minutes));
+        log("Fetching model health from Tinybird: %s", url.toString());
+
+        const response = await fetch(url.toString());
+        if (!response.ok) {
+            throw new Error(`Tinybird responded with ${response.status}`);
+        }
+
+        const data = (await response.json()) as ModelHealthResponse;
+        if (!data || !Array.isArray(data.data)) {
+            throw new Error("Tinybird returned invalid model health data");
+        }
+        const timestamp = Date.now();
+        setCacheEntry(minutes, { data, timestamp });
+        return { data, timestamp, stale: false };
+    } catch (error) {
+        log("Error fetching model health: %O", error);
+        const stale = cache.get(minutes);
+        if (!stale) return null;
+        log("Falling back to stale cache for %d minutes", minutes);
+        setCacheEntry(minutes, stale);
+        return { ...stale, stale: true };
+    }
+}
+
+export async function getModelHealthSnapshot(
+    minutes: number,
+): Promise<ModelHealthSnapshot | null> {
+    const result = await fetchModelHealth(minutes);
+    if (!result) return null;
+    return {
+        rows: result.data.data,
+        windowMinutes: minutes,
+        checkedAt: result.timestamp,
+        stale: result.stale,
+    };
+}
+
+export function resetModelHealthCache() {
+    cache.clear();
 }
 
 export const modelStatusRoutes = new Hono<Env>().get(
@@ -144,51 +209,16 @@ export const modelStatusRoutes = new Hono<Env>().get(
             );
         }
 
-        const now = Date.now();
-        const cached = cache.get(minutes);
-        if (cached && now - cached.timestamp < CACHE_TTL_MS) {
-            log(
-                "Returning cached model health response for %d minutes",
-                minutes,
-            );
-            setCacheEntry(minutes, cached);
-            c.header(
-                DATA_TIMESTAMP_HEADER,
-                new Date(cached.timestamp).toISOString(),
-            );
-            return c.json(cached.data);
-        }
-
-        try {
-            const url = new URL("/v0/pipes/model_health.json", TINYBIRD_HOST);
-            url.searchParams.set("token", TINYBIRD_PUBLIC_TOKEN);
-            url.searchParams.set("minutes", String(minutes));
-            log("Fetching model health from Tinybird: %s", url.toString());
-
-            const response = await fetch(url.toString());
-            if (!response.ok) {
-                throw new Error(`Tinybird responded with ${response.status}`);
-            }
-
-            const tinybirdData = (await response.json()) as ModelHealthResponse;
-            const timestamp = Date.now();
-            setCacheEntry(minutes, { data: tinybirdData, timestamp });
-            c.header(DATA_TIMESTAMP_HEADER, new Date(timestamp).toISOString());
-            return c.json(tinybirdData);
-        } catch (error) {
-            log("Error fetching model health: %O", error);
-            const stale = cache.get(minutes);
-            if (stale) {
-                log("Falling back to stale cache for %d minutes", minutes);
-                setCacheEntry(minutes, stale);
-                c.header(
-                    DATA_TIMESTAMP_HEADER,
-                    new Date(stale.timestamp).toISOString(),
-                );
-                c.header(STALE_HEADER, "true");
-                return c.json(stale.data);
-            }
+        const result = await fetchModelHealth(minutes);
+        if (!result) {
             return c.json({ error: "Failed to fetch model health data" }, 502);
         }
+
+        c.header(
+            DATA_TIMESTAMP_HEADER,
+            new Date(result.timestamp).toISOString(),
+        );
+        if (result.stale) c.header(STALE_HEADER, "true");
+        return c.json(result.data);
     },
 );

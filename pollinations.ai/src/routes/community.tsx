@@ -162,24 +162,22 @@ function CommunityParticipation() {
         failed: platformFailed,
     } = usePlatformStats();
     const {
-        data: showcase,
+        total: appCount,
         loading: appsLoading,
         failed: appsFailed,
     } = useAppShowcase();
-    const appCount = showcase[0]?.total_apps;
     const bare = loading || failed || issues.length === 0;
     const ways = [
         {
             ...WAYS_IN[0],
-            metrics:
-                appsFailed || (!appsLoading && appCount === undefined)
-                    ? []
-                    : [
-                          {
-                              value: appsLoading ? null : String(appCount),
-                              label: "published apps",
-                          },
-                      ],
+            metrics: appsFailed
+                ? []
+                : [
+                      {
+                          value: appsLoading ? null : String(appCount),
+                          label: "published apps",
+                      },
+                  ],
         },
         {
             ...WAYS_IN[1],

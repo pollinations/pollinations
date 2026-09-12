@@ -109,15 +109,25 @@ export function useAppDirectory() {
     return useAsync<DirectoryApp[]>(loadDirectory, []);
 }
 
-export type ShowcaseApp = DirectoryApp & { total_apps: number };
-
-/** The most active apps plus the complete directory count, from one small pipe. */
-const loadShowcase = cached(() =>
-    tinybird<ShowcaseApp>("app_showcase_public", "&limit=8"),
-);
-
+/** The same cached catalog serves discovery, the active showcase, and counts. */
 export function useAppShowcase() {
-    return useAsync<ShowcaseApp[]>(loadShowcase, []);
+    const directory = useAppDirectory();
+    return {
+        ...directory,
+        data: selectShowcaseApps(directory.data),
+        total: directory.data.length,
+    };
+}
+
+export function selectShowcaseApps(apps: DirectoryApp[]): DirectoryApp[] {
+    return apps
+        .filter((app) => app.description && isBuzz(app))
+        .sort(
+            (left, right) =>
+                Number(right.requests_24h) - Number(left.requests_24h) ||
+                right.approved_date.localeCompare(left.approved_date),
+        )
+        .slice(0, 8);
 }
 
 type PlatformStats = {

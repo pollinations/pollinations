@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { appIdentity } from "./publicStats";
+import {
+    appIdentity,
+    type DirectoryApp,
+    selectShowcaseApps,
+} from "./publicStats";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -25,6 +29,41 @@ describe("app identity", () => {
                 github_repository_url: "https://github.com/example/cli",
             }),
         ).toBe("cli|https://github.com/example/cli");
+    });
+});
+
+describe("app showcase", () => {
+    const app = (name: string, requests: number, date = "2026-09-01") =>
+        ({
+            name,
+            description: "An app",
+            requests_24h: requests,
+            approved_date: date,
+        }) as DirectoryApp;
+
+    it("selects active apps by usage and recency without mutating the catalog", () => {
+        const catalog = [
+            app("Low usage", 99),
+            app("Popular", 500),
+            app("Newer", 100, "2026-09-11"),
+            app("Older", 100),
+            { ...app("No description", 1000), description: "" },
+        ];
+        expect(selectShowcaseApps(catalog).map((item) => item.name)).toEqual([
+            "Popular",
+            "Newer",
+            "Older",
+        ]);
+        expect(catalog[0].name).toBe("Low usage");
+    });
+
+    it("limits the showcase to eight apps", () => {
+        expect(
+            selectShowcaseApps(
+                Array.from({ length: 12 }, (_, i) => app(String(i), 100 + i)),
+            ),
+        ).toHaveLength(8);
+        expect(selectShowcaseApps([])).toEqual([]);
     });
 });
 

@@ -7,7 +7,7 @@ Every change starts with the confirmation gate in `SKILL.md`. Test the exact con
 | Change | Required verification |
 |---|---|
 | Any model addition or modification | Research viable fallback routes; document the best exact candidate and use/decline decision. If configured, directly probe it and run forced-fallback E2E for every applicable capability, parameter, permission, billing field, cache path, error path, and expected burst |
-| Add model | Full declared-modality matrix, aliases, permissions, provider price, billing audit, cache, errors, burst, catalog entry, description, logo |
+| Add model | Full declared-modality matrix; no aliases on the new model; existing alias targets and historical accounting identities unchanged; permissions, provider price, billing audit, cache, errors, burst, catalog entry, description, logo |
 | Provider or upstream model ID | Full declared-modality matrix, every previously supported capability, params, price, usage fields, cache, errors, latency, quotas, and provider-managed fallback behavior |
 | Price or multiplier | Official exact-route price, one real request per declared modality, usage headers/body, billing row, displayed price, no missing conversion |
 | Canonical name or alias | Audit registries and stored aliases; deploy and verify alias-aware permission readers with future IDs recognized before any rename migration. Test old/new IDs, empty scopes, community IDs, catalogs, realtime and fallback filtering. Keep canonical writes and the migration; repeat bounded cleanup after both workers deploy to catch old-writer races and verify zero old IDs. Removed IDs return model-not-found when no alias was approved |
@@ -31,7 +31,7 @@ Test every claimed capability:
 - image input and multiple images when advertised; the answer must demonstrate it saw the image
 - native search or code execution when advertised, including provider charges
 - prompt caching with the same sufficiently long prefix twice
-- canonical ID and every alias
+- canonical ID; every retained legacy alias for existing models; no aliases for new models
 
 Do not advertise a capability because the base model supports it if the selected provider route drops or rewrites it.
 

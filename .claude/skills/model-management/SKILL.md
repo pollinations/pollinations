@@ -29,6 +29,20 @@ Read [operating-policy.md](references/operating-policy.md) before recommending a
 | Add, update, reroute, rename, or remove | [change-and-test-matrix.md](references/change-and-test-matrix.md) |
 | New model, provider, model ID, or price | [billing-verification.md](references/billing-verification.md) |
 
+## Alias policy — new models must have no aliases
+
+- A newly introduced model, including a new version or checkpoint, must use
+  only its canonical public ID and have no aliases (`aliases: []` if required
+  by the registry shape).
+- Do not invent shorthand or version aliases, or transfer existing generic
+  aliases from an older model to a new one. A shared model family does not
+  make distinct versions the same model.
+- Existing aliases are legacy compatibility only. The goal is to remove all
+  model aliases through explicit migrations; adding a model must not expand
+  the alias set or change what existing aliases resolve to.
+- Keep historical accounting identities independent of live request aliases.
+  Adding a model must not relabel an older model's usage or costs.
+
 ## Mandatory confirmation gate
 
 Apply this gate only to a proposed tracked model mutation. Do not turn a
@@ -43,7 +57,7 @@ Show one complete row per model:
 | Field | Required value |
 |---|---|
 | Canonical name | Public model ID after the change |
-| Aliases | Every compatibility alias, or `none` |
+| Aliases | Always `none` for a new model; for an existing model, list only retained legacy aliases |
 | `priceMultiplier` | Exact multiplier after provider cost |
 | `paidOnly` | Whether purchased pack balance is required |
 | Pollinations GPU | `yes` only if Pollinations operates the production hardware |
@@ -197,7 +211,8 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
   the migration; verify no audited old IDs remain. Do not rewrite historical
   analytics using today's mutable aliases.
 - Update every consumer of a changed public ID at once.
-- Add aliases only for existing compatibility contracts or explicit approval.
+- Apply the alias policy above: new models have no aliases; legacy alias
+  retirement is a separate migration from adding a model.
 - Keep model names and aliases in `shared/registry/`; use the live model
   catalog for public listings rather than maintaining a duplicate Markdown list.
 - Keep one PR per model or tightly coupled model-family change.
@@ -207,7 +222,9 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
 
 - Run the relevant rows in [change-and-test-matrix.md](references/change-and-test-matrix.md).
 - For new models and provider/model-ID changes, run the full declared-modality matrix and [billing-verification.md](references/billing-verification.md).
-- Test aliases, permissions, errors, caching, capacity, and `/models` metadata.
+- For a new model, verify its alias list is empty and existing aliases still
+  resolve to their previous models. Test retained legacy aliases, permissions,
+  errors, caching, capacity, and `/models` metadata as applicable.
 - When a fallback is configured, probe it directly and run the same applicable E2E matrix through a forced fallback, including capabilities, parameters, permissions, cache behavior, billing, provider attribution, errors, and expected burst. When no fallback is approved, record the researched candidate and rejection reason.
 - Verify all media is fully returned within the supported request-lifetime budget, including the durable-media checks when applicable.
 - Record exact evidence and uncertainty in the PR.
@@ -227,6 +244,8 @@ Before publishing:
 A model change is not complete until all applicable statements are true:
 
 - The configured model, aliases, provider, route, price, access, modalities, and capabilities match the approved contract.
+- Every new model has no aliases, and its addition leaves existing alias
+  targets and historical accounting identities unchanged.
 - Direct-provider and local E2E requests passed for every declared surface.
 - The best fallback candidate and use/decline decision are documented; every configured fallback passed direct and forced-fallback E2E verification.
 - No existing capability disappeared unless explicitly approved.

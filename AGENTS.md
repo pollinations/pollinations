@@ -185,6 +185,7 @@ npx vitest run test/file.test.ts
 ## Models & API Changes
 
 - Before model changes, read and follow `.claude/skills/model-management/SKILL.md`.
+- New models, including new versions/checkpoints, must have no aliases. Use only the canonical public ID; never transfer an older model's aliases to a new model. Existing aliases are legacy compatibility to retire through migrations; the goal is to remove all model aliases.
 - Text models: add config in `gen.pollinations.ai/src/text/configs/modelConfigs.ts`, entry in `gen.pollinations.ai/src/text/availableModels.ts`. Provider configs (Portkey/Bedrock/OpenAI-compat) in `gen.pollinations.ai/src/text/configs/providerConfigs.ts`.
 - Image models: handler in `gen.pollinations.ai/src/image/`, register in `shared/registry/image.ts`.
 - Update the model registry and OpenAPI source schemas/routes for new models.

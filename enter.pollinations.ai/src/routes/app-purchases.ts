@@ -66,6 +66,8 @@ export const appPurchaseRoutes = new Hono<Env>()
                 ]),
                 returnTo: z.enum([
                     "http://localhost:5173/play",
+                    "http://localhost:4179/play",
+                    "http://127.0.0.1:4179/play",
                     "https://pollinations-ai-website-v2.elliot-b6e.workers.dev/play",
                 ]),
             }),

@@ -34,6 +34,7 @@ async function startAppTopUp(
     sessionToken: string,
     key: { id: string; key: string },
     balance: number,
+    returnTo = "http://localhost:5173/play",
 ) {
     const client = await createApiKeyViaApi(sessionToken, {
         name: "Play sandbox",
@@ -45,7 +46,7 @@ async function startAppTopUp(
     if (!user) throw new Error("Missing test user");
     await env.DB.batch([
         env.DB.prepare("UPDATE apikey SET metadata = ? WHERE id = ?").bind(
-            JSON.stringify({ redirectUris: ["http://localhost/play"] }),
+            JSON.stringify({ redirectUris: [returnTo] }),
             client.id,
         ),
         env.DB.prepare(
@@ -65,7 +66,7 @@ async function startAppTopUp(
             },
             body: JSON.stringify({
                 amount: 20,
-                returnTo: "http://localhost:5173/play",
+                returnTo,
             }),
         },
     );
@@ -89,6 +90,22 @@ function confirmTopUp(
         },
     });
 }
+
+test.for([
+    "http://localhost:4179/play",
+    "http://127.0.0.1:4179/play",
+])("app key top-up supports the registered local website at %s", async (returnTo, {
+    sessionToken,
+    budgetedApiKey,
+}) => {
+    const { id, userId } = await startAppTopUp(
+        sessionToken,
+        budgetedApiKey,
+        50,
+        returnTo,
+    );
+    expect((await getAppPurchase(env, id, userId)).returnTo).toBe(returnTo);
+});
 
 test.for([
     25, 50,

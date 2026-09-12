@@ -10,6 +10,7 @@ import {
     CommunityEndpointAdvertisedSchema,
     CommunityEndpointApiSchema,
     type CommunityEndpointPriceKey,
+    EndpointAgentModalitiesSchema,
     MAX_FALLBACK_TARGETS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
@@ -191,6 +192,8 @@ export const CreateEndpointAgentSchema = z
             [],
         ),
         perUserRpm: PerUserRpmSchema.optional().default(null),
+        inputModalities: EndpointAgentModalitiesSchema.optional(),
+        outputModalities: EndpointAgentModalitiesSchema.optional(),
     })
     .strict();
 
@@ -241,11 +244,16 @@ const EndpointAgentUpdateSchema = z
         url: EndpointFieldsSchema.url.optional(),
         upstreamModel: EndpointFieldsSchema.upstreamModel,
         perUserRpm: PerUserRpmSchema.optional(),
+        inputModalities: EndpointAgentModalitiesSchema.optional(),
+        outputModalities: EndpointAgentModalitiesSchema.optional(),
     })
     .strict()
     .superRefine(validateEndpointUpdate);
 
-export const UpdateEndpointSchema = ProxyUpdateSchema;
+// The stored listing type selects the strict schema in assertValidUpdate.
+export const UpdateEndpointSchema = ProxyUpdateSchema.safeExtend({
+    outputModalities: EndpointAgentModalitiesSchema.optional(),
+});
 
 const UPDATE_SCHEMA_BY_TYPE = {
     proxy: ProxyUpdateSchema,
@@ -384,6 +392,8 @@ export const EndpointAgentResponseSchema = z
         url: EndpointFieldsSchema.url,
         upstreamModel: z.string().min(1),
         perUserRpm: PerUserRpmSchema,
+        inputModalities: EndpointAgentModalitiesSchema.optional(),
+        outputModalities: EndpointAgentModalitiesSchema.optional(),
     })
     .strict();
 export const CommunityEndpointResponseSchema = z.union([

@@ -190,6 +190,8 @@ export function CommunityEndpoints({
                       url: payload.url,
                       upstreamModel: payload.upstreamModel,
                       perUserRpm: payload.perUserRpm,
+                      inputModalities: payload.inputModalities,
+                      outputModalities: payload.outputModalities,
                   }
                 : bearerToken
                   ? { ...proxyUpdate, bearerToken }

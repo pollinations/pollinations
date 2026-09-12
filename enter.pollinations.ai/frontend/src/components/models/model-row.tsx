@@ -11,11 +11,7 @@ import {
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { FC, ReactNode } from "react";
 import { calculatePerPollen } from "./calculations.ts";
-import {
-    CAPABILITY_ICON,
-    getCommunityModelIcon,
-    MODALITY_ICON,
-} from "./model-icons.tsx";
+import { CAPABILITY_ICON, getCommunityModelIcon } from "./model-icons.tsx";
 import {
     getModelBrandLogoPath,
     getModelCapabilities,
@@ -23,12 +19,12 @@ import {
     getModelDescriptionWithoutName,
     getModelDisplayName,
     getModelInputModalities,
-    getModelModalityLabel,
     hasPollinationsTools,
     isAlpha,
     isNewModel,
     isPaidOnly,
 } from "./model-info.ts";
+import { ModelModalityBadges } from "./model-modality-badges.tsx";
 import {
     type BalanceAccess,
     BalanceAccessChip,
@@ -231,7 +227,6 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const CommunityModelIcon = getCommunityModelIcon(model);
     const hasLeadingIcon = Boolean(brandLogoPath || CommunityModelIcon);
     const inputModalities = getModelInputModalities(model);
-    const modalityLabel = getModelModalityLabel(model);
     const capabilities = getModelCapabilities(model);
     const capabilityLabel = getModelCapabilityLabel(model);
     const pollinationsTools = hasPollinationsTools(model);
@@ -364,40 +359,14 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                     capabilities.length > 0 ||
                                     model.perUserRpm != null) && (
                                     <div className="inline-flex items-center gap-2.5 text-theme-text-muted">
-                                        {inputModalities.length > 0 && (
-                                            <Tooltip
-                                                content={
-                                                    <span>
-                                                        <strong className="font-semibold text-theme-text-strong">
-                                                            Input:
-                                                        </strong>{" "}
-                                                        {inputModalities.join(
-                                                            ", ",
-                                                        )}
-                                                    </span>
-                                                }
-                                                ariaLabel={modalityLabel}
-                                                tapEnabled
-                                                displayContents
-                                            >
-                                                <span className="inline-flex items-center gap-2">
-                                                    {inputModalities.map(
-                                                        (key) => {
-                                                            const Icon =
-                                                                MODALITY_ICON[
-                                                                    key
-                                                                ];
-                                                            return (
-                                                                <Icon
-                                                                    key={key}
-                                                                    className="h-4 w-4"
-                                                                />
-                                                            );
-                                                        },
-                                                    )}
-                                                </span>
-                                            </Tooltip>
-                                        )}
+                                        <ModelModalityBadges
+                                            inputs={inputModalities}
+                                            outputs={
+                                                model.agent
+                                                    ? model.outputModalities
+                                                    : undefined
+                                            }
+                                        />
                                         {inputModalities.length > 0 &&
                                             capabilities.length > 0 && (
                                                 <span className="h-3.5 w-px bg-current opacity-30" />

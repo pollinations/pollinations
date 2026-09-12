@@ -78,11 +78,6 @@ export const getModelInputModalities = (model: ModelPrice): InputModality[] => {
     return keys;
 };
 
-export const getModelModalityLabel = (model: ModelPrice): string => {
-    const modalities = getModelInputModalities(model);
-    return modalities.length > 0 ? `Input: ${modalities.join(", ")}` : "Input";
-};
-
 export type DisplayCapability =
     | "agent"
     | "tool_calling"

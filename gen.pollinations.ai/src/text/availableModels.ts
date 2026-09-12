@@ -86,15 +86,20 @@ const qwenFlashTransform: TransformFn = async (messages, options) => {
 
 // Audio models: default to a spoken+text reply and pick a wire format that
 // matches transport (pcm16 for streaming, mp3 otherwise) unless the caller
-// already specified one.
+// already specified one. A caller that explicitly asks for text-only
+// modalities is left untouched — injecting an audio config would contradict
+// the requested modalities and providers reject that combination.
 const audioDefaultsTransform: TransformFn = (messages, options) => {
+    const modalities = options.modalities || ["text", "audio"];
+    if (!modalities.includes("audio")) return { messages, options };
+
     const voice = options.voice || options.audio?.voice || "alloy";
     const audioFormat = options.stream ? "pcm16" : "mp3";
     return {
         messages,
         options: {
             ...options,
-            modalities: options.modalities || ["text", "audio"],
+            modalities,
             audio: options.audio
                 ? {
                       ...options.audio,

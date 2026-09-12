@@ -85,7 +85,7 @@ Against a current \x60llm\x60 release with a key configured:
 
 \x60\x60\x60bash
 llm -m pollinations/openai/gpt-5.4-nano "Say hi"
-llm -m pollinations/openai/gpt-5.4-nano "Count to 5" --no-stream  # streaming path
+llm -m pollinations/openai/gpt-5.4-nano "Count to 5"                  # streaming path
 llm -m pollinations/openai/gpt-5.4-nano --chat                     # chat loop
 llm -m pollinations/openai/gpt-5.4-nano "Describe this" -a photo.jpg
 llm -m pollinations/qwen/qwen3.8-flash -T llm_time "What time is it?"

@@ -66,45 +66,46 @@ describe("text balance notice", () => {
             body: { modalities: ["text"] },
             textOnly: true,
         },
-    ])(
-        "preserves audio contracts on $path textOnly=$textOnly",
-        async ({ path, body, textOnly }) => {
-            const caller = await createTestApiKey();
-            vi.spyOn(globalThis, "fetch").mockResolvedValue(
-                Response.json({ data: [] }),
-            );
-            const ctx = createExecutionContext();
-            const response = await worker.fetch(
-                new Request(
-                    `https://gen.pollinations.ai${path}?model=openai-audio`,
-                    {
-                        method: body ? "POST" : "GET",
-                        headers: {
-                            Authorization: `Bearer ${caller.key}`,
-                            "Content-Type": "application/json",
-                        },
-                        ...(body && {
-                            body: JSON.stringify({
-                                model: "openai-audio",
-                                messages: [{ role: "user", content: "hello" }],
-                                ...body,
-                            }),
-                        }),
+    ])("preserves audio contracts on $path textOnly=$textOnly", async ({
+        path,
+        body,
+        textOnly,
+    }) => {
+        const caller = await createTestApiKey();
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({ data: [] }),
+        );
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                `https://gen.pollinations.ai${path}?model=openai-audio`,
+                {
+                    method: body ? "POST" : "GET",
+                    headers: {
+                        Authorization: `Bearer ${caller.key}`,
+                        "Content-Type": "application/json",
                     },
-                ),
-                env,
-                ctx,
-            );
-            const text = await response.text();
-            expect(response.status, text).toBe(enabled && textOnly ? 200 : 402);
-            expect(text).toContain(
-                enabled && textOnly
-                    ? "The account behind this API key"
-                    : "INSUFFICIENT_BALANCE",
-            );
-            await waitOnExecutionContext(ctx);
-        },
-    );
+                    ...(body && {
+                        body: JSON.stringify({
+                            model: "openai-audio",
+                            messages: [{ role: "user", content: "hello" }],
+                            ...body,
+                        }),
+                    }),
+                },
+            ),
+            env,
+            ctx,
+        );
+        const text = await response.text();
+        expect(response.status, text).toBe(enabled && textOnly ? 200 : 402);
+        expect(text).toContain(
+            enabled && textOnly
+                ? "The account behind this API key"
+                : "INSUFFICIENT_BALANCE",
+        );
+        await waitOnExecutionContext(ctx);
+    });
 
     it.each([
         { path: "/text/hello", stream: false },
@@ -115,149 +116,143 @@ describe("text balance notice", () => {
         { path: "/v1/chat/completions", stream: true },
         { path: "/v1/responses", stream: false },
         { path: "/v1/responses", stream: true },
-    ])(
-        "presents $path stream=$stream without caching or billing",
-        async ({ path, stream }) => {
-            const caller = await createTestApiKey({
-                user: { tierBalance: 0, packBalance: 0 },
-                pollenBudget: 1,
-            });
-            const events: TinybirdEvent[] = [];
-            const otherRequests: string[] = [];
-            vi.spyOn(globalThis, "fetch").mockImplementation(
-                async (input, init) => {
-                    const request = new Request(input, init);
-                    if (new URL(request.url).pathname === "/v0/events") {
-                        events.push(
-                            ...(await request.text())
-                                .trim()
-                                .split("\n")
-                                .map((line) => JSON.parse(line)),
-                        );
-                    } else {
-                        otherRequests.push(request.url);
-                    }
-                    return Response.json({ data: [] });
-                },
-            );
-            const bindings = {
-                ...withInlineGenerationCoordinator(env),
-                TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event_v2",
-            };
-            const get = path.startsWith("/text/");
-            const url = `https://gen.pollinations.ai${path}?model=${model}&stream=${stream}&seed=123`;
-            const request = () =>
-                new Request(url, {
-                    method: get ? "GET" : "POST",
-                    headers: {
-                        Authorization: `Bearer ${caller.key}`,
-                        "Content-Type": "application/json",
-                    },
-                    ...(!get && {
-                        body: JSON.stringify({
-                            model,
-                            stream,
-                            ...(path === "/v1/responses"
-                                ? { input: "hello" }
-                                : {
-                                      messages: [
-                                          { role: "user", content: "hello" },
-                                      ],
-                                  }),
-                        }),
-                    }),
-                });
-            const beforeCache = (await env.TEXT_BUCKET.list()).objects.map(
-                (object) => object.key,
-            );
-            // An identical retry must be checked again, never served the notice from cache.
-            for (let attempt = 0; attempt < 2; attempt++) {
-                const ctx = createExecutionContext();
-                const response = await worker.fetch(request(), bindings, ctx);
-                const body = await response.text();
-                await waitOnExecutionContext(ctx);
-                expect(response.status, body).toBe(
-                    TEXT_BALANCE_NOTICE_ENABLED ? 200 : 402,
-                );
-                expect(response.headers.get("x-cache")).not.toBe("HIT");
-                if (TEXT_BALANCE_NOTICE_ENABLED) {
-                    expect(response.headers.get("cache-control")).toBe(
-                        "private, no-store",
+    ])("presents $path stream=$stream without caching or billing", async ({
+        path,
+        stream,
+    }) => {
+        const caller = await createTestApiKey({
+            user: { tierBalance: 0, packBalance: 0 },
+            pollenBudget: 1,
+        });
+        const events: TinybirdEvent[] = [];
+        const otherRequests: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                if (new URL(request.url).pathname === "/v0/events") {
+                    events.push(
+                        ...(await request.text())
+                            .trim()
+                            .split("\n")
+                            .map((line) => JSON.parse(line)),
                     );
-                    expect(body).toContain("?ref=agent_low_balance_topup");
-                    expect(body).toContain("?ref=agent_low_balance_quests");
-                    if (stream) {
-                        expect(response.headers.get("content-type")).toContain(
-                            "text/event-stream",
-                        );
-                        expect(body).toContain("data: [DONE]");
-                        expect(body).toContain(
-                            path === "/v1/responses"
-                                ? '"type":"response.completed"'
-                                : '"finish_reason":"stop"',
-                        );
-                    } else if (path === "/v1/responses") {
-                        expect(JSON.parse(body)).toMatchObject({
-                            status: "completed",
-                            usage: { total_tokens: 0 },
-                            output: [{ role: "assistant" }],
-                        });
-                    } else if (path === "/v1/chat/completions") {
-                        expect(JSON.parse(body)).toMatchObject({
-                            usage: { total_tokens: 0 },
-                            choices: [
-                                {
-                                    message: { role: "assistant" },
-                                    finish_reason: "stop",
-                                },
-                            ],
-                        });
-                    }
+                } else {
+                    otherRequests.push(request.url);
+                }
+                return Response.json({ data: [] });
+            },
+        );
+        const bindings = {
+            ...withInlineGenerationCoordinator(env),
+            TINYBIRD_INGEST_URL:
+                "https://tinybird.test/v0/events?name=generation_event_v2",
+        };
+        const get = path.startsWith("/text/");
+        const url = `https://gen.pollinations.ai${path}?model=${model}&stream=${stream}&seed=123`;
+        const request = () =>
+            new Request(url, {
+                method: get ? "GET" : "POST",
+                headers: {
+                    Authorization: `Bearer ${caller.key}`,
+                    "Content-Type": "application/json",
+                },
+                ...(!get && {
+                    body: JSON.stringify({
+                        model,
+                        stream,
+                        ...(path === "/v1/responses"
+                            ? { input: "hello" }
+                            : {
+                                  messages: [
+                                      { role: "user", content: "hello" },
+                                  ],
+                              }),
+                    }),
+                }),
+            });
+        const beforeCache = (await env.TEXT_BUCKET.list()).objects.map(
+            (object) => object.key,
+        );
+        // An identical retry must be checked again, never served the notice from cache.
+        for (let attempt = 0; attempt < 2; attempt++) {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(request(), bindings, ctx);
+            const body = await response.text();
+            await waitOnExecutionContext(ctx);
+            expect(response.status, body).toBe(
+                TEXT_BALANCE_NOTICE_ENABLED ? 200 : 402,
+            );
+            expect(response.headers.get("x-cache")).not.toBe("HIT");
+            if (TEXT_BALANCE_NOTICE_ENABLED) {
+                expect(response.headers.get("cache-control")).toBe(
+                    "private, no-store",
+                );
+                expect(body).toContain("?ref=agent_low_balance_topup");
+                expect(body).toContain("?ref=agent_low_balance_quests");
+                if (stream) {
+                    expect(response.headers.get("content-type")).toContain(
+                        "text/event-stream",
+                    );
+                    expect(body).toContain("data: [DONE]");
+                    expect(body).toContain(
+                        path === "/v1/responses"
+                            ? '"type":"response.completed"'
+                            : '"finish_reason":"stop"',
+                    );
+                } else if (path === "/v1/responses") {
+                    expect(JSON.parse(body)).toMatchObject({
+                        status: "completed",
+                        usage: { total_tokens: 0 },
+                        output: [{ role: "assistant" }],
+                    });
+                } else if (path === "/v1/chat/completions") {
+                    expect(JSON.parse(body)).toMatchObject({
+                        usage: { total_tokens: 0 },
+                        choices: [
+                            {
+                                message: { role: "assistant" },
+                                finish_reason: "stop",
+                            },
+                        ],
+                    });
                 }
             }
-            expect(otherRequests).toEqual([]);
-            expect(
-                (await env.TEXT_BUCKET.list()).objects.map(
-                    (object) => object.key,
-                ),
-            ).toEqual(beforeCache);
-            expect(events).toHaveLength(2);
-            for (const event of events)
-                expect(event).toMatchObject({
-                    responseStatus: 402,
-                    errorResponseCode: "INSUFFICIENT_BALANCE",
-                    isBilledUsage: false,
-                    totalPrice: 0,
-                });
-            const db = drizzle(env.DB);
-            expect(await getUserBalance(db, caller.userId)).toMatchObject({
-                tierBalance: 0,
-                packBalance: 0,
+        }
+        expect(otherRequests).toEqual([]);
+        expect(
+            (await env.TEXT_BUCKET.list()).objects.map((object) => object.key),
+        ).toEqual(beforeCache);
+        expect(events).toHaveLength(2);
+        for (const event of events)
+            expect(event).toMatchObject({
+                responseStatus: 402,
+                errorResponseCode: "INSUFFICIENT_BALANCE",
+                isBilledUsage: false,
+                totalPrice: 0,
             });
-            expect(
-                (
-                    await db
-                        .select()
-                        .from(apikey)
-                        .where(eq(apikey.id, caller.id))
-                )[0].pollenBalance,
-            ).toBe(1);
+        const db = drizzle(env.DB);
+        expect(await getUserBalance(db, caller.userId)).toMatchObject({
+            tierBalance: 0,
+            packBalance: 0,
+        });
+        expect(
+            (await db.select().from(apikey).where(eq(apikey.id, caller.id)))[0]
+                .pollenBalance,
+        ).toBe(1);
 
-            // A funded retry must pass access checks, not replay the previous notice.
-            await db
-                .update(user)
-                .set({ packBalance: 10 })
-                .where(eq(user.id, caller.userId));
-            const fundedCtx = createExecutionContext();
-            const funded = await worker.fetch(request(), bindings, fundedCtx);
-            expect(await funded.text()).not.toContain(
-                "?ref=agent_low_balance_topup",
-            );
-            expect(funded.status).not.toBe(402);
-            await waitOnExecutionContext(fundedCtx);
-        },
-    );
+        // A funded retry must pass access checks, not replay the previous notice.
+        await db
+            .update(user)
+            .set({ packBalance: 10 })
+            .where(eq(user.id, caller.userId));
+        const fundedCtx = createExecutionContext();
+        const funded = await worker.fetch(request(), bindings, fundedCtx);
+        expect(await funded.text()).not.toContain(
+            "?ref=agent_low_balance_topup",
+        );
+        expect(funded.status).not.toBe(402);
+        await waitOnExecutionContext(fundedCtx);
+    });
 
     it.each([
         { path: "/text/hello?json=true", body: undefined },
@@ -341,51 +336,52 @@ it.each([
         referer: "https://chat.example/c/1",
         redirect: "https://chat.example",
     },
-])(
-    "links key budget exhaustion to the key editor (redirect=$redirect)",
-    async ({ metadata, referer, redirect }) => {
-        const caller = await createTestApiKey({
-            user: { packBalance: 10 },
-            pollenBudget: 0,
-            metadata,
-        });
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            Response.json({ data: [] }),
-        );
-        const ctx = createExecutionContext();
-        const response = await worker.fetch(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${caller.key}`,
-                    "Content-Type": "application/json",
-                    ...(referer && { Referer: referer }),
-                },
-                body: JSON.stringify({
-                    model,
-                    messages: [{ role: "user", content: "hello" }],
-                }),
+])("links key budget exhaustion to the key editor (redirect=$redirect)", async ({
+    metadata,
+    referer,
+    redirect,
+}) => {
+    const caller = await createTestApiKey({
+        user: { packBalance: 10 },
+        pollenBudget: 0,
+        metadata,
+    });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        Response.json({ data: [] }),
+    );
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(
+        new Request("https://gen.pollinations.ai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${caller.key}`,
+                "Content-Type": "application/json",
+                ...(referer && { Referer: referer }),
+            },
+            body: JSON.stringify({
+                model,
+                messages: [{ role: "user", content: "hello" }],
             }),
-            env,
-            ctx,
+        }),
+        env,
+        ctx,
+    );
+    const text = await response.text();
+    if (!TEXT_BALANCE_NOTICE_ENABLED) {
+        expect(response.status, text).toBe(402);
+        expect(text).toContain("KEY_BUDGET_EXHAUSTED");
+    } else {
+        expect(response.status, text).toBe(200);
+        const link = new URL(
+            `https://enter.pollinations.ai/edit-key?id=${caller.id}&ref=agent_key_budget`,
         );
-        const text = await response.text();
-        if (!TEXT_BALANCE_NOTICE_ENABLED) {
-            expect(response.status, text).toBe(402);
-            expect(text).toContain("KEY_BUDGET_EXHAUSTED");
-        } else {
-            expect(response.status, text).toBe(200);
-            const link = new URL(
-                `https://enter.pollinations.ai/edit-key?id=${caller.id}&ref=agent_key_budget`,
-            );
-            if (redirect) link.searchParams.set("redirect", redirect);
-            expect(text).toContain(`[raise the key budget](${link})`);
-            expect(text).toContain("Topping up the wallet does not raise");
-            expect(text).not.toContain("complete a quest");
-        }
-        await waitOnExecutionContext(ctx);
-    },
-);
+        if (redirect) link.searchParams.set("redirect", redirect);
+        expect(text).toContain(`[raise the key budget](${link})`);
+        expect(text).toContain("Topping up the wallet does not raise");
+        expect(text).not.toContain("complete a quest");
+    }
+    await waitOnExecutionContext(ctx);
+});
 
 it("omits the quest link when only paid Pollen can cover the model", async () => {
     const paidOnlyModel = "inception/mercury-2";

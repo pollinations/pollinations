@@ -308,7 +308,7 @@ export const CreateChatCompletionRequestSchema = z
         messages: z.array(ChatCompletionRequestMessageSchema),
         model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({
             description:
-                "AI model for text generation. See /v1/models for full list. Comma-separated models are a fallback chain: the first serves, the rest are tried in order if it fails.",
+                "AI model for text generation. See /v1/models for full list.",
         }),
         modalities: z.array(z.enum(["text", "audio"])).optional(),
         audio: z

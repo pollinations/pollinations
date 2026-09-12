@@ -1206,7 +1206,7 @@ Owners can publish their own embedding backend as a community endpoint. A commun
 
 #### `GET` `/embeddings/models` — List Embedding Models
 
-Returns available embedding models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+Returns available embedding models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` to exclude community models or `?source=community` to return only community models.
 
 ⚙️ **Parameters**
 
@@ -1221,7 +1221,7 @@ Returns available embedding models with pricing, capabilities, and supported inp
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/embeddings/models?community=0" \
+curl "https://gen.pollinations.ai/embeddings/models?source=official" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1297,17 +1297,87 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 
 ### Query Parameters
 
-All model discovery endpoints accept an optional `community` query parameter:
+All model discovery endpoints accept the same optional filters. Omitting them
+returns every model the caller can see, exactly as before.
 
 | Parameter | Values | Behaviour |
 |-----------|--------|-----------|
-| *(omitted)* | | Returns all models (default, backward-compatible) |
-| `community=false` | `false`, `0` | Excludes community models — returns official models only |
-| `community=true` | `true`, `1` | Returns community models only |
+| `source` | `all` (default), `official`, `community` | Filter by who publishes the model |
+| `reliability` | `all` (default), `reliable` | Return only models whose recent health clears the thresholds |
+| `health` | `true`, `false`, `1`, `0` | Attach a `health` object to every model. Implied by `reliability=reliable` |
+| `community` | `true`, `false`, `1`, `0` | **Deprecated.** `true` ≡ `source=community`, `false` ≡ `source=official`. Ignored when `source` is present |
 
-Any other value (e.g. `tru`, `yes`, `2`) returns **400 Bad Request**.
+Any other value (e.g. `source=tru`, `reliability=perfect`) returns **400 Bad Request**.
 
-Example: `GET /models?community=false`
+```bash
+curl "https://gen.pollinations.ai/models?source=official"
+curl "https://gen.pollinations.ai/v1/models?reliability=reliable"
+curl "https://gen.pollinations.ai/image/models?health=true"
+```
+
+#### Header equivalents
+
+Several OpenAI-compatible clients build the catalog URL by appending `/models`
+to a configured base URL, which discards any query string. Every filter above is
+also readable from a header, so those clients can still narrow the list:
+
+| Header | Equivalent to |
+|--------|---------------|
+| `X-Pollinations-Model-Source` | `?source=` |
+| `X-Pollinations-Model-Reliability` | `?reliability=` |
+| `X-Pollinations-Model-Health` | `?health=` |
+
+A query parameter always wins over the header, so an explicit URL beats a
+client-wide default.
+
+- **Open WebUI** — *Settings → Connections → OpenAI API*: set the base URL to
+  `https://gen.pollinations.ai/v1` and add `X-Pollinations-Model-Source: official`
+  under that connection's custom headers.
+- **LibreChat** — in `librechat.yaml`, under the custom endpoint:
+  `headers: { X-Pollinations-Model-Source: "official" }`.
+- **Cline** — *OpenAI Compatible* provider: add the same header in the provider's
+  custom-headers section.
+
+#### Health metadata
+
+With `health=true`, every model carries:
+
+```json
+{
+  "name": "openai/gpt-5.4-nano",
+  "health": {
+    "status": "reliable",
+    "success_rate": 0.9982,
+    "sample_size": 15234,
+    "window_minutes": 60,
+    "checked_at": "2026-09-08T12:00:00.000Z",
+    "stale": false
+  }
+}
+```
+
+| Field | Meaning |
+|-------|---------|
+| `status` | `reliable`, `degraded`, or `unknown` |
+| `success_rate` | Successes ÷ attempts, or `null` when unknown |
+| `sample_size` | Attempts observed in the window |
+| `window_minutes` | Length of the rolling window |
+| `checked_at` | When the data was last fetched |
+| `stale` | Data is past its freshness budget or came from a fallback cache |
+
+A request the fallback layer rescued still returned a usable result, so it counts
+as a success. Caller-side `4xx` failures are excluded from both the rate and the
+sample — they say nothing about the model. A model with no traffic in the window
+is `unknown`, and `reliability=reliable` excludes it, so `reliable` always means
+"we have recently seen this work" rather than "nothing has gone wrong yet".
+Experimental or preview status is separate from health and is unaffected by these
+filters.
+
+These parameters filter **discovery only**. They never change which models an
+account is permitted to generate with; permission and balance filtering still
+runs first, and a filtered listing is always a subset of the unfiltered one.
+
+Raw per-provider rows remain available at `GET /v1/models/status`.
 
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.
@@ -1326,13 +1396,13 @@ error; use their native endpoint until attachments are supported here.
 
 ## Community Models
 
-Community models use an `owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `community=true` to return only community models or `community=false` to exclude them.
+Community models use an `owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `source=community` to return only community models or `source=official` to exclude them.
 
 For registration, publishing, pricing, fallbacks, and health monitoring, see [Publish a Model](/docs#tag/publish-a-model). For ownership endpoints and schemas, see [Community Models](/docs#tag/community-models) under Resources.
 
 #### `GET` `/v1/models` — List Models (OpenAI-compatible)
 
-Returns available models in the OpenAI-compatible format (`{object: "list", data: [...]}`), with Pollinations pricing and capability extensions. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` for richer metadata. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+Returns available models in the OpenAI-compatible format (`{object: "list", data: [...]}`), with Pollinations pricing and capability extensions. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` for richer metadata. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` to exclude community models or `?source=community` to return only community models.
 
 ⚙️ **Parameters**
 
@@ -1468,7 +1538,7 @@ curl "https://gen.pollinations.ai/v1/models/:model" \
 
 #### `GET` `/models` — List Models
 
-Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` to exclude community models or `?source=community` to return only community models.
 
 ⚙️ **Parameters**
 
@@ -1502,7 +1572,7 @@ curl "https://gen.pollinations.ai/models?community=0" \
 
 #### `GET` `/3d/models` — List 3D Models
 
-Returns all available 3D model generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+Returns all available 3D model generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` to exclude community models or `?source=community` to return only community models.
 
 ⚙️ **Parameters**
 
@@ -1536,7 +1606,7 @@ curl "https://gen.pollinations.ai/3d/models?community=0" \
 
 #### `GET` `/image/models` — List Image & Video Models
 
-Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `output_modalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `output_modalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` to exclude community models or `?source=community` to return only community models.
 
 ⚙️ **Parameters**
 
@@ -1570,7 +1640,7 @@ curl "https://gen.pollinations.ai/image/models?community=0" \
 
 #### `GET` `/video/models` — List Video Models
 
-Returns all available video generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+Returns all available video generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` to exclude community models or `?source=community` to return only community models.
 
 ⚙️ **Parameters**
 
@@ -1604,7 +1674,7 @@ curl "https://gen.pollinations.ai/video/models?community=0" \
 
 #### `GET` `/text/models` — List Text Models (Detailed)
 
-Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` to exclude community models or `?source=community` to return only community models.
 
 ⚙️ **Parameters**
 
@@ -1638,7 +1708,7 @@ curl "https://gen.pollinations.ai/text/models?community=0" \
 
 #### `GET` `/audio/models` — List Audio Models
 
-Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` to exclude community models or `?source=community` to return only community models.
 
 ⚙️ **Parameters**
 

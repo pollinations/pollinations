@@ -3,10 +3,10 @@
  */
 
 import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
-import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import {
     getPriceDefinition,
+    getVisibleEmbeddingModels,
     type ModelName,
     type PriceDefinition,
 } from "@shared/registry/registry.ts";
@@ -145,7 +145,7 @@ export const getModelPrices = (modelStats?: ModelStats): ModelPrice[] => {
 
     // Add embedding models — input-only pricing (output is a vector).
     // Gemini Embedding 2 bills every modality at its own per-million rate.
-    for (const serviceName of Object.keys(EMBEDDING_SERVICES)) {
+    for (const serviceName of getVisibleEmbeddingModels()) {
         const latestPrice = getPriceDefinition(serviceName as ModelName);
         if (!latestPrice) continue;
 

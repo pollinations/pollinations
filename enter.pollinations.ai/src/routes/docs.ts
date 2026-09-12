@@ -1,7 +1,11 @@
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import { AUDIO_SERVICES, ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
-import type { ModelDefinition } from "@shared/registry/registry.ts";
+import {
+    getModelDefinition,
+    getVisibleImageModels,
+    type ModelDefinition,
+} from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { Hono } from "hono";
 import { openAPIRouteHandler } from "hono-openapi";
@@ -19,24 +23,15 @@ const TEXT_ALIASES: Set<string> = new Set(
 );
 const ALL_ALIASES: Set<string> = new Set([...IMAGE_ALIASES, ...TEXT_ALIASES]);
 
-// Build dynamic model name lists from registry for tag descriptions
-const imageModelDisplayNames = Object.keys(IMAGE_SERVICES)
-    .filter(
-        (id) =>
-            !(
-                IMAGE_SERVICES[id as keyof typeof IMAGE_SERVICES]
-                    .outputModalities as string[] | undefined
-            )?.includes("video"),
-    )
+// Build dynamic model name lists from registry for tag descriptions.
+// Sourced from getVisibleImageModels() so hidden/unlisted models never
+// appear here even though they remain callable by id.
+const imageModelDisplayNames = getVisibleImageModels()
+    .filter((id) => !getModelDefinition(id).outputModalities?.includes("video"))
     .join(", ");
 
-const videoModelDisplayNames = Object.keys(IMAGE_SERVICES)
-    .filter((id) =>
-        (
-            IMAGE_SERVICES[id as keyof typeof IMAGE_SERVICES]
-                .outputModalities as string[] | undefined
-        )?.includes("video"),
-    )
+const videoModelDisplayNames = getVisibleImageModels()
+    .filter((id) => getModelDefinition(id).outputModalities?.includes("video"))
     .join(", ");
 
 function filterAliases(

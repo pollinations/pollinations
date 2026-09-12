@@ -2,6 +2,13 @@ import { Scalar } from "@scalar/hono-api-reference";
 import { AUDIO_SERVICES, ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import {
+    getModelDefinition,
+    getVisibleAudioModels,
+    getVisibleEmbeddingModels,
+    getVisibleImageModels,
+    getVisibleTextModels,
+} from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -82,28 +89,19 @@ const ALL_ALIASES = new Set([
     ...EMBEDDING_ALIASES,
 ]);
 
-const imageModelDisplayNames = Object.keys(IMAGE_SERVICES)
-    .filter(
-        (id) =>
-            !(
-                IMAGE_SERVICES[id as keyof typeof IMAGE_SERVICES]
-                    .outputModalities as string[] | undefined
-            )?.includes("video"),
-    )
+// Sourced from getVisible*Models() so hidden/unlisted models never appear in
+// the docs prose even though they remain callable by id.
+const imageModelDisplayNames = getVisibleImageModels()
+    .filter((id) => !getModelDefinition(id).outputModalities?.includes("video"))
     .join(", ");
 
-const videoModelDisplayNames = Object.keys(IMAGE_SERVICES)
-    .filter((id) =>
-        (
-            IMAGE_SERVICES[id as keyof typeof IMAGE_SERVICES]
-                .outputModalities as string[] | undefined
-        )?.includes("video"),
-    )
+const videoModelDisplayNames = getVisibleImageModels()
+    .filter((id) => getModelDefinition(id).outputModalities?.includes("video"))
     .join(", ");
 
-const textModelDisplayNames = Object.keys(TEXT_SERVICES).join(", ");
-const audioModelDisplayNames = Object.keys(AUDIO_SERVICES).join(", ");
-const embeddingModelDisplayNames = Object.keys(EMBEDDING_SERVICES).join(", ");
+const textModelDisplayNames = getVisibleTextModels().join(", ");
+const audioModelDisplayNames = getVisibleAudioModels().join(", ");
+const embeddingModelDisplayNames = getVisibleEmbeddingModels().join(", ");
 
 function filterAliases(schema: OpenApiSchema): OpenApiSchema {
     return JSON.parse(

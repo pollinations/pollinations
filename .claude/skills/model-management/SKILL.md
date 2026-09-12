@@ -134,7 +134,7 @@ Provider/runtime secrets (Azure, OpenAI, OpenRouter API keys, etc.) belong in `g
 | `gen.pollinations.ai/src/text/configs/modelConfigs.ts` | Per-model provider routing config |
 | `gen.pollinations.ai/src/text/configs/providerConfigs.ts` | Provider clients (Portkey, Bedrock, OpenAI-compat) |
 | `gen.pollinations.ai/src/text/availableModels.ts` | Service-name → config mapping (the slug you call) |
-| `shared/registry/text.ts` | `name`, `aliases`, `description`, `provider`, `inputModalities`, `outputModalities`, `tools`/`reasoning`/`search`, `cost` block, `priceMultiplier`, `paidOnly`, `addedDate`, `tier`, `alpha` |
+| `shared/registry/text.ts` | `name`, `aliases`, `description`, `provider`, `inputModalities`, `outputModalities`, `tools`/`reasoning`/`search`, `cost` block, `priceMultiplier`, `paidOnly`, `addedDate`, `tier`, `alpha`, `hidden` (unlisted: excluded from `/models` endpoints and dashboards, still resolvable and callable by id/alias — use for community models that should stay invite-only) |
 | `gen.pollinations.ai/secrets/{dev,staging,prod}.vars.json` | Encrypted provider API keys (SOPS) |
 
 ## Image / Video

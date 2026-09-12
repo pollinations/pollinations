@@ -20,14 +20,17 @@ const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
     baseResolver(schema, { reused: "ref" });
 
 import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
-import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import {
     getAudioModelsInfo,
     getEmbeddingModelsInfo,
     getImageModelsInfo,
     getTextModelsInfo,
 } from "@shared/registry/model-info.ts";
-import { getModelDefinition } from "@shared/registry/registry.ts";
+import {
+    getModelDefinition,
+    getVisibleImageModels,
+} from "@shared/registry/registry.ts";
 import {
     type CreateChatCompletionRequest,
     CreateChatCompletionRequestSchema,
@@ -64,20 +67,17 @@ import { errorResponseDescriptions } from "@/utils/api-docs.ts";
 import { checkBalance, generationAccess } from "@/utils/generation-access.ts";
 import { handleSimpleAudio } from "./audio.ts";
 
-// Build dynamic model lists from registry for use in API descriptions
-const imageModelNames = Object.entries(IMAGE_SERVICES)
-    .filter(
-        ([, svc]) =>
-            !(svc.outputModalities as string[] | undefined)?.includes("video"),
-    )
-    .map(([id]) => `\`${id}\``)
+// Build dynamic model lists from registry for use in API descriptions.
+// Sourced from getVisibleImageModels() so hidden/unlisted models are never
+// advertised here even though they remain callable by id.
+const imageModelNames = getVisibleImageModels()
+    .filter((id) => !getModelDefinition(id).outputModalities?.includes("video"))
+    .map((id) => `\`${id}\``)
     .join(", ");
 
-const videoModelNames = Object.entries(IMAGE_SERVICES)
-    .filter(([, svc]) =>
-        (svc.outputModalities as string[] | undefined)?.includes("video"),
-    )
-    .map(([id]) => `\`${id}\``)
+const videoModelNames = getVisibleImageModels()
+    .filter((id) => getModelDefinition(id).outputModalities?.includes("video"))
+    .map((id) => `\`${id}\``)
     .join(", ");
 
 const factory = createFactory<Env>();

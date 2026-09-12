@@ -115,6 +115,13 @@ class OpenAIAPITests(unittest.TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json()["error"]["type"], "invalid_request_error")
 
+    def test_health_does_not_require_discord_or_api_credentials(self):
+        response = self.client.get("/health")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "healthy")
+        self.assertEqual(response.json()["bot_name"], "Polli")
+
     def test_models_lists_polli(self):
         response = self.client.get("/v1/models", headers=self.headers)
 

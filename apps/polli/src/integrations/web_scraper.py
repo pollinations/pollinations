@@ -522,6 +522,7 @@ async def scrape_url(
     timeout: int = 30,
     headless: bool = True,
     session_id: str | None = None,
+    complexity: str | None = None,
 ) -> dict:
     try:
         parsed = parse_url(url)
@@ -610,6 +611,7 @@ async def scrape_url(
         timeout=timeout,
         headless=headless,
         session_id=session_id,
+        complexity=complexity,
     )
 
 
@@ -640,6 +642,7 @@ async def _scrape_with_crawl4ai(
     timeout: int = 30,
     headless: bool = True,
     session_id: str | None = None,
+    complexity: str | None = None,
 ) -> dict:
     if session_id:
         return {
@@ -738,6 +741,7 @@ async def _scrape_with_crawl4ai(
                     rendered,
                     instruction or "Extract the main content and key information.",
                     schema,
+                    complexity,
                 )
             elif extraction_strategy == "cosine":
                 extracted_content = await _semantic_extract(url, rendered, semantic_filter, timeout)
@@ -838,9 +842,10 @@ async def _scrape_with_crawl4ai(
         return {"success": False, "url": url, "error": str(e)}
 
 
-async def _pollinations_extract(content: str, instruction: str, schema: dict | None) -> str:
+async def _pollinations_extract(content: str, instruction: str, schema: dict | None, complexity: str | None) -> str:
     """Extract through Pollinations' configured gateway, not a Crawl4AI dummy provider."""
     from ..ai.client import pollinations_client
+    from ..ai.complexity import model_for_complexity
 
     max_content_chars = 24_000
     bounded_content = content[:max_content_chars]
@@ -857,6 +862,7 @@ async def _pollinations_extract(content: str, instruction: str, schema: dict | N
             f"Instruction: {instruction}{schema_prompt}\n\n"
             f"Content (limited to {max_content_chars} characters):\n{bounded_content}"
         ),
+        model=model_for_complexity(complexity),
         temperature=0.0,
     )
     if not isinstance(result, str) or not result.strip():
@@ -1054,6 +1060,7 @@ async def parse_file_content(
     file_type: str = "text",
     instruction: str | None = None,
     extract_patterns: list[str] | None = None,
+    complexity: str | None = None,
 ) -> dict:
     response = {
         "success": True,
@@ -1124,7 +1131,7 @@ async def parse_file_content(
 
     if instruction:
         try:
-            extracted = await _llm_extract(content, instruction)
+            extracted = await _llm_extract(content, instruction, complexity)
             if extracted:
                 response["llm_extracted"] = extracted
         except Exception as e:
@@ -1137,6 +1144,7 @@ async def fetch_discord_attachment(
     attachment_url: str,
     file_type: str | None = None,
     instruction: str | None = None,
+    complexity: str | None = None,
 ) -> dict:
     import aiohttp
 
@@ -1173,7 +1181,9 @@ async def fetch_discord_attachment(
                     else:
                         file_type = "text"
 
-                return await parse_file_content(content=content, file_type=file_type, instruction=instruction)
+                return await parse_file_content(
+                    content=content, file_type=file_type, instruction=instruction, complexity=complexity
+                )
 
     except TimeoutError:
         return {"success": False, "error": "Timeout fetching attachment"}
@@ -1181,9 +1191,10 @@ async def fetch_discord_attachment(
         return {"success": False, "error": str(e)}
 
 
-async def _llm_extract(content: str, instruction: str) -> str | None:
+async def _llm_extract(content: str, instruction: str, complexity: str | None = None) -> str | None:
     try:
         from ..ai.client import pollinations_client
+        from ..ai.complexity import model_for_complexity
 
         result = await pollinations_client.generate_text(
             system_prompt=(
@@ -1193,6 +1204,7 @@ async def _llm_extract(content: str, instruction: str) -> str | None:
                 "If the requested information is not found, say 'Not found'."
             ),
             user_prompt=f"Content:\n{content}\n\n---\nExtract: {instruction}",
+            model=model_for_complexity(complexity),
             temperature=0.3,
         )
 
@@ -1230,6 +1242,7 @@ async def web_scrape_handler(
     file_url: str | None = None,
     file_content: str | None = None,
     file_type: str | None = None,
+    complexity: str | None = None,
     **kwargs,
 ) -> dict:
     if action == "parse_file":
@@ -1240,12 +1253,15 @@ async def web_scrape_handler(
             file_type=file_type or "text",
             instruction=extract,
             extract_patterns=patterns,
+            complexity=complexity,
         )
 
     if action == "fetch_file":
         if not file_url:
             return {"error": "file_url required for fetch_file action"}
-        return await fetch_discord_attachment(attachment_url=file_url, file_type=file_type, instruction=extract)
+        return await fetch_discord_attachment(
+            attachment_url=file_url, file_type=file_type, instruction=extract, complexity=complexity
+        )
 
     scrape_actions = {"scrape", "extract", "css_extract", "semantic", "regex"}
     if action in scrape_actions:
@@ -1260,6 +1276,7 @@ async def web_scrape_handler(
             "scan_full_page": scan_full_page,
             "process_iframes": process_iframes,
             "session_id": session_id,
+            "complexity": complexity,
         }
 
         if action == "scrape":

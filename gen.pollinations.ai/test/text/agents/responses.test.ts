@@ -1250,9 +1250,19 @@ describe("managed agent Responses runtime", () => {
             },
         );
         vi.stubGlobal("fetch", fetchMock);
+        // Open WebUI replays stored items without status, and outputs
+        // without id; the Responses API makes both optional on input.
+        const replayed = output.map((item) => {
+            const { status: _status, ...rest } = item as Record<
+                string,
+                unknown
+            >;
+            if (rest.type === "function_call_output") delete rest.id;
+            return rest;
+        });
         const response = await handlePromptAgentResponsesRequest(
             request({
-                input: [...output, { role: "user", content: "Continue" }],
+                input: [...replayed, { role: "user", content: "Continue" }],
             }),
             new AbortController().signal,
             RUNTIME,

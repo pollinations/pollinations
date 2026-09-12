@@ -13,13 +13,13 @@ import {
     type ResponseUsage,
     ResponseUsageSchema,
 } from "../schemas/openai.ts";
-import { functionOutputText } from "../schemas/response-function-items.ts";
 import {
-    type FunctionCall,
-    FunctionCallOutputSchema,
-    FunctionCallSchema,
-    parseFunctionName,
-} from "./function-items.ts";
+    functionOutputText,
+    type ResponseFunctionCall,
+    ResponseFunctionCallOutputSchema,
+    ResponseFunctionCallSchema,
+} from "../schemas/response-function-items.ts";
+import { parseFunctionName } from "./function-items.ts";
 import { safeMcpModelOutput } from "./mcp-output.ts";
 import { type AgentOutputItem, collectOutput } from "./output.ts";
 import type {
@@ -191,7 +191,7 @@ async function inputMessages(
 
     const itemIds = new Set<string>();
     const toolCallIds = new Set<string>();
-    const pendingCalls = new Map<string, FunctionCall>();
+    const pendingCalls = new Map<string, ResponseFunctionCall>();
     let calls: ToolCallPart[] = [];
     let results: ToolResultPart[] = [];
     for (const raw of request.input) {
@@ -207,10 +207,12 @@ async function inputMessages(
             itemIds.add(id);
         }
         if (item.type === "function_call") {
-            const parsed = FunctionCallSchema.safeParse(item);
+            // Input items carry optional id and status, unlike the items the
+            // agent emits: Open WebUI strips both when it replays history.
+            const parsed = ResponseFunctionCallSchema.safeParse(item);
             if (
                 !parsed.success ||
-                parsed.data.status !== "completed" ||
+                (parsed.data.status ?? "completed") !== "completed" ||
                 toolCallIds.has(parsed.data.call_id)
             ) {
                 invalidRequest(
@@ -248,13 +250,13 @@ async function inputMessages(
             continue;
         }
         if (item.type === "function_call_output") {
-            const parsed = FunctionCallOutputSchema.safeParse(item);
+            const parsed = ResponseFunctionCallOutputSchema.safeParse(item);
             const call = parsed.success
                 ? pendingCalls.get(parsed.data.call_id)
                 : undefined;
             if (
                 !parsed.success ||
-                parsed.data.status !== "completed" ||
+                (parsed.data.status ?? "completed") !== "completed" ||
                 !call
             ) {
                 invalidRequest(

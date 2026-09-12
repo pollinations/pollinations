@@ -299,7 +299,11 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
     async (c, next) => {
         const body = c.req.valid("json" as never) as CreateImageRequest &
             Record<string, unknown>;
-        const model = c.var.model.resolved;
+        // Any listed model may serve, so the whole list identifies the cache
+        // entry. Keying on the primary alone would store one model's image
+        // under another's key.
+        const model =
+            c.var.model.listedModels?.join(",") ?? c.var.model.resolved;
 
         // This endpoint returns a complete image/JSON, never an SSE stream.
         // A passthrough stream flag must not bypass durable media storage.

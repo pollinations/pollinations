@@ -45,6 +45,12 @@ export type ModelVariables = {
         cacheScope?: string;
         /** Entry that serves the request when this model's upstream fails. */
         fallbackEntries?: GenerationModelEntry[];
+        /**
+         * Every model the caller listed, resolved, when they named more than
+         * one. Any of them may serve, so a normalized cache key must name the
+         * whole list rather than just the primary.
+         */
+        listedModels?: string[];
     };
     formData?: FormData;
 };
@@ -207,6 +213,7 @@ export async function resolveModelDefinition(
             candidate.communityEndpoint &&
             usesAgentRunToken(candidate.communityEndpoint),
     );
+    const listedModels = [entry.id, ...alternates.map((a) => a.id)];
     return {
         requested: model,
         resolved: entry.id,
@@ -216,6 +223,7 @@ export async function resolveModelDefinition(
         }),
         ...(agent && { cacheScope: `agent:${agent.id}` }),
         ...(fallbackEntries.length > 0 && { fallbackEntries }),
+        ...(alternates.length > 0 && { listedModels }),
     };
 }
 

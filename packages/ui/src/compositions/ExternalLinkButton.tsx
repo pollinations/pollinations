@@ -1,10 +1,16 @@
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
-import { Button } from "../primitives/Button.tsx";
+import { Button, type ButtonAppearance } from "../primitives/Button.tsx";
 import { ExternalLinkIcon } from "../primitives/icons/index.tsx";
 
 type ExternalLinkButtonBaseProps = {
     size?: "sm" | "md" | "lg";
+    appearance?: ButtonAppearance;
+    /** Set false for another Pollinations property that should behave as product navigation. */
+    external?: boolean;
+    showIcon?: boolean;
+    /** Leading icon, rendered before the label. */
+    icon?: ReactNode;
     className?: string;
     children: ReactNode;
 };
@@ -21,23 +27,38 @@ export type ExternalLinkButtonProps =
     | ExternalLinkButtonNativeButtonProps;
 
 export function ExternalLinkButton(props: ExternalLinkButtonProps) {
-    const { size = "md", className, children } = props;
+    const {
+        size = "md",
+        appearance,
+        external = true,
+        showIcon = true,
+        icon,
+        className,
+        children,
+    } = props;
     const content = (
         <>
+            {icon}
             <span>{children}</span>
-            <ExternalLinkIcon
-                className="polli:h-4 polli:w-4 polli:shrink-0 polli:opacity-60"
-                aria-hidden="true"
-            />
+            {external && showIcon ? (
+                <ExternalLinkIcon
+                    className="polli:h-4 polli:w-4 polli:shrink-0 polli:opacity-60"
+                    aria-hidden="true"
+                />
+            ) : null}
         </>
     );
 
     if ("href" in props) {
         const {
             href,
-            target = "_blank",
+            target = external ? "_blank" : undefined,
             rel = target === "_blank" ? "noopener noreferrer" : undefined,
             size: _size,
+            appearance: _appearance,
+            external: _external,
+            showIcon: _showIcon,
+            icon: _icon,
             className: _className,
             children: _children,
             ...anchorProps
@@ -50,6 +71,7 @@ export function ExternalLinkButton(props: ExternalLinkButtonProps) {
                 target={target}
                 rel={rel}
                 size={size}
+                appearance={appearance}
                 className={cn("polli:gap-2", className)}
                 {...anchorProps}
             >
@@ -61,6 +83,10 @@ export function ExternalLinkButton(props: ExternalLinkButtonProps) {
     const {
         type = "button",
         size: _size,
+        appearance: _appearance,
+        external: _external,
+        showIcon: _showIcon,
+        icon: _icon,
         className: _className,
         children: _children,
         ...buttonProps
@@ -71,6 +97,7 @@ export function ExternalLinkButton(props: ExternalLinkButtonProps) {
             as="button"
             type={type}
             size={size}
+            appearance={appearance}
             className={cn("polli:gap-2", className)}
             {...buttonProps}
         >

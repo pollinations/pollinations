@@ -1,0 +1,44 @@
+DESCRIPTION >
+    Compact public app showcase for the website home and community pages.
+    Returns the most active apps with screenshots plus the complete directory
+    count, without making those pages download the full directory.
+
+TOKEN tinybird_read_public READ
+TOKEN tinybird_read READ
+
+NODE app_showcase_public_node
+SQL >
+    %
+    WITH (
+        SELECT count()
+        FROM app_directory
+        WHERE name != ''
+    ) AS total_apps
+    SELECT
+        emoji,
+        name,
+        web_url,
+        screenshot_url,
+        description,
+        language,
+        category,
+        platform,
+        github_username,
+        github_user_id,
+        github_repository_url,
+        github_repository_stars,
+        discord_username,
+        submitted_date,
+        issue_url,
+        approved_date,
+        byop,
+        requests_24h,
+        total_apps
+    FROM app_directory
+    WHERE name != ''
+      AND description != ''
+      AND requests_24h >= 100
+    ORDER BY requests_24h DESC, approved_date DESC
+    LIMIT {{Int32(limit, 8)}}
+
+TYPE endpoint

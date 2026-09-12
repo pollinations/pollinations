@@ -1,11 +1,13 @@
 import type { PropsWithChildren } from "react";
 import { cn } from "../lib/cn.ts";
-import { ExternalLinkIcon } from "./icons/index.tsx";
+import { ArrowRightIcon, ExternalLinkIcon } from "./icons/index.tsx";
 
 type BaseInlineLinkProps = {
     /** Set explicitly for non-http external links, or false for custom routing components. */
     external?: boolean;
     showIcon?: boolean;
+    /** Show a right arrow for internal destinations. External links keep the external-link icon. */
+    directional?: boolean;
     className?: string;
 };
 
@@ -25,6 +27,7 @@ export function InlineLink<T extends React.ElementType = "a">({
     as,
     external,
     showIcon = true,
+    directional = false,
     className,
     children,
     ...linkProps
@@ -48,6 +51,12 @@ export function InlineLink<T extends React.ElementType = "a">({
             {children}
             {showIcon && isExternal && (
                 <ExternalLinkIcon
+                    aria-hidden="true"
+                    className="polli:h-3.5 polli:w-3.5 polli:shrink-0 polli:opacity-65"
+                />
+            )}
+            {showIcon && directional && !isExternal && (
+                <ArrowRightIcon
                     aria-hidden="true"
                     className="polli:h-3.5 polli:w-3.5 polli:shrink-0 polli:opacity-65"
                 />

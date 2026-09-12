@@ -3,15 +3,19 @@
  * Serves static assets and rewrites meta tags per route for SEO.
  *
  * The site talks to the public APIs (gen/enter) directly from the browser using
- * the publishable BYOP app key (see src/api.config.ts), so this worker does no
- * API proxying — it only serves assets and rewrites SEO metadata.
+ * the publishable BYOP app key (see src/config.ts). This worker also exposes a
+ * tiny cached proxy for Discord's public presence count, whose widget response
+ * cannot be read directly by browsers because it does not include CORS headers.
  */
+
+import { NOT_FOUND_META, ROUTE_META } from "./routeMeta";
 
 // Cloudflare Workers types (minimal, avoids conflicts with DOM types)
 interface CfElement {
     setAttribute(name: string, value: string): void;
     setInnerContent(content: string): void;
     append(content: string, options?: { html: boolean }): void;
+    remove(): void;
 }
 interface CfElementHandler {
     element(el: CfElement): void;
@@ -25,42 +29,122 @@ interface Env {
     ASSETS: { fetch: (request: Request) => Promise<Response> };
 }
 
-const ROUTE_META: Record<string, { title: string; description: string }> = {
-    "/": {
-        title: "pollinations.ai",
-        description:
-            "Build AI apps with one API, user wallets, and developer earnings",
-    },
-    "/play": {
-        title: "Play | pollinations.ai",
-        description: "Generate images, text, audio and video with AI models",
-    },
-    "/apps": {
-        title: "Apps | pollinations.ai",
-        description: "Community-built apps powered by Pollinations AI",
-    },
-    "/community": {
-        title: "Community | pollinations.ai",
-        description: "Contributors, voting, and build diary",
-    },
-    "/terms": {
-        title: "Terms | pollinations.ai",
-        description: "Terms of service for pollinations.ai",
-    },
-    "/privacy": {
-        title: "Privacy | pollinations.ai",
-        description: "Privacy policy for pollinations.ai",
-    },
-    "/refunds": {
-        title: "Refunds | pollinations.ai",
-        description: "Refunds and cancellations policy for pollinations.ai",
-    },
-    "/night": {
-        title: "Pollinations AI Night | 16 July 2026, Block1 Berlin",
-        description:
-            "A free evening for anyone curious about AI. Show & tell, real or fake? songs, images and news, and a robot DJ. Thu 16 July 2026, 17:30-22:00, Block1, Gaswerksiedlung, Berlin.",
-    },
-};
+interface ExecutionContext {
+    waitUntil(promise: Promise<unknown>): void;
+}
+
+const DISCORD_GUILD_ID = "885844321461485618";
+const DISCORD_PRESENCE_PATH = "/api/discord-presence";
+const DISCORD_PRESENCE_TTL_SECONDS = 300;
+const GITHUB_STARS_PATH = "/api/github-stars";
+const GITHUB_STARS_TTL_SECONDS = 15 * 60;
+
+const STALE_TTL_SECONDS = 24 * 60 * 60;
+
+async function cachedJson<T>(
+    request: Request,
+    ctx: ExecutionContext,
+    ttlSeconds: number,
+    load: () => Promise<T>,
+) {
+    const cache = (caches as CacheStorage & { default: Cache }).default;
+    // Key on the path only, so a query string cannot bypass the cache and
+    // spend the shared upstream quota.
+    const url = new URL(request.url);
+    const cacheKey = new Request(`${url.origin}${url.pathname}`);
+    const staleKey = new Request(`${url.origin}${url.pathname}?stale`);
+    const cached = await cache.match(cacheKey);
+    if (cached) return cached;
+
+    const headers = { "Cache-Control": `public, max-age=${ttlSeconds}` };
+    try {
+        const value = await load();
+        const fresh = Response.json(value, { headers });
+        const stale = Response.json(value, {
+            headers: {
+                "Cache-Control": `public, max-age=${STALE_TTL_SECONDS}`,
+            },
+        });
+        ctx.waitUntil(
+            Promise.all([
+                cache.put(cacheKey, fresh.clone()),
+                cache.put(staleKey, stale),
+            ]),
+        );
+        return fresh;
+    } catch {
+        // Serve the last good value while the upstream is down instead of
+        // letting every page view retry it.
+        const stale = await cache.match(staleKey);
+        if (stale) return new Response(stale.body, { headers });
+        return Response.json(
+            { error: "Live data is temporarily unavailable" },
+            { status: 502, headers: { "Cache-Control": "no-store" } },
+        );
+    }
+}
+
+async function discordPresence(request: Request, ctx: ExecutionContext) {
+    return cachedJson(request, ctx, DISCORD_PRESENCE_TTL_SECONDS, async () => {
+        const response = await fetch(
+            `https://discord.com/api/guilds/${DISCORD_GUILD_ID}/widget.json`,
+        );
+        if (!response.ok) throw new Error(`discord: ${response.status}`);
+
+        const widget = (await response.json()) as {
+            presence_count?: number;
+        };
+        if (typeof widget.presence_count !== "number") {
+            throw new Error("discord: invalid presence count");
+        }
+
+        return { presence_count: widget.presence_count };
+    });
+}
+
+async function githubStars(request: Request, ctx: ExecutionContext) {
+    return cachedJson(request, ctx, GITHUB_STARS_TTL_SECONDS, async () => {
+        const response = await fetch(
+            "https://api.github.com/repos/pollinations/pollinations",
+            {
+                headers: {
+                    Accept: "application/vnd.github+json",
+                    "User-Agent": "pollinations.ai",
+                },
+            },
+        );
+        if (response.ok) {
+            const repo = (await response.json()) as {
+                stargazers_count?: number;
+            };
+            if (typeof repo.stargazers_count === "number") {
+                return { stargazers_count: repo.stargazers_count };
+            }
+        }
+
+        // GitHub's anonymous API limit is shared by the Worker's egress IP.
+        // The public repository page exposes the same live count without a
+        // credential, so it is a safe fallback for this decorative signal.
+        const page = await fetch(
+            "https://github.com/pollinations/pollinations",
+            { headers: { "User-Agent": "pollinations.ai" } },
+        );
+        if (!page.ok) throw new Error(`github page: ${page.status}`);
+
+        const html = await page.text();
+        const match = html.match(
+            /id="repo-stars-counter-star"[^>]*aria-label="([\d,]+) users? starred this repository"/,
+        );
+        const stargazersCount = match
+            ? Number(match[1].replace(/,/g, ""))
+            : Number.NaN;
+        if (!Number.isSafeInteger(stargazersCount)) {
+            throw new Error("github page: invalid star count");
+        }
+
+        return { stargazers_count: stargazersCount };
+    });
+}
 
 const JSON_LD_HOME = JSON.stringify({
     "@context": "https://schema.org",
@@ -74,7 +158,7 @@ const JSON_LD_HOME = JSON.stringify({
         "https://x.com/pollinations_ai",
     ],
     description:
-        "Build AI apps with one API, user wallets, and developer earnings",
+        "Open infrastructure for text, image, audio and video generation, with one wallet and one API.",
 });
 
 const JSON_LD_PLAY = JSON.stringify({
@@ -93,8 +177,29 @@ function getJsonLd(path: string): string | null {
 }
 
 export default {
-    async fetch(request: Request, env: Env): Promise<Response> {
+    async fetch(
+        request: Request,
+        env: Env,
+        ctx: ExecutionContext,
+    ): Promise<Response> {
         const url = new URL(request.url);
+
+        // www is routed only so it can redirect to the canonical apex host.
+        if (url.hostname.startsWith("www.")) {
+            url.hostname = url.hostname.slice(4);
+            return Response.redirect(url.toString(), 301);
+        }
+
+        if (
+            request.method === "GET" &&
+            url.pathname === DISCORD_PRESENCE_PATH
+        ) {
+            return discordPresence(request, ctx);
+        }
+
+        if (request.method === "GET" && url.pathname === GITHUB_STARS_PATH) {
+            return githubStars(request, ctx);
+        }
 
         // Serve static assets with per-route meta tag rewriting for SEO
         const response = await env.ASSETS.fetch(request);
@@ -106,12 +211,23 @@ export default {
         }
 
         const path = url.pathname === "" ? "/" : url.pathname;
-        // Normalize: strip trailing slash (except root)
-        const normalizedPath =
-            path !== "/" && path.endsWith("/") ? path.slice(0, -1) : path;
-        const meta = ROUTE_META[normalizedPath] || ROUTE_META["/"];
+        // Normalize: strip trailing slash (except root). The router matches
+        // paths case-insensitively, so the meta lookup must too.
+        const normalizedPath = (
+            path !== "/" && path.endsWith("/") ? path.slice(0, -1) : path
+        ).toLowerCase();
+        const knownRoute = normalizedPath in ROUTE_META;
+        const meta = knownRoute ? ROUTE_META[normalizedPath] : NOT_FOUND_META;
         const canonical = `https://pollinations.ai${normalizedPath === "/" ? "" : normalizedPath}`;
         const jsonLd = getJsonLd(normalizedPath);
+
+        const htmlResponse = knownRoute
+            ? response
+            : new Response(response.body, {
+                  status: 404,
+                  statusText: "Not Found",
+                  headers: response.headers,
+              });
 
         return new HTMLRewriter()
             .on("title", {
@@ -121,7 +237,8 @@ export default {
             })
             .on('link[rel="canonical"]', {
                 element(el) {
-                    el.setAttribute("href", canonical);
+                    if (knownRoute) el.setAttribute("href", canonical);
+                    else el.remove();
                 },
             })
             .on('meta[name="description"]', {
@@ -141,7 +258,8 @@ export default {
             })
             .on('meta[property="og:url"]', {
                 element(el) {
-                    el.setAttribute("content", canonical);
+                    if (knownRoute) el.setAttribute("content", canonical);
+                    else el.remove();
                 },
             })
             .on('meta[name="twitter:title"]', {
@@ -164,6 +282,6 @@ export default {
                     }
                 },
             })
-            .transform(response);
+            .transform(htmlResponse);
     },
 };

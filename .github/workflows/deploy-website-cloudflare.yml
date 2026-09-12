@@ -24,8 +24,15 @@ jobs:
         with:
           node-version: '24'
 
+      # The site links packages/sdk and packages/ui from source, so their
+      # dist must exist before the site bundles.
       - name: Install dependencies
-        run: npm install
+        run: |
+          npm ci
+          npm ci --prefix pollinations.ai
+
+      - name: Build shared packages
+        run: npm run build:ui
         working-directory: ./pollinations.ai
 
       - name: Build and deploy to Cloudflare

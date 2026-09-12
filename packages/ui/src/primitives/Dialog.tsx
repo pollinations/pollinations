@@ -22,6 +22,7 @@ export type DialogProps = {
     labelledBy?: string;
     size?: keyof typeof sizeClasses;
     showBackdrop?: boolean;
+    backdropBlur?: boolean;
     positionerClassName?: string;
     contentClassName?: string;
     children: ReactNode;
@@ -38,6 +39,7 @@ export const Dialog: FC<DialogProps> = ({
     labelledBy,
     size = "md",
     showBackdrop = true,
+    backdropBlur = true,
     positionerClassName,
     contentClassName,
     children,
@@ -64,7 +66,10 @@ export const Dialog: FC<DialogProps> = ({
                         // Scrim must DARKEN in both modes — ink-950 inverts
                         // (near-white in dark) and would brighten the page.
                         // Fixed black + a soft blur dims and de-focuses.
-                        className="polli:fixed polli:inset-0 polli:z-[100] polli:bg-black/50 polli:backdrop-blur-sm"
+                        className={cn(
+                            "polli:fixed polli:inset-0 polli:z-[100] polli:bg-black/50",
+                            backdropBlur && "polli:backdrop-blur-sm",
+                        )}
                     />
                 )}
                 <ArkDialog.Positioner

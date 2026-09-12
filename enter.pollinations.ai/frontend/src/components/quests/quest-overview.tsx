@@ -8,7 +8,6 @@ import {
     DiscordIcon,
     GitHubIcon,
     InlineLink,
-    Markdown,
     RocketIcon,
     SearchIcon,
     Section,
@@ -20,6 +19,7 @@ import {
     Text,
     TrendUpIcon,
 } from "@pollinations/ui";
+import { Markdown } from "@pollinations/ui/markdown";
 import { formatPollen } from "@pollinations/ui/wallet";
 import {
     type ComponentType,

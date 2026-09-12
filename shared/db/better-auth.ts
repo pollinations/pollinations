@@ -429,6 +429,19 @@ export const deviceCode = sqliteTable("device_code", {
   index("idx_device_code_user_code").on(table.userCode),
 ]);
 
+export const appKeyTopUp = sqliteTable("app_key_top_up", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  keyId: text("key_id").notNull().references(() => apikey.id, { onDelete: "cascade" }),
+  clientKeyId: text("client_key_id").notNull().references(() => apikey.id, { onDelete: "cascade" }),
+  amount: integer("amount").notNull(),
+  returnTo: text("return_to").notNull(),
+  checkoutPack: integer("checkout_pack"),
+  checkoutSessionId: text("checkout_session_id"),
+  createdAt: integer("created_at").notNull(),
+  completedAt: integer("completed_at"),
+});
+
 export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
   sessionId: text("session_id").primaryKey(),
   eventId: text("event_id").notNull(),

@@ -1,3 +1,4 @@
+import { assertNotBanned, assertStagingAccess } from "@shared/auth/api-key.ts";
 import {
     calculateServiceFeeCents,
     describePollenPack,
@@ -12,6 +13,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
+import { getAppPurchase } from "../utils/app-purchase.ts";
 import { getCohortFromCountry } from "../utils/currency-router.ts";
 import { createStripeClient } from "../utils/stripe.ts";
 import {
@@ -65,6 +67,21 @@ export const stripeRoutes = new Hono<Env>()
         }
 
         const userId = session.user.id;
+        const purchaseId = c.req.query("purchase");
+        const purchase = purchaseId
+            ? await getAppPurchase(c.env, purchaseId, userId)
+            : undefined;
+        if (purchase) {
+            assertNotBanned(session.user);
+            assertStagingAccess(c.env, session.user);
+            if (
+                purchase.checkoutPack !== pack.amountUsd ||
+                purchase.completedAt
+            )
+                throw new HTTPException(400, {
+                    message: "Purchase amount mismatch",
+                });
+        }
 
         // Create Stripe client
         const stripe = createStripeClient(c.env);
@@ -72,8 +89,11 @@ export const stripeRoutes = new Hono<Env>()
         // Return checkout sessions to the Pollen page for this environment.
         const baseUrl =
             c.env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
-        const pollenUrl = new URL("/pollen", baseUrl);
+        const pollenUrl = purchase
+            ? new URL(purchase.returnTo)
+            : new URL("/pollen", baseUrl);
         pollenUrl.searchParams.set("pack", pack.packKey);
+        if (purchase) pollenUrl.searchParams.set("app_top_up", purchase.id);
         const pollenReturnUrl = pollenUrl.toString();
 
         // Resolve cohort from buyer IP for analytics. Checkout stays USD-native
@@ -108,75 +128,104 @@ export const stripeRoutes = new Hono<Env>()
                 packKey: pack.packKey,
                 cohort,
                 ...stripeNewCardGateMetadata(newCardGate),
+                ...(purchase
+                    ? {
+                          appPurchaseKeyId: purchase.keyId,
+                          appPurchaseClientId: purchase.clientKeyId,
+                          appTopUpId: purchase.id,
+                      }
+                    : {}),
             };
             const serviceFeeCents = calculateServiceFeeCents(
                 pack.amountUsd * 100,
             );
 
-            const checkoutSession = await stripe.checkout.sessions.create({
-                mode: "payment",
-                payment_method_configuration: pmcId,
-                line_items: [
-                    {
-                        price_data: {
-                            currency: "usd",
-                            unit_amount: pack.amountUsd * 100,
-                            tax_behavior: "exclusive",
-                            product_data: {
-                                name: pack.checkoutName,
-                                description: pack.checkoutDescription,
-                                images: [pack.checkoutImageUrl],
-                                tax_code: pack.taxCode,
+            const checkoutSession = await stripe.checkout.sessions.create(
+                {
+                    mode: "payment",
+                    payment_method_configuration: pmcId,
+                    line_items: [
+                        {
+                            price_data: {
+                                currency: "usd",
+                                unit_amount: pack.amountUsd * 100,
+                                tax_behavior: "exclusive",
+                                product_data: {
+                                    name: pack.checkoutName,
+                                    description: pack.checkoutDescription,
+                                    images: [pack.checkoutImageUrl],
+                                    tax_code: pack.taxCode,
+                                },
+                            },
+                            quantity: 1,
+                        },
+                        {
+                            price_data: {
+                                currency: "usd",
+                                unit_amount: serviceFeeCents,
+                                tax_behavior: "exclusive",
+                                product_data: {
+                                    name: SERVICE_FEE_NAME,
+                                    tax_code: SERVICE_FEE_TAX_CODE,
+                                },
+                            },
+                            quantity: 1,
+                        },
+                    ],
+                    adaptive_pricing: { enabled: true },
+                    // Enable discount/promotion codes
+                    allow_promotion_codes: true,
+                    // Automatic tax & VAT
+                    automatic_tax: { enabled: true },
+                    // Auto billing address - collects only what's needed (country for tax)
+                    billing_address_collection: "auto",
+                    // Optional VAT/Tax ID collection for businesses (not enforced)
+                    tax_id_collection: { enabled: true },
+                    customer: stripeCustomerId,
+                    customer_update: {
+                        address: "auto",
+                        name: "auto",
+                    },
+                    payment_intent_data: {
+                        metadata: packMetadata,
+                    },
+                    // Invoice creation after payment
+                    invoice_creation: {
+                        enabled: true,
+                        invoice_data: {
+                            rendering_options: {
+                                amount_tax_display: "exclude_tax",
                             },
                         },
-                        quantity: 1,
                     },
-                    {
-                        price_data: {
-                            currency: "usd",
-                            unit_amount: serviceFeeCents,
-                            tax_behavior: "exclusive",
-                            product_data: {
-                                name: SERVICE_FEE_NAME,
-                                tax_code: SERVICE_FEE_TAX_CODE,
-                            },
-                        },
-                        quantity: 1,
-                    },
-                ],
-                adaptive_pricing: { enabled: true },
-                // Enable discount/promotion codes
-                allow_promotion_codes: true,
-                // Automatic tax & VAT
-                automatic_tax: { enabled: true },
-                // Auto billing address - collects only what's needed (country for tax)
-                billing_address_collection: "auto",
-                // Optional VAT/Tax ID collection for businesses (not enforced)
-                tax_id_collection: { enabled: true },
-                customer: stripeCustomerId,
-                customer_update: {
-                    address: "auto",
-                    name: "auto",
-                },
-                payment_intent_data: {
                     metadata: packMetadata,
+                    ...(purchase
+                        ? {
+                              custom_text: {
+                                  submit: {
+                                      message: `Also increase ${purchase.appName.slice(0, 100)}'s spending allowance by ${purchase.amount} Pollen. This is a one-time purchase.`,
+                                  },
+                              },
+                          }
+                        : {}),
+                    success_url: `${pollenReturnUrl}&stripe_success=true&session_id={CHECKOUT_SESSION_ID}`,
+                    cancel_url: `${pollenReturnUrl}&stripe_canceled=true`,
                 },
-                // Invoice creation after payment
-                invoice_creation: {
-                    enabled: true,
-                    invoice_data: {
-                        rendering_options: {
-                            amount_tax_display: "exclude_tax",
-                        },
-                    },
-                },
-                metadata: packMetadata,
-                success_url: `${pollenReturnUrl}&stripe_success=true&session_id={CHECKOUT_SESSION_ID}`,
-                cancel_url: `${pollenReturnUrl}&stripe_canceled=true`,
-            });
+                purchaseId
+                    ? { idempotencyKey: `app-purchase:${purchaseId}` }
+                    : undefined,
+            );
 
             // Redirect to Stripe Checkout (will use checkout.pollinations.ai custom domain)
             if (checkoutSession.url) {
+                if (purchase) {
+                    await c.env.DB.prepare(
+                        "UPDATE app_key_top_up SET checkout_session_id = ? WHERE id = ?",
+                    )
+                        .bind(checkoutSession.id, purchase.id)
+                        .run();
+                    return c.json({ url: checkoutSession.url });
+                }
                 return c.redirect(checkoutSession.url);
             }
 

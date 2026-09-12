@@ -1,0 +1,1535 @@
+import { useChat } from "@ai-sdk/react";
+import {
+    type AudioFormat,
+    CHAT_ROUTING_CAPABILITIES,
+    type ChatRoutingCapability,
+    type MessageContentPart,
+    Pollinations,
+} from "@pollinations/sdk";
+import {
+    type UseModelCatalogValue,
+    useAuthActions,
+    useAuthState,
+} from "@pollinations/sdk/react";
+import {
+    Alert,
+    BeakerIcon,
+    Button,
+    ChatConversation,
+    ChatConversationContent,
+    ChatIcon,
+    ChatMessage,
+    ChatMessageActions,
+    ChatMessageContent,
+    ChatMessageHeader,
+    ChatPromptInput,
+    ChatPromptInputFooter,
+    ChatPromptTextarea,
+    CheckIcon,
+    ChevronIcon,
+    Chip,
+    ClipboardIcon,
+    CloudUploadIcon,
+    CopyButton,
+    cn,
+    Dialog,
+    DownloadIcon,
+    Dropdown,
+    ExpandIcon,
+    FileUpload,
+    ImageIcon,
+    PauseIcon,
+    PlayIcon,
+    RocketIcon,
+    ScrollArea,
+    Slider,
+    TabButton,
+    Text,
+    ToolCallDetails,
+    type ToolCallStatus,
+    TrashIcon,
+    XIcon,
+} from "@pollinations/ui";
+import { Markdown } from "@pollinations/ui/markdown";
+import type { DynamicToolUIPart } from "ai";
+import {
+    type ClipboardEvent,
+    type CSSProperties,
+    type DragEvent,
+    type FormEvent,
+    type KeyboardEvent as ReactKeyboardEvent,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
+import {
+    type AgentChoice,
+    API_BASE_URL,
+    AUTO_ROUTING,
+    agentChoices,
+    arrayBufferToBase64,
+    audioFormat,
+    type ChatAttachmentKind,
+    compactRouting,
+    errorMessage,
+    fileKind,
+    isCancellation,
+    type RenderedMedia,
+    type RoutingChoice,
+    type RoutingSelection,
+    routingChoices,
+} from "./chat-models";
+import {
+    PollinationsChatTransport,
+    type PollinationsUIMessage,
+    type PreparedAttachment,
+} from "./pollinations-chat-transport";
+
+const ROUTING_LABELS: Record<ChatRoutingCapability, string> = {
+    text: "Text",
+    web_search: "Web search",
+    image_generation: "Image",
+    image_editing: "Image edit",
+    video: "Video",
+    audio: "Audio",
+};
+
+function routingThemeStyle(): CSSProperties {
+    return {
+        "--play-routing-accent": "var(--polli-color-text-soft)",
+    } as CSSProperties;
+}
+
+const FLORET_MODEL_ID = "floret";
+const MAX_ATTACHMENTS = 6;
+const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
+const ATTACHMENT_ACCEPT: Record<ChatAttachmentKind, string> = {
+    image: "image/*",
+    video: "video/*",
+    audio: "audio/*",
+    file: ".pdf,.txt,.md,.csv,.json,.doc,.docx",
+};
+
+function welcomeMessage(agent: AgentChoice): PollinationsUIMessage {
+    return {
+        id: `${agent.id}-welcome`,
+        role: "assistant",
+        metadata: { localOnly: true },
+        parts: [
+            {
+                type: "text",
+                text:
+                    agent.id === FLORET_MODEL_ID
+                        ? "👋 Hi, I’m Floret — an AI agent. That means I can combine several tasks in one conversation: chat, search, and create text, images, video, or audio. What would you like to make? ✨"
+                        : `👋 You’re chatting with ${agent.title}. What would you like help with?`,
+            },
+        ],
+    };
+}
+
+function attachmentKinds(agent: AgentChoice | undefined) {
+    if (!agent) return new Set<ChatAttachmentKind>();
+    if (agent.id === FLORET_MODEL_ID)
+        return new Set<ChatAttachmentKind>(["image", "video", "audio", "file"]);
+    return new Set(
+        agent.inputModalities.filter(
+            (modality): modality is ChatAttachmentKind =>
+                modality === "image" ||
+                modality === "video" ||
+                modality === "audio" ||
+                modality === "file",
+        ),
+    );
+}
+
+async function prepareAttachment(
+    client: Pollinations,
+    file: File,
+    signal: AbortSignal,
+): Promise<PreparedAttachment> {
+    const kind = fileKind(file);
+    const format = kind === "audio" ? audioFormat(file) : null;
+    if (kind === "audio" && !format) {
+        throw new Error(`${file.name} uses an unsupported audio format.`);
+    }
+
+    const [upload, audioBuffer] = await Promise.all([
+        client.upload(file, {
+            name: file.name,
+            contentType: file.type || undefined,
+            signal,
+        }),
+        kind === "audio" ? file.arrayBuffer() : Promise.resolve(null),
+    ]);
+    const mimeType = upload.contentType || file.type;
+    return {
+        id: upload.id,
+        name: file.name,
+        mimeType,
+        kind,
+        url: upload.url,
+        contentPart: attachmentPart(
+            kind,
+            upload.url,
+            file,
+            mimeType,
+            format,
+            audioBuffer,
+        ),
+    };
+}
+
+function attachmentPart(
+    kind: ChatAttachmentKind,
+    url: string,
+    file: File,
+    mimeType: string,
+    format: AudioFormat | null,
+    audioBuffer: ArrayBuffer | null,
+): MessageContentPart {
+    if (kind === "image") {
+        return { type: "image_url", image_url: { url, mime_type: mimeType } };
+    }
+    if (kind === "video") {
+        return { type: "video_url", video_url: { url, mime_type: mimeType } };
+    }
+    if (kind === "audio" && format && audioBuffer) {
+        return {
+            type: "input_audio",
+            input_audio: { data: arrayBufferToBase64(audioBuffer), format },
+        };
+    }
+    return {
+        type: "file",
+        file: { file_url: url, file_name: file.name, mime_type: mimeType },
+    };
+}
+
+function AttachmentView({ attachment }: { attachment: PreparedAttachment }) {
+    if (attachment.kind === "image") {
+        return (
+            <a href={attachment.url} target="_blank" rel="noopener noreferrer">
+                <img
+                    src={attachment.url}
+                    alt={attachment.name}
+                    loading="lazy"
+                    className="play-chat-media rounded-lg"
+                />
+            </a>
+        );
+    }
+    if (attachment.kind === "video") {
+        return (
+            <>
+                {/* biome-ignore lint/a11y/useMediaCaption: User-provided media has no caption track. */}
+                <video
+                    src={attachment.url}
+                    controls
+                    preload="metadata"
+                    className="play-chat-media rounded-lg"
+                />
+            </>
+        );
+    }
+    if (attachment.kind === "audio") {
+        return (
+            <>
+                {/* biome-ignore lint/a11y/useMediaCaption: User-provided media has no caption track. */}
+                <audio
+                    src={attachment.url}
+                    controls
+                    preload="metadata"
+                    className="max-w-full"
+                />
+            </>
+        );
+    }
+    return (
+        <a
+            href={attachment.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="break-all text-sm font-semibold underline"
+        >
+            {attachment.name}
+        </a>
+    );
+}
+
+function MediaView({ media }: { media: RenderedMedia }) {
+    const [open, setOpen] = useState(false);
+
+    if (media.kind === "audio") {
+        return <AudioPlayer media={media} />;
+    }
+
+    const label = media.label || `Generated ${media.kind}`;
+    const isVideo = media.kind === "video";
+
+    return (
+        <>
+            <div
+                className={cn(
+                    "relative w-full max-w-sm overflow-hidden rounded-xl shadow-well",
+                    isVideo ? "bg-black" : "bg-theme-bg-pale",
+                )}
+            >
+                {isVideo ? (
+                    <VideoPlayer media={media} />
+                ) : (
+                    <button
+                        type="button"
+                        aria-label={`View ${label} larger`}
+                        onClick={() => setOpen(true)}
+                        className="block w-full cursor-zoom-in focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-theme-border"
+                    >
+                        <img
+                            src={media.url}
+                            alt={label}
+                            loading="lazy"
+                            className="play-chat-media-preview"
+                        />
+                    </button>
+                )}
+                <div className="absolute top-2 right-2 flex gap-2">
+                    <Button
+                        type="button"
+                        size="sm"
+                        aria-label={`Enlarge ${media.kind}`}
+                        title={`Enlarge ${media.kind}`}
+                        onClick={() => setOpen(true)}
+                        className="h-9 w-9 min-w-9 rounded-full bg-surface-opaque p-0 shadow-well [&>svg]:size-4"
+                    >
+                        <ExpandIcon />
+                    </Button>
+                    <Button
+                        as="a"
+                        href={media.url}
+                        download={`pollinations-${media.kind}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        size="sm"
+                        aria-label={`Download ${media.kind}`}
+                        title={`Download ${media.kind}`}
+                        className="h-9 w-9 min-w-9 rounded-full bg-surface-opaque p-0 shadow-well [&>svg]:size-4"
+                    >
+                        <DownloadIcon />
+                    </Button>
+                </div>
+            </div>
+            <Dialog
+                open={open}
+                onOpenChange={setOpen}
+                ariaLabel={`${label} preview`}
+                size="xl"
+                backdropBlur={false}
+                contentClassName="relative border-0 p-3 sm:p-4"
+            >
+                <Button
+                    type="button"
+                    aria-label="Close media preview"
+                    onClick={() => setOpen(false)}
+                    className="absolute top-5 right-5 z-10 h-10 w-10 min-w-10 p-0 [&>svg]:size-5"
+                >
+                    <XIcon />
+                </Button>
+                {open &&
+                    (isVideo ? (
+                        <div className="relative overflow-hidden rounded-lg bg-black">
+                            <VideoPlayer media={media} expanded autoPlay />
+                        </div>
+                    ) : (
+                        <img
+                            src={media.url}
+                            alt={label}
+                            className="max-h-[calc(100dvh-5rem)] w-full rounded-lg object-contain"
+                        />
+                    ))}
+            </Dialog>
+        </>
+    );
+}
+
+function AudioPlayer({ media }: { media: RenderedMedia }) {
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+
+    const togglePlayback = () => {
+        const audio = audioRef.current;
+        if (!audio) return;
+        if (audio.paused) {
+            void audio.play().catch(() => setIsPlaying(false));
+        } else {
+            audio.pause();
+        }
+    };
+
+    return (
+        <div className="flex w-full max-w-sm items-center gap-3 rounded-xl bg-theme-bg-pale p-2 shadow-well">
+            {/* biome-ignore lint/a11y/useMediaCaption: Generated media does not include a caption track. */}
+            <audio
+                ref={audioRef}
+                src={media.url}
+                preload="metadata"
+                onLoadedMetadata={(event) => {
+                    const nextDuration = event.currentTarget.duration;
+                    setDuration(
+                        Number.isFinite(nextDuration) ? nextDuration : 0,
+                    );
+                }}
+                onTimeUpdate={(event) =>
+                    setCurrentTime(event.currentTarget.currentTime)
+                }
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                onEnded={() => setIsPlaying(false)}
+                className="hidden"
+            />
+            <button
+                type="button"
+                aria-label={isPlaying ? "Pause audio" : "Play audio"}
+                onClick={togglePlayback}
+                className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-well transition-colors hover:bg-theme-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-border"
+            >
+                {isPlaying ? (
+                    <PauseIcon className="size-4" />
+                ) : (
+                    <PlayIcon className="size-4" />
+                )}
+            </button>
+            <Slider
+                aria-label="Audio timeline"
+                min={0}
+                max={duration || 0}
+                step={0.01}
+                value={Math.min(currentTime, duration || 0)}
+                disabled={duration <= 0}
+                onChange={(event) => {
+                    const nextTime = Number(event.currentTarget.value);
+                    if (audioRef.current)
+                        audioRef.current.currentTime = nextTime;
+                    setCurrentTime(nextTime);
+                }}
+                style={
+                    {
+                        "--polli-slider-fill":
+                            "var(--polli-color-brand-accent)",
+                        "--polli-slider-track": "var(--polli-color-bg-active)",
+                        "--polli-slider-thumb-border":
+                            "var(--polli-color-brand-accent)",
+                    } as CSSProperties
+                }
+            />
+            <Button
+                as="a"
+                href={media.url}
+                download="pollinations-audio"
+                size="sm"
+                aria-label="Download audio"
+                title="Download audio"
+                className="h-9 w-9 min-w-9 shrink-0 rounded-full bg-surface-opaque p-0 shadow-well [&>svg]:size-4"
+            >
+                <DownloadIcon />
+            </Button>
+        </div>
+    );
+}
+
+function VideoPlayer({
+    media,
+    expanded = false,
+    autoPlay = false,
+}: {
+    media: RenderedMedia;
+    expanded?: boolean;
+    autoPlay?: boolean;
+}) {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+
+    const togglePlayback = () => {
+        const video = videoRef.current;
+        if (!video) return;
+        if (video.paused) {
+            void video.play().catch(() => setIsPlaying(false));
+        } else {
+            video.pause();
+        }
+    };
+
+    return (
+        <>
+            {/* biome-ignore lint/a11y/useMediaCaption: Generated media does not include a caption track. */}
+            <video
+                ref={videoRef}
+                src={media.url}
+                autoPlay={autoPlay}
+                playsInline
+                preload="metadata"
+                onLoadedMetadata={(event) => {
+                    const nextDuration = event.currentTarget.duration;
+                    setDuration(
+                        Number.isFinite(nextDuration) ? nextDuration : 0,
+                    );
+                }}
+                onTimeUpdate={(event) =>
+                    setCurrentTime(event.currentTarget.currentTime)
+                }
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                onEnded={() => setIsPlaying(false)}
+                className={cn(
+                    "w-full bg-black object-contain",
+                    expanded
+                        ? "max-h-[calc(100dvh-5rem)]"
+                        : "play-chat-media-preview",
+                )}
+            />
+            <div
+                className={cn(
+                    "absolute flex items-center",
+                    expanded
+                        ? "inset-x-0 bottom-0 gap-3 bg-black/65 px-3 py-2 text-white"
+                        : "bottom-2 left-2",
+                )}
+            >
+                <button
+                    type="button"
+                    aria-label={isPlaying ? "Pause video" : "Play video"}
+                    onClick={togglePlayback}
+                    className={cn(
+                        "inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2",
+                        expanded
+                            ? "h-8 w-8 text-white hover:bg-white/15 focus-visible:ring-white"
+                            : "h-9 w-9 bg-surface-opaque text-theme-text-strong shadow-well hover:bg-theme-bg-hover focus-visible:ring-theme-border",
+                    )}
+                >
+                    {isPlaying ? (
+                        <PauseIcon className="size-4" />
+                    ) : (
+                        <PlayIcon className="size-4" />
+                    )}
+                </button>
+                {expanded && (
+                    <Slider
+                        aria-label="Video timeline"
+                        min={0}
+                        max={duration || 0}
+                        step={0.01}
+                        value={Math.min(currentTime, duration || 0)}
+                        disabled={duration <= 0}
+                        onChange={(event) => {
+                            const nextTime = Number(event.currentTarget.value);
+                            if (videoRef.current)
+                                videoRef.current.currentTime = nextTime;
+                            setCurrentTime(nextTime);
+                        }}
+                        style={
+                            {
+                                "--polli-slider-fill":
+                                    "var(--polli-color-brand-accent)",
+                                "--polli-slider-track":
+                                    "rgb(255 255 255 / 0.35)",
+                                "--polli-slider-thumb-border":
+                                    "var(--polli-color-brand-accent)",
+                            } as CSSProperties
+                        }
+                    />
+                )}
+            </div>
+        </>
+    );
+}
+
+function ToolPart({ part }: { part: DynamicToolUIPart }) {
+    const isError = part.state === "output-error";
+    const output = part.state === "output-available" ? part.output : undefined;
+    const error = isError ? part.errorText : undefined;
+    const status: ToolCallStatus =
+        part.state === "input-streaming"
+            ? "pending"
+            : part.state === "input-available"
+              ? "running"
+              : part.state === "approval-requested"
+                ? "approval-requested"
+                : part.state === "approval-responded"
+                  ? "approval-responded"
+                  : part.state === "output-available"
+                    ? "complete"
+                    : part.state === "output-denied"
+                      ? "denied"
+                      : "error";
+    return (
+        <ToolCallDetails
+            name={part.toolName}
+            input={"input" in part ? part.input : undefined}
+            output={output}
+            error={error}
+            status={status}
+        />
+    );
+}
+
+function activeTool(message: PollinationsUIMessage): string | undefined {
+    const activities = message.parts.flatMap((part) =>
+        part.type === "data-activity" && part.data.status !== "complete"
+            ? [part.data]
+            : [],
+    );
+    const activity = activities[activities.length - 1];
+    if (!activity) return undefined;
+    return activity.status === "failed"
+        ? `${activity.name} failed`
+        : activity.name;
+}
+
+function MessageCard({
+    message,
+    assistantName,
+    isStreaming,
+    responseError,
+    canRetry,
+    onRetry,
+}: {
+    message: PollinationsUIMessage;
+    assistantName: string;
+    isStreaming: boolean;
+    responseError?: Error;
+    canRetry: boolean;
+    onRetry: () => void;
+}) {
+    const isUser = message.role === "user";
+    const attachments = message.metadata?.attachments ?? [];
+    const contentParts = message.parts.filter(
+        (part) => part.type === "text" || part.type === "dynamic-tool",
+    );
+    const media = message.parts.flatMap((part) =>
+        part.type === "data-media" ? [part.data] : [],
+    );
+    const cancelled = message.parts.some(
+        (part) => part.type === "data-responseStatus",
+    );
+    const activity = activeTool(message);
+    const copyText = message.parts
+        .flatMap((part) => (part.type === "text" ? [part.text] : []))
+        .join("\n\n");
+    const showArticle =
+        isUser ||
+        contentParts.length > 0 ||
+        attachments.length > 0 ||
+        isStreaming ||
+        cancelled ||
+        responseError ||
+        canRetry;
+
+    return (
+        <div
+            className={cn(
+                "play-chat-message flex min-w-0 flex-col gap-3",
+                isUser ? "ml-auto items-end" : "mr-auto items-start",
+            )}
+            aria-busy={isStreaming}
+        >
+            {showArticle && (
+                <ChatMessage
+                    from={isUser ? "user" : "assistant"}
+                    className="max-w-full"
+                >
+                    <ChatMessageHeader
+                        from={isUser ? "user" : "assistant"}
+                        label={isUser ? "You" : assistantName}
+                    />
+                    <ChatMessageContent className="flex flex-col gap-3">
+                        {contentParts.map((part, index) =>
+                            part.type === "text" ? (
+                                isUser ? (
+                                    <p
+                                        // biome-ignore lint/suspicious/noArrayIndexKey: parts are positional and never reorder within a message
+                                        key={`text:${index}`}
+                                        className="whitespace-pre-wrap break-words"
+                                    >
+                                        {part.text}
+                                    </p>
+                                ) : (
+                                    <Markdown
+                                        // biome-ignore lint/suspicious/noArrayIndexKey: parts are positional and never reorder within a message
+                                        key={`text:${index}`}
+                                    >
+                                        {part.text}
+                                    </Markdown>
+                                )
+                            ) : (
+                                <ToolPart key={part.toolCallId} part={part} />
+                            ),
+                        )}
+                        {attachments.length > 0 && (
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                {attachments.map((attachment) => (
+                                    <AttachmentView
+                                        key={attachment.id}
+                                        attachment={attachment}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                        {isStreaming && (
+                            <Text
+                                size="sm"
+                                tone="muted"
+                                className="animate-pulse"
+                            >
+                                {activity || "Working…"}
+                            </Text>
+                        )}
+                        {cancelled && (
+                            <Text size="xs" tone="muted">
+                                Stopped
+                            </Text>
+                        )}
+                        {responseError && (
+                            <Alert intent="danger" title="Response interrupted">
+                                {responseError.message ||
+                                    `${assistantName} could not finish this response.`}
+                            </Alert>
+                        )}
+                    </ChatMessageContent>
+                    {!isUser && (copyText || canRetry) && (
+                        <ChatMessageActions>
+                            {copyText && (
+                                <CopyButton
+                                    value={copyText}
+                                    aria-label="Copy response"
+                                    className="flex cursor-pointer items-center gap-1.5 rounded-full px-2 py-1 text-xs text-theme-text-soft hover:bg-theme-bg-hover hover:text-theme-text-strong"
+                                >
+                                    {(copied) => (
+                                        <>
+                                            {copied ? (
+                                                <CheckIcon className="size-3.5" />
+                                            ) : (
+                                                <ClipboardIcon className="size-3.5" />
+                                            )}
+                                            {copied ? "Copied" : "Copy"}
+                                        </>
+                                    )}
+                                </CopyButton>
+                            )}
+                            {canRetry && (
+                                <Button
+                                    type="button"
+                                    size="xs"
+                                    onClick={onRetry}
+                                >
+                                    Retry
+                                </Button>
+                            )}
+                        </ChatMessageActions>
+                    )}
+                </ChatMessage>
+            )}
+            {media.length > 0 && (
+                <div className="flex flex-col gap-3">
+                    {media.map((item) => (
+                        <MediaView
+                            key={`${item.kind}:${item.url}`}
+                            media={item}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function AgentPicker({
+    agents,
+    selectedAgentId,
+    isLoading,
+    disabled,
+    onSelectAgent,
+}: {
+    agents: AgentChoice[];
+    selectedAgentId: string | null;
+    isLoading: boolean;
+    disabled: boolean;
+    onSelectAgent: (agentId: string) => void;
+}) {
+    const selected = agents.find((agent) => agent.id === selectedAgentId);
+
+    return (
+        <div className="flex min-w-0 items-center gap-3">
+            <Text as="span" size="sm" weight="bold" className="shrink-0">
+                Agent
+            </Text>
+            <Dropdown
+                className="w-max max-w-[calc(100vw-2rem)] p-2"
+                panelStyle={routingThemeStyle()}
+                trigger={(open) => (
+                    <Button
+                        type="button"
+                        disabled={disabled || agents.length === 0}
+                        className="w-fit max-w-full self-start justify-between gap-2"
+                        aria-label={`Agent: ${selected?.title ?? "Unavailable"}`}
+                    >
+                        <span className="truncate">
+                            {isLoading && agents.length === 0
+                                ? "Loading agents…"
+                                : (selected?.title ?? "No agents available")}
+                        </span>
+                        <ChevronIcon expanded={open} />
+                    </Button>
+                )}
+            >
+                {(close) => (
+                    <ScrollArea className="max-h-80 pr-2">
+                        <div className="flex flex-col gap-1">
+                            {agents.map((agent) => (
+                                <TabButton
+                                    key={agent.id}
+                                    active={agent.id === selectedAgentId}
+                                    size="sm"
+                                    variant="ghost"
+                                    className="w-full justify-start text-left"
+                                    onClick={() => {
+                                        onSelectAgent(agent.id);
+                                        close();
+                                    }}
+                                >
+                                    <span className="truncate">
+                                        {agent.title}
+                                    </span>
+                                </TabButton>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                )}
+            </Dropdown>
+        </div>
+    );
+}
+
+function RoutingSelector({
+    field,
+    value,
+    choices,
+    disabled,
+    onChange,
+}: {
+    field: ChatRoutingCapability;
+    value: string | null;
+    choices: RoutingChoice[];
+    disabled: boolean;
+    onChange: (model: string | null) => void;
+}) {
+    const selected = choices.find((choice) => choice.id === value);
+    const themeStyle = routingThemeStyle();
+    return (
+        <div className="flex min-w-0 items-center gap-2">
+            <Text
+                as="span"
+                size="xs"
+                tone="muted"
+                weight="bold"
+                className="shrink-0"
+            >
+                {ROUTING_LABELS[field]}
+            </Text>
+            <Dropdown
+                className="w-max max-w-[calc(100vw-2rem)] p-2"
+                panelStyle={themeStyle}
+                trigger={(open) => (
+                    <Button
+                        type="button"
+                        size="sm"
+                        intent={value === null ? "neutral" : undefined}
+                        disabled={disabled}
+                        data-theme={value === null ? "neutral" : undefined}
+                        data-customized={value !== null}
+                        style={value === null ? undefined : themeStyle}
+                        className="play-routing-value w-fit max-w-full justify-between gap-2"
+                        aria-label={`${ROUTING_LABELS[field]} routing: ${selected?.title ?? "Auto"}`}
+                    >
+                        <span className="truncate">
+                            {selected?.title ?? "Auto"}
+                        </span>
+                        <ChevronIcon expanded={open} />
+                    </Button>
+                )}
+            >
+                {(close) => (
+                    <ScrollArea className="max-h-72 pr-2">
+                        <div className="flex flex-col gap-1">
+                            <TabButton
+                                data-theme="neutral"
+                                active={value === null}
+                                size="sm"
+                                variant="ghost"
+                                className="w-full justify-start text-left"
+                                onClick={() => {
+                                    onChange(null);
+                                    close();
+                                }}
+                            >
+                                Auto
+                            </TabButton>
+                            {choices.map((choice) => (
+                                <TabButton
+                                    key={choice.id}
+                                    active={choice.id === value}
+                                    size="sm"
+                                    variant="ghost"
+                                    className="w-full justify-start text-left"
+                                    onClick={() => {
+                                        onChange(choice.id);
+                                        close();
+                                    }}
+                                >
+                                    <span className="truncate">
+                                        {choice.title}
+                                    </span>
+                                </TabButton>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                )}
+            </Dropdown>
+        </div>
+    );
+}
+
+function RoutingPanel({
+    selection,
+    choices,
+    disabled,
+    onChange,
+}: {
+    selection: RoutingSelection;
+    choices: Record<ChatRoutingCapability, RoutingChoice[]>;
+    disabled: boolean;
+    onChange: (field: ChatRoutingCapability, model: string | null) => void;
+}) {
+    return (
+        <div
+            id="play-chat-routing"
+            className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+        >
+            {CHAT_ROUTING_CAPABILITIES.map((field) => (
+                <RoutingSelector
+                    key={field}
+                    field={field}
+                    value={selection[field]}
+                    choices={choices[field]}
+                    disabled={disabled}
+                    onChange={(model) => onChange(field, model)}
+                />
+            ))}
+        </div>
+    );
+}
+
+export function Chat({ catalog }: { catalog: UseModelCatalogValue }) {
+    const { apiKey, isLoggedIn, isHydrated } = useAuthState();
+    const { login } = useAuthActions();
+    const agents = useMemo(
+        () => agentChoices(catalog.models),
+        [catalog.models],
+    );
+    const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+    const [draft, setDraft] = useState("");
+    const [files, setFiles] = useState<File[]>([]);
+    const [routing, setRouting] = useState<RoutingSelection>(AUTO_ROUTING);
+    const [advancedOpen, setAdvancedOpen] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const [localError, setLocalError] = useState<string | null>(null);
+    const [showScrollButton, setShowScrollButton] = useState(false);
+    const uploadAbortRef = useRef<AbortController | null>(null);
+    const activeAgentRef = useRef<string | null>(null);
+    const transcriptRef = useRef<HTMLDivElement | null>(null);
+    const followOutputRef = useRef(true);
+    const composerRef = useRef<HTMLTextAreaElement | null>(null);
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const selectedAgent =
+        agents.find((agent) => agent.id === selectedAgentId) ?? agents[0];
+    const assistantName = selectedAgent?.title ?? "Agent";
+    const acceptedAttachmentKinds = attachmentKinds(selectedAgent);
+    const attachmentAccept = [...acceptedAttachmentKinds]
+        .map((kind) => ATTACHMENT_ACCEPT[kind])
+        .join(",");
+    const supportsAttachments = acceptedAttachmentKinds.size > 0;
+
+    const client = useMemo(
+        () =>
+            apiKey ? new Pollinations({ apiKey, baseUrl: API_BASE_URL }) : null,
+        [apiKey],
+    );
+    const transport = useMemo(
+        () =>
+            new PollinationsChatTransport({
+                client,
+                model: selectedAgent?.id ?? null,
+                routing:
+                    selectedAgent?.id === FLORET_MODEL_ID
+                        ? compactRouting(routing)
+                        : undefined,
+            }),
+        [client, selectedAgent?.id, routing],
+    );
+    const {
+        messages,
+        setMessages,
+        sendMessage,
+        regenerate,
+        stop,
+        status,
+        error: responseError,
+        clearError,
+    } = useChat<PollinationsUIMessage>({
+        id: "pollinations-play-agent-chat",
+        transport,
+    });
+    const streaming = status === "submitted" || status === "streaming";
+    const sending = uploading || streaming;
+    const modelChoices = useMemo(
+        () =>
+            Object.fromEntries(
+                CHAT_ROUTING_CAPABILITIES.map((field) => [
+                    field,
+                    routingChoices(
+                        catalog.models,
+                        catalog.allowedModelIds,
+                        field,
+                    ),
+                ]),
+            ) as Record<ChatRoutingCapability, RoutingChoice[]>,
+        [catalog.models, catalog.allowedModelIds],
+    );
+
+    useEffect(() => () => uploadAbortRef.current?.abort(), []);
+    useEffect(() => {
+        if (!selectedAgent || activeAgentRef.current === selectedAgent.id)
+            return;
+        activeAgentRef.current = selectedAgent.id;
+        uploadAbortRef.current?.abort();
+        void stop();
+        setMessages([welcomeMessage(selectedAgent)]);
+        setDraft("");
+        setFiles([]);
+        setLocalError(null);
+        clearError();
+    }, [selectedAgent, setMessages, stop, clearError]);
+    useEffect(() => {
+        setRouting((current) => {
+            const next = { ...current };
+            for (const field of CHAT_ROUTING_CAPABILITIES) {
+                if (
+                    next[field] &&
+                    !modelChoices[field].some(
+                        (choice) => choice.id === next[field],
+                    )
+                )
+                    next[field] = null;
+            }
+            return next;
+        });
+    }, [modelChoices]);
+    useEffect(() => {
+        if (messages.length === 0) return;
+        const transcript = transcriptRef.current;
+        if (transcript && followOutputRef.current) {
+            transcript.scrollTop = transcript.scrollHeight;
+            setShowScrollButton(false);
+        }
+    }, [messages]);
+    useEffect(() => {
+        if (isLoggedIn) return;
+        uploadAbortRef.current?.abort();
+        void stop();
+    }, [isLoggedIn, stop]);
+    useEffect(() => {
+        if (!advancedOpen) return;
+        const closeOnEscape = (event: KeyboardEvent) => {
+            if (event.key === "Escape") setAdvancedOpen(false);
+        };
+        window.addEventListener("keydown", closeOnEscape);
+        return () => window.removeEventListener("keydown", closeOnEscape);
+    }, [advancedOpen]);
+
+    async function send(messageText = draft) {
+        if (sending || !isHydrated) return;
+        if (!isLoggedIn || !client) {
+            login();
+            return;
+        }
+        if (!selectedAgent) {
+            setLocalError("Select an agent first.");
+            return;
+        }
+        if (!messageText.trim() && files.length === 0) return;
+        const controller = new AbortController();
+        uploadAbortRef.current = controller;
+        setUploading(true);
+        setLocalError(null);
+        clearError();
+        try {
+            const attachments = await Promise.all(
+                files.map((file) =>
+                    prepareAttachment(client, file, controller.signal),
+                ),
+            );
+            setDraft("");
+            setFiles([]);
+            followOutputRef.current = true;
+            setUploading(false);
+            uploadAbortRef.current = null;
+            await sendMessage({
+                role: "user",
+                metadata: { attachments },
+                parts: messageText.trim()
+                    ? [{ type: "text", text: messageText.trim() }]
+                    : [],
+            });
+            composerRef.current?.focus();
+        } catch (caught) {
+            if (!isCancellation(caught)) setLocalError(errorMessage(caught));
+        } finally {
+            if (uploadAbortRef.current === controller)
+                uploadAbortRef.current = null;
+            setUploading(false);
+        }
+    }
+
+    async function retry(assistantId: string) {
+        if (sending) return;
+        clearError();
+        followOutputRef.current = true;
+        await regenerate({ messageId: assistantId });
+        composerRef.current?.focus();
+    }
+
+    const canAttach =
+        supportsAttachments && isHydrated && isLoggedIn && !sending;
+
+    function handleFiles(nextFiles: File[]) {
+        const accepted: File[] = [];
+        const problems: string[] = [];
+
+        if (nextFiles.length > MAX_ATTACHMENTS) {
+            problems.push(`You can attach up to ${MAX_ATTACHMENTS} files.`);
+        }
+        for (const file of nextFiles.slice(0, MAX_ATTACHMENTS)) {
+            if (file.size > MAX_ATTACHMENT_BYTES) {
+                problems.push(`${file.name} is larger than 20 MB.`);
+            } else if (!acceptedAttachmentKinds.has(fileKind(file))) {
+                problems.push(
+                    `${file.name} is not supported by ${assistantName}.`,
+                );
+            } else if (fileKind(file) === "audio" && !audioFormat(file)) {
+                problems.push(`${file.name} uses an unsupported audio format.`);
+            } else {
+                accepted.push(file);
+            }
+        }
+
+        setFiles(accepted);
+        setLocalError(problems.length > 0 ? problems.join(" ") : null);
+    }
+
+    function addFiles(nextFiles: File[]) {
+        if (!canAttach || nextFiles.length === 0) return;
+        handleFiles([...files, ...nextFiles]);
+    }
+
+    function onComposerPaste(event: ClipboardEvent<HTMLTextAreaElement>) {
+        const pastedFiles = Array.from(event.clipboardData.files);
+        if (!canAttach || pastedFiles.length === 0) return;
+        event.preventDefault();
+        addFiles(pastedFiles);
+    }
+
+    function onComposerDrop(event: DragEvent<HTMLFieldSetElement>) {
+        event.preventDefault();
+        if (!canAttach) return;
+        addFiles(Array.from(event.dataTransfer.files));
+    }
+
+    function submit(event: FormEvent) {
+        event.preventDefault();
+        void send();
+    }
+    function onComposerKeyDown(event: ReactKeyboardEvent<HTMLTextAreaElement>) {
+        if (
+            event.key === "Enter" &&
+            !event.shiftKey &&
+            !event.nativeEvent.isComposing
+        ) {
+            event.preventDefault();
+            void send();
+        }
+    }
+
+    const canRetryLast = (id: string) =>
+        messages[messages.length - 1]?.id === id && !sending;
+    const routingOverrideCount = CHAT_ROUTING_CAPABILITIES.filter(
+        (field) => routing[field] !== null,
+    ).length;
+
+    function selectAgent(agentId: string) {
+        if (agentId === selectedAgentId) return;
+        setSelectedAgentId(agentId);
+        setAdvancedOpen(false);
+        composerRef.current?.focus();
+    }
+
+    if (!selectedAgent) {
+        return (
+            <section className="min-w-0" aria-label="Agent chat">
+                <div className="pt-6 pb-3">
+                    <AgentPicker
+                        agents={agents}
+                        selectedAgentId={null}
+                        isLoading={catalog.isLoading}
+                        disabled
+                        onSelectAgent={selectAgent}
+                    />
+                </div>
+                <div
+                    className="flex min-h-32 flex-col items-center justify-center gap-3 py-6 text-center"
+                    aria-live="polite"
+                >
+                    <Text size="sm" tone="muted">
+                        {catalog.isLoading
+                            ? "Loading agents…"
+                            : catalog.error
+                              ? "Agents could not be loaded right now."
+                              : "No agents are available right now."}
+                    </Text>
+                    {catalog.error && (
+                        <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => void catalog.refresh()}
+                        >
+                            Retry catalog
+                        </Button>
+                    )}
+                </div>
+            </section>
+        );
+    }
+
+    return (
+        <section className="min-w-0" aria-label={`${assistantName} chat`}>
+            <div className="play-chat-window flex min-h-0 flex-col">
+                <div className="pt-6 pb-3">
+                    <AgentPicker
+                        agents={agents}
+                        selectedAgentId={selectedAgent?.id ?? null}
+                        isLoading={catalog.isLoading}
+                        disabled={sending}
+                        onSelectAgent={selectAgent}
+                    />
+                </div>
+                <ChatConversation
+                    ref={transcriptRef}
+                    className="min-h-0 flex-1"
+                    viewportClassName="play-chat-transcript py-3"
+                    aria-label="Conversation"
+                    aria-busy={sending}
+                    showScrollButton={showScrollButton}
+                    onScrollToBottom={() => {
+                        const transcript = transcriptRef.current;
+                        if (!transcript) return;
+                        transcript.scrollTo({
+                            top: transcript.scrollHeight,
+                            behavior: "smooth",
+                        });
+                        followOutputRef.current = true;
+                        setShowScrollButton(false);
+                    }}
+                    onScroll={(event) => {
+                        const target = event.currentTarget;
+                        const followsOutput =
+                            target.scrollHeight -
+                                target.scrollTop -
+                                target.clientHeight <
+                            96;
+                        followOutputRef.current = followsOutput;
+                        setShowScrollButton(!followsOutput);
+                    }}
+                >
+                    <ChatConversationContent>
+                        {messages.map((message, index) => {
+                            const isLast = index === messages.length - 1;
+                            const cancelled = message.parts.some(
+                                (part) => part.type === "data-responseStatus",
+                            );
+                            return (
+                                <MessageCard
+                                    key={message.id}
+                                    message={message}
+                                    assistantName={assistantName}
+                                    isStreaming={
+                                        isLast &&
+                                        message.role === "assistant" &&
+                                        streaming
+                                    }
+                                    responseError={
+                                        isLast && message.role === "assistant"
+                                            ? responseError
+                                            : undefined
+                                    }
+                                    canRetry={
+                                        canRetryLast(message.id) &&
+                                        message.role === "assistant" &&
+                                        (cancelled || Boolean(responseError))
+                                    }
+                                    onRetry={() => void retry(message.id)}
+                                />
+                            );
+                        })}
+                    </ChatConversationContent>
+                </ChatConversation>
+                <form
+                    onSubmit={submit}
+                    className="relative flex shrink-0 flex-col gap-3 pt-3"
+                >
+                    {catalog.error && (
+                        <Alert intent="warning" title="Agent list unavailable">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span>
+                                    The model catalog could not be refreshed.
+                                </span>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={() => void catalog.refresh()}
+                                >
+                                    Retry catalog
+                                </Button>
+                            </div>
+                        </Alert>
+                    )}
+                    {localError && (
+                        <Alert intent="danger" title="Could not send">
+                            {localError}
+                        </Alert>
+                    )}
+
+                    <ChatPromptInput
+                        aria-label="Message and attachments"
+                        onDragOver={(event) => {
+                            event.preventDefault();
+                            if (canAttach)
+                                event.dataTransfer.dropEffect = "copy";
+                        }}
+                        onDrop={onComposerDrop}
+                    >
+                        <FileUpload
+                            value={files}
+                            onChange={handleFiles}
+                            onReject={(rejected) => {
+                                const problems = new Set(
+                                    rejected.map(({ file, reason }) => {
+                                        if (reason === "count")
+                                            return `You can attach up to ${MAX_ATTACHMENTS} files.`;
+                                        if (reason === "size")
+                                            return `${file.name} is larger than 20 MB.`;
+                                        return `${file.name} is not a supported file type.`;
+                                    }),
+                                );
+                                setLocalError([...problems].join(" "));
+                            }}
+                            maxFiles={MAX_ATTACHMENTS}
+                            maxSizeBytes={MAX_ATTACHMENT_BYTES}
+                            accept={attachmentAccept}
+                            variant="inline"
+                            disabled={!canAttach}
+                            className="px-3 pt-3"
+                            previewIcon={<ImageIcon className="h-5 w-5" />}
+                        />
+                        <ChatPromptTextarea
+                            aria-label="Message"
+                            ref={composerRef}
+                            value={draft}
+                            onChange={(event) => setDraft(event.target.value)}
+                            onKeyDown={onComposerKeyDown}
+                            onPaste={onComposerPaste}
+                            disabled={!isHydrated || sending}
+                            placeholder={`Message ${assistantName}…`}
+                            rows={3}
+                        />
+                        <ChatPromptInputFooter>
+                            {selectedAgent?.id === FLORET_MODEL_ID && (
+                                <TabButton
+                                    type="button"
+                                    active={advancedOpen}
+                                    intent="neutral"
+                                    size="lg"
+                                    disabled={sending}
+                                    aria-expanded={advancedOpen}
+                                    aria-controls="play-chat-routing"
+                                    ariaLabel={`Routing, ${routingOverrideCount > 0 ? `${routingOverrideCount} customized` : "Auto"}`}
+                                    onClick={() =>
+                                        setAdvancedOpen((open) => !open)
+                                    }
+                                    className="play-routing-toggle h-12 gap-2"
+                                >
+                                    <BeakerIcon className="h-5 w-5" />
+                                    <Chip
+                                        size="sm"
+                                        aria-label={
+                                            routingOverrideCount > 0
+                                                ? `${routingOverrideCount} routes customized`
+                                                : "Automatic routing"
+                                        }
+                                        className="play-routing-badge min-w-6 justify-center px-1.5"
+                                    >
+                                        {routingOverrideCount > 0
+                                            ? routingOverrideCount
+                                            : "Auto"}
+                                    </Chip>
+                                    <ChevronIcon
+                                        expanded={advancedOpen}
+                                        className="h-4 w-4"
+                                    />
+                                </TabButton>
+                            )}
+                            <span className="inline-flex">
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept={attachmentAccept}
+                                    multiple
+                                    hidden
+                                    onChange={(event) => {
+                                        addFiles(
+                                            Array.from(
+                                                event.currentTarget.files ?? [],
+                                            ),
+                                        );
+                                        event.currentTarget.value = "";
+                                    }}
+                                />
+                                <Button
+                                    type="button"
+                                    size="lg"
+                                    intent="info"
+                                    aria-label="Add media"
+                                    title={
+                                        !supportsAttachments
+                                            ? `${assistantName} accepts text only`
+                                            : isLoggedIn
+                                              ? "Add media"
+                                              : "Connect to add media"
+                                    }
+                                    disabled={
+                                        !canAttach ||
+                                        files.length >= MAX_ATTACHMENTS
+                                    }
+                                    className="h-12 w-12 shrink-0 p-0"
+                                    onClick={() =>
+                                        fileInputRef.current?.click()
+                                    }
+                                >
+                                    <CloudUploadIcon className="h-5 w-5 text-theme-text-strong" />
+                                </Button>
+                            </span>
+                            <div className="ml-auto flex items-center gap-2">
+                                {messages.some(
+                                    (message) => !message.metadata?.localOnly,
+                                ) && (
+                                    <Button
+                                        intent="danger"
+                                        size="lg"
+                                        aria-label="New chat"
+                                        title="New chat"
+                                        className="h-12 w-12 shrink-0 p-0"
+                                        onClick={() => {
+                                            uploadAbortRef.current?.abort();
+                                            void stop();
+                                            setMessages([
+                                                welcomeMessage(selectedAgent),
+                                            ]);
+                                            setDraft("");
+                                            setFiles([]);
+                                            setLocalError(null);
+                                            clearError();
+                                            composerRef.current?.focus();
+                                        }}
+                                    >
+                                        <TrashIcon className="h-5 w-5" />
+                                    </Button>
+                                )}
+                                {sending ? (
+                                    <Button
+                                        intent="danger"
+                                        size="lg"
+                                        type="button"
+                                        aria-label="Stop generation"
+                                        title="Stop generation"
+                                        className="h-12 w-12 shrink-0 p-0"
+                                        onClick={() => {
+                                            uploadAbortRef.current?.abort();
+                                            void stop();
+                                        }}
+                                    >
+                                        <XIcon className="h-5 w-5" />
+                                    </Button>
+                                ) : !isHydrated ? (
+                                    <Button
+                                        size="lg"
+                                        disabled
+                                        aria-label="Loading account"
+                                    >
+                                        Checking…
+                                    </Button>
+                                ) : !isLoggedIn ? (
+                                    <Button
+                                        size="lg"
+                                        type="button"
+                                        onClick={() => login()}
+                                    >
+                                        <ChatIcon className="mr-2 h-4 w-4" />
+                                        Connect to chat
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        size="lg"
+                                        type="submit"
+                                        disabled={
+                                            !selectedAgent ||
+                                            (!draft.trim() &&
+                                                files.length === 0)
+                                        }
+                                    >
+                                        <RocketIcon className="mr-2 h-4 w-4" />
+                                        Send
+                                    </Button>
+                                )}
+                            </div>
+                        </ChatPromptInputFooter>
+                    </ChatPromptInput>
+                </form>
+            </div>
+            {advancedOpen && selectedAgent?.id === FLORET_MODEL_ID && (
+                <div>
+                    <RoutingPanel
+                        selection={routing}
+                        choices={modelChoices}
+                        disabled={!isLoggedIn || catalog.isLoading || sending}
+                        onChange={(field, model) =>
+                            setRouting((current) => ({
+                                ...current,
+                                [field]: model,
+                            }))
+                        }
+                    />
+                </div>
+            )}
+        </section>
+    );
+}

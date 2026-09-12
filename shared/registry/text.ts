@@ -839,6 +839,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4.1-flash": {
+        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
         aliases: [
             "deepseek-v4.1",
             "deepseek-v4.1-flash",

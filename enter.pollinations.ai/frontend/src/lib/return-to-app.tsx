@@ -1,5 +1,5 @@
 import { Button } from "@pollinations/ui";
-import { type FC, useEffect, useState } from "react";
+import type { FC } from "react";
 
 /** An absolute http(s) URL, else null. Used for the `redirect` search param. */
 export function parseAppUrl(value: unknown): string | null {
@@ -47,43 +47,21 @@ export function preferredReturnUrl(
         : null;
 }
 
-const AUTO_RETURN_SECONDS = 8;
-
-type ReturnToAppProps = {
-    returnUrl: string | null;
-    /** Count down and open `returnUrl` on its own; for the "done" screens. */
-    autoReturn?: boolean;
-};
-
-export const ReturnToApp: FC<ReturnToAppProps> = ({
+/**
+ * A plain link back, never an automatic redirect: `redirect` is caller
+ * supplied, so the user should see the host before leaving this origin.
+ * Renders nothing when no app is known; done screens say so in their copy.
+ */
+export const ReturnToApp: FC<{ returnUrl: string | null }> = ({
     returnUrl,
-    autoReturn = false,
 }) => {
-    const counting = autoReturn && returnUrl !== null;
-    const [secondsLeft, setSecondsLeft] = useState(AUTO_RETURN_SECONDS);
-
-    useEffect(() => {
-        if (!counting) return;
-        if (secondsLeft <= 0) {
-            window.location.assign(returnUrl);
-            return;
-        }
-        const timer = setTimeout(() => setSecondsLeft((s) => s - 1), 1000);
-        return () => clearTimeout(timer);
-    }, [counting, secondsLeft, returnUrl]);
-
     if (!returnUrl) return null;
-
-    const host = new URL(returnUrl).hostname;
     return (
         <div className="space-y-3">
             <Button as="a" href={returnUrl} className="w-full">
-                Back to {host}
+                Back to {new URL(returnUrl).hostname}
             </Button>
             <p className="text-sm text-theme-text-muted">
-                {counting
-                    ? `Taking you back to ${host} in ${secondsLeft}s. `
-                    : ""}
                 If the app is still open in another tab, you can close this one
                 instead.
             </p>

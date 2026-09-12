@@ -128,11 +128,12 @@ function EditKeyPage() {
                     >
                         <p className="text-sm text-theme-text-base">
                             {outcome === "saved"
-                                ? "The new limits apply to the next request."
-                                : "The key was left as it is."}
+                                ? "The new limits apply to the next request. "
+                                : "The key was left as it is. "}
+                            You can close this tab and return to the app.
                         </p>
                     </AuthInfoCard>
-                    <ReturnToApp returnUrl={returnUrl} autoReturn />
+                    <ReturnToApp returnUrl={returnUrl} />
                 </div>
             </AuthModal>
         );

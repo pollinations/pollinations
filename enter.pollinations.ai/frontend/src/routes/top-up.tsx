@@ -174,11 +174,12 @@ function TopUpPage() {
                 <div className="px-6 pb-6 pt-4 space-y-4">
                     <AuthInfoCard title="Pollen added">
                         <p className="text-sm text-theme-text-base">
-                            Your payment went through.
+                            Your payment went through. You can close this tab
+                            and return to the app.
                         </p>
                     </AuthInfoCard>
                     {wallet && <PollenBalance {...wallet} compact />}
-                    <ReturnToApp returnUrl={returnUrl} autoReturn />
+                    <ReturnToApp returnUrl={returnUrl} />
                 </div>
             </AuthModal>
         );

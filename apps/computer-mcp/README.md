@@ -17,9 +17,10 @@ host allowlist.
 
 One tool, `bash`, with `command`, optional `stdin` (file content for
 `cat > path`, passed as-is, no quoting) and optional `cwd`, created if
-missing and defaulting to `/workspace`. The whole tree persists; `/workspace`
-is only the home folder, and projects are folders in it. Nothing is shared
-between users. Files come in with `curl -o` (any public URL) or `git clone`
+missing and defaulting to `/workspace`. The whole tree persists except
+`/tmp`, which is emptied after every call (stdin is fed to the command
+from a file there); `/workspace` is only the home folder, and projects are
+folders in it. Nothing is shared between users. Files come in with `curl -o` (any public URL) or `git clone`
 (any public repository) and go out with `assets publish <path>`, which copies
 one file to the Pollinations media service (`MEDIA` service binding, the same
 one ffmpeg-mcp uses) and prints its unlisted `https://media.pollinations.ai/…`

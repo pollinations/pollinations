@@ -109,9 +109,20 @@ describe("computer MCP worker", () => {
         expect(read.text).toContain(
             "facts.md:favourite colour: 'green' $HOME `date` — “naïve” ✓",
         );
-        const scratch = await bash(again, "ls /tmp | wc -l");
-        expect(scratch.text.trim()).toBe("0");
         await again.close();
+    });
+
+    it("empties /tmp after every call", async () => {
+        const client = await connect("user-tmp");
+        const write = await bash(
+            client,
+            "echo scratch > /tmp/note.txt && cat /tmp/note.txt",
+            "unused stdin",
+        );
+        expect(write.text.trim()).toBe("scratch");
+        const later = await bash(client, "ls /tmp");
+        expect(later.text.trim()).toBe("");
+        await client.close();
     });
 
     it("reports stderr and non-zero exit codes as errors", async () => {

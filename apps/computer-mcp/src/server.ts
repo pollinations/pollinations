@@ -7,7 +7,7 @@ const SERVER_INSTRUCTIONS =
     "under /workspace and survive between runs. Read /workspace/README.md " +
     "first; it explains the memory layout and how to import and share files.";
 
-const BASH_DESCRIPTION = `Run a bash command on your private, persistent computer. Everything you write survives between runs; keep one folder per project under /workspace (the default cwd), e.g. /workspace/thesis. The cwd folder is created if missing.
+const BASH_DESCRIPTION = `Run a bash command on your private, persistent computer. Everything you write survives between runs, except /tmp, which is emptied after every call; keep one folder per project under /workspace (the default cwd), e.g. /workspace/thesis. The cwd folder is created if missing.
 
 Available: coreutils, grep, sed, awk, jq, tar, find, xargs, diff, curl (HTTP and HTTPS) and git (init, add, commit, log, diff, status, clone, pull, push over HTTPS). Not available: Node, Python, npm, apt.
 
@@ -17,7 +17,7 @@ Import: \`curl -o <path> <url>\` downloads any public URL; \`git clone <https-ur
 
 export const HOME = "/workspace";
 
-const SCRATCH_DIR = "/tmp";
+const TMP_DIR = "/tmp";
 const MAX_OUTPUT_BYTES = 64 * 1024;
 const COMMAND_TIMEOUT_MS = 60_000;
 
@@ -49,20 +49,20 @@ export function createComputerMcpServer(workspace: WorkspaceClient): McpServer {
             },
         },
         async ({ command, stdin, cwd = HOME }, context) => {
-            // stdin goes through a scratch file, not the runtime's stdin
+            // stdin goes through a file in /tmp, not the runtime's stdin
             // option: @cloudflare/computer 0.3.0 hands stdin to the shell as
             // a latin1 byte string, and a `>` redirect then writes each UTF-8
             // byte as its own character. A file read by `<` stays UTF-8.
             const stdinPath =
                 stdin === undefined
                     ? undefined
-                    : `${SCRATCH_DIR}/stdin-${crypto.randomUUID()}`;
+                    : `${TMP_DIR}/.stdin-${crypto.randomUUID()}`;
             try {
                 await workspace.fs
                     .mkdir(cwd, { recursive: true })
                     .catch(() => undefined);
+                await workspace.fs.mkdir(TMP_DIR, { recursive: true });
                 if (stdinPath !== undefined) {
-                    await workspace.fs.mkdir(SCRATCH_DIR, { recursive: true });
                     await workspace.fs.writeFile(stdinPath, stdin ?? "");
                 }
                 const handle = await workspace.runtime.exec(
@@ -96,9 +96,10 @@ export function createComputerMcpServer(workspace: WorkspaceClient): McpServer {
                     };
                 } finally {
                     context.signal.removeEventListener("abort", onAbort);
-                    if (stdinPath !== undefined) {
-                        await workspace.fs.rm(stdinPath).catch(() => undefined);
-                    }
+                    // /tmp does not persist: it is emptied after every call.
+                    await workspace.fs
+                        .rm(TMP_DIR, { recursive: true })
+                        .catch(() => undefined);
                 }
             } catch (error) {
                 return {

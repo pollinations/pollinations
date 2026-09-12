@@ -62,18 +62,46 @@ const diaryPullRequests = pullRequests
     }));
 
 const output = resolve(
-    dirname(fileURLToPath(import.meta.url)),
-    "../public/data/community-pr-history.json",
+    process.env.PR_HISTORY_OUTPUT ||
+        resolve(
+            dirname(fileURLToPath(import.meta.url)),
+            "../public/data/community-pr-history.json",
+        ),
 );
 mkdirSync(dirname(output), { recursive: true });
-writeFileSync(
-    output,
-    `${JSON.stringify({
-        generatedAt: new Date().toISOString(),
-        allTimeCount: pullRequests.length,
-        pullRequests: diaryPullRequests,
-    })}\n`,
-);
+const archive = `${JSON.stringify({
+    generatedAt: new Date().toISOString(),
+    allTimeCount: pullRequests.length,
+    pullRequests: diaryPullRequests,
+})}\n`;
+writeFileSync(output, archive);
+
+// Publish the data file only; this never generates summaries or social posts.
+if (process.argv.includes("--publish-news")) {
+    const endpoint = `repos/${repository}/contents/operations/social/news/community-pr-history.json`;
+    let sha;
+    try {
+        sha = execFileSync(
+            "gh",
+            ["api", `${endpoint}?ref=news`, "--jq", ".sha"],
+            {
+                encoding: "utf8",
+                stdio: ["pipe", "pipe", "pipe"],
+            },
+        ).trim();
+    } catch (error) {
+        if (!String(error.stderr).includes("HTTP 404")) throw error;
+    }
+    execFileSync("gh", ["api", "--method", "PUT", endpoint, "--input", "-"], {
+        input: JSON.stringify({
+            message: "news: refresh community PR history",
+            content: Buffer.from(archive).toString("base64"),
+            branch: "news",
+            ...(sha ? { sha } : {}),
+        }),
+        stdio: ["pipe", "pipe", "pipe"],
+    });
+}
 
 console.log(
     `Saved ${diaryPullRequests.length} diary pull requests and an all-time total of ${pullRequests.length} from ${repository}.`,

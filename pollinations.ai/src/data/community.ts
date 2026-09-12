@@ -1,10 +1,11 @@
 /**
- * Community signals, all anonymous and all live.
+ * Anonymous community signals and a daily refreshed build-history archive.
  *
  * Most GitHub feeds are requested anonymously from each visitor's browser.
  * The small header signals use cached same-site endpoints so they remain
  * reliable without credentials. Everything degrades to `failed` and hides
- * rather than showing a stale hardcoded number.
+ * rather than showing a stale hardcoded number. The diary labels its archive
+ * timestamp and explicitly identifies the bundled snapshot during an outage.
  */
 import { type UseAsyncOptions, useAsync } from "./useAsync";
 
@@ -174,9 +175,8 @@ type DiaryPr = {
     author: string;
 };
 
-type LivePullRequest = Omit<DiaryPr, "date"> & { mergedAt: string };
-
 type HistoryPayload = {
+    generatedAt: string;
     allTimeCount: number;
     pullRequests: DiaryPr[];
 };
@@ -187,12 +187,16 @@ type DiaryHistory = {
     firstDay: string;
     latestDay: string;
     allTimeCount: number;
+    updatedAt: string;
+    fallback: boolean;
 };
 
 type DiaryRange = {
     month: string;
     latestDay: string;
     days: DiaryDay[];
+    updatedAt: string;
+    fallback: boolean;
 };
 
 export type DiaryMonth = {
@@ -233,76 +237,39 @@ function stableIndex(value: string, length: number) {
     );
 }
 
-async function loadLivePullRequests(since: string) {
-    const query = encodeURIComponent(
-        `repo:${REPO} is:pr is:merged merged:>=${since}`,
-    );
-    const pullRequests: LivePullRequest[] = [];
-    let page = 1;
-    let total = 1;
+const HISTORY_ARCHIVE =
+    "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/community-pr-history.json";
 
-    while (pullRequests.length < total && page <= 10) {
-        const response = await fetch(
-            `${GITHUB}/search/issues?q=${query}&sort=updated&order=asc&per_page=100&page=${page}`,
-            { headers: { Accept: "application/vnd.github+json" } },
-        );
-        if (!response.ok) {
-            throw new Error(`recent pull requests: ${response.status}`);
-        }
-        const result = (await response.json()) as {
-            total_count: number;
-            items: {
-                number: number;
-                title: string;
-                closed_at: string | null;
-                user: { login: string } | null;
-            }[];
-        };
-        total = Math.min(result.total_count, 1_000);
-        for (const item of result.items) {
-            if (!item.closed_at) continue;
-            pullRequests.push({
-                number: item.number,
-                mergedAt: item.closed_at,
-                title: item.title,
-                author: item.user?.login ?? "community contributor",
-            });
-        }
-        page += 1;
+async function fetchHistory(url: string): Promise<HistoryPayload> {
+    const response = await fetch(url);
+    if (!response.ok)
+        throw new Error(`pull request history: ${response.status}`);
+    const payload = (await response.json()) as HistoryPayload;
+    if (
+        !Array.isArray(payload.pullRequests) ||
+        !Number.isFinite(payload.allTimeCount) ||
+        !Number.isFinite(Date.parse(payload.generatedAt))
+    ) {
+        throw new Error("pull request history: invalid archive");
     }
-
-    return pullRequests;
+    return payload;
 }
 
-function loadPullRequestHistory() {
+/** The scheduled news archive is complete; the bundled copy is an explicit fallback. */
+export function loadPullRequestHistory() {
     if (historyCache) return historyCache;
     historyCache = (async () => {
-        const response = await fetch("/data/community-pr-history.json");
-        if (!response.ok) {
-            throw new Error(`pull request history: ${response.status}`);
-        }
-        const payload = (await response.json()) as HistoryPayload;
-        const archivedLatest =
-            payload.pullRequests[payload.pullRequests.length - 1]?.date;
-        const livePullRequests = archivedLatest
-            ? await loadLivePullRequests(archivedLatest).catch(() => [])
-            : [];
+        let fallback = false;
+        const payload = await fetchHistory(HISTORY_ARCHIVE).catch(() => {
+            fallback = true;
+            return fetchHistory("/data/community-pr-history.json");
+        });
         const uniquePullRequests = new Map(
             payload.pullRequests.map((pullRequest) => [
                 pullRequest.number,
                 pullRequest,
             ]),
         );
-        let liveAdditions = 0;
-        for (const pullRequest of livePullRequests) {
-            if (!uniquePullRequests.has(pullRequest.number)) liveAdditions += 1;
-            uniquePullRequests.set(pullRequest.number, {
-                number: pullRequest.number,
-                date: pullRequest.mergedAt.slice(0, 10),
-                title: pullRequest.title,
-                author: pullRequest.author,
-            });
-        }
         const pullRequests = [...uniquePullRequests.values()]
             .filter((pullRequest) => pullRequest.date >= NEWS_START_DAY)
             .sort(
@@ -326,13 +293,20 @@ function loadPullRequestHistory() {
             byDate,
             firstDay,
             latestDay,
-            allTimeCount: payload.allTimeCount + liveAdditions,
+            allTimeCount: payload.allTimeCount,
+            updatedAt: payload.generatedAt,
+            fallback,
         };
     })();
     // A failed load must not be cached, or the diary stays broken until reload.
-    historyCache.catch(() => {
-        historyCache = null;
-    });
+    historyCache.then(
+        (history) => {
+            if (history.fallback) historyCache = null;
+        },
+        () => {
+            historyCache = null;
+        },
+    );
     return historyCache;
 }
 
@@ -378,21 +352,7 @@ function loadMonthlySummary(month: string) {
     return request;
 }
 
-function toDiaryDay(
-    date: string,
-    daily: DailySummary | null,
-    pullRequests: DiaryPr[],
-): DiaryDay {
-    if (daily) {
-        return {
-            date,
-            prCount: pullRequests.length,
-            title: daily.title,
-            summary: daily.summary.split(/\n\s*\n/)[0].trim(),
-            imageUrl: `${NEWS_RAW}/${date}/images/twitter.jpg`,
-        };
-    }
-
+function toDiaryDay(date: string, pullRequests: DiaryPr[]): DiaryDay {
     const representative = pullRequests[stableIndex(date, pullRequests.length)];
     if (!representative) {
         return { date, prCount: 0, title: null, summary: null, imageUrl: null };
@@ -436,23 +396,17 @@ export function useBuildDiary(requestedMonth?: string) {
                     ? requestedMonth
                     : newestMonth;
             const range = monthRange(month, history.latestDay);
-            const dailySummaries = await Promise.all(
-                range.map(loadDailySummary),
-            );
-
             return {
                 month,
                 latestDay: history.latestDay,
-                days: range.map((date, index) =>
-                    toDiaryDay(
-                        date,
-                        dailySummaries[index],
-                        history.byDate.get(date) ?? [],
-                    ),
+                updatedAt: history.updatedAt,
+                fallback: history.fallback,
+                days: range.map((date) =>
+                    toDiaryDay(date, history.byDate.get(date) ?? []),
                 ),
             };
         },
-        { month: "", latestDay: "", days: [] },
+        { month: "", latestDay: "", days: [], updatedAt: "", fallback: false },
         { key: requestedMonth ?? "latest" },
     );
 }
@@ -485,26 +439,56 @@ export function useBuildDiaryAll(options?: UseAsyncOptions) {
                 cursor.setUTCMonth(cursor.getUTCMonth() + 1);
             }
 
-            const monthlySummaries = await Promise.all(
-                months.map((item) => loadMonthlySummary(item.month)),
-            );
-
-            return {
-                months: months.map((item, index) => {
-                    const monthly = monthlySummaries[index];
-                    if (!monthly) return item;
-                    return {
-                        ...item,
-                        title: monthly.title,
-                        summary: monthly.summary.split(/\n\s*\n/)[0].trim(),
-                        imageUrl: `${NEWS_MONTHLY_RAW}/${item.month}/images/cover.jpg`,
-                    };
-                }),
-            };
+            return { months };
         },
         { months: [] },
         options,
     );
+}
+
+type DiaryStory =
+    | (DiaryDay & { period: "day" })
+    | (DiaryMonth & { period: "month" });
+
+/** Load only the story on screen, after its counts and navigation are ready. */
+export async function loadBuildDiaryStory(
+    month: DiaryMonth | null,
+    day: DiaryDay | undefined,
+): Promise<DiaryStory | null> {
+    if (month) {
+        const summary = await loadMonthlySummary(month.month);
+        if (summary)
+            return {
+                ...month,
+                title: summary.title,
+                summary: summary.summary.split(/\n\s*\n/)[0].trim(),
+                imageUrl: `${NEWS_MONTHLY_RAW}/${month.month}/images/cover.jpg`,
+                period: "month",
+            };
+    }
+    if (!day) return null;
+    const summary = await loadDailySummary(day.date);
+    return {
+        ...day,
+        ...(summary
+            ? {
+                  title: summary.title,
+                  summary: summary.summary.split(/\n\s*\n/)[0].trim(),
+                  imageUrl: `${NEWS_RAW}/${day.date}/images/twitter.jpg`,
+              }
+            : {}),
+        period: "day",
+    };
+}
+
+export function useBuildDiaryStory(
+    month: DiaryMonth | null,
+    day: DiaryDay | undefined,
+) {
+    return useAsync(() => loadBuildDiaryStory(month, day), null, {
+        enabled: Boolean(month || day),
+        key: `${month?.month ?? ""}:${day?.date ?? ""}`,
+    });
 }
 
 /* ── Supporters ─────────────────────────────────────────────────────────── */

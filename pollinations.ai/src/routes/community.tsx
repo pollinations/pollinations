@@ -32,6 +32,7 @@ import {
     SUPPORTERS,
     useBuildDiary,
     useBuildDiaryAll,
+    useBuildDiaryStory,
     useContributors,
     useDiscordPresence,
     usePullRequestCount,
@@ -452,8 +453,22 @@ function BuildDiary() {
         selectedMonthIndex >= 0 && selectedMonthIndex < activeMonths.length - 1
             ? activeMonths[selectedMonthIndex + 1]
             : null;
-    const showingMonthlyStory = zoom === "all" && Boolean(selectedMonth?.title);
-    const story = showingMonthlyStory ? selectedMonth : selected;
+    const { data: loadedStory } = useBuildDiaryStory(
+        zoom === "all" ? (selectedMonth ?? null) : null,
+        selected,
+    );
+    const monthlyStory =
+        zoom === "all" &&
+        loadedStory?.period === "month" &&
+        loadedStory.month === month
+            ? loadedStory
+            : null;
+    const dailyStory =
+        loadedStory?.period === "day" && loadedStory.date === selected?.date
+            ? loadedStory
+            : selected;
+    const showingMonthlyStory = Boolean(monthlyStory);
+    const story = monthlyStory ?? dailyStory;
     const previousStory = zoom === "all" ? previousMonth : previous;
     const nextStory = zoom === "all" ? nextMonth : next;
     const formatDate = (date: string, full = false) =>
@@ -557,6 +572,14 @@ function BuildDiary() {
                 title="What shipped, day by day"
                 subtitle="Pollinations’ build history from 2025 onward, told through merged pull requests and daily summaries."
             />
+            {diary.updatedAt && (
+                <p className="text-xs text-theme-text-muted">
+                    History updated{" "}
+                    {formatDate(diary.updatedAt.slice(0, 10), true)}.
+                    {diary.fallback &&
+                        " Showing saved history while updates are unavailable."}
+                </p>
+            )}
             {bare ? (
                 <FeedState
                     loading={loading}

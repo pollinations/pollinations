@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import * as api from "../lib/api";
+import { buildDailyComparison } from "../lib/dailyComparison";
 import { currentWeekStart } from "../lib/format";
 import { DEFAULT_WEEKS } from "../lib/range";
 
@@ -12,7 +13,17 @@ const RETENTION_WEEKS = 8;
 const SOURCES = [
     { label: "GitHub stars", key: "github", load: api.github },
     { label: "Registrations", key: "registrations", load: api.registrations },
+    {
+        label: "Daily signups",
+        key: "dailyRegistrations",
+        load: api.dailyRegistrations,
+    },
     { label: "Revenue", key: "revenue", load: api.revenue },
+    {
+        label: "Daily revenue",
+        key: "dailyRevenue",
+        load: api.dailyRevenue,
+    },
     {
         label: "Health stats",
         key: "health",
@@ -49,6 +60,8 @@ const REQUIRED = {
     wau: "Tinybird (WAU)",
     usage: "Tinybird (usage)",
     revenue: "Revenue (Stripe)",
+    dailyRevenue: "Revenue (daily Stripe)",
+    dailyRegistrations: "Daily signups (D1 snapshot)",
     // A failed GitHub call returns an empty list, which is indistinguishable
     // from a week with no submissions unless we name it here.
     appSubmissions: "GitHub (app submissions)",
@@ -188,6 +201,11 @@ export function useKpiData(weeks = DEFAULT_WEEKS) {
                     w3: row.w3_retention,
                     w4: row.w4_retention,
                 })),
+                dailyComparison: buildDailyComparison(
+                    raw.dailyRevenue,
+                    raw.dailyRegistrations,
+                ),
+                signupsSyncedAt: raw.dailyRegistrations?.[0]?.snapshot_at,
                 github: raw.github ?? { stars: 0, forks: 0 },
             }));
         }

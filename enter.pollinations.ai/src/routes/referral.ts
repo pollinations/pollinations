@@ -1,15 +1,30 @@
 import type { Logger } from "@logtape/logtape";
 import { getTinybirdDatasourceIngestUrl } from "@shared/events.ts";
 import { Hono } from "hono";
+import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
-
-const IMAGE_REF = "image";
 
 async function trackReferral(
     env: CloudflareBindings,
     ref: string,
+    headers: Headers,
     log: Logger,
 ): Promise<void> {
+    const timestamp = new Date().toISOString();
+    let loggedIn: boolean | null = null;
+    try {
+        const session = await createAuth(env).api.getSession({
+            headers,
+            query: { disableRefresh: true },
+        });
+        loggedIn = Boolean(session?.user);
+    } catch (error) {
+        // Keep the arrival even when session lookup fails; unknown is not signed out.
+        log.warn("Could not determine referral login status: {error}", {
+            error,
+        });
+    }
+
     const response = await fetch(
         getTinybirdDatasourceIngestUrl(
             env.TINYBIRD_INGEST_URL,
@@ -22,8 +37,9 @@ async function trackReferral(
                 "Content-Type": "application/x-ndjson",
             },
             body: JSON.stringify({
-                timestamp: new Date().toISOString(),
+                timestamp,
                 ref,
+                metadata: JSON.stringify({ logged_in: loggedIn }),
             }),
         },
     );
@@ -38,12 +54,17 @@ async function trackReferral(
 export const referralRoutes = new Hono<Env>().post("/", (c) => {
     const ref = c.req.query("ref");
 
-    if (ref === IMAGE_REF) {
+    if (
+        ref === "image" ||
+        ref === "agent_low_balance_topup" ||
+        ref === "agent_low_balance_quests"
+    ) {
         c.executionCtx.waitUntil(
-            trackReferral(c.env, ref, c.get("log")).catch((error) =>
-                c.get("log").warn("Referral event ingest failed: {error}", {
-                    error,
-                }),
+            trackReferral(c.env, ref, c.req.raw.headers, c.get("log")).catch(
+                (error) =>
+                    c.get("log").warn("Referral event ingest failed: {error}", {
+                        error,
+                    }),
             ),
         );
     }

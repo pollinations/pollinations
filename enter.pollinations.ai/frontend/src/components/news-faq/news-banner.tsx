@@ -25,6 +25,28 @@ interface Highlight {
  */
 const PINNED_NEWS: Highlight[] = [
     {
+        date: "2026-09-11",
+        dateLabel: "Alpha",
+        emoji: "🧑‍💻",
+        title: "Code agents: run your own agent.ts",
+        description:
+            "Point a code agent at a public GitHub repository and Pollinations deploys and runs it as a model.",
+        details: [
+            "Write one agent.ts using the bundled Vercel AI SDK, Pollinations models, and MCP tools.",
+            "Calls are billed to whoever uses the agent, never to you.",
+            "Fork an [example repository](https://github.com/orgs/pollinations/repositories?q=topic%3Apollinations-code-agent-example), then add it from [My Models](/my-models). [Read the guide](https://gen.pollinations.ai/docs#tag/publish-an-agent).",
+        ],
+    },
+    {
+        date: "2026-09-11",
+        dateLabel: "Planned for September 11",
+        emoji: "🧩",
+        title: "Community model IDs get a clearer prefix",
+        description:
+            "Community models and agents will be listed as community/username/model instead of username/model.",
+        details: ["Your existing model IDs will keep working."],
+    },
+    {
         date: "2026-08-15",
         dateLabel: "Alpha",
         emoji: "🤖",

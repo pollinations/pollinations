@@ -363,7 +363,7 @@ export const CreateChatCompletionRequestSchema = z
         top_p: z.number().min(0).max(1).nullable().optional(),
         tools: z.array(ChatCompletionToolSchema).optional(),
         tool_choice: ChatCompletionToolChoiceOptionSchema.optional(),
-        parallel_tool_calls: z.boolean().optional().default(true),
+        parallel_tool_calls: z.boolean().optional(),
         user: z.string().optional(),
         prompt_cache_key: z.string().optional(),
         prompt_cache_options: PromptCacheOptionsSchema,
@@ -743,6 +743,12 @@ export const OpenAIModelSchema = z
         base_model: z.string().optional(),
         pricing: z.record(z.string(), z.string()).optional(),
         capabilities: z.array(z.string()).optional(),
+        supported_parameters: z
+            .array(z.string())
+            .optional()
+            .describe(
+                "Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`.",
+            ),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),

@@ -11,7 +11,9 @@ import type { TrackVariables } from "./middleware/track.ts";
 import type { TextVariables } from "./text/types.ts";
 
 export type Env = {
-    Bindings: CloudflareBindings;
+    Bindings: CloudflareBindings & {
+        CODE_AGENTS?: DispatchNamespace;
+    };
     Variables: RequestIdVariables &
         LoggerVariables &
         ErrorVariables &

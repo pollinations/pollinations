@@ -21,7 +21,7 @@ import type {
 const ID = "prime";
 const LABEL = "Prime Agent";
 const PROVIDER = "pollinations";
-const DEFAULT_MODEL = "deepseek";
+const DEFAULT_MODEL = "deepseek/deepseek-v4-flash";
 
 /** Prime Agent resolves its agent dir from this override, tilde included. */
 export const primeAgentDir = (ctx: HarnessContext) => {

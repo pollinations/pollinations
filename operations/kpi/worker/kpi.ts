@@ -152,6 +152,23 @@ kpiRoutes.get("/registrations", async (c) => {
     return c.json({ data: result.data });
 });
 
+kpiRoutes.get("/registrations/daily", async (c) => {
+    const result = await fetchTinybird(c.env, "kpi_registrations", {
+        granularity: "day",
+        min_created_at: (Math.floor(Date.now() / 86400000) - 14) * 86400,
+    });
+    if (result.error) return c.json({ error: result.error, data: [] }, 500);
+    // An older pipe ignores granularity and returns weekly rows. Never render
+    // that as a week of zero signups while the Tinybird update is pending.
+    if (result.data.some((row) => !row || !("date" in Object(row)))) {
+        return c.json(
+            { error: "Daily registrations are unavailable", data: [] },
+            503,
+        );
+    }
+    return c.json({ data: result.data });
+});
+
 // D7 Activations: users who made their first API request within 7 days of registration
 // Fully computed in Tinybird by joining d1_user with generation_event_v2
 kpiRoutes.get("/activations", async (c) => {
@@ -270,6 +287,15 @@ kpiRoutes.get("/revenue", async (c) => {
     );
 
     return c.json({ data: result });
+});
+
+// Tinybird: Daily Stripe revenue for this week versus the same days last week.
+kpiRoutes.get("/revenue/daily", async (c) => {
+    const result = await fetchTinybird(c.env, "daily_stripe_revenue", {
+        days_back: 14,
+    });
+    if (result.error) return c.json({ error: result.error, data: [] }, 500);
+    return c.json({ data: result.data });
 });
 
 // Tinybird: B2B/B2C User Segments — fetched week-by-week to avoid 10s timeout

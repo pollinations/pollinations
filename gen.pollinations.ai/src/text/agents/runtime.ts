@@ -1,24 +1,26 @@
 import { createMCPClient } from "@ai-sdk/mcp";
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { getLogger } from "@logtape/logtape";
+import { safeMcpModelOutput } from "@shared/agents/mcp-output.ts";
+import {
+    createAgentModelProvider,
+    openAIFinishReason,
+    strictAgentUsage,
+} from "@shared/agents/model.ts";
+import { runSdkAgent } from "@shared/agents/sdk-runner.ts";
+import type {
+    AgentOutput,
+    AgentPart,
+    AgentGenerationSettings as PromptAgentGenerationSettings,
+    ToolCallCounts,
+} from "@shared/agents/types.ts";
 import type { PromptAgentListingPayload } from "@shared/community-endpoints.ts";
 import type { McpServerId } from "@shared/registry/mcp.ts";
 import {
-    type CompletionUsage,
-    CompletionUsageSchema,
-} from "@shared/schemas/openai.ts";
-import {
     type FinishReason,
-    type LanguageModelCallOptions,
     type ModelMessage,
     stepCountIs,
-    type TextStreamPart,
     ToolLoopAgent,
-    type ToolLoopAgentSettings,
-    type ToolSet,
 } from "ai";
-
-import { safeMcpModelOutput } from "./mcp.ts";
 
 const log = getLogger(["gen", "prompt-agent-runtime"]);
 
@@ -31,53 +33,6 @@ export type PromptAgentRuntime = {
 
 type McpClient = Awaited<ReturnType<typeof createMCPClient>>;
 type McpTool = Awaited<ReturnType<McpClient["tools"]>>[string];
-type ToolCallCounts = Record<string, number>;
-
-export type AgentUsage = {
-    inputTokens?: number;
-    inputTokenDetails?: {
-        cacheReadTokens?: number;
-        cacheWriteTokens?: number;
-    };
-    outputTokens?: number;
-    outputTokenDetails?: {
-        reasoningTokens?: number;
-    };
-    totalTokens?: number;
-};
-
-type AgentStep = {
-    providerMetadata?: Record<string, Record<string, unknown>>;
-};
-
-export type AgentOutput = {
-    finishReason: string;
-    usage: AgentUsage;
-    toolCallCounts: ToolCallCounts;
-};
-
-export type AgentPart =
-    | Extract<
-          TextStreamPart<ToolSet>,
-          { type: "tool-call" | "tool-result" | "tool-error" }
-      >
-    | { type: "text-delta"; text: string };
-
-export type PromptAgentGenerationSettings = Partial<
-    Pick<
-        LanguageModelCallOptions,
-        | "frequencyPenalty"
-        | "maxOutputTokens"
-        | "presencePenalty"
-        | "reasoning"
-        | "temperature"
-        | "topP"
-    >
-> & {
-    providerOptions?: ToolLoopAgentSettings["providerOptions"];
-    promptCacheBreakpoint?: boolean;
-};
-
 const MAX_STEPS = 8;
 const MAX_TOOL_CALLS = 16;
 const MCP_INITIALIZATION_TIMEOUT_MS = 15_000;
@@ -185,46 +140,10 @@ async function createAgent(
             },
         };
     }
-    const pollinations = createOpenAICompatible({
-        name: "pollinations",
-        apiKey: runtime.apiKey,
+    const pollinations = createAgentModelProvider({
         baseURL: `${genBaseUrl}/v1`,
         fetch: runtime.fetcher,
-        metadataExtractor: {
-            async extractMetadata({ parsedBody }) {
-                return {
-                    pollinations: {
-                        completionUsage: completionUsageFromBody(parsedBody),
-                    },
-                };
-            },
-            createStreamExtractor() {
-                let usage: unknown;
-                return {
-                    processChunk(chunk) {
-                        if (
-                            chunk &&
-                            typeof chunk === "object" &&
-                            "usage" in chunk &&
-                            chunk.usage != null
-                        ) {
-                            // Providers may send provisional counts before final usage.
-                            usage = chunk.usage;
-                        }
-                    },
-                    buildMetadata() {
-                        return {
-                            pollinations: {
-                                completionUsage:
-                                    usage == null
-                                        ? null
-                                        : completionUsage(usage),
-                            },
-                        };
-                    },
-                };
-            },
-        },
+        apiKey: runtime.apiKey,
     });
 
     const { promptCacheBreakpoint, ...agentSettings } = settings;
@@ -252,107 +171,8 @@ async function createAgent(
     return { agent, close, toolCallCounts };
 }
 
-function openAIFinishReason(reason: FinishReason): string {
-    if (reason === "tool-calls") return "tool_calls";
-    if (reason === "content-filter") return "content_filter";
-    if (reason === "stop" || reason === "length") return reason;
-    return "stop";
-}
-
 function hitStepLimit(reason: FinishReason, stepCount: number): boolean {
     return reason === "tool-calls" && stepCount >= MAX_STEPS;
-}
-
-function tokenCount(value: number | undefined, name: string): number {
-    if (!Number.isSafeInteger(value) || (value ?? -1) < 0) {
-        throw new Error(`Agent response omitted valid ${name}`);
-    }
-    return value as number;
-}
-
-function completionUsage(value: unknown): CompletionUsage {
-    const parsed = CompletionUsageSchema.safeParse(value);
-    if (!parsed.success) {
-        throw new Error("Agent response omitted valid usage");
-    }
-    return parsed.data;
-}
-
-function completionUsageFromBody(body: unknown): CompletionUsage | null {
-    if (!body || typeof body !== "object" || !("usage" in body)) {
-        return null;
-    }
-    return completionUsage(body.usage);
-}
-
-function sumUsageField(
-    usages: CompletionUsage[],
-    value: (usage: CompletionUsage) => number | null | undefined,
-): number | undefined {
-    let found = false;
-    let total = 0;
-    for (const usage of usages) {
-        const amount = value(usage);
-        if (amount == null) continue;
-        found = true;
-        total += amount;
-    }
-    return found ? total : undefined;
-}
-
-function strictAgentUsage(steps: AgentStep[]): AgentUsage {
-    const usages = steps.map((step) => {
-        return completionUsage(
-            step.providerMetadata?.pollinations?.completionUsage,
-        );
-    });
-    if (usages.length === 0) {
-        throw new Error("Agent response omitted valid usage");
-    }
-    return {
-        inputTokens: sumUsageField(usages, (usage) => usage.prompt_tokens),
-        inputTokenDetails: {
-            cacheReadTokens: sumUsageField(
-                usages,
-                (usage) => usage.prompt_tokens_details?.cached_tokens,
-            ),
-            cacheWriteTokens: sumUsageField(
-                usages,
-                (usage) => usage.prompt_tokens_details?.cache_write_tokens,
-            ),
-        },
-        outputTokens: sumUsageField(usages, (usage) => usage.completion_tokens),
-        outputTokenDetails: {
-            reasoningTokens: sumUsageField(
-                usages,
-                (usage) =>
-                    usage.completion_tokens_details?.reasoning_tokens ??
-                    usage.reasoning_tokens,
-            ),
-        },
-        totalTokens: sumUsageField(usages, (usage) => usage.total_tokens),
-    };
-}
-
-export function buildUsage(usage: AgentUsage, toolCallCounts: ToolCallCounts) {
-    const promptTokens = tokenCount(usage.inputTokens, "input usage");
-    const completionTokens = tokenCount(usage.outputTokens, "output usage");
-    const totalTokens = usage.totalTokens ?? promptTokens + completionTokens;
-    tokenCount(totalTokens, "total usage");
-    return {
-        prompt_tokens: promptTokens,
-        completion_tokens: completionTokens,
-        total_tokens: totalTokens,
-        prompt_tokens_details: {
-            cached_tokens: usage.inputTokenDetails?.cacheReadTokens ?? null,
-            cache_write_tokens:
-                usage.inputTokenDetails?.cacheWriteTokens ?? null,
-        },
-        completion_tokens_details: {
-            reasoning_tokens: usage.outputTokenDetails?.reasoningTokens ?? null,
-        },
-        tool_call_counts: toolCallCounts,
-    };
 }
 
 export async function runPromptAgent(
@@ -368,25 +188,13 @@ export async function runPromptAgent(
         settings,
     );
     try {
-        const result = await agent.generate({
+        const result = await runSdkAgent(agent, {
             messages,
-            abortSignal: signal,
+            signal,
+            stream: false,
+            onPart,
         });
         const limited = hitStepLimit(result.finishReason, result.steps.length);
-        for (const step of result.steps) {
-            for (const part of step.content) {
-                if (part.type === "text") {
-                    onPart({ type: "text-delta", text: part.text });
-                }
-                if (
-                    part.type === "tool-call" ||
-                    part.type === "tool-result" ||
-                    part.type === "tool-error"
-                ) {
-                    onPart(part);
-                }
-            }
-        }
         if (limited) {
             onPart({ type: "text-delta", text: `\n\n${STEP_LIMIT_MESSAGE}` });
         }
@@ -415,22 +223,12 @@ export async function streamPromptAgent(
         settings,
     );
     try {
-        const result = await agent.stream({ messages, abortSignal: signal });
-        for await (const part of result.fullStream) {
-            if (part.type === "error") throw part.error;
-            if (
-                part.type === "text-delta" ||
-                part.type === "tool-call" ||
-                part.type === "tool-result" ||
-                part.type === "tool-error"
-            ) {
-                onPart(part);
-            }
-        }
-        const [reason, steps] = await Promise.all([
-            result.finishReason,
-            result.steps,
-        ]);
+        const { finishReason: reason, steps } = await runSdkAgent(agent, {
+            messages,
+            signal,
+            stream: true,
+            onPart,
+        });
         const limited = hitStepLimit(reason, steps.length);
         if (limited) {
             onPart({ type: "text-delta", text: `\n\n${STEP_LIMIT_MESSAGE}` });

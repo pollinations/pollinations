@@ -1,0 +1,34 @@
+{
+  "pr_number": 14744,
+  "title": "fix: report code agent failures with their real status and message",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14744",
+  "merged_at": "2026-09-12T12:27:06Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fix: errors thrown outside `respond()` in a code agent isolate (e.g. an MCP `tools/list` failure, or a direct `generateText` call hitting 402) collapsed into a generic 500 \"Code agent execution failed\".\n- Reuses the shared `agentResponsesError` mapping already bundled in the runtime: model errors keep their upstream status, everything else returns 502 with the message, the same as prompt agents.\n- Updates the MCP failure tests to assert the real messages and adds a 402 pass-through test.\n- Existing code agents pick this up on their next sync (the runtime bundle is pinned at deploy time).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01WKMPrAfe4wMNBNdZ96Yqmr",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The agent says what happened",
+    "blurb": "Code agents have stopped filing every mishap under the same mysterious 500. MCP and model errors now carry their actual status and message back through the hive.",
+    "summary": "Code-agent runtime errors thrown outside respond(), including MCP tools/list failures and generateText 402 responses, now use the shared agentResponsesError mapping to preserve upstream model statuses and return other error messages as 502s.",
+    "impact": "Developers now receive actionable MCP failure messages and pass-through 402 model responses instead of a generic \"Code agent execution failed\" 500, once their code agents next sync the deployed runtime.",
+    "keywords": [
+      "code-agents",
+      "error-handling",
+      "mcp",
+      "generateText",
+      "api",
+      "runtime"
+    ],
+    "visual_concept": "Depict Polli as a careful debugging beekeeper wearing tiny round glasses, helping a cozy CRT monitor robot sort error-message envelopes into clearly labeled 402 and 502 mail slots instead of one oversized generic 500 bin. Code-plants and small flowers make the technical scene feel like a well-tended garden; the robot is relieved to see the real messages.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny debugging glasses, helping a cheerful CRT-monitor robot place glowing error-message envelopes into small mail slots labeled \"402\" and \"502\", while an old dusty bin labeled \"500\" sits unused nearby. Lime green (#ecf874) code-plants and pastel flowers glow around a retro terminal in a warm cream hackerspace; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14744.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny debugging glasses, helping a cheerful CRT-monitor robot place glowing error-message envelopes into small mail slots labeled \"402\" and \"502\", while an old dusty bin labeled \"500\" sits unused nearby. Lime green (#ecf874) code-plants and pastel flowers glow around a retro terminal in a warm cream hackerspace; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-12T12:28:00.259660+00:00"
+}

@@ -1,3 +1,7 @@
+- **2026-09-11** – **🚀 Managed Code Agents** Publish commit-pinned TypeScript agents from a public GitHub repo with the dashboard or Polli CLI—models, MCP tools, and AI SDK helpers included. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-09-11** – **✨ Model Parameters, Visible** Every public chat model now declares which request parameters it supports, so your app can inspect the knobs before turning them. [View models](https://gen.pollinations.ai/v1/models)
+- **2026-09-11** – **🎨 Polli Visual Studio** Discord communities can request richer page renders with full-page capture while Polli routes tasks to models by complexity. 
+- **2026-09-11** – **🤖 NewEra AI Agent** Turn a plain-English app idea into a planned, coded, built, and deployed application from chat. [Try it](https://newera.namansoni.in) <!-- app -->
 - **2026-09-10** – **✨ StoryCraft AI** Turn an idea into a multi-chapter illustrated storybook, with Pollinations handling the words and scene art. [Try it](https://khushalkks.github.io/pollinations) <!-- app -->
 - **2026-09-10** – **🎨 Men’s Fashion Pins** Generate polished Pinterest artwork for men’s fashion with `gpt-image-2`. Pocket squares now have an API. [Try it](https://fashionpins4u.blogspot.com/p/mens-fashion-pins.html) <!-- app -->
 - **2026-09-10** – **💡 YouTube Transcription AI** Turn YouTube transcripts into structured summaries, English translations, and concept-cover images. [Try it](https://www.mrpaloma.com/trascrivere-video-youtube-pollinations) <!-- app -->

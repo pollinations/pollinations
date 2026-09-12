@@ -15,6 +15,7 @@ then choose a server:
 | FFmpeg | `https://gen.pollinations.ai/mcp/ffmpeg` | Trim, convert, resize, compress, and remix audio and video | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ffmpeg-mcp) |
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Composio | `https://gen.pollinations.ai/mcp/composio` | Use connected apps such as Gmail, Slack, GitHub, and Drive | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
+| Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 
 Send the key with every request:
 
@@ -119,6 +120,16 @@ executable and output path from the arguments.
 The Composio server discovers tools for the apps you ask to use. When an app is
 not connected, the agent can return a sign-in link. You can also manage
 connections from [MCP Connectors](https://enter.pollinations.ai/account#connectors).
+
+### Computer MCP
+
+The Computer server gives each account a private filesystem under `/workspace`
+and a bash shell. Files persist between requests and agent runs; nothing runs
+while idle. Tools: `read`, `write`, `edit`, `ls`, `find`, `grep`, and `exec`.
+The shell has no network access and cannot run Node or Python; `jq` and
+`sqlite3` are available. A `/workspace/README.md` is created on first use and
+describes a simple memory layout (`memory/facts.md` plus a dated
+`memory/log/`). Every tool call costs the same flat rate; see the catalog.
 
 ### Billing and permissions
 

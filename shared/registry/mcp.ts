@@ -41,7 +41,8 @@ export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
-    | "COMPOSIO_MCP";
+    | "COMPOSIO_MCP"
+    | "COMPUTER_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -58,6 +59,24 @@ export const FFMPEG_MCP_PRICE_PER_SECOND =
 const EXA_SEARCH_PRICE_PER_REQUEST = 0.007;
 const EXA_CONTENTS_PRICE_PER_PAGE = 0.001;
 export const COMPOSIO_TOOL_CALL_PRICE = 0.0002;
+export const COMPUTER_TOOL_CALL_PRICE = 0.0002;
+const COMPUTER_MCP_PRICING = {
+    description: "Preview price",
+    rates: [
+        {
+            id: "computer.tool_call.v1",
+            description: "Computer tool call",
+            kind: "tool_call",
+            unit: "call",
+            unitCost: COMPUTER_TOOL_CALL_PRICE,
+            publicPricing: {
+                label: "Tool call",
+                quantity: 1,
+                unit: "call",
+            },
+        },
+    ],
+} as const;
 const COMPOSIO_MCP_PRICING = {
     description: "Launch price",
     rates: [
@@ -164,6 +183,17 @@ export const MCP_SERVERS = [
         userScoped: true,
         accountPath: "/account#connectors",
         pricing: COMPOSIO_MCP_PRICING,
+    },
+    {
+        id: "computer",
+        name: "Computer",
+        description:
+            "A private persistent computer: files and a bash shell that survive between runs.",
+        binding: "COMPUTER_MCP",
+        billing: "usage_receipt",
+        provider: "cloudflare",
+        userScoped: true,
+        pricing: COMPUTER_MCP_PRICING,
     },
 ] as const satisfies readonly McpServerDefinition[];
 

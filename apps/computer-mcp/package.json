@@ -1,0 +1,30 @@
+{
+  "name": "pollinations-computer-mcp-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "check": "wrangler deploy --dry-run",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env staging"
+  },
+  "dependencies": {
+    "@cfworker/json-schema": "^4.1.1",
+    "@cloudflare/codemode": "^0.5.0",
+    "@cloudflare/computer": "0.3.0",
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "@platformatic/vfs": "^0.4.0",
+    "ai": "^7.0.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.22.0",
+    "@cloudflare/workers-types": "^5.20260722.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.130.0"
+  }
+}

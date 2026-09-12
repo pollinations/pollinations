@@ -230,7 +230,12 @@ describe("shared agent Responses adapter", () => {
                 {
                     type: "function_call_output",
                     call_id: "lookup-call",
-                    output: JSON.stringify(toolOutput),
+                    output: [
+                        {
+                            type: "input_text",
+                            text: JSON.stringify(toolOutput),
+                        },
+                    ],
                 },
                 { type: "message", content: [{ text: "The answer is 42." }] },
             ],
@@ -285,7 +290,12 @@ describe("shared agent Responses adapter", () => {
                 { type: "function_call", name: "lookup" },
                 {
                     type: "function_call_output",
-                    output: JSON.stringify(toolOutput),
+                    output: [
+                        {
+                            type: "input_text",
+                            text: JSON.stringify(toolOutput),
+                        },
+                    ],
                 },
             ],
         });
@@ -1150,10 +1160,15 @@ describe("managed agent Responses runtime", () => {
         expect(output[4]).toMatchObject({
             call_id: "call_search",
             status: "completed",
-            output: JSON.stringify({
-                isError: true,
-                content: [{ type: "text", text: "Search unavailable" }],
-            }),
+            output: [
+                {
+                    type: "input_text",
+                    text: JSON.stringify({
+                        isError: true,
+                        content: [{ type: "text", text: "Search unavailable" }],
+                    }),
+                },
+            ],
         });
         expect(JSON.stringify(output)).not.toContain("PRIVATE_");
         expect(

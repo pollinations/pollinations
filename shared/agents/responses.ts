@@ -13,6 +13,7 @@ import {
     type ResponseUsage,
     ResponseUsageSchema,
 } from "../schemas/openai.ts";
+import { functionOutputText } from "../schemas/response-function-items.ts";
 import {
     type FunctionCall,
     FunctionCallOutputSchema,
@@ -264,7 +265,9 @@ async function inputMessages(
             const isMcp = Boolean(parseFunctionName(call.name));
             let output: z.infer<ReturnType<typeof z.json>>;
             try {
-                output = z.json().parse(JSON.parse(parsed.data.output));
+                output = z
+                    .json()
+                    .parse(JSON.parse(functionOutputText(parsed.data.output)));
                 if (isMcp) {
                     const result = objectValue(output, "input.output");
                     if (

@@ -1,4 +1,5 @@
 import type { AgentOutputItem } from "@shared/agents/output.ts";
+import { functionOutputText } from "@shared/schemas/response-function-items.ts";
 import OpenAI from "openai";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -252,9 +253,14 @@ describe("prompt-agent runtime", () => {
             type: "function_call_output",
             call_id: "c1",
             status: "completed",
-            output: JSON.stringify({
-                content: [{ type: "text", text: "found" }],
-            }),
+            output: [
+                {
+                    type: "input_text",
+                    text: JSON.stringify({
+                        content: [{ type: "text", text: "found" }],
+                    }),
+                },
+            ],
         });
         expect(chatOutputText(json)).toBe(
             "checking \n\n" +
@@ -1155,7 +1161,7 @@ describe("prompt-agent runtime", () => {
             });
             expect(events[5]).toMatchObject({
                 output_index: 1,
-                item: { ...output[1], output: "", status: "in_progress" },
+                item: { ...output[1], output: [], status: "in_progress" },
             });
             const chunks = responseStreamEvents(
                 await new Response(chatStream).text(),
@@ -1191,23 +1197,28 @@ describe("prompt-agent runtime", () => {
                     id: expect.stringMatching(/^fco_/),
                     call_id: "c1",
                     status: "completed",
-                    output: JSON.stringify({
-                        content: [
-                            {
-                                type: "text",
-                                text: "[image output omitted; use an HTTPS resource link]",
-                            },
-                            {
-                                type: "resource_link",
-                                uri: "https://images.example/pirate.png",
-                                name: "Generated image",
-                            },
-                            {
-                                type: "text",
-                                text: '{"data":[{"url":"https://images.example/pirate.png"}]}',
-                            },
-                        ],
-                    }),
+                    output: [
+                        {
+                            type: "input_text",
+                            text: JSON.stringify({
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: "[image output omitted; use an HTTPS resource link]",
+                                    },
+                                    {
+                                        type: "resource_link",
+                                        uri: "https://images.example/pirate.png",
+                                        name: "Generated image",
+                                    },
+                                    {
+                                        type: "text",
+                                        text: '{"data":[{"url":"https://images.example/pirate.png"}]}',
+                                    },
+                                ],
+                            }),
+                        },
+                    ],
                 },
                 {
                     type: "message",
@@ -1849,7 +1860,7 @@ describe("prompt-agent runtime", () => {
             id: expect.stringMatching(/^fco_/),
             call_id: "c1",
             status: "completed",
-            output: expect.any(String),
+            output: [{ type: "input_text", text: expect.any(String) }],
         };
         expect(json).toMatchObject({
             status: "completed",
@@ -1870,7 +1881,7 @@ describe("prompt-agent runtime", () => {
         if (toolResult.type !== "function_call_output") {
             throw new Error("Missing completed tool result");
         }
-        expect(JSON.parse(toolResult.output)).toEqual({
+        expect(JSON.parse(functionOutputText(toolResult.output))).toEqual({
             isError: true,
             content: [
                 { type: "text", text: expect.stringContaining(failureMessage) },

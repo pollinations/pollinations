@@ -60,20 +60,18 @@ export type AuthModalHeaderProps = {
     logoOnly?: boolean;
 };
 
-/** Shared consent/sign-in chrome; content scrolls behind the anchored controls. */
+/** Shared consent/sign-in chrome; scrolling content never changes the footer width. */
 export function AuthFlowLayout({
     children,
     account,
     actions,
     secondaryAction,
-    actionLayout = "stacked",
     dialog,
 }: {
     children: ReactNode;
     account?: ReactNode;
     actions: ReactNode;
     secondaryAction?: ReactNode;
-    actionLayout?: "stacked" | "inline";
     dialog?: AuthModalProps["dialog"];
 }) {
     return (
@@ -81,41 +79,44 @@ export function AuthFlowLayout({
             dialog={dialog}
             contentClassName="polli:flex polli:h-dvh polli:flex-col polli:sm:h-[calc(100dvh-2rem)]"
         >
-            <ScrollArea className="polli:min-h-0 polli:flex-1 polli:overscroll-contain polli:scroll-pt-28 polli:scroll-pb-48 polli:sm:rounded-2xl">
-                <div className="polli:flex polli:min-h-dvh polli:flex-col polli:sm:min-h-[calc(100dvh-2rem)]">
+            <ScrollArea className="polli:min-h-0 polli:flex-1 polli:overscroll-contain polli:scroll-pt-28 polli:scroll-pb-4 polli:sm:rounded-t-2xl">
+                <div className="polli:flex polli:min-h-full polli:flex-col">
                     <div className="polli:sticky polli:top-0 polli:z-10 polli:shrink-0 polli:bg-surface-white/80 polli:pb-3 polli:backdrop-blur-md">
                         <AuthModalHeader logoOnly>{account}</AuthModalHeader>
                     </div>
                     <div className="polli:flex-1 polli:space-y-3 polli:px-6 polli:py-2">
                         {children}
                     </div>
-                    <AuthActionFooter
-                        actions={actions}
-                        secondaryAction={secondaryAction}
-                        actionLayout={actionLayout}
-                    />
                 </div>
             </ScrollArea>
+            <AuthActionFooter
+                actions={actions}
+                secondaryAction={secondaryAction}
+            />
         </AuthModal>
     );
 }
 
-/** Stable provider-action, optional return-action, and terms slots. */
+/** Center lone actions; keep paired actions and terms in stable, responsive slots. */
 export function AuthActionFooter({
     actions,
     secondaryAction,
-    actionLayout = "stacked",
     className,
 }: {
     actions: ReactNode;
     secondaryAction?: ReactNode;
-    actionLayout?: "stacked" | "inline";
     className?: string;
 }) {
     const primarySlot = (
         <div
             data-auth-slot="primary"
-            className="polli:flex polli:min-h-12 polli:w-full polli:items-center polli:justify-center polli:[&>button]:h-12 polli:[&>button]:w-full polli:[&>a]:h-12 polli:[&>a]:w-full"
+            className={cn(
+                "polli:order-first polli:flex polli:min-h-12 polli:min-w-0 polli:w-full polli:items-center polli:justify-center polli:@min-[320px]/auth-footer:order-none polli:@min-[320px]/auth-footer:row-start-1 polli:[&>button]:h-12 polli:[&>button]:w-full polli:[&>a]:h-12 polli:[&>a]:w-full",
+                secondaryAction
+                    ? "polli:@min-[320px]/auth-footer:col-start-2"
+                    : "polli:@min-[320px]/auth-footer:col-span-full polli:@min-[320px]/auth-footer:w-[calc(100%_-_8.25rem)] polli:justify-self-center",
+                !actions && "polli:pointer-events-none",
+            )}
         >
             {actions}
         </div>
@@ -123,7 +124,13 @@ export function AuthActionFooter({
     const secondarySlot = (
         <div
             data-auth-slot="secondary"
-            className="polli:flex polli:min-h-9 polli:items-center polli:justify-center polli:[&>button]:h-9 polli:[&>a]:h-9"
+            className={cn(
+                "polli:flex polli:min-h-9 polli:items-center polli:justify-center polli:@min-[320px]/auth-footer:row-start-1 polli:[&>button]:h-9 polli:[&>a]:h-9",
+                actions
+                    ? "polli:@min-[320px]/auth-footer:col-start-1"
+                    : "polli:@min-[320px]/auth-footer:col-span-full",
+                !secondaryAction && "polli:pointer-events-none",
+            )}
         >
             {secondaryAction}
         </div>
@@ -131,29 +138,13 @@ export function AuthActionFooter({
     return (
         <div
             className={cn(
-                "polli:sticky polli:bottom-0 polli:z-10 polli:flex polli:shrink-0 polli:flex-col polli:items-center polli:gap-3 polli:bg-surface-white/80 polli:p-6 polli:pt-4 polli:backdrop-blur-md",
+                "polli:@container/auth-footer polli:sticky polli:bottom-0 polli:z-10 polli:flex polli:shrink-0 polli:flex-col polli:items-center polli:gap-3 polli:bg-surface-white/80 polli:p-6 polli:pt-4 polli:backdrop-blur-md",
                 className,
             )}
         >
-            <div
-                className={cn(
-                    "polli:w-full polli:gap-3",
-                    actionLayout === "inline"
-                        ? "polli:grid polli:grid-cols-2"
-                        : "polli:flex polli:flex-col polli:items-center",
-                )}
-            >
-                {actionLayout === "inline" ? (
-                    <>
-                        {secondarySlot}
-                        {primarySlot}
-                    </>
-                ) : (
-                    <>
-                        {primarySlot}
-                        {secondarySlot}
-                    </>
-                )}
+            <div className="polli:grid polli:w-full polli:grid-cols-1 polli:gap-3 polli:@min-[320px]/auth-footer:grid-cols-[minmax(7.5rem,max-content)_minmax(0,1fr)]">
+                {secondarySlot}
+                {primarySlot}
             </div>
             <InlineLink
                 href="https://pollinations.ai/terms"

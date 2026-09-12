@@ -1,0 +1,34 @@
+{
+  "pr_number": 14621,
+  "title": "feat: prefix community model IDs and migrate key permissions",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14621",
+  "merged_at": "2026-09-12T15:07:30Z",
+  "labels": [],
+  "pr_body_excerpt": "- Promotes `community/owner/model` to the canonical ID for community models and agents. The old `owner/model` ID stays a generation alias on every listing, including newly created ones.\n- Migration `0065` renames stored key permissions in D1. Key writes validate canonical-ID membership only; no alias lookup or permission fallback.\n- Preserves monitoring history, probe cadence, catalog collision checks and canonical billing attribution. Reward attribution keys off the owner's user ID, not the model string.\n- Every ID is built through `communityModelId` / `legacyCommunityModelId`, so the rename is contained to six callers.\n\nVerified on staging (enter + gen deployed, `0065` applied):\n- Catalog flipped to `community/...` for all 8 community listings, each carrying the bare alias.\n- Generation returns 200 for both ID forms; `x-model-requested` and `x-model-used` both report canonical.\n- Full 8-model status matrix identical before and after; bundled models unaffected.\n\nFollow-ups, not blockers: the `community/` stripping in the monitor SQL is only needed while the 24h/7d windows span the rename; `probe.mjs` keeps legacy state-file keys; the two leaderboards display the stripped ID while seven-day-health displays canonical.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01WKMPrAfe4wMNBNdZ96Yqmr\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Community models get a postcode",
+    "blurb": "Community models now wear their full `community/owner/model` address on the catalog shelf. The old bare address still gets the bees home, while permissions and billing follow the canonical trail.",
+    "summary": "Community models and agents now use `community/owner/model` as their canonical catalog and permission ID, while legacy `owner/model` IDs remain generation aliases and existing D1 key permissions are migrated by migration `0065`.",
+    "impact": "Developers can adopt unambiguous `community/...` model IDs while both ID forms continue returning successful generations, with request and usage headers consistently reporting the canonical ID.",
+    "keywords": [
+      "community-models",
+      "model-ids",
+      "api-keys",
+      "permissions",
+      "migration",
+      "catalog"
+    ],
+    "visual_concept": "Depict a cozy community-model garden where model seeds have moved into clearly labeled `community/owner/model` planters, while small legacy `owner/model` signposts still point safely to the same flowers. Polli, wearing a tiny postal-worker cap, updates a glowing address book beside a retro terminal; include vines and code-plants to represent the contained canonical-ID migration and preserved routing.",
+    "image_prompt": "A cozy pixel art garden post office where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears a tiny postal-worker cap and labels blooming code-planters `community/owner/model`; an old `owner/model` signpost warmly points to the same flowers beside a lime-green (#ecf874) glowing retro terminal. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) pixel outlines, subtle CRT glow, and a nostalgic garden-shed atmosphere like Stardew Valley or A Short Hike."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14621.jpg",
+    "prompt": "A cozy pixel art garden post office where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears a tiny postal-worker cap and labels blooming code-planters `community/owner/model`; an old `owner/model` signpost warmly points to the same flowers beside a lime-green (#ecf874) glowing retro terminal. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) pixel outlines, subtle CRT glow, and a nostalgic garden-shed atmosphere like Stardew Valley or A Short Hike."
+  },
+  "generated_at": "2026-09-12T15:08:26.797888+00:00"
+}

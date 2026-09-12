@@ -1,0 +1,33 @@
+{
+  "pr_number": 14753,
+  "title": "Add rule prohibiting aliases for new models",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14753",
+  "merged_at": "2026-09-12T10:16:13Z",
+  "labels": [],
+  "pr_body_excerpt": "- Require new models, including new versions and checkpoints, to have no aliases.\n- Preserve existing alias targets until removal and retire legacy aliases through explicit migrations.\n- Replace the previous alias rule in model-management; keep the policy in one place.\n\nValidation: skill validator and `git diff --check` pass.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "No More Model Nicknames",
+    "blurb": "The model garden has a clearer labeling rule: new arrivals get one proper name. Existing signposts stay put until a deliberate migration moves them.",
+    "summary": "Updated the model-management policy so new models, versions, and checkpoints ship without aliases, while existing alias targets remain until explicitly migrated or removed.",
+    "impact": "Model maintainers get a single documented rule for naming new model entries and can retire legacy aliases through deliberate migrations.",
+    "keywords": [
+      "models",
+      "model-management",
+      "aliases",
+      "policy",
+      "maintenance"
+    ],
+    "visual_concept": "Polli, wearing tiny librarian glasses, organizes a cozy garden shelf of clearly labeled model seed packets while older packets keep their familiar signposts until a careful transplant. A small retro terminal and code-vines represent the centralized model-management policy.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light-blue wings, wearing tiny librarian glasses as she labels model seed packets on a lime green (#ecf874) garden shelf; older packets retain small legacy signposts beside a glowing retro terminal and code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14753.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light-blue wings, wearing tiny librarian glasses as she labels model seed packets on a lime green (#ecf874) garden shelf; older packets retain small legacy signposts beside a glowing retro terminal and code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm."
+  },
+  "generated_at": "2026-09-12T10:17:11.525055+00:00"
+}

@@ -5,6 +5,7 @@ import {
     enterLoginErrorScreens,
     type ScreenVariant,
 } from "./pollen-connect-canvas-data";
+import { getDeviceFlow } from "./pollen-connect-device";
 import type {
     JourneyEntrance,
     JourneySection,
@@ -26,13 +27,7 @@ export const galleryFlowScreens: Record<JourneyEntrance, readonly string[]> = {
         "add-pollen-pending",
         "app-connected",
     ],
-    device: [
-        "sign-in",
-        ...loginErrorIds,
-        "device-code",
-        "consent",
-        "device-result",
-    ],
+    device: getDeviceFlow().galleryScreens.map((entry) => entry.id),
     account: [
         "enter-signed-out",
         ...loginErrorIds,
@@ -56,6 +51,7 @@ export function galleryScreensForFlow(
     flow: JourneyEntrance,
     section?: JourneySection,
 ): CanvasScreen[] {
+    if (flow === "device") return getDeviceFlow(section).galleryScreens;
     const entries = canvasGroups.flatMap((group) => group.screens);
     let ids = galleryFlowScreens[flow];
     if (flow === "app" && section === "main")
@@ -78,7 +74,9 @@ export function galleryScreensForFlow(
                 ? {
                       ...source,
                       title:
-                          section === "topup" ? "App" : "App · Return to app",
+                          section === "topup"
+                              ? "App"
+                              : "App · Connection status",
                       variants:
                           section === "topup"
                               ? [
@@ -139,50 +137,13 @@ export function galleryScreensForFlow(
                 ),
             };
         }
-        if (flow === "device" && id === "sign-in") {
-            entry = {
-                ...source,
-                screen: "device-signed-out",
-                variants: [
-                    "Device",
-                    "Device with app",
-                    "Checking account",
-                    "Signing in",
-                    "Sign-in failed",
-                ].flatMap((label) => {
-                    const variant = source.variants?.find(
-                        (candidate) => candidate.label === label,
-                    );
-                    return variant ? [variant] : [];
-                }),
-            };
-        }
-        if (flow === "device" && id === "consent") {
-            entry = {
-                ...source,
-                screen: "device-consent",
-                variants: source.variants?.filter(
-                    (variant) =>
-                        (!variant.params?.request_error ||
-                            ["app", "lookup"].includes(
-                                variant.params.request_error,
-                            )) &&
-                        variant.params?.authorize_error !== "code" &&
-                        !variant.screen,
-                ),
-            };
-        }
         if (id === "consent")
             entry = {
                 ...entry,
                 variants: entry.variants?.filter(
                     (variant) =>
                         variant.label !== "App example" &&
-                        !(flow === "app" && variant.params?.request_error) &&
-                        !(
-                            flow === "app" &&
-                            variant.screen === "device-consent"
-                        ),
+                        !(flow === "app" && variant.params?.request_error),
                 ),
             };
         const errors = entry.variants?.filter((variant) => variant.error) ?? [];
@@ -256,13 +217,6 @@ function errorGroup(
         if (reason) return "App could not be verified";
         if (variant.params?.action === "authorize") return "Connection failed";
     }
-    // Expired and used codes both require a new code. Invalid codes and network
-    // failures keep their own cards because Verify code and Try again differ.
-    if (
-        entry.id === "device-code-errors" &&
-        ["device-error", "device-used"].includes(variant.screen ?? "")
-    )
-        return "Device code no longer usable";
     return undefined;
 }
 
@@ -271,6 +225,7 @@ export function galleryCardsForFlow(
     flow: JourneyEntrance,
     section?: JourneySection,
 ): CanvasScreen[] {
+    if (flow === "device") return getDeviceFlow(section).galleryScreens;
     const pages = new Map(
         galleryPagesForFlow(flow, section).map((page) => [page.id, page]),
     );

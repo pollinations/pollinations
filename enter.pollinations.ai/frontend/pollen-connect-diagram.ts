@@ -1,6 +1,7 @@
 import { loginErrors } from "@shared/auth/login-errors.ts";
 import { appLoginEdges, appLoginNodes } from "./pollen-connect-app-login";
 import { enterLoginErrorScreens } from "./pollen-connect-canvas-data";
+import { getDeviceFlow } from "./pollen-connect-device";
 
 export type FlowNode = {
     id: string;
@@ -212,33 +213,6 @@ export const flowNodes: FlowNode[] = [
     },
     { id: "error", kind: "outcome", label: "Sign-in failed", x: 3440, y: 1060 },
     { id: "github-signup", screen: "github-signup", x: 1460, y: 1700 },
-    { id: "device-start", screen: "device-start", x: 110, y: 2430 },
-    { id: "device-code", screen: "device-code", x: 1190, y: 2430 },
-    {
-        id: "code-valid",
-        kind: "decision",
-        label: "Code valid + pending?",
-        x: 1750,
-        y: 2580,
-    },
-    {
-        id: "device-wait",
-        kind: "outcome",
-        label: "Waiting for approval",
-        note: "Device keeps polling",
-        x: 2530,
-        y: 2630,
-    },
-    { id: "device-result", screen: "device-result", x: 2135, y: 2430 },
-    { id: "device-done", screen: "device-done", x: 3440, y: 2430 },
-    {
-        id: "device-stopped",
-        kind: "outcome",
-        label: "Denied or expired",
-        note: "Stop polling · request a new code",
-        x: 3010,
-        y: 2830,
-    },
     { id: "enter-signed-out", screen: "enter-signed-out", x: 950, y: 3110 },
     { id: "enter-connected", screen: "enter-connected", x: 2150, y: 3110 },
     { id: "account-checkout", screen: "account-checkout", x: 2150, y: 3730 },
@@ -397,29 +371,6 @@ export const flowEdges: FlowEdge[] = [
             [3520, 3990],
             [3520, 3650],
             [2920, 3650],
-        ],
-        alternate: true,
-    },
-    {
-        from: "device-result",
-        to: "device-done",
-        label: "Authorized · return to device",
-        fromSide: "top",
-        toSide: "top",
-        via: [
-            [2245, 2390],
-            [3550, 2390],
-        ],
-    },
-    {
-        from: "device-result",
-        to: "device-stopped",
-        label: "Denied · return to device",
-        fromSide: "bottom",
-        toSide: "bottom",
-        via: [
-            [2245, 2980],
-            [3120, 2980],
         ],
         alternate: true,
     },
@@ -858,142 +809,6 @@ export const flowEdges: FlowEdge[] = [
         alternate: true,
     },
     {
-        from: "device-start",
-        to: "session",
-        label: "Open verification URL",
-        fromSide: "top",
-        toSide: "left",
-        via: [
-            [220, 2300],
-            [420, 2300],
-            [420, 1235],
-        ],
-        labelAt: [420, 1850],
-    },
-    {
-        from: "resume",
-        to: "device-code",
-        label: "Device",
-        fromSide: "bottom",
-        toSide: "top",
-        via: [
-            [3165, 2310],
-            [1300, 2310],
-        ],
-        labelAt: [3040, 2310],
-    },
-    {
-        from: "device-code",
-        to: "code-valid",
-        label: "Continue / prefilled code",
-    },
-    {
-        from: "code-valid",
-        to: "device-code",
-        label: "Invalid / used / expired · retry",
-        fromSide: "bottom",
-        toSide: "bottom",
-        via: [
-            [1835, 2990],
-            [1300, 2990],
-        ],
-        labelAt: [1560, 2990],
-        alternate: true,
-    },
-    {
-        from: "code-valid",
-        to: "request-valid",
-        label: "Yes · review device access",
-        fromSide: "top",
-        toSide: "left",
-        via: [
-            [1835, 2330],
-            [2100, 2330],
-            [2100, 405],
-        ],
-        labelAt: [2100, 2360],
-    },
-    {
-        from: "device-start",
-        to: "device-wait",
-        label: "Poll for approval",
-        fromSide: "bottom",
-        toSide: "bottom",
-        via: [
-            [220, 2980],
-            [2640, 2980],
-        ],
-        labelAt: [760, 2980],
-    },
-    {
-        from: "device-wait",
-        to: "device-wait",
-        label: "Pending · poll again",
-        fromSide: "top",
-        toSide: "right",
-        via: [
-            [2640, 2540],
-            [2830, 2540],
-            [2830, 2670],
-        ],
-        alternate: true,
-    },
-    {
-        from: "consent",
-        to: "device-result",
-        label: "Allow access",
-        fromSide: "bottom",
-        toSide: "top",
-        via: [
-            [3065, 890],
-            [3900, 890],
-            [3900, 2380],
-            [2245, 2380],
-        ],
-        labelAt: [3900, 1830],
-    },
-    {
-        from: "device-wait",
-        to: "device-done",
-        label: "Approved · retrieve key",
-    },
-    {
-        from: "device-wait",
-        to: "device-stopped",
-        label: "Denied / expired",
-        fromSide: "bottom",
-        toSide: "left",
-        via: [[2640, 2870]],
-        alternate: true,
-    },
-    {
-        from: "cancelled",
-        to: "device-result",
-        label: "Device · deny",
-        fromSide: "right",
-        toSide: "right",
-        via: [
-            [3980, 800],
-            [3980, 2870],
-        ],
-        labelAt: [3980, 2210],
-        alternate: true,
-    },
-    {
-        from: "device-stopped",
-        to: "device-start",
-        label: "Start again · new code",
-        fromSide: "bottom",
-        toSide: "left",
-        via: [
-            [3120, 3010],
-            [85, 3010],
-            [85, 2685],
-        ],
-        labelAt: [2900, 3010],
-        alternate: true,
-    },
-    {
         from: "enter-signed-out",
         to: "github-session",
         label: "Sign in",
@@ -1216,20 +1031,7 @@ const flowMembership: Record<FlowId, readonly string[]> = {
     ],
     app: appLoginNodes.map((node) => node.id),
     "sign-in": signInNodes,
-    device: [
-        ...signInNodes,
-        "device-start",
-        "device-code",
-        "code-valid",
-        "device-wait",
-        "device-done",
-        "device-result",
-        "device-stopped",
-        "request-valid",
-        "consent",
-        "blocked",
-        "cancelled",
-    ],
+    device: getDeviceFlow().nodes.map((node) => node.id),
     account: [
         ...signInNodes,
         "enter-signed-out",
@@ -1251,7 +1053,7 @@ const flowMembership: Record<FlowId, readonly string[]> = {
     ],
 };
 
-export function getFlowFocus(id: FlowId, section?: "main" | "topup") {
+export function getFlowFocus(id: FlowId, section?: "main" | "topup" | "link") {
     const selectedFlow =
         id === "app" && section === "topup" ? "add-pollen" : id;
     let members = flowMembership[selectedFlow];
@@ -1268,29 +1070,28 @@ export function getFlowFocus(id: FlowId, section?: "main" | "topup") {
     if (id === "account" && section === "topup")
         members = ["enter-connected", "account-checkout"];
     const appLogin = id === "app" && section !== "topup";
+    const deviceMap = id === "device" ? getDeviceFlow(section).map : null;
+    const sourceNodes = appLogin
+        ? appLoginNodes
+        : deviceMap
+          ? deviceMap.nodes
+          : flowNodes;
+    const sourceEdges = appLogin
+        ? appLoginEdges
+        : deviceMap
+          ? deviceMap.edges
+          : flowEdges;
     const nodeIds = new Set(
-        appLogin ? appLoginNodes.map((node) => node.id) : members,
+        appLogin || deviceMap ? sourceNodes.map((node) => node.id) : members,
     );
-    const nodes = (appLogin ? appLoginNodes : flowNodes).filter((node) =>
-        nodeIds.has(node.id),
-    );
-    const edges = (appLogin ? appLoginEdges : flowEdges)
+    const nodes = sourceNodes.filter((node) => nodeIds.has(node.id));
+    const edges = sourceEdges
         .map((edge) =>
-            edge.from === "login-failed"
+            edge.from === "login-failed" && id !== "device"
                 ? { ...edge, to: loginRetryNode(id) }
                 : edge,
         )
-        .filter(
-            (edge) =>
-                nodeIds.has(edge.from) &&
-                nodeIds.has(edge.to) &&
-                // The device sign-in page has no app-cancellation button.
-                !(
-                    id === "device" &&
-                    edge.from === "sign-in" &&
-                    edge.to === "cancelled"
-                ),
-        );
+        .filter((edge) => nodeIds.has(edge.from) && nodeIds.has(edge.to));
     if (id === "app" && section === "topup") {
         // Authentication is the same Apps Login flow, represented here as a
         // handoff instead of duplicating its account and consent screens.

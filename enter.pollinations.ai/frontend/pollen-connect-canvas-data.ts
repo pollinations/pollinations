@@ -85,6 +85,14 @@ export function appVariantSupportsProtocol(
     );
 }
 
+export function screenVariantIndices(entry: CanvasScreen, protocol?: string) {
+    return entry.variants?.length
+        ? entry.variants.flatMap((variant, index) =>
+              appVariantSupportsProtocol(variant, protocol) ? [index] : [],
+          )
+        : [0];
+}
+
 export const modelCatalogStates = [
     { id: "ready", label: "Models available" },
     { id: "loading", label: "Loading models" },
@@ -145,17 +153,6 @@ export const canvasGroups: { title: string; screens: CanvasScreen[] }[] = [
                     },
                     { label: "Simple BYOP", screen: "direct-signed-out" },
                     { label: "New account", params: { persona: "new" } },
-                    { label: "Device", screen: "device-signed-out" },
-                    {
-                        label: "Checking account",
-                        screen: "device-signed-out",
-                        params: { session: "loading" },
-                    },
-                    {
-                        label: "Device with app",
-                        screen: "device-signed-out",
-                        params: { user_code: "ABCD-EFGH" },
-                    },
                 ],
             },
             {
@@ -337,45 +334,6 @@ export const canvasGroups: { title: string; screens: CanvasScreen[] }[] = [
                 title: "Start on a device",
                 owner: "Developer app",
                 illustration: "device",
-            },
-            {
-                id: "device-code",
-                title: "Enter device code",
-                owner: "Pollinations",
-                screen: "device",
-                variants: [
-                    { label: "Enter code" },
-                    {
-                        label: "Verifying code",
-                        params: { user_code: "ABCD-EFGH", verify: "waiting" },
-                    },
-                    {
-                        label: "Expired code",
-                        screen: "device-error",
-                        error: true,
-                    },
-                    { label: "Used code", screen: "device-used", error: true },
-                    {
-                        label: "Invalid code",
-                        screen: "device-invalid",
-                        error: true,
-                    },
-                    {
-                        label: "Verification failed",
-                        error: true,
-                        screen: "device-unavailable",
-                    },
-                ],
-            },
-            {
-                id: "device-result",
-                title: "Device approval result",
-                owner: "Pollinations",
-                screen: "device-result",
-                variants: [
-                    { label: "Authorized" },
-                    { label: "Denied", params: { outcome: "denied" } },
-                ],
             },
             {
                 id: "device-done",

@@ -18,6 +18,10 @@ import {
     canvasScreenUrl,
 } from "../frontend/pollen-connect-canvas-data";
 import {
+    deviceAutomaticDestination,
+    getDeviceFlow,
+} from "../frontend/pollen-connect-device";
+import {
     edgePoints,
     flowEdges,
     flowNodes,
@@ -234,7 +238,7 @@ describe("focused flow navigation", () => {
             const focus = getFlowFocus(id);
             for (const shared of [
                 "sign-in",
-                ...(id === "app"
+                ...(["app", "device"].includes(id)
                     ? ["github-handoff"]
                     : ["github-login", "github-authorize"]),
                 "error",
@@ -247,7 +251,9 @@ describe("focused flow navigation", () => {
                         edge.to ===
                             (id === "app"
                                 ? "app-signing-in"
-                                : "github-session"),
+                                : id === "device"
+                                  ? "device-signing-in"
+                                  : "github-session"),
                 ),
             ).toBe(true);
         }
@@ -304,7 +310,8 @@ describe("focused flow navigation", () => {
         expect(
             device.edges.some(
                 (edge) =>
-                    edge.from === "cancelled" && edge.to === "device-result",
+                    edge.from === "device-denying" &&
+                    edge.to === "device-declined",
             ),
         ).toBe(true);
     });
@@ -329,9 +336,9 @@ describe("focused flow navigation", () => {
                 expect(nodeIds.has(edge.from) && nodeIds.has(edge.to)).toBe(
                     true,
                 );
-                expect(edgePoints(edge).every(([x, y]) => contains(x, y))).toBe(
-                    true,
-                );
+                expect(
+                    edgePoints(edge, nodes).every(([x, y]) => contains(x, y)),
+                ).toBe(true);
             }
         }
     });
@@ -347,6 +354,8 @@ describe("authorization preview coverage", () => {
         expect(new Set(screens).size).toBe(screens.length);
         const represented = new Set([
             ...screens,
+            "device-start",
+            "device-done",
             ...[...appLoginScreens.values()].map((entry) =>
                 entry.id.split("--")[0].replace(/-errors$/, ""),
             ),
@@ -373,9 +382,11 @@ describe("authorization preview coverage", () => {
                 ).toBeGreaterThanOrEqual(2);
         }
         expect(
-            flowEdges.some(
+            getDeviceFlow().edges.some(
                 (edge) =>
-                    edge.from === "device-wait" && edge.to === "device-wait",
+                    edge.from === "device-result" &&
+                    edge.to === "device-done" &&
+                    edge.label === "Device retrieves key",
             ),
         ).toBe(true);
         expect(
@@ -546,7 +557,10 @@ describe("Connect lab journey", () => {
         state = go(state, "consent");
         expect(state).toMatchObject({ node: "consent", signedIn: true });
         expect(
-            go({ ...state, node: "loading", world: "device" }, "resume").node,
+            go(
+                { ...state, node: "device-session", world: "device" },
+                "device-code",
+            ).node,
         ).toBe("device-code");
         expect(
             go({ ...state, node: "loading", world: "account" }, "resume").node,
@@ -819,8 +833,8 @@ describe("Connect lab journey", () => {
     });
     it("keeps denied device results on the denied branch", () => {
         const state = go(
-            { ...startJourney("device"), node: "cancelled", denied: true },
-            "device-result",
+            { ...startJourney("device"), node: "device-denying", denied: true },
+            "device-declined",
         );
         expect(journeyOptions(state).map((edge) => edge.to)).toEqual([
             "device-stopped",
@@ -876,8 +890,12 @@ describe("automatic journey routing", () => {
         let next = journeyAdvance(state, edge, settings);
         // Simulate completion of the visible pending screens; the player waits
         // for each iframe to load before applying these same transitions.
-        for (let i = 0; i < 8 && next.world === "app"; i++) {
-            const destination = appLoginAutomaticDestination(next, settings);
+        for (let i = 0; i < 8 && ["app", "device"].includes(next.world); i++) {
+            const destination = (
+                next.world === "device"
+                    ? deviceAutomaticDestination
+                    : appLoginAutomaticDestination
+            )(next, settings);
             if (!destination) return next;
             const route = journeyOptions(next).find(
                 (edge) => edge.to === destination,
@@ -1022,10 +1040,10 @@ describe("automatic journey routing", () => {
         expect(
             advance(
                 { ...startJourney("device"), node: "device-code" },
-                "code-valid",
-                settings,
+                "device-verifying",
+                { ...settings, deviceCodeResult: "invalid" },
             ),
-        ).toMatchObject({ node: "device-code", scenario: "device-invalid" });
+        ).toMatchObject({ node: "device-code-invalid" });
         expect(
             appLoginAutomaticDestination(
                 { ...startJourney(), node: "app-signing-in" },
@@ -1057,7 +1075,7 @@ describe("automatic journey routing", () => {
         expect(
             advance(
                 { ...startJourney("device"), node: "device-code" },
-                "code-valid",
+                "device-verifying",
             ).node,
         ).toBe("consent");
     });

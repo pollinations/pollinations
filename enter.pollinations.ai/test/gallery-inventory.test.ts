@@ -12,6 +12,7 @@ import {
     canvasGroups,
     canvasScreenUrl,
 } from "../frontend/pollen-connect-canvas-data";
+import { getDeviceFlow } from "../frontend/pollen-connect-device";
 import { flowNodes, getFlowFocus } from "../frontend/pollen-connect-diagram";
 import {
     galleryCardsForFlow,
@@ -27,6 +28,9 @@ import {
     startJourney,
     startSelectedJourney,
 } from "../frontend/pollen-connect-journey-state";
+
+const { galleryScreens: deviceGalleryScreens, screens: deviceScreens } =
+    getDeviceFlow();
 
 describe("Complete managed screen inventory", () => {
     const sources = canvasGroups.flatMap((group) => group.screens);
@@ -82,6 +86,7 @@ describe("Complete managed screen inventory", () => {
         for (const entry of allGallery)
             expect(
                 entry.id === "github-handoff" ||
+                    deviceGalleryScreens.includes(entry) ||
                     managedIds.has(entry.id.replace(/-errors$/, "")),
             ).toBe(true);
         for (const { id } of entrances) {
@@ -99,7 +104,7 @@ describe("Complete managed screen inventory", () => {
         const device = galleryScreensForFlow("device");
         expect(
             device.find((entry) => entry.id === "sign-in")?.variants?.[0].label,
-        ).toBe("Device");
+        ).toBe("Ready");
         expect(device.find((entry) => entry.id === "sign-in")?.screen).toBe(
             "device-signed-out",
         );
@@ -169,16 +174,24 @@ it("shows every Enter error route state separately in every login flow and map",
         const gallery = galleryScreensForFlow(id);
         const map = getFlowFocus(id);
         for (const error of Object.values(loginErrors)) {
-            expect(gallery.find((entry) => entry.id === error.id)?.title).toBe(
-                error.title,
+            expect(
+                (id === "device"
+                    ? deviceScreens.get(error.id)
+                    : gallery.find((entry) => entry.id === error.id)
+                )?.title,
+            ).toBe(
+                id === "device" && error.id === "login-failed"
+                    ? "Returning from GitHub"
+                    : error.title,
             );
             expect(map.nodes.some((node) => node.id === error.id)).toBe(true);
             expect(
                 map.edges.some(
                     (edge) =>
                         edge.from ===
-                            (id === "app" ? "github-handoff" : "loading") &&
-                        edge.to === error.id,
+                            (["app", "device"].includes(id)
+                                ? "github-handoff"
+                                : "loading") && edge.to === error.id,
                 ),
             ).toBe(true);
         }
@@ -203,10 +216,14 @@ it("routes failed Enter login to its real error page before completing any journ
             const before = {
                 ...startJourney(),
                 world,
-                node: world === "app" ? "github-handoff" : "github-authorize",
+                node: ["app", "device"].includes(world)
+                    ? "github-handoff"
+                    : "github-authorize",
             };
             const edge = journeyOptions(before).find(
-                (edge) => edge.to === "loading",
+                (edge) =>
+                    edge.to ===
+                    (world === "device" ? "device-session" : "loading"),
             );
             if (!edge) throw new Error("Missing login completion edge");
             const failed = journeyAdvance(before, edge, {
@@ -227,11 +244,13 @@ it("routes failed Enter login to its real error page before completing any journ
             const retryNode =
                 world === "app"
                     ? "app-signing-in"
-                    : world === "account"
-                      ? "enter-signed-out"
-                      : world === "admin"
-                        ? "dashboard-sign-in"
-                        : "sign-in";
+                    : world === "device"
+                      ? "device-session"
+                      : world === "account"
+                        ? "enter-signed-out"
+                        : world === "admin"
+                          ? "dashboard-sign-in"
+                          : "sign-in";
             expect(exit.to).toBe(retry ? retryNode : `${error.id}-exit`);
             expect(journeyAdvance(failed, exit)).toMatchObject({
                 node: retry ? retryNode : `${error.id}-exit`,
@@ -435,10 +454,14 @@ it("groups configuration controls without hiding loading, success, or error stat
                         "Pollinations sign-in error": 4,
                         "App connection error": 15,
                         "Allow access": 5,
-                        "App · Return to app": 6,
+                        "App · Connection status": 6,
                     };
                     if (card.title in counts)
                         expect(card.variants).toHaveLength(counts[card.title]);
+                    continue;
+                }
+                if (id === "device") {
+                    expect(deviceGalleryScreens).toContainEqual(card);
                     continue;
                 }
                 if (card.title === "Connection failed") {
@@ -526,22 +549,18 @@ it("groups matching request errors while preserving identity, phase, and recover
             .map((variant) => variant.params?.authorize_error),
     ).toEqual(authorizeFailures.map(({ id }) => id));
     const device = galleryCardsForFlow("device", "main");
+    const errors = device.find((entry) => entry.id === "device-errors");
     expect(
-        device
-            .find((entry) => entry.title === "App could not be verified")
-            ?.variants?.map((variant) => variant.params?.request_error),
+        errors?.variants?.flatMap((variant) =>
+            variant.params?.request_error ? [variant.params.request_error] : [],
+        ),
     ).toEqual(["app", "lookup"]);
+    const codes = device.find((entry) => entry.id === "device-code");
     expect(
-        device
-            .find((entry) => entry.title === "Device code no longer usable")
-            ?.variants?.map((variant) => variant.screen),
-    ).toEqual(["device-error", "device-used"]);
-    expect(device.some((entry) => entry.title.includes("Invalid code"))).toBe(
-        true,
-    );
-    expect(
-        device.some((entry) => entry.title.includes("Verification failed")),
-    ).toBe(true);
+        codes?.variants?.flatMap((variant) =>
+            variant.params?.device_info ? [variant.params.device_info] : [],
+        ),
+    ).toEqual(["invalid", "expired", "used", "unavailable"]);
     expect(device.some((entry) => entry.screen === "oauth-signed-out")).toBe(
         false,
     );
@@ -952,7 +971,7 @@ it("retries a stored-key check without going through sign-in", () => {
 it("keeps account-detail failures on the return panel and retries account loading", () => {
     const cards = galleryCardsForFlow("app", "main");
     expect(cards[0].variants).toBeUndefined();
-    expect(cards.at(-1)?.title).toBe("App · Return to app");
+    expect(cards.at(-1)?.title).toBe("App · Connection status");
     const connected = {
         ...startJourney(),
         node: "app-connected",
@@ -1062,7 +1081,7 @@ it("keeps app lookup reviewable inside its screen and explicit as a map check", 
         ),
     );
     expect(pending?.screen).toBe("device-signed-out");
-    expect(pending?.title).toBe("Sign in to Pollinations · Checking account");
+    expect(pending?.title).toBe("Sign in to Pollinations");
 });
 
 it("uses one external GitHub handoff without simulating provider-internal steps", () => {

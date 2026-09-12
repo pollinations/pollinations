@@ -10,6 +10,7 @@ import type {
     authorizeFailures,
     modelCatalogStates,
 } from "./pollen-connect-canvas-data";
+import { type DeviceEntry, getDeviceFlow } from "./pollen-connect-device";
 import {
     type FlowEdge,
     flowEdges,
@@ -25,7 +26,7 @@ export const entrances = [
 ] as const;
 export type JourneyEntrance = (typeof entrances)[number]["id"];
 export type JourneyWorld = JourneyEntrance | "topup";
-export type JourneySection = "main" | "topup";
+export type JourneySection = "main" | "topup" | "link";
 export type JourneySelection = {
     world: JourneyEntrance;
     section: JourneySection;
@@ -33,6 +34,9 @@ export type JourneySelection = {
 };
 export type JourneyLocation = { world: JourneyWorld; node: string };
 export type JourneySettings = {
+    deviceCodeResult: "ready" | "invalid" | "expired" | "used" | "unavailable";
+    deviceRequestResult: JourneySettings["deviceCodeResult"] | "app" | "lookup";
+    deviceSubmitResult: "ready" | "key" | "approve" | "deny" | "session";
     githubSignedIn: boolean;
     githubApproved: boolean;
     adminAccess: boolean;
@@ -49,6 +53,9 @@ export type JourneySettings = {
     loginResult: "ready" | "start" | keyof typeof loginErrors;
 };
 export const defaultJourneySettings: JourneySettings = {
+    deviceCodeResult: "ready",
+    deviceRequestResult: "ready",
+    deviceSubmitResult: "ready",
     githubSignedIn: true,
     githubApproved: true,
     adminAccess: true,
@@ -65,6 +72,9 @@ export const defaultJourneySettings: JourneySettings = {
     loginResult: "ready",
 };
 export type JourneyState = {
+    deviceEntry: DeviceEntry;
+    deviceConsentRoute: boolean;
+    deviceCode: string;
     node: string;
     world: JourneyWorld;
     paid: number;
@@ -116,6 +126,9 @@ export const situations = [
 
 export function startJourney(world: JourneyWorld = "app"): JourneyState {
     return {
+        deviceEntry: "main",
+        deviceConsentRoute: false,
+        deviceCode: "",
         node:
             world === "topup"
                 ? "app-connected"
@@ -152,7 +165,13 @@ export function startSelectedJourney(
             node: "enter-connected",
             signedIn: true,
         };
-    return startJourney(selection.world);
+    return {
+        ...startJourney(selection.world),
+        deviceEntry:
+            selection.world === "device" && selection.section === "link"
+                ? "link"
+                : "main",
+    };
 }
 
 /** Restore navigation without rolling back the shared account session or wallet. */
@@ -278,7 +297,23 @@ export function journeyOptions(
     state: JourneyState,
     settings?: JourneySettings,
 ): FlowEdge[] {
-    return (state.world === "app" ? appLoginEdges : flowEdges)
+    const edges =
+        state.world === "app"
+            ? appLoginEdges
+            : state.world === "device"
+              ? getDeviceFlow(state.deviceEntry).edges
+              : flowEdges;
+    if (state.world === "device")
+        return edges.filter(
+            (edge) =>
+                edge.from === state.node &&
+                (edge.from !== "login-failed" ||
+                    edge.to ===
+                        (state.deviceConsentRoute
+                            ? "device-signing-in"
+                            : "device-session")),
+        );
+    return edges
         .map((edge) =>
             edge.from === "login-failed" && state.world !== "app"
                 ? { ...edge, to: loginRetryNode(state.world) }
@@ -312,11 +347,9 @@ export function journeyOptions(
             if (state.node === "cancelled")
                 return (
                     edge.to ===
-                    (state.world === "device"
-                        ? "device-result"
-                        : state.world === "app" && state.method === "oauth"
-                          ? "app-callback-error"
-                          : "app-connect")
+                    (state.world === "app" && state.method === "oauth"
+                        ? "app-callback-error"
+                        : "app-connect")
                 );
             if (
                 state.world === "app" &&
@@ -335,11 +368,6 @@ export function journeyOptions(
                     (state.scenario === "key-check"
                         ? "app-callback"
                         : "loading")
-                );
-            if (state.node === "device-result")
-                return (
-                    edge.to ===
-                    (state.denied ? "device-stopped" : "device-done")
                 );
             return true;
         })
@@ -478,10 +506,6 @@ export function journeyStep(state: JourneyState, edge: FlowEdge): JourneyState {
         next.node = next.signedIn ? "enter-connected" : "enter-signed-out";
     }
     if (edge.from === "session") next.signedIn = edge.to === "resume";
-    if (edge.from === "consent" && edge.to === "device-result") {
-        next.connected = true;
-        next.denied = false;
-    }
     if (
         edge.from === "app-callback" &&
         edge.to === "app-callback-error" &&
@@ -536,8 +560,6 @@ export function journeyStep(state: JourneyState, edge: FlowEdge): JourneyState {
                 : "";
         next.notice = edge.label;
     }
-    if (edge.from === "code-valid" && edge.to === "device-code")
-        next.scenario = "device-invalid";
     next = resolve(next);
     if (next.node === "app-connected") next.connected = true;
     return next;
@@ -580,6 +602,46 @@ export function journeyAdvance(
             throw new Error("Missing Apps Login callback error route");
         return journeyStep(state, failure);
     }
+    if (state.world === "device") {
+        let next = journeyStep(state, edge);
+        if (next === state) return state;
+        // Leaving for GitHub remounts Authorize on return. Only the request
+        // route survives that round trip, not the unsaved consent choices.
+        if (edge.to === "github-handoff") next.consent = null;
+        if (edge.from === "device-start")
+            next = {
+                ...next,
+                connected: false,
+                denied: false,
+                consent: null,
+                deviceConsentRoute: false,
+                deviceCode:
+                    edge.label === "Open link with code" ? "ABCDEFGH" : "",
+            };
+        if (edge.from === "github-handoff" && edge.to === "device-session") {
+            if (
+                settings.loginResult !== "ready" &&
+                settings.loginResult !== "start"
+            )
+                return {
+                    ...next,
+                    signedIn: false,
+                    node: loginErrors[settings.loginResult].id,
+                };
+            next.signedIn = true;
+        }
+        if (edge.to === "device-checking") next.deviceConsentRoute = true;
+        if (edge.to === "device-code") {
+            next.deviceConsentRoute = false;
+            next.deviceCode = "";
+            next.consent = null;
+        }
+        if (edge.to === "device-denying") next.denied = true;
+        if (edge.to === "device-approving") next.denied = false;
+        if (edge.to === "device-submit-session") next.signedIn = false;
+        if (edge.to === "device-done") next.connected = true;
+        return next;
+    }
     let next = journeyStep(state, edge);
     if (state.world === "app") {
         if (next.node !== "cancelled") return next;
@@ -616,13 +678,11 @@ export function journeyAdvance(
                           : "error"
                       : "resume",
             "request-valid": settings.errors ? "blocked" : "consent",
-            "code-valid": settings.errors ? "device-code" : "request-valid",
             admin:
                 settings.adminAccess && !settings.errors
                     ? "dashboard-connected"
                     : "dashboard-denied",
-            cancelled:
-                next.world === "device" ? "device-result" : "app-connect",
+            cancelled: "app-connect",
         }[next.node];
         if (!destination) return next;
         const route = journeyOptions(next).find(

@@ -134,6 +134,34 @@ describe("computer MCP worker", () => {
         await bob.close();
     });
 
+    it("keeps sessions of one user isolated", async () => {
+        const client = await connect("user-sessions");
+        await call(client, "write", {
+            path: "/workspace/plan.md",
+            content: "thesis plan\n",
+            session: "thesis",
+        });
+        const elsewhere = await call(client, "ls", { path: "/workspace" });
+        expect(elsewhere.text).not.toContain("plan.md");
+        const same = await call(client, "read", {
+            path: "/workspace/plan.md",
+            session: "thesis",
+        });
+        expect(same.text).toContain("thesis plan");
+        const readme = await call(client, "read", {
+            path: "/workspace/README.md",
+            session: "thesis",
+        });
+        expect(readme.isError).toBe(false);
+        await expect(
+            client.callTool({
+                name: "ls",
+                arguments: { path: "/workspace", session: "../other" },
+            }),
+        ).rejects.toThrow(/Invalid session name/);
+        await client.close();
+    });
+
     it("runs bash against the persistent filesystem", async () => {
         const client = await connect("user-shell");
         await call(client, "write", {

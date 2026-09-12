@@ -13,8 +13,11 @@ grep, sed, awk, jq, tar and git; no Node or Python.
 
 ## Tools
 
-`read`, `write`, `edit`, `ls`, `find`, `grep`, `exec`. Every successful tool
-call is billed at one flat rate (`computer.tool_call.v1`, reported to gen as a
+`read`, `write`, `edit`, `ls`, `find`, `grep`, `exec`. Every tool takes an
+optional `session` slug (`^[a-z0-9][a-z0-9._-]{0,63}$`); each session is a
+separate Durable Object, so sessions of one user never see each other's files
+and run in parallel. Without it the agent is in the `default` session. There
+is no session listing. Every successful tool call is billed at one flat rate (`computer.tool_call.v1`, reported to gen as a
 usage receipt); discovery requests and storage are free. Memory is a convention,
 not a tool: a `/workspace/README.md` seeded on first use tells the agent to keep
 current facts in `memory/facts.md` and a dated append-only journal in
@@ -25,7 +28,8 @@ current facts in `memory/facts.md` and a dated append-only journal in
 The Worker is private (`workers_dev: false`, no routes). Gen's
 `/mcp/computer` route authenticates the caller, then calls this Worker through
 the `COMPUTER_MCP` service binding with the `x-pollinations-user-id` header
-set. That header selects the Durable Object, so a missing header is a 401 here.
+set. That header plus the `session` argument selects the Durable Object
+(`<userId>/<session>`), so a missing header is a 401 here.
 The registry entry lives in `shared/registry/mcp.ts`.
 
 ## Local

@@ -15,7 +15,11 @@ import {
     COMPUTER_TOOL_CALL_PRICE,
     MCP_USER_ID_HEADER,
 } from "../../../shared/registry/mcp.ts";
-import { createComputerMcpServer } from "./server.ts";
+import {
+    createComputerMcpServer,
+    DEFAULT_SESSION,
+    SESSION_NAME,
+} from "./server.ts";
 
 const TOOL_CALL_RATE = "computer.tool_call.v1";
 
@@ -28,7 +32,9 @@ const README_PATH = "/workspace/README.md";
 const README = `# Your computer
 
 This is your private, persistent computer. Everything under /workspace
-survives between runs. Nothing outside /workspace persists.
+survives between runs. Nothing outside /workspace persists. Every tool
+takes an optional \`session\` name; each session is a separate computer
+with its own files. Without it you are in the default session.
 
 ## Memory convention
 
@@ -97,8 +103,9 @@ export class Computer extends withWorkspace(
 }
 
 type JsonRpcPayload = {
+    id?: string | number | null;
     method?: string;
-    params?: { name?: string };
+    params?: { name?: string; arguments?: { session?: unknown } };
 };
 
 async function readJsonRpc(request: Request): Promise<JsonRpcPayload> {
@@ -143,7 +150,23 @@ export default {
                 { status: 401 },
             );
         }
-        const stub = env.COMPUTER.get(env.COMPUTER.idFromName(userId));
+        const payload = await readJsonRpc(request);
+        const session = payload.params?.arguments?.session ?? DEFAULT_SESSION;
+        if (typeof session !== "string" || !SESSION_NAME.test(session)) {
+            return Response.json({
+                jsonrpc: "2.0",
+                id: payload.id ?? null,
+                error: {
+                    code: -32602,
+                    message: `Invalid session name; use ${SESSION_NAME}`,
+                },
+            });
+        }
+        // One Durable Object per user and session: sessions never see each
+        // other's files and run in parallel.
+        const stub = env.COMPUTER.get(
+            env.COMPUTER.idFromName(`${userId}/${session}`),
+        );
         return stub.fetch(request);
     },
 } satisfies ExportedHandler<Env>;

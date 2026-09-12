@@ -2,12 +2,27 @@ import type { WorkspaceClient } from "@cloudflare/computer";
 import { createAITools } from "@cloudflare/computer/tools";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Tool } from "ai";
-import type { ZodRawShape } from "zod";
+import { type ZodObject, z } from "zod";
 
 const SERVER_INSTRUCTIONS =
     "A private, persistent computer. Files under /workspace survive between " +
     "runs. Read /workspace/README.md first; it explains the memory layout. " +
+    "Every tool takes an optional `session` name; each session is a separate " +
+    "computer with its own files. Omit it to use the default one. " +
     "The shell has no network access and cannot run Node, Python, or npm.";
+
+// Session names become part of the Durable Object key; keep them short slugs.
+export const SESSION_NAME = /^[a-z0-9][a-z0-9._-]{0,63}$/;
+export const DEFAULT_SESSION = "default";
+
+const SESSION_ARG = z
+    .string()
+    .regex(SESSION_NAME)
+    .optional()
+    .describe(
+        "Session to run in. Each session is an isolated computer; " +
+            "omit for the default session.",
+    );
 
 const WORKER_SHELL_DESCRIPTION =
     "bash (just-bash) in an isolated Worker. Coreutils, grep, sed, awk, jq, " +
@@ -50,9 +65,11 @@ function registerComputerTool(server: McpServer, name: string, tool: Tool) {
                 typeof tool.description === "string"
                     ? tool.description
                     : undefined,
-            inputSchema: tool.inputSchema as unknown as ZodRawShape,
+            inputSchema: (tool.inputSchema as ZodObject).extend({
+                session: SESSION_ARG,
+            }),
         },
-        async (args, context) => {
+        async ({ session: _session, ...args }, context) => {
             try {
                 const execution = await execute(args, {
                     toolCallId: `mcp:${name}`,

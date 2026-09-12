@@ -129,7 +129,9 @@ while idle. Tools: `read`, `write`, `edit`, `ls`, `find`, `grep`, and `exec`.
 The shell has no network access and cannot run Node or Python; coreutils,
 `grep`, `sed`, `awk`, `jq`, `tar`, and `git` are available. A `/workspace/README.md` is created on first use and
 describes a simple memory layout (`memory/facts.md` plus a dated
-`memory/log/`). Every tool call costs the same flat rate; see the catalog.
+`memory/log/`). Every tool accepts an optional `session` slug; each session is
+an isolated computer with its own files, and omitting it selects the `default`
+session. Every tool call costs the same flat rate; see the catalog.
 
 ### Billing and permissions
 

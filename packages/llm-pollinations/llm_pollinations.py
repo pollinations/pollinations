@@ -117,7 +117,7 @@ def get_pollinations_models(skip_cache: bool = False) -> list:
 
     Results are persisted in a user-level key-value file under a hash of the
     API key, so catalogs for different keys never leak into one another. A
-    stale value is served when the network fails.
+    stale value is served when the network fails unless skip_cache is requested.
     """
     key = llm.get_key("", KEY_ALIAS, KEY_ENV_VAR)
     if not key:
@@ -151,13 +151,13 @@ def get_pollinations_models(skip_cache: bool = False) -> list:
             # A read-only user directory should not prevent a live response.
             pass
         return payload["data"]
-    except Exception:
-        if cached is not None:
+    except Exception as exc:
+        if cached is not None and not skip_cache:
             return cached
         raise DownloadError(
             "Failed to download the Pollinations model catalog and no cached "
             "value is available"
-        )
+        ) from exc
 
 
 def supports_vision(model: dict) -> bool:
@@ -180,6 +180,8 @@ def supports_reasoning(model: dict) -> bool:
 
 
 def is_compatible_text_model(model: dict) -> bool:
+    if not isinstance(model, dict):
+        return False
     if not isinstance(model.get("id"), str):
         return False
     output_modalities = model.get("output_modalities")

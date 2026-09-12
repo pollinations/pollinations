@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextvars
 from typing import Optional
 
-from pydantic import Field
+from pydantic import Field, PositiveFloat, PositiveInt
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _api_key_override: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
@@ -24,27 +24,28 @@ class Settings(BaseSettings):
     openai_base_url: str = "https://gen.pollinations.ai"
     openai_api_key: str = ""
     default_tier: str = Field("balanced", validation_alias="POLLI_TIER")
-    max_concurrency: int = Field(4, validation_alias="POLLI_MAX_CONCURRENCY")
+    max_concurrency: PositiveInt = Field(4, validation_alias="POLLI_MAX_CONCURRENCY")
     temp_dir: str = Field("tmp", validation_alias="POLLI_TEMP_DIR")
-    brain_model: str = Field("glm", validation_alias="POLLI_BRAIN_MODEL")
+    brain_model: str = Field("z-ai/glm-5.3-flash", validation_alias="POLLI_BRAIN_MODEL")
     # Safety backstop only — loop detection injects corrective guidance long
     # before this; the cap just prevents a truly runaway loop from burning quota.
-    max_iters: int = Field(100, validation_alias="POLLI_MAX_ITERS")
+    max_iters: PositiveInt = Field(100, validation_alias="POLLI_MAX_ITERS")
     default_voice: str = Field("nova", validation_alias="POLLI_DEFAULT_VOICE")
     public_base_url: str = Field("", validation_alias="POLLI_PUBLIC_BASE_URL")
     paid: bool = Field(True, validation_alias="POLLI_PAID")
-    sse_keepalive_seconds: float = Field(
+    sse_keepalive_seconds: PositiveFloat = Field(
         15.0, validation_alias="POLLI_SSE_KEEPALIVE_SECONDS"
     )
-    brain_timeout_seconds: float = Field(
+    brain_timeout_seconds: PositiveFloat = Field(
         180.0, validation_alias="POLLI_BRAIN_TIMEOUT_SECONDS"
     )
     # Local/dev convenience only. When false (the default) a request without a
     # per-request credential fails instead of silently spending the operator's
     # own key — which for a hosted deployment is the whole point.
-    allow_operator_key: bool = Field(
-        False, validation_alias="POLLI_ALLOW_OPERATOR_KEY"
-    )
+    allow_operator_key: bool = Field(False, validation_alias="POLLI_ALLOW_OPERATOR_KEY")
+    # Private outbound handlers configured only on the hosted agent container.
+    shell_endpoint: str = Field("", validation_alias="POLLI_SHELL_ENDPOINT")
+    catalog_endpoint: str = Field("", validation_alias="POLLI_CATALOG_ENDPOINT")
 
 
 settings = Settings()

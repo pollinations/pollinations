@@ -3,15 +3,27 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-from typing import Any
+from contextvars import ContextVar, Token
+from typing import Any, cast
 
 import httpx
 
 from floret.config import settings
+from floret.model_policy import (
+    PolicySnapshot,
+    SelectionRequest,
+    parse_policy_snapshot,
+    select_model,
+)
 
 logger = logging.getLogger(__name__)
 
 _registry_cache: dict[str, Any] | None = None
+_policy_snapshot: PolicySnapshot | None = None
+_catalog_revision: str | None = None
+_request_eligible_models: ContextVar[frozenset[str] | None] = ContextVar(
+    "request_eligible_models", default=None
+)
 _lock = asyncio.Lock()
 _METADATA_KEYS = {
     "id",
@@ -25,7 +37,18 @@ _METADATA_KEYS = {
     "output_modalities",
     "supported_endpoints",
     "context_length",
+    "category",
+    "hidden",
+    "alpha",
+    "fallback",
+    "is_fallback",
+    "fallbackOnly",
+    "fallback_only",
+    "status",
+    "stage",
 }
+
+_DEFAULT_CHAT_AUDIO_MODELS = {"openai-audio", "openai-audio-large"}
 
 _END_MAP = {
     "text": "/v1/chat/completions",
@@ -74,7 +97,12 @@ def _tier_score(mid: str, meta: dict[str, Any], tier: str) -> float:
     if owned == "pollinations-ai":
         score += 5.0
     caps = meta.get("capabilities") or {}
-    cap_count = sum(1 for v in caps.values() if v)
+    if isinstance(caps, dict):
+        cap_count = sum(1 for value in caps.values() if value)
+    elif isinstance(caps, list):
+        cap_count = len(caps)
+    else:
+        cap_count = 0
     score += cap_count * 2.0
     ctx = meta.get("context_length")
     if isinstance(ctx, int) and ctx > 0:
@@ -268,7 +296,16 @@ def _infer_meta(item: dict[str, Any]) -> dict[str, Any]:
     return {
         "id": mid,
         "aliases": list(item.get("aliases") or []),
+        "category": category,
         "modalities": modalities,
+        "hidden": item.get("hidden", False),
+        "alpha": item.get("alpha", False),
+        "fallback": item.get("fallback", False),
+        "is_fallback": item.get("is_fallback", False),
+        "fallbackOnly": item.get("fallbackOnly", False),
+        "fallback_only": item.get("fallback_only", False),
+        "status": item.get("status"),
+        "stage": item.get("stage"),
         "pricing": pricing,
         "capabilities": caps,
         "params": params,
@@ -322,6 +359,43 @@ async def fetch_model_catalog() -> dict[str, dict[str, Any]]:
     return _adapt_rich_catalog(await _fetch_models("/models"))
 
 
+def install_global_snapshot(payload: dict[str, Any]) -> None:
+    """Install a trusted, immutable global catalog/review snapshot."""
+    global _catalog_revision, _policy_snapshot, _registry_cache
+    version = payload.get("version")
+    raw_catalog = payload.get("catalog")
+    raw_review = payload.get("review", {})
+    if not isinstance(version, str) or not version:
+        raise ValueError("catalog snapshot version is required")
+    rich = _adapt_rich_catalog(raw_catalog)
+    if not rich:
+        raise ValueError("catalog snapshot must contain models")
+    normalized_items = [{"id": model_id, **item} for model_id, item in rich.items()]
+    policy_value = dict(raw_review) if isinstance(raw_review, dict) else {}
+    policy_value.setdefault("revision", f"review:{version}")
+    if "catalog_revision" not in policy_value and "catalogRevision" not in policy_value:
+        policy_value["catalog_revision"] = version
+    policy_value.setdefault("incumbents", {})
+    policy_value.setdefault("recommendations", [])
+    normalized = _normalize({"data": normalized_items})
+    normalized["catalog_revision"] = version
+    review = parse_policy_snapshot(policy_value)
+    _registry_cache = normalized
+    _catalog_revision = version
+    _policy_snapshot = review
+
+
+def set_request_catalog(
+    catalog: dict[str, dict[str, Any]],
+) -> Token[frozenset[str] | None]:
+    """Bind caller-visible model IDs without mutating the global catalog."""
+    return _request_eligible_models.set(frozenset(catalog))
+
+
+def reset_request_catalog(token: Token[frozenset[str] | None]) -> None:
+    _request_eligible_models.reset(token)
+
+
 def find_model_meta(
     catalog: dict[str, dict[str, Any]], model_id: str
 ) -> dict[str, Any] | None:
@@ -369,11 +443,23 @@ async def get_registry() -> dict[str, Any]:
 
 def get_model_catalog() -> dict[str, dict[str, Any]]:
     reg = _registry_cache or {}
-    return reg.get("models", {})
+    models = reg.get("models")
+    if not isinstance(models, dict):
+        return {}
+    catalog = cast(dict[str, dict[str, Any]], models)
+    eligible = _request_eligible_models.get()
+    if eligible is None:
+        return catalog
+    return {
+        model_id: meta for model_id, meta in catalog.items() if model_id in eligible
+    }
 
 
 def get_modalities_for_model(model_id: str) -> list[str]:
-    return get_model_meta(model_id).get("modalities", [])
+    modalities = get_model_meta(model_id).get("modalities")
+    if not isinstance(modalities, list):
+        return []
+    return [value for value in modalities if isinstance(value, str)]
 
 
 def get_model_params(model_id: str) -> dict[str, Any]:
@@ -382,6 +468,38 @@ def get_model_params(model_id: str) -> dict[str, Any]:
 
 def get_model_meta(model_id: str) -> dict[str, Any]:
     return find_model_meta(get_model_catalog(), model_id) or {}
+
+
+def get_audio_endpoint(model_id: str, meta: dict[str, Any] | None = None) -> str | None:
+    model_meta = meta if meta is not None else get_model_meta(model_id)
+    if not model_meta and model_id in _DEFAULT_CHAT_AUDIO_MODELS:
+        return "/v1/chat/completions"
+    endpoints = model_meta.get("supported_endpoints") or []
+    if "/v1/chat/completions" in endpoints:
+        return "/v1/chat/completions"
+    if "/v1/audio/speech" in endpoints:
+        return "/v1/audio/speech"
+    return None
+
+
+def default_model(modality: str, prompt: str, local_default: str) -> str:
+    selected = pick_model(modality, settings.default_tier, prompt, paid=settings.paid)
+    if selected:
+        return selected
+    if _policy_snapshot is not None:
+        raise ValueError(f"No eligible {modality} model in the current global catalog")
+    return local_default
+
+
+def auto_selection_summary() -> str | None:
+    if _policy_snapshot is None:
+        return None
+    choices = []
+    for modality in ("text", "image", "video", "audio", "transcript"):
+        model = pick_model(modality, paid=settings.paid)
+        if model:
+            choices.append(f"  - {modality}: {model}")
+    return "\n".join(choices)
 
 
 def get_voices() -> list[str]:
@@ -439,7 +557,25 @@ _IMAGE_TEXT_PRIORITY: list[str] = [
 
 
 async def warm_registry() -> None:
-    if _registry_cache is None:
+    if settings.catalog_endpoint:
+        async with _lock:
+            try:
+                async with httpx.AsyncClient(
+                    timeout=15, follow_redirects=False
+                ) as client:
+                    response = await client.get(settings.catalog_endpoint)
+                    response.raise_for_status()
+                    payload = response.json()
+                if not isinstance(payload, dict):
+                    raise ValueError("Global model catalog returned invalid data")
+                install_global_snapshot(payload)
+            except Exception:
+                if _policy_snapshot is None:
+                    raise
+                logger.warning(
+                    "Global catalog refresh failed; retaining last valid snapshot"
+                )
+    elif _registry_cache is None:
         await get_registry()
 
 
@@ -482,12 +618,40 @@ def pick_model(
         if not pool:
             return ""
 
-    # Image-specific: prompt-aware priority for text/infographic/diagram
+    eligible_ids = _request_eligible_models.get()
+    if eligible_ids is not None:
+        pool = {mid: meta for mid, meta in pool.items() if mid in eligible_ids}
+    if not pool:
+        return ""
+
+    policy = _policy_snapshot
+    revision = _catalog_revision
+    if (
+        policy is not None
+        and revision is not None
+        and (_registry_cache or {}).get("catalog_revision") == revision
+    ):
+        selected = select_model(
+            pool,
+            policy,
+            SelectionRequest(
+                task_family=f"{modality}.general",
+                modality=modality,
+                endpoint=endpoint,
+                eligible_model_ids=eligible_ids,
+                paid=paid,
+            ),
+            catalog_revision=revision,
+        )
+        return selected or ""
+
+    # Preserve local heuristics only when no trusted policy is installed.
     if modality == "image" and prompt and _prompt_needs_text_image(prompt):
         for model_id in _IMAGE_TEXT_PRIORITY:
             model = find_model_meta(pool, model_id)
-            if model is not None:
-                return model["id"]
+            resolved_id = model.get("id") if model is not None else None
+            if isinstance(resolved_id, str):
+                return resolved_id
 
     scored = []
     for mid, meta in pool.items():

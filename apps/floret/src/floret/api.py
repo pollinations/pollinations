@@ -9,9 +9,11 @@ import logging
 import os
 import time
 import uuid
+from collections.abc import AsyncGenerator, AsyncIterator
 from pathlib import Path
-from typing import Any, AsyncIterator
+from typing import Any
 
+import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
@@ -31,8 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 @asynccontextlib.asynccontextmanager
-async def _lifespan(_: FastAPI):
-    # pick_model returns "" if the registry cache is cold inside a running loop.
+async def _lifespan(_: FastAPI) -> AsyncGenerator[None]:
     from floret.registry import warm_registry
 
     try:
@@ -63,6 +64,7 @@ class ChatRequest(BaseModel):
     model: str
     messages: list[ChatMessage]
     stream: bool = False
+    stream_options: dict[str, Any] | None = None
     routing: RoutingInput | None = None
 
 
@@ -169,6 +171,15 @@ async def _build_content(
     return markdown, content_parts
 
 
+def _include_stream_usage(stream_options: dict[str, Any] | None) -> bool:
+    """Return whether an OpenAI-compatible terminal usage chunk was requested."""
+    return bool(stream_options and stream_options.get("include_usage") is True)
+
+
+def _zero_usage() -> dict[str, int]:
+    return {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+
+
 def _to_openai_messages(messages: list[ChatMessage]) -> list[dict[str, Any]]:
     return [{"role": m.role, "content": m.content} for m in messages]
 
@@ -178,14 +189,23 @@ def _sse_frame(
     model: str,
     delta: dict[str, Any],
     finish_reason: str | None = None,
+    usage: dict[str, int] | None = None,
+    include_usage: bool = False,
+    choices: list[dict[str, Any]] | None = None,
 ) -> str:
     payload = {
         "id": chunk_id,
         "object": "chat.completion.chunk",
         "created": int(time.time()),
         "model": model,
-        "choices": [{"index": 0, "delta": delta, "finish_reason": finish_reason}],
+        "choices": (
+            choices
+            if choices is not None
+            else [{"index": 0, "delta": delta, "finish_reason": finish_reason}]
+        ),
     }
+    if include_usage:
+        payload["usage"] = usage
     return f"data: {json.dumps(payload)}\n\n"
 
 
@@ -197,6 +217,7 @@ async def _sse_events(
     model: str,
     api_key: str | None,
     routing: RoutingPreferences,
+    include_usage: bool,
 ) -> AsyncIterator[str]:
     """Translate agent events into OpenAI chat.completion.chunk SSE frames.
 
@@ -223,7 +244,12 @@ async def _sse_events(
 
     pump = asyncio.create_task(_pump())
     try:
-        yield _sse_frame(chunk_id, model, {"role": "assistant", "content": ""})
+        yield _sse_frame(
+            chunk_id,
+            model,
+            {"role": "assistant", "content": ""},
+            include_usage=include_usage,
+        )
         while True:
             try:
                 item = await asyncio.wait_for(
@@ -253,21 +279,50 @@ async def _sse_events(
                             }
                         ]
                     },
+                    include_usage=include_usage,
                 )
             elif item["type"] == "nudge":
                 reason = str(item["reason"]).replace("\r", " ").replace("\n", " ")
                 yield f": progress {reason}\n\n"
             elif item["type"] == "final":
                 markdown, _ = await _build_content(item["text"], item["artifacts"])
-                yield _sse_frame(chunk_id, model, {"content": markdown})
-        yield _sse_frame(chunk_id, model, {}, finish_reason="stop")
-    except Exception as exc:
+                yield _sse_frame(
+                    chunk_id,
+                    model,
+                    {"content": markdown},
+                    include_usage=include_usage,
+                )
+        yield _sse_frame(
+            chunk_id,
+            model,
+            {},
+            finish_reason="stop",
+            include_usage=include_usage,
+        )
+        if include_usage:
+            yield _sse_frame(
+                chunk_id,
+                model,
+                {},
+                usage=_zero_usage(),
+                include_usage=True,
+                choices=[],
+            )
+    except Exception:
         logger.exception("streaming chat_completions failed")
         yield _sse_frame(
-            chunk_id, model, {"content": f"\n\n[error: {exc}]"}, finish_reason="stop"
+            chunk_id,
+            model,
+            {"content": "\n\n[error: Generation failed.]"},
+            finish_reason="stop",
+            include_usage=include_usage,
         )
     finally:
         pump.cancel()
+        try:
+            await pump
+        except asyncio.CancelledError:
+            pass
         _api_key_override.reset(token)
     yield "data: [DONE]\n\n"
 
@@ -297,6 +352,16 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
             detail="Missing agent run token.",
         )
 
+    if settings.catalog_endpoint:
+        from floret.registry import warm_registry
+
+        try:
+            await warm_registry()
+        except (httpx.HTTPError, ValueError):
+            raise HTTPException(
+                status_code=503, detail="Model catalog unavailable."
+            ) from None
+
     token = _api_key_override.set(api_key or None)
     try:
         routing = await validate_routing(request.routing)
@@ -317,6 +382,7 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
                 request.model,
                 api_key or None,
                 routing,
+                _include_stream_usage(request.stream_options),
             ),
             media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
@@ -327,9 +393,6 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
         markdown, content_parts = await _build_content(
             result["text"], result["artifacts"]
         )
-        content_block: Any = (
-            content_parts[0]["text"] if len(content_parts) == 1 else content_parts
-        )
         return {
             "id": f"chatcmpl-polli-{uuid.uuid4().hex[:12]}",
             "object": "chat.completion",
@@ -338,7 +401,11 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
             "choices": [
                 {
                     "index": 0,
-                    "message": {"role": "assistant", "content": content_block},
+                    "message": {
+                        "role": "assistant",
+                        "content": markdown,
+                        "content_blocks": content_parts,
+                    },
                     "finish_reason": "stop",
                 }
             ],
@@ -346,9 +413,9 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
         }
     except HTTPException:
         raise
-    except Exception as exc:
+    except Exception:
         logger.exception("chat_completions failed")
-        raise HTTPException(status_code=500, detail=str(exc))
+        raise HTTPException(status_code=500, detail="Generation failed.") from None
     finally:
         _api_key_override.reset(token)
 

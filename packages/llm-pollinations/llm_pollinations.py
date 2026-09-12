@@ -182,11 +182,19 @@ def supports_reasoning(model: dict) -> bool:
 def is_compatible_text_model(model: dict) -> bool:
     if not isinstance(model, dict):
         return False
-    if not isinstance(model.get("id"), str):
+    if not isinstance(model.get("id"), str) or not model["id"]:
         return False
+
+    supported_endpoints = model.get("supported_endpoints")
+    if supported_endpoints is not None:
+        if not isinstance(supported_endpoints, list):
+            return False
+        if "/v1/chat/completions" not in supported_endpoints:
+            return False
+
     output_modalities = model.get("output_modalities")
     if output_modalities is not None:
-        return "text" in output_modalities
+        return isinstance(output_modalities, list) and "text" in output_modalities
     return model.get("category") == "text"
 
 
@@ -203,12 +211,17 @@ def register_models(register):
         # Discovery is best-effort: never break \x60llm\x60 startup when the
         # catalog is unreachable and uncached.
         return
+    seen_ids = set()
     for model in models:
         if not is_compatible_text_model(model):
             continue
+        model_id = model["id"]
+        if model_id in seen_ids:
+            continue
+        seen_ids.add(model_id)
         kwargs = dict(
-            model_id=f"pollinations/{model['id']}",
-            model_name=model["id"],
+            model_id=f"pollinations/{model_id}",
+            model_name=model_id,
             api_base=API_BASE,
             vision=supports_vision(model),
             supports_tools=supports_tools(model),

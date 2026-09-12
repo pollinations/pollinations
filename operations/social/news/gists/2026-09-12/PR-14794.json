@@ -1,0 +1,33 @@
+{
+  "pr_number": 14794,
+  "title": "Revert \"feat: let callers list models as their own fallback chain\"",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14794",
+  "merged_at": "2026-09-12T18:07:56Z",
+  "labels": [],
+  "pr_body_excerpt": "Reverts #14784. It was merged before it was meant to be; my mistake, I armed auto-merge on it without being asked.\n\n- Restores `main` to the state after #14792\n- Leaves both cache simplifications (#14790, #14792) in place\n- The feature returns unchanged as its own PR from `feat/model-fallback-list`\n\nNothing shipped: every deploy workflow triggers on `production`, not `main`.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_0161ggPVjwNMTu6oaevEScZw\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The fallback stayed parked",
+    "blurb": "A fallback-chain change took an early lap around main, then politely returned to its branch. The cache cleanups remain planted and growing.",
+    "summary": "Reverted the unshipped caller-defined model fallback-chain changes from #14784, restoring gen.pollinations.ai to the post-#14792 state while retaining the cache simplifications from #14790 and #14792.",
+    "impact": "Production behavior remains unchanged because deployments trigger from production rather than main; the fallback-list feature will return unchanged in its dedicated PR.",
+    "keywords": [
+      "model-fallbacks",
+      "revert",
+      "gen.pollinations.ai",
+      "cache",
+      "api-routing"
+    ],
+    "visual_concept": "Polli gently parks a small branching fallback-route sign beside a garden path marked for a future planting, while healthy cache-plants remain in their pots. The scene represents an intentionally deferred API feature rather than a removed capability.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny gardener hat as she carefully sets a branching \"FALLBACK\" sign beside a reserved garden bed; nearby, thriving code-plants in lime green (#ecf874) pots represent the cache improvements that remain. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: \"LATER\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-12/PR-14794.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny gardener hat as she carefully sets a branching \"FALLBACK\" sign beside a reserved garden bed; nearby, thriving code-plants in lime green (#ecf874) pots represent the cache improvements that remain. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: \"LATER\"."
+  },
+  "generated_at": "2026-09-12T18:09:05.237485+00:00"
+}

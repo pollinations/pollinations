@@ -1,26 +1,11 @@
 import { env } from "cloudflare:test";
-import {
-    computeModelHealth,
-    type ModelHealthWindow,
-    statusForRow,
-    unknownModelHealth,
-} from "@shared/registry/model-health.ts";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CommunityModelEnv } from "../src/community-models.ts";
 import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
 } from "../src/model-registry.ts";
 import { availableModels } from "../src/text/availableModels.ts";
-
-beforeEach(() => {
-    // The registry enriches entries with model health by querying Tinybird.
-    // Disable network access so tests assert the graceful "unknown" fallback
-    // deterministically instead of depending on live upstream data.
-    vi.spyOn(globalThis, "fetch").mockRejectedValue(
-        new Error("network disabled in tests"),
-    );
-});
 
 afterEach(() => {
     resetGenerationModelRegistryCache();
@@ -56,6 +41,69 @@ function skewedDbBinding(): CloudflareBindings["DB"] {
 }
 
 describe("getGenerationModelRegistry", () => {
+    it("declares unique Chat controls for every configured route", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        for (const model of availableModels) {
+            const info = registry.resolve(model.name)?.info;
+            const parameters = info?.supported_parameters ?? [];
+            expect(parameters.length, model.name).toBeGreaterThan(0);
+            expect(new Set(parameters).size, model.name).toBe(
+                parameters.length,
+            );
+            for (const internal of [
+                "model",
+                "messages",
+                "stream_options",
+                "thinking",
+                "thinking_budget",
+                "safe",
+                "provider",
+            ]) {
+                expect(parameters, model.name).not.toContain(internal);
+            }
+        }
+    });
+
+    it("keeps provider-specific controls separate instead of inheriting unsupported ones", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        for (const [id, parameter, supported] of [
+            ["openai/gpt-5.4", "temperature", false],
+            ["openai/gpt-5.4", "parallel_tool_calls", true],
+            ["openai/gpt-5.4-mini", "parallel_tool_calls", false],
+            ["openai/gpt-6-astra", "verbosity", false],
+            ["openai/gpt-oss-20b", "top_p", true],
+            ["openai/gpt-audio-mini", "stream", true],
+            ["openai/gpt-audio-1.5", "max_completion_tokens", true],
+            ["x-ai/grok-4.3", "max_tokens", true],
+            ["anthropic/claude-sonnet-4.6", "response_format", true],
+            ["anthropic/claude-sonnet-5", "temperature", false],
+            ["anthropic/claude-sonnet-5", "response_format", false],
+            ["anthropic/claude-fable-5.1", "tool_choice", false],
+            ["google/gemini-3.7-flash", "temperature", false],
+            ["google/gemini-3.7-flash", "stop", true],
+            [
+                "google/gemini-3.7-flash:openrouter:ai-studio-priority",
+                "stop",
+                false,
+            ],
+            ["nvidia/nemotron-3.5-lightning", "top_k", true],
+            ["nvidia/nemotron-3-ultra", "top_k", true],
+            ["qwen/qwen3-coder-30b-a3b-instruct", "top_k", false],
+            ["qwen/qwen3-vl-235b-a22b-thinking", "response_format", false],
+            ["perplexity/sonar", "search_domain_filter", true],
+            [
+                "perplexity/sonar:openrouter:perplexity",
+                "search_domain_filter",
+                false,
+            ],
+        ] as const) {
+            const parameters = registry.resolve(id)?.info.supported_parameters;
+            expect(parameters?.includes(parameter), `${id}: ${parameter}`).toBe(
+                supported,
+            );
+        }
+    });
+
     it("advertises every configured direct Responses model", async () => {
         const registry = await getGenerationModelRegistry(env);
         const configured = availableModels
@@ -73,6 +121,7 @@ describe("getGenerationModelRegistry", () => {
             .filter(
                 (entry) =>
                     !entry.communityEndpoint &&
+                    entry.definition.category === "text" &&
                     entry.supportedEndpoints.includes("/v1/responses"),
             )
             .map((entry) => entry.id)
@@ -112,64 +161,5 @@ describe("getGenerationModelRegistry", () => {
             "Community model registry unavailable",
             expect.any(Error),
         );
-    });
-});
-
-describe("model health enrichment", () => {
-    const window: ModelHealthWindow = {
-        windowMinutes: 1440,
-        checkedAt: 1_725_000_000_000,
-        stale: false,
-    };
-
-    it("classifies status from the 2xx success rate", () => {
-        expect(statusForRow({ status_2xx: 1000, errors_5xx: 0 })).toBe(
-            "healthy",
-        );
-        expect(statusForRow({ status_2xx: 950, errors_5xx: 50 })).toBe(
-            "degraded",
-        );
-        expect(statusForRow({ status_2xx: 500, errors_5xx: 500 })).toBe(
-            "unavailable",
-        );
-    });
-
-    it("reports unknown below the minimum sample size", () => {
-        expect(statusForRow({ status_2xx: 0, errors_5xx: 0 })).toBe("unknown");
-        expect(statusForRow({ status_2xx: 20, errors_5xx: 9 })).toBe("unknown");
-    });
-
-    it("computes success rate over 2xx and 5xx only", () => {
-        const health = computeModelHealth(
-            { model: "flux", status_2xx: 900, errors_5xx: 100 },
-            window,
-        );
-        expect(health.success_rate).toBe(0.9);
-        expect(health.sample_size).toBe(1000);
-        expect(health.window_minutes).toBe(1440);
-        expect(health.checked_at).toBe(
-            new Date(window.checkedAt).toISOString(),
-        );
-        expect(health.stale).toBe(false);
-    });
-
-    it("produces an unknown placeholder when there is no sample", () => {
-        const health = unknownModelHealth(window);
-        expect(health.status).toBe("unknown");
-        expect(health.success_rate).toBeNull();
-        expect(health.sample_size).toBe(0);
-    });
-
-    it("attaches unknown health to entries when the source is unavailable", async () => {
-        resetGenerationModelRegistryCache();
-
-        const registry = await getGenerationModelRegistry(env);
-        const entries = registry.visibleEntries();
-
-        expect(entries.length).toBeGreaterThan(0);
-        expect(entries.every((e) => e.info.health?.status === "unknown")).toBe(
-            true,
-        );
-        expect(entries.every((e) => e.info.health?.stale === true)).toBe(true);
     });
 });

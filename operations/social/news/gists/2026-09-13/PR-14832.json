@@ -1,0 +1,34 @@
+{
+  "pr_number": 14832,
+  "title": "fix: recover historical agent KPI from run tokens",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14832",
+  "merged_at": "2026-09-13T23:11:06Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces the Agent volume with observed top-level runs, keeping the runs/users switch and MCP unchanged.\n- Uses existing verified ag_ parent-request links; deduplicates request IDs and excludes nested runs and runs without recorded child calls.\n- Handles Sunday-to-Monday child calls; leaves weeks before August 24 unavailable and explains coverage in tooltips/CSV labels.\n- Passes 36 dashboard tests, the production build, and real Tinybird SQL fixtures covering duplicates, nesting, week boundaries and missing data. Live historical queries return counts for both requested weeks.\n- Main-only change. Rollout requires staging-first Tinybird deployment before the KPI production deployment; no datasource or secret changes.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The KPI found its roots",
+    "blurb": "The agent chart was counting the right kind of work in the wrong shape. It now follows verified parent requests, so the historical garden has fewer duplicate sprouts.",
+    "summary": "Reworked the weekly Agent KPI to count deduplicated observed top-level runs through verified ag_ parent-request links, excluding nested runs and runs without recorded child calls while preserving the runs/users switch and MCP metric.",
+    "impact": "The internal KPI dashboard now returns historical agent-run counts for requested weeks, correctly carrying Sunday-to-Monday child calls across week boundaries and clearly marking coverage before August 24 as unavailable.",
+    "keywords": [
+      "kpi",
+      "observability",
+      "agent-runs",
+      "Tinybird",
+      "MCP",
+      "analytics"
+    ],
+    "visual_concept": "A cozy observability garden where Polli traces verified parent-request roots from a top-level run into a tidy weekly chart; duplicate and nested sprouts are gently pruned, while a small calendar bridge carries a child-call flower from Sunday into Monday. A CRT monitor robot can display the corrected run count, with code-plants and a subtle unavailable section of the historical garden reinforcing data coverage.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny analyst glasses as she follows glowing root-like request links from one top-level code-plant into a neat weekly chart; a cute CRT monitor robot points at a Sunday-to-Monday calendar bridge while duplicate nested sprouts are neatly composted. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, pixel-font text: \"COUNTED ONCE\", with flowers and vines throughout; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-13/PR-14832.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny analyst glasses as she follows glowing root-like request links from one top-level code-plant into a neat weekly chart; a cute CRT monitor robot points at a Sunday-to-Monday calendar bridge while duplicate nested sprouts are neatly composted. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, pixel-font text: \"COUNTED ONCE\", with flowers and vines throughout; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-13T23:12:14.497689+00:00"
+}

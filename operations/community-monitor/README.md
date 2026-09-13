@@ -1,8 +1,8 @@
 # Community model monitor
 
-Headless coding agent that watches community text and image models (the
-`community/owner/model` endpoints registered via My Models), probes them, reads Tinybird
-health, and hides unreliable ones from model listings while keeping exact-ID
+Headless coding agent that watches community models (the
+`community/owner/model` endpoints registered via My Models), probes text/image models,
+reads Tinybird health for every category, and hides unreliable ones from model listings while keeping exact-ID
 calls available. Runs on the `monitoring-agents` EC2 box (ssh alias
 `community-monitor`, see `operations/infrastructure/gpu/GPU_INSTANCES.md`),
 not in this repo's CI. The Discord bots share that host.
@@ -11,7 +11,7 @@ not in this repo's CI. The Discord bots share that host.
 
 Committed (source of truth — edit here, then deploy):
 - `CYCLE.md` — the agent's full rulebook, re-read fresh every cycle.
-- `probe.mjs` — one low-load probe sweep across all community models (see
+- `probe.mjs` — one low-load probe sweep across community text/image models (see
   "Probe load" below).
 - `seven-day-health.mjs` — deterministic daily 7-day effective-success audit.
   Final request outcomes count successful fallback rescues; image-provider 4xx
@@ -19,7 +19,7 @@ Committed (source of truth — edit here, then deploy):
   or better in the freshest 24h/48h window with at least 20 requests are
   protected from a delayed hide after a fix or new fallback.
 - `community-monitor.service` + `loop.sh` — the deployed systemd path. Each
-  cycle gets a fresh Claude process and systemd starts the next one 60 minutes
+  cycle gets a fresh Claude process and systemd starts the next one 30 minutes
   after completion. Headless cycles cannot be remote-controlled; a separate
   persistent `claude --remote-control community-monitor` session runs alongside
   as a phone-accessible console.
@@ -38,7 +38,7 @@ Live-only on the box, never committed:
   Configure `mcp-discord` without `--config`; it inherits `DISCORD_TOKEN` from
   the service environment. Never place the token in MCP command-line arguments.
 - `state.json` — cycle-to-cycle memory (last-replied message ids, alert state,
-  and billing flags). Preserve it during deployments to retain cooldowns and
+  per-operation health/recovery checks, and billing flags). Preserve it during deployments to retain cooldowns and
   prevent duplicate posts.
 - `people_mapping.json` — GitHub↔Discord identity map the agent maintains
   for tagging owners correctly. Contains real Discord user IDs, so it stays
@@ -166,9 +166,9 @@ D1/wrangler access needed on the box):
 - Text and image results record `modelUsed` and `fallbackUsed` from the
   gateway's served-model header. A passing fallback is effective listing health,
   not proof the primary works. Missing headers leave attribution unknown.
-  Image failures include `upstreamStatus`, `errorCode`, and a short error
-  message without copying the raw upstream body. Upstream 4xx still need
-  input/content-policy attribution; the daily audit surfaces them separately
+  Text and image failures include `upstreamStatus`, `errorCode`, and a short error
+  message when available, without copying the raw upstream body. Upstream 4xx still need
+  caller/provider attribution; the daily audit surfaces image-provider 4xx separately
   in `needsDiagnosis` rather than silently dropping them or auto-hiding.
 - Actual spend is reconciled from each response's real `usage` tokens (not
   the pre-flight estimate) and written to `state.json`'s `spend` key.
@@ -176,7 +176,7 @@ D1/wrangler access needed on the box):
 Provider feedback stays request-driven: use public examples and aggregate
 metrics, reproduce the reported operation, and verify tool/caching claims
 with bounded tests. Never disclose private prompts or upstream URLs. Existing
-message limits, health thresholds, and cooldowns remain unchanged.
+message limits and cooldowns remain unchanged.
 
 ## Model/effort
 
@@ -200,20 +200,32 @@ monitor offline.
 
 ## Authority split
 
-The monitor may hide a listed community model through one of three paths:
+The monitor may hide a listed community model through these paths:
 
 - complete outage: 0% success across at least 5 attributable requests in the
   last 30 minutes, confirmed by a fresh provider-failing probe;
-- severe failure: below 50% across at least 10 requests in four hours,
+- poor short-term reliability: below 75% across at least 10 requests in four hours,
   confirmed by a fresh provider-failing probe in the same cycle;
-- rolling floor: below 70% final user-visible success across at least 20
+- repeated failures: two confirmed provider-failing probes on separate cycles
+  at least 30 minutes apart, for the same model and operation, even with little traffic;
+- rolling floor: below 75% final user-visible success across at least 20
   requests over seven days, unless fresh 24h/48h health vetoes the action.
+
+Provider credits/quota, invalid upstream credentials, and disabled hosting count
+as unavailability. Caller/probe-wallet balance, caller auth, invalid inputs,
+content-policy refusals, and unknown error origins do not confirm an outage.
+Marker-only mismatches do not justify hiding. For audio/video/embeddings, use the
+traffic-based gates with final, provider-attributable errors across at least two
+callers instead of new synthetic probes; insufficient evidence means no action.
 
 Successful fallback rescues count as successes. Hiding writes the
 `hidden_at`, `hidden_reason`, and `hidden_by` audit fields, removes the model
 from catalogs and fallback selection, and keeps exact-ID calls working. The
 monitor relists only its own hides after at least 90% success across ten
-post-hide requests in one hour plus a passing probe, or after a passing probe
-requested by the owner. Owners and maintainers retain full manual control.
+post-hide requests in one hour plus a passing same-operation probe, or two
+passing same-operation checks after hiding, on separate cycles at least 30
+minutes apart. Image recovery probes retain the four-hour routine cadence.
+Audio/video/embedding recovery uses the same 90% traffic gate across two callers.
+Owner requests use these gates too; owners and maintainers retain manual control.
 Discord posts are limited to actual hide and relist actions rather than advance
 warnings or routine recovery chatter.

@@ -19,7 +19,7 @@ if (!token) {
 
 const sql = `
 SELECT
-    resolved_model_requested AS model,
+    replaceRegexpOne(resolved_model_requested, '^community/', '') AS model,
     countIf(is_final) AS total_final,
     countIf(is_final AND response_status >= 200 AND response_status < 300) AS successes,
     countIf(is_final AND response_status >= 500) AS failures_5xx,
@@ -120,7 +120,7 @@ const activeCommunityModels = new Map(
                 model.community &&
                 (model.category === "text" || model.category === "image"),
         )
-        .map((model) => [model.name, model]),
+        .map((model) => [model.name.replace(/^community\//, ""), model]),
 );
 
 const healthPayload = await healthResponse.json();
@@ -166,7 +166,7 @@ const models = healthPayload.data
                   ? health48h
                   : null;
         return {
-            model: row.model,
+            model: model.name,
             category: model.category,
             totalFinalRequests: Number(row.total_final),
             eligibleRequests,

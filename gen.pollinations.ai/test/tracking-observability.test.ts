@@ -12,6 +12,7 @@ import {
     type CommunityEndpointRuntime,
     communityEndpointPrices,
     communityModelDefinition,
+    communityModelId,
     type ProxyCommunityEndpointRuntime,
 } from "@shared/community-endpoints.ts";
 import {
@@ -2516,7 +2517,8 @@ describe("tracking observability", () => {
             expect(body).not.toContain('"error"');
             expect(rows[0]).toMatchObject({
                 isBilledUsage: true,
-                modelUsed: model,
+                // A legacy request alias still attributes billing to the canonical ID.
+                modelUsed: communityModelId(publisher, endpoint.name),
                 tokenCountPromptText: 10,
                 tokenCountCompletionText: 5,
                 totalPrice: expectedPrice,

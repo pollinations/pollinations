@@ -15,5 +15,14 @@
       "custom_domain": true
     }
   ],
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  "env": {
+    "staging": {
+      "name": "pollinations-mcp-staging",
+      "workers_dev": false,
+      "routes": [],
+      "vars": { "POLLINATIONS_BASE_URL": "https://staging.gen.pollinations.ai" },
+      "observability": { "enabled": true }
+    }
+  }
 }

@@ -33,8 +33,8 @@ export type PromptAgentRuntime = {
 
 type McpClient = Awaited<ReturnType<typeof createMCPClient>>;
 type McpTool = Awaited<ReturnType<McpClient["tools"]>>[string];
-const MAX_STEPS = 8;
-const MAX_TOOL_CALLS = 16;
+const MAX_STEPS = 24;
+const MAX_TOOL_CALLS = 48;
 const MCP_INITIALIZATION_TIMEOUT_MS = 15_000;
 const STEP_LIMIT_MESSAGE =
     "The agent reached its maximum number of tool-use steps without a final answer.";

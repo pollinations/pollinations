@@ -595,7 +595,7 @@ export function Authorize({
             if (sessionExpired) setDeviceRecovery("sign-in");
             setError(
                 sessionExpired
-                    ? "Your Pollinations session expired. Sign in again to continue."
+                    ? "Your pollinations.ai session expired. Sign in again to continue."
                     : e instanceof Error
                       ? e.message
                       : "Authorization failed",
@@ -625,7 +625,7 @@ export function Authorize({
                 if (sessionExpired) setDeviceRecovery("sign-in");
                 setError(
                     sessionExpired
-                        ? "Your Pollinations session expired. Sign in again to continue."
+                        ? "Your pollinations.ai session expired. Sign in again to continue."
                         : "Couldn’t decline this connection. Try again.",
                 );
             } finally {
@@ -650,6 +650,14 @@ export function Authorize({
         }
     }
 
+    const showingConnectionError =
+        !!error && (!isDeviceMode || deviceRecovery !== "sign-in");
+    const showingSignIn =
+        isPending ||
+        !user ||
+        !!signInError ||
+        isSigningIn ||
+        deviceRecovery === "sign-in";
     const accountHeader = user ? (
         <AuthAccountIdentity
             user={user}
@@ -666,7 +674,7 @@ export function Authorize({
         );
     }
 
-    if (error && (!isDeviceMode || deviceRecovery !== "sign-in")) {
+    if (error && showingConnectionError) {
         return (
             <ConnectionErrorScreen
                 app={
@@ -718,20 +726,14 @@ export function Authorize({
         );
     }
 
-    if (
-        isPending ||
-        !user ||
-        signInError ||
-        isSigningIn ||
-        deviceRecovery === "sign-in"
-    ) {
+    if (showingSignIn) {
         const displayedError = signInError ?? error;
         return (
             <SignInScreen
                 appFirst
                 app={
                     <AppAttribution
-                        titleId="sign-in-title"
+                        titleId={displayedError ? undefined : "sign-in-title"}
                         attribution={attribution}
                         isDeviceMode={isDeviceMode}
                         userCode={user_code}
@@ -739,6 +741,11 @@ export function Authorize({
                     />
                 }
                 error={displayedError}
+                errorTitle={
+                    !signInError && deviceRecovery === "sign-in"
+                        ? "Session expired"
+                        : undefined
+                }
                 actions={
                     (!error || deviceRecovery === "sign-in") && (
                         <GitHubSignInButton

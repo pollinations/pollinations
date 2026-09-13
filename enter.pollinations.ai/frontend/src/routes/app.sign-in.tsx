@@ -1,4 +1,9 @@
-import { AuthInfoCard, GitHubSignInButton } from "@pollinations/ui/auth";
+import { Chip } from "@pollinations/ui";
+import {
+    AuthAccessItem,
+    AuthInfoCard,
+    GitHubSignInButton,
+} from "@pollinations/ui/auth";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
@@ -42,7 +47,7 @@ function AppSignIn() {
             appFirst
             app={
                 <AppAttribution
-                    titleId="sign-in-title"
+                    titleId={error ? undefined : "sign-in-title"}
                     attribution={{ appName: name }}
                     isDeviceMode={false}
                     redirectHostname=""
@@ -58,7 +63,19 @@ function AppSignIn() {
             }
         >
             <AuthInfoCard title={null}>
-                Shares your name, email, picture and admin status.
+                <ul>
+                    <AuthAccessItem
+                        checked
+                        ariaLabel="Name, email, picture and admin status"
+                        control={
+                            <Chip intent="neutral" size="sm">
+                                Required
+                            </Chip>
+                        }
+                    >
+                        Name, email, picture and admin status.
+                    </AuthAccessItem>
+                </ul>
             </AuthInfoCard>
         </SignInScreen>
     );

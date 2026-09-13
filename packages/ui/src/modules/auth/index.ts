@@ -1,3 +1,4 @@
+export { AuthErrorContent } from "./AuthErrorContent.tsx";
 export {
     AuthAccessItem,
     AuthAccessSummary,

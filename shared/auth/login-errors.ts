@@ -4,7 +4,8 @@ export const loginErrors = {
         code: "BANNED_USER",
         id: "account-deactivated",
         title: "Account suspended",
-        message: "If you think this is a mistake, contact billing.",
+        message:
+            "Your pollinations.ai account is suspended. If you think this is a mistake, contact billing.",
         action: {
             label: "Contact billing",
             href: "mailto:billing@pollinations.ai",
@@ -15,7 +16,7 @@ export const loginErrors = {
         id: "staging-invite-only",
         title: "Staging is invite-only",
         message:
-            "This environment is limited to the Pollinations team. Use pollinations.ai to continue.",
+            "Your pollinations.ai account doesn’t have access to staging. Use pollinations.ai to continue.",
         action: {
             label: "Visit pollinations.ai",
             href: "https://pollinations.ai/",
@@ -24,8 +25,9 @@ export const loginErrors = {
     default: {
         code: "unknown",
         id: "login-failed",
-        title: "Couldn’t sign in to your pollinations.ai account",
-        message: "Please try again.",
+        title: "Couldn’t sign in",
+        message:
+            "We couldn’t sign you in to your pollinations.ai account. Please try again.",
         action: { label: "Try again", href: "/sign-in" },
     },
 } as const;

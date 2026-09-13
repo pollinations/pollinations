@@ -128,7 +128,7 @@ export function Device({ prefilledCode }: DeviceProps) {
                 appFirst
                 app={
                     <AppAttribution
-                        titleId="sign-in-title"
+                        titleId={signInError ? undefined : "sign-in-title"}
                         attribution={
                             deviceApp?.code === prefilledCode ? deviceApp : null
                         }

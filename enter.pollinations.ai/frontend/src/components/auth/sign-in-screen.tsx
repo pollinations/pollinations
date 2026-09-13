@@ -1,9 +1,10 @@
 import { Heading, InlineLink } from "@pollinations/ui";
 import {
+    AuthErrorContent,
     AuthFlowLayout,
     AuthInfoCard,
-    ErrorBanner,
 } from "@pollinations/ui/auth";
+import { loginErrors } from "@shared/auth/login-errors.ts";
 import type { ReactNode } from "react";
 
 export function SignInScreen({
@@ -11,6 +12,7 @@ export function SignInScreen({
     appFirst = false,
     title = "Sign in to pollinations.ai",
     error,
+    errorTitle = loginErrors.default.title,
     actions,
     secondaryAction,
     children,
@@ -19,10 +21,27 @@ export function SignInScreen({
     appFirst?: boolean;
     title?: string;
     error?: string | null;
+    errorTitle?: string;
     actions: ReactNode;
     secondaryAction?: ReactNode;
     children?: ReactNode;
 }) {
+    if (error)
+        return (
+            <AuthFlowLayout
+                dialog={{ labelledBy: "sign-in-title" }}
+                actions={actions}
+                secondaryAction={secondaryAction}
+            >
+                <AuthErrorContent
+                    title={errorTitle}
+                    titleId="sign-in-title"
+                    message={error}
+                >
+                    {app && <AuthInfoCard title={null}>{app}</AuthInfoCard>}
+                </AuthErrorContent>
+            </AuthFlowLayout>
+        );
     return (
         <AuthFlowLayout
             dialog={{ labelledBy: "sign-in-title" }}
@@ -61,7 +80,6 @@ export function SignInScreen({
                 )}
             </div>
             {children}
-            {error && <ErrorBanner>{error}</ErrorBanner>}
         </AuthFlowLayout>
     );
 }

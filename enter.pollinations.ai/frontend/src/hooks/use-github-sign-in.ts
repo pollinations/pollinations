@@ -3,7 +3,7 @@ import { useState } from "react";
 import { authClient } from "../auth.ts";
 import { rememberSignIn } from "../lib/sign-in-context.ts";
 
-const signInErrorMessage = `${loginErrors.default.title}. ${loginErrors.default.message}`;
+const signInErrorMessage = loginErrors.default.message;
 
 export function useGitHubSignIn(callbackURL?: string, failed = false) {
     const [isSigningIn, setIsSigningIn] = useState(false);

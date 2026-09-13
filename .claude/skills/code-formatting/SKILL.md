@@ -1,39 +1,18 @@
 ---
 name: code-formatting
-description: Format code on the current branch using Biome. Use when asked to format, lint, or clean up code before committing or creating a PR.
+description: Format or lint Pollinations JS/TS/JSON changes with Biome when formatting is requested or required before a commit.
 ---
 
 # Code Formatting
 
-Format JS/TS/JSON files changed on the current branch using Biome.
+Use the repository's `biome.jsonc` and Node.js/npx. Before write mode, compare the installed Biome version with `node_modules/@biomejs/biome` in the root `package-lock.json`; if they differ, use the exact locked version. Avoid an unpinned download when local dependencies are missing.
 
-## Quick Usage
+For a named file or uncommitted changes, run Biome on those files. For committed branch changes, run from the repository root:
 
 ```bash
 .claude/skills/code-formatting/scripts/format-branch.sh
 ```
 
-This formats all `.js`, `.ts`, `.jsx`, `.tsx`, `.json`, `.jsonc` files changed compared to `main`.
+The script formats `.js`, `.ts`, `.jsx`, `.tsx`, `.json`, and `.jsonc` files in the three-dot diff from `main` to `HEAD`. Pass another base ref as its first argument when needed. It does not discover staged or unstaged changes.
 
-## Custom Base Branch
-
-```bash
-.claude/skills/code-formatting/scripts/format-branch.sh develop
-```
-
-## What It Does
-
-1. Finds files changed on current branch vs base branch
-2. Filters to JS/TS/JSON files only
-3. Runs `npx biome check --write` on those files
-4. Uses same settings as the `ci-pull-request-checks.yml` CI workflow
-
-## Config
-
-Biome config is at `biome.jsonc` in repo root.
-
-## Notes
-
-- Run from repo root
-- Requires Node.js/npx
-- Only formats changed files (not entire codebase)
+Inspect the resulting diff for unintended churn and report any remaining lint failures. Formatting alone does not require an application test suite.

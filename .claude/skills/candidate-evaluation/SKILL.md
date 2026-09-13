@@ -1,113 +1,25 @@
 ---
 name: candidate-evaluation
-description: Evaluate GitHub contributors for MLOps/engineering roles. Use when analyzing candidates, researching GitHub profiles, or updating CONTRIBUTORS.md with hiring assessments.
+description: Assess GitHub contributors for engineering hiring, compare candidates, or record hiring assessments in CONTRIBUTORS.md.
 allowed-tools: "Read, Write, Edit, Grep, Bash(gh api:*), Bash(git:*)"
 ---
 
-# Candidate Evaluation Skill
+# Candidate Evaluation
 
-Evaluate GitHub contributors for engineering roles at Pollinations.
+Assess engineering candidates for Pollinations using evidence from their repositories and contributions. Ordinary GitHub profile lookups and code reviews do not need this skill.
 
-## When to Use
+## Hiring criteria
 
-- User asks to evaluate a contributor or candidate
-- User wants to research GitHub profiles for hiring
-- User needs to update CONTRIBUTORS.md with candidate analysis
-- User mentions "hiring", "candidate", "MLOps", or "evaluate contributor"
+Use the requested role's requirements. For MLOps roles, the default priorities are:
 
-## Evaluation Criteria
+- **High:** Python proficiency, Docker/CI/CD/infrastructure, GPU model serving and inference optimization.
+- **Medium:** Kubernetes, vLLM/TGI, quantization (GGUF/ONNX), and GitHub Actions experience.
+- **Work practices:** focused PRs, review interactions, documentation quality, and meaningful tests.
 
-### Must-Have Skills (Weight: High)
-- **Python**: Primary language proficiency
-- **DevOps**: Docker, CI/CD, infrastructure
-- **GPU/ML Deployment**: Model serving, inference optimization
+## Evidence and assessment
 
-### Nice-to-Have Skills (Weight: Medium)
-- Kubernetes, vLLM, TGI
-- Quantization (GGUF, ONNX)
-- CI/CD pipelines (GitHub Actions)
+Inspect relevant repositories and Pollinations contributions through GitHub tools or `gh api`. Prefer concrete code and merged PRs; use open PRs, issues, discussions, and app submissions for additional context. Repository popularity and activity are context, not substitutes for demonstrated ability.
 
-### Work Style Indicators (Weight: Medium)
-- PR size preference (small, focused = good)
-- Response time to reviews
-- Documentation quality
-- Test coverage habits
+Return a concise hiring recommendation with linked evidence, strengths, gaps, and uncertainty. A repository table or comparison matrix is useful when comparing candidates; use a fit score only when requested and explain its basis. Missing public evidence is an unknown, not proof that a candidate lacks a skill.
 
-## Evaluation Process
-
-1. **Gather Data** via GitHub MCP or `gh api`:
-   ```bash
-   # Get user repos
-   gh api users/{username}/repos --jq '.[].name'
-   
-   # Search PRs in pollinations
-   gh api search/issues -X GET -f q='repo:pollinations/pollinations author:{username}'
-   
-   # Search code for MLOps keywords
-   gh api search/code -X GET -f q='user:{username} docker OR kubernetes OR gpu OR vllm'
-   ```
-
-2. **Analyze Repositories** for:
-   - ML/AI projects (ComfyUI, HuggingFace, PyTorch)
-   - DevOps tooling (Docker, CI/CD, scripts)
-   - API/backend experience
-   - Star counts and activity
-
-3. **Check Pollinations Contributions**:
-   - Merged PRs (high signal)
-   - Open issues/discussions
-   - Project submissions
-
-4. **Generate Profile** with:
-   - Fit score (1-10)
-   - Strengths (bullet points)
-   - Weaknesses (bullet points)
-   - Key repositories table
-   - Hiring recommendation
-
-## Output Format
-
-Use ASCII box art for visual appeal:
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  FIT: X.X/10  │  GitHub: username  │  Repos: N  │  Focus: Area             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-**✅ STRENGTHS**
-- Point 1
-- Point 2
-
-**❌ WEAKNESSES**
-- Point 1
-- Point 2
-
-**📦 KEY REPOS**
-| Repo | Tech | What It Does |
-|------|------|--------------|
-
-**🎯 VERDICT**: Recommendation
-
-## Skills Matrix Format
-
-```
-╔═══════════════════╦════════╦════════╦════════╦═══════════════╗
-║     CANDIDATE     ║ Python ║ GPU/ML ║ Docker ║   FIT SCORE   ║
-╠═══════════════════╬════════╬════════╬════════╬═══════════════╣
-║ username          ║ █████  ║ ███    ║ ████   ║     X.X/10    ║
-╚═══════════════════╩════════╩════════╩════════╩═══════════════╝
-
-Legend: █ = Skill Level (1-5)
-```
-
-## Reference Files
-
-- `AGENTS.md` - Project guidelines and contributor attribution
-
-## Example Queries
-
-- "Evaluate @username for MLOps role"
-- "Research GitHub profile for {username}"
-- "Add {username} to CONTRIBUTORS.md"
-- "Compare candidates X and Y"
+Check that the recommendation follows the role criteria and cited evidence before delivering. Update `CONTRIBUTORS.md` when requested, following its existing structure and the contributor-attribution rules in `AGENTS.md`.

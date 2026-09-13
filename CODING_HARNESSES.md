@@ -2,7 +2,7 @@
 
 Use `polli harness` to connect a supported coding harness to Pollinations. It handles Polli login, a dedicated API key, model setup, and any Pollinations capabilities supported by that harness.
 
-> **Available now:** Bloom CLI, DeepSeek Harness, OpenCode, OpenClaw, Pi, and Prime Agent are integrated `polli harness` profiles.
+> **Available now:** Bloom CLI, DeepSeek Harness, OpenCode, OpenClaw, Pi, Prime Agent, and tgpt are integrated `polli harness` profiles.
 
 ## Use a harness
 
@@ -31,6 +31,7 @@ If a harness cannot be launched, `on` stops before login, key creation, or confi
 | [OpenClaw](https://github.com/openclaw/openclaw) | **Available now** — `polli harness openclaw on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, pulling models from the live catalog. Defaults to `kimi`. |
 | [Pi](https://github.com/earendil-works/pi) | **Available now** — `polli harness pi on` | Uses Pi's native provider support and the Polli skill. Pi intentionally has no built-in MCP support. Defaults to `deepseek`. |
 | [Prime Agent](https://github.com/PrimeIntellect-ai/prime-agent) | **Available now** — `polli harness prime on` | Uses native provider support and the Polli skill while preserving memories, sessions, and unrelated configuration. |
+| [tgpt](https://github.com/aandrew-me/tgpt) | **Available now** — `polli harness tgpt on` | Configures tgpt's existing Pollinations provider with a dedicated key and authenticated text model. |
 
 ## Bloom CLI
 
@@ -41,6 +42,18 @@ bloom
 ```
 
 Bloom already uses Pollinations for its models. `on` creates a dedicated key and stores it in `~/.bloom/.env` (or `$BLOOM_HOME/.env`); `off` restores the previous file or removes only that key if the file changed later.
+
+## tgpt
+
+```bash
+brew install tgpt # or use another official installation method
+polli harness tgpt on
+tgpt "Hello"
+```
+
+tgpt already includes a Pollinations provider. `on` selects it for text generation and writes a dedicated key and model to `~/.config/tgpt/config.conf`, making tgpt use the authenticated `gen.pollinations.ai` endpoint. Choose another model with `--model <id>`; `off` restores the previous file or removes only the Pollinations values if the file changed later.
+
+The default model is `openai/gpt-5.4-nano`. Polli clears any generic `AI_API_KEY` from this file so it cannot override the dedicated `POLLINATIONS_API_KEY`; the original file is backed up. Exported environment variables, a local `config.conf`, or `--config` can override this user-level setup. `off` does not revoke the account key.
 
 ## DeepSeek Harness
 

@@ -2986,6 +2986,154 @@ describe("trackResponse missing usage", () => {
     });
 });
 
+it("reports committed wallet debit when API key reconciliation fails", async () => {
+    const db = drizzle(env.DB);
+    const payerId = `settlement-payer-${crypto.randomUUID()}`;
+    await db.insert(userTable).values({
+        id: payerId,
+        email: `${payerId}@test.local`,
+        name: "Settlement Test Payer",
+        tierBalance: 100,
+        packBalance: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    });
+    const [payer] = await db
+        .select()
+        .from(userTable)
+        .where(eq(userTable.id, payerId))
+        .limit(1);
+    if (!payer) throw new Error("Expected inserted payer");
+
+    const { id: apiKeyId } = await createTestApiKey({
+        userId: payerId,
+        pollenBudget: 1,
+    });
+
+    const tinybirdRequests: Request[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const req = new Request(input, init);
+        tinybirdRequests.push(req);
+        // Delete the API key row to simulate reconciliation failure
+        if (
+            !req.url.includes("tinybird.test") &&
+            !req.url.includes("tinybird")
+        ) {
+            await db.delete(apiKeyTable).where(eq(apiKeyTable.id, apiKeyId));
+        }
+        return new Response("ok");
+    });
+
+    const app = new Hono<Env>();
+    app.use("*", requestId());
+    app.use("*", logger);
+    app.use("*", async (c, next) => {
+        c.set("auth", {
+            user: payer,
+            requireUser: () => payer,
+            requireModelAccess: () => {},
+            apiKey: {
+                id: apiKeyId,
+                pollenBalance: 1,
+                byopClientKeyId: null,
+            },
+        });
+        c.set("balance", {
+            getBalance: async () => ({
+                tierBalance: 100,
+                packBalance: 0,
+            }),
+            apiKeyReservation: { amount: 0 },
+        });
+        c.set("frontendKeyRateLimit", {
+            consumePollen: async () => {},
+        });
+        c.set("model", {
+            requested: "openai/gpt-5.4-nano",
+            resolved: "openai/gpt-5.4-nano",
+            definition: getRegistryModelDefinition("openai/gpt-5.4-nano"),
+        });
+        await next();
+    });
+    app.post("/v1/chat/completions", track("generate.text"), (_c) => {
+        return new Response(
+            JSON.stringify({
+                id: "chatcmpl_test",
+                object: "chat.completion",
+                choices: [
+                    {
+                        index: 0,
+                        message: {
+                            role: "assistant",
+                            content: "ok",
+                        },
+                        finish_reason: "stop",
+                    },
+                ],
+            }),
+            {
+                headers: {
+                    "content-type": "application/json",
+                    "x-model-used": "gpt-5-nano-2025-08-07",
+                    "x-usage-prompt-text-tokens": "10",
+                    "x-usage-completion-text-tokens": "5",
+                },
+            },
+        );
+    });
+
+    const ctx = createExecutionContext();
+    const response = await app.fetch(
+        new Request("https://gen.pollinations.ai/v1/chat/completions", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+                model: "openai/gpt-5.4-nano",
+                stream: false,
+                messages: [{ role: "user", content: "test" }],
+            }),
+        }),
+        {
+            DB: env.DB,
+            ENVIRONMENT: "test",
+            LOG_LEVEL: "debug",
+            LOG_FORMAT: "text",
+            BETTER_AUTH_SECRET: "test_secret",
+            TINYBIRD_INGEST_URL:
+                "https://tinybird.test/v0/events?name=generation_event_v2",
+            TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+        } as unknown as CloudflareBindings,
+        ctx,
+    );
+
+    await waitOnExecutionContext(ctx);
+
+    expect(response.status).toBe(200);
+
+    // The generation event should have the correct totalPrice (not 0)
+    const genEvent = tinybirdRequests.find((r) =>
+        r.url.includes("generation_event_v2"),
+    );
+    expect(genEvent).toBeDefined();
+    const event = (await genEvent?.json()) as Record<string, unknown>;
+    expect(event.totalPrice).toBeGreaterThan(0);
+    expect(event.isBilledUsage).toBe(true);
+
+    // The error event should report the settlement failure
+    const errorEvent = tinybirdRequests.find((r) =>
+        r.url.includes("error_event"),
+    );
+    expect(errorEvent).toBeDefined();
+    const error = (await errorEvent?.json()) as Record<string, unknown>;
+    expect(error.error_class).toBe("SettlementFailure");
+    expect(error.error_code).toBe("settlement_api_key_reconciliation");
+    expect(error.request_id).toBe(event.requestId);
+
+    // The user's balance should reflect the committed debit
+    const balance = await getUserBalance(db, payerId);
+    expect(balance.tierBalance).toBeLessThan(100);
+});
+
 function makeAdjustment(
     ruleId: string,
     cost: number,

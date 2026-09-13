@@ -6,6 +6,7 @@ import {
     type CommunityModelRewardResolution,
     handleBalanceDeduction,
     type MarkupResolution,
+    type SettlementError,
     selectCommunityModelReward,
 } from "@shared/billing/track-helpers.ts";
 import {
@@ -381,6 +382,7 @@ export const track = (eventType: EventType) =>
                 let communityModelReward: CommunityModelRewardResolution | null =
                     null;
                 let billedPrice = 0;
+                let settlementError: SettlementError | undefined;
                 let shouldRunAutoTopUp = false;
                 billingStarted = true;
                 try {
@@ -413,6 +415,7 @@ export const track = (eventType: EventType) =>
                     communityModelReward = deduction.communityModelReward;
                     payerBucket = deduction.payerBucket;
                     billedPrice = deduction.billedPrice;
+                    settlementError = deduction.settlementError;
                     const totalPrice = responseTracking.price?.totalPrice ?? 0;
                     if (
                         totalPrice > 0 &&
@@ -531,6 +534,55 @@ export const track = (eventType: EventType) =>
                     ].join("\n"),
                     { event: finalEvent },
                 );
+
+                if (settlementError) {
+                    const settlementMessage: Record<SettlementError, string> = {
+                        api_key_reconciliation:
+                            "API key budget reconciliation failed after committed debit",
+                        dev_credit:
+                            "Dev markup credit failed after committed debit",
+                        community_reward_credit:
+                            "Community model reward credit failed after committed debit",
+                    };
+                    await sendErrorEventToTinybird(
+                        {
+                            timestamp: endTime.toISOString(),
+                            kind: "server_error",
+                            severity: "error",
+                            request_id: finalEvent.requestId,
+                            environment: finalEvent.environment,
+                            route_path: finalEvent.requestPath,
+                            method: c.req.method,
+                            status: 200,
+                            duration_ms:
+                                endTime.getTime() - startTime.getTime(),
+                            error_class: "SettlementFailure",
+                            error_code: `settlement_${settlementError}`,
+                            message: settlementMessage[settlementError],
+                            edge_colo: (
+                                c.req.raw as Request & {
+                                    cf?: { colo?: string };
+                                }
+                            ).cf?.colo,
+                            model_requested:
+                                finalEvent.modelRequested ?? undefined,
+                            resolved_model_requested:
+                                finalEvent.resolvedModelRequested,
+                            request_inputs: stringifyRequestInputs(
+                                await collectRequestInputs(c),
+                            ),
+                            user_id: finalEvent.userId,
+                            user_tier: finalEvent.userTier,
+                            api_key_id: finalEvent.apiKeyId,
+                        },
+                        getTinybirdDatasourceIngestUrl(
+                            c.env.TINYBIRD_INGEST_URL,
+                            "error_event",
+                        ),
+                        c.env.TINYBIRD_INGEST_TOKEN,
+                        log,
+                    );
+                }
 
                 if (shouldRunAutoTopUp) {
                     await triggerAutoTopUp(c.env, userId, log);

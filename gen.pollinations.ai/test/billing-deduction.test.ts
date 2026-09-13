@@ -298,4 +298,102 @@ describe("billing deduction", () => {
 
         expect(await getApiKeyBalance(apiKeyId)).toBe(10);
     });
+
+    it("preserves committed debit when API key reconciliation fails", async () => {
+        const userId = await createUser({ tierBalance: 100, packBalance: 0 });
+        const { id: apiKeyId } = await createTestApiKey({
+            userId,
+            pollenBudget: 10,
+        });
+        const { reserved } = await atomicReserveApiKeyBalance(db, apiKeyId, 5);
+
+        // Delete the API key row to simulate reconciliation failure
+        await db.delete(apiKeyTable).where(eq(apiKeyTable.id, apiKeyId));
+
+        const result = await handleBalanceDeduction({
+            db,
+            isBilledUsage: true,
+            totalPrice: 3,
+            userId,
+            apiKeyId,
+            apiKeyPollenBalance: 10,
+            apiKeyReservedAmount: reserved,
+        });
+
+        // The debit should be preserved even though reconciliation failed
+        expect(result.billedPrice).toBe(3);
+        expect(result.settlementError).toBe("api_key_reconciliation");
+        expect(result.payerBucket).toBe("tier");
+        expect((await getUserBalance(db, userId)).tierBalance).toBe(97);
+    });
+
+    it("preserves committed debit when dev credit fails", async () => {
+        const payerId = await createUser({ tierBalance: 100, packBalance: 0 });
+        const { id: byopKeyId } = await createTestApiKey({
+            user: { tierBalance: 0, packBalance: 0 },
+            pollenBudget: 0,
+        });
+
+        // The dev credit will fail because the dev user has no row to credit
+        // (atomicCreditUserBalance affects 0 rows)
+        const result = await handleBalanceDeduction({
+            db,
+            isBilledUsage: true,
+            totalPrice: 1,
+            userId: payerId,
+            byopClientKeyId: byopKeyId,
+        });
+
+        // The debit should be preserved even though dev credit failed
+        expect(result.billedPrice).toBe(1.25); // 1 + 25% markup
+        expect(result.settlementError).toBe("dev_credit");
+        expect(result.markup).toBeNull();
+        expect((await getUserBalance(db, payerId)).tierBalance).toBeCloseTo(
+            98.75,
+            10,
+        );
+    });
+
+    it("preserves committed debit when community reward credit fails", async () => {
+        const payerId = await createUser({ tierBalance: 100, packBalance: 0 });
+        // Non-existent owner — credit will fail
+        const nonexistentOwnerId = `nonexistent-${crypto.randomUUID()}`;
+
+        const result = await handleBalanceDeduction({
+            db,
+            isBilledUsage: true,
+            totalPrice: 1,
+            userId: payerId,
+            communityModelReward: {
+                userId: nonexistentOwnerId,
+                rewardRate: 0.75,
+            },
+        });
+
+        // The debit should be preserved even though community reward failed
+        expect(result.billedPrice).toBe(1);
+        expect(result.settlementError).toBe("community_reward_credit");
+        expect(result.communityModelReward).toBeNull();
+        expect((await getUserBalance(db, payerId)).tierBalance).toBe(99);
+    });
+
+    it("throws when payer deduction fails (before any debit)", async () => {
+        const { id: apiKeyId } = await createTestApiKey({ pollenBudget: 10 });
+        const { reserved } = await atomicReserveApiKeyBalance(db, apiKeyId, 4);
+
+        await expect(
+            handleBalanceDeduction({
+                db,
+                isBilledUsage: true,
+                totalPrice: 3,
+                userId: "missing-payer-row",
+                apiKeyId,
+                apiKeyPollenBalance: 10,
+                apiKeyReservedAmount: reserved,
+            }),
+        ).rejects.toThrow(/affected 0 rows/);
+
+        // API key reservation should be released
+        expect(await getApiKeyBalance(apiKeyId)).toBe(10);
+    });
 });

@@ -1,4 +1,4 @@
-import { Button, TabButton } from "@pollinations/ui";
+import { Button, ChevronIcon, Dropdown, TabButton } from "@pollinations/ui";
 import { loginErrors } from "@shared/auth/login-errors.ts";
 import {
     createContext,
@@ -326,68 +326,102 @@ export function ReviewPanel({ journey }: { journey: boolean }) {
     const situations = review.cases.filter(
         (item) => item.pageId === screen?.id,
     );
+    const hasChoices = Boolean(screen && situations.length > 1);
+    const hasDevice =
+        journey && review.flow === "device" && Boolean(state?.device);
+    const messages = [review.error, error].filter(Boolean);
+    if (!hasChoices && !(journey && recipe) && !hasDevice && !messages.length)
+        return null;
     return (
-        <aside className="connect-conditions" aria-label="Screen review">
-            {screen && situations.length > 1 && (
-                <fieldset disabled={review.running}>
-                    <legend>{journey ? "Restart with" : "Situation"}</legend>
-                    <div>
-                        {situations.map((item) => (
-                            <TabButton
-                                key={item.id}
-                                size="sm"
-                                active={recipe?.id === item.id}
-                                onClick={() => review.select(item.id)}
-                            >
-                                {situationLabel(item, screen)}
-                            </TabButton>
-                        ))}
-                    </div>
-                </fieldset>
-            )}
-            {recipe?.provider ? (
-                <p className="connect-review-note">
-                    {recipe.provider} is an external reference. Journey uses a
-                    local provider.
-                </p>
-            ) : recipe && isErrorRouteCase(recipe) ? (
-                <p className="connect-review-note">
-                    Opens the real error route for copy and layout review.
-                </p>
-            ) : null}
-            {recipe && (
-                <div className="connect-conditions-actions">
-                    <Button
-                        size="sm"
-                        disabled={busy || !state || review.running}
-                        onClick={() => void review.run(recipe)}
-                    >
-                        {review.running
-                            ? "Starting…"
+        <div className="connect-review-float">
+            <Dropdown
+                key={screen?.id}
+                align="end"
+                portalled={false}
+                className="connect-review-popover"
+                trigger={(open) => (
+                    <Button size="sm" data-theme="neutral">
+                        {messages.length
+                            ? "Review issue"
                             : journey
-                              ? "Restart"
-                              : "Run in Journey"}
+                              ? "Journey controls"
+                              : "Situations"}
+                        <ChevronIcon
+                            expanded={open}
+                            className="polli:h-3 polli:w-3"
+                        />
                     </Button>
-                </div>
-            )}
-            {journey && (
-                <output className="connect-review-note">
-                    {review.pending
-                        ? "Selected situation is not applied. Restart to apply it."
-                        : "Use the page to continue. Restart prepares the selected situation."}
-                </output>
-            )}
-            {journey && review.flow === "device" && <DeviceConnectionStatus />}
-            {[review.error, error].filter(Boolean).map((message) => (
-                <p
-                    key={message}
-                    className="connect-conditions-error"
-                    role="alert"
+                )}
+            >
+                <aside
+                    className="connect-conditions"
+                    aria-label="Screen review"
                 >
-                    {message}
-                </p>
-            ))}
-        </aside>
+                    {screen && situations.length > 1 && (
+                        <fieldset disabled={review.running}>
+                            <legend>
+                                {journey ? "Restart with" : "Situation"}
+                            </legend>
+                            <div>
+                                {situations.map((item) => (
+                                    <TabButton
+                                        key={item.id}
+                                        size="sm"
+                                        active={recipe?.id === item.id}
+                                        onClick={() => review.select(item.id)}
+                                    >
+                                        {situationLabel(item, screen)}
+                                    </TabButton>
+                                ))}
+                            </div>
+                        </fieldset>
+                    )}
+                    {recipe?.provider ? (
+                        <p className="connect-review-note">
+                            {recipe.provider} is an external reference. Journey
+                            uses a local provider.
+                        </p>
+                    ) : recipe && isErrorRouteCase(recipe) ? (
+                        <p className="connect-review-note">
+                            Opens the real error route for copy and layout
+                            review.
+                        </p>
+                    ) : null}
+                    {recipe && (
+                        <div className="connect-conditions-actions">
+                            <Button
+                                size="sm"
+                                disabled={busy || !state || review.running}
+                                onClick={() => void review.run(recipe)}
+                            >
+                                {review.running
+                                    ? "Starting…"
+                                    : journey
+                                      ? "Restart"
+                                      : "Run in Journey"}
+                            </Button>
+                        </div>
+                    )}
+                    {journey && (
+                        <output className="connect-review-note">
+                            {review.pending
+                                ? "Selected situation is not applied. Restart to apply it."
+                                : "Use the page to continue. Restart prepares the selected situation."}
+                        </output>
+                    )}
+                    {hasDevice && <DeviceConnectionStatus />}
+                    {messages.map((message) => (
+                        <p
+                            key={message}
+                            className="connect-conditions-error"
+                            role="alert"
+                        >
+                            {message}
+                        </p>
+                    ))}
+                </aside>
+            </Dropdown>
+        </div>
     );
 }
 

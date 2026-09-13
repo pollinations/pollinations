@@ -1193,7 +1193,9 @@ function ConnectLab() {
                             </div>
                         )}
                     </div>
-                    <ReviewPanel journey={view === "journey"} />
+                    {view !== "map" && (
+                        <ReviewPanel journey={view === "journey"} />
+                    )}
                 </div>
             </div>
         </ReviewProvider>

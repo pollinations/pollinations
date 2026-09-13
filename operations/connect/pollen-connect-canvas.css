@@ -133,8 +133,8 @@ body { font: 14px/1.5 var(--polli-font-body); background: var(--polli-color-app-
 .account-action-journey[data-preview-size="mobile"] > .journey-view { flex: 1; width: 100%; height: auto; min-height: 0; }
 .account-action-frames { display: flex; width: 100%; max-width: 1120px; height: max(320px, calc(100dvh - 320px)); flex: 1 0 auto; }
 
-/* The inspector stays inside the canvas so shared conditions remain usable. */
+/* Map inspection stays within the full canvas. */
 .canvas-inspector-overlay { position: absolute; inset: 0; z-index: 4; display: flex; align-items: center; justify-content: center; padding: 16px; background: color-mix(in srgb, var(--polli-color-app-bg) 72%, transparent); backdrop-filter: blur(8px); overflow: auto; container-type: size; }
 .canvas-inspector-overlay .canvas-inspector:not(.canvas-inspector-desktop) { --status-width: clamp(112px, 24cqw, 220px); --phone-width: min(375px, calc(100cqw - var(--status-width) - 26px), calc((100cqh - 10px) * 1206 / 2622)); }
 .canvas-inspector:not(.canvas-inspector-desktop) .canvas-inspector-title { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
-.canvas-inspector-overlay .canvas-inspector-desktop { --phone-width: min(1120px, calc(100vw - 324px), calc((100dvh - 250px) * 1.6)); }
+.canvas-inspector-overlay .canvas-inspector-desktop { --phone-width: min(1120px, calc(100cqw - 32px), calc((100cqh - 32px) * 1.6)); }

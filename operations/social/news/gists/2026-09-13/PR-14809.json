@@ -1,0 +1,34 @@
+{
+  "pr_number": 14809,
+  "title": "fix: stop Floret introducing itself as Polli",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/14809",
+  "merged_at": "2026-09-13T12:12:10Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fixes Floret introducing itself as Polli.\n- Makes image editing, voice changing, and background-noise removal explicit in Floret's system prompt.",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Floret found her name",
+    "blurb": "Floret has stopped borrowing Polli's name badge. Her instructions now also make image editing, voice changing, and background-noise removal easier to spot.",
+    "summary": "Updated Floret's system prompt so she identifies herself as Floret rather than Polli, while explicitly documenting her image-editing, voice-changing, and background-noise-removal capabilities.",
+    "impact": "Floret conversations now begin with the right identity, and users get clearer guidance that she can edit images, change voices, and clean up background noise.",
+    "keywords": [
+      "floret",
+      "identity",
+      "system-prompt",
+      "image-editing",
+      "voice-changing",
+      "noise-removal"
+    ],
+    "visual_concept": "A cozy garden-label scene: Polli warmly helps Floret, represented as a friendly blooming code-flower assistant, place the correct \"FLORET\" name tag beside a retro terminal. Small visual tools—a paintbrush over an image, a microphone with sound waves, and a little noise-filter sieve—show the newly explicit capabilities.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, warmly helping a cheerful blooming code-flower assistant attach a pixel-font name tag reading \"FLORET\" beside a retro terminal; nearby sit a tiny image paintbrush, microphone with soft sound waves, and a background-noise filter. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-13/PR-14809.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, warmly helping a cheerful blooming code-flower assistant attach a pixel-font name tag reading \"FLORET\" beside a retro terminal; nearby sit a tiny image paintbrush, microphone with soft sound waves, and a background-noise filter. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-13T12:13:06.479578+00:00"
+}

@@ -340,15 +340,18 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    // Azure primary, OpenAI fallback: both OpenRouter tags bill the same
-    // $0.15/$0.60/$0.075 per-M rate; azure/swedencentral bills 10% higher and
-    // is excluded by pinning the order and disabling further fallbacks.
+    // Azure primary, OpenAI second: both OpenRouter tags bill the same
+    // $0.15/$0.60/$0.075 per-M rate. The base slug "azure" also matches
+    // azure/swedencentral (bills 10% higher), so it is excluded explicitly.
+    // The azure tag does not advertise tools, so tool requests are served by
+    // the openai tag at the same rate.
     "openai/gpt-4o-mini": () =>
         createOpenRouterModelConfig({
             model: "openai/gpt-4o-mini",
             defaultOptions: {
                 provider: {
                     order: ["azure", "openai"],
+                    ignore: ["azure/swedencentral"],
                     allow_fallbacks: false,
                 },
             },

@@ -292,9 +292,9 @@ export const CHAT_PARAMETERS = {
     ],
     museSpark: [...CHAT, "temperature", "tools"],
     openRouterMistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
-    // OpenRouter azure/openai tags only (2026-09-12); azure/swedencentral is
-    // excluded via provider.order + allow_fallbacks:false so pricing stays
-    // fixed. Neither pinned tag reports max_completion_tokens as supported.
+    // OpenRouter azure/openai tags (2026-09-12); azure/swedencentral is
+    // excluded via provider.ignore so pricing stays fixed. Both tags report
+    // max_completion_tokens (not max_tokens) as supported.
     openRouterGpt4oMini: [
         "max_tokens",
         "stream",

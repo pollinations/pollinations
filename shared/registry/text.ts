@@ -131,6 +131,7 @@ const TEXT_BASE_SERVICES = {
             "Affordable multimodal chat with vision input for everyday tasks",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
+        maxReferenceImages: 10, // OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
         contextLength: 128000,
         isSpecialized: false,

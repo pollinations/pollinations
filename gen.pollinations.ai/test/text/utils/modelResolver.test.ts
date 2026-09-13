@@ -125,6 +125,7 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("openai/gpt-4o-mini");
         expect(result.options.provider).toEqual({
             order: ["azure", "openai"],
+            ignore: ["azure/swedencentral"],
             allow_fallbacks: false,
         });
     });

@@ -96,6 +96,10 @@ const models: ModelDefinition[] = [
         transform: omitOpenAISampling,
     },
     {
+        name: "openai/gpt-4o-mini",
+        config: portkeyConfig["openai/gpt-4o-mini"],
+    },
+    {
         name: "openai/gpt-oss-20b",
         config: portkeyConfig["gpt-oss-20b"],
     },
@@ -583,10 +587,6 @@ const models: ModelDefinition[] = [
     {
         name: "thinkingmachines/inkling-small",
         config: portkeyConfig["thinkingmachines/inkling-small"],
-    },
-    {
-        name: "openai/gpt-4o-mini",
-        config: portkeyConfig["openai/gpt-4o-mini"],
     },
     {
         name: "thinkingmachines/inkling",

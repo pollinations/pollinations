@@ -2973,6 +2973,90 @@ describe("trackResponse modelUsed", () => {
         });
     });
 
+    it("preserves stream-read errors without billing earlier valid usage", async () => {
+        const error = {
+            message: "upstream connection reset",
+            type: "upstream_error",
+            code: "upstream_stream_error",
+        };
+        const events = [
+            {
+                choices: [],
+                usage: {
+                    prompt_tokens: 10,
+                    completion_tokens: 20,
+                    total_tokens: 30,
+                },
+            },
+            { error },
+        ];
+        const body = `${events
+            .map((event) => `data: ${JSON.stringify(event)}\n\n`)
+            .join("")}data: [DONE]\n\n`;
+        const stream = new Response(body).body;
+        if (!stream) throw new Error("Missing test stream");
+        const validated = requireChatStreamUsage(stream);
+        const [client, billing] = validated.tee();
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            new Response(billing, {
+                headers: { "content-type": "text/event-stream" },
+            }),
+            candidateFixture(),
+        );
+        expect(await new Response(client).text()).toBe(body);
+        expect(tracking).toMatchObject({
+            responseStatus: 502,
+            isBilledUsage: false,
+            errorTracking: {
+                errorResponseCode: "upstream_stream_error",
+                errorMessage: error.message,
+            },
+            errorOutput: { streamEvents: events },
+        });
+    });
+
+    it("keeps terminal diagnostics within the log budget despite oversized earlier chunks", () => {
+        const error = {
+            error: { code: "upstream_stream_error", message: "socket closed" },
+        };
+        const streamEvents = [
+            { content: "x".repeat(20_000) },
+            ...Array.from({ length: 40 }, () => ({
+                content: "y".repeat(1_000),
+            })),
+            error,
+        ];
+        const original = JSON.stringify(streamEvents);
+        const summary = summarizeStreamForLog({
+            streamEvents,
+            doneSeen: false,
+        });
+        const logged = JSON.stringify(summary);
+        expect(logged.length).toBeLessThanOrEqual(16_000);
+        expect(JSON.parse(logged).streamEvents.at(-1)).toEqual(error);
+        expect(JSON.parse(logged)).toMatchObject({
+            chunks: 42,
+            doneSeen: false,
+        });
+        expect(JSON.stringify(streamEvents)).toBe(original);
+    });
+
+    it("retains the ending of a single oversized terminal chunk as valid JSON", () => {
+        const summary = summarizeStreamForLog({
+            streamEvents: [
+                { error: { message: `${'\\"'.repeat(20_000)}socket closed` } },
+            ],
+        });
+        const logged = JSON.stringify(summary);
+        expect(logged.length).toBeLessThanOrEqual(16_000);
+        expect(JSON.parse(logged).streamEvents[0]).toMatchObject({
+            truncated: true,
+        });
+        expect(logged).toContain("socket closed");
+    });
+
     it("does not attribute a model to a cache hit", async () => {
         const tracking = await trackResponse(
             "generate.text",

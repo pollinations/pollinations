@@ -222,6 +222,37 @@ describe("PollinationsChatTransport", () => {
         ).toEqual(["const a = ", "[\n", "  1,\n", "];"]);
     });
 
+    it("preserves text and image order across streamed chunk boundaries", async () => {
+        const source =
+            "Before\n\n![Day](https://example.test/day.png)\n\nBetween\n\n![Night](https://example.test/night.png)\n\nAfter";
+        const partitions = [
+            [source],
+            [...source],
+            ...Array.from({ length: source.length - 1 }, (_, index) => [
+                source.slice(0, index + 1),
+                source.slice(index + 1),
+            ]),
+        ];
+        for (const partition of partitions) {
+            const chunks = await chunksFrom(
+                partition.map((text, index) =>
+                    contentChunk(text, String(index)),
+                ),
+            );
+            const content = chunks
+                .map((chunk) => {
+                    if (chunk.type === "text-delta") return chunk.delta;
+                    if (chunk.type === "data-media")
+                        return `[${(chunk.data as { label: string }).label}]`;
+                    return "";
+                })
+                .join("");
+            expect(content).toBe(
+                "Before\n\n[Day]\n\nBetween\n\n[Night]\n\nAfter",
+            );
+        }
+    });
+
     it("buffers generated media links split across provider chunks", async () => {
         const chunks = await chunksFrom([
             contentChunk("![Res", "chunk-1"),

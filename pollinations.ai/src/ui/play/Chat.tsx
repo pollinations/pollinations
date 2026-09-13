@@ -595,7 +595,7 @@ function activeTool(message: PollinationsUIMessage): string | undefined {
         : activity.name;
 }
 
-function MessageCard({
+export function MessageCard({
     message,
     assistantName,
     isStreaming,
@@ -613,10 +613,10 @@ function MessageCard({
     const isUser = message.role === "user";
     const attachments = message.metadata?.attachments ?? [];
     const contentParts = message.parts.filter(
-        (part) => part.type === "text" || part.type === "dynamic-tool",
-    );
-    const media = message.parts.flatMap((part) =>
-        part.type === "data-media" ? [part.data] : [],
+        (part) =>
+            part.type === "text" ||
+            part.type === "dynamic-tool" ||
+            part.type === "data-media",
     );
     const cancelled = message.parts.some(
         (part) => part.type === "data-responseStatus",
@@ -670,6 +670,11 @@ function MessageCard({
                                         {part.text}
                                     </Markdown>
                                 )
+                            ) : part.type === "data-media" ? (
+                                <MediaView
+                                    key={`media:${part.id ?? part.data.url}`}
+                                    media={part.data}
+                                />
                             ) : (
                                 <ToolPart key={part.toolCallId} part={part} />
                             ),
@@ -737,16 +742,6 @@ function MessageCard({
                         </ChatMessageActions>
                     )}
                 </ChatMessage>
-            )}
-            {media.length > 0 && (
-                <div className="flex flex-col gap-3">
-                    {media.map((item) => (
-                        <MediaView
-                            key={`${item.kind}:${item.url}`}
-                            media={item}
-                        />
-                    ))}
-                </div>
             )}
         </div>
     );

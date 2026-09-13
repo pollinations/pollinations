@@ -23,7 +23,6 @@ import {
     mediaResponseDescription,
 } from "../media/response-output.ts";
 import { mediaResponses } from "../media/responses.ts";
-import { fetchModelHealthData } from "./model-status.ts";
 import { textBalanceNotice } from "../middleware/text-balance-notice.ts";
 import {
     formatOpenAIImageResponse,
@@ -31,6 +30,7 @@ import {
     prepareOpenAIImageEdit,
     prepareOpenAIImageGeneration,
 } from "./images.ts";
+import { fetchModelHealthData } from "./model-status.ts";
 
 // Wrapper for resolver that enables schema deduplication via $ref
 // Schemas with .meta({ $id: "Name" }) will be extracted to components/schemas
@@ -322,17 +322,11 @@ function attachHealth(
 ): GenerationModelEntry[] {
     if (!healthData) return entries;
     return entries.map((entry) => {
-        const health = healthFor(
-            entry.info,
-            healthData.data.data,
-            {
-                timestamp: healthData.timestamp,
-                minutes: MODEL_HEALTH_WINDOW_MINUTES,
-            },
-        );
-        return health
-            ? { ...entry, info: { ...entry.info, health } }
-            : entry;
+        const health = healthFor(entry.info, healthData.data.data, {
+            timestamp: healthData.timestamp,
+            minutes: MODEL_HEALTH_WINDOW_MINUTES,
+        });
+        return health ? { ...entry, info: { ...entry.info, health } } : entry;
     });
 }
 

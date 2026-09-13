@@ -309,12 +309,7 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
             normalizedJsonBody(
                 JSON.stringify({
                     prompt: safePrompt,
-                    // Any listed model may serve, so the whole list identifies
-                    // the cache entry. Keying on the primary alone would store
-                    // one model's image under another's key.
-                    model:
-                        c.var.model.listedModels?.join(",") ??
-                        c.var.model.resolved,
+                    model: c.var.model.resolved,
                     ...resolved,
                     ...collectPassthrough(body, ...CACHE_PARAMS),
                 }),

@@ -1,0 +1,45 @@
+name: CI / Floret
+
+on:
+  pull_request:
+    paths:
+      - "apps/floret/**"
+      - ".github/workflows/ci-floret.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/floret/**"
+      - ".github/workflows/ci-floret.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/floret
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      - name: Install dependencies
+        run: |
+          python -m pip install '.[dev]'
+          npm ci --workspaces=false
+      - name: Test Python and shell runner
+        run: python -m pytest tests test_shell_runner.py
+      - name: Typecheck production source
+        run: python -m mypy --config-file pyproject.toml src/floret
+      - name: Test Worker boundaries
+        run: node --test gateway.test.js model-catalog.test.js shell-container.test.js worker-runtime.test.js worker-rpc.test.js
+      - name: Validate deployment bundle
+        run: npm run deploy -- --dry-run
+      - name: Build shell image
+        run: docker build -f Dockerfile.shell -t floret-shell-test .

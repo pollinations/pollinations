@@ -18,7 +18,7 @@ import {
 } from "./registry/usage-headers.ts";
 import type { SafetyFeature } from "./schemas/safety.ts";
 
-export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
+export const COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
 export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 3 * 60 * 60 * 1000;
 export const COMMUNITY_ENDPOINT_MODALITIES = [
@@ -539,6 +539,7 @@ export type CommunityEndpointVisibility =
 export const LISTING_TYPES = [
     "proxy",
     "prompt_agent",
+    "code_agent",
     "endpoint_agent",
 ] as const;
 
@@ -548,6 +549,8 @@ export const LISTING_TYPES = [
 // The reserved .invalid host guarantees it can never become a real target.
 export const PROMPT_AGENT_BASE_URL_PLACEHOLDER =
     "https://agent-runtime.invalid/api/agent-runtime/v1";
+export const CODE_AGENT_BASE_URL_PLACEHOLDER =
+    "https://code-agent-runtime.invalid/v1/responses";
 
 export type ListingType = (typeof LISTING_TYPES)[number];
 
@@ -630,6 +633,51 @@ export const PromptAgentInputSchema = PromptAgentConfigSchema.strict();
 
 export type PromptAgentListingPayload = z.infer<typeof PromptAgentConfigSchema>;
 
+const GitHubRepositorySchema = z
+    .string()
+    .trim()
+    .url()
+    .transform((value, context) => {
+        const url = new URL(value);
+        const parts = url.pathname
+            .replace(/\.git$/, "")
+            .split("/")
+            .filter(Boolean);
+        if (
+            url.protocol !== "https:" ||
+            url.hostname !== "github.com" ||
+            url.username ||
+            url.password ||
+            url.port ||
+            url.search ||
+            url.hash ||
+            parts.length !== 2
+        ) {
+            context.addIssue({
+                code: "custom",
+                message: "Repository must be an HTTPS GitHub repository URL",
+            });
+            return z.NEVER;
+        }
+        return `https://github.com/${parts[0]}/${parts[1]}`;
+    });
+
+/** Public GitHub source selected when a code agent is created. */
+export const CodeAgentInputSchema = z
+    .object({
+        repository: GitHubRepositorySchema.describe(
+            "Public GitHub repository containing agent.ts at its root.",
+        ),
+    })
+    .strict();
+
+/** Immutable GitHub source revision currently deployed for a code agent. */
+export const CodeAgentConfigSchema = CodeAgentInputSchema.extend({
+    deployedCommitSha: z.string().regex(/^[0-9a-f]{40}$/),
+}).strict();
+
+export type CodeAgentListingPayload = z.infer<typeof CodeAgentConfigSchema>;
+
 /**
  * An agent on the owner's own server. It is sent a run token rather than a
  * credential. The rate limit remains gateway policy, not an upstream secret.
@@ -648,12 +696,14 @@ export type EndpointAgentListingPayload = z.infer<
 export type ListingPayloadByType = {
     proxy: ProxyListingPayload;
     prompt_agent: PromptAgentListingPayload;
+    code_agent: CodeAgentListingPayload;
     endpoint_agent: EndpointAgentListingPayload;
 };
 
 const LISTING_PAYLOAD_SCHEMA_BY_TYPE = {
     proxy: ProxyListingPayloadSchema,
     prompt_agent: PromptAgentConfigSchema,
+    code_agent: CodeAgentConfigSchema,
     endpoint_agent: EndpointAgentListingPayloadSchema,
 } as const;
 
@@ -798,6 +848,11 @@ export type PromptAgentCommunityEndpointRuntime =
         type: "prompt_agent";
     };
 
+/** An agent whose JavaScript module runs in an isolated dispatch Worker. */
+export type CodeAgentCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
+    type: "code_agent";
+};
+
 /** An agent on the owner's own server, sent a run token instead of a key. */
 export type EndpointAgentCommunityEndpointRuntime =
     CommunityEndpointRuntimeBase & {
@@ -807,14 +862,15 @@ export type EndpointAgentCommunityEndpointRuntime =
 export type CommunityEndpointRuntime =
     | ProxyCommunityEndpointRuntime
     | PromptAgentCommunityEndpointRuntime
+    | CodeAgentCommunityEndpointRuntime
     | EndpointAgentCommunityEndpointRuntime;
 
 /**
  * Whether calls to this endpoint spend the caller's balance downstream.
  *
- * Both agent kinds do — one runs here, one on the owner's server, and either
- * way the work is charged to whoever called. A proxy never does: its owner
- * pays their own upstream and charges the caller a declared price. This is the
+ * Every agent kind does: its work is charged to whoever called. A proxy never
+ * does: its owner pays their own upstream and charges the caller a declared
+ * price. This is the
  * fact that decides which credential goes on the wire, so it has one name.
  */
 export function usesAgentRunToken(endpoint: CommunityEndpointRuntime): boolean {
@@ -857,17 +913,14 @@ export function communityModelId(
     ownerGithubUsername: string,
     modelName: string,
 ): string {
-    return `${ownerGithubUsername}/${modelName}`;
+    return `${COMMUNITY_MODEL_PREFIX}${ownerGithubUsername}/${modelName}`;
 }
 
 export function legacyCommunityModelId(
     ownerGithubUsername: string,
     modelName: string,
 ): string {
-    return `${LEGACY_COMMUNITY_MODEL_PREFIX}${communityModelId(
-        ownerGithubUsername,
-        modelName,
-    )}`;
+    return `${ownerGithubUsername}/${modelName}`;
 }
 
 export function normalizeCommunityEndpointBearerToken(value: string): string {
@@ -903,8 +956,8 @@ export function isCommunityEndpointOwnerAllowed(
 export function parseCommunityModelId(
     model: string,
 ): CommunityModelParts | null {
-    const value = model.startsWith(LEGACY_COMMUNITY_MODEL_PREFIX)
-        ? model.slice(LEGACY_COMMUNITY_MODEL_PREFIX.length).trim()
+    const value = model.startsWith(COMMUNITY_MODEL_PREFIX)
+        ? model.slice(COMMUNITY_MODEL_PREFIX.length).trim()
         : model.trim();
     const separator = value.indexOf("/");
     if (separator <= 0) return null;

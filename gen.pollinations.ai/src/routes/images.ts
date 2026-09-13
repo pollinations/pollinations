@@ -5,7 +5,6 @@
  */
 
 import { UpstreamError } from "@shared/error.ts";
-import { getPublicOrigin } from "@shared/public-origin.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
@@ -18,15 +17,12 @@ import {
     CreateImageEditRequestSchema,
     type CreateImageRequest,
 } from "@shared/schemas/openai.ts";
-import {
-    normalizeSafeValue,
-    SAFETY_HEADER_NAME,
-    type SafeValue,
-} from "@shared/schemas/safety.ts";
+import { normalizeSafeValue, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import type { Env } from "@/env.ts";
 import { generateImageOrVideoResponse } from "@/image/handler.ts";
+import { normalizedJsonBody } from "@/middleware/generation-cache.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
 
@@ -80,14 +76,6 @@ function responseImageUsage(
     const fallbackTarget = response.headers.get(FALLBACK_TARGET_HEADER);
     if (fallbackTarget) c.header(FALLBACK_TARGET_HEADER, fallbackTarget);
     return usageToOpenAIImageUsage(usage);
-}
-
-function setUrlParam(url: URL, name: string, value: unknown): void {
-    if (value === undefined || value === null) return;
-    url.searchParams.set(
-        name,
-        Array.isArray(value) ? value.join("|") : String(value),
-    );
 }
 
 /** Resolve OpenAI params to Pollinations equivalents. */
@@ -232,10 +220,20 @@ async function parseEditInput(c: Context): Promise<{
 
 // --- Exported handlers ---
 
-/** Normalize edit inputs once per request; only file-producing inputs identify the cache. */
-export const prepareOpenAIImageEdit = createMiddleware<Env>(async (c, next) => {
-    const { imageUrls, extra, response_format, ...input } =
-        await parseEditInput(c);
+type EditInput = Omit<
+    Awaited<ReturnType<typeof parseEditInput>>,
+    "response_format"
+>;
+
+/**
+ * Build the JSON edits body the coordinator replays. Every entry point
+ * (native edits, Chat, Responses) hashes this same normalized body, so
+ * identical edits share one cache key and one generation.
+ */
+export async function prepareImageEditRequest(
+    c: Context<Env>,
+    { imageUrls, extra, ...input }: EditInput,
+) {
     const body = {
         ...extra,
         ...input,
@@ -247,14 +245,23 @@ export const prepareOpenAIImageEdit = createMiddleware<Env>(async (c, next) => {
     };
     // Replay the JSON edits contract even when the caller uploaded multipart files.
     // Leave random seed selection to execution so retries without a seed still join.
-    c.set("generationRequestBody", JSON.stringify(body));
+    const identity = normalizedJsonBody(JSON.stringify(body));
+    c.set("generationRequestBody", identity);
+    c.set("generationCacheBody", identity);
     c.set("generationRequestContentType", "application/json");
+    if (c.var.track) c.var.track.streamRequested = false;
+    return body;
+}
+
+/** Normalize edit inputs once per request; only file-producing inputs identify the cache. */
+export const prepareOpenAIImageEdit = createMiddleware<Env>(async (c, next) => {
+    const { response_format, ...input } = await parseEditInput(c);
+    const body = await prepareImageEditRequest(c, input);
     c.req.addValidatedData("json", {
         ...body,
-        image: imageUrls,
+        image: input.imageUrls,
         response_format,
     });
-    if (c.var.track) c.var.track.streamRequested = false;
     await next();
 });
 
@@ -274,12 +281,11 @@ export const prepareOpenAIImageEditReplay = createMiddleware<Env>(
     },
 );
 
-/** Resolve the POST body to the equivalent public media URL used for caching. */
+/** Normalize the generation body and hash the parts that shape the file. */
 export const prepareOpenAIImageGeneration = createMiddleware<Env>(
     async (c, next) => {
         const body = c.req.valid("json" as never) as CreateImageRequest &
             Record<string, unknown>;
-        const model = c.var.model.resolved;
 
         // This endpoint returns a complete image/JSON, never an SSE stream.
         // A passthrough stream flag must not bypass durable media storage.
@@ -295,23 +301,20 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
             prompt: safePrompt,
         });
         c.set("generationRequestBody", JSON.stringify(body));
-
-        const imageUrl = new URL(
-            `/image/${encodeURIComponent(body.prompt)}`,
-            getPublicOrigin(c),
+        // Only the prompt, the model and the generation parameters change the
+        // bytes. Response formatting and caller metadata are left out so they
+        // do not split one image across several cache entries.
+        c.set(
+            "generationCacheBody",
+            normalizedJsonBody(
+                JSON.stringify({
+                    prompt: safePrompt,
+                    model: c.var.model.resolved,
+                    ...resolved,
+                    ...collectPassthrough(body, ...CACHE_PARAMS),
+                }),
+            ),
         );
-        for (const [name, value] of Object.entries({
-            model,
-            ...resolved,
-            ...collectPassthrough(body, ...CACHE_PARAMS),
-        })) {
-            setUrlParam(imageUrl, name, value);
-        }
-        const safeValue = normalizeSafeValue(
-            (body.safe ?? c.req.header(SAFETY_HEADER_NAME)) as SafeValue,
-        );
-        if (safeValue) imageUrl.searchParams.set("safe", safeValue);
-        c.set("generationCacheUrl", imageUrl);
 
         await next();
     },

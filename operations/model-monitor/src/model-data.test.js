@@ -122,9 +122,47 @@ test("video aliases use image events while preserving video favorites", () => {
         true,
     );
     assert.equal(results[1].catalogStatus, "historical");
+    assert.equal(results[1].type, "video");
+    assert.equal(results[1].endpointType, "image");
     assert.deepEqual(migrateFavorites(["video-old-video"], results), [
         "video-publisher/video-1",
     ]);
+});
+
+test("renamed community models keep their catalog category and scope", () => {
+    const renamed = normalizeCatalogModel({
+        name: "community/owner/seedance",
+        category: "video",
+        community: true,
+        aliases: ["owner/seedance"],
+    });
+    const [, historical] = mergeModelHealth(
+        [renamed],
+        [
+            {
+                model: "owner/seedance",
+                event_type: "generate.image",
+                provider: "community",
+                total_requests: 3,
+                status_2xx: 3,
+            },
+        ],
+        true,
+    );
+    assert.equal(historical.catalogStatus, "historical");
+    assert.equal(historical.type, "video");
+    assert.equal(historical.community, true);
+});
+
+test("unregistered traffic still falls back to the event type", () => {
+    const [unregistered] = mergeModelHealth(
+        [],
+        [{ model: "owner/deleted", event_type: "generate.image" }],
+        true,
+    );
+    assert.equal(unregistered.catalogStatus, "unregistered");
+    assert.equal(unregistered.type, "image");
+    assert.equal(unregistered.community, false);
 });
 
 test("favorites migrate and deduplicate without erasing unknown selections", () => {

@@ -877,6 +877,106 @@ test("media text protocols reject invalid prompts and attachments before generat
     ).toBe(false);
 });
 
+test("media text protocols share one edit generation with native edits", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "deepInfra");
+    const { key } = await createTestApiKey({ user: { packBalance: 100 } });
+    const image = `data:image/png;base64,${png1x1Base64}`;
+    const prompt = `edit wrapper ${crypto.randomUUID()}`;
+    const bindings = withInlineGenerationCoordinator(env);
+    const native = await fetchWorker(
+        "/v1/images/edits",
+        {
+            method: "POST",
+            headers: {
+                authorization: `Bearer ${key}`,
+                "content-type": "application/json",
+            },
+            body: JSON.stringify({
+                model: "prunaai/p-image-edit",
+                prompt,
+                image,
+            }),
+        },
+        bindings,
+    );
+    expect(native.response.status, await native.response.clone().text()).toBe(
+        200,
+    );
+    await native.wait();
+    expect(mocks.deepInfra.state.requests).toHaveLength(1);
+    const request = (protocol: string, model: string) =>
+        fetchWorker(
+            `/v1/${protocol}`,
+            {
+                method: "POST",
+                headers: {
+                    authorization: `Bearer ${key}`,
+                    "content-type": "application/json",
+                },
+                body: JSON.stringify({
+                    model,
+                    [protocol === "responses" ? "input" : "messages"]: [
+                        {
+                            role: "user",
+                            content: [
+                                {
+                                    type:
+                                        protocol === "responses"
+                                            ? "input_text"
+                                            : "text",
+                                    text: prompt,
+                                },
+                                protocol === "responses"
+                                    ? { type: "input_image", image_url: image }
+                                    : {
+                                          type: "image_url",
+                                          image_url: { url: image },
+                                      },
+                            ],
+                        },
+                    ],
+                }),
+            },
+            bindings,
+        );
+    const results = await Promise.all(
+        ["responses", "chat/completions"].map((protocol) =>
+            request(protocol, "prunaai/p-image-edit"),
+        ),
+    );
+    for (const { response } of results)
+        expect(response.status, await response.clone().text()).toBe(200);
+    const chat = (await results[1].response.json()) as {
+        choices: { message: { content: string } }[];
+    };
+    expect(chat.choices[0].message.content).toMatch(
+        /^!\[Image\]\(https:\/\/media\./,
+    );
+    await Promise.all(results.map(({ wait }) => wait()));
+    // All three entry points hash the same edit body, so the native
+    // generation serves both text protocols from the cache.
+    expect(mocks.deepInfra.state.requests).toHaveLength(1);
+    expect(mocks.deepInfra.state.requests[0]).toMatchObject({
+        prompt,
+        images: [image],
+    });
+    expect(
+        mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
+    ).toHaveLength(1);
+    expect(
+        mocks.tinybird.state.events.find((event) => event.isBilledUsage),
+    ).toMatchObject({ modelRequested: "prunaai/p-image-edit" });
+
+    // A text-input-only media model rejects images before any generation.
+    const { response, wait } = await request("chat/completions", "flux");
+    expect(response.status).toBe(400);
+    expect(await response.text()).toContain("does not accept image input");
+    await wait();
+    expect(mocks.deepInfra.state.requests).toHaveLength(1);
+});
+
 test("media Responses rejects invalid string input before generation", async ({
     mocks,
 }) => {
@@ -1979,7 +2079,7 @@ test("Perplexity aliases add no options and allow explicit override", async ({
     });
 });
 
-test("rejects unsupported Perplexity search context sizes", async ({
+test("forwards a medium search context and bills the medium fee", async ({
     paidApiKey,
     mocks,
 }) => {
@@ -1992,23 +2092,25 @@ test("rejects unsupported Perplexity search context sizes", async ({
         },
         body: JSON.stringify({
             model: "perplexity/sonar",
-            messages: [{ role: "user", content: "invalid context" }],
+            messages: [{ role: "user", content: "medium context" }],
             web_search_options: { search_context_size: "medium" },
         }),
     });
 
-    expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toEqual({
-        error: {
-            message:
-                'Unsupported web_search_options.search_context_size. Use "low" or "high".',
-        },
-    });
-    expect(mocks.portkeyDirect.state.requests).toHaveLength(0);
+    expect(response.status).toBe(200);
+    await response.text();
     await wait();
+
+    expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
+        web_search_options: { search_context_size: "medium" },
+    });
+    // The reply reports no tier, so the fee follows what the caller asked for.
+    expect(mocks.tinybird.state.events[0].adjustmentCosts).toEqual({
+        "perplexity.sonar_medium.search_request.v1": 0.008,
+    });
 });
 
-test("pins other Perplexity models high and strips search options elsewhere", async ({
+test("forwards search options untouched and bills the requested tier", async ({
     paidApiKey,
     mocks,
 }) => {
@@ -2016,7 +2118,7 @@ test("pins other Perplexity models high and strips search options elsewhere", as
 
     for (const [model, searchContextSize] of [
         ["perplexity/sonar-pro", "low"],
-        ["perplexity/sonar-reasoning-pro", "low"],
+        ["perplexity/sonar-reasoning-pro", "high"],
         ["openai/gpt-5-nano", "medium"],
     ] as const) {
         const { response, wait } = await fetchWorker("/v1/chat/completions", {
@@ -2041,14 +2143,21 @@ test("pins other Perplexity models high and strips search options elsewhere", as
 
     expect(mocks.portkeyDirect.state.requests).toHaveLength(3);
     expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
-        web_search_options: { search_context_size: "high" },
+        web_search_options: { search_context_size: "low" },
     });
     expect(mocks.portkeyDirect.state.requests[1]).toMatchObject({
         web_search_options: { search_context_size: "high" },
     });
-    expect(mocks.portkeyDirect.state.requests[2]).not.toHaveProperty(
-        "web_search_options",
-    );
+    expect(mocks.portkeyDirect.state.requests[2]).toMatchObject({
+        web_search_options: { search_context_size: "medium" },
+    });
+    expect(mocks.tinybird.state.events[0].adjustmentCosts).toEqual({
+        "perplexity.sonar_pro_low.search_request.v1": 0.006,
+    });
+    expect(mocks.tinybird.state.events[1].adjustmentCosts).toEqual({
+        "perplexity.sonar_reasoning_high.search_request.v1": 0.014,
+    });
+    expect(mocks.tinybird.state.events[2].adjustmentCosts).toBeUndefined();
 });
 
 test("streaming chat completions bill provider-reported Perplexity request cost", async ({

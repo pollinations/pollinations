@@ -32,6 +32,7 @@ from .chart_renderer import (
     SUPPORTED_TYPES as CHART_TYPES,
 )
 from .diagrams import detect_diagram_type, render_mermaid_safe
+from .visual_studio import render_studio
 
 logger = logging.getLogger(__name__)
 
@@ -325,6 +326,9 @@ async def render_visual(
             kind = detect_diagram_type(inline_source) or "diagram"
             return _ok(title or f"{kind} rendered.", [_png_to_data_url(buffer)])
         logger.info("Mermaid render failed (%s); trying other renderers", error)
+
+    if chart_type in ("studio", "visual_studio"):
+        return await render_studio(title, data, options)
 
     if chart_type == "table":
         table = _normalize_table_data(data)

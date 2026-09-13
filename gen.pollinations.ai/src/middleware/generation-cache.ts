@@ -22,8 +22,6 @@ export type GenerationCacheVariables = {
         adapter: GenerationCacheAdapter;
         key: string;
     };
-    /** Alternate request identity for routes which wrap a media response. */
-    generationCacheUrl?: URL;
     /** Native route replayed when a public endpoint only formats its result. */
     generationRequestUrl?: URL;
     generationRequestMethod?: string;
@@ -65,7 +63,8 @@ export type GenerationCacheAdapter = {
     ) => { response: Response; write: Promise<void> };
 };
 
-function normalizedJsonBody(body: string): string {
+/** One stable identity per JSON body: key order and the `key` credential do not matter. */
+export function normalizedJsonBody(body: string): string {
     try {
         const parsed = JSON.parse(body);
         if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
@@ -134,7 +133,12 @@ export const prepareGenerationRequest = createMiddleware<GenerationCacheEnv>(
             if (typeof body === "string") {
                 c.set("generationRequestBody", identity);
             }
-            c.set("generationCacheBody", identity);
+            // A route that already declared its cache identity keeps it: the
+            // replayable body carries fields, such as the response format,
+            // that do not change the generated file.
+            if (c.var.generationCacheBody === undefined) {
+                c.set("generationCacheBody", identity);
+            }
             return next();
         }
 

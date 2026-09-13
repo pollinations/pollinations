@@ -612,6 +612,64 @@ test("POST /api/stripe/billing/portal creates a Stripe Portal session", async ({
     });
 });
 
+test("POST /api/stripe/billing/portal returns to standalone top-up without changing the shared default", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const response = await SELF.fetch(`${base}/billing/portal`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            cookie: `better-auth.session_token=${sessionToken}`,
+        },
+        body: JSON.stringify({
+            return: "top-up",
+            redirect: "https://app.example/chat",
+        }),
+    });
+    expect(response.status).toBe(200);
+    const request = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/billing_portal/sessions",
+    );
+    const url = new URL(String(request?.body.return_url));
+    expect(url.origin).toBe(new URL(env.STRIPE_SUCCESS_URL).origin);
+    expect(url.pathname).toBe("/top-up");
+    expect(url.searchParams.get("redirect")).toBe("https://app.example/chat");
+    expect(url.searchParams.get("stripe_billing_return")).toBe("true");
+    const defaultUrl = new URL(
+        String(mocks.stripe.state.portalConfigurations[0].default_return_url),
+    );
+    expect(defaultUrl.pathname).toBe("/pollen");
+    expect(defaultUrl.searchParams.has("redirect")).toBe(false);
+});
+
+test("POST /api/stripe/billing/portal returns to Pollen for any other return value", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    for (const value of ["/top-up", "https://evil.example", 123, null]) {
+        mocks.stripe.state.requests.length = 0;
+        const response = await SELF.fetch(`${base}/billing/portal`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({ return: value }),
+        });
+        expect(response.status).toBe(200);
+        const request = mocks.stripe.state.requests.find(
+            (request) => request.path === "/v1/billing_portal/sessions",
+        );
+        const url = new URL(String(request?.body.return_url));
+        expect(url.origin).toBe(new URL(env.STRIPE_SUCCESS_URL).origin);
+        expect(url.pathname).toBe("/pollen");
+        expect(url.searchParams.get("stripe_billing_return")).toBe("true");
+    }
+});
+
 test("POST /api/stripe/billing/portal updates existing Stripe Portal headline", async ({
     sessionToken,
     mocks,
@@ -3381,4 +3439,66 @@ test("POST /api/webhooks/stripe emits checkout.session.expired to Tinybird witho
     // Exact serialization: the expired handler does not emit the offered
     // payment methods, so the shared mapper must not synthesize them here.
     expect(emitted.payment_methods_offered).toBe("");
+});
+
+test("GET /api/stripe/checkout/p5?return=top-up returns to the standalone page", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+
+    const response = await SELF.fetch(
+        `${base}/checkout/p5?return=top-up&redirect=${encodeURIComponent("https://app.example/chat")}`,
+        {
+            method: "GET",
+            headers: { cookie: `better-auth.session_token=${sessionToken}` },
+            redirect: "manual",
+        },
+    );
+    expect(response.status).toBe(302);
+
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    const successUrl = new URL(String(body?.success_url));
+    expect(successUrl.origin).toBe(new URL(env.STRIPE_SUCCESS_URL).origin);
+    expect(successUrl.pathname).toBe("/top-up");
+    expect(successUrl.searchParams.get("redirect")).toBe(
+        "https://app.example/chat",
+    );
+    expect(successUrl.searchParams.get("pack")).toBe("p5");
+    expect(successUrl.searchParams.get("stripe_success")).toBe("true");
+    expect(new URL(String(body?.cancel_url)).pathname).toBe("/top-up");
+});
+
+test("GET /api/stripe/checkout/p5 returns to Pollen for any other return value", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+
+    for (const value of ["/top-up", "https://evil.example/x", "elsewhere"]) {
+        mocks.stripe.state.requests.length = 0;
+        const response = await SELF.fetch(
+            `${base}/checkout/p5?return=${encodeURIComponent(value)}`,
+            {
+                method: "GET",
+                headers: {
+                    cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                redirect: "manual",
+            },
+        );
+        expect(response.status).toBe(302);
+        const body = mocks.stripe.state.requests.find(
+            (request) => request.path === "/v1/checkout/sessions",
+        )?.body;
+        for (const target of [body?.success_url, body?.cancel_url]) {
+            const url = new URL(String(target));
+            expect(url.origin, value).toBe(
+                new URL(env.STRIPE_SUCCESS_URL).origin,
+            );
+            expect(url.pathname, value).toBe("/pollen");
+        }
+    }
 });

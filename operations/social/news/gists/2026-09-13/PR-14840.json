@@ -1,0 +1,35 @@
+{
+  "pr_number": 14840,
+  "title": "fix: refresh harness setup and update guidance",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14840",
+  "merged_at": "2026-09-13T23:57:46Z",
+  "labels": [],
+  "pr_body_excerpt": "- Launch DSH with explicit @latest and select Python 3.12 for Bloom installation.\n- Document native update commands and current OpenClaw/Pi Node requirements.\n- Bump Polli CLI to 0.1.15 to ship the refreshed guidance, including #14838.\n- Verify current releases locally: DSH 0.1.5-rc.1, OpenCode 1.18.30 + plugin 6.5.5, OpenClaw 2026.9.4, Pi 0.85.1, Prime 0.9.4 and Bloom 0.1.3.\n- All 111 CLI tests, build and changed-code lint pass. Latest harnesses load generated configurations/catalogs; DSH reaches the expected 401 with a dummy key. Successful paid inference is not claimed.\n\nFollow-up to #14666. No provider schema or alias-resolution changes.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Harnesses, freshly watered",
+    "blurb": "Polli CLI 0.1.15 refreshes the setup map for the current crop of coding harnesses. DSH now starts from @latest with Python 3.12 for Bloom, while the guide records the native update paths and current OpenClaw/Pi requirements.",
+    "summary": "Bumped Polli CLI to 0.1.15, updated DSH setup to launch via @latest with Python 3.12 for Bloom, and refreshed CODING_HARNESSES.md with native update commands and verified versions for DSH, OpenCode, OpenClaw, Pi, Prime, and Bloom.",
+    "impact": "Developers setting up current harness releases get working generated configurations and catalog loading guidance, with DSH reaching the expected authentication check using a dummy key.",
+    "keywords": [
+      "polli-cli",
+      "coding-harnesses",
+      "DSH",
+      "Bloom",
+      "OpenClaw",
+      "documentation",
+      "compatibility"
+    ],
+    "visual_concept": "A cozy garden-shed workstation represents refreshed local coding-harness setup: Polli, wearing a tiny mechanic tool belt, tends labeled code-plants for DSH, Bloom, OpenCode, OpenClaw, Pi, and Prime. A friendly CRT monitor robot displays a clean harness catalog while a retro terminal shows a small successful setup check, surrounded by flowers and lime-green configuration sprouts.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed hackerspace: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny mechanic tool belt and carefully waters code-plants labeled DSH, Bloom, OpenCode, OpenClaw, Pi, and Prime beside a retro terminal glowing lime green (#ecf874). A cute chunky CRT-monitor robot holds a harness catalog with a small pixel-font message \"SETUP READY,\" while flowers and vines curl around the desk; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-13/PR-14840.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed hackerspace: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny mechanic tool belt and carefully waters code-plants labeled DSH, Bloom, OpenCode, OpenClaw, Pi, and Prime beside a retro terminal glowing lime green (#ecf874). A cute chunky CRT-monitor robot holds a harness catalog with a small pixel-font message \"SETUP READY,\" while flowers and vines curl around the desk; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-13T23:58:46.322629+00:00"
+}

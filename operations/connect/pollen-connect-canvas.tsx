@@ -10,7 +10,6 @@ import {
     GridIcon,
     IconButton,
     MoonIcon,
-    RouteIcon,
     ScrollArea,
     SmartphoneIcon,
     SunIcon,
@@ -65,6 +64,7 @@ import {
 import {
     ReviewHeader,
     ReviewJourney,
+    ReviewJourneyTab,
     ReviewPanel,
     ReviewProvider,
     useReview,
@@ -959,17 +959,11 @@ function ConnectLab() {
                                 aria-label="View"
                                 data-theme="neutral"
                             >
-                                <IconButton
-                                    size="md"
-                                    variant={
-                                        view === "journey" ? "tile" : "ghost"
-                                    }
-                                    pressed={view === "journey"}
-                                    title="Journey"
-                                    onClick={() => changeView("journey")}
-                                >
-                                    <RouteIcon className="polli:h-4 polli:w-4" />
-                                </IconButton>
+                                <ReviewJourneyTab
+                                    active={view === "journey"}
+                                    visited={journeyVisited}
+                                    onResume={() => changeView("journey")}
+                                />
                                 <IconButton
                                     size="md"
                                     variant={view === "map" ? "tile" : "ghost"}

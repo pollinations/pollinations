@@ -1,4 +1,11 @@
-import { Button, ChevronIcon, Dropdown, TabButton } from "@pollinations/ui";
+import {
+    Button,
+    ChevronIcon,
+    Dropdown,
+    IconButton,
+    RouteIcon,
+    TabButton,
+} from "@pollinations/ui";
 import { loginErrors } from "@shared/auth/login-errors.ts";
 import {
     createContext,
@@ -174,6 +181,8 @@ export function ReviewProvider({
     }, [enabled, query, cases.length]);
     function selectScreen(pageId: string, recipe?: ReviewCase) {
         if (!screens.some((entry) => entry.id === pageId)) return;
+        if (pageId === screen?.id && (!recipe || recipe.id === selected?.id))
+            return;
         setRunError("");
         setPendingScope(scope);
         setSelections((all) => ({
@@ -318,6 +327,37 @@ export function ReviewHeader({ children }: PropsWithChildren) {
     );
 }
 
+export function ReviewJourneyTab({
+    active,
+    visited,
+    onResume,
+}: {
+    active: boolean;
+    visited: boolean;
+    onResume: () => void;
+}) {
+    const review = useReview();
+    const { state, busy } = useConnectConditions();
+    return (
+        <IconButton
+            size="md"
+            variant={active ? "tile" : "ghost"}
+            pressed={active}
+            title={review?.running ? "Starting Journey…" : "Journey"}
+            disabled={busy || !state || review?.running}
+            onClick={() => {
+                if (review?.selected && (review.pending || !visited))
+                    void review.run(review.selected);
+                else onResume();
+            }}
+        >
+            <RouteIcon
+                className={`polli:h-4 polli:w-4${review?.running ? " polli:animate-pulse" : ""}`}
+            />
+        </IconButton>
+    );
+}
+
 export function ReviewPanel({ journey }: { journey: boolean }) {
     const review = useReview();
     const { state, busy, error } = useConnectConditions();
@@ -387,18 +427,14 @@ export function ReviewPanel({ journey }: { journey: boolean }) {
                             review.
                         </p>
                     ) : null}
-                    {recipe && (
+                    {journey && recipe && (
                         <div className="connect-conditions-actions">
                             <Button
                                 size="sm"
                                 disabled={busy || !state || review.running}
                                 onClick={() => void review.run(recipe)}
                             >
-                                {review.running
-                                    ? "Starting…"
-                                    : journey
-                                      ? "Restart"
-                                      : "Run in Journey"}
+                                {review.running ? "Starting…" : "Restart"}
                             </Button>
                         </div>
                     )}

@@ -1,0 +1,79 @@
+{
+  "date": "2026-09-12",
+  "period_start": "2026-09-12",
+  "period_end": "2026-09-12",
+  "title": "Agents got a durable workspace and room to actually finish the job",
+  "summary": "A large agent-and-model day: persistent workspaces, longer tool runs, resilient model routing, 1080p video, and fewer dead ends when a request needs attention.\n\nThe new built-in computer MCP gives each user a persistent private workspace, Bash, asset publishing, and authenticated pushes to their own repositories. Agent runs now have more CPU, subrequests, steps, and tool calls for multi-file work; tool results and upstream errors also reach clients in usable formats instead of becoming mysterious failures. Floret moved shell execution into disposable Cloudflare containers, keeping credentials out of the terminal while preserving workspace files and streaming output.\n\nCommunity models now have canonical `community/owner/model` IDs while existing aliases keep generating, and DeepSeek V4.1 Flash joined the text API with reasoning and tool use. Callers can bring a fallback chain of up to four models, Perplexity search settings pass through intact, model status reads the catalog correctly, and media caching has one active path instead of carrying a retired bucket around like archaeological baggage.\n\nMiniMax H3 Max Turbo can now generate 1080p text-to-video and image-to-video clips through the existing generation routes. The app registry also gained Pollination_chatbot, a Login with Pollinations chat interface that can talk through OpenAI, Mistral, and Gemini-backed models.",
+  "pr_count": 17,
+  "prs": [
+    {
+      "number": 14621,
+      "date": "2026-09-12"
+    },
+    {
+      "number": 14736,
+      "date": "2026-09-12"
+    },
+    {
+      "number": 14740,
+      "date": "2026-09-12"
+    },
+    {
+      "number": 14741,
+      "date": "2026-09-12"
+    },
+    {
+      "number": 14744,
+      "date": "2026-09-12"
+    },
+    {
+      "number": 14747,
+      "date": "2026-09-12"
+    },
+    {
+      "number": 14750,
+      "date": "2026-09-12"
+    },
+    {
+      "number": 14755,
+      "date": "2026-09-12"
+    },
+    {
+      "number": 14761,
+      "date": "2026-09-12"
+    },
+    {
+      "number": 14764,
+      "date": "2026-09-12"
+    },
+    {
+      "number": 14779,
+      "date": "2026-09-12"
+    },
+    {
+      "number": 14780,
+      "date": "2026-09-12"
+    },
+    {
+      "number": 14782,
+      "date": "2026-09-12"
+    },
+    {
+      "number": 14784,
+      "date": "2026-09-12"
+    },
+    {
+      "number": 14786,
+      "date": "2026-09-12"
+    },
+    {
+      "number": 14787,
+      "date": "2026-09-12"
+    },
+    {
+      "number": 14792,
+      "date": "2026-09-12"
+    }
+  ],
+  "generated_at": "2026-09-13T06:31:17.380329+00:00"
+}

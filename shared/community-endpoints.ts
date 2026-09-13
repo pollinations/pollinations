@@ -678,15 +678,6 @@ export const CodeAgentConfigSchema = CodeAgentInputSchema.extend({
 
 export type CodeAgentListingPayload = z.infer<typeof CodeAgentConfigSchema>;
 
-/** Media handled through agent chat; excludes embeddings, 3D, and realtime. */
-export const EndpointAgentModalitiesSchema = z
-    .array(z.enum(MODEL_INPUT_MODALITIES))
-    .min(1)
-    .max(MODEL_INPUT_MODALITIES.length)
-    .refine((values) => new Set(values).size === values.length, {
-        message: "Duplicate modalities are not allowed",
-    });
-
 /**
  * An agent on the owner's own server. It is sent a run token rather than a
  * credential. The rate limit remains gateway policy, not an upstream secret.
@@ -695,8 +686,14 @@ export const EndpointAgentListingPayloadSchema = z
     .object({
         perUserRpm: z.number().finite().positive().nullable().default(null),
         api: CommunityEndpointApiSchema,
-        inputModalities: EndpointAgentModalitiesSchema.optional(),
-        outputModalities: EndpointAgentModalitiesSchema.optional(),
+        inputModalities: z
+            .array(z.enum(MODEL_INPUT_MODALITIES))
+            .min(1)
+            .optional(),
+        outputModalities: z
+            .array(z.enum(MODEL_INPUT_MODALITIES))
+            .min(1)
+            .optional(),
     })
     .strict();
 

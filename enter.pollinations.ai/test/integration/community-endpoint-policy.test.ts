@@ -57,67 +57,28 @@ async function publishPendingModel(
 }
 
 describe("community endpoint configuration policy", () => {
-    test("round-trips endpoint-agent modalities and preserves them during unrelated edits", async ({
+    test("preserves stored endpoint-agent modalities when editing the rate limit", async ({
         sessionToken,
     }) => {
-        const modalities = ["text", "image", "audio", "video"];
         const created = await postModel(sessionToken, "/endpoint-agents", {
             name: "multimodal-agent",
             title: "Multimodal agent",
             api: "chat_completions",
             url: "https://agent.example.com/v1/chat/completions",
-            inputModalities: modalities,
-            outputModalities: modalities,
         });
-        expect(created).toMatchObject({
-            inputModalities: modalities,
-            outputModalities: modalities,
-        });
-
-        const updated = await postModel(sessionToken, `/${created.id}/update`, {
-            perUserRpm: 7,
-            api: "responses",
-            url: "https://agent.example.com/v1/responses",
-        });
-        expect(updated).toMatchObject({
-            inputModalities: modalities,
-            outputModalities: modalities,
+        const payload = {
+            api: "chat_completions",
+            perUserRpm: null,
+            inputModalities: ["text", "image", "audio", "video"],
+            outputModalities: ["text", "image", "audio", "video"],
+        };
+        await drizzle(env.DB)
+            .update(schema.communityEndpoint)
+            .set({ payload: JSON.stringify(payload) })
+            .where(eq(schema.communityEndpoint.id, created.id as string));
+        await postModel(sessionToken, `/${created.id}/update`, {
             perUserRpm: 7,
         });
-
-        const edited = await postModel(sessionToken, `/${created.id}/update`, {
-            inputModalities: ["text", "image"],
-            outputModalities: ["image"],
-        });
-        expect(edited).toMatchObject({
-            inputModalities: ["text", "image"],
-            outputModalities: ["image"],
-            perUserRpm: 7,
-            api: "responses",
-        });
-
-        for (const field of ["inputModalities", "outputModalities"]) {
-            for (const invalid of [
-                [],
-                ["text", "text"],
-                ["3d"],
-                ["embedding"],
-                ["realtime"],
-            ]) {
-                const response = await SELF.fetch(
-                    `${endpointUrl}/${created.id}/update`,
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            Cookie: `better-auth.session_token=${sessionToken}`,
-                        },
-                        body: JSON.stringify({ [field]: invalid }),
-                    },
-                );
-                expect(response.status).toBe(400);
-            }
-        }
         const stored = await drizzle(env.DB, {
             schema,
         }).query.communityEndpoint.findFirst({
@@ -125,12 +86,7 @@ describe("community endpoint configuration policy", () => {
         });
         expect(
             parseListingPayload("endpoint_agent", stored?.payload ?? null),
-        ).toEqual({
-            api: "responses",
-            perUserRpm: 7,
-            inputModalities: ["text", "image"],
-            outputModalities: ["image"],
-        });
+        ).toEqual({ ...payload, perUserRpm: 7 });
     });
 
     test("rejects exact bundled ID collisions without reserving the publisher namespace", async ({

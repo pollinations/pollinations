@@ -488,8 +488,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const payload: EndpointAgentListingPayload = {
                 perUserRpm: input.perUserRpm,
                 api: input.api,
-                inputModalities: input.inputModalities,
-                outputModalities: input.outputModalities,
             };
             const [row] = await db
                 .insert(schema.communityEndpoint)
@@ -890,12 +888,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 if (input.upstreamModel !== undefined) {
                     update.upstreamModel = input.upstreamModel;
                 }
-                if (
-                    input.perUserRpm !== undefined ||
-                    input.api !== undefined ||
-                    input.inputModalities !== undefined ||
-                    input.outputModalities !== undefined
-                ) {
+                if (input.perUserRpm !== undefined || input.api !== undefined) {
                     update.payload = JSON.stringify({
                         ...current,
                         perUserRpm:
@@ -903,10 +896,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                                 ? current.perUserRpm
                                 : input.perUserRpm,
                         api: input.api ?? current.api,
-                        inputModalities:
-                            input.inputModalities ?? current.inputModalities,
-                        outputModalities:
-                            input.outputModalities ?? current.outputModalities,
                     });
                 }
             } else {

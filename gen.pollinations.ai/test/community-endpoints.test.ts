@@ -90,7 +90,6 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
-import configureHostedAgentsSql from "../../enter.pollinations.ai/scripts/configure-hosted-agents.sql?raw";
 import {
     callCommunitySpeechEndpoint,
     callCommunityTranscriptionEndpoint,
@@ -106,10 +105,7 @@ import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
 } from "../src/model-registry.ts";
-import {
-    communityEndpointGatewayContext,
-    communityEndpointModelConfig,
-} from "../src/text/communityEndpoint.ts";
+import { communityEndpointGatewayContext } from "../src/text/communityEndpoint.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const db = drizzle(env.DB);
@@ -7246,142 +7242,6 @@ fixtureTest(
                 output_modalities: modalities,
             });
         }
-    },
-);
-
-fixtureTest(
-    "converts hosted listings without losing identity or double billing Polli",
-    async () => {
-        const ownerUserId = await createTestUser({
-            githubUsername: "pollinations-router",
-        });
-        const otherOwnerUserId = await createTestUser({
-            githubUsername: `other-${crypto.randomUUID().slice(0, 8)}`,
-        });
-        const floretId = crypto.randomUUID();
-        const polliId = crypto.randomUUID();
-        const unrelatedId = crypto.randomUUID();
-        const polli = {
-            ownerUserId,
-            name: "polli",
-            title: "Polli",
-            description: "Support assistant",
-            baseUrl: "https://polli.pollinations.ai/v1/chat/completions",
-            api: "chat_completions" as const,
-            upstreamModel: "polli",
-            visibility: "public" as const,
-            hiddenAt: new Date(),
-            hiddenReason: "Old proxy failed",
-            perUserRpm: 7,
-            promptTextPrice: 0.0000014,
-            completionTextPrice: 0.0000044,
-            bearerTokenCiphertext: "test-proxy-ciphertext",
-        };
-        await insertCommunityEndpoints([
-            {
-                id: floretId,
-                ownerUserId,
-                name: "floret",
-                type: "endpoint_agent",
-                baseUrl: "https://floret.pollinations.ai/v1/chat/completions",
-                api: "chat_completions",
-                upstreamModel: "floret",
-                visibility: "public",
-            },
-            { ...polli, id: polliId },
-            { ...polli, id: unrelatedId, ownerUserId: otherOwnerUserId },
-        ]);
-        const applyUpdate = () =>
-            env.DB.batch(
-                configureHostedAgentsSql
-                    .split(";")
-                    .map((statement) => statement.trim())
-                    .filter(Boolean)
-                    .map((statement) => env.DB.prepare(statement)),
-            );
-        await applyUpdate();
-        const [updated] = await db
-            .select()
-            .from(communityEndpointTable)
-            .where(eq(communityEndpointTable.id, polliId));
-        expect(updated).toMatchObject({
-            id: polliId,
-            ownerUserId,
-            name: polli.name,
-            title: polli.title,
-            description: polli.description,
-            baseUrl: polli.baseUrl,
-            upstreamModel: polli.upstreamModel,
-            visibility: polli.visibility,
-            type: "endpoint_agent",
-            hiddenAt: null,
-            hiddenReason: null,
-        });
-        expect(JSON.parse(updated?.payload ?? "{}")).toEqual({
-            api: "chat_completions",
-            perUserRpm: 7,
-            inputModalities: ["text", "image"],
-            outputModalities: ["text"],
-        });
-        const entries = await getCommunityModelRegistryEntries(env);
-        const converted = entries.find(
-            (entry) => entry.communityEndpoint.id === polliId,
-        );
-        expect(converted?.id).toBe("community/pollinations-router/polli");
-        expect(converted?.info).toMatchObject({
-            agent: true,
-            input_modalities: ["text", "image"],
-            output_modalities: ["text"],
-        });
-        if (!converted)
-            throw new Error("Converted Polli is missing from registry");
-        const endpoint = converted.communityEndpoint;
-        expect(communityEndpointPrices(endpoint)).toEqual(
-            communityEndpointPrices({}),
-        );
-        const config = await communityEndpointModelConfig({
-            endpoint,
-            secret: "test-signing-secret",
-            parentApiKeyId: "caller-key-id",
-            parentRequestId: "caller-request-id",
-        });
-        expect(config.directEndpoint).toBe(polli.baseUrl);
-        expect(
-            await verifyAgentRunToken(
-                String(config.authKey),
-                "test-signing-secret",
-            ),
-        ).toMatchObject({
-            parentApiKeyId: "caller-key-id",
-            parentRequestId: "caller-request-id",
-        });
-        expect(
-            entries.find((entry) => entry.communityEndpoint.id === floretId)
-                ?.info,
-        ).toMatchObject({
-            agent: true,
-            input_modalities: ["text", "image", "audio", "video"],
-            output_modalities: ["text", "image", "audio", "video"],
-        });
-        const [unrelated] = await db
-            .select()
-            .from(communityEndpointTable)
-            .where(eq(communityEndpointTable.id, unrelatedId));
-        expect(unrelated?.type).toBe("proxy");
-        expect(unrelated?.hiddenReason).toBe(polli.hiddenReason);
-
-        // A retry must preserve later moderation of the converted agent.
-        await db
-            .update(communityEndpointTable)
-            .set({ hiddenAt: new Date(), hiddenReason: "New incident" })
-            .where(eq(communityEndpointTable.id, polliId));
-        await applyUpdate();
-        const [retried] = await db
-            .select()
-            .from(communityEndpointTable)
-            .where(eq(communityEndpointTable.id, polliId));
-        expect(retried?.payload).toBe(updated?.payload);
-        expect(retried?.hiddenReason).toBe("New incident");
     },
 );
 

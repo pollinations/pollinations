@@ -80,7 +80,7 @@ export function ModelListingFields({
 
     return (
         <>
-            {onInputModalitiesChange && (
+            {!isAgent && (
                 <FieldStack
                     label="Accepted inputs"
                     helper="Select every input type supported by this model. At least one is required."

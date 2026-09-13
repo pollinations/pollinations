@@ -1,6 +1,10 @@
 import { Tooltip } from "@pollinations/ui";
 import { type FC, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { CAPABILITY_ICON, getCommunityModelIcon } from "./model-icons.tsx";
+import {
+    CAPABILITY_ICON,
+    getCommunityModelIcon,
+    MODALITY_ICON,
+} from "./model-icons.tsx";
 import {
     type DisplayCapability,
     getModelBrandLogoPath,
@@ -8,13 +12,13 @@ import {
     getModelCapabilityLabel,
     getModelDisplayName,
     getModelInputModalities,
+    getModelModalityLabel,
     hasPollinationsTools,
     type InputModality,
     isAlpha,
     isNewModel,
     isPaidOnly,
 } from "./model-info.ts";
-import { ModelModalityBadges } from "./model-modality-badges.tsx";
 import {
     getModelTitleTooltipContent,
     ModelId,
@@ -167,6 +171,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const CommunityModelIcon = getCommunityModelIcon(model);
     const hasLeadingIcon = Boolean(brandLogoPath || CommunityModelIcon);
     const inputModalities = getModelInputModalities(model);
+    const modalityLabel = getModelModalityLabel(model);
     const capabilities = getModelCapabilities(model);
     const capabilityLabel = getModelCapabilityLabel(model);
     const pollinationsTools = hasPollinationsTools(model);
@@ -250,11 +255,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             <MobileMetadataBadges
                                 inputModalities={inputModalities}
                                 capabilities={capabilities}
-                                outputModalities={
-                                    model.agent
-                                        ? model.outputModalities
-                                        : undefined
-                                }
+                                modalityLabel={modalityLabel}
                                 capabilityLabel={capabilityLabel}
                                 perUserRpm={model.perUserRpm}
                             />
@@ -309,7 +310,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
 type MobileMetadataBadgesProps = {
     inputModalities: InputModality[];
     capabilities: DisplayCapability[];
-    outputModalities?: string[];
+    modalityLabel: string;
     capabilityLabel: string;
     perUserRpm?: number | null;
 };
@@ -317,7 +318,7 @@ type MobileMetadataBadgesProps = {
 const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
     inputModalities,
     capabilities,
-    outputModalities,
+    modalityLabel,
     capabilityLabel,
     perUserRpm,
 }) => {
@@ -331,11 +332,29 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
 
     return (
         <div className="inline-flex items-center gap-1.5 text-theme-text-muted">
-            <ModelModalityBadges
-                inputs={inputModalities}
-                outputs={outputModalities}
-                compact
-            />
+            {inputModalities.length > 0 && (
+                <Tooltip
+                    triggerAs="span"
+                    content={
+                        <span>
+                            <strong className="font-semibold text-theme-text-strong">
+                                Input:
+                            </strong>{" "}
+                            {inputModalities.join(", ")}
+                        </span>
+                    }
+                    ariaLabel={modalityLabel}
+                    tapEnabled
+                    displayContents
+                >
+                    <span className="inline-flex items-center gap-1">
+                        {inputModalities.map((key) => {
+                            const Icon = MODALITY_ICON[key];
+                            return <Icon key={key} className="h-4 w-4" />;
+                        })}
+                    </span>
+                </Tooltip>
+            )}
             {inputModalities.length > 0 && capabilities.length > 0 && (
                 <span className="h-3.5 w-px bg-current opacity-30" />
             )}

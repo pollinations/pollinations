@@ -1,0 +1,35 @@
+{
+  "pr_number": 14803,
+  "title": "docs: update README — 2026-09-13",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14803",
+  "merged_at": "2026-09-13T07:21:09Z",
+  "labels": [
+    "NEWS"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News and star history. Recent Apps is refreshed when an app is published.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh pollen on the README",
+    "blurb": "The project front porch got its daily sweep: latest hive news and the star-history garden are current again.",
+    "summary": "Refreshed README.md with the latest news and updated both light and dark GitHub star-history charts for 2026-09-13.",
+    "impact": "Visitors to the repository now see current project updates and an up-to-date view of the community’s GitHub star growth.",
+    "keywords": [
+      "readme",
+      "news",
+      "github",
+      "star-history",
+      "community"
+    ],
+    "visual_concept": "Depict Polli as the observant repository gardener updating a cozy bulletin board labeled README, with two tiny framed star-growth charts—one light and one dark—beside sprouting flowers shaped like stars. The scene represents a freshly maintained public project front page and growing community interest.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener visor, pinning fresh notes onto a retro glowing README bulletin board beside two small star-history charts and blooming star-shaped code flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font text: 'README'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-13/PR-14803.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener visor, pinning fresh notes onto a retro glowing README bulletin board beside two small star-history charts and blooming star-shaped code flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font text: 'README'."
+  },
+  "generated_at": "2026-09-13T07:22:05.502358+00:00"
+}

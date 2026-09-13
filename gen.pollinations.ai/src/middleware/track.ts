@@ -340,9 +340,7 @@ export const track = (eventType: EventType) =>
                             fallbackUsed:
                                 model !==
                                 requestTracking.resolvedModelRequested,
-                            modelUsed:
-                                attempt.candidate.definition?.publicModelId ??
-                                model,
+                            modelUsed: model,
                             modelProviderUsed:
                                 attempt.candidate.definition?.provider ??
                                 requestTracking.modelProvider,
@@ -669,13 +667,12 @@ export async function trackResponse(
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
-    const modelCalled = candidate.id || resolvedModelRequested;
+    const modelUsed = candidate.id || resolvedModelRequested;
     const modelProviderUsed =
         candidate.definition?.provider ?? requestTracking.modelProvider;
-    const modelUsed = candidate.definition?.publicModelId ?? modelCalled;
     const cacheHit = response.headers.get("x-cache") === "HIT";
     const fallbackUsed =
-        modelCalled !== resolvedModelRequested || parseFallbackUsed(response);
+        modelUsed !== resolvedModelRequested || parseFallbackUsed(response);
     const notBilled = (
         extra?: Partial<ResponseTrackingData>,
     ): ResponseTrackingData => ({
@@ -687,15 +684,8 @@ export async function trackResponse(
         ...extra,
     });
 
-    // A cache hit called no model, so it must not claim one. A failure did
-    // call a model, and recording which one is the only way an error row can
-    // say what failed — otherwise model_used falls back to the datasource
-    // DEFAULT 'undefined' and per-model upstream health is unqueryable.
-    //
-    // Which model that was: the one the request resolved to, unless the
-    // fallback loop moved on and stopped on a different one. Only the loop
-    // knows that, so it reports the id it stopped on and modelCalled prefers
-    // it.
+    // Record the exact attempted registry ID, not the provider's model name.
+    // Cache hits made no upstream attempt and must not claim one.
     if (cacheHit) {
         return notBilled();
     }

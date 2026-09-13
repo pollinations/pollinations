@@ -73,7 +73,7 @@ export type TinybirdEvent = {
     modelRequested?: string | null;
     /** Canonical public model requested, before fallback. */
     resolvedModelRequested?: string;
-    /** Public ID of the serving model, including when a fallback ran. */
+    /** Exact registry ID attempted: the primary or a fallback, on success or failure. */
     modelUsed?: string;
     modelProviderUsed?: string;
     /** Named conditional pricing sheet selected for this billed request. */

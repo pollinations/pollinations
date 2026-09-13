@@ -141,6 +141,7 @@ test("uses Fal only after the Vast Z-Image pool exhausts its 503s", async ({
     expect(mocks.tinybird.state.events).toHaveLength(2);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelRequested: "zimage",
+        resolvedModelRequested: "tongyi-mai/z-image-turbo",
         modelUsed: "tongyi-mai/z-image-turbo",
         modelProviderUsed: "vast",
         responseStatus: 503,
@@ -149,7 +150,8 @@ test("uses Fal only after the Vast Z-Image pool exhausts its 503s", async ({
     });
     expect(mocks.tinybird.state.events[1]).toMatchObject({
         modelRequested: "zimage",
-        modelUsed: "tongyi-mai/z-image-turbo",
+        resolvedModelRequested: "tongyi-mai/z-image-turbo",
+        modelUsed: "tongyi-mai/z-image-turbo:fal",
         modelProviderUsed: "fal",
         responseStatus: 200,
         fallbackUsed: true,

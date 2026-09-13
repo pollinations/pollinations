@@ -1835,7 +1835,9 @@ describe("tracking observability", () => {
         >;
         expect(event).toMatchObject({
             // The requested model id is still what the caller asked for.
+            modelRequested: primaryEndpoint.modelId,
             resolvedModelRequested: primaryEndpoint.modelId,
+            modelUsed: fallbackEndpoint.modelId,
             // 1000 × 0.0001 + 500 × 0.0002 — the PRIMARY's rates. The caller
             // bought that listing, so the invoice does not move because a
             // cheaper endpoint happened to be the one that was up.
@@ -3237,7 +3239,7 @@ describe("trackResponse model identity", () => {
         );
     }
 
-    it("keeps a public model stable across provider routes and records cross-model fallbacks", async () => {
+    it("records the exact fallback ID while keeping the original price", async () => {
         const route = `${model}:openrouter:ai-studio-priority` as const;
         const sameModel = await trackResponse(
             "generate.text",
@@ -3253,12 +3255,33 @@ describe("trackResponse model identity", () => {
         );
         for (const tracking of [sameModel, differentModel]) {
             expect(tracking).toMatchObject({
-                modelUsed: model,
+                modelUsed: route,
                 modelProviderUsed: "openrouter",
                 fallbackUsed: true,
             });
         }
         // A fallback still charges the customer's original quote.
         expect(differentModel.price).not.toEqual(sameModel.price);
+    });
+
+    it.each([
+        200, 502,
+    ])("distinguishes same-provider routes on HTTP %i", async (status) => {
+        const primary = "openai/gpt-6-astra" as const;
+        const fallback = "openai/gpt-6-astra:azure:datazone" as const;
+        for (const attempted of [primary, fallback]) {
+            const tracking = await trackResponse(
+                "generate.text",
+                requestTrackingFixture(false, primary),
+                status === 200 ? response() : new Response(null, { status }),
+                candidateFixture(attempted),
+            );
+            expect(tracking).toMatchObject({
+                responseStatus: status,
+                modelUsed: attempted,
+                modelProviderUsed: "azure",
+                fallbackUsed: attempted !== primary,
+            });
+        }
     });
 });

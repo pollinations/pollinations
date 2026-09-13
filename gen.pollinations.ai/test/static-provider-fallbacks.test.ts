@@ -148,7 +148,6 @@ function expectInheritedRoute(
     }
     expect(parent.fallbacks).toContain(routeId);
     expect(route).toMatchObject({
-        publicModelId: parentId,
         aliases: [],
         hidden: true,
         fallbackOnly: true,

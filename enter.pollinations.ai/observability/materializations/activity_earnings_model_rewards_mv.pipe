@@ -9,7 +9,7 @@ SQL >
         event_id,
         'community_model' AS source,
         -- Group earnings by the requested listing. model_used identifies the
-        -- serving public model for new events; historical rows contain upstream
+        -- exact serving registry entry for new events; historical rows contain upstream
         -- names and must not be regrouped using today's registry.
         resolved_model_requested AS entity_id,
         resolved_model_requested AS entity_name,

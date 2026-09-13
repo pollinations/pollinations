@@ -10,7 +10,7 @@ import {
     signAgentRunToken,
     verifyAgentRunToken,
 } from "@shared/auth/agent-run-token.ts";
-import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
+import { PollenHeadersSchema } from "@shared/schemas/pollen.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { Hono } from "hono";
 import { SignJWT } from "jose";
@@ -20,7 +20,6 @@ import { auth, authFromSnapshot } from "@/middleware/auth.ts";
 import { imageCache } from "@/middleware/media-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { textCache } from "@/middleware/text-cache.ts";
-import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { getGenerationModelRegistry } from "../src/model-registry.ts";
 
 const log = {
@@ -62,6 +61,7 @@ async function dispatch(
     path: string,
     token: string,
     body?: unknown,
+    headers: Record<string, string> = {},
 ) {
     const ctx = createExecutionContext();
     const response = await app.fetch(
@@ -69,6 +69,7 @@ async function dispatch(
             headers: {
                 Authorization: `Bearer ${token}`,
                 ...(body ? { "Content-Type": "application/json" } : {}),
+                ...headers,
             },
             ...(body ? { method: "POST", body: JSON.stringify(body) } : {}),
         }),
@@ -79,26 +80,45 @@ async function dispatch(
     return response;
 }
 
-test("GET and Chat expose the same optional pollen enum", () => {
-    for (const pollen of [undefined, "quest", "all"]) {
-        expect(
-            GenerateTextRequestQueryParamsSchema.parse({ pollen }).pollen,
-        ).toBe(pollen);
-        expect(
-            CreateChatCompletionRequestSchema.parse({ messages: [], pollen })
-                .pollen,
-        ).toBe(pollen);
+test("pollen headers accept either alias and reject invalid or conflicting values", () => {
+    for (const header of ["pollen", "x-pollinations-pollen"]) {
+        for (const pollen of [undefined, "quest", "all"]) {
+            expect(
+                PollenHeadersSchema.safeParse({ [header]: pollen }).success,
+            ).toBe(true);
+        }
+        for (const pollen of [null, "", "free", "paid", true, {}, []]) {
+            expect(
+                PollenHeadersSchema.safeParse({ [header]: pollen }).success,
+            ).toBe(false);
+        }
     }
-    for (const pollen of [null, "free", "paid", true, {}, []]) {
+    expect(
+        PollenHeadersSchema.safeParse({
+            pollen: "quest",
+            "x-pollinations-pollen": "quest",
+        }).success,
+    ).toBe(true);
+    expect(
+        PollenHeadersSchema.safeParse({
+            pollen: "quest",
+            "x-pollinations-pollen": "all",
+        }).success,
+    ).toBe(false);
+});
+
+test("legacy pollen body and query fields and conflicting headers fail before generation", async () => {
+    const parent = await createTestApiKey();
+    for (const [path, body, headers] of [
+        ["/?pollen=quest", undefined, {}],
+        ["/", { model: "openai", pollen: "quest" }, {}],
+        ["/", undefined, { pollen: "quest", "X-Pollinations-Pollen": "all" }],
+        ["/", undefined, { pollen: "free" }],
+    ] as const) {
         expect(
-            GenerateTextRequestQueryParamsSchema.safeParse({ pollen }).success,
-        ).toBe(false);
-        expect(
-            CreateChatCompletionRequestSchema.safeParse({
-                messages: [],
-                pollen,
-            }).success,
-        ).toBe(false);
+            (await dispatch(resolutionApp(), path, parent.key, body, headers))
+                .status,
+        ).toBe(400);
     }
 });
 
@@ -126,8 +146,10 @@ test("signed Quest claims survive authentication and malformed signed policies f
     assert(eligible);
     const response = await dispatch(
         resolutionApp(),
-        `/?model=${encodeURIComponent(eligible.id)}&pollen=all`,
+        `/?model=${encodeURIComponent(eligible.id)}`,
         restricted,
+        undefined,
+        { pollen: "all" },
     );
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ pollen: "quest" });
@@ -174,25 +196,32 @@ test("Quest rejects paid models and aliases before handlers, even with purchased
                 (
                     await dispatch(
                         resolutionApp(eventType),
-                        `${path}&pollen=all`,
+                        path,
                         restricted,
+                        undefined,
+                        { "X-Pollinations-Pollen": "all" },
                     )
-                ).status,
-            ).toBe(403);
-            expect(
-                (
-                    await dispatch(resolutionApp(eventType), "/", restricted, {
-                        model,
-                        pollen: "all",
-                    })
                 ).status,
             ).toBe(403);
             expect(
                 (
                     await dispatch(
                         resolutionApp(eventType),
-                        `${path}&pollen=quest`,
+                        "/",
+                        restricted,
+                        { model },
+                        { pollen: "all" },
+                    )
+                ).status,
+            ).toBe(403);
+            expect(
+                (
+                    await dispatch(
+                        resolutionApp(eventType),
+                        path,
                         parent.key,
+                        undefined,
+                        { pollen: "quest" },
                     )
                 ).status,
             ).toBe(403);
@@ -424,6 +453,22 @@ test("token-only Quest requests partition both text and media cache identities",
         expect(all.key).toBeTruthy();
         expect(quest.key).toBeTruthy();
         expect(quest.key).not.toBe(all.key);
+        for (const header of ["pollen", "X-Pollinations-Pollen"]) {
+            expect(
+                await (
+                    await dispatch(app, path, parent.key, undefined, {
+                        [header]: "quest",
+                    })
+                ).json(),
+            ).toEqual(quest);
+            expect(
+                await (
+                    await dispatch(app, path, parent.key, undefined, {
+                        [header]: "all",
+                    })
+                ).json(),
+            ).toEqual(all);
+        }
         expect(await (await dispatch(app, path, restricted)).json()).toEqual(
             quest,
         );

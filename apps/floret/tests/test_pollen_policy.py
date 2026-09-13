@@ -142,10 +142,9 @@ def test_quest_api_uses_scoped_catalog_for_entire_agent_run(
     monkeypatch.setattr(agent, "_run_agent_events", events)
     response = TestClient(api.app).post(
         "/v1/chat/completions",
-        headers={"Authorization": "Bearer ag_test"},
+        headers={"Authorization": "Bearer ag_test", "pollen": "quest"},
         json={
             "model": "floret",
-            "pollen": "quest",
             "stream": stream,
             "messages": [{"role": "user", "content": "hi"}],
         },
@@ -172,10 +171,9 @@ def test_quest_rejects_paid_pin_before_starting_stream(catalog, monkeypatch, str
     monkeypatch.setattr("floret.routing.fetch_model_catalog", fetch)
     response = TestClient(api.app).post(
         "/v1/chat/completions",
-        headers={"Authorization": "Bearer ag_test"},
+        headers={"Authorization": "Bearer ag_test", "pollen": "quest"},
         json={
             "model": "floret",
-            "pollen": "quest",
             "stream": stream,
             "routing": {"text": "paid-best-alias"},
             "messages": [{"role": "user", "content": "hi"}],
@@ -185,7 +183,16 @@ def test_quest_rejects_paid_pin_before_starting_stream(catalog, monkeypatch, str
     assert response.headers["content-type"].startswith("application/json")
 
 
-def test_invalid_pollen_rejected_before_generation(monkeypatch):
+@pytest.mark.parametrize(
+    "headers, body, status",
+    [
+        ({"pollen": "free"}, {}, 422),
+        ({"X-Pollinations-Pollen": "free"}, {}, 422),
+        ({"pollen": "all", "X-Pollinations-Pollen": "quest"}, {}, 400),
+        ({}, {"pollen": "quest"}, 422),
+    ],
+)
+def test_invalid_pollen_rejected_before_generation(monkeypatch, headers, body, status):
     from fastapi.testclient import TestClient
 
     from floret import api
@@ -196,10 +203,10 @@ def test_invalid_pollen_rejected_before_generation(monkeypatch):
     monkeypatch.setattr(api, "run_agent", run)
     response = TestClient(api.app).post(
         "/v1/chat/completions",
-        headers={"Authorization": "Bearer ag_test"},
-        json={"model": "floret", "pollen": "free", "messages": []},
+        headers={"Authorization": "Bearer ag_test", **headers},
+        json={"model": "floret", "messages": [], **body},
     )
-    assert response.status_code == 422
+    assert response.status_code == status
 
 
 @pytest.mark.parametrize("stream", [False, True])
@@ -218,8 +225,8 @@ def test_catalog_failure_is_not_reported_as_invalid_user_input(monkeypatch, stre
     monkeypatch.setattr(registry, "fetch_model_catalog", fetch)
     response = TestClient(api.app).post(
         "/v1/chat/completions",
-        headers={"Authorization": "Bearer ag_test"},
-        json={"model": "floret", "pollen": "quest", "stream": stream, "messages": []},
+        headers={"Authorization": "Bearer ag_test", "pollen": "quest"},
+        json={"model": "floret", "stream": stream, "messages": []},
     )
     assert response.status_code == 503
     assert response.json() == {"detail": "Model catalog unavailable."}
@@ -286,10 +293,12 @@ async def test_api_wrapper_uses_real_brain_request(
         ) as caller:
             response = await caller.post(
                 "/v1/chat/completions",
-                headers={"Authorization": "Bearer ag_test"},
+                headers={
+                    "Authorization": "Bearer ag_test",
+                    **({"X-Pollinations-Pollen": pollen} if pollen else {}),
+                },
                 json={
                     "model": "floret",
-                    **({"pollen": pollen} if pollen else {}),
                     "stream": stream,
                     "messages": [{"role": "user", "content": "hey"}],
                 },

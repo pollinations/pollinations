@@ -157,14 +157,7 @@ async function handleDirectResponse(
                     attempt,
                 );
                 const result = await callDirectResponses(
-                    {
-                        ...request,
-                        ...(attempt.communityEndpoint &&
-                        attempt.communityEndpoint.type !== "proxy" &&
-                        c.var.model?.pollen === "quest"
-                            ? { pollen: "quest" }
-                            : {}),
-                    },
+                    request,
                     responsesClient.target,
                     responsesClient.fetcher,
                 );

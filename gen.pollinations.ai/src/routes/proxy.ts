@@ -63,6 +63,7 @@ import {
     GetModelResponseSchema,
     GetModelsResponseSchema,
 } from "@shared/schemas/openai.ts";
+import { PollenHeadersSchema } from "@shared/schemas/pollen.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import {
     errorResponseDescriptions,
@@ -205,9 +206,9 @@ const model3dHandlers = factory.createHandlers(
 // Group access/coordination to stay within Hono's typed handler-count limit.
 const chatCompletionHandlers = factory.createHandlers(
     textBodyLimit,
+    validator("header", PollenHeadersSchema),
     validator("json", CreateChatCompletionRequestSchema),
-    mediaResponses("chat/completions"),
-    resolveModel("generate.text"),
+    every(mediaResponses("chat/completions"), resolveModel("generate.text")),
     every(textBalanceNotice, track("generate.text")),
     textCache,
     every(generationAccess, deduplicateGeneration),
@@ -217,9 +218,9 @@ const chatCompletionHandlers = factory.createHandlers(
 
 const responsesHandlers = factory.createHandlers(
     textBodyLimit,
+    validator("header", PollenHeadersSchema),
     validator("json", CreateResponseRequestSchema),
-    mediaResponses("responses"),
-    resolveModel("generate.text"),
+    every(mediaResponses("responses"), resolveModel("generate.text")),
     every(textBalanceNotice, track("generate.text")),
     textCache,
     every(generationAccess, deduplicateGeneration),
@@ -817,12 +818,12 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         textBodyLimit,
+        validator("header", PollenHeadersSchema),
         validator("json", CreateChatCompletionRequestSchema),
         resolveModel("generate.text"),
         every(textBalanceNotice, track("generate.text")),
         textCache,
-        generationAccess,
-        deduplicateGeneration,
+        every(generationAccess, deduplicateGeneration),
         apiKeyBudgetReservation,
         generateTextContent,
     )
@@ -857,12 +858,12 @@ export const proxyRoutes = new Hono<Env>()
                 }),
             }),
         ),
+        validator("header", PollenHeadersSchema),
         validator("query", GenerateTextRequestQueryParamsSchema),
         resolveModel("generate.text"),
         every(textBalanceNotice, track("generate.text")),
         textCache,
-        generationAccess,
-        deduplicateGeneration,
+        every(generationAccess, deduplicateGeneration),
         apiKeyBudgetReservation,
         generateSimpleText,
     )

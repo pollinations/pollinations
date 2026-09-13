@@ -105,9 +105,6 @@ export async function communityEndpointGatewayContext({
     });
     return {
         ...requestDataWithoutMessages,
-        ...(pollen === "quest" && usesAgentRunToken(endpoint)
-            ? { pollen }
-            : {}),
         modelConfig:
             endpoint.type === "endpoint_agent" && requestedAgentModel
                 ? { ...modelConfig, model: requestedAgentModel }
@@ -155,6 +152,9 @@ export async function communityEndpointModelConfig({
         provider: "openai",
         authKey,
         model: endpoint.upstreamModel,
+        ...(pollen === "quest" && usesAgentRunToken(endpoint)
+            ? { pollen }
+            : {}),
         ...(endpoint.api === "responses"
             ? { responsesEndpoint: endpoint.baseUrl }
             : { directEndpoint: endpoint.baseUrl }),

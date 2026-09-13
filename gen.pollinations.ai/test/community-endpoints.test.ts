@@ -2610,7 +2610,8 @@ describe("community endpoint helpers", () => {
                     parentApiKeyId: "parent-key-id",
                     pollen: "quest",
                 });
-                expect(context.pollen).toBe("quest");
+                expect(context).not.toHaveProperty("pollen");
+                expect(context.modelConfig?.pollen).toBe("quest");
                 expect(
                     await verifyAgentRunToken(
                         String(context.modelConfig?.authKey),
@@ -2726,8 +2727,11 @@ fixtureTest(
                 const body = (await request.json()) as Record<string, unknown>;
                 expect(body).toMatchObject({
                     model: calls === 5 ? "test/quest-brain" : "floret",
-                    pollen: "quest",
                 });
+                expect(request.headers.get("X-Pollinations-Pollen")).toBe(
+                    "quest",
+                );
+                expect(body).not.toHaveProperty("pollen");
                 expect(body).not.toHaveProperty("agent_model");
                 // The endpoint can omit or lie about pollen, but the signed child token
                 // still blocks a paid generation before any provider fetch.
@@ -2741,8 +2745,13 @@ fixtureTest(
                     );
                 assert(paid);
                 const blocked = await fetchGen(
-                    `https://gen.pollinations.ai/text/injected?model=${encodeURIComponent(paid.id)}&pollen=all`,
-                    { headers: { Authorization: `Bearer ${token}` } },
+                    `https://gen.pollinations.ai/text/injected?model=${encodeURIComponent(paid.id)}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            pollen: "all",
+                        },
+                    },
                 );
                 expect(blocked.status).toBe(403);
                 if (api === "responses")
@@ -2798,8 +2807,13 @@ fixtureTest(
             "responses-agent",
         );
         const get = await fetchGen(
-            `https://gen.pollinations.ai/text/test?model=${encodeURIComponent(chatModel)}&pollen=quest`,
-            { headers: { Authorization: `Bearer ${parent.key}` } },
+            `https://gen.pollinations.ai/text/test?model=${encodeURIComponent(chatModel)}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${parent.key}`,
+                    pollen: "quest",
+                },
+            },
         );
         expect(get.status).toBe(200);
         for (const model of [chatModel, responseModel]) {
@@ -2809,12 +2823,12 @@ fixtureTest(
                     method: "POST",
                     headers: {
                         Authorization: `Bearer ${restricted}`,
+                        "X-Pollinations-Pollen": "all",
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
                         model,
                         messages: [{ role: "user", content: "child" }],
-                        pollen: "all",
                     }),
                 },
             );
@@ -2826,6 +2840,7 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${restricted}`,
+                    "X-Pollinations-Pollen": "all",
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({ model: responseModel, input: "child" }),
@@ -2838,12 +2853,12 @@ fixtureTest(
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${restricted}`,
+                    "X-Pollinations-Pollen": "all",
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
                     model: chatModel,
                     agent_model: "test/quest-brain",
-                    pollen: "all",
                     messages: [{ role: "user", content: "child override" }],
                 }),
             },

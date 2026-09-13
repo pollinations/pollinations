@@ -21,13 +21,19 @@ export async function generateHeaders(
 
     // Direct providers need only bearer auth; Portkey needs its whole
     // x-portkey-* config translated from the same modelConfig.
-    const additionalHeaders =
+    const additionalHeaders: Record<string, string> =
         typeof options.modelConfig.directEndpoint === "string"
             ? options.modelConfig.directAuthHeader === "api-key"
                 ? { "api-key": String(options.modelConfig.authKey) }
                 : { Authorization: `Bearer ${options.modelConfig.authKey}` }
             : await generatePortkeyHeaders(options.modelConfig, options);
 
+    if (
+        options.modelConfig.directEndpoint &&
+        options.modelConfig.pollen === "quest"
+    ) {
+        additionalHeaders["X-Pollinations-Pollen"] = "quest";
+    }
     log("Generated header keys:", Object.keys(additionalHeaders));
 
     return {

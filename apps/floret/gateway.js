@@ -112,31 +112,29 @@ export function createGateway(getAgent, fetchImpl = globalThis.fetch) {
             const claims = JSON.parse(
                 atob(payload.replace(/-/g, "+").replace(/_/g, "/")),
             );
+            const pollen = request.headers.get("pollen");
+            const prefixedPollen = request.headers.get("X-Pollinations-Pollen");
+            if (
+                [pollen, prefixedPollen].some(
+                    (value) =>
+                        value !== null && value !== "quest" && value !== "all",
+                ) ||
+                (pollen !== null &&
+                    prefixedPollen !== null &&
+                    pollen !== prefixedPollen)
+            ) {
+                return Response.json(
+                    {
+                        detail: "pollen headers must be quest or all and agree when both are supplied.",
+                    },
+                    { status: 400 },
+                );
+            }
             if (claims.pollen === "quest") {
-                let body;
-                try {
-                    body = await request.clone().json();
-                } catch {
-                    return Response.json(
-                        { detail: "Invalid JSON body." },
-                        { status: 400 },
-                    );
-                }
-                if (
-                    body &&
-                    typeof body === "object" &&
-                    !Array.isArray(body) &&
-                    (body.pollen === undefined ||
-                        body.pollen === "all" ||
-                        body.pollen === "quest")
-                ) {
-                    const headers = new Headers(request.headers);
-                    headers.delete("Content-Length");
-                    request = new Request(request, {
-                        headers,
-                        body: JSON.stringify({ ...body, pollen: "quest" }),
-                    });
-                }
+                const headers = new Headers(request.headers);
+                headers.delete("pollen");
+                headers.set("X-Pollinations-Pollen", "quest");
+                request = new Request(request, { headers });
             }
         }
         return getAgent(env).fetch(request);

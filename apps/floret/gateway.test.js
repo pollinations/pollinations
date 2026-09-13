@@ -134,6 +134,11 @@ test("verified Quest runs cannot widen the policy forwarded to Floret", async ()
             fetch: async (request) => {
                 seen.push(await request.json());
                 assert.equal(
+                    request.headers.get("X-Pollinations-Pollen"),
+                    "quest",
+                );
+                assert.equal(request.headers.get("pollen"), null);
+                assert.equal(
                     request.headers.get("Authorization"),
                     `Bearer ${bearer}`,
                 );
@@ -149,27 +154,41 @@ test("verified Quest runs cannot widen the policy forwarded to Floret", async ()
             return Response.json({ valid: true });
         },
     );
-    for (const pollen of [undefined, "all", "quest"]) {
-        const body = {
-            model: "floret",
-            messages: [],
-            stream: true,
-            ...(pollen ? { pollen } : {}),
-        };
+    for (const header of ["pollen", "X-Pollinations-Pollen"]) {
+        for (const pollen of [undefined, "all", "quest"]) {
+            const body = { model: "floret", messages: [], stream: true };
+            const response = await gateway(
+                new Request("https://floret.test/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${bearer}`,
+                        "Content-Type": "application/json",
+                        ...(pollen ? { [header]: pollen } : {}),
+                    },
+                    body: JSON.stringify(body),
+                }),
+                {},
+            );
+            assert.equal(response.status, 200);
+            assert.deepEqual(seen.at(-1), body);
+        }
+    }
+    const before = seen.length;
+    for (const headers of [
+        { pollen: "free" },
+        { pollen: "all", "X-Pollinations-Pollen": "quest" },
+    ]) {
         const response = await gateway(
             new Request("https://floret.test/v1/chat/completions", {
                 method: "POST",
-                headers: {
-                    Authorization: `Bearer ${bearer}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(body),
+                headers: { Authorization: `Bearer ${bearer}`, ...headers },
+                body: "{}",
             }),
             {},
         );
-        assert.equal(response.status, 200);
-        assert.deepEqual(seen.at(-1), { ...body, pollen: "quest" });
+        assert.equal(response.status, 400);
     }
+    assert.equal(seen.length, before);
 });
 
 test("an unverified Quest claim never reaches Floret", async () => {

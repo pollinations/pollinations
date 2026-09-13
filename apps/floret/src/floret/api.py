@@ -11,13 +11,13 @@ import time
 import uuid
 from collections.abc import AsyncGenerator, AsyncIterator
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 import httpx
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from floret import registry
 from floret.agent import run_agent, run_agent_events, select_brain
@@ -68,7 +68,15 @@ class ChatRequest(BaseModel):
     stream: bool = False
     stream_options: dict[str, Any] | None = None
     routing: RoutingInput | None = None
-    pollen: PollenPolicy = "all"
+
+    @model_validator(mode="before")
+    @classmethod
+    def reject_body_pollen(cls, value: Any) -> Any:
+        if isinstance(value, dict) and "pollen" in value:
+            raise ValueError(
+                "Use the pollen or X-Pollinations-Pollen header, not a body field."
+            )
+        return value
 
 
 def _files_dir() -> str:
@@ -373,7 +381,25 @@ def _agent_run_token(http_request: Request) -> str | None:
 
 
 @app.post("/v1/chat/completions")
-async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
+async def chat_completions(
+    request: ChatRequest,
+    http_request: Request,
+    pollen: Annotated[PollenPolicy | None, Header()] = None,
+    x_pollinations_pollen: Annotated[PollenPolicy | None, Header()] = None,
+) -> Any:
+    if (
+        pollen is not None
+        and x_pollinations_pollen is not None
+        and pollen != x_pollinations_pollen
+    ):
+        raise HTTPException(
+            status_code=400, detail="pollen and X-Pollinations-Pollen must agree."
+        )
+    pollen = pollen or x_pollinations_pollen or "all"
+    if "pollen" in http_request.query_params:
+        raise HTTPException(
+            status_code=400, detail="Use a pollen header, not a query parameter."
+        )
     api_key = _agent_run_token(http_request)
     # Fail here rather than part-way through a run: without a credential every
     # downstream generation 401s anyway, after the caller has already waited.
@@ -387,16 +413,16 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
     token = _api_key_override.set(api_key or None)
     try:
         try:
-            if settings.catalog_endpoint or request.pollen == "quest":
+            if settings.catalog_endpoint or pollen == "quest":
                 await registry.warm_registry()
-            if request.pollen == "quest":
+            if pollen == "quest":
                 catalog = await registry.fetch_model_catalog()
         except (httpx.HTTPError, ValueError):
             raise HTTPException(
                 status_code=503, detail="Model catalog unavailable."
             ) from None
-        if request.pollen == "quest":
-            with registry.model_scope(catalog, request.pollen):
+        if pollen == "quest":
+            with registry.model_scope(catalog, pollen):
                 routing = await validate_routing(
                     request.routing, catalog=registry.get_model_catalog()
                 )
@@ -427,7 +453,7 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
                 api_key or None,
                 routing,
                 _include_stream_usage(request.stream_options),
-                request.pollen,
+                pollen,
                 catalog,
             ),
             media_type="text/event-stream",
@@ -435,7 +461,7 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
         )
     token = _api_key_override.set(api_key or None)
     try:
-        with registry.model_scope(catalog, request.pollen):
+        with registry.model_scope(catalog, pollen):
             result = await run_agent(
                 _to_openai_messages(request.messages), routing=routing
             )

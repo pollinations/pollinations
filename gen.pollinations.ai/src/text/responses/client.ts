@@ -42,7 +42,12 @@ export function responsesTargetFromConfig(
             ? { disableReasoningForForcedTools: true as const }
             : {}),
         endpoint,
-        headers: authHeader,
+        headers: {
+            ...authHeader,
+            ...(config.pollen === "quest"
+                ? { "X-Pollinations-Pollen": "quest" }
+                : {}),
+        },
         model,
         defaults: {
             ...(chatDefaults.provider === undefined

@@ -19,7 +19,23 @@ polli harness <harness> off
 - `status` shows whether the harness is ready to use Pollinations.
 - `off` removes only the Pollinations setup and preserves unrelated configuration.
 
-If a harness cannot be launched, `on` stops before login, key creation, or configuration and shows its official installation command. If Polli is not installed yet, run the first setup through `npx @pollinations/cli`. Login uses the browser device flow by default. Each harness receives its own API key instead of reusing the account key stored by `polli auth login`.
+If a harness cannot be launched, `on` stops before login, key creation, or configuration and shows its official installation command. If Polli is not installed yet, run the first setup through `npx @pollinations/cli@latest`. Login uses the browser device flow by default. Each harness receives its own API key instead of reusing the account key stored by `polli auth login`.
+
+## Update a harness
+
+Polli configures harnesses; it does not update their installations. Use the harness's updater (or the package manager you installed it with), then rerun `polli harness <harness> on` to refresh the model catalog and configuration.
+
+```bash
+npm install -g @pollinations/cli@latest
+uv tool upgrade bloom-cli
+npx @deepseek-ai/dsh@latest web
+opencode upgrade
+openclaw update
+pi update self
+prime-agent update
+```
+
+Current OpenClaw requires Node `>=24.16.0 <25` or `>=26.1.0`; Pi requires Node `>=22.19.0`. Upgrade Node before updating either harness if needed. Bloom requires Python 3.12 or newer. Stop a running DSH server before launching its replacement, and back up saved sessions before a major harness upgrade.
 
 ## Harnesses
 
@@ -35,7 +51,7 @@ If a harness cannot be launched, `on` stops before login, key creation, or confi
 ## Bloom CLI
 
 ```bash
-uv tool install bloom-cli
+uv tool install --python 3.12 bloom-cli
 polli harness bloom on
 bloom
 ```
@@ -45,17 +61,17 @@ Bloom already uses Pollinations for its models. `on` creates a dedicated key and
 ## DeepSeek Harness
 
 ```bash
-npx @pollinations/cli harness dsh on
+npx @pollinations/cli@latest harness dsh on
 polli harness dsh status
 polli harness dsh off
 ```
 
-DeepSeek Harness is officially run with `npx @deepseek-ai/dsh web`. `on` verifies that `npx` is available before changing configuration. Choose another default model with `--model <id>`. Add `--no-mcp` if you do not want the hosted Pollinations media tools.
+DeepSeek Harness is officially run with `npx @deepseek-ai/dsh@latest web`. The explicit `@latest` selects the current release rather than a local installation. `on` verifies that `npx` is available before changing configuration. Choose another default model with `--model <id>`. Add `--no-mcp` if you do not want the hosted Pollinations media tools.
 
 ## OpenCode
 
 ```bash
-npx @pollinations/cli harness opencode on
+npx @pollinations/cli@latest harness opencode on
 polli harness opencode status
 polli harness opencode off
 ```
@@ -65,7 +81,7 @@ polli harness opencode off
 ## OpenClaw
 
 ```bash
-npx @pollinations/cli harness openclaw on
+npx @pollinations/cli@latest harness openclaw on
 polli harness openclaw status
 polli harness openclaw off
 ```
@@ -75,7 +91,7 @@ polli harness openclaw off
 ## Pi
 
 ```bash
-npx @pollinations/cli harness pi on
+npx @pollinations/cli@latest harness pi on
 polli harness pi status
 polli harness pi off
 ```
@@ -85,7 +101,7 @@ polli harness pi off
 ## Prime Agent
 
 ```bash
-npx @pollinations/cli harness prime on
+npx @pollinations/cli@latest harness prime on
 polli harness prime status
 polli harness prime off
 ```

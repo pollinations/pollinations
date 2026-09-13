@@ -142,12 +142,13 @@ export async function callInferencePortImage(
 
     const data = (await response.json()) as InferencePortResponse;
     const encodedImage = data.data?.[0]?.b64_json;
+    const imageUrl = data.data?.[0]?.url;
     const responseSummary = JSON.stringify({
         responseKeys: Object.keys(data).sort(),
         dataCount: Array.isArray(data.data) ? data.data.length : undefined,
     });
 
-    if (!encodedImage) {
+    if (!encodedImage && !imageUrl) {
         throw new UpstreamError(502, {
             message: `InferencePort ${INFERENCEPORT_TITLE} returned no image`,
             requestUrl: new URL(endpoint),
@@ -157,9 +158,14 @@ export async function callInferencePortImage(
         });
     }
 
+    const buffer = encodedImage
+        ? base64ToBuffer(encodedImage)
+        : (await downloadUserImage(imageUrl)).buffer;
+    const outputSafety = await analyzeImageSafety(buffer);
+
     return {
-        buffer: base64ToBuffer(encodedImage),
-        isMature: false,
+        buffer,
+        isMature: !outputSafety.safe,
         isChild: false,
         trackingData: {
             actualModel: safeParams.model,

@@ -152,6 +152,12 @@ describe("callInferencePortImage", () => {
         const formData = editInit?.body as FormData;
         expect(formData).toBeInstanceOf(FormData);
         expect(formData.get("model")).toBe("lightning-image-turbo");
+        const imageParts = formData.getAll("image");
+        expect(imageParts).toHaveLength(4);
+        for (const part of imageParts) {
+            expect(part).toBeInstanceOf(Blob);
+            expect((part as Blob).type).toBe("image/png");
+        }
         expect(result.trackingData.usage).toEqual({
             completionImageTokens: 1,
             totalTokenCount: 1,
@@ -235,6 +241,34 @@ describe("callInferencePortImage", () => {
         ).rejects.toMatchObject({
             status: 500,
             upstreamStatus: 500,
+        });
+    });
+
+    it("downloads and uses image from URL when b64_json is absent", async () => {
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+            if (url.toString() === GENERATIONS_ENDPOINT) {
+                return Response.json({
+                    data: [{ url: INPUT_IMAGE_URL }],
+                });
+            }
+            if (url.toString() === INPUT_IMAGE_URL) {
+                return new Response(OUTPUT_IMAGE, {
+                    headers: { "Content-Type": "image/png" },
+                });
+            }
+            return new Response("Not found", { status: 404 });
+        });
+
+        const result = await callInferencePortImage(
+            "a lighthouse",
+            baseParams,
+            USER_INFO,
+        );
+
+        expect(result.buffer.equals(OUTPUT_IMAGE)).toBe(true);
+        expect(result.trackingData.usage).toEqual({
+            completionImageTokens: 1,
+            totalTokenCount: 1,
         });
     });
 });

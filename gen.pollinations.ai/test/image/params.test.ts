@@ -311,7 +311,7 @@ describe("ImageParamsSchema", () => {
         ).toBe(true);
     });
 
-    it("resolves lightning-image-turbo alias to canonical ID", () => {
+    it("rejects alias directly in schema (alias resolved by middleware instead)", () => {
         const result = ImageParamsSchema.safeParse({
             model: "lightning-image-turbo",
         });

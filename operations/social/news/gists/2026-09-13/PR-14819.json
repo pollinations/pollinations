@@ -1,0 +1,35 @@
+{
+  "pr_number": 14819,
+  "title": "feat: add switchable agent and MCP usage KPIs",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14819",
+  "merged_at": "2026-09-13T16:06:34Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds exactly two Ecosystem KPI rows: Agents (requests / unique users) and MCP (recorded calls / unique users), using the existing switches, weekly comparison, explorer, and CSV export.\n- Records request-time agent type for endpoint, code, and prompt agents; excludes ordinary community proxies and internal steps. Incomplete historical agent weeks display unavailable, not zero. Existing KPI definitions and billing are unchanged.\n- Labels MCP coverage: receipt-emitting Exa, FFmpeg, Computer, and Composio calls, including agent tool calls; excludes Pollinations MCP and discovery traffic.\n- Validated: 35 dashboard tests, targeted Gen tracking tests, Gen typecheck, dashboard production build, browser switching, and actual SQL against fixtures and read-only production data.\n- Rollout required separately: validate/deploy the additive Tinybird column and pipe to staging first, then production when approved; deploy Gen attribution and the KPI app through CI. No secrets changed or deployments performed.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Two New Flowers in the Dashboard",
+    "blurb": "The ecosystem garden now counts two more kinds of buzz: agent requests and MCP calls. The charts know when the historical soil has no sample, too, so they say unavailable instead of inventing a zero.",
+    "summary": "Added switchable Ecosystem KPI rows for Agents (requests and unique users) and MCP (recorded calls and unique users), with weekly comparisons, explorer views, and CSV export backed by new request-time agent and receipt-emitting MCP attribution.",
+    "impact": "Dashboard users can now inspect and export agent and MCP adoption separately, while incomplete historical agent weeks are clearly shown as unavailable rather than zero.",
+    "keywords": [
+      "kpi",
+      "analytics",
+      "agents",
+      "mcp",
+      "observability",
+      "tinybird",
+      "dashboard"
+    ],
+    "visual_concept": "A cozy ecosystem analytics garden gains exactly two new labeled plants: an Agents flower growing from request packets and an MCP flower growing from tiny tool-call receipts. Polli, wearing analyst glasses and holding a clipboard, compares the two plants on a warm CRT dashboard while a small monitor robot happily points to the new chart rows; a few older garden plots carry gentle “N/A” signs rather than empty zero markers.",
+    "image_prompt": "A cozy pixel art observability garden where the cute Polli bee mascot—yellow body with dark brown horizontal stripes, black antennae and oval eyes, pink rectangular cheek blushes, small smile, light blue rounded wings—wears tiny analyst glasses and checks a clipboard beside two blooming code-plants labeled in simple pixel text “AGENTS” and “MCP”; a chunky CRT-monitor robot points excitedly at their new dashboard chart rows, while older plots gently read “N/A.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, warm lighting, chunky retro sprites, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-13/PR-14819.jpg",
+    "prompt": "A cozy pixel art observability garden where the cute Polli bee mascot—yellow body with dark brown horizontal stripes, black antennae and oval eyes, pink rectangular cheek blushes, small smile, light blue rounded wings—wears tiny analyst glasses and checks a clipboard beside two blooming code-plants labeled in simple pixel text “AGENTS” and “MCP”; a chunky CRT-monitor robot points excitedly at their new dashboard chart rows, while older plots gently read “N/A.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, warm lighting, chunky retro sprites, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-13T16:07:29.477036+00:00"
+}

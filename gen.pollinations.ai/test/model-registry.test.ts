@@ -42,6 +42,22 @@ function skewedDbBinding(): CloudflareBindings["DB"] {
 }
 
 describe("getGenerationModelRegistry", () => {
+    it.each([
+        "midijourney",
+        "midijourney-large",
+        "pollinations/midijourney",
+        "pollinations/midijourney-large",
+    ])("does not resolve the retired built-in model %s", async (model) => {
+        const registry = await getGenerationModelRegistry(env);
+        expect(registry.resolve(model)).toBeNull();
+        expect(
+            registry.visibleEntries().some((entry) => entry.id === model),
+        ).toBe(false);
+        expect(availableModels.some((entry) => entry.name === model)).toBe(
+            false,
+        );
+    });
+
     it("declares unique Chat controls for every configured route", async () => {
         const registry = await getGenerationModelRegistry(env);
         for (const model of availableModels) {

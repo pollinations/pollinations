@@ -1,0 +1,34 @@
+{
+  "pr_number": 14836,
+  "title": "fix: tighten community model monitoring",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14836",
+  "merged_at": "2026-09-13T23:38:49Z",
+  "labels": [],
+  "pr_body_excerpt": "- Raises short-term and seven-day reliability floors to 75%, with fallback rescues still counted as successes.\n- Adds repeated provider-failure hiding and sustained recovery checks; separates caller-wallet errors from provider-account outages.\n- Checks audio/video/embedding health from real traffic; starts cycles 30 minutes after completion without changing image cadence or Discord cooldowns.\n- Preserves safe text-error details and accepts case-only probe-marker changes. All 15 focused monitor tests pass; seven-day report dry-run against live data succeeded.\n- Rollout: merge to main, then update the EC2 runtime and systemd unit from merged main.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The garden gets stricter",
+    "blurb": "The community-model watchtower now expects a sturdier bloom: 75% short-term and seven-day reliability, with successful fallback rescues counted fairly. It also knows the difference between a visitor’s wallet issue and a provider having a rough day.",
+    "summary": "Community model monitoring now enforces 75% short-term and seven-day reliability floors, hides repeatedly failing providers, verifies sustained recoveries, and measures audio, video, and embedding health from real traffic.",
+    "impact": "Users get a more dependable community model garden as unreliable providers are surfaced less often, healthy recoveries are confirmed over time, and fallback successes continue to count as successful requests.",
+    "keywords": [
+      "community-models",
+      "reliability",
+      "monitoring",
+      "providers",
+      "fallbacks",
+      "healthchecks"
+    ],
+    "visual_concept": "A cozy garden watchtower represents the stricter community-model monitor: Polli tends several code-plants labeled text, audio, video, and embeddings while a friendly CRT robot checks a 75% health gauge. Healthy plants glow and receive water from a fallback pipe, while repeatedly wilted provider plants are gently tucked behind a hedge until they recover; this conveys reliable routing without making failure the focus.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee with dark brown stripes, black oval eyes, pink rectangular blush, light blue rounded wings, and a tiny gardener's hat, tending a lime green (#ecf874) code garden beside a 75% reliability gauge; a cheerful chunky CRT-monitor robot checks glowing text, audio, video, and embedding flowers while a gentle fallback watering pipe revives a plant. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"75% HEALTH\", with dark purple (#110518) outlines and a warm cream background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-13/PR-14836.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee with dark brown stripes, black oval eyes, pink rectangular blush, light blue rounded wings, and a tiny gardener's hat, tending a lime green (#ecf874) code garden beside a 75% reliability gauge; a cheerful chunky CRT-monitor robot checks glowing text, audio, video, and embedding flowers while a gentle fallback watering pipe revives a plant. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"75% HEALTH\", with dark purple (#110518) outlines and a warm cream background."
+  },
+  "generated_at": "2026-09-13T23:39:45.646637+00:00"
+}

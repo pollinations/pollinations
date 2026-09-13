@@ -118,6 +118,7 @@ type RequestTrackingData = {
     modelRequested: string | null;
     resolvedModelRequested: string;
     modelProvider?: string;
+    communityEndpointType?: InsertGenerationEvent["communityEndpointType"];
     modelDefinition: ModelDefinition;
     modelCostDefinition: CostDefinition;
     modelPriceDefinition: PriceDefinition;
@@ -623,6 +624,7 @@ async function trackRequest(
         modelRequested,
         resolvedModelRequested,
         modelProvider,
+        communityEndpointType: modelInfo.communityEndpoint?.type,
         modelDefinition,
         modelCostDefinition,
         modelPriceDefinition,
@@ -1157,6 +1159,7 @@ function createTrackingEvent({
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
+        communityEndpointType: requestTracking.communityEndpointType,
         modelProviderUsed:
             responseTracking.modelProviderUsed ?? requestTracking.modelProvider,
         costVariant: responseTracking.costVariant,

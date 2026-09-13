@@ -209,6 +209,20 @@ kpiRoutes.get("/usage", async (c) => {
     return c.json({ data: result.data });
 });
 
+// Tinybird: Agent/MCP usage — separate from existing model KPIs.
+kpiRoutes.get("/agent-mcp-usage", async (c) => {
+    const result = await fetchTinybirdByWeek(
+        c.env,
+        "weekly_agent_mcp_usage",
+        parseWeeksBack(c),
+    );
+    // A missing pipe or failed week is unavailable, not zero activity.
+    if (result.errors.length) {
+        return c.json({ error: "Agent/MCP usage unavailable", data: [] }, 503);
+    }
+    return c.json({ data: result.data });
+});
+
 // Tinybird: Retention — multi-week cohort query, cannot split by week
 kpiRoutes.get("/retention", async (c) => {
     const result = await fetchTinybird(c.env, "weekly_retention", {

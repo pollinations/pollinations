@@ -14,6 +14,30 @@ import { DEFAULT_WEEKS, WEEK_RANGES, weeksFromSearch } from "../src/lib/range";
 
 const community = KPIS.find((row) => row.key === "communityModels");
 
+describe("agent and MCP KPI rows", () => {
+    it.each([
+        ["agentUsage", "agentRequests", "agentUsers"],
+        ["mcpUsage", "mcpCalls", "mcpUsers"],
+    ])("keeps %s in one switchable row", (key, volume, users) => {
+        const row = KPIS.find((item) => item.key === key);
+        expect(row.views).toHaveLength(2);
+        const week = { [volume]: 410, [users]: 12 };
+        expect(kpiValue(kpiView(row, 0), week)).toBe(410);
+        expect(kpiValue(kpiView(row, 1), week)).toBe(12);
+        expect(kpiValue(kpiView(row, 2), week)).toBe(410);
+        for (const index of [0, 1]) {
+            const view = kpiView(row, index);
+            expect(formatValue(kpiValue(view, {}), view.format)).toBe("—");
+            expect(
+                formatValue(kpiValue(view, { [view.key]: null }), view.format),
+            ).toBe("—");
+            expect(
+                formatValue(kpiValue(view, { [view.key]: 0 }), view.format),
+            ).toBe("0");
+        }
+    });
+});
+
 describe("dashboard time range", () => {
     it("defaults to 12 weeks and accepts the supported 20-week view", () => {
         expect(DEFAULT_WEEKS).toBe(12);

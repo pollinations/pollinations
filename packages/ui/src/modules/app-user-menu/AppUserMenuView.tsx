@@ -43,12 +43,14 @@ type AccountResourceState = {
     isLoading: boolean;
 };
 
-/** Wait for both resources; never present failed or unresolved data as a connected menu. */
+/** Keep loaded data visible during refresh; hide failed or unresolved account data. */
 export function appAccountState(
     profile: AccountResourceState,
     key: AccountResourceState,
 ): AppAccountState | undefined {
-    if (profile.isLoading || key.isLoading) return "loading";
+    if ((profile.isLoading || key.isLoading) && (!profile.data || !key.data)) {
+        return "loading";
+    }
     if (profile.error || key.error) return "account-error";
     if (!profile.data || !key.data) return "loading";
     return undefined;

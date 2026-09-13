@@ -115,6 +115,35 @@ describe("shared control accessibility", () => {
         expect(markup).not.toContain("Connected menu");
     });
 
+    it("keeps the loaded account menu visible during background refresh", () => {
+        const ready = { data: {}, error: null, isLoading: false };
+        const refreshing = { ...ready, isLoading: true };
+        for (const [profile, key] of [
+            [ready, refreshing],
+            [refreshing, ready],
+            [refreshing, refreshing],
+        ] as const) {
+            const state = appAccountState(profile, key);
+            expect(state).toBeUndefined();
+            const markup = renderToStaticMarkup(
+                <PollinationsConnectionPanel accountState={state}>
+                    Connected menu
+                </PollinationsConnectionPanel>,
+            );
+            expect(markup).toContain("Connected menu");
+            expect(markup).not.toContain("Loading account…");
+        }
+        expect(appAccountState(ready, { ...refreshing, data: null })).toBe(
+            "loading",
+        );
+        expect(
+            appAccountState(ready, {
+                ...ready,
+                error: new Error("Refresh failed"),
+            }),
+        ).toBe("account-error");
+    });
+
     it("identifies GitHub and exposes pending and retry states", () => {
         const ready = renderToStaticMarkup(<GitHubSignInButton />);
         expect(ready).toContain("Sign in with GitHub");

@@ -15,22 +15,47 @@ import {
 
 export type { AppUserMenuLabels } from "./AppUserMenuView.tsx";
 
+export type AppUserMenuState =
+    | "checking-connection"
+    | "connection-error"
+    | "connection-check-error"
+    | "loading-account"
+    | "account-error"
+    | "connected"
+    | "signed-out";
+
 export type AppUserMenuProps = {
     labels?: Partial<AppUserMenuLabels>;
+    onStateChange?: (state: AppUserMenuState) => void;
 };
 
 /** SDK adapter; rendering is shared with apps that supply their own data. */
-export function AppUserMenu({ labels }: AppUserMenuProps) {
+export function AppUserMenu({ labels, onStateChange }: AppUserMenuProps) {
     const { logout, enterUrl, retryConnection } = useAuthActions();
     const { isLoggedIn, isHydrated, error } = useAuthState();
     const profile = useAccountProfile({ enabled: isLoggedIn });
     const key = useAccountKey({ enabled: isLoggedIn });
+    const accountState = isLoggedIn ? appAccountState(profile, key) : undefined;
+    const state: AppUserMenuState = !isHydrated
+        ? "checking-connection"
+        : accountState === "loading"
+          ? "loading-account"
+          : accountState === "account-error"
+            ? "account-error"
+            : retryConnection
+              ? "connection-check-error"
+              : error
+                ? "connection-error"
+                : isLoggedIn
+                  ? "connected"
+                  : "signed-out";
+    useEffect(() => onStateChange?.(state), [onStateChange, state]);
     useEffect(() => {
-        if (!isLoggedIn) return;
+        if (!isLoggedIn || accountState !== undefined) return;
         const refresh = () => void key.refresh();
         window.addEventListener("focus", refresh);
         return () => window.removeEventListener("focus", refresh);
-    }, [isLoggedIn, key.refresh]);
+    }, [isLoggedIn, accountState, key.refresh]);
     const redirect: Record<string, string> =
         typeof window === "undefined"
             ? {}
@@ -42,9 +67,7 @@ export function AppUserMenu({ labels }: AppUserMenuProps) {
               };
     return (
         <PollinationsConnectionPanel
-            accountState={
-                isLoggedIn ? appAccountState(profile, key) : undefined
-            }
+            accountState={accountState}
             onRetryAccount={() => {
                 void Promise.all([profile.refresh(), key.refresh()]);
             }}

@@ -214,8 +214,30 @@ describe("/openapi.json", () => {
                 aliases: expect.any(Object),
                 category: expect.any(Object),
                 community: expect.any(Object),
+                health: expect.any(Object),
                 title: expect.any(Object),
             }),
+        );
+
+        const modelListOperation = schema.paths["/v1/models"] as {
+            get: { parameters: { name: string; in: string }[] };
+        };
+        expect(modelListOperation.get.parameters).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ name: "source", in: "query" }),
+                expect.objectContaining({
+                    name: "reliability",
+                    in: "query",
+                }),
+                expect.objectContaining({
+                    name: "X-Pollinations-Model-Source",
+                    in: "header",
+                }),
+                expect.objectContaining({
+                    name: "X-Pollinations-Model-Reliability",
+                    in: "header",
+                }),
+            ]),
         );
 
         const statusOperation = schema.paths["/v1/models/status"] as {

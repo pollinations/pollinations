@@ -13,19 +13,78 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 | `GET /embeddings/models` | Embedding models with supported modalities |
 | `GET /3d/models` | 3D Generation models with supported modalities |
 
-### Query Parameters
+### Discovery filters and health
 
-All model discovery endpoints accept an optional `community` query parameter:
+All model-list endpoints support the same opt-in filters. With no filters, the
+response is unchanged and no health lookup is performed.
 
-| Parameter | Values | Behaviour |
-|-----------|--------|-----------|
-| *(omitted)* | | Returns all models (default, backward-compatible) |
-| `community=false` | `false`, `0` | Excludes community models — returns official models only |
-| `community=true` | `true`, `1` | Returns community models only |
+| Query parameter | Values | Behaviour |
+|-----------------|--------|-----------|
+| `source` | `all`, `official`, `community` | Return every accessible model (default), Pollinations-operated models, or community models |
+| `reliability` | `all`, `reliable` | Add health to every result, or return only models currently meeting the reliability threshold |
+| `community` | `true`, `1`, `false`, `0` | Legacy source filter; prefer `source` |
 
-Any other value (e.g. `tru`, `yes`, `2`) returns **400 Bad Request**.
+The equivalent headers are `X-Pollinations-Model-Source` and
+`X-Pollinations-Model-Reliability`. Query parameters take precedence over
+headers. Invalid values and conflicting `source` and `community` query filters
+return **400 Bad Request**.
 
-Example: `GET /models?community=false`
+```bash
+# Official models that are currently reliable
+curl "https://gen.pollinations.ai/v1/models?source=official&reliability=reliable"
+
+# Same selection with persistent client headers
+curl https://gen.pollinations.ai/v1/models \
+  -H "X-Pollinations-Model-Source: official" \
+  -H "X-Pollinations-Model-Reliability: reliable"
+```
+
+`reliability=all` adds a `health` object with `success_rate`, `sample_count`,
+`window_minutes`, `checked_at`, and `stale`. The 60-minute success rate is
+calculated from final 2xx and 5xx responses. Caller-side 4xx failures are
+excluded, and a successful fallback is already counted once as a 2xx response.
+Missing measurements are explicit (`success_rate: null`, `sample_count: 0`).
+
+`reliability=reliable` requires fresh health, at least 10 eligible samples, and
+a success rate of at least 90%. Unknown, low-sample, stale, and degraded models
+are excluded. The existing `alpha` flag on rich model listings stays separate
+and is not used as a reliability signal.
+
+These filters only affect discovery. They run after key permissions and paid
+balance rules, and do not grant or remove generation access.
+
+### OpenAI-compatible clients
+
+Use the base URL `https://gen.pollinations.ai/v1` and add the two headers above
+as persistent custom headers:
+
+- **Open WebUI:** Admin Settings → Connections → OpenAI → add the URL and
+  custom headers. Its OpenAI connection applies configured headers to both
+  model discovery and generation ([implementation](https://github.com/open-webui/open-webui/blob/main/backend/open_webui/routers/openai.py)).
+- **LibreChat:** configure a custom endpoint with `models.fetch: true` and the
+  headers map below. LibreChat uses endpoint headers for model fetching and
+  requests ([configuration reference](https://www.librechat.ai/docs/configuration/librechat_yaml/object_structure/custom_endpoint)).
+
+  ```yaml
+  endpoints:
+    custom:
+      - name: Pollinations
+        baseURL: https://gen.pollinations.ai/v1
+        models:
+          default: []
+          fetch: true
+        headers:
+          X-Pollinations-Model-Source: official
+          X-Pollinations-Model-Reliability: reliable
+  ```
+
+- **Cline:** choose OpenAI Compatible, set the same base URL, then use **Add
+  Header** twice. Cline stores these headers with the provider and reuses them
+  when refreshing models ([implementation](https://github.com/cline/cline/blob/main/apps/vscode/webview-ui/src/components/settings/providers/OpenAICompatible.tsx)).
+
+Clients may also send these headers on generation requests; Pollinations ignores
+them outside model-list endpoints, so generation behaviour and permissions stay
+unchanged.
 
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.

@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
-import { parseChatStream } from "./chat-stream.mjs";
+import {
+    hasChatProbeMarker,
+    parseChatStream,
+    probeErrorDetails,
+} from "./chat-stream.mjs";
 import {
     imageProbeRequest,
     imageProbeResult,
@@ -178,17 +182,6 @@ function imageBillingSanityFlags(usage) {
     return flags;
 }
 
-function finalCompletionContent(content) {
-    if (typeof content !== "string") return "";
-    const withoutReasoning = content
-        .replace(/<thought>[\s\S]*?<\/thought>/gi, "")
-        .replace(/<think>[\s\S]*?<\/think>/gi, "");
-    // An unclosed reasoning wrapper means the response ended before its final
-    // answer. Do not accept a copy of the marker from inside that reasoning.
-    if (/<(?:thought|think)>/i.test(withoutReasoning)) return "";
-    return withoutReasoning.trim();
-}
-
 async function probeText(model) {
     const started = Date.now();
     const requestPath = "/v1/chat/completions";
@@ -219,11 +212,27 @@ async function probeText(model) {
         let usage;
         let content;
         let protocolError;
+        let errorCode;
+        let errorMessage;
+        let upstreamStatus;
         if (res.ok) {
-            ({ usage, content, protocolError } = parseChatStream(body));
+            ({
+                usage,
+                content,
+                protocolError,
+                errorCode,
+                errorMessage,
+                upstreamStatus,
+            } = parseChatStream(body));
+        } else {
+            try {
+                ({ errorCode, errorMessage, upstreamStatus } =
+                    probeErrorDetails(JSON.parse(body)?.error));
+            } catch {
+                // Do not persist raw non-JSON error bodies.
+            }
         }
-        const finalContent = finalCompletionContent(content);
-        const hasProbeMarker = finalContent.includes(marker);
+        const hasProbeMarker = hasChatProbeMarker(content, marker);
         const contentPreview =
             typeof content === "string" && content.trim()
                 ? JSON.stringify(content.trim().slice(0, 200))
@@ -249,13 +258,17 @@ async function probeText(model) {
             usage,
             probeMarker: marker,
             protocolError,
+            errorCode,
+            errorMessage,
+            upstreamStatus,
             detail: res.ok
                 ? protocolError
-                    ? protocolError
+                    ? (errorMessage ?? protocolError)
                     : hasProbeMarker
                       ? undefined
                       : `successful response did not contain the probe marker in its final completion; received ${contentPreview}`
-                : body.slice(0, 300),
+                : (errorMessage ??
+                  `text request failed with HTTP ${res.status}`),
         };
         if (res.ok && !protocolError) {
             result.billingFlags = billingSanityFlags(usage, content);

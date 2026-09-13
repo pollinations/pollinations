@@ -1,0 +1,33 @@
+{
+  "pr_number": 14833,
+  "title": "fix: track key-budget referral arrivals",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14833",
+  "merged_at": "2026-09-13T23:30:55Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fixes missing arrival analytics for the `agent_key_budget` links introduced in #14740 by allowing the tag in both the browser beacon and referral API.\n- Reuses the existing `metadata.logged_in` tracking and Tinybird schema; adds signed-in and signed-out coverage through the existing referral test cases.\n- Validation: CI Enter tests/typecheck, frontend lint/build, and CodeQL pass. Local Biome, TypeScript, and two focused tests also pass; the full local run was blocked by DNS during the existing GitHub username-sync flow.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The referral trail reconnects",
+    "blurb": "Agent key-budget links now leave the same little trail of pollen as the rest of the garden. Signed-in and signed-out arrivals are both counted again.",
+    "summary": "Fixed arrival analytics for `agent_key_budget` referral links by allowing the tag through both the frontend browser beacon and Enter referral API while retaining the existing `metadata.logged_in` and Tinybird schema.",
+    "impact": "Builders sharing `agent_key_budget` links can now see referral arrivals recorded consistently for both signed-in and signed-out visitors.",
+    "keywords": [
+      "referrals",
+      "analytics",
+      "agent_key_budget",
+      "enter",
+      "tinybird"
+    ],
+    "visual_concept": "Depict Polli as a tiny trail-mapping gardener, following a lime-green path from a key-shaped budget sign to a cozy CRT analytics monitor. Small logged-in and logged-out visitor sprites arrive along the path while flowers and code-plants mark each correctly tracked visit.",
+    "image_prompt": "Cozy pixel art scene of the cute pixel bee mascot wearing a tiny explorer hat, placing lime green (#ecf874) pollen markers along a path from a key-shaped budget sign to a glowing CRT analytics monitor; two small visitor sprites, one with a little login badge and one without, arrive beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-13/PR-14833.jpg",
+    "prompt": "Cozy pixel art scene of the cute pixel bee mascot wearing a tiny explorer hat, placing lime green (#ecf874) pollen markers along a path from a key-shaped budget sign to a glowing CRT analytics monitor; two small visitor sprites, one with a little login badge and one without, arrive beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-13T23:31:50.750211+00:00"
+}

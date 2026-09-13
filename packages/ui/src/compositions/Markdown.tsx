@@ -20,6 +20,22 @@ function textContent(value: ReactNode): string {
     return "";
 }
 
+const VIDEO_EXTENSIONS = new Set(["m4v", "mov", "mp4", "webm"]);
+const AUDIO_EXTENSIONS = new Set([
+    "aac",
+    "flac",
+    "m4a",
+    "mp3",
+    "ogg",
+    "opus",
+    "wav",
+]);
+
+function urlExtension(src: string): string {
+    const path = src.split(/[?#]/, 1)[0];
+    return path.split(".").pop()?.toLowerCase() ?? "";
+}
+
 function MarkdownCodeBlock({ children }: { children?: ReactNode }) {
     const child = isValidElement<{
         children?: ReactNode;
@@ -65,6 +81,41 @@ const components: Components = {
         />
     ),
     pre: ({ children }) => <MarkdownCodeBlock>{children}</MarkdownCodeBlock>,
+    img: ({ node, src, alt, ...props }) => {
+        const extension = typeof src === "string" ? urlExtension(src) : "";
+        if (typeof src === "string" && VIDEO_EXTENSIONS.has(extension)) {
+            return (
+                // biome-ignore lint/a11y/useMediaCaption: generated media has no caption track
+                <video
+                    src={src}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    className="polli:max-w-full polli:rounded-lg"
+                />
+            );
+        }
+        if (typeof src === "string" && AUDIO_EXTENSIONS.has(extension)) {
+            return (
+                // biome-ignore lint/a11y/useMediaCaption: generated media has no caption track
+                <audio
+                    src={src}
+                    controls
+                    preload="metadata"
+                    className="polli:w-full"
+                />
+            );
+        }
+        return (
+            <img
+                src={src}
+                alt={alt}
+                loading="lazy"
+                className="polli:max-w-full polli:rounded-lg"
+                {...props}
+            />
+        );
+    },
     a: ({ node, href, ...props }) => {
         const external =
             typeof href === "string" &&

@@ -100,15 +100,6 @@ describe("messagesForPollinations", () => {
                         output: { count: 1 },
                         providerExecuted: true,
                     },
-                    {
-                        type: "data-media",
-                        id: "media-1",
-                        data: {
-                            kind: "image",
-                            url: "https://example.test/result.png",
-                            label: "Result",
-                        },
-                    },
                 ],
             },
         ];
@@ -128,14 +119,11 @@ describe("messagesForPollinations", () => {
         expect(result[1].content).toContain(
             '<details type="tool_calls" done="true"',
         );
-        expect(result[1].content).toContain(
-            "![Result](<https://example.test/result.png>)",
-        );
     });
 });
 
 describe("PollinationsChatTransport", () => {
-    it("normalizes tool markup and media into UI Message Stream chunks", async () => {
+    it("normalizes tool markup into UI Message Stream chunks, leaving media markdown inline", async () => {
         const content =
             "Found it.\n\n" +
             '<details type="tool_calls" done="true" id="call-1" ' +
@@ -162,7 +150,9 @@ describe("PollinationsChatTransport", () => {
             "text-end",
             "tool-input-available",
             "tool-output-available",
-            "data-media",
+            "text-start",
+            "text-delta",
+            "text-end",
             "finish-step",
             "finish",
         ]);
@@ -176,8 +166,11 @@ describe("PollinationsChatTransport", () => {
             dynamic: true,
         });
         expect(
-            chunks.filter((chunk) => chunk.type === "data-media"),
-        ).toHaveLength(1);
+            chunks
+                .filter((chunk) => chunk.type === "text-delta")
+                .map((chunk) => chunk.delta)
+                .join(""),
+        ).toBe("Found it.\n\n\n\n![Result](<https://example.test/result.png>)");
     });
 
     it("buffers tool markup split across provider chunks", async () => {
@@ -208,7 +201,7 @@ describe("PollinationsChatTransport", () => {
         ).toBe("Found it.\n\n");
     });
 
-    it("releases text held for a possible link at the next newline", async () => {
+    it("passes plain code straight through without splitting on brackets", async () => {
         const chunks = await chunksFrom([
             contentChunk("const a = [\n", "chunk-1"),
             contentChunk("  1,\n", "chunk-2"),
@@ -218,11 +211,12 @@ describe("PollinationsChatTransport", () => {
         expect(
             chunks
                 .filter((chunk) => chunk.type === "text-delta")
-                .map((chunk) => chunk.delta),
-        ).toEqual(["const a = ", "[\n", "  1,\n", "];"]);
+                .map((chunk) => chunk.delta)
+                .join(""),
+        ).toBe("const a = [\n  1,\n];");
     });
 
-    it("buffers generated media links split across provider chunks", async () => {
+    it("passes markdown image links straight through as text, split across provider chunks", async () => {
         const chunks = await chunksFrom([
             contentChunk("![Res", "chunk-1"),
             contentChunk("ult](<https://example.test/result", "chunk-2"),
@@ -230,21 +224,17 @@ describe("PollinationsChatTransport", () => {
         ]);
 
         expect(
-            chunks.filter((chunk) => chunk.type === "data-media"),
-        ).toHaveLength(1);
-        expect(
-            chunks.filter((chunk) => chunk.type === "text-delta"),
-        ).toHaveLength(0);
+            chunks
+                .filter((chunk) => chunk.type === "text-delta")
+                .map((chunk) => chunk.delta)
+                .join(""),
+        ).toBe("![Result](<https://example.test/result.png>)");
     });
 
     it.each([
         "![Result](https://example.test/result.png)",
         "[Video](<https://example.test/result.mp4>)",
-    ])("renders media independently of every chunk boundary: %s", async (content) => {
-        const expected = await chunksFrom([contentChunk(content, "whole")]);
-        const expectedMedia = expected.flatMap((chunk) =>
-            chunk.type === "data-media" && "data" in chunk ? [chunk.data] : [],
-        );
+    ])("renders markdown media links independently of every chunk boundary: %s", async (content) => {
         const partitions = [
             ...Array.from({ length: content.length - 1 }, (_, index) => [
                 content.slice(0, index + 1),
@@ -259,15 +249,11 @@ describe("PollinationsChatTransport", () => {
                 ),
             );
             expect(
-                chunks.flatMap((chunk) =>
-                    chunk.type === "data-media" && "data" in chunk
-                        ? [chunk.data]
-                        : [],
-                ),
-            ).toEqual(expectedMedia);
-            expect(
-                chunks.filter((chunk) => chunk.type === "text-delta"),
-            ).toHaveLength(0);
+                chunks
+                    .filter((chunk) => chunk.type === "text-delta")
+                    .map((chunk) => chunk.delta)
+                    .join(""),
+            ).toBe(content);
         }
     });
 
@@ -299,20 +285,7 @@ describe("PollinationsChatTransport", () => {
                     .filter((chunk) => chunk.type === "text-delta")
                     .map((chunk) => chunk.delta)
                     .join(""),
-            ).toBe(`${content}\n\n`);
-            expect(
-                chunks.flatMap((chunk) =>
-                    chunk.type === "data-media" && "data" in chunk
-                        ? [chunk.data]
-                        : [],
-                ),
-            ).toEqual([
-                {
-                    kind: "image",
-                    url: "https://example.test/actual.png",
-                    label: "Actual result",
-                },
-            ]);
+            ).toBe(source);
             expect(
                 chunks.filter((chunk) => chunk.type === "tool-input-available"),
             ).toHaveLength(0);

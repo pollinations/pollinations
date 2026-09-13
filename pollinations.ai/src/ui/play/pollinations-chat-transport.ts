@@ -15,10 +15,8 @@ import type {
 import {
     buildUserContent,
     errorMessage,
-    extractStreamedMedia,
     isCancellation,
     parseAgentMessage,
-    type RenderedMedia,
 } from "./chat-models";
 
 export interface PreparedAttachment {
@@ -41,7 +39,6 @@ export type PollinationsChatData = {
         name: string;
         status: "running" | "complete" | "failed";
     };
-    media: RenderedMedia;
     responseStatus: { status: "cancelled" };
 };
 
@@ -94,19 +91,11 @@ function serializeToolPart(part: DynamicToolUIPart): string {
     return details;
 }
 
-function mediaMarkdown(media: RenderedMedia): string {
-    const label = media.label || `Generated ${media.kind}`;
-    return media.kind === "image"
-        ? `![${label}](<${media.url}>)`
-        : `[${label}](<${media.url}>)`;
-}
-
 function messageText(message: PollinationsUIMessage): string {
     return message.parts
         .map((part) => {
             if (part.type === "text") return part.text;
             if (part.type === "dynamic-tool") return serializeToolPart(part);
-            if (part.type === "data-media") return mediaMarkdown(part.data);
             return "";
         })
         .filter(Boolean)
@@ -185,7 +174,6 @@ export class PollinationsChatTransport
                 let linePrefix = "";
                 let codeFence: string | null = null;
                 let inlineCode: string | null = null;
-                const emittedMedia = new Set<string>();
 
                 const endText = () => {
                     if (!textId) return;
@@ -203,11 +191,6 @@ export class PollinationsChatTransport
                         id: textId,
                         delta: text,
                     });
-                };
-                const emitMedia = (media: RenderedMedia, id: string) => {
-                    if (emittedMedia.has(media.url)) return;
-                    emittedMedia.add(media.url);
-                    controller.enqueue({ type: "data-media", id, data: media });
                 };
                 const emitParsedContent = (content: string) => {
                     const parts = parseAgentMessage(content);
@@ -242,15 +225,7 @@ export class PollinationsChatTransport
                             continue;
                         }
 
-                        const extracted = extractStreamedMedia(part.text);
-                        if (extracted.media.length === 0) {
-                            emitText(part.text);
-                            continue;
-                        }
-                        endText();
-                        for (const media of extracted.media) {
-                            emitMedia(media, `media:${media.url}`);
-                        }
+                        emitText(part.text);
                     }
                 };
                 const partialToolPrefix = (content: string) => {
@@ -276,18 +251,10 @@ export class PollinationsChatTransport
                             : source.slice(newline + 1);
                     return source;
                 };
-                // A markdown link cannot span a raw newline, so text held
-                // back for a possible link is released at the next one.
-                const releaseThroughNewline = () => {
-                    const newline = contentBuffer.indexOf("\n");
-                    if (newline < 0) return false;
-                    emitText(consume(newline + 1));
-                    return true;
-                };
                 const flushContent = (final = false) => {
                     while (contentBuffer) {
-                        // Code is literal content: do not turn example links or
-                        // tool markup into media/tool parts. Keep delimiters across
+                        // Code is literal content: do not turn example tool
+                        // markup into tool-call parts. Keep delimiters across
                         // provider chunks, including a split closing fence.
                         if (codeFence) {
                             const newline = contentBuffer.indexOf("\n");
@@ -340,18 +307,10 @@ export class PollinationsChatTransport
                         }
                         const lower = contentBuffer.toLowerCase();
                         const toolIndex = lower.indexOf("<details");
-                        const bracketIndex = contentBuffer.indexOf("[");
-                        const linkIndex =
-                            bracketIndex > 0 &&
-                            contentBuffer[bracketIndex - 1] === "!"
-                                ? bracketIndex - 1
-                                : bracketIndex;
-                        const literalIndex = contentBuffer.search(/[`~\\]/);
-                        const starts = [
-                            toolIndex,
-                            linkIndex,
-                            literalIndex,
-                        ].filter((index) => index >= 0);
+                        const literalIndex = contentBuffer.search(/[`~]/);
+                        const starts = [toolIndex, literalIndex].filter(
+                            (index) => index >= 0,
+                        );
                         const specialIndex =
                             starts.length > 0 ? Math.min(...starts) : -1;
 
@@ -362,10 +321,7 @@ export class PollinationsChatTransport
                             }
                             const pendingLength = final
                                 ? 0
-                                : Math.max(
-                                      partialToolPrefix(contentBuffer),
-                                      contentBuffer.endsWith("!") ? 1 : 0,
-                                  );
+                                : partialToolPrefix(contentBuffer);
                             const safeLength =
                                 contentBuffer.length - pendingLength;
                             emitText(consume(safeLength));
@@ -378,13 +334,6 @@ export class PollinationsChatTransport
                             continue;
                         }
 
-                        if (contentBuffer.startsWith("\\")) {
-                            if (contentBuffer.length === 1 && !final) return;
-                            emitText(
-                                consume(Math.min(2, contentBuffer.length)),
-                            );
-                            continue;
-                        }
                         if (/^[`~]/.test(contentBuffer)) {
                             const delimiter =
                                 contentBuffer.match(/^(`+|~+)/)?.[0];
@@ -405,62 +354,18 @@ export class PollinationsChatTransport
                             continue;
                         }
 
-                        if (
-                            contentBuffer.toLowerCase().startsWith("<details")
-                        ) {
-                            const closeIndex = contentBuffer
-                                .toLowerCase()
-                                .indexOf("</details>");
-                            if (closeIndex < 0) {
-                                if (final) {
-                                    emitText(consume(contentBuffer.length));
-                                }
-                                return;
-                            }
-                            const end = closeIndex + "</details>".length;
-                            emitParsedContent(consume(end));
-                            continue;
-                        }
-
-                        const labelEnd = contentBuffer.indexOf("]");
-                        if (labelEnd < 0) {
+                        // Only remaining case at specialIndex 0: "<details".
+                        const closeIndex = contentBuffer
+                            .toLowerCase()
+                            .indexOf("</details>");
+                        if (closeIndex < 0) {
                             if (final) {
                                 emitText(consume(contentBuffer.length));
-                            } else if (releaseThroughNewline()) {
-                                continue;
                             }
                             return;
                         }
-                        if (labelEnd + 1 === contentBuffer.length && !final)
-                            return;
-                        if (contentBuffer[labelEnd + 1] !== "(") {
-                            const end = labelEnd + 1;
-                            emitText(consume(end));
-                            continue;
-                        }
-                        const linkEnd = contentBuffer.indexOf(
-                            ")",
-                            labelEnd + 2,
-                        );
-                        if (linkEnd < 0) {
-                            if (final) {
-                                emitText(consume(contentBuffer.length));
-                            } else if (releaseThroughNewline()) {
-                                continue;
-                            }
-                            return;
-                        }
-                        const end = linkEnd + 1;
-                        const candidate = consume(end);
-                        const extracted = extractStreamedMedia(candidate);
-                        if (extracted.media.length === 0) {
-                            emitText(candidate);
-                        } else {
-                            endText();
-                            for (const media of extracted.media) {
-                                emitMedia(media, `media:${media.url}`);
-                            }
-                        }
+                        const end = closeIndex + "</details>".length;
+                        emitParsedContent(consume(end));
                     }
                 };
 

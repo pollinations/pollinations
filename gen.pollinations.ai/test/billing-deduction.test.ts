@@ -334,11 +334,14 @@ describe("billing deduction", () => {
             type: "publishable",
             user: { tierBalance: 0, packBalance: 0 },
             pollenBudget: 0,
-            metadata: { earningsEnabled: true },
         });
+        // Set earningsEnabled metadata directly in the DB
+        await db
+            .update(apiKeyTable)
+            .set({ metadata: JSON.stringify({ earningsEnabled: true }) })
+            .where(eq(apiKeyTable.id, byopKeyId));
         // Delete the dev user so atomicCreditUserBalance affects 0 rows
         await db.delete(userTable).where(eq(userTable.id, devUserId));
-
         const result = await handleBalanceDeduction({
             db,
             isBilledUsage: true,

@@ -2812,24 +2812,43 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
                 }),
             );
 
-            for (const agentModel of ["", "   ", "x".repeat(129)]) {
-                const invalid = await fetchGen(
-                    new Request(`https://gen.pollinations.ai${path}`, {
-                        method: "POST",
-                        headers: {
-                            Authorization: `Bearer ${apiKey}`,
-                            "Content-Type": "application/json",
-                            "X-Pollinations-Agent-Model": agentModel,
-                        },
-                        body: JSON.stringify({
-                            model: modelId,
-                            ...input,
+            for (const header of [
+                "agent-model",
+                "X-Pollinations-Agent-Model",
+            ]) {
+                for (const agentModel of ["", "   ", "x".repeat(129)]) {
+                    const invalid = await fetchGen(
+                        new Request(`https://gen.pollinations.ai${path}`, {
+                            method: "POST",
+                            headers: {
+                                Authorization: `Bearer ${apiKey}`,
+                                "Content-Type": "application/json",
+                                [header]: agentModel,
+                            },
+                            body: JSON.stringify({
+                                model: modelId,
+                                ...input,
+                            }),
                         }),
-                    }),
-                );
-                expect(invalid.status).toBe(400);
-                await invalid.text();
+                    );
+                    expect(invalid.status).toBe(400);
+                    await invalid.text();
+                }
             }
+            const conflict = await fetchGen(
+                new Request(`https://gen.pollinations.ai${path}`, {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                        "agent-model": "test/one",
+                        "X-Pollinations-Agent-Model": "test/two",
+                    },
+                    body: JSON.stringify({ model: modelId, ...input }),
+                }),
+            );
+            expect(conflict.status).toBe(400);
+            await conflict.text();
             for (const agentModel of [undefined, "test/brain"]) {
                 const legacyBody = await fetchGen(
                     new Request(`https://gen.pollinations.ai${path}`, {
@@ -2867,7 +2886,9 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
                                 "Content-Type": "application/json",
                                 ...(agentModel
                                     ? {
-                                          "X-Pollinations-Agent-Model":
+                                          [agentModel === "test/brain-one"
+                                              ? "agent-model"
+                                              : "X-Pollinations-Agent-Model"]:
                                               agentModel,
                                       }
                                     : {}),

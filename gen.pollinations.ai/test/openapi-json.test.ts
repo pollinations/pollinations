@@ -89,14 +89,19 @@ describe("/openapi.json", () => {
             const operation = schema.paths[path] as {
                 post: { parameters: { name: string; required?: boolean }[] };
             };
-            const header = operation.post.parameters.find(
-                ({ name }) => name === "x-pollinations-agent-model",
-            );
-            expect(header).toMatchObject({
-                in: "header",
-                schema: { type: "string", minLength: 1, maxLength: 128 },
-            });
-            expect(header?.required ?? false).toBe(false);
+            for (const headerName of [
+                "agent-model",
+                "x-pollinations-agent-model",
+            ]) {
+                const header = operation.post.parameters.find(
+                    ({ name }) => name === headerName,
+                );
+                expect(header).toMatchObject({
+                    in: "header",
+                    schema: { type: "string", minLength: 1, maxLength: 128 },
+                });
+                expect(header?.required ?? false).toBe(false);
+            }
             expect(schema).toHaveProperty([
                 "paths",
                 path,

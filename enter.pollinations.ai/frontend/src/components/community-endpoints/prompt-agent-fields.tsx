@@ -18,10 +18,7 @@ export function PromptAgentFields({
 }: {
     form: AgentFormState;
     disabled: boolean;
-    onChange: (
-        key: keyof AgentFormState,
-        value: string | AgentFormState["mcpServers"],
-    ) => void;
+    onChange: (key: keyof AgentFormState, value: string | string[]) => void;
 }) {
     return (
         <div className="space-y-4">
@@ -47,7 +44,7 @@ export function PromptAgentFields({
             </Alert>
 
             <FieldStack
-                label="Base model"
+                label="Default base model"
                 helper="Pick a Pollinations text model or type any model ID. Accepted inputs are inherited from this model."
                 alignLabelRow
             >
@@ -55,6 +52,25 @@ export function PromptAgentFields({
                     value={form.baseModel}
                     disabled={disabled}
                     onChange={(value) => onChange("baseModel", value)}
+                />
+            </FieldStack>
+
+            <FieldStack
+                label="Alternative base models"
+                helper="Models callers may choose instead of the default, one ID per line. Leave empty to use only the base model."
+                alignLabelRow
+            >
+                <Textarea
+                    name="prompt-agent-allowed-base-models"
+                    value={(form.allowedBaseModels ?? []).join("\n")}
+                    rows={3}
+                    disabled={disabled}
+                    onChange={(event) =>
+                        onChange(
+                            "allowedBaseModels",
+                            event.target.value.split("\n"),
+                        )
+                    }
                 />
             </FieldStack>
 

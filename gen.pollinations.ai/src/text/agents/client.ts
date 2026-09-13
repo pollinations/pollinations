@@ -1,5 +1,6 @@
 import { getRealClientIp } from "@shared/client-ip.ts";
 import {
+    PROMPT_AGENT_MODEL_HEADER,
     type PromptAgentCommunityEndpointRuntime,
     parseListingPayload,
 } from "@shared/community-endpoints.ts";
@@ -8,7 +9,9 @@ import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
+import { getGenerationModelRegistry } from "../../model-registry.ts";
 import type { DirectResponsesTarget } from "../responses/client.ts";
+import { selectPromptAgentModel } from "./model-choice.ts";
 import {
     handlePromptAgentResponsesRequest,
     PromptAgentResponsesRequestSchema,
@@ -38,6 +41,15 @@ async function loadPromptAgentRuntime(
     const config = parseListingPayload("prompt_agent", row.payload);
     if (!config)
         throw new Error(`Agent ${endpoint.id} has invalid configuration`);
+
+    const requestedBaseModel = c.req.header(PROMPT_AGENT_MODEL_HEADER);
+    if (requestedBaseModel !== undefined) {
+        config.baseModel = selectPromptAgentModel(
+            config,
+            requestedBaseModel,
+            await getGenerationModelRegistry(c.env),
+        );
+    }
 
     const clientIp = getRealClientIp(c);
     const fetcher: typeof fetch = (input, init) => {

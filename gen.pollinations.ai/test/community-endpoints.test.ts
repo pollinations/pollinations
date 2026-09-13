@@ -100,6 +100,8 @@ import {
     callCommunityVideoEndpoint,
 } from "../src/image/communityEndpoint.ts";
 import worker from "../src/index.ts";
+import { authFromSnapshot } from "../src/middleware/auth.ts";
+import { resolveModel } from "../src/middleware/model.ts";
 import { TEXT_BALANCE_NOTICE_ENABLED } from "../src/middleware/text-balance-notice.ts";
 import {
     getGenerationModelRegistry,
@@ -3529,16 +3531,19 @@ fixtureTest.each(
 fixtureTest.each(
     ["responses", "chat/completions"].flatMap((route) =>
         [false, true].flatMap((stream) =>
-            ["valid", "missing", "malformed"].map((usageKind) => ({
-                route,
-                stream,
-                usageKind,
-            })),
+            ["valid", "missing", "malformed"].flatMap((usageKind) =>
+                [false, true].map((override) => ({
+                    route,
+                    stream,
+                    usageKind,
+                    override,
+                })),
+            ),
         ),
     ),
 )(
-    "bills managed $route stream=$stream with $usageKind final usage and a paid MCP call",
-    async ({ route, stream, usageKind }) => {
+    "bills managed $route stream=$stream override=$override with $usageKind final usage and a paid MCP call",
+    async ({ route, stream, usageKind, override }) => {
         const ownerGithubUsername = `agent-owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `managed-${crypto.randomUUID().slice(0, 8)}`;
         const agentId = crypto.randomUUID();
@@ -3557,7 +3562,8 @@ fixtureTest.each(
             upstreamModel: agentId,
             agentConfig: {
                 systemPrompt: "Search once, then reply tersely.",
-                baseModel: "openai-fast",
+                baseModel: override ? "openai-large" : "openai-fast",
+                allowedBaseModels: ["openai-fast"],
                 mcpServers: ["exa"],
             },
             createdAt: new Date(),
@@ -3661,6 +3667,19 @@ fixtureTest.each(
                     new URL(request.url).origin ===
                     "https://gen.pollinations.ai"
                 ) {
+                    if (
+                        new URL(request.url).pathname === "/v1/chat/completions"
+                    ) {
+                        const body = (await request.clone().json()) as {
+                            model: string;
+                        };
+                        expect(body.model).toBe(
+                            override ? "openai/gpt-5-nano" : "openai-fast",
+                        );
+                        expect(
+                            request.headers.has("X-Pollinations-Agent-Model"),
+                        ).toBe(false);
+                    }
                     runtimeClientIps.push(
                         request.headers.get("x-real-ip") ?? "",
                     );
@@ -3676,6 +3695,13 @@ fixtureTest.each(
                         messages: { role: string; content: string }[];
                         reasoning_effort?: string;
                     };
+                    expect(
+                        upstream.messages.some(
+                            (message) =>
+                                message.content ===
+                                "Search once, then reply tersely.",
+                        ),
+                    ).toBe(true);
                     expect(upstream.reasoning_effort).toBe("low");
                     if (modelCalls === 2) {
                         expect(
@@ -3799,6 +3825,9 @@ fixtureTest.each(
                     Authorization: `Bearer ${caller.key}`,
                     "Content-Type": "application/json",
                     "cf-connecting-ip": testClientIp,
+                    ...(override
+                        ? { "X-Pollinations-Agent-Model": "openai-fast" }
+                        : {}),
                 },
                 body: JSON.stringify({
                     model: modelId,
@@ -3856,7 +3885,9 @@ fixtureTest.each(
                 event.modelRequested !== modelId,
         );
         const modelEvents = billed.filter(
-            (event) => event.modelRequested === "openai-fast",
+            (event) =>
+                event.modelRequested ===
+                (override ? "openai/gpt-5-nano" : "openai-fast"),
         );
         expect(modelEvents).toHaveLength(expectedBilledModelCalls);
         for (const event of modelEvents) {
@@ -7451,6 +7482,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     const promptAgent = {
         systemPrompt: "You are a terse SQL tutor.",
         baseModel: "openai/gpt-5-nano",
+        allowedBaseModels: ["openai-large"],
         requiredSafetyFeatures: ["sexual"],
         mcpServers: ["pollinations"],
     };
@@ -7480,6 +7512,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     expect(agent).toMatchObject({
         systemPrompt: "You are a terse SQL tutor.",
         baseModel: "openai/gpt-5-nano",
+        allowedBaseModels: ["openai-large"],
         mcpServers: ["pollinations"],
     });
     expect(agent).not.toHaveProperty("apiKeyId");
@@ -7503,6 +7536,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     expect(JSON.parse(storedAgent.payload)).toEqual({
         systemPrompt: promptAgent.systemPrompt,
         baseModel: promptAgent.baseModel,
+        allowedBaseModels: promptAgent.allowedBaseModels,
         mcpServers: promptAgent.mcpServers,
     });
     const partialUpdateResponse = await fetchEnterApi(
@@ -7543,6 +7577,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     await expect(updateAgentResponse.json()).resolves.toMatchObject({
         id: agent.id,
         systemPrompt: "You are an editable SQL tutor.",
+        allowedBaseModels: promptAgent.allowedBaseModels,
         mcpServers: ["pollinations"],
     });
     const [agentAfterPromptUpdate] = await db
@@ -7552,6 +7587,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     expect(agentAfterPromptUpdate.requiredSafetyFeatures).toEqual(["sexual"]);
     expect(JSON.parse(agentAfterPromptUpdate.payload)).toEqual({
         baseModel: promptAgent.baseModel,
+        allowedBaseModels: promptAgent.allowedBaseModels,
         mcpServers: promptAgent.mcpServers,
         systemPrompt: "You are an editable SQL tutor.",
     });
@@ -7648,6 +7684,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     if (!registryEntry) throw new Error("Agent listing was not registered");
     expect(registryEntry.agentConfig).toEqual({
         baseModel: promptAgent.baseModel,
+        allowedBaseModels: promptAgent.allowedBaseModels,
         mcpServers: ["pollinations"],
     });
     expect(registryEntry.definition.cost).toMatchObject({
@@ -9379,5 +9416,87 @@ fixtureTest(
             }),
         );
         expect(direct.status).toBe(403);
+    },
+);
+
+fixtureTest(
+    "validates prompt-agent choices before cache lookup and partitions by canonical base model",
+    async () => {
+        const ownerGithubUsername = `choices-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const modelId = communityModelId(ownerGithubUsername, "agent");
+        await insertCommunityEndpoints({
+            id: crypto.randomUUID(),
+            ownerUserId,
+            type: "prompt_agent",
+            visibility: "public",
+            name: "agent",
+            baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+            upstreamModel: "agent",
+            agentConfig: {
+                systemPrompt: "Unchanged prompt",
+                baseModel: "openai-large",
+                allowedBaseModels: ["openai-fast"],
+                mcpServers: [],
+            },
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        resetGenerationModelRegistryCache();
+        const registry = await getGenerationModelRegistry(env);
+        expect(registry.resolve(modelId)?.info.allowed_base_models).toEqual([
+            "openai-large",
+            "openai-fast",
+        ]);
+        const app = new Hono<Env>();
+        app.use(
+            "*",
+            authFromSnapshot({
+                user: { id: ownerUserId, tier: "seed" },
+                apiKey: {
+                    id: "choice-test",
+                    permissions: { models: [modelId, "openai-fast"] },
+                },
+            }),
+        );
+        app.use(
+            "*",
+            resolveModel("generate.text", {
+                supportedEndpoint: "/v1/chat/completions",
+            }),
+        );
+        app.get("/", (c) =>
+            c.json({
+                scope: c.var.model.cacheScope,
+                base: c.var.model.promptAgentBaseModel,
+            }),
+        );
+        const request = (base?: string, agent = modelId) =>
+            app.request(
+                `/?model=${encodeURIComponent(agent)}`,
+                {
+                    headers:
+                        base === undefined
+                            ? {}
+                            : { "X-Pollinations-Agent-Model": base },
+                },
+                env,
+            );
+        const original = (await (await request()).json()) as { scope: string };
+        const chosen = (await (await request("openai-fast")).json()) as {
+            scope: string;
+            base: string;
+        };
+        expect(chosen.base).toBe("openai/gpt-5-nano");
+        expect(chosen.scope).not.toBe(original.scope);
+        expect(await (await request("openai/gpt-5-nano")).json()).toEqual(
+            chosen,
+        );
+        expect((await request("unknown")).status).toBe(400);
+        expect((await request("openai-large")).status).toBe(403);
+        expect((await request("openai-fast", "openai-fast")).status).toBe(400);
     },
 );

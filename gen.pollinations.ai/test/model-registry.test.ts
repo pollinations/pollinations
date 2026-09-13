@@ -5,6 +5,7 @@ import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
 } from "../src/model-registry.ts";
+import { selectPromptAgentModel } from "../src/text/agents/model-choice.ts";
 import { availableModels } from "../src/text/availableModels.ts";
 
 afterEach(() => {
@@ -161,5 +162,33 @@ describe("getGenerationModelRegistry", () => {
             "Community model registry unavailable",
             expect.any(Error),
         );
+    });
+});
+
+describe("prompt-agent model selection", () => {
+    it("accepts the default and approved aliases, rejecting other models", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        const config = {
+            baseModel: "openai-large",
+            allowedBaseModels: ["openai-fast"],
+        };
+        expect(
+            selectPromptAgentModel(config, "openai/gpt-5-nano", registry),
+        ).toBe("openai/gpt-5-nano");
+        expect(selectPromptAgentModel(config, "openai-large", registry)).toBe(
+            registry.resolve("openai-large")?.id,
+        );
+        for (const id of ["missing-model", "flux", "midijourney", ""]) {
+            expect(() => selectPromptAgentModel(config, id, registry)).toThrow(
+                "not allowed",
+            );
+        }
+        expect(() =>
+            selectPromptAgentModel(
+                { baseModel: "openai-large" },
+                "openai-fast",
+                registry,
+            ),
+        ).toThrow("not allowed");
     });
 });

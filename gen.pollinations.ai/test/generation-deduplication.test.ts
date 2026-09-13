@@ -175,6 +175,7 @@ describe("generation request deduplication", () => {
                         "Content-Type": "application/json",
                         "X-Forwarded-Host": "gen.pollinations.ai",
                         "X-Original-Client-IP": "203.0.113.42",
+                        "X-Pollinations-Agent-Model": "chosen-model",
                     },
                     body: JSON.stringify({
                         model: "test",
@@ -210,6 +211,7 @@ describe("generation request deduplication", () => {
                 ["cf-connecting-ip", "203.0.113.42"],
                 ["x-forwarded-host", "gen.pollinations.ai"],
                 ["x-original-client-ip", "203.0.113.42"],
+                ["x-pollinations-agent-model", "chosen-model"],
             ]),
         );
         expect(jobs[0].auth.apiKey).not.toHaveProperty("rawKey");

@@ -142,6 +142,12 @@ describe("text cache", () => {
             "agent:agent-id:key:key-two",
         );
 
+        const selectedBase = await generateCacheKey(
+            request,
+            body,
+            "agent:agent-id:base:chosen-model:key:key-one",
+        );
+        expect(selectedBase).not.toBe(first);
         expect(sameCaller).toBe(first);
         expect(otherCaller).not.toBe(first);
     });

@@ -17,6 +17,7 @@ type ModelVariables = {
     model: {
         requested: string;
         resolved: string;
+        promptAgentBaseModel?: string;
         communityEndpoint?: CommunityEndpointRuntime;
     };
 };
@@ -83,7 +84,11 @@ function installAuth(
 
         if (!apiKey?.permissions?.models) return;
 
-        if (!apiKey.permissions.models.includes(model.resolved)) {
+        if (
+            !apiKey.permissions.models.includes(model.resolved) ||
+            (model.promptAgentBaseModel &&
+                !apiKey.permissions.models.includes(model.promptAgentBaseModel))
+        ) {
             throw new HTTPException(403, {
                 message: `Model '${model.requested}' is not allowed for this API key`,
             });

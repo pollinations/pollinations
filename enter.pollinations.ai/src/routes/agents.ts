@@ -93,6 +93,7 @@ const UpdateAgentEnvelopeSchema = z
         ...UpdateListingFieldsSchema.shape,
         systemPrompt: z.unknown().optional(),
         baseModel: z.unknown().optional(),
+        allowedBaseModels: z.unknown().optional(),
         mcpServers: z.unknown().optional(),
     })
     .strict();
@@ -112,6 +113,7 @@ const AgentResponseSchema = z.discriminatedUnion("type", [
         type: z.literal("prompt_agent"),
         systemPrompt: z.string(),
         baseModel: z.string(),
+        allowedBaseModels: z.array(z.string()).optional(),
         mcpServers: z.array(BuiltinMcpServerIdSchema),
     }),
     AgentResponseBaseSchema.extend({
@@ -524,6 +526,7 @@ export const agentsRoutes = new Hono<Env>()
                 update.payload = serializePromptAgentConfig({
                     systemPrompt: data.systemPrompt,
                     baseModel: data.baseModel,
+                    allowedBaseModels: data.allowedBaseModels,
                     mcpServers: data.mcpServers,
                 });
             }

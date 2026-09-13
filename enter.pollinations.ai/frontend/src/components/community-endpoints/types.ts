@@ -40,6 +40,7 @@ export type ManagedPromptAgent = ManagedAgentBase & {
     type: "prompt_agent";
     systemPrompt: string;
     baseModel: string;
+    allowedBaseModels?: string[];
     mcpServers: McpServerId[];
 };
 
@@ -53,7 +54,11 @@ export type ManagedAgent = ManagedPromptAgent | ManagedCodeAgent;
 
 type AgentFields = Pick<
     ManagedPromptAgent,
-    "systemPrompt" | "baseModel" | "requiredSafetyFeatures" | "mcpServers"
+    | "systemPrompt"
+    | "baseModel"
+    | "requiredSafetyFeatures"
+    | "mcpServers"
+    | "allowedBaseModels"
 >;
 
 export type AgentFormState = AgentFields &
@@ -450,6 +455,7 @@ export function agentToForm(agent?: ManagedAgent): AgentFormState {
             : {
                   systemPrompt: agent.systemPrompt,
                   baseModel: agent.baseModel,
+                  allowedBaseModels: agent.allowedBaseModels,
                   mcpServers: agent.mcpServers,
               }),
     };
@@ -568,6 +574,9 @@ function promptAgentPayload(form: AgentFormState) {
         visibility: form.visibility,
         systemPrompt,
         baseModel,
+        allowedBaseModels: form.allowedBaseModels
+            ?.map((model) => model.trim())
+            .filter(Boolean),
         requiredSafetyFeatures: form.requiredSafetyFeatures,
         mcpServers: form.mcpServers,
     };

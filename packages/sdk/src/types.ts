@@ -1001,6 +1001,8 @@ export interface ModelInfo {
     community?: boolean;
     agent?: boolean;
     base_model?: string;
+    /** Owner-approved base models, including the default, for prompt-agent overrides. */
+    allowed_base_models?: string[];
     input_modalities?: ModelInputModality[];
     output_modalities?: ModelOutputModality[];
     video_capabilities?: VideoCapability[];

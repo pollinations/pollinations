@@ -1,4 +1,5 @@
 import type { BalanceCheckResult } from "@shared/billing/balance.ts";
+import { PROMPT_AGENT_MODEL_HEADER } from "@shared/community-endpoints.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import { getRoutePath } from "@shared/util.ts";
 import type { Context } from "hono";
@@ -18,6 +19,7 @@ import { hashGenerationCacheIdentity } from "@/middleware/generation-cache.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 
 const EXECUTOR_HEADERS = new Set([
+    PROMPT_AGENT_MODEL_HEADER.toLowerCase(),
     "accept",
     "cf-connecting-ip",
     "content-type",

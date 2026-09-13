@@ -456,3 +456,32 @@ test("requires paid balance for Recraft vector", async ({
     );
     expect(generation.status).toBe(402);
 });
+
+test("prompt-agent overrides require permission for both the agent and selected model", async () => {
+    const app = new Hono<AuthEnv>();
+    app.use(
+        "*",
+        authFromSnapshot({
+            user: { id: "permission-test", tier: "seed" },
+            apiKey: {
+                id: "test",
+                permissions: { models: ["owner/agent", "openai-fast"] },
+            },
+        }),
+    );
+    app.get("/", (c) => {
+        c.set("model", {
+            requested: "owner/agent",
+            resolved: c.req.query("agent") ?? "owner/agent",
+            promptAgentBaseModel: c.req.query("base"),
+        });
+        c.var.auth.requireModelAccess();
+        return c.text("allowed");
+    });
+    expect((await app.request("/?base=openai%2Fgpt-5-nano")).status).toBe(200);
+    expect((await app.request("/?base=other%2Fmodel")).status).toBe(403);
+    expect(
+        (await app.request("/?agent=other%2Fagent&base=openai%2Fgpt-5-nano"))
+            .status,
+    ).toBe(403);
+});

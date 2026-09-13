@@ -31,6 +31,15 @@ import {
     prepareOpenAIImageGeneration,
 } from "./images.ts";
 
+const promptAgentModelParameter = {
+    in: "header" as const,
+    name: "X-Pollinations-Agent-Model",
+    required: false,
+    schema: { type: "string" as const },
+    description:
+        "For managed prompt agents, choose the default or an owner-approved alternative base model. Discover allowed_base_models in /text/models. Other model types reject this header. The API key must allow both the agent and selected model.",
+};
+
 // Wrapper for resolver that enables schema deduplication via $ref
 // Schemas with .meta({ $id: "Name" }) will be extracted to components/schemas
 const resolver = <T extends Parameters<typeof baseResolver>[0]>(schema: T) =>
@@ -665,6 +674,7 @@ export const proxyRoutes = new Hono<Env>()
         describeRoute({
             tags: ["✍️ Text"],
             summary: "Chat Completions",
+            parameters: [promptAgentModelParameter],
             description: [
                 "Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by pointing it to `https://gen.pollinations.ai`.",
                 "",
@@ -707,6 +717,7 @@ export const proxyRoutes = new Hono<Env>()
         describeRoute({
             tags: ["✍️ Text"],
             summary: "Create Response",
+            parameters: [promptAgentModelParameter],
             description: [
                 "Generate a stateless OpenAI-compatible Response through a model that advertises `/v1/responses` in `supported_endpoints`.",
                 "",
@@ -795,6 +806,7 @@ export const proxyRoutes = new Hono<Env>()
         describeRoute({
             tags: ["✍️ Text"],
             summary: "Text Generation With Messages",
+            parameters: [promptAgentModelParameter],
             description: [
                 "Generate text from an OpenAI-style messages array and return the assistant content directly.",
                 "",
@@ -823,6 +835,7 @@ export const proxyRoutes = new Hono<Env>()
         describeRoute({
             tags: ["✍️ Text"],
             summary: "Simple Text Generation",
+            parameters: [promptAgentModelParameter],
             description: [
                 "Generate text from a prompt via a simple GET request. Returns plain text.",
                 "",

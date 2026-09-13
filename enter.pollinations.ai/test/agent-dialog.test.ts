@@ -2,7 +2,11 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, expect, it, vi } from "vitest";
 import { AgentDialog } from "../frontend/src/components/community-endpoints/agent-dialog.tsx";
-import type { ManagedAgent } from "../frontend/src/components/community-endpoints/types.ts";
+import {
+    agentToForm,
+    type ManagedAgent,
+    toAgentUpdatePayload,
+} from "../frontend/src/components/community-endpoints/types.ts";
 
 vi.hoisted(() => {
     vi.stubGlobal("window", { location: { origin: "http://localhost:3000" } });
@@ -43,9 +47,17 @@ it.each([
                     type,
                     systemPrompt: "Hello",
                     baseModel: "openai",
+                    allowedBaseModels: ["alternative-model"],
                     mcpServers: [],
                 }
               : undefined;
+    if (agent?.type === "prompt_agent") {
+        expect(toAgentUpdatePayload(agentToForm(agent))).toMatchObject({
+            systemPrompt: "Hello",
+            baseModel: "openai",
+            allowedBaseModels: ["alternative-model"],
+        });
+    }
     const html = renderToStaticMarkup(
         createElement(AgentDialog, {
             agent,
@@ -71,5 +83,6 @@ it.each([
         expect(syncButton).not.toContain("disabled");
     } else {
         expect(syncButton).toBeUndefined();
+        expect(html).toContain("Alternative base models");
     }
 });

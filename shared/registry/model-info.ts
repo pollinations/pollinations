@@ -46,6 +46,7 @@ export const ModelInfoSchema = z.object({
     community: z.boolean(),
     agent: z.boolean().optional(),
     base_model: z.string().optional(),
+    allowed_base_models: z.array(z.string()).optional(),
     per_user_rpm: z.number().positive().nullable().optional(),
     pricing: z
         .record(z.string(), z.string())

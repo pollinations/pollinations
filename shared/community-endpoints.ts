@@ -617,9 +617,18 @@ export type ProxyListingPayload = z.infer<typeof ProxyListingPayloadSchema>;
  * to load this configuration from the same row.
  */
 export const BuiltinMcpServerIdSchema = z.enum(MCP_SERVER_IDS);
+export const PROMPT_AGENT_MODEL_HEADER = "X-Pollinations-Agent-Model";
+
 export const PromptAgentConfigSchema = z.object({
     systemPrompt: z.string().trim().min(1).max(8000),
     baseModel: z.string().trim().min(1).max(253),
+    allowedBaseModels: z
+        .array(z.string().trim().min(1).max(253))
+        .max(20)
+        .refine((models) => new Set(models).size === models.length, {
+            message: "Duplicate base models are not allowed",
+        })
+        .optional(),
     mcpServers: z
         .array(BuiltinMcpServerIdSchema)
         .max(MCP_SERVER_IDS.length)

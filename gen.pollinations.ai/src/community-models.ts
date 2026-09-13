@@ -139,6 +139,9 @@ export async function getCommunityModelRegistryEntries(
                 if (!payload) return [];
                 agentConfig = {
                     baseModel: payload.baseModel,
+                    ...(payload.allowedBaseModels && {
+                        allowedBaseModels: payload.allowedBaseModels,
+                    }),
                     mcpServers: payload.mcpServers,
                 };
                 communityEndpoint = {

@@ -13,6 +13,7 @@ import type { GenerationModelEntry } from "./model-registry.ts";
 /** The agent fields the catalog reads out of the listing payload. */
 export type AgentCatalogConfig = {
     baseModel: string;
+    allowedBaseModels?: string[];
     mcpServers: McpServerId[];
 };
 
@@ -32,6 +33,11 @@ function applyBaseModelMetadata(
     entry.info = {
         ...entry.info,
         base_model: config.baseModel,
+        ...(config.allowedBaseModels?.length && {
+            allowed_base_models: [
+                ...new Set([config.baseModel, ...config.allowedBaseModels]),
+            ],
+        }),
         capabilities: [
             ...new Set([...entry.info.capabilities, ...agentCapabilities]),
         ],

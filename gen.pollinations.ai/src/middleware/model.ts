@@ -1,5 +1,6 @@
 import {
     type CommunityEndpointRuntime,
+    PROMPT_AGENT_MODEL_HEADER,
     usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
@@ -17,6 +18,7 @@ import {
     type GenerationModelEntry,
     getGenerationModelRegistry,
 } from "../model-registry.ts";
+import { selectPromptAgentModel } from "../text/agents/model-choice.ts";
 import type { AuthVariables } from "./auth.ts";
 
 const ENDPOINT_LABEL: Record<EventType, string> = {
@@ -42,6 +44,7 @@ export type ModelVariables = {
          * which is the default for every static and external community model.
          */
         cacheScope?: string;
+        promptAgentBaseModel?: string;
         /** Entry that serves the request when this model's upstream fails. */
         fallbackEntries?: GenerationModelEntry[];
     };
@@ -225,6 +228,34 @@ export function resolveModel(
             c.var.auth?.user?.id,
             options?.supportedEndpoint,
         );
+        const requestedBaseModel = c.req.header(PROMPT_AGENT_MODEL_HEADER);
+        if (requestedBaseModel !== undefined) {
+            const registry = await getGenerationModelRegistry(c.env);
+            const agent = registry.resolve(resolved.resolved);
+            if (
+                agent?.communityEndpoint?.type !== "prompt_agent" ||
+                !agent.agentConfig
+            ) {
+                throw new HTTPException(400, {
+                    message: `${PROMPT_AGENT_MODEL_HEADER} is supported only for prompt agents`,
+                });
+            }
+            const selected = selectPromptAgentModel(
+                agent.agentConfig,
+                requestedBaseModel,
+                registry,
+            );
+            // Reuse normal visibility and endpoint checks before checking the cache.
+            await resolveModelDefinition(
+                selected,
+                "generate.text",
+                c.env,
+                c.var.auth?.user?.id,
+                "/v1/chat/completions",
+            );
+            resolved.promptAgentBaseModel = selected;
+            resolved.cacheScope = `${resolved.cacheScope}:base:${selected}`;
+        }
         // Fallback-only entries are provider implementations of the public
         // model the caller selected, so they inherit that model's permission.
         // Visible and community targets remain independently scoped: a key can
@@ -239,6 +270,7 @@ export function resolveModel(
             );
         }
         c.set("model", resolved);
+        if (requestedBaseModel !== undefined) c.var.auth?.requireModelAccess();
         c.header(MODEL_REQUESTED_HEADER, resolved.resolved);
         await next();
     });

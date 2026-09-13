@@ -10,6 +10,22 @@ describe("prompt-agent config", () => {
         mcpServers: [],
     };
 
+    it("preserves optional model choices and rejects duplicate choices", () => {
+        expect(
+            PromptAgentConfigSchema.parse({
+                ...config,
+                allowedBaseModels: [" alternative "],
+            }).allowedBaseModels,
+        ).toEqual(["alternative"]);
+        expect(
+            PromptAgentConfigSchema.safeParse({
+                ...config,
+                allowedBaseModels: ["alternative", " alternative "],
+            }).success,
+        ).toBe(false);
+        expect(PromptAgentConfigSchema.parse(config)).toEqual(config);
+    });
+
     it("rejects custom MCP configuration on write", () => {
         expect(
             PromptAgentInputSchema.safeParse({

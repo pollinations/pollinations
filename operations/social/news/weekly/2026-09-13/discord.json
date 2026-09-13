@@ -1,0 +1,14 @@
+{
+  "platform": "discord",
+  "scope": "weekly",
+  "date": "2026-09-13",
+  "period_start": "2026-09-06",
+  "period_end": "2026-09-12",
+  "generated_at": "2026-09-13T06:32:41.130676+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-13/images/discord.jpg"
+    }
+  ],
+  "text": "## Weekly Update - 2026-09-13\n\nHey <@&1424461167883194418> — 96 PRs merged. The garden has acquired a shell.\n\n🤖 **Agents got proper elbow room**\n- Managed code agents now have a persistent per-user filesystem + `bash` via [Computer MCP](https://github.com/pollinations/pollinations/pull/14741).\n- Agent prompt/tool-call limits are now 3× larger, with clearer failure statuses and tool results returned as content parts.\n- MCP also gained device-flow login and structured call errors.\n\n🎞️ **Media routes are converging**\n- Media models now work through both Chat and Responses, including image inputs.\n- Generated files use media storage, old cached media can be recovered on demand, and MCP reuses generated media URLs.\n- `minimax/h3-max-turbo` can now render at 1080p; paid users can access GPT Image 2.5 models.\n\n🧭 **Models, usage, and keys got less ambiguous**\n- Canonical model names, provider mappings, permissions, and community model IDs got a serious cleanup.\n- You can define your own fallback chains; Perplexity Sonar and Grok video routing have stronger fallbacks.\n- The dashboard now has usage/earnings breakdowns, independent activity charts, and top-up/key-editor links from `402` notices.\n\n🌱 **Also sprouting:** `embeddings()` in the SDK, DeepSeek V4.1 Flash, GIMP 3 BYOP generation/editing, and a steadily growing app registry.\n\nStreams, caches, billing usage, and error diagnostics also received the sort of attention that prevents future archaeology. [Docs](https://github.com/pollinations/pollinations/blob/master/APIDOCS.md) · [GitHub](https://github.com/pollinations/pollinations)"
+}

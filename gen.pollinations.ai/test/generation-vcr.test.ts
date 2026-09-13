@@ -2508,7 +2508,6 @@ test("flux falls back to DeepInfra when the Vast pool is empty", async ({
         modelProviderUsed: "vast",
         responseStatus: 503,
         isFinal: false,
-        hasCostEstimate: false,
         isBilledUsage: false,
     });
     expect(mocks.tinybird.state.events[1]).toMatchObject({
@@ -2675,7 +2674,6 @@ test("gpt-image-2 falls back to OpenAI direct on an Azure 429", async ({
         modelProviderUsed: "azure",
         responseStatus: 502,
         isFinal: false,
-        hasCostEstimate: false,
     });
     expect(mocks.tinybird.state.events[1]).toMatchObject({
         modelUsed: "openai/gpt-image-2",
@@ -2713,7 +2711,6 @@ test("gpt-image-2 tries its fallback when the reference image host is over capac
         // Failed-attempt telemetry maps the image host's 429 to a gateway failure.
         responseStatus: 502,
         isFinal: false,
-        hasCostEstimate: false,
         isBilledUsage: false,
     });
     expect(mocks.tinybird.state.events[1]).toMatchObject({

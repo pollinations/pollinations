@@ -134,7 +134,6 @@ type ResponseTrackingData = {
     modelProviderUsed?: string;
     usage?: Usage;
     cost?: UsageCost;
-    hasCostEstimate?: boolean;
     price?: UsagePrice;
     /** What the serving model charges for this usage; bounds the owner reward. */
     servedPrice?: number;
@@ -680,7 +679,6 @@ export async function trackResponse(
         responseStatus: response.status,
         cacheHit,
         isBilledUsage: false,
-        hasCostEstimate: false,
         fallbackUsed,
         modelProviderUsed,
         ...extra,
@@ -742,9 +740,6 @@ export async function trackResponse(
         // the upstream protocol's explicit terminal failure.
         const usage = modelUsage?.usage ?? {};
         return {
-            hasCostEstimate:
-                Object.keys(usage).length > 0 &&
-                finishError.code !== "usage_missing",
             responseStatus: finishError.status,
             cacheHit,
             isBilledUsage: false,
@@ -818,7 +813,6 @@ export async function trackResponse(
                 responseStatus: response.status,
                 cacheHit,
                 isBilledUsage: hasBillablePrice,
-                hasCostEstimate: false,
                 fallbackUsed,
                 ...adjustmentOnlyBilling,
                 modelUsed,
@@ -853,7 +847,6 @@ export async function trackResponse(
         responseStatus: response.status,
         cacheHit,
         isBilledUsage: true,
-        hasCostEstimate: Object.keys(modelUsage.usage).length > 0,
         fallbackUsed,
         cost,
         price,
@@ -1160,7 +1153,6 @@ function createTrackingEvent({
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
-        hasCostEstimate: responseTracking.hasCostEstimate ?? false,
         modelProviderUsed:
             responseTracking.modelProviderUsed ?? requestTracking.modelProvider,
         costVariant: responseTracking.costVariant,

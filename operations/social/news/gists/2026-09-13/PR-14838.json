@@ -1,0 +1,35 @@
+{
+  "pr_number": 14838,
+  "title": "docs: correct harness model examples",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14838",
+  "merged_at": "2026-09-13T23:54:15Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replace stale model aliases in setup examples with canonical catalog IDs.\n- Correct the documented OpenCode, OpenClaw, Pi and DeepSeek defaults.\n- Validate the IDs against the live catalog; all 111 CLI tests and the build pass.\n\nFollow-up to #14666.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Names, Now Canonical",
+    "blurb": "The harness setup examples got their labels straightened out. OpenCode, OpenClaw, Pi, and DeepSeek now point at the models that actually live in the catalog.",
+    "summary": "Updated CODING_HARNESSES.md and Polli CLI documentation to replace stale model aliases with canonical live-catalog IDs, including the documented defaults for OpenCode, OpenClaw, Pi, and DeepSeek.",
+    "impact": "Developers following the harness and Polli CLI setup guides can now copy the documented model IDs and defaults directly into working configurations.",
+    "keywords": [
+      "documentation",
+      "coding harnesses",
+      "polli-cli",
+      "model catalog",
+      "OpenCode",
+      "OpenClaw",
+      "DeepSeek"
+    ],
+    "visual_concept": "A cozy documentation garden where old handwritten model-name tags have been replaced with neat canonical catalog labels. Polli acts as a careful librarian-gardener, checking a glowing terminal catalog while code-plants for OpenCode, OpenClaw, Pi, and DeepSeek grow from labeled pots.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black antennae, oval eyes, pink rectangular cheek blush, light blue rounded wings, and a tiny librarian hat, carefully replacing old labels on four code-plant pots with clean canonical model IDs while a retro terminal glows lime green (#ecf874) with a checked catalog list. Small flowers and vines surround the OpenCode, OpenClaw, Pi, and DeepSeek pots; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) pixel-font text reading “CATALOG CHECKED”, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-13/PR-14838.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black antennae, oval eyes, pink rectangular cheek blush, light blue rounded wings, and a tiny librarian hat, carefully replacing old labels on four code-plant pots with clean canonical model IDs while a retro terminal glows lime green (#ecf874) with a checked catalog list. Small flowers and vines surround the OpenCode, OpenClaw, Pi, and DeepSeek pots; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) pixel-font text reading “CATALOG CHECKED”, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-13T23:55:11.085514+00:00"
+}

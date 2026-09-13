@@ -2453,6 +2453,132 @@ describe("tracking observability", () => {
         }
     });
 
+    it("preserves committed debit when API key is deleted before tracking reconciliation", async () => {
+        const tinybirdRequests: Request[] = [];
+        const db = drizzle(env.DB);
+        const caller = await createTestApiKey({
+            user: { tierBalance: 100, packBalance: 0 },
+            pollenBudget: 1,
+        });
+        const before = await getUserBalance(db, caller.userId);
+        const publisher = `recon-${crypto.randomUUID().slice(0, 8)}`;
+        const endpoint = createCommunityEndpoint(
+            await createTestUser({ githubUsername: publisher }),
+            {
+                id: crypto.randomUUID(),
+                modelId: `${publisher}/test-model`,
+                bearerTokenCiphertext: await encryptSecret(
+                    "test-upstream-key",
+                    env.BETTER_AUTH_SECRET,
+                ),
+            },
+        );
+        await db.insert(communityEndpointTable).values({
+            id: endpoint.id,
+            ownerUserId: endpoint.ownerUserId,
+            name: endpoint.name,
+            title: endpoint.title,
+            type: "proxy",
+            baseUrl: endpoint.baseUrl,
+            upstreamModel: endpoint.upstreamModel,
+            visibility: "public",
+            payload: JSON.stringify({
+                api: "chat_completions",
+                modality: "text",
+                imagePricing: "request",
+                inputModalities: ["text"],
+                perUserRpm: null,
+                fallbacks: [],
+                bearerTokenCiphertext: endpoint.bearerTokenCiphertext,
+                prices: communityEndpointPrices(endpoint),
+            }),
+        });
+        const model = endpoint.modelId;
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                const url = new URL(request.url);
+                if (request.url === endpoint.baseUrl) {
+                    expect(init?.redirect).toBe("manual");
+                    // Delete the API key row to simulate reconciliation failure
+                    await db
+                        .delete(apiKeyTable)
+                        .where(eq(apiKeyTable.id, caller.id));
+                    return new Response(
+                        'data: {"choices":[{"index":0,"delta":{"content":"hello"},"finish_reason":null}]}\n\n' +
+                            'data: {"choices":[],"usage":{"prompt_tokens":10,"completion_tokens":5,"total_tokens":15}}\n\n' +
+                            "data: [DONE]\n\n",
+                        {
+                            headers: { "Content-Type": "text/event-stream" },
+                        },
+                    );
+                }
+                if (url.pathname === "/v0/events") {
+                    const body = await request.text();
+                    for (const line of body.split("\n").filter(Boolean)) {
+                        tinybirdRequests.push(
+                            new Request("https://tinybird.test/v0/events", {
+                                method: "POST",
+                                body: line,
+                            }),
+                        );
+                    }
+                }
+                return Response.json({ data: [] });
+            },
+        );
+        const ctx = createExecutionContext();
+        const request = (): Parameters<typeof worker.fetch>[0] =>
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${caller.key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model,
+                    stream: true,
+                    messages: [{ role: "user", content: "recon test" }],
+                }),
+            });
+        const response = await worker.fetch(request(), env, ctx);
+        await waitOnExecutionContext(ctx);
+        const body = await response.text();
+        expect(response.status, body).toBe(200);
+        const after = await getUserBalance(db, caller.userId);
+        const events = (
+            await Promise.all(
+                tinybirdRequests.map(async (r) => {
+                    try {
+                        return JSON.parse(await r.text());
+                    } catch {
+                        return null;
+                    }
+                }),
+            )
+        ).filter(
+            (e): e is Record<string, unknown> =>
+                e !== null && typeof e === "object" && "modelRequested" in e,
+        );
+        const rows = events.filter((event) => event.modelRequested === model);
+        expect(rows).toHaveLength(1);
+        const expectedPrice = calculateUsageBilling({
+            model,
+            usage: { promptTextTokens: 10, completionTextTokens: 5 },
+            servedBy: communityModelDefinition(endpoint),
+        }).price.totalPrice;
+        expect(expectedPrice).toBeGreaterThan(0);
+        expect(rows[0]).toMatchObject({
+            isBilledUsage: true,
+            modelUsed: model,
+            totalPrice: expectedPrice,
+        });
+        expect(before.tierBalance - after.tierBalance).toBeCloseTo(
+            expectedPrice,
+            9,
+        );
+    });
+
     it("bills cache-write tokens reported by a Chat stream", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(

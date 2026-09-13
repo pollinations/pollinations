@@ -16,7 +16,7 @@ const failuresPerThousand = (availability) =>
     Number.isFinite(availability) ? (100 - availability) * 10 : null;
 
 // The KPI catalogue. Rows with `views` are the same measure in another
-// unit and cycle in place; the rest have a single definition.
+// unit or quantity and cycle in place; the rest have a single definition.
 export const KPIS = [
     {
         key: "registrations",
@@ -230,6 +230,42 @@ export const KPIS = [
                 format: "percentPrecise",
                 tooltip:
                     "Community-model 2xx / (2xx + 5xx) × 100. 4xx is excluded from the denominator — auth, balance, rate-limit and bad-input errors are the caller's, not an endpoint being down. Includes top-level managed-agent runs until agent attribution exists.",
+            },
+        ],
+    },
+    {
+        key: "agentUsage",
+        category: "Ecosystem",
+        views: [
+            {
+                key: "agentRequests",
+                name: "Agents · requests",
+                tooltip:
+                    "Top-level requests to endpoint, code, and prompt agents, including errors and balance rejections. Excludes ordinary community models, internal model/tool calls, and cache hits. — means the week's agent attribution is unavailable or incomplete. Source: Tinybird (weekly_agent_mcp_usage).",
+            },
+            {
+                key: "agentUsers",
+                name: "Agents · unique users",
+                tooltip:
+                    "Distinct authenticated users making a top-level agent request, deduplicated across endpoint, code, and prompt agents. Includes rejected requests; excludes internal calls and cache hits. — means attribution is unavailable or incomplete.",
+            },
+        ],
+    },
+    {
+        key: "mcpUsage",
+        category: "Ecosystem",
+        views: [
+            {
+                key: "mcpCalls",
+                name: "MCP · recorded calls",
+                tooltip:
+                    "Recorded MCP tool calls through Gen: Exa, FFmpeg, Computer, and Composio. Includes calls inside agents and recorded errors. Excludes Pollinations' own MCP server, discovery calls, and failures before a usage receipt. Not total MCP traffic. Source: Tinybird (weekly_agent_mcp_usage).",
+            },
+            {
+                key: "mcpUsers",
+                name: "MCP · unique users",
+                tooltip:
+                    "Distinct authenticated users of recorded MCP tool calls, deduplicated across Exa, FFmpeg, Computer, and Composio. Includes calls inside agents. Pollinations' own MCP server and discovery calls are not covered.",
             },
         ],
     },

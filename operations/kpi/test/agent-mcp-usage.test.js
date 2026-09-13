@@ -14,8 +14,8 @@ it.each([
     });
     const row = {
         week: "2026-09-07",
-        agent_requests: null,
-        agent_users: null,
+        agent_requests: 2300,
+        agent_users: 150,
         mcp_calls: 410,
         mcp_users: 12,
     };

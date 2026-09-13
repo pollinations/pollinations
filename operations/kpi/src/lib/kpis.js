@@ -239,15 +239,15 @@ export const KPIS = [
         views: [
             {
                 key: "agentRequests",
-                name: "Agents · requests",
+                name: "Agents · observed runs",
                 tooltip:
-                    "Top-level requests to endpoint, code, and prompt agents, including errors and balance rejections. Excludes ordinary community models, internal model/tool calls, and cache hits. — means the week's agent attribution is unavailable or incomplete. Source: Tinybird (weekly_agent_mcp_usage).",
+                    "Distinct top-level agent runs with at least one recorded internal model/tool call, linked by the verified run token's parent request ID. All outcomes count. Excludes ordinary community models, nested runs, cache hits, and runs with no recorded child call. Comparable history starts Aug 24, 2026; earlier weeks show —. Source: Tinybird (weekly_agent_mcp_usage).",
             },
             {
                 key: "agentUsers",
                 name: "Agents · unique users",
                 tooltip:
-                    "Distinct authenticated users making a top-level agent request, deduplicated across endpoint, code, and prompt agents. Includes rejected requests; excludes internal calls and cache hits. — means attribution is unavailable or incomplete.",
+                    "Distinct authenticated users of observed top-level agent runs, deduplicated across agents. Only runs with a recorded internal model/tool call are covered; excludes ordinary community models, nested runs, and cache hits. Comparable history starts Aug 24, 2026; earlier weeks show —.",
             },
         ],
     },

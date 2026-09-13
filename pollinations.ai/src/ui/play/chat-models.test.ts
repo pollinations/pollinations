@@ -8,6 +8,7 @@ import {
     buildUserContent,
     compactRouting,
     extractStreamedMedia,
+    FLORET_MODEL_ID,
     fileKind,
     parseAgentMessage,
     routingChoices,
@@ -27,6 +28,26 @@ function model(overrides: Partial<ModelInfo>): ModelInfo {
 }
 
 describe("chat agents", () => {
+    it("keeps canonical production agent IDs from the public catalog", () => {
+        const choices = agentChoices([
+            model({
+                id: undefined,
+                name: "community/pollinations-router/floret",
+                title: "Floret",
+                agent: true,
+            }),
+            model({
+                id: undefined,
+                name: "community/pollinations-router/polli",
+                title: "Polli",
+                agent: true,
+            }),
+        ]);
+        expect(choices.map(({ id }) => id)).toEqual([
+            FLORET_MODEL_ID,
+            "community/pollinations-router/polli",
+        ]);
+    });
     it("lists only catalog models explicitly marked as agents", () => {
         const choices = agentChoices([
             model({ id: "regular", title: "Regular" }),
@@ -108,15 +129,21 @@ describe("chat routing models", () => {
         ).toBe(false);
     });
 
-    it("only lists allowed official models and excludes floret", () => {
+    it("only lists allowed official models and excludes agents", () => {
         const choices = routingChoices(
             [
                 model({ id: "allowed", title: "Allowed" }),
                 model({ id: "blocked", title: "Blocked" }),
                 model({ id: "community", community: true }),
-                model({ id: "floret", title: "Floret" }),
+                model({ id: FLORET_MODEL_ID, title: "Floret", agent: true }),
+                model({ id: "official-agent", agent: true }),
             ],
-            new Set(["allowed", "community", "floret"]),
+            new Set([
+                "allowed",
+                "community",
+                FLORET_MODEL_ID,
+                "official-agent",
+            ]),
             "text",
         );
 

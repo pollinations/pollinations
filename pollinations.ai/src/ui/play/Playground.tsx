@@ -35,8 +35,9 @@ import {
 } from "@pollinations/ui";
 import { categoryLabel, ModelAccessIcon } from "@pollinations/ui/gen";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
+import { API_BASE_URL } from "../../config";
 import { Chat } from "./Chat";
-import { API_BASE_URL, errorMessage } from "./chat-models";
+import { errorMessage } from "./chat-models";
 import { MediaDownloadButton } from "./MediaDownloadButton";
 import { UploadPrivacyNote } from "./UploadPrivacyNote";
 

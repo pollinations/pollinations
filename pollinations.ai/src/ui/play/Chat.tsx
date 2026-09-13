@@ -62,9 +62,9 @@ import {
     useRef,
     useState,
 } from "react";
+import { API_BASE_URL } from "../../config";
 import {
     type AgentChoice,
-    API_BASE_URL,
     AUTO_ROUTING,
     agentChoices,
     arrayBufferToBase64,
@@ -72,6 +72,7 @@ import {
     type ChatAttachmentKind,
     compactRouting,
     errorMessage,
+    FLORET_MODEL_ID,
     fileKind,
     isCancellation,
     type RenderedMedia,
@@ -102,7 +103,6 @@ function routingThemeStyle(): CSSProperties {
     } as CSSProperties;
 }
 
-const FLORET_MODEL_ID = "floret";
 const MAX_ATTACHMENTS = 6;
 const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
 const ATTACHMENT_ACCEPT: Record<ChatAttachmentKind, string> = {

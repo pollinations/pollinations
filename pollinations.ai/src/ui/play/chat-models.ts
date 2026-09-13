@@ -8,14 +8,8 @@ import {
     type ModelInfo,
     PollinationsError,
 } from "@pollinations/sdk";
-import { SANDBOX_TOP_UP } from "../../config";
 
-export const API_BASE_URL = (
-    (SANDBOX_TOP_UP
-        ? "https://staging.gen.pollinations.ai"
-        : import.meta.env.VITE_POLLINATIONS_API_BASE_URL) ||
-    "https://gen.pollinations.ai"
-).replace(/\/$/, "");
+export const FLORET_MODEL_ID = "community/pollinations-router/floret";
 
 export function errorMessage(error: unknown): string {
     if (error instanceof Error) return error.message;
@@ -264,7 +258,7 @@ export function routingChoices(
             const id = modelId(model);
             if (
                 !id ||
-                id === "floret" ||
+                model.agent === true ||
                 model.community === true ||
                 !allowedModelIds.has(id) ||
                 !supportsRoutingField(model, field)

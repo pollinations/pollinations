@@ -16,7 +16,6 @@ from floret.config import resolve_api_key, settings
 from floret.knowledge import build_system_prompt
 from floret.registry import PollenPolicy
 from floret.routing import RoutingPreferences
-from floret.tools import shell
 from floret.toolset import dispatch, parse_args, tool_schemas
 
 logger = logging.getLogger(__name__)
@@ -34,7 +33,9 @@ def _client() -> AsyncOpenAI:
     )
 
 
-_WORKSPACE_MEDIA_RE = re.compile(r"\b[\w-]+\.(mp4|webm|mov|mkv|mp3|wav|gif)\b", re.I)
+_WORKSPACE_MEDIA_RE = re.compile(
+    r"\b[\w-]+\.(mp4|webm|mov|mkv|mp3|wav|gif|glb|ply)\b", re.IGNORECASE
+)
 
 
 def _mentions_unpublished_media(text: str) -> bool:
@@ -84,7 +85,7 @@ async def _run_agent_events(
     max_iters = max_iters or settings.max_iters
     client = _client()
     semaphore = asyncio.Semaphore(settings.max_concurrency)
-    workspace_lock = asyncio.Lock()
+    computer_lock = asyncio.Lock()
     system_prompt = build_system_prompt() + routing.prompt_block()
 
     convo: list[dict[str, Any]] = [
@@ -128,7 +129,7 @@ async def _run_agent_events(
         if not tool_calls:
             text = msg.content or ""
             attached = any(
-                a.get("type") in ("video", "audio")
+                a.get("type") in ("video", "audio", "3d", "file")
                 and str(a.get("url", "")).startswith("https://media.pollinations.ai/")
                 for a in artifacts
             )
@@ -147,8 +148,8 @@ async def _run_agent_events(
                         "content": (
                             "Your answer references media files that were never "
                             "published. Files in the workspace are NOT delivered "
-                            "to the user. Call upload_media on each final file "
-                            "and include the returned URLs in your answer."
+                            "to the user. Use bash to run assets publish <path> "
+                            "on each final Computer file and include the returned URLs."
                         ),
                     }
                 )
@@ -170,12 +171,12 @@ async def _run_agent_events(
                 "arguments": arguments,
             }
 
-        # Generation can run concurrently; workspace snapshots must not race.
+        # Keep this run's Computer mutations ordered; generation can run concurrently.
         async def _run(call: Any) -> tuple[str, Any]:
             call_id, name, raw_args = _tool_call_fields(call)
             async with semaphore:
-                if name in {"bash", "fetch_media", "upload_media"}:
-                    async with workspace_lock:
+                if name == "bash":
+                    async with computer_lock:
                         result = await dispatch(name, parse_args(raw_args), routing)
                 else:
                     result = await dispatch(name, parse_args(raw_args), routing)
@@ -200,8 +201,8 @@ async def _run_agent_events(
         if repeats:
             guidance.append(
                 f"You repeated {repeats} tool call(s) with identical arguments — "
-                "identical inputs return identical (cached) results. Do not repeat "
-                "them; use the results you already have or change the inputs."
+                "check the previous results. Repeat only if relevant state changed "
+                "or repeating the action is intentional; otherwise change your approach."
             )
         if error_turns >= 2:
             guidance.append(
@@ -241,22 +242,18 @@ async def run_agent_events(
     pollen: PollenPolicy = "all",
     catalog: dict[str, dict[str, Any]] | None = None,
 ) -> AsyncGenerator[dict[str, Any], None]:
-    """Run one agent event stream in an isolated temporary workspace."""
-    workspace, token = shell.create_workspace()
-    try:
-        if catalog is None and (settings.catalog_endpoint or pollen == "quest"):
-            await registry.warm_registry()
-            catalog = await registry.fetch_model_catalog()
-        with registry.model_scope(catalog, pollen):
-            if registry.request_pollen() == "quest" and routing is not None:
-                for pin in routing.explicit().values():
-                    registry.require_model(pin)
-            async for event in _run_agent_events(
-                messages, model=model, max_iters=max_iters, routing=routing
-            ):
-                yield event
-    finally:
-        shell.cleanup_workspace(workspace, token)
+    """Run one agent event stream with request-scoped model eligibility."""
+    if catalog is None and (settings.catalog_endpoint or pollen == "quest"):
+        await registry.warm_registry()
+        catalog = await registry.fetch_model_catalog()
+    with registry.model_scope(catalog, pollen):
+        if registry.request_pollen() == "quest" and routing is not None:
+            for pin in routing.explicit().values():
+                registry.require_model(pin)
+        async for event in _run_agent_events(
+            messages, model=model, max_iters=max_iters, routing=routing
+        ):
+            yield event
 
 
 async def run_agent(

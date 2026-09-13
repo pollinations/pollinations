@@ -76,7 +76,7 @@ _TIER_COST_WEIGHT = {
 }
 
 _IMAGE_TEXT_PATTERNS = [
-    re.compile(p, re.I)
+    re.compile(p, re.IGNORECASE)
     for p in [
         r"\b(text|typo|font|letter|word|label|title|heading|caption|infographic|diagram|chart|graph|flowchart|mindmap|timeline|poster|banner|sign|badge|sticker|meme|comic|panel|speech.bubble|.subtitle|.overlay)\b",
         r"\b(render.*text|text.*render|legible|readable|typography)\b",
@@ -137,6 +137,8 @@ def _infer_meta(item: dict[str, Any]) -> dict[str, Any]:
         modalities.append("image")
     if category == "video" and "video" in declared_outputs:
         modalities.append("video")
+    if category == "3d" and "3d" in declared_outputs:
+        modalities.append("3d")
     if (
         category in {"text", "audio"}
         and "text" in declared_inputs
@@ -156,7 +158,7 @@ def _infer_meta(item: dict[str, Any]) -> dict[str, Any]:
         modalities.append("transcript")
     if category == "audio" and any(
         endpoint in declared_endpoints
-        for endpoint in {"/v1/audio/voice-changer", "/v1/audio/voice-isolator"}
+        for endpoint in ("/v1/audio/voice-changer", "/v1/audio/voice-isolator")
     ):
         modalities.append("audio_transform")
     if not category and (
@@ -461,10 +463,13 @@ def choose_model(
     video_capabilities: frozenset[str] = frozenset(),
     default: str = "",
 ) -> str:
-    if request_pollen() == "all":
+    if request_pollen() == "all" and modality != "3d":
         return model_id or default_model(modality, "", default)
     pinned = require_model(model_id) if model_id else None
     catalog = get_model_catalog()
+    meta = find_model_meta(catalog, pinned) if pinned else None
+    if meta:
+        pinned = str(meta["id"])
     if video_capabilities:
         catalog = {
             mid: meta
@@ -472,8 +477,9 @@ def choose_model(
             if video_capabilities
             <= set(meta.get("params", {}).get("video_capabilities") or [])
         }
-    policy = request_policy()
-    assert policy is not None
+    policy = request_policy() or PolicySnapshot(
+        "unreviewed", _catalog_revision or "", {}, ()
+    )
     selected = select_model(
         catalog,
         policy,

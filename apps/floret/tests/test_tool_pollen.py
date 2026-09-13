@@ -149,7 +149,9 @@ def test_tools_without_eligible_models_are_not_offered(catalog):
         assert "text_to_speech" not in names
         assert "transcribe" not in names
         assert "web_search" not in names
-        assert "fetch_media" in names
+        assert {"bash", "runFfmpeg", "upload_media"} <= names
+        assert "generate_3d" not in names
+        assert "fetch_media" not in names
 
 
 @pytest.mark.parametrize(
@@ -303,23 +305,20 @@ async def test_dispatch_default_and_explicit_models_reach_correct_endpoint(
         "/unknown/test?model=quest/image",
     ],
 )
-@pytest.mark.parametrize("entry", ["fetch_bytes", "upload_media", "fetch_media"])
+@pytest.mark.parametrize("entry", ["fetch_bytes", "upload_media"])
 async def test_media_tools_cannot_execute_disallowed_or_implicit_gen_models(
-    catalog, monkeypatch, tmp_path, suffix, entry
+    catalog, monkeypatch, suffix, entry
 ):
     def no_network():
         pytest.fail("disallowed URL reached network setup")
 
     monkeypatch.setattr(gen, "_http_client", no_network)
-    monkeypatch.setattr(media, "_workdir", lambda: str(tmp_path))
     url = gen._base() + suffix
     with registry.model_scope(catalog, "quest"), pytest.raises(ValueError):
         if entry == "fetch_bytes":
             await gen._fetch_bytes(url)
-        elif entry == "upload_media":
-            await media.upload_media(url)
         else:
-            await media.fetch_media(url, filename="output.png")
+            await media.upload_media(url)
 
 
 async def test_media_allowed_alias_is_canonicalized_and_external_media_stays_unauthenticated(

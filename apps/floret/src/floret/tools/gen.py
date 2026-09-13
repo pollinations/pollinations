@@ -92,6 +92,9 @@ _TOOL_REQUIREMENTS = {
         input_modalities=frozenset({"image"}),
     ),
     "generate_video": SelectionRequest("video.general", "video", "/video/{prompt}"),
+    "generate_3d": SelectionRequest(
+        "3d.general", "3d", output_modalities=frozenset({"3d"})
+    ),
     "text_to_speech": SelectionRequest(
         "audio.general",
         "audio",
@@ -148,7 +151,7 @@ def _restricted_media_url(url: str) -> str:
     parsed = urllib.parse.urlsplit(url)
     if not any(
         parsed.path.startswith(f"/{kind}/")
-        for kind in ("image", "video", "audio", "text")
+        for kind in ("image", "video", "audio", "text", "3d")
     ):
         raise ValueError("Quest media fetching requires an explicit generation URL")
     query = urllib.parse.parse_qs(parsed.query, keep_blank_values=True)
@@ -159,6 +162,46 @@ def _restricted_media_url(url: str) -> str:
     return urllib.parse.urlunsplit(
         parsed._replace(query=urllib.parse.urlencode(query, doseq=True))
     )
+
+
+async def generate_3d(
+    prompt: str,
+    model: str | None = None,
+    image: str | list[str] | None = None,
+    resolution: str | None = None,
+    seed: int | None = None,
+) -> tuple[str, str]:
+    """Use the existing durable 3D route and return its hosted enclosure."""
+    prompt = prompt.strip()
+    if not prompt or prompt in {".", ".."}:
+        raise ValueError("A descriptive 3D prompt is required")
+    if resolution is not None and resolution not in {"low", "medium", "high"}:
+        raise ValueError("resolution must be low, medium, or high")
+    images = [image] if isinstance(image, str) else image or []
+    model = registry.choose_model(
+        "3d",
+        model,
+        input_modalities=frozenset({"image" if images else "text"}),
+        output_modalities=frozenset({"3d"}),
+    )
+    body: dict[str, Any] = {"model": model}
+    if images:
+        body["image"] = [await _public_frame_url(url) for url in images]
+    if resolution is not None:
+        body["resolution"] = resolution
+    if seed is not None:
+        body["seed"] = seed
+    url = f"{_base()}/3d/{urllib.parse.quote(prompt, safe='')}"
+    async with _http_client().stream(
+        "POST", url, headers={"Authorization": f"Bearer {_key()}"}, json=body
+    ) as response:
+        response.raise_for_status()
+        enclosure = response.links.get("enclosure", {}).get("url")
+        if not enclosure or not enclosure.startswith("https://media.pollinations.ai/"):
+            raise RuntimeError("3D generation returned no public file URL")
+        return enclosure, response.headers.get(
+            "content-type", "application/octet-stream"
+        )
 
 
 async def _fetch_bytes(

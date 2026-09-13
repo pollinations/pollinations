@@ -55,17 +55,15 @@ async def test_edit_image_transforms_the_source():
     assert len(raw) > 10_000
 
 
-async def test_media_hosting_roundtrip(tmp_path, monkeypatch):
+async def test_media_hosting_roundtrip():
     """upload_media must yield a public URL that serves the exact bytes back."""
+    import base64
+
     from floret.tools import media
 
-    monkeypatch.setattr(media.settings, "temp_dir", str(tmp_path))
-    payload = b"polli media hosting roundtrip probe"
-    workdir = tmp_path / "workspace"
-    workdir.mkdir()
-    (workdir / "probe.txt").write_bytes(payload)
-
-    url = await media.upload_media("probe.txt")
+    payload = b"floret media hosting roundtrip probe"
+    source = "data:text/plain;base64," + base64.b64encode(payload).decode()
+    url = await media.upload_media(source)
     assert url.startswith("https://media.pollinations.ai/")
 
     import httpx
@@ -76,64 +74,54 @@ async def test_media_hosting_roundtrip(tmp_path, monkeypatch):
     assert r.content == payload
 
 
-async def test_chained_video_via_frame_extraction(tmp_path, monkeypatch):
-    """The full recipe: keyframes -> clip1 -> real last frame -> clip2 -> stitch."""
-    import shutil
-
-    if not shutil.which("ffmpeg"):
-        pytest.skip("ffmpeg not on PATH")
-
+async def test_chained_video_via_frame_extraction():
+    """Generation -> public source -> FFmpeg MCP -> next clip -> hosted final."""
     from floret.tools import media
-    from floret.tools.shell import bash
+    from floret.toolset import dispatch
 
-    monkeypatch.setattr(media.settings, "temp_dir", str(tmp_path))
     await warm_registry()
-
-    k1, k2 = [
-        (await gen.generate_image(p, model="flux", width=512, height=512, seed=11))[0]
-        for p in (
-            "a red cube on a white table, studio lighting",
-            "a red cube melting into a puddle on a white table, studio lighting",
+    k1 = (await gen.generate_image("a red cube on a white table", model="flux"))[0]
+    clip1 = await media.upload_media(
+        await gen.generate_video(
+            "the red cube slowly melts", model="wan-fast", image=k1
         )
-    ]
-
-    clip1_url = await gen.generate_video(
-        "the red cube slowly melts", model="wan-fast", image=k1, end_image=k2
     )
-    clip1 = await media.fetch_media(clip1_url, "clip1.mp4")
-
-    out = await bash(f"ffmpeg -y -sseof -0.5 -i {clip1} -update 1 -q:v 1 last.jpg")
-    assert "exit_code: 0" in out
-    assert (tmp_path / "workspace" / "last.jpg").is_file()
-
-    frame_url = await media.upload_media("last.jpg")
-    assert frame_url.startswith("https://media.pollinations.ai/")
-
-    clip2_url = await gen.generate_video(
-        "the puddle evaporates into red mist", model="wan-fast", image=frame_url
+    frame = await dispatch(
+        "runFfmpeg",
+        {
+            "sources": [clip1],
+            "args": ["-sseof", "-0.1", "-i", "input0", "-update", "1", "-q:v", "1"],
+            "outputExtension": "jpg",
+        },
     )
-    await media.fetch_media(clip2_url, "clip2.mp4")
-
-    # Drop clip2's first frame (duplicate of clip1's last) and concatenate.
-    # Double quotes + a Python-written concat list keep this portable (the
-    # production container runs POSIX sh; local dev may be cmd.exe).
-    trim = await bash(
-        'ffmpeg -y -i clip2.mp4 -vf "select=gte(n\\,1),setpts=N/FRAME_RATE/TB" '
-        "-an clip2_trim.mp4",
-        timeout=300,
+    assert not frame.brain.startswith("ERROR"), frame.brain
+    frame_url = frame.artifacts[0]["url"]
+    clip2 = await media.upload_media(
+        await gen.generate_video(
+            "the puddle evaporates into red mist", model="wan-fast", image=frame_url
+        )
     )
-    assert "exit_code: 0" in trim
-
-    workdir = tmp_path / "workspace"
-    (workdir / "list.txt").write_text("file 'clip1.mp4'\nfile 'clip2_trim.mp4'\n")
-    stitch = await bash(
-        "ffmpeg -y -f concat -safe 0 -i list.txt -c:v libx264 -an final.mp4",
-        timeout=300,
+    stitched = await dispatch(
+        "runFfmpeg",
+        {
+            "sources": [clip1, clip2],
+            "args": [
+                "-i",
+                "input0",
+                "-i",
+                "input1",
+                "-filter_complex",
+                "[1:v]trim=start_frame=1,setpts=PTS-STARTPTS[v1];[0:v][v1]concat=n=2:v=1:a=0[out]",
+                "-map",
+                "[out]",
+                "-c:v",
+                "libx264",
+            ],
+            "outputExtension": "mp4",
+        },
     )
-    assert "exit_code: 0" in stitch
-
-    final_url = await media.upload_media("final.mp4")
-    assert final_url.startswith("https://media.pollinations.ai/")
+    assert not stitched.brain.startswith("ERROR"), stitched.brain
+    assert stitched.artifacts[0]["url"].startswith("https://media.pollinations.ai/")
 
 
 async def test_agent_events_stream_live():

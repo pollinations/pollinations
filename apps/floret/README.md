@@ -2,16 +2,17 @@
 
 Autonomous multimodal creative agent running on [Pollinations](https://pollinations.ai). Give it one input; it decides everything else — which model to use, whether the answer is text, an image, audio, a video, or several of those together — and returns them in a single response.
 
-Where [`polli`](../polli) is a Discord/GitHub assistant, `floret` is a router: an OpenAI-compatible `/v1/chat/completions` endpoint (streaming supported) backed by a tool-calling loop that generates images and video, synthesises and transcribes speech, searches the web, and runs shell commands (ffmpeg included) — chaining them freely to satisfy a request across any modality.
+Where [`polli`](../polli) is a Discord/GitHub assistant, `floret` is a router: an OpenAI-compatible `/v1/chat/completions` endpoint (streaming supported) backed by a tool-calling loop that generates images and video, synthesises and transcribes speech, searches the web, generates downloadable 3D assets, and uses the official Computer and FFmpeg MCP services — chaining them freely to satisfy a request across any modality.
 
 Given a prompt like *"make a 20-second continuous video of a paper boat drifting down a rain gutter,"* the agent will: generate keyframes, render clips between them, extract the real last frame of each clip (video models drift from the requested end frame), re-encode it as the next clip's start frame, trim duplicate boundary frames, and stitch the result — publishing the final file to public hosting.
 
 ## How it works
 
-- **Brain**: an OpenAI-compatible tool-calling model (default `z-ai/glm-5.3-flash`) drives the loop in `agent.py`, calling tools until it produces a final answer. Repeated identical tool calls or consecutive tool errors inject corrective guidance instead of killing the run; a final answer that references unpublished workspace files is rejected until the agent actually uploads them.
-- **Tools** (`tools/`): `generate_image`, `edit_image` (real img2img), `generate_video` (text-to-video, image-to-video, start+end-frame interpolation), `text_to_speech` (verbatim narration), `transcribe`, `web_search`, `bash` (sandboxed shell with ffmpeg), `upload_media`/`fetch_media` (Pollinations media hosting — the plumbing that lets edited images and extracted frames flow back into video generation as public URLs).
+- **Brain**: an OpenAI-compatible tool-calling model (default `z-ai/glm-5.3-flash`) drives the loop in `agent.py`, calling tools until it produces a final answer. Repeated identical tool calls or consecutive tool errors inject corrective guidance instead of killing the run; a final answer that references unpublished workspace files triggers one reminder to publish them.
+- **Tools** (`tools/`): text/image/video/audio generation, image editing, voice transformation/isolation, transcription, web search, `generate_3d` (text/image input according to model capability), `bash` (Computer MCP), `runFfmpeg` (FFmpeg MCP), and `upload_media` (data URI or authenticated URL to public media hosting). 3D assets and other files are returned as download links.
 - **API** (`api.py`): FastAPI app exposing `/v1/chat/completions` (OpenAI-compatible request/response, SSE streaming with keepalives for long multi-clip runs), `/v1/models`, `/health`.
-- **Hosted shell**: each Bash call uses a fresh container. Workspace files return to the agent after execution; background processes do not persist between calls. The shell receives no caller credentials.
+- **Computer MCP**: `bash` calls `/mcp/computer` with caller-scoped authentication outside the command. `/workspace` persists per account, so use unique project folders; `/tmp` is cleared each call. Shell utilities are available, but not Python, Node, package installs, native FFmpeg, or GUI control. Publish files with `assets publish <path>`.
+- **FFmpeg MCP**: `runFfmpeg` calls `/mcp/ffmpeg` with public HTTPS sources, referenced as `input0`, `input1`, etc. Its output is already hosted. Publish authenticated generation URLs with `upload_media` first. Computer and uploaded media links have approximately 30-day retention.
 - **Catalog**: a shared Durable Object refreshes public model metadata. The agent reads its latest snapshot before each request. Automated advisory reviews are not triggered by caller requests; enabling them requires a separately approved funding model.
 
 ## Running

@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import os
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -236,10 +234,7 @@ async def test_unpublished_workspace_file_in_final_answer_triggers_nudge(monkeyp
     async def dispatch(name, args, routing=None):
         from floret.toolset import ToolResult
 
-        return ToolResult(
-            brain="Uploaded. Public URL: https://media.pollinations.ai/fin1",
-            artifacts=[{"type": "video", "url": "https://media.pollinations.ai/fin1"}],
-        )
+        return ToolResult(brain="https://media.pollinations.ai/fin1")
 
     monkeypatch.setattr(agent_mod, "dispatch", dispatch)
 
@@ -248,7 +243,7 @@ async def test_unpublished_workspace_file_in_final_answer_triggers_nudge(monkeyp
             _assistant("Done! The result is saved as final.mp4 — enjoy!", None),
             _assistant(
                 "publishing",
-                [_tool_call("c1", "upload_media", '{"source":"final.mp4"}')],
+                [_tool_call("c1", "bash", '{"command":"assets publish final.mp4"}')],
             ),
             _assistant("Here it is: https://media.pollinations.ai/fin1", None),
         ]
@@ -258,13 +253,13 @@ async def test_unpublished_workspace_file_in_final_answer_triggers_nudge(monkeyp
     result = await agent_mod.run_agent([{"role": "user", "content": "make a video"}])
 
     assert "media.pollinations.ai/fin1" in result["text"]
-    assert [a["type"] for a in result["artifacts"]] == ["video"]
+    assert result["artifacts"] == []
     # The nudge must have been injected after the premature final answer.
     second_call_msgs = brain.calls[1]
     nudges = [
         m
         for m in second_call_msgs
-        if m["role"] == "system" and "upload_media" in m["content"]
+        if m["role"] == "system" and "assets publish" in m["content"]
     ]
     assert nudges, "expected publish nudge to be injected"
 
@@ -345,71 +340,40 @@ async def test_iteration_cap_forces_final_answer(monkeypatch):
     assert result["text"] == "forced final"
 
 
-async def test_run_workspace_is_shared_by_tools_then_cleaned(monkeypatch, tmp_path):
+async def test_computer_calls_in_one_turn_are_serialized(monkeypatch):
     seen = []
 
     async def dispatch(name, args, routing=None):
-        from floret.tools import shell
         from floret.toolset import ToolResult
 
-        path = shell._workdir()
-        seen.append(path)
-        marker = Path(path, "marker")
-        if name == "first":
-            marker.write_text("ok", encoding="utf-8")
-        else:
-            assert marker.read_text(encoding="utf-8") == "ok"
+        seen.append(("start", args["command"]))
+        await asyncio.sleep(0)
+        seen.append(("end", args["command"]))
         return ToolResult(brain="ok")
 
     monkeypatch.setattr(agent_mod, "dispatch", dispatch)
-    monkeypatch.setattr(agent_mod.settings, "temp_dir", str(tmp_path))
     brain = _FakeBrain(
         [
-            _assistant("one", [_tool_call("c1", "first", "{}")]),
-            _assistant("two", [_tool_call("c2", "second", "{}")]),
-            _assistant("done", None),
+            _assistant(
+                "work",
+                [
+                    _tool_call("c1", "bash", '{"command":"first"}'),
+                    _tool_call("c2", "bash", '{"command":"second"}'),
+                ],
+            ),
+            _assistant("done"),
         ]
     )
     monkeypatch.setattr(agent_mod, "_client", lambda: brain)
 
     await agent_mod.run_agent([{"role": "user", "content": "work"}])
 
-    assert seen[0] == seen[1]
-    assert not os.path.exists(seen[0])
-
-
-async def test_concurrent_runs_use_distinct_workspaces(monkeypatch, tmp_path):
-    seen = []
-
-    async def dispatch(name, args, routing=None):
-        from floret.tools import shell
-        from floret.toolset import ToolResult
-
-        seen.append(shell._workdir())
-        await asyncio.sleep(0)
-        return ToolResult(brain="ok")
-
-    monkeypatch.setattr(agent_mod, "dispatch", dispatch)
-    monkeypatch.setattr(agent_mod.settings, "temp_dir", str(tmp_path))
-    brains = iter(
-        [
-            _FakeBrain(
-                [_assistant("a", [_tool_call("a", "x", "{}")]), _assistant("done")]
-            ),
-            _FakeBrain(
-                [_assistant("b", [_tool_call("b", "x", "{}")]), _assistant("done")]
-            ),
-        ]
-    )
-    monkeypatch.setattr(agent_mod, "_client", lambda: next(brains))
-
-    await asyncio.gather(
-        agent_mod.run_agent([{"role": "user", "content": "a"}]),
-        agent_mod.run_agent([{"role": "user", "content": "b"}]),
-    )
-
-    assert len(set(seen)) == 2
-    assert all(not os.path.exists(path) for path in seen)
+    assert seen == [
+        ("start", "first"),
+        ("end", "first"),
+        ("start", "second"),
+        ("end", "second"),
+    ]
 
 
 async def test_routing_object_reaches_dispatch(monkeypatch):

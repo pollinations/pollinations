@@ -169,6 +169,9 @@ async def _build_content(
             else:
                 md_lines.append(f"_(audio narration attached: “{label}…”)_")
 
+        elif kind in {"3d", "file"}:
+            md_lines.append(f"[Download {kind}]({art['url']})")
+
     markdown = "\n\n".join(md_lines)
     content_parts = [{"type": "text", "text": markdown}] + parts
     return markdown, content_parts

@@ -198,6 +198,46 @@ test("an unverified Quest claim never reaches Floret", async () => {
     assert.equal(response.status, 401);
 });
 
+test("authentication rejects redirects, invalid bodies, and transport failures", async () => {
+    for (const reply of [
+        () =>
+            new Response(null, {
+                status: 302,
+                headers: { Location: "https://untrusted.test/" },
+            }),
+        () => new Response("not json"),
+        () => new Response(" ".repeat(16 * 1024) + '{"valid":true}'),
+        () =>
+            new Response('{"valid":true}', {
+                headers: { "Content-Length": "20000" },
+            }),
+        () => {
+            throw new Error("auth unavailable");
+        },
+    ]) {
+        const gateway = createGateway(
+            () => ({
+                fetch: () =>
+                    assert.fail("Invalid authentication reached Floret"),
+            }),
+            async (_url, options) => {
+                assert.equal(options.redirect, "manual");
+                assert.ok(options.signal instanceof AbortSignal);
+                return reply();
+            },
+        );
+        const response = await gateway(
+            new Request("https://floret.test/v1/chat/completions", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${allToken}` },
+                body: "{}",
+            }),
+            {},
+        );
+        assert.equal(response.status, 401);
+    }
+});
+
 test("private snapshot strips storage internals and credentials", async () => {
     const { env, snapshot } = setup();
     const response = await catalogOutbound(

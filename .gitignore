@@ -404,3 +404,4 @@ operations/community-monitor/results.json
 # Open WebUI session-signing secret, written into the working directory of
 # whichever folder it is started from. Local to one instance, never ours.
 .webui_secret_key
+.vercel

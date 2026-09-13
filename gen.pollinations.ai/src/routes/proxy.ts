@@ -72,6 +72,7 @@ import {
 import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
+import { AgentModelHeadersSchema } from "@/schemas/agent-model.ts";
 import {
     CreateEmbeddingRequestSchema,
     CreateEmbeddingResponseSchema,
@@ -206,25 +207,23 @@ const model3dHandlers = factory.createHandlers(
 // Group access/coordination to stay within Hono's typed handler-count limit.
 const chatCompletionHandlers = factory.createHandlers(
     textBodyLimit,
-    validator("header", PollenHeadersSchema),
+    validator("header", PollenHeadersSchema.and(AgentModelHeadersSchema)),
     validator("json", CreateChatCompletionRequestSchema),
     every(mediaResponses("chat/completions"), resolveModel("generate.text")),
     every(textBalanceNotice, track("generate.text")),
     textCache,
-    every(generationAccess, deduplicateGeneration),
-    apiKeyBudgetReservation,
+    every(generationAccess, deduplicateGeneration, apiKeyBudgetReservation),
     generateChatCompletion,
 );
 
 const responsesHandlers = factory.createHandlers(
     textBodyLimit,
-    validator("header", PollenHeadersSchema),
+    validator("header", PollenHeadersSchema.and(AgentModelHeadersSchema)),
     validator("json", CreateResponseRequestSchema),
     every(mediaResponses("responses"), resolveModel("generate.text")),
     every(textBalanceNotice, track("generate.text")),
     textCache,
-    every(generationAccess, deduplicateGeneration),
-    apiKeyBudgetReservation,
+    every(generationAccess, deduplicateGeneration, apiKeyBudgetReservation),
     generateCreateResponse,
 );
 
@@ -681,6 +680,8 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Successful text JSON responses contain usage. Text streams contain a usage chunk before `[DONE]`; missing text-provider usage fails the response.",
                 "",
+                "For endpoint agents, send `agent-model` or `X-Pollinations-Agent-Model` (matching values if both are supplied) to override the inner model while keeping the agent in the body `model` field. Omit the header to use the registered default. Other model types reject this header.",
+                "",
                 mediaResponseDescription,
             ].join("\n"),
             responses: {
@@ -726,6 +727,8 @@ export const proxyRoutes = new Hono<Env>()
                 "Response storage, previous response IDs, conversations, background execution, and encrypted or referenced state are not supported. Direct providers may accept caller-supplied function tools; managed prompt agents ignore these definitions and use only their configured MCP tools. Completed MCP output items can be replayed as history without executing them again.",
                 "",
                 "Successful text JSON responses and terminal streaming events contain usage; missing text-provider usage fails the response.",
+                "",
+                "For endpoint agents, send `agent-model` or `X-Pollinations-Agent-Model` (matching values if both are supplied) to override the inner model while keeping the agent in the body `model` field. Omit the header to use the registered default. Other model types reject this header.",
                 "",
                 mediaResponseDescription,
             ].join("\n"),
@@ -818,7 +821,7 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         textBodyLimit,
-        validator("header", PollenHeadersSchema),
+        validator("header", PollenHeadersSchema.and(AgentModelHeadersSchema)),
         validator("json", CreateChatCompletionRequestSchema),
         resolveModel("generate.text"),
         every(textBalanceNotice, track("generate.text")),

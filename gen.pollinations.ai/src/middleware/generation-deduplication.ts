@@ -16,6 +16,10 @@ import type {
 } from "@/middleware/generation-cache.ts";
 import { hashGenerationCacheIdentity } from "@/middleware/generation-cache.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
+import {
+    AGENT_MODEL_HEADER,
+    AGENT_MODEL_SHORT_HEADER,
+} from "@/schemas/agent-model.ts";
 
 const EXECUTOR_HEADERS = new Set([
     "accept",
@@ -28,6 +32,8 @@ const EXECUTOR_HEADERS = new Set([
     SAFETY_HEADER_NAME.toLowerCase(),
     "pollen",
     "x-pollinations-pollen",
+    AGENT_MODEL_HEADER,
+    AGENT_MODEL_SHORT_HEADER,
 ]);
 
 export type GenerationErrorSnapshot = {

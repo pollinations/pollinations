@@ -120,6 +120,30 @@ describe("/openapi.json", () => {
                 ),
             ).toBe(false);
         }
+        for (const path of ["/v1/chat/completions", "/v1/responses", "/text"]) {
+            const operation = schema.paths[path] as {
+                post: { parameters: { name: string; required?: boolean }[] };
+            };
+            for (const headerName of [
+                "agent-model",
+                "x-pollinations-agent-model",
+            ]) {
+                const header = operation.post.parameters.find(
+                    ({ name }) => name === headerName,
+                );
+                expect(header).toMatchObject({
+                    in: "header",
+                    schema: { type: "string", minLength: 1, maxLength: 128 },
+                });
+                expect(header?.required ?? false).toBe(false);
+            }
+            expect(schema).toHaveProperty([
+                "paths",
+                path,
+                "post",
+                "requestBody",
+            ]);
+        }
 
         for (const [path, method] of [
             ["/image/{prompt}", "get"],

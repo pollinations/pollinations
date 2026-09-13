@@ -310,10 +310,6 @@ export const CreateChatCompletionRequestSchema = z
             description:
                 "AI model for text generation. See /v1/models for full list.",
         }),
-        agent_model: z.string().trim().min(1).max(128).optional().meta({
-            description:
-                "Pollinations extension: override an endpoint agent's inner model without changing the outer model selection. Omit to use the agent's registered default. Only supported by endpoint agents.",
-        }),
         modalities: z.array(z.enum(["text", "audio"])).optional(),
         audio: z
             .object({
@@ -383,7 +379,12 @@ export const CreateChatCompletionRequestSchema = z
             .max(128)
             .optional(), // deprecated, supported
     })
-    .passthrough();
+    .passthrough()
+    .refine((body) => !("agent_model" in body), {
+        message:
+            "Use the X-Pollinations-Agent-Model header instead of agent_model in the body",
+        path: ["agent_model"],
+    });
 
 export type CreateChatCompletionRequest = z.infer<
     typeof CreateChatCompletionRequestSchema

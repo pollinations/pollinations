@@ -14,6 +14,37 @@ import type { LoggerVariables } from "@/middleware/logger.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { generateCacheKey } from "@/utils/text-cache.ts";
 
+it("partitions text cache by the normalized agent model header", async () => {
+    for (const path of ["/v1/chat/completions", "/v1/responses", "/text"]) {
+        const key = (model?: string, header = "X-Pollinations-Agent-Model") =>
+            generateCacheKey(
+                new Request(`https://gen.pollinations.ai${path}`, {
+                    method: "POST",
+                    headers: model === undefined ? {} : { [header]: model },
+                }),
+                JSON.stringify({ model: "owner/agent", messages: [] }),
+            );
+        expect(await key("brain-one")).not.toBe(await key("brain-two"));
+        expect(await key("brain-one")).not.toBe(await key());
+        expect(await key(" brain-one ")).toBe(await key("brain-one"));
+        expect(await key("brain-one", "agent-model")).toBe(
+            await key("brain-one"),
+        );
+        expect(
+            await generateCacheKey(
+                new Request(`https://gen.pollinations.ai${path}`, {
+                    method: "POST",
+                    headers: {
+                        "agent-model": "brain-one",
+                        "X-Pollinations-Agent-Model": "brain-one",
+                    },
+                }),
+                JSON.stringify({ model: "owner/agent", messages: [] }),
+            ),
+        ).toBe(await key("brain-one"));
+    }
+});
+
 const testLog = {
     getChild: () => testLog,
     debug() {},

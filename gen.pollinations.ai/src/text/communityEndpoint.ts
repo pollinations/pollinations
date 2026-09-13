@@ -79,6 +79,7 @@ export async function communityEndpointGatewayContext({
     parentRequestId,
     parentApiKeyId,
     pollen,
+    agentModel,
 }: {
     endpoint: CommunityEndpointRuntime;
     modelDefinition: ModelDefinition;
@@ -89,11 +90,11 @@ export async function communityEndpointGatewayContext({
     parentRequestId: string;
     parentApiKeyId?: string;
     pollen?: "quest";
+    agentModel?: string;
 }): Promise<TransformOptions> {
     const {
         messages: _messages,
         pollen: _pollen,
-        agent_model: requestedAgentModel,
         ...requestDataWithoutMessages
     } = requestData;
     const modelConfig = await communityEndpointModelConfig({
@@ -102,13 +103,11 @@ export async function communityEndpointGatewayContext({
         parentRequestId,
         parentApiKeyId,
         pollen,
+        agentModel,
     });
     return {
         ...requestDataWithoutMessages,
-        modelConfig:
-            endpoint.type === "endpoint_agent" && requestedAgentModel
-                ? { ...modelConfig, model: requestedAgentModel }
-                : modelConfig,
+        modelConfig,
         modelDef: modelDefinition,
         requestedModel: endpoint.modelId,
         portkeyGatewayUrl,
@@ -122,12 +121,14 @@ export async function communityEndpointModelConfig({
     parentRequestId,
     parentApiKeyId,
     pollen,
+    agentModel,
 }: {
     endpoint: CommunityEndpointRuntime;
     secret: string;
     parentRequestId: string;
     parentApiKeyId?: string;
     pollen?: "quest";
+    agentModel?: string;
 }): Promise<Record<string, unknown>> {
     const runToken = await mintDelegatedToken({
         endpoint,
@@ -151,7 +152,10 @@ export async function communityEndpointModelConfig({
     return {
         provider: "openai",
         authKey,
-        model: endpoint.upstreamModel,
+        model:
+            endpoint.type === "endpoint_agent"
+                ? (agentModel ?? endpoint.upstreamModel)
+                : endpoint.upstreamModel,
         ...(pollen === "quest" && usesAgentRunToken(endpoint)
             ? { pollen }
             : {}),

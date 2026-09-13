@@ -14,6 +14,7 @@ import {
 } from "@shared/schemas/safety.ts";
 import stableStringify from "fast-json-stable-stringify";
 import type { Context } from "hono";
+import { AGENT_MODEL_HEADER, getAgentModel } from "@/schemas/agent-model.ts";
 
 // Parameters to exclude from cache key (auth + cache control)
 const EXCLUDED_PARAMS = ["key", "no-cache"];
@@ -116,6 +117,9 @@ export async function generateCacheKey(
             parts.push(bodyText);
         }
     }
+    const agentModel = getAgentModel(request.headers);
+    if (agentModel !== undefined)
+        parts.push(`${AGENT_MODEL_HEADER}:${agentModel}`);
     const safeHeader = request.headers.get(SAFETY_HEADER_NAME);
     if (safeHeader !== null && !hasQuerySafe && !hasBodySafe) {
         parts.push(`${SAFETY_HEADER_NAME}:${safeHeader}`);

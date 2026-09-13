@@ -11,8 +11,8 @@ import {
 } from "@shared/registry/usage-headers.ts";
 import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import type { Context } from "hono";
-import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
+import { getAgentModel, requireEndpointAgent } from "@/schemas/agent-model.ts";
 import {
     attachFallbackTarget,
     type FallbackCandidate,
@@ -85,14 +85,8 @@ async function gatewayContext(
     candidate: FallbackCandidate,
 ): Promise<TransformOptions> {
     const { communityEndpoint, definition } = candidate;
-    if (
-        requestData.agent_model !== undefined &&
-        communityEndpoint?.type !== "endpoint_agent"
-    ) {
-        throw new HTTPException(400, {
-            message: "agent_model is supported only by endpoint agents",
-        });
-    }
+    const agentModel = getAgentModel(c.req.raw.headers);
+    requireEndpointAgent(agentModel, communityEndpoint?.type);
     // A fallback must resolve transforms from the model that will actually run.
     const candidateRequest = candidate.entry
         ? { ...requestData, model: candidate.id }
@@ -113,6 +107,7 @@ async function gatewayContext(
         parentRequestId: c.get("requestId"),
         parentApiKeyId: c.var.auth?.apiKey?.id,
         pollen: c.var.model?.pollen,
+        agentModel,
     });
     if (
         communityEndpoint.type !== "prompt_agent" &&

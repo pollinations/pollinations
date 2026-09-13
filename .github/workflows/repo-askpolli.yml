@@ -118,9 +118,6 @@ jobs:
                 response.writeHead(400).end('{"error":"bad json"}');
                 return;
               }
-              if (body.model === "pollinations-router/polli") {
-                body.agent_model = "openai/gpt-5.6-terra";
-              }
               if (Array.isArray(body.messages)) {
                 body.messages = body.messages.map((message) => {
                   const next = { ...message, content: flatten(message.content) };
@@ -135,6 +132,9 @@ jobs:
                   headers: {
                     "Content-Type": "application/json",
                     Authorization: request.headers.authorization || "",
+                    ...(body.model === "pollinations-router/polli"
+                      ? { "X-Pollinations-Agent-Model": "openai/gpt-5.6-terra" }
+                      : {}),
                   },
                   body: JSON.stringify(body),
                 });

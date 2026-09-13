@@ -339,7 +339,6 @@ for (const [name, source, brain] of [
                 source,
                 JSON.stringify({
                     model: "pollinations-router/polli",
-                    agent_model: "must-be-overridden",
                     messages: [
                         {
                             role: "system",
@@ -380,7 +379,11 @@ for (const [name, source, brain] of [
             );
             const body = JSON.parse(calls[0].options.body);
             assert.equal(body.model, "pollinations-router/polli");
-            assert.equal(body.agent_model, brain);
+            assert.equal(body.agent_model, undefined);
+            assert.equal(
+                calls[0].options.headers["X-Pollinations-Agent-Model"],
+                brain,
+            );
             assert.deepEqual(body.messages, [
                 { role: "system", content: "first\nsecond" },
                 { role: "user", content: "question" },
@@ -404,6 +407,10 @@ for (const [name, source, brain] of [
                 JSON.stringify({ model, messages: [] }),
                 async (_url, options) => {
                     forwarded = JSON.parse(options.body);
+                    assert.equal(
+                        options.headers["X-Pollinations-Agent-Model"],
+                        undefined,
+                    );
                     return new Response('{"error":"denied"}', {
                         status: 401,
                         headers: { "Content-Type": "application/json" },

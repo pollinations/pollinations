@@ -5,6 +5,7 @@ import type { ModelCapability } from "./registry/model-info.ts";
 import {
     type Category,
     MODEL_INPUT_MODALITIES,
+    MODEL_OUTPUT_MODALITIES,
     type ModelDefinition,
     type ModelInputModality,
     type ModelOutputModality,
@@ -689,11 +690,13 @@ export const EndpointAgentListingPayloadSchema = z
         inputModalities: z
             .array(z.enum(MODEL_INPUT_MODALITIES))
             .min(1)
-            .optional(),
+            .optional()
+            .describe("Input types accepted by the agent. Defaults to text."),
         outputModalities: z
-            .array(z.enum(MODEL_INPUT_MODALITIES))
+            .array(z.enum(MODEL_OUTPUT_MODALITIES))
             .min(1)
-            .optional(),
+            .optional()
+            .describe("Output types produced by the agent. Defaults to text."),
     })
     .strict();
 

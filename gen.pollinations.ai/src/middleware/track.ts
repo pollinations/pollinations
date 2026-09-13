@@ -482,11 +482,9 @@ export const track = (eventType: EventType) =>
                             duration_ms:
                                 endTime.getTime() - startTime.getTime(),
                             error_code: errorTracking?.errorResponseCode,
-                            error_class:
-                                errorTracking?.errorResponseCode ===
-                                "usage_missing"
-                                    ? "UpstreamUsageError"
-                                    : "UpstreamFinishReasonError",
+                            error_class: streamErrorClass(
+                                errorTracking?.errorResponseCode,
+                            ),
                             message: errorTracking?.errorMessage,
                             upstream_status: response.status,
                             upstream_body: stringifyErrorOutput(
@@ -759,11 +757,12 @@ export async function trackResponse(
                         ? CONTENT_POLICY_ERROR_CODE
                         : "upstream_finish_reason_error"),
                 errorMessage:
-                    finishError.code === "usage_missing"
+                    finishError.message ??
+                    (finishError.code === "usage_missing"
                         ? "Upstream stream failed usage validation"
                         : finishError.status === CONTENT_POLICY_STATUS
                           ? "Upstream rejected generation for content policy"
-                          : "Upstream ended generation with finish_reason=error",
+                          : "Upstream ended generation with finish_reason=error"),
             },
             errorOutput: output,
         };
@@ -856,15 +855,37 @@ export async function trackResponse(
     };
 }
 
-function finishReasonError(
-    output: unknown,
-): { status: number; code?: "usage_missing" } | undefined {
+function streamErrorClass(code: string | undefined): string {
+    if (code === "usage_missing") return "UpstreamUsageError";
+    if (code === "upstream_stream_error") return "UpstreamStreamError";
+    return "UpstreamFinishReasonError";
+}
+
+function finishReasonError(output: unknown):
+    | {
+          status: number;
+          code?: "usage_missing" | "upstream_stream_error";
+          message?: string;
+      }
+    | undefined {
     if (!output || typeof output !== "object") return undefined;
     const streamEvents = (output as { streamEvents?: unknown }).streamEvents;
     const events = Array.isArray(streamEvents) ? streamEvents : [output];
     for (const event of events) {
         if (!event || typeof event !== "object") continue;
         const eventError = (event as { error?: unknown }).error;
+        if (
+            eventError &&
+            typeof eventError === "object" &&
+            (eventError as { code?: unknown }).code === "upstream_stream_error"
+        ) {
+            const { message } = eventError as { message?: unknown };
+            return {
+                status: 502,
+                code: "upstream_stream_error",
+                message: typeof message === "string" ? message : undefined,
+            };
+        }
         if (
             (eventError &&
                 typeof eventError === "object" &&

@@ -1,0 +1,35 @@
+{
+  "pr_number": 14799,
+  "title": "feat: add Polli brain override through Gen",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/14799",
+  "merged_at": "2026-09-13T10:22:32Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds optional `agent_model` for endpoint agents while preserving outer model identity, caller-linked `ag_` authentication, and default selection.\n- Ports both workflows from #14643: read-only Ask Polli uses `openai/gpt-5.6-terra`; write Polli uses `openai/gpt-6-astra`. Preserves authorization gates and the fixed-destination publisher.\n- Fixes GitHub App key mounting across Polli releases and rollbacks. Production GitHub authentication was repaired separately and verified with read-only issue/PR calls; no key rotation.\n- Verifies deployment/rollback tests and 17 workflow tests; earlier agent-model checks passed 145 endpoint tests, 446 compatibility tests, Gen typecheck, and formatting.\n- Remains draft: production proxy-to-endpoint-agent conversion is blocked by D1 authorization (403/7403). Registration is unchanged; delegated JSON/SSE and billing verification must follow conversion and Gen deployment. Merging alone does not complete that repair.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli gets two brains",
+    "blurb": "Polli can now pick the right brain for the job without changing the model identity callers see. Ask Polli reads with Terra; write Polli brings Astra and keeps the publishing gate exactly where it belongs.",
+    "summary": "Gen endpoint agents now accept an optional agent_model while retaining the caller-facing outer model and ag_ authentication; the read-only Ask Polli workflow uses openai/gpt-5.6-terra and the write Polli workflow uses openai/gpt-6-astra.",
+    "impact": "Developers can route Polli’s read and write workflows to their dedicated models without changing existing endpoint identity, authorization gates, fixed-destination publishing, or caller-linked authentication behavior.",
+    "keywords": [
+      "Polli",
+      "agent_model",
+      "Gen",
+      "endpoint-agents",
+      "GPT-5.6-Terra",
+      "GPT-6-Astra",
+      "GitHub"
+    ],
+    "visual_concept": "Depict Polli as a cozy librarian-engineer at a forked garden path: one labeled read-only leading to a Terra book-terminal and one labeled write leading to an Astra pen-terminal, while both routes feed into one familiar outer API sign. Include a small CRT monitor robot holding an authorization badge and code-plants around the terminals to represent preserved authentication and safe workflow gates.",
+    "image_prompt": "A cozy pixel art garden hackerspace where Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wears tiny librarian glasses and calmly routes glowing code pollen between two retro terminals labeled in simple pixel text “READ: TERRA” and “WRITE: ASTRA”; a friendly CRT monitor robot holds an “ag_” badge beside blooming code-plants, and both paths join at one API sign. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-13/PR-14799.jpg",
+    "prompt": "A cozy pixel art garden hackerspace where Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wears tiny librarian glasses and calmly routes glowing code pollen between two retro terminals labeled in simple pixel text “READ: TERRA” and “WRITE: ASTRA”; a friendly CRT monitor robot holds an “ag_” badge beside blooming code-plants, and both paths join at one API sign. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-13T10:23:33.935644+00:00"
+}

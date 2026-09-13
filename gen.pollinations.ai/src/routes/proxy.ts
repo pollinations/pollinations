@@ -63,6 +63,7 @@ import {
     GetModelResponseSchema,
     GetModelsResponseSchema,
 } from "@shared/schemas/openai.ts";
+import { PollenHeadersSchema } from "@shared/schemas/pollen.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import {
     errorResponseDescriptions,
@@ -206,10 +207,9 @@ const model3dHandlers = factory.createHandlers(
 // Group access/coordination to stay within Hono's typed handler-count limit.
 const chatCompletionHandlers = factory.createHandlers(
     textBodyLimit,
-    validator("header", AgentModelHeadersSchema),
+    validator("header", PollenHeadersSchema.and(AgentModelHeadersSchema)),
     validator("json", CreateChatCompletionRequestSchema),
-    mediaResponses("chat/completions"),
-    resolveModel("generate.text"),
+    every(mediaResponses("chat/completions"), resolveModel("generate.text")),
     every(textBalanceNotice, track("generate.text")),
     textCache,
     every(generationAccess, deduplicateGeneration, apiKeyBudgetReservation),
@@ -218,10 +218,9 @@ const chatCompletionHandlers = factory.createHandlers(
 
 const responsesHandlers = factory.createHandlers(
     textBodyLimit,
-    validator("header", AgentModelHeadersSchema),
+    validator("header", PollenHeadersSchema.and(AgentModelHeadersSchema)),
     validator("json", CreateResponseRequestSchema),
-    mediaResponses("responses"),
-    resolveModel("generate.text"),
+    every(mediaResponses("responses"), resolveModel("generate.text")),
     every(textBalanceNotice, track("generate.text")),
     textCache,
     every(generationAccess, deduplicateGeneration, apiKeyBudgetReservation),
@@ -233,10 +232,15 @@ function filterEntriesByPermissions(
     entries: GenerationModelEntry[],
     allowedModels: string[] | undefined,
     hasPaidBalance?: boolean,
+    pollen?: "quest",
 ): GenerationModelEntry[] {
     return entries.filter((entry) => {
         if (allowedModels && !allowedModels.includes(entry.id)) return false;
-        if (entry.info.paid_only && hasPaidBalance === false) return false;
+        if (
+            entry.info.paid_only &&
+            (hasPaidBalance === false || pollen === "quest")
+        )
+            return false;
         return true;
     });
 }
@@ -285,6 +289,7 @@ const modelsListHandler = (
                         await getEntries(c),
                         allowedModels,
                         paidBalance,
+                        c.var.auth?.agentRun?.pollen,
                     ),
                     community,
                 ).map((entry) => entry.info),
@@ -431,6 +436,7 @@ export const proxyRoutes = new Hono<Env>()
                     await getVisibleModelEntries(c),
                     allowedModels,
                     paidBalance,
+                    c.var.auth?.agentRun?.pollen,
                 ),
                 community,
             );
@@ -475,6 +481,7 @@ export const proxyRoutes = new Hono<Env>()
                 [visible],
                 c.var.auth?.apiKey?.permissions?.models,
                 hasPaidBalance(c),
+                c.var.auth?.agentRun?.pollen,
             );
             if (!entry) {
                 throw new HTTPException(404, {
@@ -814,7 +821,7 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         textBodyLimit,
-        validator("header", AgentModelHeadersSchema),
+        validator("header", PollenHeadersSchema.and(AgentModelHeadersSchema)),
         validator("json", CreateChatCompletionRequestSchema),
         resolveModel("generate.text"),
         every(textBalanceNotice, track("generate.text")),
@@ -854,12 +861,12 @@ export const proxyRoutes = new Hono<Env>()
                 }),
             }),
         ),
+        validator("header", PollenHeadersSchema),
         validator("query", GenerateTextRequestQueryParamsSchema),
         resolveModel("generate.text"),
         every(textBalanceNotice, track("generate.text")),
         textCache,
-        generationAccess,
-        deduplicateGeneration,
+        every(generationAccess, deduplicateGeneration),
         apiKeyBudgetReservation,
         generateSimpleText,
     )

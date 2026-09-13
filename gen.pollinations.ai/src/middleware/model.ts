@@ -10,6 +10,11 @@ import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import { MODEL_REQUESTED_HEADER } from "@shared/registry/usage-headers.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
+import {
+    POLLEN_HEADER,
+    POLLEN_SHORT_HEADER,
+    PollenHeadersSchema,
+} from "@shared/schemas/pollen.ts";
 import type { SafetyFeature } from "@shared/schemas/safety.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -43,6 +48,8 @@ export type ModelVariables = {
          * which is the default for every static and external community model.
          */
         cacheScope?: string;
+        /** Signed or requested run restriction; omission permits all models. */
+        pollen?: "quest";
         /** Entry that serves the request when this model's upstream fails. */
         fallbackEntries?: GenerationModelEntry[];
     };
@@ -172,6 +179,7 @@ export function resolveModel(
     }>(async (c, next) => {
         // Extract model from request
         let rawModel: string | null = null;
+        let legacyPollen = c.req.query("pollen") !== undefined;
 
         if (c.req.method === "GET") {
             rawModel = c.req.query("model") || null;
@@ -181,6 +189,7 @@ export function resolveModel(
                 try {
                     const formData = await c.req.formData();
                     rawModel = (formData.get("model") as string) || null;
+                    legacyPollen ||= formData.has("pollen");
                     // Store formData to avoid re-parsing in route handlers
                     c.set("formData", formData);
                 } catch {
@@ -188,12 +197,15 @@ export function resolveModel(
                 }
             } else if (hasJsonContentType(contentType)) {
                 try {
+                    const rawBody = await c.req.json();
                     const body =
                         getValidatedJsonBody<{ model?: string }>(c.req) ||
-                        ((await c.req.raw.clone().json()) as
-                            | { model?: string }
-                            | undefined);
+                        (rawBody as { model?: string } | undefined);
                     rawModel = body?.model || null;
+                    legacyPollen ||=
+                        rawBody !== null &&
+                        typeof rawBody === "object" &&
+                        "pollen" in rawBody;
                 } catch {
                     throw new HTTPException(400, {
                         message: "Invalid JSON body",
@@ -201,6 +213,26 @@ export function resolveModel(
                 }
             }
         }
+
+        if (legacyPollen) {
+            throw new HTTPException(400, {
+                message:
+                    "Use the pollen or X-Pollinations-Pollen header instead of a body or query field",
+            });
+        }
+        const policy = PollenHeadersSchema.safeParse({
+            [POLLEN_HEADER]: c.req.header(POLLEN_HEADER),
+            [POLLEN_SHORT_HEADER]: c.req.header(POLLEN_SHORT_HEADER),
+        });
+        if (!policy.success) {
+            throw new HTTPException(400, {
+                message: policy.error.issues[0].message,
+            });
+        }
+        const questOnly =
+            c.var.auth?.agentRun?.pollen === "quest" ||
+            (policy.data[POLLEN_SHORT_HEADER] ?? policy.data[POLLEN_HEADER]) ===
+                "quest";
 
         // Apply default based on event type
         const defaultModel =
@@ -230,13 +262,23 @@ export function resolveModel(
         // model the caller selected, so they inherit that model's permission.
         // Visible and community targets remain independently scoped: a key can
         // never be served — or billed for — a model it could not call directly.
+        if (questOnly) {
+            if (resolved.definition.paidOnly === true) {
+                throw new HTTPException(403, {
+                    message: `Model "${resolved.resolved}" requires purchased Pollen and is unavailable with pollen=quest`,
+                });
+            }
+            resolved.pollen = "quest";
+        }
         const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-        if (allowedModels && resolved.fallbackEntries) {
+        if (resolved.fallbackEntries) {
             resolved.fallbackEntries = resolved.fallbackEntries.filter(
                 (entry) =>
-                    (entry.definition.fallbackOnly === true &&
-                        !entry.communityEndpoint) ||
-                    allowedModels.includes(entry.id),
+                    (!questOnly || entry.definition.paidOnly !== true) &&
+                    (!allowedModels ||
+                        (entry.definition.fallbackOnly === true &&
+                            !entry.communityEndpoint) ||
+                        allowedModels.includes(entry.id)),
             );
         }
         requireEndpointAgent(

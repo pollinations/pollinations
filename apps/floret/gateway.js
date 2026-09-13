@@ -1,4 +1,61 @@
-import { authenticateRun } from "./shell-bridge.js";
+const AUTH_URL = "https://enter.pollinations.ai/api/account/key";
+const AUTH_TIMEOUT_MS = 10_000;
+const AUTH_MAX_BYTES = 16 * 1024;
+
+function token(request) {
+    const match = /^Bearer\s+(ag_\S+)$/i.exec(
+        (request.headers.get("Authorization") || "").trim(),
+    );
+    return match?.[1] || null;
+}
+
+async function boundedJson(response) {
+    const length = Number(response.headers.get("Content-Length"));
+    if (Number.isFinite(length) && length > AUTH_MAX_BYTES) return null;
+    const reader = response.body?.getReader();
+    if (!reader) return null;
+    const chunks = [];
+    let bytes = 0;
+    try {
+        for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            bytes += value.byteLength;
+            if (bytes > AUTH_MAX_BYTES) return null;
+            chunks.push(value);
+        }
+        const body = new Uint8Array(bytes);
+        let offset = 0;
+        for (const chunk of chunks) {
+            body.set(chunk, offset);
+            offset += chunk.byteLength;
+        }
+        return JSON.parse(new TextDecoder().decode(body));
+    } catch {
+        return null;
+    } finally {
+        await reader.cancel().catch(() => {});
+    }
+}
+
+async function authenticateRun(request, fetchImpl) {
+    const bearer = token(request);
+    if (!bearer) return false;
+    let response;
+    try {
+        response = await fetchImpl(AUTH_URL, {
+            method: "GET",
+            headers: { Authorization: `Bearer ${bearer}` },
+            redirect: "manual",
+            signal: AbortSignal.timeout(AUTH_TIMEOUT_MS),
+        });
+    } catch {
+        return false;
+    }
+    if (response.status !== 200) return false;
+    const body = await boundedJson(response);
+    return body !== null && body.valid === true;
+}
 
 function catalog(env) {
     return env.FLORET_CATALOG.getByName("global");
@@ -33,17 +90,52 @@ export function createGateway(getAgent, fetchImpl = globalThis.fetch) {
         }
         const isChat =
             path === "/v1/chat/completions" && request.method === "POST";
-        if (isChat && !(await authenticateRun(request, fetchImpl))) {
-            return Response.json(
-                { detail: "Invalid agent run token." },
-                {
-                    status: 401,
-                    headers: {
-                        "Access-Control-Allow-Origin": "*",
-                        "Cache-Control": "no-store",
+        if (isChat) {
+            if (!(await authenticateRun(request, fetchImpl))) {
+                return Response.json(
+                    { detail: "Invalid agent run token." },
+                    {
+                        status: 401,
+                        headers: {
+                            "Access-Control-Allow-Origin": "*",
+                            "Cache-Control": "no-store",
+                        },
                     },
-                },
+                );
+            }
+            // Enter verified this exact bearer before we read its signed policy.
+            const bearer = request.headers
+                .get("Authorization")
+                .trim()
+                .split(/\s+/)[1];
+            const payload = bearer.slice(3).split(".")[1];
+            const claims = JSON.parse(
+                atob(payload.replace(/-/g, "+").replace(/_/g, "/")),
             );
+            const pollen = request.headers.get("pollen");
+            const prefixedPollen = request.headers.get("X-Pollinations-Pollen");
+            if (
+                [pollen, prefixedPollen].some(
+                    (value) =>
+                        value !== null && value !== "quest" && value !== "all",
+                ) ||
+                (pollen !== null &&
+                    prefixedPollen !== null &&
+                    pollen !== prefixedPollen)
+            ) {
+                return Response.json(
+                    {
+                        detail: "pollen headers must be quest or all and agree when both are supplied.",
+                    },
+                    { status: 400 },
+                );
+            }
+            if (claims.pollen === "quest") {
+                const headers = new Headers(request.headers);
+                headers.delete("pollen");
+                headers.set("X-Pollinations-Pollen", "quest");
+                request = new Request(request, { headers });
+            }
         }
         return getAgent(env).fetch(request);
     };

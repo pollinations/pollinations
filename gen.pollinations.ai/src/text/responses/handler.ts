@@ -124,6 +124,7 @@ async function responsesClientForAttempt(
         secret: c.env.BETTER_AUTH_SECRET,
         parentRequestId: c.get("requestId"),
         parentApiKeyId: c.var.auth?.apiKey?.id,
+        pollen: c.var.model?.pollen,
         agentModel,
     });
     if (endpoint.type === "prompt_agent" || endpoint.type === "code_agent") {

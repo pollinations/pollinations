@@ -50,11 +50,14 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
                     ),
                 );
             }
-            return generateCacheKey(
+            const key = await generateCacheKey(
                 cacheUrl,
                 c.req.header(SAFETY_HEADER_NAME),
                 getRequiredSafetyFeatures(variables.model),
             );
+            return variables.model?.pollen === "quest"
+                ? hashGenerationCacheIdentity("media", `pollen:quest:${key}`)
+                : key;
         },
         async get(c, cacheKey) {
             const response = await c.env.MEDIA.get(cacheKey);

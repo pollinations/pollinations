@@ -36,6 +36,7 @@ class PolicySnapshot:
     catalog_revision: str
     incumbents: Mapping[str, str]
     recommendations: tuple[Recommendation, ...]
+    quest: PolicySnapshot | None = None
 
 
 def parse_policy_snapshot(value: Mapping[str, Any]) -> PolicySnapshot:
@@ -104,6 +105,11 @@ def parse_policy_snapshot(value: Mapping[str, Any]) -> PolicySnapshot:
         catalog_revision=catalog_revision,
         incumbents=MappingProxyType(incumbents),
         recommendations=tuple(recommendations),
+        quest=(
+            parse_policy_snapshot(value["quest"])
+            if isinstance(value.get("quest"), Mapping)
+            else None
+        ),
     )
 
 

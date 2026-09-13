@@ -85,6 +85,41 @@ describe("/openapi.json", () => {
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/v1/audio/music/upload"]).toBeUndefined();
+        for (const [path, method] of [
+            ["/v1/chat/completions", "post"],
+            ["/v1/responses", "post"],
+            ["/text", "post"],
+            ["/text/{prompt}", "get"],
+        ]) {
+            const operation = (
+                schema.paths[path] as Record<
+                    string,
+                    {
+                        parameters: {
+                            name: string;
+                            in: string;
+                            required?: boolean;
+                        }[];
+                    }
+                >
+            )[method];
+            for (const name of ["pollen", "x-pollinations-pollen"]) {
+                const header = operation.parameters.find(
+                    (parameter) => parameter.name === name,
+                );
+                expect(header).toMatchObject({
+                    in: "header",
+                    schema: { type: "string", enum: ["quest", "all"] },
+                });
+                expect(header?.required ?? false).toBe(false);
+            }
+            expect(
+                operation.parameters.some(
+                    (parameter) =>
+                        parameter.name === "pollen" && parameter.in === "query",
+                ),
+            ).toBe(false);
+        }
         for (const path of ["/v1/chat/completions", "/v1/responses", "/text"]) {
             const operation = schema.paths[path] as {
                 post: { parameters: { name: string; required?: boolean }[] };

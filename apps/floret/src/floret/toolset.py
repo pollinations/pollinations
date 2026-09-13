@@ -8,11 +8,13 @@ from __future__ import annotations
 
 import json
 import logging
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any
 
+from floret import registry
 from floret.routing import RoutingPreferences
-from floret.tools import gen, media, shell
+from floret.tools import gen, mcp, media
 
 logger = logging.getLogger(__name__)
 
@@ -214,17 +216,16 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         "function": {
             "name": "upload_media",
             "description": (
-                "Upload media to Pollinations hosting and get a public URL (valid 30+ "
-                "days, no auth needed to fetch). Accepts a workspace file path (e.g. a "
-                "frame extracted with ffmpeg), a data: URI, or any URL. Use this to turn "
-                "local/edited media into URLs that generate_video or edit_image can consume."
+                "Upload a URL or data: URI to Pollinations hosting and get a public "
+                "URL (30-day retention). Handles authenticated Pollinations generation "
+                "URLs. For Computer workspace files, use bash with assets publish instead."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "source": {
                         "type": "string",
-                        "description": "Workspace path, data: URI, or URL.",
+                        "description": "Data: URI or HTTP(S) URL, not a local path.",
                     },
                     "filename": {
                         "type": "string",
@@ -238,22 +239,70 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
     {
         "type": "function",
         "function": {
-            "name": "fetch_media",
+            "name": "runFfmpeg",
             "description": (
-                "Download a media URL into the bash workspace (handles Pollinations "
-                "auth for you — curl inside bash cannot). Returns the saved filename; "
-                "use it directly in bash/ffmpeg commands afterwards."
+                "Process media with official FFmpeg MCP: trim, stitch, extract frames, "
+                "convert, or mux audio. Sources must be public HTTPS URLs and become "
+                "input0, input1, etc. Include -i arguments; omit the ffmpeg executable "
+                "and output path. Returns a hosted output. Limits: 100 MB per file, 110 seconds."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "url": {"type": "string"},
-                    "filename": {
+                    "sources": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "minItems": 1,
+                    },
+                    "args": {
+                        "type": "array",
+                        "items": {"type": "string", "minLength": 1, "maxLength": 1024},
+                        "maxItems": 64,
+                    },
+                    "outputExtension": {
                         "type": "string",
-                        "description": "Optional filename to save as (e.g. clip1.mp4).",
+                        "pattern": "^[a-zA-Z0-9]{1,16}$",
                     },
                 },
-                "required": ["url"],
+                "required": ["sources", "args", "outputExtension"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "generate_3d",
+            "description": (
+                "Generate a downloadable 3D asset from text or reference images. "
+                "Use list_models(kind='3d') for input requirements and choose a compatible model. "
+                "Image-only models require image URLs; generate an image first if needed. "
+                "Output format depends on the model (GLB mesh or PLY splat)."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "prompt": {"type": "string"},
+                    "model": {"type": "string"},
+                    "image": {
+                        "oneOf": [
+                            {"type": "string"},
+                            {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "minItems": 1,
+                            },
+                        ]
+                    },
+                    "resolution": {
+                        "type": "string",
+                        "enum": ["low", "medium", "high"],
+                        "description": "Detail level for models that support it.",
+                    },
+                    "seed": {"type": "integer"},
+                },
+                "required": ["prompt"],
+                "additionalProperties": False,
             },
         },
     },
@@ -262,15 +311,21 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         "function": {
             "name": "bash",
             "description": (
-                "Run a shell command in the sandbox (has ffmpeg, curl, python). Use for "
-                "media post-processing (concatenate clips, extract frames, mux audio), "
-                "downloading files, or any computation. Working dir persists within a request."
+                "Run official Computer MCP bash: shell utilities, curl, git, jq, and files. "
+                "The account workspace persists across runs; use a project folder under /workspace. "
+                "/tmp is cleared after each call. No Python, Node, package installs, native ffmpeg, or GUI. "
+                "Use stdin with cat > path to write text; assets publish <path> prints a public file URL. "
+                "Commands have a 60-second limit and bounded output."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "command": {"type": "string"},
-                    "timeout": {"type": "integer", "default": 60},
+                    "stdin": {"type": "string"},
+                    "cwd": {
+                        "type": "string",
+                        "description": "Absolute working directory; defaults to /workspace.",
+                    },
                 },
                 "required": ["command"],
             },
@@ -282,7 +337,7 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
             "name": "list_models",
             "description": (
                 "List available Pollinations models, optionally filtered by kind "
-                "(text|image|video|audio|transcript). Includes voices for audio."
+                "(text|image|video|audio|transcript|3d). Includes voices for audio and 3D input requirements."
             ),
             "parameters": {
                 "type": "object",
@@ -296,6 +351,7 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                             "audio",
                             "audio_transform",
                             "transcript",
+                            "3d",
                         ],
                     }
                 },
@@ -303,6 +359,38 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         },
     },
 ]
+
+
+def tool_schemas() -> list[dict[str, Any]]:
+    """Expose only request-eligible model choices without changing shared schemas."""
+    if registry.request_pollen() != "quest":
+        return TOOL_SCHEMAS
+    descriptions = {
+        "generate_image": "Generate images from text; omit model to auto-select. Use n for variations.",
+        "edit_image": "Edit an image from image_url and prompt. Join two reference URLs with '|'.",
+        "generate_video": (
+            "Generate video from text and optional start image/end_image. "
+            "A compatible eligible model is required for end frames. Frame URLs must be fetchable."
+        ),
+    }
+    result = []
+    for schema in TOOL_SCHEMAS:
+        name = schema["function"]["name"]
+        models = gen.tool_model_ids(name)
+        if models == []:
+            continue
+        scoped = deepcopy(schema)
+        function = scoped["function"]
+        if name in descriptions:
+            function["description"] = descriptions[name]
+        if models is not None:
+            function["parameters"]["properties"]["model"] = {
+                "type": "string",
+                "enum": sorted(models),
+                "description": "Eligible model ID; omit to auto-select where optional.",
+            }
+        result.append(scoped)
+    return result
 
 
 # --------------------------------------------------------------------------- #
@@ -363,7 +451,13 @@ async def dispatch(
             )
 
         if name == "text_to_speech":
-            model = call_args.get("model", "openai-audio")
+            model = (
+                gen._select_tool_model(name, call_args.get("model"))
+                if registry.request_pollen() == "quest"
+                else call_args.get("model", "openai-audio")
+            )
+            if registry.request_pollen() == "quest":
+                call_args["model"] = model
             from floret.registry import get_audio_endpoint
 
             endpoint = routing.audio_endpoint if routing and routing.audio else None
@@ -394,14 +488,19 @@ async def dispatch(
 
         if name in {"change_voice", "isolate_voice"}:
             endpoint = "voice-changer" if name == "change_voice" else "voice-isolator"
-            call_args.setdefault(
-                "model",
-                (
-                    "eleven-voice-changer"
-                    if name == "change_voice"
-                    else "eleven-voice-isolator"
-                ),
-            )
+            if registry.request_pollen() == "quest":
+                call_args["model"] = gen._select_tool_model(
+                    name, call_args.get("model")
+                )
+            else:
+                call_args.setdefault(
+                    "model",
+                    (
+                        "eleven-voice-changer"
+                        if name == "change_voice"
+                        else "eleven-voice-isolator"
+                    ),
+                )
             res = await gen.transform_audio(endpoint=endpoint, **call_args)
             art = {
                 "type": "audio",
@@ -435,13 +534,41 @@ async def dispatch(
                 arts = [{"type": "audio", "url": url}]
             return ToolResult(brain=f"Uploaded. Public URL: {url}", artifacts=arts)
 
-        if name == "fetch_media":
-            path = await media.fetch_media(**args)
-            return ToolResult(brain=f"Saved to workspace as: {path}")
+        if name == "generate_3d":
+            url, mime = await gen.generate_3d(**call_args)
+            return ToolResult(
+                brain=f"Generated 3D asset ({mime}): {url}",
+                artifacts=[{"type": "3d", "url": url, "mime_type": mime}],
+            )
 
-        if name == "bash":
-            out = await shell.bash(**args)
-            return ToolResult(brain=out)
+        if name in {"bash", "runFfmpeg"}:
+            result = await mcp.call_tool(
+                "computer" if name == "bash" else "ffmpeg", name, args
+            )
+            texts = []
+            arts = []
+            for content in result.content:
+                if content.type == "text":
+                    texts.append(content.text)
+                elif content.type == "resource_link":
+                    url = str(content.uri)
+                    texts.append(f"{content.name}: {url}")
+                    mime = content.mimeType or "application/octet-stream"
+                    kind = mime.split("/", 1)[0]
+                    arts.append(
+                        {
+                            "type": kind
+                            if kind in {"image", "video", "audio"}
+                            else "file",
+                            "url": url,
+                            "mime_type": mime,
+                        }
+                    )
+            brain = "\n".join(texts)
+            return ToolResult(
+                brain=f"ERROR from {name}: {brain}" if result.isError else brain,
+                artifacts=[] if result.isError else arts,
+            )
 
         if name == "list_models":
             from floret.knowledge import models_summary

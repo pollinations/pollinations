@@ -30,6 +30,8 @@ const EXECUTOR_HEADERS = new Set([
     "x-forwarded-host",
     "x-original-client-ip",
     SAFETY_HEADER_NAME.toLowerCase(),
+    "pollen",
+    "x-pollinations-pollen",
     AGENT_MODEL_HEADER,
     AGENT_MODEL_SHORT_HEADER,
 ]);

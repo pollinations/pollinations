@@ -4,8 +4,12 @@ import {
     SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import assert from "node:assert/strict";
 import type { Logger } from "@logtape/logtape";
-import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
+import {
+    signAgentRunToken,
+    verifyAgentRunToken,
+} from "@shared/auth/agent-run-token.ts";
 import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import {
@@ -2592,6 +2596,31 @@ describe("community endpoint helpers", () => {
             );
         });
 
+        it("signs and forwards effective Quest policy to Chat and Responses agents", async () => {
+            for (const api of ["chat_completions", "responses"] as const) {
+                const endpoint = endpointAgent({ api });
+                const context = await communityEndpointGatewayContext({
+                    endpoint,
+                    modelDefinition: communityModelDefinition(endpoint),
+                    requestData: { messages: [], pollen: "all" },
+                    secret,
+                    portkeyGatewayUrl: "https://portkey.test",
+                    userApiKey: "sk_user_key",
+                    parentRequestId: "quest-parent",
+                    parentApiKeyId: "parent-key-id",
+                    pollen: "quest",
+                });
+                expect(context).not.toHaveProperty("pollen");
+                expect(context.modelConfig?.pollen).toBe("quest");
+                expect(
+                    await verifyAgentRunToken(
+                        String(context.modelConfig?.authKey),
+                        secret,
+                    ),
+                ).toMatchObject({ pollen: "quest" });
+            }
+        });
+
         // The complement of the test above, and the reason an agent listing
         // has nowhere to store a credential: only a proxy sends one.
         it("sends a proxy listing's saved bearer, never a run token", async () => {
@@ -2644,6 +2673,200 @@ describe("community endpoint helpers", () => {
     });
 });
 
+fixtureTest(
+    "Quest policy reaches real endpoint-agent dispatch through GET, Chat and nested Responses",
+    async () => {
+        const ownerGithubUsername = `quest-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const parent = await createTestApiKey({ user: { packBalance: 100 } });
+        const restricted = await signAgentRunToken({
+            secret: env.BETTER_AUTH_SECRET,
+            parentApiKeyId: parent.id,
+            parentRequestId: "outer",
+            pollen: "quest",
+        });
+        const upstreams = new Map<string, string>();
+        for (const api of ["chat_completions", "responses"] as const) {
+            const name = api === "responses" ? "responses-agent" : "chat-agent";
+            const url = `https://quest-agent.example.com/${api}`;
+            upstreams.set(url, api);
+            await insertCommunityEndpoints({
+                id: crypto.randomUUID(),
+                ownerUserId,
+                type: "endpoint_agent",
+                name,
+                api,
+                baseUrl: url,
+                upstreamModel: "floret",
+                visibility: "public",
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+        }
+        let calls = 0;
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                const api = upstreams.get(request.url);
+                if (!api) {
+                    if (isBillingFetch(request))
+                        return Response.json({ data: [] });
+                    throw new Error(`Unexpected fetch: ${request.url}`);
+                }
+                calls++;
+                const authorization = request.headers.get("authorization");
+                assert(authorization);
+                const token = authorization.replace(/^Bearer /, "");
+                expect(
+                    await verifyAgentRunToken(token, env.BETTER_AUTH_SECRET),
+                ).toMatchObject({ parentApiKeyId: parent.id, pollen: "quest" });
+                const body = (await request.json()) as Record<string, unknown>;
+                expect(body).toMatchObject({
+                    model: calls === 5 ? "test/quest-brain" : "floret",
+                });
+                expect(request.headers.get("X-Pollinations-Pollen")).toBe(
+                    "quest",
+                );
+                expect(body).not.toHaveProperty("pollen");
+                expect(body).not.toHaveProperty("agent_model");
+                // The endpoint can omit or lie about pollen, but the signed child token
+                // still blocks a paid generation before any provider fetch.
+                const registry = await getGenerationModelRegistry(env);
+                const paid = registry
+                    .visibleEntries()
+                    .find(
+                        (entry) =>
+                            entry.eventType === "generate.text" &&
+                            entry.definition.paidOnly === true,
+                    );
+                assert(paid);
+                const blocked = await fetchGen(
+                    `https://gen.pollinations.ai/text/injected?model=${encodeURIComponent(paid.id)}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            pollen: "all",
+                        },
+                    },
+                );
+                expect(blocked.status).toBe(403);
+                if (api === "responses")
+                    return Response.json({
+                        id: "resp_quest",
+                        object: "response",
+                        created_at: 1,
+                        model: "floret",
+                        status: "completed",
+                        output: [
+                            {
+                                id: "msg_quest",
+                                type: "message",
+                                status: "completed",
+                                role: "assistant",
+                                content: [
+                                    {
+                                        type: "output_text",
+                                        text: "quest",
+                                        annotations: [],
+                                    },
+                                ],
+                            },
+                        ],
+                        usage: {
+                            input_tokens: 2,
+                            output_tokens: 3,
+                            total_tokens: 5,
+                        },
+                    });
+                return Response.json({
+                    id: "chatcmpl_quest",
+                    object: "chat.completion",
+                    model: "floret",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "quest" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 2,
+                        completion_tokens: 3,
+                        total_tokens: 5,
+                    },
+                });
+            }),
+        );
+        const chatModel = communityModelId(ownerGithubUsername, "chat-agent");
+        const responseModel = communityModelId(
+            ownerGithubUsername,
+            "responses-agent",
+        );
+        const get = await fetchGen(
+            `https://gen.pollinations.ai/text/test?model=${encodeURIComponent(chatModel)}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${parent.key}`,
+                    pollen: "quest",
+                },
+            },
+        );
+        expect(get.status).toBe(200);
+        for (const model of [chatModel, responseModel]) {
+            const chat = await fetchGen(
+                "https://gen.pollinations.ai/v1/chat/completions",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${restricted}`,
+                        "X-Pollinations-Pollen": "all",
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model,
+                        messages: [{ role: "user", content: "child" }],
+                    }),
+                },
+            );
+            expect(chat.status).toBe(200);
+        }
+        const responses = await fetchGen(
+            "https://gen.pollinations.ai/v1/responses",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${restricted}`,
+                    "X-Pollinations-Pollen": "all",
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ model: responseModel, input: "child" }),
+            },
+        );
+        expect(responses.status).toBe(200);
+        const override = await fetchGen(
+            "https://gen.pollinations.ai/v1/chat/completions",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${restricted}`,
+                    "X-Pollinations-Pollen": "all",
+                    "agent-model": "test/quest-brain",
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: chatModel,
+                    messages: [{ role: "user", content: "child override" }],
+                }),
+            },
+        );
+        expect(override.status).toBe(200);
+        expect(calls).toBe(5);
+    },
+);
 for (const protocol of ["chat_completions", "responses", "text"] as const) {
     const api = protocol === "text" ? "chat_completions" : protocol;
     fixtureTest(
@@ -2980,6 +3203,58 @@ fixtureTest(
                 }
             }
         }
+    },
+);
+
+fixtureTest(
+    "rejects agent-model headers on static providers before upstream I/O",
+    async ({ apiKey }) => {
+        const registry = await getGenerationModelRegistry(env);
+        const model = registry
+            .visibleEntries()
+            .find(
+                (entry) =>
+                    entry.eventType === "generate.text" &&
+                    !entry.communityEndpoint &&
+                    entry.definition.paidOnly !== true &&
+                    entry.supportedEndpoints.includes("/v1/chat/completions"),
+            );
+        assert(model);
+        const providerCalls: string[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                providerCalls.push(request.url);
+                throw new Error(`Unexpected provider call: ${request.url}`);
+            }),
+        );
+        for (const stream of [false, true]) {
+            const response = await fetchGen(
+                "https://gen.pollinations.ai/v1/chat/completions",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                        "agent-model": "test/brain",
+                    },
+                    body: JSON.stringify({
+                        model: model.id,
+                        messages: [
+                            { role: "user", content: "unsupported override" },
+                        ],
+                        stream,
+                    }),
+                },
+            );
+            expect(response.status).toBe(400);
+            expect(await response.text()).toContain(
+                "X-Pollinations-Agent-Model is supported only by endpoint agents",
+            );
+        }
+        expect(providerCalls).toEqual([]);
     },
 );
 

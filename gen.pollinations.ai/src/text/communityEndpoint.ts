@@ -34,11 +34,13 @@ import type { RequestData, TransformOptions } from "./types.js";
 async function mintDelegatedToken({
     endpoint,
     parentApiKeyId,
+    pollen,
     parentRequestId,
     secret,
 }: {
     endpoint: CommunityEndpointRuntime;
     parentApiKeyId: string | undefined;
+    pollen?: "quest";
     parentRequestId: string;
     secret: string;
 }): Promise<string | undefined> {
@@ -56,6 +58,7 @@ async function mintDelegatedToken({
     return signAgentRunToken({
         secret,
         parentApiKeyId,
+        pollen,
         parentRequestId,
         // The managed runtime uses the listing id (also its upstream model) to
         // select the prompt config. An external agent only needs spend scope.
@@ -75,6 +78,7 @@ export async function communityEndpointGatewayContext({
     userApiKey,
     parentRequestId,
     parentApiKeyId,
+    pollen,
     agentModel,
 }: {
     endpoint: CommunityEndpointRuntime;
@@ -85,14 +89,20 @@ export async function communityEndpointGatewayContext({
     userApiKey: string;
     parentRequestId: string;
     parentApiKeyId?: string;
+    pollen?: "quest";
     agentModel?: string;
 }): Promise<TransformOptions> {
-    const { messages: _messages, ...requestDataWithoutMessages } = requestData;
+    const {
+        messages: _messages,
+        pollen: _pollen,
+        ...requestDataWithoutMessages
+    } = requestData;
     const modelConfig = await communityEndpointModelConfig({
         endpoint,
         secret,
         parentRequestId,
         parentApiKeyId,
+        pollen,
         agentModel,
     });
     return {
@@ -110,17 +120,20 @@ export async function communityEndpointModelConfig({
     secret,
     parentRequestId,
     parentApiKeyId,
+    pollen,
     agentModel,
 }: {
     endpoint: CommunityEndpointRuntime;
     secret: string;
     parentRequestId: string;
     parentApiKeyId?: string;
+    pollen?: "quest";
     agentModel?: string;
 }): Promise<Record<string, unknown>> {
     const runToken = await mintDelegatedToken({
         endpoint,
         parentApiKeyId,
+        pollen,
         parentRequestId,
         secret,
     });
@@ -143,6 +156,9 @@ export async function communityEndpointModelConfig({
             endpoint.type === "endpoint_agent"
                 ? (agentModel ?? endpoint.upstreamModel)
                 : endpoint.upstreamModel,
+        ...(pollen === "quest" && usesAgentRunToken(endpoint)
+            ? { pollen }
+            : {}),
         ...(endpoint.api === "responses"
             ? { responsesEndpoint: endpoint.baseUrl }
             : { directEndpoint: endpoint.baseUrl }),

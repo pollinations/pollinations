@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import contextvars
-from typing import Optional
 
 from pydantic import Field, PositiveFloat, PositiveInt
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-_api_key_override: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
+_api_key_override: contextvars.ContextVar[str | None] = contextvars.ContextVar(
     "api_key_override", default=None
 )
 
@@ -44,7 +43,6 @@ class Settings(BaseSettings):
     # own key — which for a hosted deployment is the whole point.
     allow_operator_key: bool = Field(False, validation_alias="POLLI_ALLOW_OPERATOR_KEY")
     # Private outbound handlers configured only on the hosted agent container.
-    shell_endpoint: str = Field("", validation_alias="POLLI_SHELL_ENDPOINT")
     catalog_endpoint: str = Field("", validation_alias="POLLI_CATALOG_ENDPOINT")
 
 

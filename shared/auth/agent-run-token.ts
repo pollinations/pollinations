@@ -16,6 +16,7 @@ export type AgentRunClaims = {
     // same id would be a value the agent gets to choose.
     parentRequestId: string;
     managedAgentId?: string;
+    pollen?: "quest";
     issuedAt: number;
     expiresAt: number;
 };
@@ -31,9 +32,13 @@ export async function signAgentRunToken(opts: {
     parentApiKeyId: string;
     parentRequestId: string;
     managedAgentId?: string;
+    pollen?: "quest";
     expiresIn?: number;
     now?: number;
 }): Promise<string> {
+    if (opts.pollen !== undefined && opts.pollen !== "quest") {
+        throw new Error("Invalid agent run token policy");
+    }
     const issuedAt = opts.now ?? Math.floor(Date.now() / 1000);
     const expiresIn = opts.expiresIn ?? AGENT_RUN_TOKEN_TTL_SECONDS;
     if (expiresIn < 1 || expiresIn > AGENT_RUN_TOKEN_TTL_SECONDS) {
@@ -44,6 +49,7 @@ export async function signAgentRunToken(opts: {
         version: 1,
         parentRequestId: opts.parentRequestId,
         ...(opts.managedAgentId ? { managedAgentId: opts.managedAgentId } : {}),
+        ...(opts.pollen ? { pollen: opts.pollen } : {}),
     })
         .setProtectedHeader({ alg: "HS256", typ: "JWT" })
         .setIssuer(AGENT_RUN_TOKEN_ISSUER)
@@ -93,7 +99,8 @@ export async function verifyAgentRunToken(
         !payload.parentRequestId ||
         (payload.managedAgentId !== undefined &&
             (typeof payload.managedAgentId !== "string" ||
-                !payload.managedAgentId))
+                !payload.managedAgentId)) ||
+        (payload.pollen !== undefined && payload.pollen !== "quest")
     ) {
         throw new Error("Invalid agent run token claims");
     }
@@ -104,6 +111,7 @@ export async function verifyAgentRunToken(
         ...(typeof payload.managedAgentId === "string"
             ? { managedAgentId: payload.managedAgentId }
             : {}),
+        ...(payload.pollen === "quest" ? { pollen: payload.pollen } : {}),
         issuedAt: payload.iat,
         expiresAt: payload.exp,
     };

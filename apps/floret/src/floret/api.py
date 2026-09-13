@@ -11,16 +11,18 @@ import time
 import uuid
 from collections.abc import AsyncGenerator, AsyncIterator
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 import httpx
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
-from floret.agent import run_agent, run_agent_events
+from floret import registry
+from floret.agent import run_agent, run_agent_events, select_brain
 from floret.config import _api_key_override, settings
+from floret.registry import PollenPolicy
 from floret.routing import (
     RoutingInput,
     RoutingPreferences,
@@ -66,6 +68,15 @@ class ChatRequest(BaseModel):
     stream: bool = False
     stream_options: dict[str, Any] | None = None
     routing: RoutingInput | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def reject_body_pollen(cls, value: Any) -> Any:
+        if isinstance(value, dict) and "pollen" in value:
+            raise ValueError(
+                "Use the pollen or X-Pollinations-Pollen header, not a body field."
+            )
+        return value
 
 
 def _files_dir() -> str:
@@ -166,6 +177,9 @@ async def _build_content(
             else:
                 md_lines.append(f"_(audio narration attached: “{label}…”)_")
 
+        elif kind in {"3d", "file"}:
+            md_lines.append(f"[Download {kind}]({art['url']})")
+
     markdown = "\n\n".join(md_lines)
     content_parts = [{"type": "text", "text": markdown}] + parts
     return markdown, content_parts
@@ -218,7 +232,30 @@ async def _sse_events(
     api_key: str | None,
     routing: RoutingPreferences,
     include_usage: bool,
+    pollen: PollenPolicy = "all",
+    catalog: dict[str, dict[str, Any]] | None = None,
 ) -> AsyncIterator[str]:
+    # Streaming runs after the endpoint returns; keep policy through media hosting too.
+    with registry.model_scope(catalog, pollen):
+        frames = _scoped_sse_events(
+            messages, model, api_key, routing, include_usage, pollen, catalog
+        )
+        try:
+            async for frame in frames:
+                yield frame
+        finally:
+            await frames.aclose()
+
+
+async def _scoped_sse_events(
+    messages: list[dict[str, Any]],
+    model: str,
+    api_key: str | None,
+    routing: RoutingPreferences,
+    include_usage: bool,
+    pollen: PollenPolicy,
+    catalog: dict[str, dict[str, Any]] | None,
+) -> AsyncGenerator[str, None]:
     """Translate agent events into OpenAI chat.completion.chunk SSE frames.
 
     Agent events are pumped through a queue so quiet stretches (long renders,
@@ -235,7 +272,9 @@ async def _sse_events(
 
     async def _pump() -> None:
         try:
-            async for event in run_agent_events(messages, routing=routing):
+            async for event in run_agent_events(
+                messages, routing=routing, pollen=pollen, catalog=catalog
+            ):
                 await queue.put(event)
         except Exception as exc:
             await queue.put(exc)
@@ -342,7 +381,25 @@ def _agent_run_token(http_request: Request) -> str | None:
 
 
 @app.post("/v1/chat/completions")
-async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
+async def chat_completions(
+    request: ChatRequest,
+    http_request: Request,
+    pollen: Annotated[PollenPolicy | None, Header()] = None,
+    x_pollinations_pollen: Annotated[PollenPolicy | None, Header()] = None,
+) -> Any:
+    if (
+        pollen is not None
+        and x_pollinations_pollen is not None
+        and pollen != x_pollinations_pollen
+    ):
+        raise HTTPException(
+            status_code=400, detail="pollen and X-Pollinations-Pollen must agree."
+        )
+    pollen = pollen or x_pollinations_pollen or "all"
+    if "pollen" in http_request.query_params:
+        raise HTTPException(
+            status_code=400, detail="Use a pollen header, not a query parameter."
+        )
     api_key = _agent_run_token(http_request)
     # Fail here rather than part-way through a run: without a credential every
     # downstream generation 401s anyway, after the caller has already waited.
@@ -352,19 +409,26 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
             detail="Missing agent run token.",
         )
 
-    if settings.catalog_endpoint:
-        from floret.registry import warm_registry
-
+    catalog = None
+    token = _api_key_override.set(api_key or None)
+    try:
         try:
-            await warm_registry()
+            if settings.catalog_endpoint or pollen == "quest":
+                await registry.warm_registry()
+            if pollen == "quest":
+                catalog = await registry.fetch_model_catalog()
         except (httpx.HTTPError, ValueError):
             raise HTTPException(
                 status_code=503, detail="Model catalog unavailable."
             ) from None
-
-    token = _api_key_override.set(api_key or None)
-    try:
-        routing = await validate_routing(request.routing)
+        if pollen == "quest":
+            with registry.model_scope(catalog, pollen):
+                routing = await validate_routing(
+                    request.routing, catalog=registry.get_model_catalog()
+                )
+                select_brain(routing)
+        else:
+            routing = await validate_routing(request.routing)
     except RoutingValidationError as exc:
         raise HTTPException(
             status_code=422,
@@ -372,6 +436,12 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
         ) from exc
     except RoutingRegistryUnavailable as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=503, detail="Model catalog unavailable."
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     finally:
         _api_key_override.reset(token)
 
@@ -383,16 +453,21 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
                 api_key or None,
                 routing,
                 _include_stream_usage(request.stream_options),
+                pollen,
+                catalog,
             ),
             media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
     token = _api_key_override.set(api_key or None)
     try:
-        result = await run_agent(_to_openai_messages(request.messages), routing=routing)
-        markdown, content_parts = await _build_content(
-            result["text"], result["artifacts"]
-        )
+        with registry.model_scope(catalog, pollen):
+            result = await run_agent(
+                _to_openai_messages(request.messages), routing=routing
+            )
+            markdown, content_parts = await _build_content(
+                result["text"], result["artifacts"]
+            )
         return {
             "id": f"chatcmpl-polli-{uuid.uuid4().hex[:12]}",
             "object": "chat.completion",

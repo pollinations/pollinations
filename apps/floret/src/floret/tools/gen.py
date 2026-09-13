@@ -18,7 +18,9 @@ from typing import Any
 import httpx
 from openai import AsyncOpenAI
 
+from floret import registry
 from floret.config import resolve_api_key, settings
+from floret.model_policy import SelectionRequest, is_compatible
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +82,128 @@ def _url(path: str, params: dict[str, Any]) -> str:
     return f"{path}?{query}" if query else path
 
 
+_TOOL_REQUIREMENTS = {
+    "generate_text": SelectionRequest("text.general", "text", "/v1/chat/completions"),
+    "generate_image": SelectionRequest("image.general", "image", "/image/{prompt}"),
+    "edit_image": SelectionRequest(
+        "image.general",
+        "image",
+        "/v1/images/edits",
+        input_modalities=frozenset({"image"}),
+    ),
+    "generate_video": SelectionRequest("video.general", "video", "/video/{prompt}"),
+    "generate_3d": SelectionRequest(
+        "3d.general", "3d", output_modalities=frozenset({"3d"})
+    ),
+    "text_to_speech": SelectionRequest(
+        "audio.general",
+        "audio",
+        input_modalities=frozenset({"text"}),
+        output_modalities=frozenset({"audio"}),
+    ),
+    "change_voice": SelectionRequest(
+        "audio_transform.general", "audio_transform", "/v1/audio/voice-changer"
+    ),
+    "isolate_voice": SelectionRequest(
+        "audio_transform.general", "audio_transform", "/v1/audio/voice-isolator"
+    ),
+    "transcribe": SelectionRequest(
+        "transcript.general", "transcript", "/v1/audio/transcriptions"
+    ),
+    "web_search": SelectionRequest(
+        "text.general",
+        "text",
+        "/v1/chat/completions",
+        required_capabilities=frozenset({"web_search"}),
+    ),
+}
+
+
+def tool_model_ids(name: str) -> list[str] | None:
+    requirement = _TOOL_REQUIREMENTS.get(name)
+    if requirement is None:
+        return None
+    return [
+        model
+        for model, meta in registry.get_model_catalog().items()
+        if is_compatible(model, meta, requirement)
+    ]
+
+
+def _select_tool_model(name: str, model: str | None, default: str = "") -> str:
+    if registry.request_pollen() == "all":
+        return model or default
+    requirement = _TOOL_REQUIREMENTS[name]
+    return registry.choose_model(
+        requirement.modality,
+        model,
+        endpoint=requirement.endpoint,
+        required_capabilities=requirement.required_capabilities,
+        input_modalities=requirement.input_modalities,
+        output_modalities=requirement.output_modalities,
+        default=default,
+    )
+
+
+def _restricted_media_url(url: str) -> str:
+    if registry.request_pollen() != "quest" or _origin(url) != _origin(_base()):
+        return url
+    parsed = urllib.parse.urlsplit(url)
+    if not any(
+        parsed.path.startswith(f"/{kind}/")
+        for kind in ("image", "video", "audio", "text", "3d")
+    ):
+        raise ValueError("Quest media fetching requires an explicit generation URL")
+    query = urllib.parse.parse_qs(parsed.query, keep_blank_values=True)
+    models = query.get("model", [])
+    if len(models) != 1 or not models[0]:
+        raise ValueError("Quest generation URLs require one explicit model")
+    query["model"] = [registry.require_model(models[0])]
+    return urllib.parse.urlunsplit(
+        parsed._replace(query=urllib.parse.urlencode(query, doseq=True))
+    )
+
+
+async def generate_3d(
+    prompt: str,
+    model: str | None = None,
+    image: str | list[str] | None = None,
+    resolution: str | None = None,
+    seed: int | None = None,
+) -> tuple[str, str]:
+    """Use the existing durable 3D route and return its hosted enclosure."""
+    prompt = prompt.strip()
+    if not prompt or prompt in {".", ".."}:
+        raise ValueError("A descriptive 3D prompt is required")
+    if resolution is not None and resolution not in {"low", "medium", "high"}:
+        raise ValueError("resolution must be low, medium, or high")
+    images = [image] if isinstance(image, str) else image or []
+    model = registry.choose_model(
+        "3d",
+        model,
+        input_modalities=frozenset({"image" if images else "text"}),
+        output_modalities=frozenset({"3d"}),
+    )
+    body: dict[str, Any] = {"model": model}
+    if images:
+        body["image"] = [await _public_frame_url(url) for url in images]
+    if resolution is not None:
+        body["resolution"] = resolution
+    if seed is not None:
+        body["seed"] = seed
+    url = f"{_base()}/3d/{urllib.parse.quote(prompt, safe='')}"
+    async with _http_client().stream(
+        "POST", url, headers={"Authorization": f"Bearer {_key()}"}, json=body
+    ) as response:
+        response.raise_for_status()
+        enclosure = response.links.get("enclosure", {}).get("url")
+        if not enclosure or not enclosure.startswith("https://media.pollinations.ai/"):
+            raise RuntimeError("3D generation returned no public file URL")
+        return enclosure, response.headers.get(
+            "content-type", "application/octet-stream"
+        )
+
+
 async def _fetch_bytes(
     url: str, attempts: int = 3, max_bytes: int | None = None
 ) -> bytes:
@@ -92,6 +216,7 @@ async def _fetch_bytes(
     """
     import asyncio
 
+    url = _restricted_media_url(url)
     headers = (
         {"Authorization": f"Bearer {_key()}"}
         if _origin(url) == _origin(_base())
@@ -152,7 +277,12 @@ async def generate_image(
     """Text-to-image. Returns a list of image URLs (one per n)."""
     from floret.registry import default_model
 
-    model = model or default_model("image", prompt, "flux")
+    model = (
+        _select_tool_model("generate_image", model)
+        if registry.request_pollen() == "quest"
+        else model or default_model("image", prompt, "flux")
+    )
+    model = registry.require_model(model)
     urls: list[str] = []
     for i in range(max(1, n)):
         params = {"model": model, "width": width, "height": height, **extra}
@@ -166,6 +296,8 @@ async def generate_image(
 
 async def generate_text(prompt: str, model: str, system: str | None = None) -> str:
     """Delegate a text task to any catalogued text model."""
+    model = _select_tool_model("generate_text", model)
+    model = registry.require_model(model)
     messages = []
     if system:
         messages.append({"role": "system", "content": system})
@@ -185,7 +317,7 @@ async def generate_text(prompt: str, model: str, system: str | None = None) -> s
 async def edit_image(
     prompt: str,
     image_url: str,
-    model: str = "nanobanana",
+    model: str | None = None,
     **extra: Any,
 ) -> str:
     """Image-to-image edit via POST /v1/images/edits (multipart upload).
@@ -196,6 +328,8 @@ async def edit_image(
     cannot reliably re-fetch generation URLs (it returns 522), so a URL-based
     edit fails for the most common input — an image we just generated.
     """
+    model = _select_tool_model("edit_image", model, "nanobanana")
+    model = registry.require_model(model)
     sources = [u.strip() for u in image_url.split("|") if u.strip()]
     files: list[tuple[str, tuple[str, bytes, str]]] = []
     for i, src in enumerate(sources[:2]):  # models accept at most 2 reference images
@@ -274,10 +408,21 @@ async def generate_video(
     """
     from floret.registry import default_model
 
-    model = model or default_model("video", prompt, "wan-fast")
-
-    if end_image and not supports_end_frame(model):
-        model = "wan-fast"
+    if registry.request_pollen() == "quest":
+        model = registry.choose_model(
+            "video",
+            model,
+            endpoint="/video/{prompt}",
+            input_modalities=frozenset({"image"})
+            if image or end_image
+            else frozenset(),
+            video_capabilities=frozenset({"end_frame"}) if end_image else frozenset(),
+        )
+    else:
+        model = model or default_model("video", prompt, "wan-fast")
+        if end_image and not supports_end_frame(model):
+            model = "wan-fast"
+    model = registry.require_model(model)
 
     from floret.registry import get_model_params
 
@@ -317,7 +462,7 @@ async def generate_video(
 async def text_to_speech(
     text: str,
     voice: str | None = None,
-    model: str = "openai-audio",
+    model: str | None = None,
     fmt: str = "mp3",
 ) -> dict[str, Any]:
     """Read `text` aloud verbatim.
@@ -327,6 +472,12 @@ async def text_to_speech(
     """
     from floret.registry import get_voices
 
+    model = (
+        registry.choose_model("audio", model, endpoint="/v1/chat/completions")
+        if registry.request_pollen() == "quest"
+        else model or "openai-audio"
+    )
+    model = registry.require_model(model)
     voice = voice or settings.default_voice or (get_voices() or ["nova"])[0]
     # openai-audio is a conversational model — without this guard it *answers* the
     # text instead of reading it. Other audio models read verbatim natively; the
@@ -372,6 +523,8 @@ async def generate_audio(
     seed: int | None = None,
 ) -> dict[str, Any]:
     """Generate speech, music, or sound through the catalogued audio route."""
+    model = registry.choose_model("audio", model, endpoint="/v1/audio/speech")
+    model = registry.require_model(model)
     payload = {
         "model": model,
         "input": text,
@@ -404,10 +557,12 @@ async def generate_audio(
 # --------------------------------------------------------------------------- #
 async def transcribe(
     audio_url: str,
-    model: str = "whisper",
+    model: str | None = None,
     instruction: str = "Transcribe this audio verbatim.",
 ) -> str:
     """Speech-to-text. Accepts an audio/video URL or a data: URI."""
+    model = _select_tool_model("transcribe", model, "whisper")
+    model = registry.require_model(model)
     if audio_url.startswith("data:"):
         header, _, b64 = audio_url.partition(",")
         fmt = "mp3"
@@ -439,6 +594,10 @@ async def transform_audio(
     fmt: str = "mp3",
 ) -> dict[str, Any]:
     """Call a multipart audio transformation endpoint and return playable audio."""
+    model = registry.choose_model(
+        "audio_transform", model, endpoint=f"/v1/audio/{endpoint}"
+    )
+    model = registry.require_model(model)
     payload = await _fetch_bytes(audio_url)
     data = {"model": model, "response_format": fmt}
     if voice:
@@ -463,8 +622,10 @@ async def transform_audio(
 # --------------------------------------------------------------------------- #
 # Web search
 # --------------------------------------------------------------------------- #
-async def web_search(query: str, model: str = "gemini-search") -> str:
+async def web_search(query: str, model: str | None = None) -> str:
     """Search the web via a search-capable model. Returns a text answer."""
+    model = _select_tool_model("web_search", model, "gemini-search")
+    model = registry.require_model(model)
     payload = {"model": model, "messages": [{"role": "user", "content": query}]}
     headers = {"Authorization": f"Bearer {_key()}", "Content-Type": "application/json"}
     r = await _http_client().post(

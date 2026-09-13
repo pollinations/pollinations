@@ -49,7 +49,7 @@ describe("code agent Responses client", () => {
             "agent-id",
             {},
             {
-                limits: { cpuMs: 1_000, subRequests: 32 },
+                limits: { cpuMs: 5_000, subRequests: 64 },
                 outbound: {
                     CODE_AGENT_CONTEXT: {
                         authorization: "Bearer ag_run",

@@ -37,10 +37,13 @@ const EST_PROMPT_TOKENS = 20;
 const EST_COMPLETION_TOKENS = 8;
 const EST_IMAGE_OUTPUT_TOKENS = 1120;
 
+// Keep the persisted image cadence key stable across the catalog rename.
+const stateModelId = (id) => id.replace(/^community\//, "");
+
 const modelArgIndex = process.argv.indexOf("--model");
-const onlyModel = modelArgIndex === -1 ? null : process.argv[modelArgIndex + 1];
+let onlyModel = modelArgIndex === -1 ? null : process.argv[modelArgIndex + 1];
 if (modelArgIndex !== -1 && !onlyModel) {
-    console.error("--model requires an owner/model id");
+    console.error("--model requires a community/owner/model id");
     process.exit(1);
 }
 const categoryArgIndex = process.argv.indexOf("--category");
@@ -334,7 +337,9 @@ function probe(model) {
                   ? (onlyOperation ?? "generate")
                   : nextImageOperation(
                         model,
-                        state.spend?.lastImageProbeOperation?.[model.name],
+                        state.spend?.lastImageProbeOperation?.[
+                            stateModelId(model.name)
+                        ],
                     ),
           )
         : probeText(model);
@@ -363,7 +368,10 @@ function actualCost(result, priceByModel) {
 }
 
 const models = await fetchCommunityModels();
-const listedTarget = models.find((model) => model.name === onlyModel);
+const listedTarget = models.find(
+    (model) => model.name === onlyModel || model.aliases?.includes(onlyModel),
+);
+if (listedTarget) onlyModel = listedTarget.name;
 if (
     onlyOperation &&
     ((listedTarget?.category ?? onlyCategory) !== "image" ||
@@ -408,7 +416,9 @@ const state = readState();
 const now = Date.now();
 const lastImageProbeAt = state.spend?.lastImageProbeAt ?? {};
 const imageProbeDue = (model) => {
-    const previous = Date.parse(lastImageProbeAt[model.name] ?? "");
+    const previous = Date.parse(
+        lastImageProbeAt[stateModelId(model.name)] ?? "",
+    );
     return (
         !Number.isFinite(previous) || now - previous >= IMAGE_PROBE_INTERVAL_MS
     );
@@ -470,7 +480,10 @@ const nextState = {
             ...Object.fromEntries(
                 results
                     .filter((result) => result.category === "image")
-                    .map((result) => [result.model, result.operation]),
+                    .map((result) => [
+                        stateModelId(result.model),
+                        result.operation,
+                    ]),
             ),
         },
         lastImageProbeAt: {
@@ -478,7 +491,10 @@ const nextState = {
             ...Object.fromEntries(
                 modelsToProbe
                     .filter((model) => model.category === "image")
-                    .map((model) => [model.name, new Date(now).toISOString()]),
+                    .map((model) => [
+                        stateModelId(model.name),
+                        new Date(now).toISOString(),
+                    ]),
             ),
         },
     },

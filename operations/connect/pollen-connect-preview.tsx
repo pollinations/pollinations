@@ -11,14 +11,12 @@ import { CapturedScreen, useReview } from "./review";
 import { type ObservedScreen, RuntimeFrame } from "./runtime-frame";
 import "./pollen-connect-window.css";
 
-// Match the fixed viewports used by Screens and the expanded previews.
-export function JourneyPreview({
+// Screens and Journey share one fitted viewport.
+function PreviewViewport({
     desktop,
-    framed = true,
     children,
 }: {
     desktop: boolean;
-    framed?: boolean;
     children: ReactNode;
 }) {
     const stage = useRef<HTMLDivElement>(null);
@@ -45,22 +43,55 @@ export function JourneyPreview({
     }, [width, height]);
     return (
         <div className="journey-stage" ref={stage}>
-            {framed ? (
+            <div
+                className={`journey-device journey-device-${desktop ? "desktop" : "mobile"}`}
+                style={{ width: width * scale, height: height * scale }}
+            >
                 <div
-                    className={`journey-device journey-device-${desktop ? "desktop" : "mobile"}`}
-                    style={{ width: width * scale, height: height * scale }}
+                    className="journey-screen"
+                    style={{ width, height, transform: `scale(${scale})` }}
                 >
-                    <div
-                        className="journey-screen"
-                        style={{ width, height, transform: `scale(${scale})` }}
-                    >
-                        {children}
-                    </div>
+                    {children}
                 </div>
-            ) : (
-                children
-            )}
+            </div>
         </div>
+    );
+}
+
+export function ScreenViewer({
+    entry,
+    title = entry.title,
+    desktop,
+    selected,
+    onSelect,
+    children,
+}: {
+    entry: CanvasScreen;
+    title?: string;
+    desktop: boolean;
+    selected?: boolean;
+    onSelect?: () => void;
+    children: ReactNode;
+}) {
+    return (
+        <section className="connect-screen-viewer" aria-label={title}>
+            <div className="connect-screen-caption">
+                {onSelect ? (
+                    <Button
+                        className="connect-screen-select"
+                        aria-label={`Select ${title}`}
+                        aria-pressed={selected}
+                        onClick={onSelect}
+                    >
+                        <strong>{title}</strong>
+                    </Button>
+                ) : (
+                    <strong>{title}</strong>
+                )}
+                <ScreenOwnership entry={entry} />
+            </div>
+            <PreviewViewport desktop={desktop}>{children}</PreviewViewport>
+        </section>
     );
 }
 

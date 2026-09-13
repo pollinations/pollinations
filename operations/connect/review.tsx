@@ -328,27 +328,6 @@ export function ReviewPanel({ journey }: { journey: boolean }) {
     );
     return (
         <aside className="connect-conditions" aria-label="Screen review">
-            <div className="connect-review-controls">
-                <label htmlFor="connect-review-screen">Screen</label>
-                <select
-                    id="connect-review-screen"
-                    value={screen?.id ?? ""}
-                    disabled={review.running}
-                    onChange={(event) =>
-                        review.selectScreen(event.target.value)
-                    }
-                >
-                    {review.screens.map((item) => (
-                        <option key={item.id} value={item.id}>
-                            {item.title}
-                        </option>
-                    ))}
-                </select>
-                {journey && review.observed?.title && (
-                    <p>Live page: {review.observed.title}</p>
-                )}
-            </div>
-            {screen && <h2>{screen.title}</h2>}
             {screen && situations.length > 1 && (
                 <fieldset disabled={review.running}>
                     <legend>{journey ? "Restart with" : "Situation"}</legend>

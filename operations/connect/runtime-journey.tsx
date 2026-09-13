@@ -11,11 +11,7 @@ import {
     canvasScreenUrl,
 } from "./pollen-connect-canvas-data";
 import type { JourneyLocation } from "./pollen-connect-journey-state";
-import {
-    JourneyPreview,
-    ScreenOwnership,
-    ScreenWindow,
-} from "./pollen-connect-preview";
+import { ScreenViewer, ScreenWindow } from "./pollen-connect-preview";
 import { useReview } from "./review";
 import { reviewCaseForNode } from "./review-inventory";
 import { type ObservedScreen, RuntimeFrame } from "./runtime-frame";
@@ -118,30 +114,25 @@ export function RuntimeJourney({
         >
             <div className="journey-shell">
                 <main className="journey-layout">
-                    <section
-                        className="journey-preview"
-                        aria-label="Screen preview"
+                    <ScreenViewer
+                        entry={currentEntry}
+                        title={title}
+                        desktop={desktop}
                     >
-                        <div className="journey-screen-caption">
-                            <strong>{title}</strong>
-                            <ScreenOwnership entry={currentEntry} />
-                        </div>
-                        <JourneyPreview desktop={desktop}>
-                            <ScreenWindow entry={currentEntry}>
-                                <div ref={frameHost} style={{ height: "100%" }}>
-                                    {page && (
-                                        <RuntimeFrame
-                                            key={page.id}
-                                            src={page.src}
-                                            title={`${currentEntry.title} · journey`}
-                                            onReport={report}
-                                            onOpenDashboard={onOpenDashboard}
-                                        />
-                                    )}
-                                </div>
-                            </ScreenWindow>
-                        </JourneyPreview>
-                    </section>
+                        <ScreenWindow entry={currentEntry}>
+                            <div ref={frameHost} style={{ height: "100%" }}>
+                                {page && (
+                                    <RuntimeFrame
+                                        key={page.id}
+                                        src={page.src}
+                                        title={`${currentEntry.title} · journey`}
+                                        onReport={report}
+                                        onOpenDashboard={onOpenDashboard}
+                                    />
+                                )}
+                            </div>
+                        </ScreenWindow>
+                    </ScreenViewer>
                 </main>
             </div>
             <div className="journey-back-tools">

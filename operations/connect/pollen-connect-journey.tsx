@@ -6,11 +6,7 @@ import type {
     JourneyLocation,
     JourneySelection,
 } from "./pollen-connect-journey-state";
-import {
-    JourneyPreview,
-    ScreenOwnership,
-    ScreenWindow,
-} from "./pollen-connect-preview";
+import { ScreenViewer, ScreenWindow } from "./pollen-connect-preview";
 import type { AppPreviewProps } from "./pollen-connect-request-config";
 import { reviewScreen } from "./review";
 import type { ReviewCase } from "./review-cases";
@@ -75,36 +71,30 @@ export function Journey({
             >
                 <div className="journey-shell">
                     <main className="journey-layout">
-                        <section className="journey-preview">
-                            <div className="journey-screen-caption">
-                                <strong>{first.title}</strong>
-                                <ScreenOwnership entry={first} />
-                            </div>
-                            <JourneyPreview desktop={desktop}>
-                                <ScreenWindow entry={first}>
-                                    <div className="connect-terminal-output">
-                                        <pre>
-                                            {
-                                                "$ my-app connect\n\nOpen this URL in your browser:\n"
-                                            }
-                                        </pre>
-                                        <Button
-                                            className="connect-terminal-link"
-                                            disabled={busy || !state}
-                                            onClick={() => void openDevice()}
-                                        >
-                                            {entrance.section === "link"
-                                                ? "Open device link"
-                                                : "Open verification URL"}
-                                        </Button>
-                                        {state?.device && (
-                                            <pre>{`\nDevice code: ${state.device.userCode}\n\n${state.device.status}`}</pre>
-                                        )}
-                                        {error && <p role="alert">{error}</p>}
-                                    </div>
-                                </ScreenWindow>
-                            </JourneyPreview>
-                        </section>
+                        <ScreenViewer entry={first} desktop={desktop}>
+                            <ScreenWindow entry={first}>
+                                <div className="connect-terminal-output">
+                                    <pre>
+                                        {
+                                            "$ my-app connect\n\nOpen this URL in your browser:\n"
+                                        }
+                                    </pre>
+                                    <Button
+                                        className="connect-terminal-link"
+                                        disabled={busy || !state}
+                                        onClick={() => void openDevice()}
+                                    >
+                                        {entrance.section === "link"
+                                            ? "Open device link"
+                                            : "Open verification URL"}
+                                    </Button>
+                                    {state?.device && (
+                                        <pre>{`\nDevice code: ${state.device.userCode}\n\n${state.device.status}`}</pre>
+                                    )}
+                                    {error && <p role="alert">{error}</p>}
+                                </div>
+                            </ScreenWindow>
+                        </ScreenViewer>
                     </main>
                 </div>
             </div>

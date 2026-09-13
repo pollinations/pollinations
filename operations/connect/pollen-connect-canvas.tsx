@@ -374,17 +374,11 @@ function Canvas({
         <>
             {gallery ? (
                 <ScreenGallery
+                    key={`${entrance.world}-${entrance.section}`}
                     overrides={isAppLogin ? appPreview : {}}
                     entrance={entrance}
                     desktop={desktop}
                     selection={routeJourney ? dashboardSelection : undefined}
-                    onSelect={(entry, example, order) => {
-                        navigationOrder.current = order;
-                        setSelected(entry);
-                        setVariant(example);
-                        if (routeJourney)
-                            onDashboardSelect?.(entry.id, example);
-                    }}
                 />
             ) : (
                 <>
@@ -704,19 +698,8 @@ function Canvas({
                     </ScrollArea>
                 </>
             )}
-            {selected && (
-                <div
-                    className={`canvas-inspector-overlay${gallery ? " screens-inspector-overlay" : ""}`}
-                >
-                    {gallery && (
-                        <button
-                            type="button"
-                            className="canvas-inspector-backdrop"
-                            aria-label="Close screen preview"
-                            tabIndex={-1}
-                            onClick={close}
-                        />
-                    )}
+            {!gallery && selected && (
+                <div className="canvas-inspector-overlay">
                     <section
                         role="dialog"
                         aria-modal="false"
@@ -727,28 +710,24 @@ function Canvas({
                     >
                         {selected && (
                             <>
-                                {!gallery && (
-                                    <div className="canvas-inspector-header">
-                                        <div
-                                            className={`canvas-inspector-title${showOwnership ? " has-owner" : ""}`}
-                                        >
-                                            <strong>{selected.title}</strong>
-                                            {showOwnership && (
-                                                <ScreenOwnership
-                                                    entry={selected}
-                                                />
-                                            )}
-                                        </div>
-                                        <IconButton
-                                            title="Close screen preview"
-                                            tooltip={false}
-                                            onClick={close}
-                                            size="sm"
-                                        >
-                                            <XIcon />
-                                        </IconButton>
+                                <div className="canvas-inspector-header">
+                                    <div
+                                        className={`canvas-inspector-title${showOwnership ? " has-owner" : ""}`}
+                                    >
+                                        <strong>{selected.title}</strong>
+                                        {showOwnership && (
+                                            <ScreenOwnership entry={selected} />
+                                        )}
                                     </div>
-                                )}
+                                    <IconButton
+                                        title="Close screen preview"
+                                        tooltip={false}
+                                        onClick={close}
+                                        size="sm"
+                                    >
+                                        <XIcon />
+                                    </IconButton>
+                                </div>
                                 <div className="canvas-phone canvas-interactive">
                                     <ScreenContent
                                         key={`${selected.id}-${variant}-${JSON.stringify(previewOptions)}`}

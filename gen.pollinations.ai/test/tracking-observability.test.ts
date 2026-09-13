@@ -15,6 +15,7 @@ import {
     type ProxyCommunityEndpointRuntime,
 } from "@shared/community-endpoints.ts";
 import {
+    apikey as apiKeyTable,
     communityEndpoint as communityEndpointTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
@@ -3043,7 +3044,7 @@ it("reports committed wallet debit when API key reconciliation fails", async () 
                 tierBalance: 100,
                 packBalance: 0,
             }),
-            apiKeyReservation: { amount: 0 },
+            apiKeyReservation: { apiKeyId, amount: 0 },
         });
         c.set("frontendKeyRateLimit", {
             consumePollen: async () => {},

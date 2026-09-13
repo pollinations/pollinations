@@ -262,6 +262,31 @@
     height: min(50rem, 72dvh);
 }
 
+.play-chat-conversation > button {
+    background-color: var(--polli-color-bg-active);
+    color: var(--polli-color-text-strong);
+}
+
+.play-chat-composer-field {
+    border: 1px solid var(--polli-color-border);
+    background-color: var(--polli-color-bg-pale);
+}
+
+.play-chat-composer-field:focus-within {
+    box-shadow: 0 0 0 1px var(--polli-color-border);
+}
+
+.play-chat-composer-field .play-chat-draft {
+    display: block;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.play-chat-attachments fieldset:hover {
+    background: transparent;
+}
+
 .play-chat-transcript {
     min-height: 0;
     scrollbar-width: auto;

@@ -129,6 +129,8 @@ the changes.
 The audio reads your text verbatim, so never pass an instruction — pass the words to be spoken.
 - `text_to_speech` also generates music, sound effects, and dialogue when given the matching \
 audio model. For `eleven-dialogue`, format each line as `voice: text`.
+- Use `change_voice` to transform an audio clip to a target voice, or `isolate_voice` to \
+remove background sound from audio or video.
 - Pick models by strength (see below) or omit `model` to auto-select. Retry with a different \
 model if a tool returns an ERROR.
 - Media plumbing: `fetch_media` brings any media into the bash workspace (curl cannot \

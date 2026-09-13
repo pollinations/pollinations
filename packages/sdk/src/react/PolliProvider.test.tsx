@@ -103,6 +103,70 @@ describe("PolliProvider", () => {
         });
     });
 
+    it("recovers from browser navigation failure and preserves PKCE on retry", async () => {
+        const win = stubWindow("https://app.example/?view=connect");
+        const storage = memoryStorage();
+        const navigate = vi.fn().mockImplementationOnce(() => {
+            throw new Error("Browser navigation failed");
+        });
+        Object.defineProperty(win.location, "href", {
+            get: () => "https://app.example/?view=connect",
+            set: navigate,
+        });
+        let auth: ReturnType<typeof useAuth> | undefined;
+        function Capture() {
+            auth = useAuth();
+            return null;
+        }
+        await act(async () => {
+            create(
+                <PolliProvider appKey="pk_test" storage={storage}>
+                    <Capture />
+                </PolliProvider>,
+            );
+        });
+        await act(async () => {
+            auth?.login();
+            await vi.waitFor(() => expect(navigate).toHaveBeenCalledTimes(1));
+        });
+        expect(auth?.error?.message).toBe("Browser navigation failed");
+        expect(storage.snapshot()).toEqual({});
+        await act(async () => {
+            auth?.login({
+                permissions: ["profile"],
+                budget: 5,
+                expiry: 7,
+                models: ["example-model"],
+            });
+            await vi.waitFor(() => expect(navigate).toHaveBeenCalledTimes(2));
+        });
+        const request = new URL(navigate.mock.calls[1][0]);
+        expect(request.pathname).toBe("/authorize");
+        expect(request.searchParams.get("scope")).toBe("profile");
+        expect(request.searchParams.get("budget")).toBe("5");
+        expect(request.searchParams.get("expiry")).toBe("7");
+        expect(request.searchParams.get("models")).toBe("example-model");
+        expect(request.searchParams.get("state")).toBe(
+            storage.getItem("polli:pk_test:oauth_state"),
+        );
+        const digest = await crypto.subtle.digest(
+            "SHA-256",
+            new TextEncoder().encode(
+                storage.getItem("polli:pk_test:oauth_verifier") ?? "",
+            ),
+        );
+        expect(request.searchParams.get("code_challenge")).toBe(
+            Buffer.from(digest).toString("base64url"),
+        );
+        expect(request.searchParams.get("redirect_uri")).toBe(
+            "https://app.example/",
+        );
+        expect((win.location as { href: string }).href).toBe(
+            "https://app.example/?view=connect",
+        );
+        expect(auth?.error).toBeNull();
+    });
+
     it("reports a storage write failure and allows a subsequent login", async () => {
         const win = stubWindow("https://app.example/");
         const storage = memoryStorage();

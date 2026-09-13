@@ -118,6 +118,7 @@ type RequestTrackingData = {
     modelRequested: string | null;
     resolvedModelRequested: string;
     modelProvider?: string;
+    communityEndpointType?: InsertGenerationEvent["communityEndpointType"];
     modelDefinition: ModelDefinition;
     modelCostDefinition: CostDefinition;
     modelPriceDefinition: PriceDefinition;
@@ -146,8 +147,7 @@ type ResponseTrackingData = {
     // merged, multiplier applied). The tracking event records this sheet so
     // recorded rates always reproduce the billed totals.
     priceDefinition?: PriceDefinition;
-    // Applied cost variant name (financial identity; modelUsed stays
-    // observational).
+    // Applied rate sheet; the public model ID stays the same across variants.
     costVariant?: string;
     contentFilterResults?: GenerationEventContentFilterParams;
     // A failure the response status cannot show. Replaces the status-derived
@@ -624,6 +624,7 @@ async function trackRequest(
         modelRequested,
         resolvedModelRequested,
         modelProvider,
+        communityEndpointType: modelInfo.communityEndpoint?.type,
         modelDefinition,
         modelCostDefinition,
         modelPriceDefinition,
@@ -668,12 +669,12 @@ export async function trackResponse(
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
-    const modelCalled = candidate.id || resolvedModelRequested;
+    const modelUsed = candidate.id || resolvedModelRequested;
     const modelProviderUsed =
         candidate.definition?.provider ?? requestTracking.modelProvider;
     const cacheHit = response.headers.get("x-cache") === "HIT";
     const fallbackUsed =
-        modelCalled !== resolvedModelRequested || parseFallbackUsed(response);
+        modelUsed !== resolvedModelRequested || parseFallbackUsed(response);
     const notBilled = (
         extra?: Partial<ResponseTrackingData>,
     ): ResponseTrackingData => ({
@@ -685,21 +686,14 @@ export async function trackResponse(
         ...extra,
     });
 
-    // A cache hit called no model, so it must not claim one. A failure did
-    // call a model, and recording which one is the only way an error row can
-    // say what failed — otherwise model_used falls back to the datasource
-    // DEFAULT 'undefined' and per-model upstream health is unqueryable.
-    //
-    // Which model that was: the one the request resolved to, unless the
-    // fallback loop moved on and stopped on a different one. Only the loop
-    // knows that, so it reports the id it stopped on and modelCalled prefers
-    // it.
+    // Record the exact attempted registry ID, not the provider's model name.
+    // Cache hits made no upstream attempt and must not claim one.
     if (cacheHit) {
         return notBilled();
     }
     if (!response.ok) {
         return notBilled({
-            modelUsed: modelCalled,
+            modelUsed,
         });
     }
 
@@ -722,7 +716,7 @@ export async function trackResponse(
                 kind: contentTypeGuard.kind,
             },
         );
-        return notBilled({ modelUsed: modelCalled });
+        return notBilled({ modelUsed });
     }
 
     const { modelUsage, output, contentFilterResults } =
@@ -754,7 +748,7 @@ export async function trackResponse(
                 output,
                 input: billingInput,
             }),
-            modelUsed: modelUsage?.model ?? modelCalled,
+            modelUsed,
             modelProviderUsed,
             usage,
             contentFilterResults,
@@ -797,7 +791,7 @@ export async function trackResponse(
                 ...notBilled(),
                 ...adjustmentOnlyBilling,
                 responseStatus: 502,
-                modelUsed: modelCalled,
+                modelUsed,
                 usage: {},
                 contentFilterResults,
                 errorTracking: {
@@ -816,14 +810,15 @@ export async function trackResponse(
                 isBilledUsage: hasBillablePrice,
                 fallbackUsed,
                 ...adjustmentOnlyBilling,
-                modelUsed: modelCalled,
+                modelUsed,
+                modelProviderUsed,
                 usage: {},
                 contentFilterResults,
             };
         }
         return notBilled({
             contentFilterResults,
-            modelUsed: modelCalled,
+            modelUsed,
         });
     }
     // Cost follows the model that ran; price follows the one the caller asked
@@ -854,7 +849,7 @@ export async function trackResponse(
         adjustments,
         priceDefinition,
         costVariant,
-        modelUsed: modelUsage.model,
+        modelUsed,
         modelProviderUsed,
         usage: modelUsage.usage,
         contentFilterResults,
@@ -1164,6 +1159,7 @@ function createTrackingEvent({
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
+        communityEndpointType: requestTracking.communityEndpointType,
         modelProviderUsed:
             responseTracking.modelProviderUsed ?? requestTracking.modelProvider,
         costVariant: responseTracking.costVariant,

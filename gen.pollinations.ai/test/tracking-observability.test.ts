@@ -507,6 +507,10 @@ describe("tracking observability", () => {
         expect(tinybirdRequests[0].headers.get("authorization")).toBe(
             "Bearer test_tinybird_token",
         );
+        // Internal accounting canonicalization does not rewrite the provider response.
+        expect(response.headers.get("x-model-used")).toBe(
+            "gpt-5-nano-2025-08-07",
+        );
         const event = await tinybirdRequests[0].json();
         expect(event).toMatchObject({
             requestPath: "/v1/chat/completions",
@@ -515,7 +519,7 @@ describe("tracking observability", () => {
             responseStatus: 200,
             modelRequested: "openai/gpt-5.4-nano",
             resolvedModelRequested: "openai/gpt-5.4-nano",
-            modelUsed: "gpt-5-nano-2025-08-07",
+            modelUsed: "openai/gpt-5.4-nano",
             modelProviderUsed: expect.any(String),
             userId: trackingUser.id,
             isBilledUsage: true,
@@ -662,6 +666,65 @@ describe("tracking observability", () => {
         expect(event.requestId).not.toBe("req-parent");
     });
 
+    it.each([
+        "proxy",
+        "endpoint_agent",
+        "code_agent",
+        "prompt_agent",
+    ] as const)("records the resolved listing type (%s) for KPI attribution", async (type) => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const endpoint: CommunityEndpointRuntime = {
+            ...createCommunityEndpoint(trackingUser.id),
+            type,
+        };
+        const entry = createCommunityEntry(endpoint);
+        const ctx = createExecutionContext();
+        const response = await createTestApp(
+            async () => {},
+            trackingUser,
+            {
+                requested: endpoint.modelId,
+                resolved: endpoint.modelId,
+                definition: entry.definition,
+                communityEndpoint: endpoint,
+            },
+            entry,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        expect(await tinybirdRequests[0].json()).toMatchObject({
+            communityEndpointType: type,
+            resolvedModelRequested: endpoint.modelId,
+            isFinal: true,
+        });
+    });
+
     it("leaves the parent request id unset for an ordinary call", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -759,6 +822,7 @@ describe("tracking observability", () => {
             isBilledUsage: false,
             totalCost: 0,
             totalPrice: 0,
+            modelUsed: "openai/gpt-5.4-nano",
             errorResponseCode: "usage_missing",
         });
         expect(await tinybirdRequests[1].json()).toMatchObject({
@@ -842,6 +906,7 @@ describe("tracking observability", () => {
         await expect(generationRequest?.json()).resolves.toMatchObject({
             responseStatus: 502,
             isBilledUsage: false,
+            modelUsed: "openai/gpt-5.4-nano",
             errorResponseCode: "upstream_finish_reason_error",
             errorMessage: "Upstream ended generation with finish_reason=error",
         });
@@ -1829,7 +1894,9 @@ describe("tracking observability", () => {
         >;
         expect(event).toMatchObject({
             // The requested model id is still what the caller asked for.
+            modelRequested: primaryEndpoint.modelId,
             resolvedModelRequested: primaryEndpoint.modelId,
+            modelUsed: fallbackEndpoint.modelId,
             // 1000 × 0.0001 + 500 × 0.0002 — the PRIMARY's rates. The caller
             // bought that listing, so the invoice does not move because a
             // cheaper endpoint happened to be the one that was up.
@@ -2355,7 +2422,7 @@ describe("tracking observability", () => {
                 new Date(event.startTime).getTime(),
         ).toBeGreaterThanOrEqual(100);
         expect(event.tokenCountCompletionText).toBe(500);
-        expect(event.modelUsed).toBe("gpt-5-nano-2025-08-07");
+        expect(event.modelUsed).toBe("openai/gpt-5.4-nano");
         expect(event.isBilledUsage).toBe(true);
     });
 
@@ -3196,5 +3263,84 @@ describe("reduceAdjustmentsToEventFields", () => {
         const parsedWithout = JSON.parse(serializedWithout);
         expect(parsedWithout).not.toHaveProperty("adjustmentCosts");
         expect(parsedWithout).not.toHaveProperty("adjustmentUnits");
+    });
+});
+
+describe("trackResponse model identity", () => {
+    const model = "google/gemini-3.7-flash" as const;
+    const usage = {
+        prompt_tokens: 1000,
+        completion_tokens: 50,
+        total_tokens: 1050,
+    };
+
+    function response() {
+        return Response.json(
+            {
+                id: "gen-provider-123",
+                model: "google/gemini-3.7-flash-upstream",
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "ok" },
+                        finish_reason: "stop",
+                    },
+                ],
+                usage,
+            },
+            {
+                headers: {
+                    "x-model-used": model,
+                    "x-usage-prompt-text-tokens": "1000",
+                    "x-usage-completion-text-tokens": "50",
+                },
+            },
+        );
+    }
+
+    it("records the exact fallback ID while keeping the original price", async () => {
+        const route = `${model}:openrouter:ai-studio-priority` as const;
+        const sameModel = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(false, model),
+            response(),
+            candidateFixture(route),
+        );
+        const differentModel = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(),
+            response(),
+            candidateFixture(route),
+        );
+        for (const tracking of [sameModel, differentModel]) {
+            expect(tracking).toMatchObject({
+                modelUsed: route,
+                modelProviderUsed: "openrouter",
+                fallbackUsed: true,
+            });
+        }
+        // A fallback still charges the customer's original quote.
+        expect(differentModel.price).not.toEqual(sameModel.price);
+    });
+
+    it.each([
+        200, 502,
+    ])("distinguishes same-provider routes on HTTP %i", async (status) => {
+        const primary = "openai/gpt-6-astra" as const;
+        const fallback = "openai/gpt-6-astra:azure:datazone" as const;
+        for (const attempted of [primary, fallback]) {
+            const tracking = await trackResponse(
+                "generate.text",
+                requestTrackingFixture(false, primary),
+                status === 200 ? response() : new Response(null, { status }),
+                candidateFixture(attempted),
+            );
+            expect(tracking).toMatchObject({
+                responseStatus: status,
+                modelUsed: attempted,
+                modelProviderUsed: "azure",
+                fallbackUsed: attempted !== primary,
+            });
+        }
     });
 });

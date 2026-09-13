@@ -1,0 +1,34 @@
+{
+  "pr_number": 14825,
+  "title": "fix: make production Gen secret sync opt-in",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14825",
+  "merged_at": "2026-09-13T16:47:11Z",
+  "labels": [],
+  "pr_body_excerpt": "- Stops production pushes from automatically uploading Gen secrets, including the OpenRouter-only path.\n- Adds an off-by-default manual sync_generation_secrets input; secret uploads require workflow_dispatch on production. OpenRouter-only takes precedence when selected.\n- Preserves the separate scoped-approval requirement and existing deploy-before-secret-upload ordering. No credential values are changed.\n- Validated all 16 event/ref/input combinations and both false defaults. Actionlint passes excluding its unsupported pre-existing concurrency.queue key.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Secrets stay in the hive",
+    "blurb": "Production deploys now keep Gen secrets tucked away unless someone explicitly asks for the sync. The bees still follow the same careful deployment path; they just do not carry credentials by default.",
+    "summary": "The production Cloudflare workflow now makes Gen secret uploads opt-in through a disabled-by-default sync_generation_secrets workflow_dispatch input, including the OpenRouter-only path, while retaining scoped approval and deploy-before-upload ordering.",
+    "impact": "Production pushes can deploy without automatically syncing Gen credentials, while authorized manual runs can still sync either the full set or the OpenRouter-only secret path.",
+    "keywords": [
+      "github-actions",
+      "production",
+      "secrets",
+      "cloudflare",
+      "deployment",
+      "openrouter"
+    ],
+    "visual_concept": "Depict Polli as a careful release gardener placing a small sealed secret envelope into a locked garden shed only after turning an explicit manual lever; a cozy production deploy terminal and approval stamp show that the deployment still happens first. Use flowers and code-vines to make the safety gate feel like deliberate stewardship rather than alarm.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny locksmith tool belt, tending a lime green (#ecf874) code-garden beside a retro deployment terminal; she carefully places a sealed pixel envelope marked \"GEN\" behind a small manual gate labeled \"SYNC\" while approval flowers bloom nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and a warm cream background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-13/PR-14825.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny locksmith tool belt, tending a lime green (#ecf874) code-garden beside a retro deployment terminal; she carefully places a sealed pixel envelope marked \"GEN\" behind a small manual gate labeled \"SYNC\" while approval flowers bloom nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and a warm cream background."
+  },
+  "generated_at": "2026-09-13T16:48:20.789296+00:00"
+}

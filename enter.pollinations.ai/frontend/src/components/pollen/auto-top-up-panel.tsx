@@ -449,7 +449,8 @@ const AutoTopUpSaveButton: FC<AutoTopUpSaveButtonProps> = ({
     setup,
     onSave,
 }) => {
-    const saveDisabled = !canEnable(setup) || !hasUnsavedChanges;
+    const saveDisabled =
+        setup.isSaving || !canEnable(setup) || !hasUnsavedChanges;
     const disabledReason = getSaveDisabledReason({
         hasUnsavedChanges,
         ...setup,

@@ -5,6 +5,7 @@ import type { ModelCapability } from "./registry/model-info.ts";
 import {
     type Category,
     MODEL_INPUT_MODALITIES,
+    MODEL_OUTPUT_MODALITIES,
     type ModelDefinition,
     type ModelInputModality,
     type ModelOutputModality,
@@ -686,6 +687,16 @@ export const EndpointAgentListingPayloadSchema = z
     .object({
         perUserRpm: z.number().finite().positive().nullable().default(null),
         api: CommunityEndpointApiSchema,
+        inputModalities: z
+            .array(z.enum(MODEL_INPUT_MODALITIES))
+            .min(1)
+            .optional()
+            .describe("Input types accepted by the agent. Defaults to text."),
+        outputModalities: z
+            .array(z.enum(MODEL_OUTPUT_MODALITIES))
+            .min(1)
+            .optional()
+            .describe("Output types produced by the agent. Defaults to text."),
     })
     .strict();
 
@@ -857,6 +868,7 @@ export type CodeAgentCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
 export type EndpointAgentCommunityEndpointRuntime =
     CommunityEndpointRuntimeBase & {
         type: "endpoint_agent";
+        outputModalities?: ModelOutputModality[];
     };
 
 export type CommunityEndpointRuntime =
@@ -888,6 +900,7 @@ export type CommunityModelDefinitionInput = {
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[] | null;
+    outputModalities?: ModelOutputModality[];
     requiredSafetyFeatures?: SafetyFeature[];
     fallbacks?: string[];
     advertised?: CommunityEndpointAdvertised | null;
@@ -1066,7 +1079,9 @@ export function communityModelDefinition(
         title: endpoint.title,
         description: description || undefined,
         inputModalities,
-        outputModalities: [...spec.outputModalities],
+        outputModalities: endpoint.outputModalities ?? [
+            ...spec.outputModalities,
+        ],
         ...(spec.restrictDefinitionEndpoints
             ? {
                   supportedEndpoints: communityEndpointSupportedEndpoints(

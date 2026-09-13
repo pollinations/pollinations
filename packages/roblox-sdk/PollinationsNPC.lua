@@ -21,6 +21,10 @@ function PollinationsNPC.new(config)
 	self.maxHistory = config.maxHistory or 10
 	self.fallbackReply = config.fallbackReply or "Hmm, I didn't catch that. Try again?"
 	self.actions = {}
+	-- Optional: function(record) called after every exchange, for developers
+	-- who want to log conversations (e.g. to prep fine-tuning data). Off by
+	-- default — nothing is collected unless you set this yourself.
+	self.onExchange = config.onExchange
 	return self
 end
 
@@ -103,6 +107,14 @@ function PollinationsNPC:Say(playerMessage, player)
 		else
 			warn("[PollinationsNPC] no handler registered for action type '" .. action.type .. "'")
 		end
+	end
+
+	if self.onExchange then
+		pcall(self.onExchange, {
+			playerMessage = playerMessage,
+			say = say,
+			action = action,
+		})
 	end
 
 	return say

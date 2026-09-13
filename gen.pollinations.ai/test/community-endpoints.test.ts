@@ -3051,6 +3051,58 @@ fixtureTest(
 );
 
 fixtureTest(
+    "rejects agent_model on static providers before upstream I/O",
+    async ({ apiKey }) => {
+        const registry = await getGenerationModelRegistry(env);
+        const model = registry
+            .visibleEntries()
+            .find(
+                (entry) =>
+                    entry.eventType === "generate.text" &&
+                    !entry.communityEndpoint &&
+                    entry.definition.paidOnly !== true &&
+                    entry.supportedEndpoints.includes("/v1/chat/completions"),
+            );
+        assert(model);
+        const providerCalls: string[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                providerCalls.push(request.url);
+                throw new Error(`Unexpected provider call: ${request.url}`);
+            }),
+        );
+        for (const stream of [false, true]) {
+            const response = await fetchGen(
+                "https://gen.pollinations.ai/v1/chat/completions",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: model.id,
+                        agent_model: "test/brain",
+                        messages: [
+                            { role: "user", content: "unsupported override" },
+                        ],
+                        stream,
+                    }),
+                },
+            );
+            expect(response.status).toBe(400);
+            expect(await response.text()).toContain(
+                "agent_model is supported only by endpoint agents",
+            );
+        }
+        expect(providerCalls).toEqual([]);
+    },
+);
+
+fixtureTest(
     "routes Chat through an exact community URL with its saved token and rejects Responses",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;

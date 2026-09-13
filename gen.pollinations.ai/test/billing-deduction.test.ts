@@ -13,7 +13,22 @@ import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+const deductionMocks = vi.hoisted(() => ({
+    atomicCreditUserBalance: vi
+        .fn()
+        .mockResolvedValue({ ok: false, newBalance: null }),
+}));
+
+vi.mock("@shared/billing/deduction.ts", async (importOriginal) => {
+    const actual =
+        await importOriginal<typeof import("@shared/billing/deduction.ts")>();
+    return {
+        ...actual,
+        ...deductionMocks,
+    };
+});
 
 const db = drizzle(env.DB);
 
@@ -349,8 +364,6 @@ describe("billing deduction", () => {
             createdAt: new Date(),
             updatedAt: new Date(),
         });
-        // Delete the dev user so atomicCreditUserBalance affects 0 rows
-        await db.delete(userTable).where(eq(userTable.id, devUserId));
         const result = await handleBalanceDeduction({
             db,
             isBilledUsage: true,

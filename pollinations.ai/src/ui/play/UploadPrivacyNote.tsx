@@ -10,7 +10,7 @@ export function UploadPrivacyNote({
 }) {
     return (
         <Text id={id} size="xs" tone="muted" className={className}>
-            Uploads are public and temporary.{" "}
+            Uploaded files are publicly accessible and stored temporarily.{" "}
             <InlineLink
                 as={Link}
                 to="/terms"

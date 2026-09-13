@@ -35,7 +35,6 @@ import {
     Dropdown,
     ExpandIcon,
     FileUpload,
-    IconButton,
     ImageIcon,
     PauseIcon,
     PlayIcon,
@@ -809,25 +808,6 @@ function AgentPicker({
                     </ScrollArea>
                 )}
             </Dropdown>
-            <Dropdown
-                className="max-w-[min(18rem,calc(100vw-2rem))] p-3"
-                panelStyle={routingThemeStyle()}
-                trigger={() => (
-                    <IconButton
-                        variant="ghost"
-                        aria-label="About agent privacy"
-                    >
-                        <span aria-hidden="true" className="font-bold">
-                            i
-                        </span>
-                    </IconButton>
-                )}
-            >
-                <Text size="xs" tone="muted">
-                    May use external models and tools. Avoid sharing sensitive
-                    information.
-                </Text>
-            </Dropdown>
         </div>
     );
 }
@@ -1567,12 +1547,15 @@ export function Chat({
                                 )}
                             </div>
                         </ChatPromptInputFooter>
-                        {files.length > 0 && (
-                            <UploadPrivacyNote
-                                id="play-chat-upload-privacy"
-                                className="px-3 pb-3"
-                            />
-                        )}
+                        <div className="space-y-1 pt-2">
+                            <Text size="xs" tone="muted">
+                                May use third-party models and tools. Don’t
+                                share sensitive information.
+                            </Text>
+                            {files.length > 0 && (
+                                <UploadPrivacyNote id="play-chat-upload-privacy" />
+                            )}
+                        </div>
                     </ChatPromptInput>
                 </form>
             </div>

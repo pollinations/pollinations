@@ -93,6 +93,7 @@ export async function communityEndpointGatewayContext({
     const {
         messages: _messages,
         pollen: _pollen,
+        agent_model: requestedAgentModel,
         ...requestDataWithoutMessages
     } = requestData;
     const modelConfig = await communityEndpointModelConfig({
@@ -107,7 +108,10 @@ export async function communityEndpointGatewayContext({
         ...(pollen === "quest" && usesAgentRunToken(endpoint)
             ? { pollen }
             : {}),
-        modelConfig,
+        modelConfig:
+            endpoint.type === "endpoint_agent" && requestedAgentModel
+                ? { ...modelConfig, model: requestedAgentModel }
+                : modelConfig,
         modelDef: modelDefinition,
         requestedModel: endpoint.modelId,
         portkeyGatewayUrl,

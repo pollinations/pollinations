@@ -312,6 +312,10 @@ export const CreateChatCompletionRequestSchema = z
                 "AI model for text generation. See /v1/models for full list.",
         }),
         pollen: PollenSchema.optional(),
+        agent_model: z.string().trim().min(1).max(128).optional().meta({
+            description:
+                "Pollinations extension: override an endpoint agent's inner model without changing the outer model selection. Omit to use the agent's registered default. Only supported by endpoint agents.",
+        }),
         modalities: z.array(z.enum(["text", "audio"])).optional(),
         audio: z
             .object({

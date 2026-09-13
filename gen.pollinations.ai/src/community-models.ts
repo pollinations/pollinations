@@ -9,7 +9,6 @@ import {
     resolveEffectiveProxyListing,
     usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
-import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
     type ModelInfo,
@@ -106,9 +105,7 @@ export async function getCommunityModelRegistryEntries(
             description: row.description,
             providerName: row.providerName,
             providerUrl: row.providerUrl,
-            providerIconUrl: isCommunityProviderIconUrl(row.providerIconUrl)
-                ? row.providerIconUrl
-                : null,
+            providerIconUrl: row.providerIconUrl,
             baseUrl,
             upstreamModel: row.upstreamModel,
             requiredSafetyFeatures: row.requiredSafetyFeatures,

@@ -192,7 +192,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
             <div className="flex items-center gap-2.5 p-4">
                 <ModelBrandIcon
                     model={model}
-                    className="h-8 w-8 shrink-0 bg-current opacity-55"
+                    className="h-8 w-8 shrink-0 opacity-55"
                 />
                 {hasLeadingIcon && (
                     <span

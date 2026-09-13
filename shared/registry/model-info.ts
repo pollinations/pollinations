@@ -183,9 +183,7 @@ export function modelInfoFromDefinition(
         category: service.category,
         publisher: service.publisher,
         brand_url: service.brandUrl,
-        brand_icon_url: isCommunityProviderIconUrl(service.brandIconUrl)
-            ? service.brandIconUrl
-            : undefined,
+        brand_icon_url: service.brandIconUrl,
         community: options.community ?? false,
         agent: options.agent || undefined,
         per_user_rpm: service.perUserRpm,

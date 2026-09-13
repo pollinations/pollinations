@@ -109,10 +109,7 @@ export function CommunityEndpoints({
         setProviderName(endpointBody.provider.name ?? "");
         setProviderUrl(endpointBody.provider.url ?? "");
         setProviderIconUrl(endpointBody.provider.iconUrl ?? "");
-        setSavedProvider({
-            ...endpointBody.provider,
-            iconUrl: endpointBody.provider.iconUrl ?? null,
-        });
+        setSavedProvider(endpointBody.provider);
         setIsLoading(false);
     }, []);
 
@@ -257,10 +254,7 @@ export function CommunityEndpoints({
             setProviderName(profile.name ?? "");
             setProviderUrl(profile.url ?? "");
             setProviderIconUrl(profile.iconUrl ?? "");
-            setSavedProvider({
-                ...profile,
-                iconUrl: profile.iconUrl ?? null,
-            });
+            setSavedProvider(profile);
             await onChange?.();
         } catch (thrown) {
             setError(

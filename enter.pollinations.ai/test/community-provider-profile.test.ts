@@ -1,7 +1,13 @@
 import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
 import { ModelInfoSchema } from "@shared/registry/model-info.ts";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { expect, test } from "vitest";
-import { getCommunityModelIcon } from "../frontend/src/components/models/model-icons.tsx";
+import { getModelPricesFromCatalog } from "../frontend/src/components/models/model-catalog.ts";
+import {
+    getCommunityModelIcon,
+    ModelBrandIcon,
+} from "../frontend/src/components/models/model-icons.tsx";
 import { getModelBrandLogoPath } from "../frontend/src/components/models/model-info.ts";
 import type { ModelPrice } from "../frontend/src/components/models/types.ts";
 
@@ -61,18 +67,21 @@ test("catalog uses the direct media URL and falls back for unsafe icon metadata"
             brandIconUrl: VALID_ICON_URL,
         } as ModelPrice),
     ).toBe(VALID_ICON_URL);
-    expect(
-        getModelBrandLogoPath({
+    const [unsafeModel] = getModelPricesFromCatalog([
+        {
+            name: "owner/model",
+            category: "text",
             community: true,
-            brandIconUrl: "https://tracker.test/icon.svg",
-        } as ModelPrice),
-    ).toBeUndefined();
+            brand_icon_url: "https://tracker.test/icon.svg",
+        },
+    ]);
+    expect(getModelBrandLogoPath(unsafeModel)).toBeUndefined();
     expect(
         getModelBrandLogoPath({ community: true } as ModelPrice),
     ).toBeUndefined();
 });
 
-test("community models keep a generic icon available when a custom mask is unavailable", () => {
+test("community models keep a generic icon when no custom URL is set", () => {
     expect(
         getCommunityModelIcon({ community: true, type: "text" } as ModelPrice),
     ).toBeDefined();
@@ -85,4 +94,32 @@ test("community models keep a generic icon available when a custom mask is unava
     expect(
         getCommunityModelIcon({ community: false, type: "text" } as ModelPrice),
     ).toBeUndefined();
+});
+
+test("custom brand icons render only the mask, without a generic icon underneath", () => {
+    const html = renderToStaticMarkup(
+        createElement(ModelBrandIcon, {
+            model: {
+                community: true,
+                type: "text",
+                brandIconUrl: VALID_ICON_URL,
+            } as ModelPrice,
+        }),
+    );
+    expect(html).toContain(`mask-image:url(${VALID_ICON_URL})`);
+    expect(html).toContain("bg-current");
+    expect(html).not.toContain("<svg");
+});
+
+test("generic brand icons have no solid background on desktop or mobile", () => {
+    for (const className of [undefined, "h-8 w-8 shrink-0 opacity-55"]) {
+        const html = renderToStaticMarkup(
+            createElement(ModelBrandIcon, {
+                model: { community: true, type: "text" } as ModelPrice,
+                className,
+            }),
+        );
+        expect(html).toContain("<svg");
+        expect(html).not.toContain("bg-current");
+    }
 });

@@ -27,42 +27,15 @@ type Icon = FC<IconProps>;
 export const ModelBrandIcon: FC<{
     model: ModelPrice;
     className?: string;
-}> = ({ model, className = "h-8 w-8 bg-current opacity-55 text-ink-900" }) => {
+}> = ({ model, className = "h-8 w-8 opacity-55 text-ink-900" }) => {
     const logoPath = getModelBrandLogoPath(model);
     const CommunityModelIcon = getCommunityModelIcon(model);
-
-    if (model.community && logoPath) {
-        return (
-            <span className="relative inline-grid">
-                {CommunityModelIcon && (
-                    <CommunityModelIcon
-                        aria-hidden="true"
-                        className={`${className} col-start-1 row-start-1`}
-                    />
-                )}
-                <span
-                    aria-hidden="true"
-                    className={`${className} col-start-1 row-start-1`}
-                    style={{
-                        maskImage: `url(${logoPath})`,
-                        WebkitMaskImage: `url(${logoPath})`,
-                        maskRepeat: "no-repeat",
-                        WebkitMaskRepeat: "no-repeat",
-                        maskPosition: "center",
-                        WebkitMaskPosition: "center",
-                        maskSize: "contain",
-                        WebkitMaskSize: "contain",
-                    }}
-                />
-            </span>
-        );
-    }
 
     if (logoPath) {
         return (
             <span
                 aria-hidden="true"
-                className={className}
+                className={`${className} bg-current`}
                 style={{
                     maskImage: `url(${logoPath})`,
                     WebkitMaskImage: `url(${logoPath})`,

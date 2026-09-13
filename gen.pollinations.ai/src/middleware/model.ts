@@ -14,6 +14,10 @@ import type { SafetyFeature } from "@shared/schemas/safety.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import {
+    AGENT_MODEL_HEADER,
+    requireEndpointAgent,
+} from "@/schemas/agent-model.ts";
+import {
     type GenerationModelEntry,
     getGenerationModelRegistry,
 } from "../model-registry.ts";
@@ -238,6 +242,10 @@ export function resolveModel(
                     allowedModels.includes(entry.id),
             );
         }
+        requireEndpointAgent(
+            c.req.header(AGENT_MODEL_HEADER),
+            resolved.communityEndpoint?.type,
+        );
         c.set("model", resolved);
         c.header(MODEL_REQUESTED_HEADER, resolved.resolved);
         await next();

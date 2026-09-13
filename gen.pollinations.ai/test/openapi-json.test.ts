@@ -85,6 +85,25 @@ describe("/openapi.json", () => {
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/v1/audio/music/upload"]).toBeUndefined();
+        for (const path of ["/v1/chat/completions", "/v1/responses", "/text"]) {
+            const operation = schema.paths[path] as {
+                post: { parameters: { name: string; required?: boolean }[] };
+            };
+            const header = operation.post.parameters.find(
+                ({ name }) => name === "x-pollinations-agent-model",
+            );
+            expect(header).toMatchObject({
+                in: "header",
+                schema: { type: "string", minLength: 1, maxLength: 128 },
+            });
+            expect(header?.required ?? false).toBe(false);
+            expect(schema).toHaveProperty([
+                "paths",
+                path,
+                "post",
+                "requestBody",
+            ]);
+        }
 
         for (const [path, method] of [
             ["/image/{prompt}", "get"],

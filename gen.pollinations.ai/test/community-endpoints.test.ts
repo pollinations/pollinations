@@ -2528,14 +2528,14 @@ describe("community endpoint helpers", () => {
             expect(claims).toMatchObject({ parentApiKeyId: "parent-key-id" });
         });
 
-        it("maps agent_model to the inner model without changing identity or delegation", async () => {
+        it("maps the agent header to the inner model without changing identity or delegation", async () => {
             const endpoint = endpointAgent();
             const context = await communityEndpointGatewayContext({
+                agentModel: "test/brain",
                 endpoint,
                 modelDefinition: communityModelDefinition(endpoint),
                 requestData: {
                     model: endpoint.modelId,
-                    agent_model: "test/brain",
                     messages: [{ role: "user", content: "hello" }],
                 },
                 secret,
@@ -2644,167 +2644,242 @@ describe("community endpoint helpers", () => {
     });
 });
 
-fixtureTest(
-    "routes agent_model overrides through JSON and SSE with caller-scoped delegation",
-    async ({ apiKey }) => {
-        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
-        const modelName = `agent-${crypto.randomUUID().slice(0, 8)}`;
-        const modelId = communityModelId(ownerGithubUsername, modelName);
-        const agentUrl = "https://agent.example.com/v1/chat/completions";
-        const ownerUserId = await createTestUser({
-            githubId: nextAllowedGithubId(),
-            githubUsername: ownerGithubUsername,
-        });
-        await insertCommunityEndpoints({
-            id: `endpoint-${crypto.randomUUID()}`,
-            ownerUserId,
-            type: "endpoint_agent",
-            visibility: "public",
-            name: modelName,
-            api: "chat_completions",
-            baseUrl: agentUrl,
-            upstreamModel: "polli",
-            promptTextPrice: 0,
-            completionTextPrice: 0,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
+for (const protocol of ["chat_completions", "responses", "text"] as const) {
+    const api = protocol === "text" ? "chat_completions" : protocol;
+    fixtureTest(
+        `routes ${protocol} agent model headers through JSON and SSE with caller-scoped delegation`,
+        async ({ apiKey }) => {
+            const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+            const modelName = `agent-${crypto.randomUUID().slice(0, 8)}`;
+            const modelId = communityModelId(ownerGithubUsername, modelName);
+            const path =
+                protocol === "text"
+                    ? "/text"
+                    : api === "responses"
+                      ? "/v1/responses"
+                      : "/v1/chat/completions";
+            const input =
+                api === "responses"
+                    ? { input: "hello" }
+                    : { messages: [{ role: "user", content: "hello" }] };
+            const agentUrl = `https://agent.example.com/v1/${api === "responses" ? "responses" : "chat/completions"}`;
+            const ownerUserId = await createTestUser({
+                githubId: nextAllowedGithubId(),
+                githubUsername: ownerGithubUsername,
+            });
+            await insertCommunityEndpoints({
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                type: "endpoint_agent",
+                visibility: "public",
+                name: modelName,
+                api,
+                baseUrl: agentUrl,
+                upstreamModel: "polli",
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
 
-        const upstreamModels: string[] = [];
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async (input, init) => {
-                const request = new Request(input, init);
-                if (request.url === agentUrl) {
-                    const token =
-                        request.headers
-                            .get("authorization")
-                            ?.replace(/^Bearer\s+/i, "") ?? "";
-                    expect(token).toMatch(/^ag_/);
-                    expect(token).not.toContain(apiKey);
-                    const claims = await verifyAgentRunToken(
-                        token,
-                        env.BETTER_AUTH_SECRET,
-                    );
-                    expect(claims.parentApiKeyId).toBeTruthy();
-                    expect(claims.parentRequestId).toBeTruthy();
-                    const body = (await request.json()) as Record<
-                        string,
-                        unknown
-                    >;
-                    expect(body).not.toHaveProperty("agent_model");
-                    const innerModel = String(body.model);
-                    upstreamModels.push(innerModel);
-                    const usage = {
-                        prompt_tokens: 2,
-                        completion_tokens: 3,
-                        total_tokens: 5,
-                    };
-                    if (body.stream) {
-                        const chunks = [
-                            {
-                                choices: [
+            const upstreamModels: string[] = [];
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async (input, init) => {
+                    const request = new Request(input, init);
+                    if (request.url === agentUrl) {
+                        const token =
+                            request.headers
+                                .get("authorization")
+                                ?.replace(/^Bearer\s+/i, "") ?? "";
+                        expect(token).toMatch(/^ag_/);
+                        expect(token).not.toContain(apiKey);
+                        const claims = await verifyAgentRunToken(
+                            token,
+                            env.BETTER_AUTH_SECRET,
+                        );
+                        expect(claims.parentApiKeyId).toBeTruthy();
+                        expect(claims.parentRequestId).toBeTruthy();
+                        const body = (await request.json()) as Record<
+                            string,
+                            unknown
+                        >;
+                        expect(body).not.toHaveProperty("agent_model");
+                        const innerModel = String(body.model);
+                        upstreamModels.push(innerModel);
+                        const usage = {
+                            prompt_tokens: 2,
+                            completion_tokens: 3,
+                            total_tokens: 5,
+                        };
+                        if (api === "responses") {
+                            const response = {
+                                id: "resp_agent",
+                                object: "response",
+                                created_at: 1,
+                                status: "completed",
+                                model: innerModel,
+                                output: [
                                     {
-                                        index: 0,
-                                        delta: {
-                                            role: "assistant",
-                                            content: innerModel,
+                                        id: "msg_agent",
+                                        type: "message",
+                                        role: "assistant",
+                                        status: "completed",
+                                        content: [
+                                            {
+                                                type: "output_text",
+                                                text: innerModel,
+                                                annotations: [],
+                                            },
+                                        ],
+                                    },
+                                ],
+                                usage: {
+                                    input_tokens: 2,
+                                    output_tokens: 3,
+                                    total_tokens: 5,
+                                },
+                            };
+                            return body.stream
+                                ? new Response(
+                                      `event: response.completed\ndata: ${JSON.stringify({ type: "response.completed", sequence_number: 0, response })}\n\n`,
+                                      {
+                                          headers: {
+                                              "Content-Type":
+                                                  "text/event-stream",
+                                          },
+                                      },
+                                  )
+                                : Response.json(response);
+                        }
+                        if (body.stream) {
+                            const chunks = [
+                                {
+                                    choices: [
+                                        {
+                                            index: 0,
+                                            delta: {
+                                                role: "assistant",
+                                                content: innerModel,
+                                            },
+                                            finish_reason: null,
                                         },
-                                        finish_reason: null,
-                                    },
-                                ],
-                            },
-                            {
-                                choices: [
-                                    {
-                                        index: 0,
-                                        delta: {},
-                                        finish_reason: "stop",
-                                    },
-                                ],
-                            },
-                            { choices: [], usage },
-                        ].map(
-                            (chunk) =>
-                                `data: ${JSON.stringify({ id: "agent", object: "chat.completion.chunk", created: 1, model: innerModel, ...chunk })}\n\n`,
-                        );
-                        return new Response(
-                            `${chunks.join("")}data: [DONE]\n\n`,
-                            {
-                                headers: {
-                                    "Content-Type": "text/event-stream",
+                                    ],
                                 },
-                            },
-                        );
+                                {
+                                    choices: [
+                                        {
+                                            index: 0,
+                                            delta: {},
+                                            finish_reason: "stop",
+                                        },
+                                    ],
+                                },
+                                { choices: [], usage },
+                            ].map(
+                                (chunk) =>
+                                    `data: ${JSON.stringify({ id: "agent", object: "chat.completion.chunk", created: 1, model: innerModel, ...chunk })}\n\n`,
+                            );
+                            return new Response(
+                                `${chunks.join("")}data: [DONE]\n\n`,
+                                {
+                                    headers: {
+                                        "Content-Type": "text/event-stream",
+                                    },
+                                },
+                            );
+                        }
+                        return Response.json({
+                            id: "agent",
+                            object: "chat.completion",
+                            model: innerModel,
+                            choices: [
+                                {
+                                    index: 0,
+                                    message: {
+                                        role: "assistant",
+                                        content: innerModel,
+                                    },
+                                    finish_reason: "stop",
+                                },
+                            ],
+                            usage,
+                        });
                     }
-                    return Response.json({
-                        id: "agent",
-                        object: "chat.completion",
-                        model: innerModel,
-                        choices: [
-                            {
-                                index: 0,
-                                message: {
-                                    role: "assistant",
-                                    content: innerModel,
-                                },
-                                finish_reason: "stop",
-                            },
-                        ],
-                        usage,
-                    });
-                }
-                if (isBillingFetch(request)) return Response.json({ data: [] });
-                throw new Error(`Unexpected fetch: ${request.url}`);
-            }),
-        );
-
-        for (const agentModel of ["", "   ", "x".repeat(129), 1, null]) {
-            const invalid = await fetchGen(
-                new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${apiKey}`,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        model: modelId,
-                        agent_model: agentModel,
-                        messages: [{ role: "user", content: "hello" }],
-                    }),
+                    if (isBillingFetch(request))
+                        return Response.json({ data: [] });
+                    throw new Error(`Unexpected fetch: ${request.url}`);
                 }),
             );
-            expect(invalid.status).toBe(400);
-            await invalid.text();
-        }
-        expect(upstreamModels).toEqual([]);
 
-        for (const stream of [false, true]) {
-            for (const agentModel of [
-                undefined,
-                "test/brain-one",
-                "test/brain-two",
-            ]) {
-                const response = await fetchGen(
-                    new Request(
-                        "https://gen.pollinations.ai/v1/chat/completions",
-                        {
+            for (const agentModel of ["", "   ", "x".repeat(129)]) {
+                const invalid = await fetchGen(
+                    new Request(`https://gen.pollinations.ai${path}`, {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${apiKey}`,
+                            "Content-Type": "application/json",
+                            "X-Pollinations-Agent-Model": agentModel,
+                        },
+                        body: JSON.stringify({
+                            model: modelId,
+                            ...input,
+                        }),
+                    }),
+                );
+                expect(invalid.status).toBe(400);
+                await invalid.text();
+            }
+            for (const agentModel of [undefined, "test/brain"]) {
+                const legacyBody = await fetchGen(
+                    new Request(`https://gen.pollinations.ai${path}`, {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${apiKey}`,
+                            "Content-Type": "application/json",
+                            ...(agentModel
+                                ? { "X-Pollinations-Agent-Model": agentModel }
+                                : {}),
+                        },
+                        body: JSON.stringify({
+                            model: modelId,
+                            ...input,
+                            agent_model: "test/old-brain",
+                        }),
+                    }),
+                );
+                expect(legacyBody.status).toBe(400);
+                await legacyBody.text();
+            }
+            expect(upstreamModels).toEqual([]);
+
+            for (const stream of [false, true]) {
+                for (const agentModel of [
+                    undefined,
+                    "test/brain-one",
+                    "test/brain-two",
+                ]) {
+                    const response = await fetchGen(
+                        new Request(`https://gen.pollinations.ai${path}`, {
                             method: "POST",
                             headers: {
                                 Authorization: `Bearer ${apiKey}`,
                                 "Content-Type": "application/json",
+                                ...(agentModel
+                                    ? {
+                                          "X-Pollinations-Agent-Model":
+                                              agentModel,
+                                      }
+                                    : {}),
                             },
                             body: JSON.stringify({
                                 model: legacyCommunityModelId(
                                     ownerGithubUsername,
                                     modelName,
                                 ),
-                                ...(agentModel
-                                    ? { agent_model: agentModel }
-                                    : {}),
-                                messages: [{ role: "user", content: "hello" }],
+                                ...input,
                                 stream,
-                                ...(stream
+                                ...(stream && api === "chat_completions"
                                     ? {
                                           stream_options: {
                                               include_usage: true,
@@ -2812,33 +2887,78 @@ fixtureTest(
                                       }
                                     : {}),
                             }),
+                        }),
+                    );
+                    expect(response.status).toBe(200);
+                    expect(response.headers.get("x-model-used")).toBe(modelId);
+                    const innerModel = agentModel ?? "polli";
+                    if (api === "responses") {
+                        const body = await response.text();
+                        expect(body).toContain(`"text":"${innerModel}"`);
+                        expect(body).toContain('"input_tokens":2');
+                        if (stream)
+                            expect(body).toContain("event: response.completed");
+                    } else if (stream) {
+                        const body = await response.text();
+                        expect(body).toContain(`"content":"${innerModel}"`);
+                        expect(body).toContain('"finish_reason":"stop"');
+                        expect(body).toContain('"choices":[]');
+                        expect(body).toContain("[DONE]");
+                    } else if (protocol === "text") {
+                        expect(await response.text()).toBe(innerModel);
+                    } else {
+                        expect(await response.json()).toMatchObject({
+                            choices: [{ message: { content: innerModel } }],
+                        });
+                    }
+                }
+            }
+            expect(upstreamModels).toEqual([
+                "polli",
+                "test/brain-one",
+                "test/brain-two",
+                "polli",
+                "test/brain-one",
+                "test/brain-two",
+            ]);
+        },
+    );
+}
+
+fixtureTest(
+    "rejects agent model headers on non-agent text and media routes",
+    async ({ apiKey }) => {
+        for (const path of ["/v1/chat/completions", "/v1/responses", "/text"]) {
+            for (const model of [DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL]) {
+                const response = await fetchGen(
+                    new Request(`https://gen.pollinations.ai${path}`, {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${apiKey}`,
+                            "Content-Type": "application/json",
+                            "X-Pollinations-Agent-Model": "test/brain",
                         },
-                    ),
+                        body: JSON.stringify({
+                            model,
+                            ...(path === "/v1/responses"
+                                ? { input: "hello" }
+                                : {
+                                      messages: [
+                                          { role: "user", content: "hello" },
+                                      ],
+                                  }),
+                        }),
+                    }),
                 );
-                expect(response.status).toBe(200);
-                expect(response.headers.get("x-model-used")).toBe(modelId);
-                const innerModel = agentModel ?? "polli";
-                if (stream) {
-                    const body = await response.text();
-                    expect(body).toContain(`"content":"${innerModel}"`);
-                    expect(body).toContain('"finish_reason":"stop"');
-                    expect(body).toContain('"choices":[]');
-                    expect(body).toContain("[DONE]");
-                } else {
-                    expect(await response.json()).toMatchObject({
-                        choices: [{ message: { content: innerModel } }],
-                    });
+                expect(response.status).toBe(400);
+                const body = await response.text();
+                if (path !== "/text" || model === DEFAULT_TEXT_MODEL) {
+                    expect(body).toContain(
+                        "X-Pollinations-Agent-Model is supported only by endpoint agents",
+                    );
                 }
             }
         }
-        expect(upstreamModels).toEqual([
-            "polli",
-            "test/brain-one",
-            "test/brain-two",
-            "polli",
-            "test/brain-one",
-            "test/brain-two",
-        ]);
     },
 );
 
@@ -2978,17 +3098,17 @@ fixtureTest(
                 headers: {
                     Authorization: `Bearer ${apiKey}`,
                     "Content-Type": "application/json",
+                    "X-Pollinations-Agent-Model": "test/brain",
                 },
                 body: JSON.stringify({
                     model: modelId,
-                    agent_model: "test/brain",
                     messages: [{ role: "user", content: "hello" }],
                 }),
             }),
         );
         expect(overrideResponse.status).toBe(400);
         expect(await overrideResponse.text()).toContain(
-            "agent_model is supported only by endpoint agents",
+            "X-Pollinations-Agent-Model is supported only by endpoint agents",
         );
 
         const responses = await fetchGen(

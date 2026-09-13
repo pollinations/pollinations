@@ -39,8 +39,22 @@ See [`example/TalkingNPC.server.lua`](./example/TalkingNPC.server.lua) for a ful
 | `maxHistory` | number | `10` | Messages kept in conversation before trimming |
 | `fallbackReply` | string | `"Hmm, I didn't catch that. Try again?"` | Returned if the request fails |
 
-### `npc:Say(playerMessage)`
-Sends the player's message plus conversation history to Pollinations and returns the NPC's reply as a string.
+### `npc:Say(playerMessage, player)`
+Sends the player's message plus conversation history to Pollinations and returns the NPC's reply as a string. Pass the `Player` who triggered the line so any action the NPC takes can act on them.
+
+### `npc:RegisterAction(actionType, callback)`
+Registers a handler for an action the model can trigger alongside dialogue. `callback` is called as `callback(player, action)`, where `action` is the full table the model returned (e.g. `{ type = "give_item", item = "sword" }`).
+
+```lua
+npc:RegisterAction("give_item", function(player, action)
+	-- action.item == "sword"
+end)
+```
+
+Every persona is automatically appended with instructions telling the model to reply as `{"say": "...", "action": {"type": "...", ...}}`. If a reply isn't valid JSON, or names an action with no registered handler, the NPC still talks — it just skips the action.
+
+## Porting to other engines
+The action pattern is engine-agnostic: a JSON schema (`{say, action}`) plus a name → callback dispatch table. A Godot or Unity port needs the same two pieces — an HTTP client hitting the same endpoint, and a dispatcher mapping `action.type` to a GDScript/C# function — not a redesign.
 
 ## Notes
 - Keep this module server-side so your API key is never exposed to clients.

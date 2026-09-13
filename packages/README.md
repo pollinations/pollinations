@@ -14,7 +14,7 @@ A friendly toolkit for developers who want to add Pollinations to a website or a
 
 ### [roblox-sdk/](./roblox-sdk) — the Roblox NPC SDK
 
-A single Lua ModuleScript that gives any Roblox NPC the ability to hold a conversation, powered by Pollinations. No npm, no build step — copy one file into Studio.
+A single Lua ModuleScript that gives any Roblox NPC the ability to hold a conversation and trigger in-game actions (give an item, move, open a shop), powered by Pollinations. No npm, no build step — copy one file into Studio.
 
 **Who it's for:** Roblox creators, including teenagers with no credit card, who want an AI NPC in a few lines of code.
 

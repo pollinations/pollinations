@@ -25,6 +25,7 @@ const OPENROUTER_IMAGE_URL = "https://openrouter.ai/api/v1/images";
 const GROK_IMAGINE_QUALITY_MODEL = "x-ai/grok-imagine-image-quality";
 const GROK_IMAGINE_IMAGE_2_MODEL = "x-ai/grok-imagine-image-2.0";
 const RECRAFT_VECTOR_MODEL = "recraft/recraft-v4.1-vector";
+const FLUX2_MAX_MODEL = "black-forest-labs/flux.2-max";
 const SEEDREAM_PRO_MODEL = "bytedance-seed/seedream-4.5";
 const SVG_MEDIA_TYPE = "image/svg+xml";
 const SEEDREAM_PRO_ASPECT_RATIOS = [
@@ -538,6 +539,66 @@ export async function callOpenRouterGrokImagineImage2API(
                     ? { promptImageTokens: inputReferences.length }
                     : {}),
                 completionImageTokens: 1,
+            },
+        },
+    };
+}
+
+export async function callOpenRouterFlux2MaxAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    if (safeParams.image.length > 8) {
+        throw UpstreamError.fromProvider(400, {
+            message: "FLUX.2 Max supports at most 8 reference images",
+        });
+    }
+    const apiKey = requireOpenRouterImageApiKey();
+    const inputReferences = safeParams.image.map((url) => ({
+        type: "image_url",
+        image_url: { url },
+    }));
+    const requestBody: Record<string, unknown> = {
+        model: FLUX2_MAX_MODEL,
+        prompt,
+        n: 1,
+        seed: safeParams.seed,
+        provider: {
+            only: ["black-forest-labs/us-3"],
+            allow_fallbacks: false,
+        },
+    };
+
+    const aspectRatio = closestAspectRatio(safeParams.width, safeParams.height);
+    if (aspectRatio) requestBody.aspect_ratio = aspectRatio;
+    if (inputReferences.length > 0) {
+        requestBody.input_references = inputReferences;
+    }
+
+    const data = await postOpenRouterImage(
+        apiKey,
+        requestBody,
+        "OpenRouter FLUX.2 Max request failed",
+    );
+    const encodedImage = data.data?.[0]?.b64_json;
+    if (!encodedImage) {
+        throw buildOpenRouterNoImageError(data);
+    }
+
+    logOps("FLUX.2 Max generation complete", {
+        referenceImages: inputReferences.length,
+        providerCost: data.usage?.cost,
+    });
+
+    return {
+        buffer: base64ToBuffer(encodedImage),
+        isMature: false,
+        isChild: false,
+        trackingData: {
+            actualModel: "black-forest-labs/flux.2-max:openrouter",
+            usage: {
+                completionImageTokens:
+                    (safeParams.width * safeParams.height) / 1_000_000,
             },
         },
     };

@@ -230,7 +230,12 @@ describe("shared agent Responses adapter", () => {
                 {
                     type: "function_call_output",
                     call_id: "lookup-call",
-                    output: JSON.stringify(toolOutput),
+                    output: [
+                        {
+                            type: "input_text",
+                            text: JSON.stringify(toolOutput),
+                        },
+                    ],
                 },
                 { type: "message", content: [{ text: "The answer is 42." }] },
             ],
@@ -285,7 +290,12 @@ describe("shared agent Responses adapter", () => {
                 { type: "function_call", name: "lookup" },
                 {
                     type: "function_call_output",
-                    output: JSON.stringify(toolOutput),
+                    output: [
+                        {
+                            type: "input_text",
+                            text: JSON.stringify(toolOutput),
+                        },
+                    ],
                 },
             ],
         });
@@ -1150,10 +1160,15 @@ describe("managed agent Responses runtime", () => {
         expect(output[4]).toMatchObject({
             call_id: "call_search",
             status: "completed",
-            output: JSON.stringify({
-                isError: true,
-                content: [{ type: "text", text: "Search unavailable" }],
-            }),
+            output: [
+                {
+                    type: "input_text",
+                    text: JSON.stringify({
+                        isError: true,
+                        content: [{ type: "text", text: "Search unavailable" }],
+                    }),
+                },
+            ],
         });
         expect(JSON.stringify(output)).not.toContain("PRIVATE_");
         expect(
@@ -1235,9 +1250,19 @@ describe("managed agent Responses runtime", () => {
             },
         );
         vi.stubGlobal("fetch", fetchMock);
+        // Open WebUI replays stored items without status, and outputs
+        // without id; the Responses API makes both optional on input.
+        const replayed = output.map((item) => {
+            const { status: _status, ...rest } = item as Record<
+                string,
+                unknown
+            >;
+            if (rest.type === "function_call_output") delete rest.id;
+            return rest;
+        });
         const response = await handlePromptAgentResponsesRequest(
             request({
-                input: [...output, { role: "user", content: "Continue" }],
+                input: [...replayed, { role: "user", content: "Continue" }],
             }),
             new AbortController().signal,
             RUNTIME,

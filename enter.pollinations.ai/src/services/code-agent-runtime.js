@@ -1,3 +1,4 @@
+import { agentResponsesError } from "../../../shared/agents/responses.ts";
 import { createCodeAgentAI } from "./code-agent-ai.ts";
 
 function jsonError(message) {
@@ -157,9 +158,11 @@ export default function createCodeAgentWorker(agent) {
                 return response instanceof Response
                     ? response
                     : jsonError("Code agent must return a Response");
-            } catch {
-                console.error("Code agent execution failed");
-                return jsonError("Code agent execution failed");
+            } catch (error) {
+                // Surface the failure like a prompt agent does: the caller's
+                // status for model errors, otherwise 502 with the message.
+                console.error("Code agent execution failed", error);
+                return agentResponsesError(error);
             }
         },
     };

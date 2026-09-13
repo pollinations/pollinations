@@ -1,7 +1,8 @@
 import { runtimeModule, sdkModules } from "virtual:code-agent-sdk";
-import { jsonSchema, tool } from "ai";
+import { generateText, jsonSchema, tool } from "ai";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createWorker as createComposioWorker } from "../../apps/composio-mcp/worker.js";
+import { functionOutputText } from "../../shared/schemas/response-function-items.ts";
 import {
     deleteCodeAgent,
     deployCodeAgent,
@@ -230,14 +231,22 @@ describe("code agent AI SDK", () => {
         ).toEqual([
             expect.objectContaining({
                 call_id: "lookup-call",
-                output: fail
-                    ? JSON.stringify({
-                          isError: true,
-                          content: [
-                              { type: "text", text: "Lookup unavailable" },
-                          ],
-                      })
-                    : '{"answer":42}',
+                output: [
+                    {
+                        type: "input_text",
+                        text: fail
+                            ? JSON.stringify({
+                                  isError: true,
+                                  content: [
+                                      {
+                                          type: "text",
+                                          text: "Lookup unavailable",
+                                      },
+                                  ],
+                              })
+                            : '{"answer":42}',
+                    },
+                ],
             }),
         ]);
         const replay = await responseBody(
@@ -305,6 +314,36 @@ describe("code agent AI SDK", () => {
         );
         expect(response.status).toBe(400);
         expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("passes model errors raised outside respond through to the caller", async () => {
+        vi.stubGlobal("fetch", async () =>
+            Response.json(
+                { error: { message: "Insufficient balance" } },
+                { status: 402 },
+            ),
+        );
+        const worker = createCodeAgentWorker(async ({ model }) => {
+            const { text } = await generateText({
+                model: model("test-model"),
+                prompt: "Hello",
+                maxRetries: 0,
+            });
+            return new Response(text);
+        });
+        const response = await worker.fetch(
+            request({ input: "Hello" }),
+            runtimeEnv,
+        );
+        expect(response.status).toBe(402);
+        await expect(response.json()).resolves.toEqual({
+            error: {
+                message: "Insufficient balance",
+                type: "server_error",
+                code: "agent_error",
+                param: null,
+            },
+        });
     });
 
     it("caps executed MCP calls and reports only actual executions", async () => {
@@ -389,7 +428,9 @@ describe("code agent AI SDK", () => {
             (item) => item.type === "function_call_output",
         );
         expect(results).toHaveLength(17);
-        expect(JSON.parse(results[16].output)).toMatchObject({ isError: true });
+        expect(
+            JSON.parse(functionOutputText(results[16].output)),
+        ).toMatchObject({ isError: true });
     });
 });
 
@@ -777,10 +818,10 @@ describe("code agent runtime", () => {
     });
 
     it.each([
-        "http",
-        "rpc",
-        "missing-result",
-    ])("returns a generic failure for MCP %s errors", async (failure) => {
+        ["http", "MCP tool call failed (503)"],
+        ["rpc", "upstream detail"],
+        ["missing-result", "MCP tool call returned no result"],
+    ])("reports MCP %s errors to the caller", async (failure, message) => {
         vi.stubGlobal("fetch", async (_url, init) => {
             if (failure === "http")
                 return new Response("upstream detail", { status: 503 });
@@ -801,9 +842,14 @@ describe("code agent runtime", () => {
             new Request("https://agent.test"),
             runtimeEnv,
         );
-        expect(response.status).toBe(500);
+        expect(response.status).toBe(502);
         await expect(response.json()).resolves.toEqual({
-            error: { message: "Code agent execution failed" },
+            error: {
+                message,
+                type: "server_error",
+                code: "agent_error",
+                param: null,
+            },
         });
     });
 });

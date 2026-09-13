@@ -329,11 +329,25 @@ describe("billing deduction", () => {
 
     it("preserves committed debit when dev credit fails", async () => {
         const payerId = await createUser({ tierBalance: 100, packBalance: 0 });
-        const { id: byopKeyId, userId: devUserId } = await createTestApiKey({
-            type: "publishable",
-            user: { tierBalance: 0, packBalance: 0 },
-            pollenBudget: 0,
-            metadata: { earningsEnabled: true },
+        const devUserId = await createUser({
+            tierBalance: 0,
+            packBalance: 0,
+        });
+        // Insert a pk_ key directly, bypassing better-auth, so we control every column
+        const byopKeyId = `pk-test-${crypto.randomUUID()}`;
+        await db.insert(apiKeyTable).values({
+            id: byopKeyId,
+            configId: "default",
+            name: "test-pk-key",
+            start: "pk",
+            prefix: "pk",
+            key: `pk_${crypto.randomUUID()}`,
+            referenceId: devUserId,
+            enabled: true,
+            metadata: JSON.stringify({ earningsEnabled: true }),
+            pollenBalance: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
         });
         // Delete the dev user so atomicCreditUserBalance affects 0 rows
         await db.delete(userTable).where(eq(userTable.id, devUserId));

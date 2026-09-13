@@ -226,7 +226,10 @@ def test_catalog_failure_is_not_reported_as_invalid_user_input(monkeypatch, stre
 
 
 @pytest.mark.parametrize("stream", [False, True])
-async def test_api_wrapper_uses_real_quest_brain_request(catalog, monkeypatch, stream):
+@pytest.mark.parametrize("pollen", [None, "quest"])
+async def test_api_wrapper_uses_real_brain_request(
+    catalog, monkeypatch, stream: bool, pollen: str | None
+) -> None:
     import json
 
     import httpx
@@ -247,9 +250,14 @@ async def test_api_wrapper_uses_real_quest_brain_request(catalog, monkeypatch, s
     def respond(request):
         body = json.loads(request.content)
         requests.append(body)
-        assert body["model"] == "quest-best"
-        assert "paid-best" not in json.dumps(body)
-        assert registry.request_pollen() == "quest"
+        assert body["messages"][0]["role"] == "system"
+        assert body["messages"][0]["content"].startswith("You are Floret,")
+        if pollen == "quest":
+            assert body["model"] == "quest-best"
+            assert "paid-best" not in json.dumps(body)
+        else:
+            assert body["model"] == agent.settings.brain_model
+        assert registry.request_pollen() == (pollen or "all")
         return httpx.Response(
             200,
             json={
@@ -281,9 +289,9 @@ async def test_api_wrapper_uses_real_quest_brain_request(catalog, monkeypatch, s
                 headers={"Authorization": "Bearer ag_test"},
                 json={
                     "model": "floret",
-                    "pollen": "quest",
+                    **({"pollen": pollen} if pollen else {}),
                     "stream": stream,
-                    "messages": [{"role": "user", "content": "hi"}],
+                    "messages": [{"role": "user", "content": "hey"}],
                 },
             )
     assert response.status_code == 200

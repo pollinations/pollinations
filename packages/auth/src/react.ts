@@ -1,7 +1,19 @@
 import { useEffect, useState } from "react";
 import type { PollinationsUser } from "./server";
 
-export function useDashboardSession() {
+export type DashboardAuthRuntime = {
+    fetch: typeof fetch;
+    location: () => URL;
+    navigate: (url: string) => void;
+};
+
+const browserRuntime: DashboardAuthRuntime = {
+    fetch: (input, init) => fetch(input, init),
+    location: () => new URL(window.location.href),
+    navigate: (url) => window.location.assign(url),
+};
+
+export function useDashboardSession(runtime = browserRuntime) {
     const [session, setSession] = useState<{
         user: PollinationsUser | null;
         isPending: boolean;
@@ -12,14 +24,15 @@ export function useDashboardSession() {
         const controller = new AbortController();
         // Start authentication on arrival, but never restart a canceled,
         // failed or explicitly signed-out flow on a focus refresh.
-        const params = new URLSearchParams(window.location.search);
+        const params = runtime.location().searchParams;
         let redirectOnArrival =
             !params.has("auth_error") && params.get("signed_out") !== "1";
         const refresh = () =>
-            fetch("/auth/session", {
-                credentials: "same-origin",
-                signal: controller.signal,
-            })
+            runtime
+                .fetch("/auth/session", {
+                    credentials: "same-origin",
+                    signal: controller.signal,
+                })
                 .then(async (response) => {
                     if (!response.ok && response.status !== 401)
                         throw new Error(
@@ -32,7 +45,7 @@ export function useDashboardSession() {
                     const startAuthentication = !user && redirectOnArrival;
                     redirectOnArrival = false;
                     if (startAuthentication) {
-                        signIn();
+                        createDashboardActions(runtime).signIn();
                         return;
                     }
                     setSession({ user, isPending: false, error: null });
@@ -62,31 +75,37 @@ export function useDashboardSession() {
             window.removeEventListener("focus", refresh);
             window.clearInterval(interval);
         };
-    }, []);
+    }, [runtime]);
 
     return session;
 }
 
-export function signIn() {
-    const url = new URL("/auth/login", window.location.origin);
-    const destination = new URL(window.location.href);
-    destination.searchParams.delete("auth_error");
-    destination.searchParams.delete("signed_out");
-    url.searchParams.set(
-        "return_to",
-        destination.pathname + destination.search,
-    );
-    window.location.assign(url);
+export function createDashboardActions(runtime: DashboardAuthRuntime) {
+    return {
+        signIn() {
+            const destination = new URL(runtime.location());
+            const url = new URL("/auth/login", destination.origin);
+            destination.searchParams.delete("auth_error");
+            destination.searchParams.delete("signed_out");
+            url.searchParams.set(
+                "return_to",
+                destination.pathname + destination.search,
+            );
+            runtime.navigate(url.href);
+        },
+        async signOut() {
+            const response = await runtime.fetch("/auth/logout", {
+                method: "POST",
+                credentials: "same-origin",
+            });
+            if (!response.ok)
+                throw new Error("Could not sign out. Please try again.");
+            runtime.navigate("/?signed_out=1");
+        },
+    };
 }
 
-export async function signOut() {
-    const response = await fetch("/auth/logout", {
-        method: "POST",
-        credentials: "same-origin",
-    });
-    if (!response.ok) throw new Error("Could not sign out. Please try again.");
-    window.location.assign("/?signed_out=1");
-}
+export const { signIn, signOut } = createDashboardActions(browserRuntime);
 
 export async function dashboardFetch(
     input: RequestInfo | URL,

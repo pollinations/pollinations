@@ -21,7 +21,6 @@ import {
     ChatMessage,
     ChatMessageActions,
     ChatMessageContent,
-    ChatMessageHeader,
     ChatPromptInput,
     ChatPromptInputFooter,
     ChatPromptTextarea,
@@ -646,11 +645,10 @@ export function MessageCard({
                 <ChatMessage
                     from={isUser ? "user" : "assistant"}
                     className="max-w-full"
+                    aria-label={
+                        isUser ? "Your message" : `${assistantName} message`
+                    }
                 >
-                    <ChatMessageHeader
-                        from={isUser ? "user" : "assistant"}
-                        label={isUser ? "You" : assistantName}
-                    />
                     <ChatMessageContent className="flex flex-col gap-3">
                         {contentParts.map((part, index) =>
                             part.type === "text" ? (
@@ -715,6 +713,7 @@ export function MessageCard({
                             {copyText && (
                                 <CopyButton
                                     value={copyText}
+                                    tooltip={null}
                                     aria-label="Copy response"
                                     className="flex cursor-pointer items-center gap-1.5 rounded-full px-2 py-1 text-xs text-theme-text-soft hover:bg-theme-bg-hover hover:text-theme-text-strong"
                                 >

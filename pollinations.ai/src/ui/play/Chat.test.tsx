@@ -16,6 +16,30 @@ function renderMessage(parts: PollinationsUIMessage["parts"]) {
 }
 
 describe("chat media placement", () => {
+    it.each([
+        "user",
+        "assistant",
+    ] as const)("renders %s content without a visible sender header", (role) => {
+        const html = renderToStaticMarkup(
+            <MessageCard
+                message={{
+                    id: "plain-message",
+                    role,
+                    parts: [{ type: "text", text: "Hello there" }],
+                }}
+                assistantName="Floret"
+                isStreaming={false}
+                canRetry={false}
+                onRetry={() => {}}
+            />,
+        );
+        expect(html).toContain("Hello there");
+        expect(html).not.toContain("<header");
+        expect(html).toContain(
+            `aria-label="${role === "user" ? "Your message" : "Floret message"}"`,
+        );
+    });
+
     it("keeps images between their surrounding paragraphs with native controls", () => {
         const html = renderMessage([
             { type: "text", text: "Daytime scene" },

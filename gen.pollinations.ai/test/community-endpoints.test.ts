@@ -7247,6 +7247,8 @@ fixtureTest(
             })
             .where(eq(userTable.id, userId));
 
+        resetGenerationModelRegistryCache();
+
         const registryEntry = (
             await getCommunityModelRegistryEntries(env)
         ).find(
@@ -7266,15 +7268,15 @@ fixtureTest(
         expect(
             registryEntries.filter((entry) =>
                 [
-                    `${ownerGithubUsername}/my-test-model`,
-                    `${ownerGithubUsername}/my-second-model`,
+                    communityModelId(ownerGithubUsername, "my-test-model"),
+                    communityModelId(ownerGithubUsername, "my-second-model"),
                 ].includes(entry.id),
             ),
         ).toHaveLength(2);
         for (const entry of registryEntries.filter((entry) =>
             [
-                `${ownerGithubUsername}/my-test-model`,
-                `${ownerGithubUsername}/my-second-model`,
+                communityModelId(ownerGithubUsername, "my-test-model"),
+                communityModelId(ownerGithubUsername, "my-second-model"),
             ].includes(entry.id),
         )) {
             expect(entry.info).toMatchObject({

@@ -296,7 +296,7 @@ describe("provider registry", () => {
         expect(resolveProvider(" BedRock ")?.id).toBe("aws");
         expect(canonicalProvider("aws-bedrock")).toBe("aws");
         expect(canonicalProvider("azure-2")).toBe("azure");
-        expect(canonicalProvider("vastai")).toBe("vast.ai");
+        expect(canonicalProvider("vastai")).toBe("vast");
         expect(canonicalProvider("New-Provider")).toBe("new-provider");
         expect(resolveProvider("new-provider")).toBeUndefined();
     });
@@ -445,7 +445,7 @@ describe("provider registry", () => {
                 PRIVATE_CONFIG_FIXTURE,
             ),
         ).toMatchObject({
-            provider: "vast.ai",
+            provider: "vast",
             reason: "provider_attribution_transition",
         });
         expect(
@@ -458,6 +458,23 @@ describe("provider registry", () => {
             provider: "pruna",
             reason: "unverifiable_history",
         });
+    });
+
+    it("finds historical reconciliation explanations by the renamed vendor", () => {
+        const explanation = {
+            ...PRIVATE_CONFIG_FIXTURE.reconciliation
+                .pollenWitnessExplanations[0],
+            provider: "vast.ai",
+        };
+        expect(
+            pollenWitnessExplanation(explanation.month, "vast", {
+                ...PRIVATE_CONFIG_FIXTURE,
+                reconciliation: {
+                    ...PRIVATE_CONFIG_FIXTURE.reconciliation,
+                    pollenWitnessExplanations: [explanation],
+                },
+            }),
+        ).toBe(explanation);
     });
 
     it("keeps reviewed provider limitations unique, canonical, and archived", () => {

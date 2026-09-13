@@ -1,4 +1,6 @@
 import { remapUpstreamStatus } from "@shared/error.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { calculateCost, calculatePrice } from "@shared/registry/registry.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     type AuthResult,
@@ -105,6 +107,8 @@ describe("GPT Image OpenAI fallback routing", () => {
         ["openai/gpt-image-1-mini:openai", "gpt-image-1-mini"],
         ["openai/gpt-image-1.5:openai", "gpt-image-1.5"],
         ["openai/gpt-image-2:openai", "gpt-image-2"],
+        ["openai/gpt-image-2.5-flare", "gpt-image-2.5-flare"],
+        ["openai/gpt-image-2.5-sunburst", "gpt-image-2.5-sunburst"],
     ] as const;
 
     for (const [route, upstreamModel] of routes) {
@@ -152,4 +156,53 @@ describe("GPT Image OpenAI fallback routing", () => {
             .filter((host) => host !== "api.openai.com");
         expect(new Set(azureHosts)).toEqual(EXPECTED_HOSTS);
     });
+});
+
+describe("GPT Image 2.5", () => {
+    for (const model of [
+        "openai/gpt-image-2.5-flare",
+        "openai/gpt-image-2.5-sunburst",
+    ] as const) {
+        it(`${model} preserves custom dimensions and transparency`, async () => {
+            const fetchMock = vi
+                .spyOn(globalThis, "fetch")
+                .mockResolvedValue(successResponse());
+            await callGPTImage(
+                "test",
+                {
+                    ...params,
+                    model,
+                    width: 1536,
+                    height: 864,
+                    transparent: true,
+                },
+                userInfo,
+                model,
+            );
+            const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+            expect(body).toMatchObject({
+                size: "1536x864",
+                background: "transparent",
+                output_format: "png",
+            });
+        });
+
+        it(`${model} charges paid balance at provider cost`, () => {
+            // Usage from the live low-quality generation probe, plus image input.
+            const usage = {
+                promptTextTokens: 14,
+                promptImageTokens: 100,
+                completionImageTokens: 196,
+            };
+            expect(IMAGE_SERVICES[model].paidOnly).toBe(true);
+            expect(calculateCost(model, usage).totalCost).toBeCloseTo(
+                0.00675,
+                8,
+            );
+            expect(calculatePrice(model, usage).totalPrice).toBeCloseTo(
+                0.00675,
+                8,
+            );
+        });
+    }
 });

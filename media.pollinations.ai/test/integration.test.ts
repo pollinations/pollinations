@@ -12,7 +12,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import app from "../src/index";
-import { uploadUnlistedMedia } from "../src/media-upload.ts";
+import { MediaUpload, uploadUnlistedMedia } from "../src/media-upload.ts";
 
 // 1x1 red PNG (67 bytes)
 const TINY_PNG = new Uint8Array([
@@ -204,6 +204,158 @@ async function uploadViaForm(
 }
 
 describe("media.pollinations.ai", () => {
+    it.each([
+        "image/png",
+        "audio/mpeg",
+        "video/mp4",
+        "model/gltf-binary",
+        "image/svg+xml",
+    ])("stores generated %s once and serves its ID publicly", async (contentType) => {
+        const id = "a".repeat(64);
+        const ctx = createExecutionContext();
+        const storage = new MediaUpload(ctx, env);
+        expect(await storage.has(id)).toBe(false);
+        await storage.put(
+            id,
+            new Response(TINY_PNG, {
+                headers: {
+                    "Content-Type": contentType,
+                    "X-Model-Used": "test-model",
+                    "X-Usage-Completion-Audio-Tokens": "10",
+                    "Content-Security-Policy": "default-src 'none'; sandbox",
+                    "X-Custom-File-Metadata": "caller-selected",
+                },
+            }),
+        );
+        expect(await storage.has(id)).toBe(true);
+        const response = await SELF.fetch(
+            `https://media.pollinations.ai/${id}`,
+        );
+        expect(response.status).toBe(200);
+        expect(response.headers.get("content-type")).toBe(contentType);
+        expect(response.headers.get("Link")).toBe(
+            `<https://media.pollinations.ai/${id}>; rel="enclosure"`,
+        );
+        expect(response.headers.has("X-Media-URL")).toBe(false);
+        expect(response.headers.get("Access-Control-Expose-Headers")).toContain(
+            "Link",
+        );
+        expect(response.headers.get("cache-control")).toBe(
+            "public, max-age=31536000, immutable",
+        );
+        expect(response.headers.get("content-security-policy")).toBe(
+            "default-src 'none'; sandbox",
+        );
+        expect(response.headers.get("x-custom-file-metadata")).toBe(
+            "caller-selected",
+        );
+        expect(new Uint8Array(await response.arrayBuffer())).toEqual(TINY_PNG);
+        const cached = await storage.get(id);
+        expect(cached?.headers.get("x-model-used")).toBe("test-model");
+        expect(cached?.headers.get("x-usage-completion-audio-tokens")).toBe(
+            "10",
+        );
+        await cached?.arrayBuffer();
+        const head = await SELF.fetch(`https://media.pollinations.ai/${id}`, {
+            method: "HEAD",
+        });
+        expect(head.headers.get("content-length")).toBe(
+            String(TINY_PNG.byteLength),
+        );
+        const metadata = await SELF.fetch(
+            `https://media.pollinations.ai/${id}/metadata`,
+        );
+        expect(await metadata.json()).toMatchObject({
+            id,
+            size: TINY_PNG.byteLength,
+            contentType,
+        });
+        expect((await env.MEDIA_BUCKET.list()).objects).toHaveLength(1);
+        await waitOnExecutionContext(ctx);
+    });
+
+    it("does not regenerate a missing file, but a new generation may reuse its ID", async () => {
+        const id = "b".repeat(64);
+        const ctx = createExecutionContext();
+        const storage = new MediaUpload(ctx, env);
+        await storage.put(
+            id,
+            new Response("first", { headers: { "Content-Type": "image/png" } }),
+        );
+        await env.MEDIA_BUCKET.delete(id);
+        expect(await storage.has(id)).toBe(false);
+        expect(await storage.get(id)).toBeNull();
+        expect(
+            (await SELF.fetch(`https://media.pollinations.ai/${id}`)).status,
+        ).toBe(404);
+        await storage.put(
+            id,
+            new Response("second", {
+                headers: { "Content-Type": "image/png" },
+            }),
+        );
+        expect(
+            await (
+                await SELF.fetch(`https://media.pollinations.ai/${id}`)
+            ).text(),
+        ).toBe("second");
+        await waitOnExecutionContext(ctx);
+    });
+
+    it("rejects empty generation files and invalid IDs without creating objects", async () => {
+        const ctx = createExecutionContext();
+        const storage = new MediaUpload(ctx, env);
+        await expect(
+            storage.put(crypto.randomUUID(), new Response("bytes")),
+        ).rejects.toThrow("Invalid generation ID");
+        await expect(
+            storage.put("c".repeat(64), new Response("")),
+        ).rejects.toThrow("empty generated media");
+        expect((await env.MEDIA_BUCKET.list()).objects).toHaveLength(0);
+        await waitOnExecutionContext(ctx);
+    });
+
+    it("does not save an interrupted generation stream", async () => {
+        const id = "f".repeat(64);
+        const ctx = createExecutionContext();
+        const storage = new MediaUpload(ctx, env);
+        const response = new Response(
+            new ReadableStream({
+                start(controller) {
+                    controller.error(new Error("Provider disconnected"));
+                },
+            }),
+        );
+        await expect(storage.put(id, response)).rejects.toThrow(
+            "Provider disconnected",
+        );
+        expect(await storage.has(id)).toBe(false);
+        await waitOnExecutionContext(ctx);
+    });
+
+    it("HEAD reads metadata without refreshing an aged generated file", async () => {
+        const id = "e".repeat(64);
+        const bucket = createTestR2Bucket();
+        const mediaEnv = createMediaEnv(bucket);
+        const ctx = createExecutionContext();
+        await new MediaUpload(ctx, mediaEnv).put(id, new Response(TINY_PNG));
+        const response = await app.fetch(
+            new Request(`https://media.pollinations.ai/${id}`, {
+                method: "HEAD",
+            }),
+            mediaEnv,
+            ctx,
+        );
+        expect(response.headers.get("content-length")).toBe(
+            String(TINY_PNG.byteLength),
+        );
+        expect(response.headers.get("Link")).toBe(
+            `<https://media.pollinations.ai/${id}>; rel="enclosure"`,
+        );
+        expect(await response.text()).toBe("");
+        await waitOnExecutionContext(ctx);
+        expect(bucket.putCount).toBe(1);
+    });
     beforeAll(async () => {
         await seedUsers();
     });
@@ -565,6 +717,32 @@ describe("media.pollinations.ai", () => {
             "responses",
             "409",
         ]);
+    });
+
+    it("documents the stored-file Link header for GET and HEAD", async () => {
+        const response = await SELF.fetch(
+            "https://media.pollinations.ai/openapi.json",
+        );
+        const schema = await response.json();
+        for (const method of ["get", "head"]) {
+            expect(schema).toHaveProperty(
+                [
+                    "paths",
+                    "/{id}",
+                    method,
+                    "responses",
+                    "200",
+                    "headers",
+                    "Link",
+                ],
+                expect.objectContaining({
+                    schema: { type: "string" },
+                    example: expect.stringMatching(
+                        /^<https:\/\/media\.pollinations\.ai\/[^>]+>; rel="enclosure"$/,
+                    ),
+                }),
+            );
+        }
     });
 
     it("validates the documented JSON upload shape", async () => {

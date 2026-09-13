@@ -115,7 +115,7 @@ describe("community endpoint configuration policy", () => {
         });
 
         expect(created).toMatchObject({
-            modelId: "testuser/external-agent",
+            modelId: "community/testuser/external-agent",
             type: "endpoint_agent",
             name: "external-agent",
             title: "External agent",

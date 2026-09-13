@@ -19,6 +19,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { expect } from "vitest";
 import { type AuthEnv, authFromSnapshot } from "../src/middleware/auth.ts";
+import { TEXT_BALANCE_NOTICE_ENABLED } from "../src/middleware/text-balance-notice.ts";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
     return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
@@ -61,7 +62,7 @@ test("permission readback canonicalizes aliases without exposing hidden or unkno
 
 test("legacy stored allowlists still filter catalogs after canonical promotion", async () => {
     const { key, id } = await createTestApiKey({
-        allowedModels: ["nanobanana2"],
+        allowedModels: ["google/gemini-3.1-flash-image"],
         user: { packBalance: 100 },
     });
     // Simulate an old Enter writer after the one-time migration has run.
@@ -157,7 +158,7 @@ test("permission readback resolves future names against the current registry", (
 
 test("future-name stored allowlists filter catalogs without rewriting the database", async () => {
     const { key, id } = await createTestApiKey({
-        allowedModels: ["flux"],
+        allowedModels: ["black-forest-labs/flux.1-schnell"],
         user: { packBalance: 100 },
     });
     const permissions = { models: ["black-forest-labs/flux.1-schnell"] };
@@ -267,20 +268,13 @@ test("filters image model list by API key permissions", async ({
     expect(modelNames).toContain(RESTRICTED_IMAGE_TEST_MODEL);
 });
 
-test("canonicalizes aliases in new model permissions", async () => {
-    const { key } = await createTestApiKey({
-        allowedModels: ["nanobanana2"],
-        user: { packBalance: 100 },
-    });
-    const response = await fetchWorker("/image/models", {
-        headers: { Authorization: `Bearer ${key}` },
-    });
-
-    expect(response.status).toBe(200);
-    const body = (await response.json()) as { name: string }[];
-    expect(body.map((model) => model.name)).toEqual([
-        "google/gemini-3.1-flash-image",
-    ]);
+test("rejects aliases in new model permissions", async () => {
+    await expect(
+        createTestApiKey({
+            allowedModels: ["nanobanana2"],
+            user: { packBalance: 100 },
+        }),
+    ).rejects.toThrow("not a canonical model ID");
 });
 
 test("empty model permissions deny access and return an empty catalog", async () => {
@@ -306,7 +300,7 @@ test("empty model permissions deny access and return an empty catalog", async ()
 
 test("media routes own their endpoint-specific model defaults", async () => {
     const { key } = await createTestApiKey({
-        allowedModels: ["zimage"],
+        allowedModels: ["tongyi-mai/z-image-turbo"],
         user: { packBalance: 100 },
     });
 
@@ -367,7 +361,15 @@ test("filters OpenRouter text models by paid balance", async ({
         "/text/paid-only-check?model=mistral",
         { headers: { Authorization: `Bearer ${apiKey}` } },
     );
-    expect(generation.status).toBe(402);
+    expect(generation.status).toBe(TEXT_BALANCE_NOTICE_ENABLED ? 200 : 402);
+    if (TEXT_BALANCE_NOTICE_ENABLED) {
+        expect(await generation.text()).toContain(
+            "?ref=agent_low_balance_topup",
+        );
+        expect(generation.headers.get("cache-control")).toBe(
+            "private, no-store",
+        );
+    }
 });
 
 test("filters paid-only audio models by paid balance", async ({

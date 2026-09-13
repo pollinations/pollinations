@@ -23,7 +23,7 @@ import type { RequestData, TransformOptions } from "./types.js";
  * secret it replaces: the endpoint can verify it against `/account/key`, which
  * a shared string cannot do.
  *
- * Both agent kinds delegate and a proxy never does — the listing's type says
+ * Every agent kind delegates and a proxy never does — the listing's type says
  * so, and no flag can make a proxy delegate. The other two conditions are
  * invariants, so they throw: the endpoint must be free, since charging a
  * wrapper price on top of the generation it bills the caller for is double
@@ -60,7 +60,9 @@ async function mintDelegatedToken({
         // The managed runtime uses the listing id (also its upstream model) to
         // select the prompt config. An external agent only needs spend scope.
         managedAgentId:
-            endpoint.type === "prompt_agent" ? endpoint.id : undefined,
+            endpoint.type === "prompt_agent" || endpoint.type === "code_agent"
+                ? endpoint.id
+                : undefined,
     });
 }
 
@@ -83,7 +85,11 @@ export async function communityEndpointGatewayContext({
     parentRequestId: string;
     parentApiKeyId?: string;
 }): Promise<TransformOptions> {
-    const { messages: _messages, ...requestDataWithoutMessages } = requestData;
+    const {
+        messages: _messages,
+        agent_model: requestedAgentModel,
+        ...requestDataWithoutMessages
+    } = requestData;
     const modelConfig = await communityEndpointModelConfig({
         endpoint,
         secret,
@@ -92,7 +98,10 @@ export async function communityEndpointGatewayContext({
     });
     return {
         ...requestDataWithoutMessages,
-        modelConfig,
+        modelConfig:
+            endpoint.type === "endpoint_agent" && requestedAgentModel
+                ? { ...modelConfig, model: requestedAgentModel }
+                : modelConfig,
         modelDef: modelDefinition,
         requestedModel: endpoint.modelId,
         portkeyGatewayUrl,

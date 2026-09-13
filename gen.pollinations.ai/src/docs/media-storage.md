@@ -4,6 +4,8 @@ Upload images, audio, and video and get back an id and URL. By default, each upl
 
 Base URL: https://media.pollinations.ai
 
+Stored image, video, audio, and 3D files are linked through `Link: <https://media.pollinations.ai/{id}>; rel="enclosure"`. Image generation and editing preserve this header in both URL and base64 JSON responses; `response_format: "url"` also returns the URL in `data[].url`. Audio JSON responses, such as transcripts and timestamped speech, do not have a stored-file link. Fetching media URLs never triggers generation; missing files return 404. A generated file's ID identifies its request, so a new generation after expiry may replace the file at the same URL. Clients may continue using an older cached result after regeneration.
+
 | Endpoint | Description |
 |----------|-------------|
 | `POST /upload` | Upload a file, receive a unique media URL |

@@ -861,10 +861,10 @@ describe("buildRunway", () => {
     });
 
     it("does not block a current account forecast on unrelated historical account IDs", () => {
-        const current = cloud({ vendor: "vast.ai", account_id: "myceli" });
-        const checked = { ...balance("vast.ai", 1000), account_id: "myceli" };
+        const current = cloud({ vendor: "vast", account_id: "myceli" });
+        const checked = { ...balance("vast", 1000), account_id: "myceli" };
         const historical = cloud({
-            vendor: "vast.ai",
+            vendor: "vast",
             account_id: "old-unmapped",
             start: "2026-01-01 00:00:00",
             end: "2026-02-01 00:00:00",
@@ -878,7 +878,7 @@ describe("buildRunway", () => {
             false,
         );
         expect(
-            result.rows.find((row) => row.vendor === "vast.ai")?.forecastIssue,
+            result.rows.find((row) => row.vendor === "vast")?.forecastIssue,
         ).toBeUndefined();
         const unresolved = buildRunway([opening()], NOW, [
             { ...historical, start: current.start, end: current.end },
@@ -1082,11 +1082,11 @@ describe("buildRunway", () => {
 
     it("refuses a balance-aware projection without a checked balance", () => {
         const result = buildRunway([opening()], NOW, [
-            cloud({ vendor: "vast.ai", type: "gpu" }),
+            cloud({ vendor: "vast", type: "gpu" }),
         ]);
 
         expect(result.flags).toContain(
-            "Checked balance missing for vast.ai; prepaid or postpaid run-rate cash is not forecast.",
+            "Checked balance missing for vast; prepaid or postpaid run-rate cash is not forecast.",
         );
     });
 

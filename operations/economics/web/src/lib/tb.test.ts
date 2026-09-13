@@ -5,6 +5,7 @@ import {
     canonicalPollenRows,
     canonicalVendor,
     loadAll,
+    TbError,
     validatePipeRows,
 } from "./tb";
 
@@ -45,8 +46,8 @@ describe("loadAll", () => {
         const controller = new AbortController();
         const result = await loadAll(["opTransactions"], controller.signal);
         expect(fetch).toHaveBeenCalledExactlyOnceWith(
-            "/api/pipes/economics_bank_ledger_api",
-            { signal: controller.signal },
+            "/api/economics/pipes/economics_bank_ledger_api",
+            { credentials: "same-origin", signal: controller.signal },
         );
         expect(result.opTransactions).toHaveLength(
             FIXTURES.economics_bank_ledger_api.length,
@@ -67,6 +68,10 @@ describe("loadAll", () => {
 
         const result = await loadAll();
 
+        for (const rows of [result.vendorLedger, result.opPollen]) {
+            expect(rows?.some((row) => row.vendor === "vast")).toBe(true);
+            expect(rows?.some((row) => row.vendor === "vast.ai")).toBe(false);
+        }
         expect(result.privateConfig).toEqual(PRIVATE_CONFIG_FIXTURE);
         expect(result.userBalances).toEqual(
             FIXTURES.economics_user_balances_api,
@@ -94,6 +99,22 @@ describe("loadAll", () => {
         await expect(loadAll()).rejects.toThrow(
             "economics_private_config_api: expected one row, received 0",
         );
+    });
+
+    it("preserves dashboard authentication status", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(() =>
+                Promise.resolve(
+                    Response.json({ error: "Unauthorized" }, { status: 401 }),
+                ),
+            ),
+        );
+
+        const error = await loadAll().catch((caught: unknown) => caught);
+
+        expect(error).toBeInstanceOf(TbError);
+        expect((error as TbError).status).toBe(401);
     });
 
     it("fails closed when the D1 user snapshot is empty", async () => {
@@ -131,7 +152,7 @@ describe("loadAll", () => {
 
 describe("canonicalVendor", () => {
     it("normalizes the Vast Pollen alias", () => {
-        expect(canonicalVendor("vast")).toBe("vast.ai");
+        expect(canonicalVendor("vast.ai")).toBe("vast");
     });
 
     it("joins Bedrock usage to AWS billing", () => {
@@ -141,7 +162,7 @@ describe("canonicalVendor", () => {
 
     it("joins account-specific aliases to their provider", () => {
         expect(canonicalVendor("azure-2")).toBe("azure");
-        expect(canonicalVendor("vastai")).toBe("vast.ai");
+        expect(canonicalVendor("vastai")).toBe("vast");
     });
 
     it("leaves canonical vendors unchanged", () => {
@@ -171,14 +192,17 @@ describe("canonicalPollenRows", () => {
         ...overrides,
     });
 
-    it("aggregates aliases after canonicalization", () => {
+    it.each([
+        ["aws", "bedrock"],
+        ["vast", "vast.ai"],
+    ])("aggregates %s and historical %s usage together", (canonical, historical) => {
         const [row] = canonicalPollenRows([
-            pollen("aws"),
-            pollen("bedrock", { cost_paid: 10, requests_paid: 20 }),
+            pollen(canonical),
+            pollen(historical, { cost_paid: 10, requests_paid: 20 }),
         ]);
 
         expect(row).toMatchObject({
-            vendor: "aws",
+            vendor: canonical,
             cost_paid: 11,
             cost_quests: 4,
             requests_paid: 25,

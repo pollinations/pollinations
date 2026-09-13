@@ -11,6 +11,30 @@ import { SENTINEL_SEED } from "../../src/util.js";
 afterEach(() => vi.restoreAllMocks());
 
 describe("getChatRequestData", () => {
+    it.each([
+        undefined,
+        false,
+        true,
+    ])("does not invent parallel_tool_calls (%s)", (parallel_tool_calls) => {
+        const request = getChatRequestData(
+            CreateChatCompletionRequestSchema.parse({
+                model: "openai/gpt-5.4",
+                messages: [{ role: "user", content: "hello" }],
+                ...(parallel_tool_calls === undefined
+                    ? {}
+                    : { parallel_tool_calls }),
+            }),
+        );
+        expect(request.parallel_tool_calls).toBe(parallel_tool_calls);
+        expect(
+            chatToResponsesRequest(request.messages, request)
+                .parallel_tool_calls,
+        ).toBe(parallel_tool_calls);
+        if (parallel_tool_calls === undefined) {
+            expect(request).not.toHaveProperty("parallel_tool_calls");
+        }
+    });
+
     it("preserves validated OpenAI and provider fields", () => {
         const body = CreateChatCompletionRequestSchema.parse({
             model: "openai/gpt-5-nano",
@@ -148,9 +172,9 @@ describe("getSimpleTextRequestData", () => {
                 stream: false,
             },
         );
-        expect(() =>
+        expect(
             chatToResponsesRequest(request.messages, { ...request, seed: 0 }),
-        ).toThrow("seed is not supported");
+        ).not.toHaveProperty("seed");
     });
 
     it("leaves numeric normalization to the provider pipeline", () => {

@@ -222,6 +222,18 @@ const ProxyUpdateSchema = z
     .superRefine(validateEndpointUpdate);
 export type ProxyUpdateInput = z.infer<typeof ProxyUpdateSchema>;
 const PromptAgentUpdateSchema = z.object(CommonUpdateFieldsSchema).strict();
+export const CodeAgentUpdateSchema = z
+    .object({
+        description: z
+            .literal("")
+            .optional()
+            .describe(
+                "An empty value is ignored; the description comes from GitHub.",
+            ),
+        visibility: VisibilitySchema.optional(),
+        requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional(),
+    })
+    .strict();
 const EndpointAgentUpdateSchema = z
     .object({
         ...CommonUpdateFieldsSchema,
@@ -238,6 +250,9 @@ export const UpdateEndpointSchema = ProxyUpdateSchema;
 const UPDATE_SCHEMA_BY_TYPE = {
     proxy: ProxyUpdateSchema,
     prompt_agent: PromptAgentUpdateSchema,
+    code_agent: CodeAgentUpdateSchema.extend({
+        hidden: CommonUpdateFieldsSchema.hidden,
+    }),
     endpoint_agent: EndpointAgentUpdateSchema,
 } as const;
 
@@ -355,6 +370,12 @@ const PromptAgentEndpointResponseSchema = z
         type: z.literal("prompt_agent"),
     })
     .strict();
+const CodeAgentEndpointResponseSchema = z
+    .object({
+        ...CommunityEndpointResponseFieldsSchema,
+        type: z.literal("code_agent"),
+    })
+    .strict();
 export const EndpointAgentResponseSchema = z
     .object({
         ...CommunityEndpointResponseFieldsSchema,
@@ -368,6 +389,7 @@ export const EndpointAgentResponseSchema = z
 export const CommunityEndpointResponseSchema = z.union([
     ProxyEndpointResponseSchema,
     PromptAgentEndpointResponseSchema,
+    CodeAgentEndpointResponseSchema,
     EndpointAgentResponseSchema,
 ]);
 export type CommunityEndpointResponse = z.infer<
@@ -410,6 +432,12 @@ export const CommunityEndpointTestResponseSchema = z
         imagePricing: ImagePricingSchema.optional().describe(
             "Image tests only: pricing mode detected from the provider response.",
         ),
+        imageEditError: z
+            .string()
+            .optional()
+            .describe(
+                "Image tests only: edit-test failure details. Generation succeeded; this does not establish that editing is unsupported.",
+            ),
         inputModalities: z
             .array(InputModalitySchema)
             .optional()

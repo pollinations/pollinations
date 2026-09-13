@@ -1,3 +1,4 @@
+import { oauthProvider } from "@better-auth/oauth-provider";
 import { authAdditionalFields } from "@shared/auth/additional-fields.ts";
 import {
     assertStagingAccess,
@@ -32,6 +33,22 @@ import { drizzle } from "drizzle-orm/d1";
 import { discordConfigFromEnv } from "./services/discord.ts";
 
 const DELETE_ACCOUNT_FRESH_SESSION_MS = 10 * 60 * 1000;
+const ADMIN_USER_IDS = ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"];
+
+export function isAdminUser(user: {
+    id: string;
+    role?: string | null;
+    banned?: boolean | null;
+}) {
+    return (
+        !user.banned &&
+        (ADMIN_USER_IDS.includes(user.id) ||
+            user.role
+                ?.split(",")
+                .map((role) => role.trim())
+                .includes("admin") === true)
+    );
+}
 
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
@@ -59,8 +76,24 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             message: "Only one Discord account can be connected.",
         });
 
-    const adminPlugin = admin({
-        adminUserIds: ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"],
+    const adminPlugin = admin({ adminUserIds: ADMIN_USER_IDS });
+
+    const oauthProviderPlugin = oauthProvider({
+        loginPage: "/app/sign-in",
+        allowPublicClientPrelogin: true,
+        // Only trusted internal dashboard clients are registered, so
+        // consent is skipped. Explicit consent requests fail closed here.
+        consentPage: "/error",
+        // Clients are seeded by migrations, not managed through the public API.
+        clientPrivileges: () => false,
+        scopes: ["openid", "profile", "email"],
+        grantTypes: ["authorization_code"],
+        // Apps recheck UserInfo throughout their 12-hour session; no refresh grant.
+        accessTokenExpiresIn: 43_200,
+        disableJwtPlugin: true,
+        customUserInfoClaims: ({ user }) => ({
+            role: isAdminUser(user) ? "admin" : "user",
+        }),
     });
 
     const openAPIPlugin = openAPI({
@@ -176,6 +209,13 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             ...AUTH_TRUSTED_ORIGINS,
             "http://localhost:3000",
             "http://127.0.0.1:3000",
+            ...(env.ENVIRONMENT === "production"
+                ? []
+                : [
+                      "http://localhost:3457",
+                      "http://localhost:4180",
+                      "http://localhost:4000",
+                  ]),
         ],
         user: {
             additionalFields: authAdditionalFields.user,
@@ -232,6 +272,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         },
         plugins: [
             adminPlugin,
+            oauthProviderPlugin,
             apiKeyPlugin,
             githubProfileSyncPlugin(env, ctx),
             openAPIPlugin,

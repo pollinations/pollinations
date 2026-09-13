@@ -40,9 +40,10 @@ async function fetchPipe<T>(pipe: string, signal?: AbortSignal): Promise<T[]> {
         return validatePipeRows<T>(pipe, rows);
     }
 
-    const res = await fetch(`/api/pipes/${encodeURIComponent(pipe)}`, {
-        signal,
-    });
+    const res = await fetch(
+        `/api/economics/pipes/${encodeURIComponent(pipe)}`,
+        { credentials: "same-origin", signal },
+    );
     if (!res.ok) throw new TbError(pipe, res.status);
 
     const body = (await res.json()) as { data?: unknown[] };

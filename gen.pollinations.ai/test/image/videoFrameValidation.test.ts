@@ -14,6 +14,7 @@ import type { ImageParams } from "../../src/image/params.ts";
 const VIDEO_FRAME_LIMITS = [
     ["google/gemini-omni-1.1-flash", 2],
     ["google/veo-3.1-fast", 2],
+    ["google/veo-3.1-fast:replicate", 2],
     ["bytedance/seedance-1-pro-fast", 1],
     ["bytedance/seedance-1-pro-fast:fal", 1],
     ["bytedance/seedance-2.0", 2],
@@ -26,7 +27,7 @@ const VIDEO_FRAME_LIMITS = [
     ["alibaba/wan-2.2-fast:fal", 2],
     ["alibaba/wan-2.7", 2],
     ["x-ai/grok-imagine-video", 1],
-    ["x-ai/grok-imagine-video:fal", 1],
+    ["x-ai/grok-imagine-video:openrouter", 1],
     ["x-ai/grok-imagine-video-1.5", 1],
     ["x-ai/grok-imagine-video-1.5:fal", 1],
     ["bytedance/seedance-2.5", 2],

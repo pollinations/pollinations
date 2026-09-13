@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import JSON5 from "json5";
 import {
     commandExists,
     readTextIfExists,
@@ -13,7 +14,7 @@ import type { HarnessAdapter, HarnessContext, HarnessResult } from "./types.js";
 
 const ID = "opencode";
 const LABEL = "OpenCode";
-const DEFAULT_MODEL = "openai";
+const DEFAULT_MODEL = "openai/gpt-5.4-nano";
 const PLUGIN_SPEC = "opencode-pollinations-plugin";
 
 /**
@@ -44,7 +45,12 @@ const opencodeConfigFile = (ctx: HarnessContext) => {
     const dir = ctx.env.OPENCODE_CONFIG_DIR?.trim()
         ? resolveHomePath(ctx.home, ctx.env.OPENCODE_CONFIG_DIR)
         : join(ctx.home, ".config", "opencode");
-    return join(dir, "opencode.json");
+    return (
+        ["opencode.jsonc", "opencode.json", "config.json"]
+            .map((name) => join(dir, name))
+            .find((path) => readTextIfExists(path) !== null) ??
+        join(dir, "opencode.json")
+    );
 };
 
 const pluginConfigFile = (ctx: HarnessContext) =>
@@ -59,11 +65,16 @@ const readJson = (path: string): Record<string, unknown> | null => {
     const text = readTextIfExists(path);
     if (text === null) return null;
     try {
-        const parsed = JSON.parse(text);
-        return parsed && typeof parsed === "object" ? parsed : null;
-    } catch {
-        return null;
+        const parsed = JSON5.parse(text);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+            return parsed as Record<string, unknown>;
+        }
+    } catch (error) {
+        throw new Error(`Could not parse OpenCode config at ${path}`, {
+            cause: error,
+        });
     }
+    throw new Error(`OpenCode config at ${path} must contain an object`);
 };
 
 const writeJson = (path: string, data: unknown) =>

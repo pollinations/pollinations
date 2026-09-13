@@ -86,6 +86,88 @@ describe("/openapi.json", () => {
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/v1/audio/music/upload"]).toBeUndefined();
 
+        for (const [path, method] of [
+            ["/image/{prompt}", "get"],
+            ["/video/{prompt}", "get"],
+            ["/3d/{prompt}", "get"],
+            ["/3d/{prompt}", "post"],
+            ["/audio/{text}", "get"],
+            ["/v1/images/generations", "post"],
+            ["/v1/images/edits", "post"],
+            ["/v1/audio/speech", "post"],
+            ["/v1/audio/voice-changer", "post"],
+            ["/v1/audio/voice-isolator", "post"],
+        ]) {
+            expect(schema).toHaveProperty(
+                ["paths", path, method, "responses", "200", "headers", "Link"],
+                expect.objectContaining({
+                    schema: { type: "string" },
+                    example: expect.stringMatching(
+                        /^<https:\/\/media\.pollinations\.ai\/[^>]+>; rel="enclosure"$/,
+                    ),
+                }),
+            );
+        }
+        for (const path of [
+            "/v1/audio/transcriptions",
+            "/v1/audio/speech/with-timestamps",
+        ]) {
+            expect(schema).not.toHaveProperty([
+                "paths",
+                path,
+                "post",
+                "responses",
+                "200",
+                "headers",
+                "Link",
+            ]);
+        }
+
+        const imageEditOperation = schema.paths["/v1/images/edits"] as {
+            post: {
+                requestBody: {
+                    required: boolean;
+                    content: Record<string, { schema: unknown }>;
+                };
+            };
+        };
+        const editBody = imageEditOperation.post.requestBody;
+        expect(editBody.required).toBe(true);
+        expect(editBody.content["application/json"].schema).toMatchObject({
+            type: "object",
+            required: ["prompt", "image"],
+            properties: {
+                image: { anyOf: expect.any(Array) },
+                response_format: {
+                    enum: ["url", "b64_json"],
+                    default: "b64_json",
+                },
+            },
+        });
+        const multipart = editBody.content["multipart/form-data"].schema;
+        expect(multipart).toMatchObject({
+            anyOf: [
+                { required: ["prompt", "image"] },
+                { required: ["prompt", "image[]"] },
+            ],
+        });
+        const multipartProperties = collectPropertySets(multipart);
+        expect(multipartProperties.some((fields) => "n" in fields)).toBe(false);
+        expect(multipartProperties).toContainEqual(
+            expect.objectContaining({
+                image: {
+                    anyOf: [
+                        expect.objectContaining({
+                            type: "string",
+                            format: "binary",
+                        }),
+                        { type: "string" },
+                        expect.objectContaining({ type: "array", minItems: 1 }),
+                    ],
+                },
+            }),
+        );
+
         const modelProperties = collectPropertySets(
             schema.paths["/models"],
         ).find(

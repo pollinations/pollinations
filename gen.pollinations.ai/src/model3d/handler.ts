@@ -21,7 +21,7 @@ export async function generate3dResponse(
     body: Record<string, unknown> = {},
 ): Promise<Response> {
     syncModel3dEnvironment(c.env);
-    const originalPrompt = decodePrompt(prompt || "");
+    const originalPrompt = prompt || "";
     const safeParams = parseModel3dParams(c, body);
     c.var.track.setPricingInput({ resolution: safeParams.resolution });
 
@@ -58,14 +58,6 @@ export async function handle3dPrompt(
     return generate3dResponse(c, prompt, body);
 }
 
-export function decodePrompt(rawPrompt: string): string {
-    try {
-        return decodeURIComponent(rawPrompt);
-    } catch {
-        return rawPrompt;
-    }
-}
-
 export function parseModel3dParams(
     c: Model3dContext,
     body: Record<string, unknown>,
@@ -98,7 +90,7 @@ export function assertNonEmptyMedia(result: Model3dGenerationResult): void {
     }
 }
 
-function contentDisposition(prompt: string): string {
+function contentDisposition(prompt: string, contentType: string): string {
     const baseFilename = prompt
         .slice(0, 100)
         .replace(/[^a-z0-9\s-]/gi, "")
@@ -106,7 +98,11 @@ function contentDisposition(prompt: string): string {
         .replace(/-+/g, "-")
         .replace(/^-|-$/g, "")
         .toLowerCase();
-    return `inline; filename="${baseFilename || "generated-model"}.glb"`;
+    const filename = baseFilename || "generated-model";
+    if (contentType === "model/ply") {
+        return `inline; filename="${filename}.ply"`;
+    }
+    return `inline; filename="${filename}.glb"`;
 }
 
 export function mediaHeaders(
@@ -118,7 +114,10 @@ export function mediaHeaders(
         "Content-Type": result.contentType,
         "Cache-Control": IMMUTABLE_CACHE_CONTROL,
     });
-    headers.set("Content-Disposition", contentDisposition(prompt));
+    headers.set(
+        "Content-Disposition",
+        contentDisposition(prompt, result.contentType),
+    );
 
     const modelUsed = result.trackingData?.actualModel || safeParams.model;
     const usage = result.trackingData?.usage || { completionImageTokens: 1 };

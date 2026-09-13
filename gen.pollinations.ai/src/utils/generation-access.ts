@@ -46,7 +46,7 @@ export async function checkBalance(
     if (typeof apiKeyBudget === "number" && apiKeyBudget < requiredBudget) {
         throw new PaymentRequiredError(
             "KEY_BUDGET_EXHAUSTED",
-            `API key budget too low. This request costs ~${estimatedCost.toFixed(4)} pollen, but this key has ${Math.max(0, apiKeyBudget).toFixed(4)}. Increase the key budget at https://enter.pollinations.ai/keys; topping up the wallet does not increase this limit.`,
+            `API key budget too low. This request costs ~${estimatedCost.toFixed(4)} pollen, but this key has ${Math.max(0, apiKeyBudget).toFixed(4)}. Increase the key budget at https://enter.pollinations.ai/edit-key?id=${auth.apiKey?.id ?? ""}; topping up the wallet does not increase this limit.`,
         );
     }
 
@@ -58,7 +58,8 @@ export async function checkBalance(
             : Math.max(userBalance.tierBalance, userBalance.packBalance);
         throw new PaymentRequiredError(
             "INSUFFICIENT_BALANCE",
-            `Insufficient balance. This request costs ~${estimatedCost.toFixed(4)} pollen, but your available ${isPaidOnly ? "paid " : ""}balance is ${Math.max(0, available).toFixed(4)}. Top up at https://enter.pollinations.ai/pollen.`,
+            `Insufficient balance. This request costs ~${estimatedCost.toFixed(4)} pollen, but your available ${isPaidOnly ? "paid " : ""}balance is ${Math.max(0, available).toFixed(4)}. Top up at https://enter.pollinations.ai/top-up.`,
+            isPaidOnly,
         );
     }
 

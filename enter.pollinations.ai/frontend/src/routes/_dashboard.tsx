@@ -136,8 +136,12 @@ function DashboardLayout() {
     );
 }
 
-export function SignedOutAccountArea() {
-    const { isSigningIn, error, signIn } = useGitHubSignIn();
+export function SignedOutAccountArea({
+    callbackURL,
+}: {
+    callbackURL?: string;
+} = {}) {
+    const { isSigningIn, error, signIn } = useGitHubSignIn(callbackURL);
 
     return (
         <div className="flex flex-col gap-2">

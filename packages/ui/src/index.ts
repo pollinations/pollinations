@@ -1,4 +1,8 @@
 export {
+    AccountIdentity,
+    type AccountIdentityProps,
+} from "./compositions/AccountIdentity.tsx";
+export {
     AccountMenu,
     type AccountMenuProps,
 } from "./compositions/AccountMenu.tsx";
@@ -54,9 +58,12 @@ export { cn } from "./lib/cn-app.ts";
 export {
     currentPeriod,
     getPeriodBucketKeys,
+    isPeriodSelectable,
     type PeriodGranularity,
     type PeriodSelection,
     periodBucketKeyToDate,
+    periodFromDate,
+    periodToWindow,
 } from "./lib/period.ts";
 export { useScrollLock } from "./lib/use-scroll-lock.ts";
 export { Button, type ButtonProps } from "./primitives/Button.tsx";

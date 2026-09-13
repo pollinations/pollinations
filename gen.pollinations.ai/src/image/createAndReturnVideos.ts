@@ -24,6 +24,7 @@ import { callSeedanceProAPI } from "./models/seedanceReplicateVideoModel.ts";
 import { callSeedanceV2API } from "./models/seedanceV2VideoModel.ts";
 import {
     callVeoAPI,
+    callVeoReplicateAPI,
     type VideoGenerationResult,
 } from "./models/veoVideoModel.ts";
 import { callWan3FalAPI } from "./models/wan3FalVideoModel.ts";
@@ -74,13 +75,16 @@ export async function createAndReturnVideo(
         case "google/veo-3.1-fast":
             result = await callVeoAPI(prompt, safeParams);
             break;
+        case "google/veo-3.1-fast:replicate":
+            result = await callVeoReplicateAPI(prompt, safeParams);
+            break;
         case "bytedance/seedance-1-pro-fast":
             result = await callSeedanceProAPI(prompt, safeParams);
             break;
         case "bytedance/seedance-1-pro-fast:fal":
         case "alibaba/wan-2.6:fal":
         case "alibaba/wan-2.2-fast:fal":
-        case "x-ai/grok-imagine-video:fal":
+        case "x-ai/grok-imagine-video":
         case "x-ai/grok-imagine-video-1.5:fal":
             result = await callFalFallbackVideo(prompt, safeParams);
             break;
@@ -107,8 +111,8 @@ export async function createAndReturnVideo(
         case "amazon/nova-reel-v1":
             result = await callNovaReelAPI(prompt, safeParams, requestId);
             break;
+        case "x-ai/grok-imagine-video:openrouter":
         case "x-ai/grok-imagine-video-1.5":
-        case "x-ai/grok-imagine-video":
             result = await callOpenRouterGrokVideoAPI(prompt, safeParams);
             break;
         case "bytedance/seedance-2.5":

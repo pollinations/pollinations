@@ -422,6 +422,50 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
     },
+    "openai/gpt-image-2.5-flare": {
+        aliases: [],
+        provider: "openai",
+        publisher: "OpenAI",
+        category: "image",
+        addedDate: new Date("2026-09-08").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // https://developers.openai.com/api/docs/models/gpt-image-2.5-flare
+            promptTextTokens: perMillion(5),
+            promptCachedTokens: perMillion(1.25),
+            promptImageTokens: perMillion(8),
+            completionImageTokens: perMillion(30),
+        },
+        title: "GPT Image 2.5 Flare",
+        description:
+            "Fast image generation and precise editing with reference images",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 16,
+    },
+    "openai/gpt-image-2.5-sunburst": {
+        aliases: [],
+        provider: "openai",
+        publisher: "OpenAI",
+        category: "image",
+        addedDate: new Date("2026-09-08").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst
+            promptTextTokens: perMillion(5),
+            promptCachedTokens: perMillion(1.25),
+            promptImageTokens: perMillion(8),
+            completionImageTokens: perMillion(30),
+        },
+        title: "GPT Image 2.5 Sunburst",
+        description:
+            "Detailed image generation with precise control over reference-image edits",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 16,
+    },
     "black-forest-labs/flux.1-schnell": {
         aliases: ["flux"],
         provider: "vast",
@@ -1107,7 +1151,7 @@ const IMAGE_BASE_SERVICES = {
     },
     "x-ai/grok-imagine-video": {
         aliases: ["grok-imagine-video", "grok-video-pro"],
-        provider: "openrouter",
+        provider: "fal",
         publisher: "xAI",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
@@ -1315,28 +1359,34 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-09-04").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // fal launch pricing through 2026-09-07; restore list rates on 2026-09-08.
+        // fal launch pricing through 2026-09-14; restore list rates on 2026-09-15.
         cost: {
             completionVideoSeconds: 0.00625, // 480p per output second.
         },
         ...defineCostVariants(
             {
                 "768p": { completionVideoSeconds: 0.01 },
+                "1080p": { completionVideoSeconds: 0.02 },
             },
-            matchResolution("768p"),
+            matchResolution("768p", "1080p"),
             {
                 "768p": {
                     label: "768p",
                     description:
                         "Applies when the requested video resolution is 768p.",
                 },
+                "1080p": {
+                    label: "1080p",
+                    description:
+                        "Applies when the requested video resolution is 1080p.",
+                },
             },
             "480p",
         ),
-        resolutions: ["480p", "768p"],
+        resolutions: ["480p", "768p", "1080p"],
         title: "MiniMax H3 Max Turbo",
         description:
-            "Fast 5–15 second video with synchronized audio and first/last-frame control at 480p or 768p",
+            "Fast 5–15 second video with synchronized audio and first/last-frame control at 480p, 768p, or 1080p",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],
@@ -1444,7 +1494,7 @@ const IMAGE_BASE_SERVICES = {
     },
     "amazon/nova-canvas-v1": {
         aliases: ["amazon-nova-canvas", "nova-canvas"],
-        provider: "bedrock",
+        provider: "aws",
         publisher: "Amazon",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
@@ -1478,7 +1528,7 @@ const IMAGE_BASE_SERVICES = {
     },
     "amazon/nova-reel-v1": {
         aliases: ["amazon-nova-reel", "nova-reel"],
-        provider: "bedrock",
+        provider: "aws",
         publisher: "Amazon",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),

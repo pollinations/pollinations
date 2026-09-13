@@ -521,6 +521,21 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("routes DeepSeek V4.1 Flash to the exact Fireworks checkpoint", () => {
+        const result = resolveModelConfig(messages, {
+            model: "deepseek/deepseek-v4.1-flash",
+        });
+
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/deepseek-v4p1-flash",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
     it("routes DeepSeek Vision to the exact Fireworks vision checkpoint", () => {
         const result = resolveModelConfig(messages, {
             model: "deepseek/deepseek-v4-flash-vision-exp",
@@ -562,6 +577,29 @@ describe("resolveModelConfig", () => {
             "azure-model-name": "Cohere-command-a-plus-05-2026",
         });
         expect(result.options.provider).toBeUndefined();
+    });
+
+    it.each([
+        ["perplexity/sonar", "low"],
+        ["perplexity/sonar", "high"],
+        ["perplexity/sonar-pro", "high"],
+        ["perplexity/sonar-reasoning-pro", "high"],
+    ] as const)("preserves %s %s search context on OpenRouter", (model, searchContextSize) => {
+        const result = resolveModelConfig(messages, {
+            model: `${model}:openrouter:perplexity`,
+            web_search_options: { search_context_size: searchContextSize },
+        });
+        expect(result.options.model).toBe(model);
+        expect(result.options.web_search_options).toEqual({
+            search_context_size: searchContextSize,
+        });
+        expect(result.options.modelConfig).toMatchObject({
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+        });
+        expect(result.options.provider).toEqual({
+            only: ["perplexity"],
+            allow_fallbacks: false,
+        });
     });
 
     it.each([

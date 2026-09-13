@@ -7,6 +7,7 @@ on:
       - "apps/**"
       - "operations/**"
       - "packages/sdk/**"
+      - "packages/auth/**"
       - "packages/ui/**"
       - "packages/mcp/**"
       - "package.json"
@@ -29,7 +30,7 @@ jobs:
       apps: ${{ steps.detect.outputs.apps }}
       skip: ${{ steps.detect.outputs.skip }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -91,15 +92,15 @@ jobs:
       group: deploy-${{ matrix.app.path }}
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: "24"
 
       - name: Setup SOPS
         if: matrix.app.sops != 'none'
-        uses: nhedger/setup-sops@v2
+        uses: nhedger/setup-sops@v3
 
       - name: Verify Docker
         if: matrix.app.docker

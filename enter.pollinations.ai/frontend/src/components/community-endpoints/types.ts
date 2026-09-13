@@ -25,28 +25,42 @@ import type { SafetyFeature } from "@shared/schemas/safety.ts";
 
 type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
 
-export type ManagedAgent = {
+type ManagedAgentBase = {
     id: string;
     name: string;
     title: string;
     description: string | null;
     visibility: CommunityEndpointVisibility;
-    systemPrompt: string;
-    baseModel: string;
     requiredSafetyFeatures: SafetyFeature[];
-    mcpServers: McpServerId[];
     createdAt: string;
     updatedAt: string;
 };
 
+export type ManagedPromptAgent = ManagedAgentBase & {
+    type: "prompt_agent";
+    systemPrompt: string;
+    baseModel: string;
+    mcpServers: McpServerId[];
+};
+
+export type ManagedCodeAgent = ManagedAgentBase & {
+    type: "code_agent";
+    repository: string;
+    deployedCommitSha: string;
+};
+
+export type ManagedAgent = ManagedPromptAgent | ManagedCodeAgent;
+
 type AgentFields = Pick<
-    ManagedAgent,
+    ManagedPromptAgent,
     "systemPrompt" | "baseModel" | "requiredSafetyFeatures" | "mcpServers"
 >;
 
-export type AgentFormState = AgentFields;
-
-export type AgentPayload = AgentFields;
+export type AgentFormState = AgentFields &
+    ModelListingFormState & {
+        type: "prompt_agent" | "code_agent";
+        repository: string;
+    };
 
 export type CommunityProviderProfile = {
     name: string | null;
@@ -99,6 +113,10 @@ export type PromptAgentCommunityEndpoint = CommunityEndpointBase & {
     type: "prompt_agent";
 };
 
+export type CodeAgentCommunityEndpoint = CommunityEndpointBase & {
+    type: "code_agent";
+};
+
 export type EndpointAgentCommunityEndpoint = CommunityEndpointBase & {
     type: "endpoint_agent";
     api: CommunityEndpointApi;
@@ -110,6 +128,7 @@ export type EndpointAgentCommunityEndpoint = CommunityEndpointBase & {
 export type CommunityEndpoint =
     | ProxyCommunityEndpoint
     | PromptAgentCommunityEndpoint
+    | CodeAgentCommunityEndpoint
     | EndpointAgentCommunityEndpoint;
 
 export type EditableEndpoint =
@@ -232,13 +251,6 @@ export type EndpointPayload = ModelListingPayload & {
           }
     );
 
-export type AgentListingDetailsPayload = {
-    name: string;
-    title: string;
-    description: string;
-    visibility: CommunityEndpointVisibility;
-};
-
 export type CommunityEndpointUsage = Record<string, unknown>;
 
 export type CommunityEndpointTestResponse = {
@@ -248,6 +260,7 @@ export type CommunityEndpointTestResponse = {
     billableUsage?: Usage;
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[];
+    imageEditError?: string;
 };
 
 export type ActionState = {
@@ -287,10 +300,13 @@ export const emptyForm: EndpointFormState = {
 };
 
 export const emptyAgentForm: AgentFormState = {
+    ...emptyListingForm,
+    type: "prompt_agent",
     systemPrompt: "",
     baseModel: "",
     requiredSafetyFeatures: [],
     mcpServers: [],
+    repository: "",
 };
 
 export const idleAction: ActionState = { status: "idle" };
@@ -419,21 +435,24 @@ export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
     };
 }
 
-export function agentListingToForm(
-    endpoint?: PromptAgentCommunityEndpoint,
-): ModelListingFormState {
-    return endpoint
-        ? {
-              inputModalities: ["text"],
-              capabilities: [],
-              contextLength: "",
-              name: endpoint.name,
-              title: endpoint.title,
-              description: endpoint.description ?? "",
-              visibility: endpoint.visibility,
-              perUserRpm: "",
-          }
-        : { ...emptyListingForm };
+export function agentToForm(agent?: ManagedAgent): AgentFormState {
+    if (!agent) return { ...emptyAgentForm };
+    return {
+        ...emptyAgentForm,
+        type: agent.type,
+        name: agent.name,
+        title: agent.title,
+        description: agent.description ?? "",
+        visibility: agent.visibility,
+        requiredSafetyFeatures: agent.requiredSafetyFeatures,
+        ...(agent.type === "code_agent"
+            ? { repository: agent.repository }
+            : {
+                  systemPrompt: agent.systemPrompt,
+                  baseModel: agent.baseModel,
+                  mcpServers: agent.mcpServers,
+              }),
+    };
 }
 
 function formPricesToPayload(
@@ -507,7 +526,33 @@ export function observedUsageValue(
         : null;
 }
 
-export function toAgentPayload(form: AgentFormState): AgentPayload {
+export function toAgentPayload(form: AgentFormState) {
+    if (form.type === "code_agent") {
+        const repository = form.repository.trim();
+        if (!repository) {
+            throw new Error("GitHub repository is required for a code agent");
+        }
+        return {
+            type: "code_agent" as const,
+            repository,
+            visibility: form.visibility,
+            requiredSafetyFeatures: form.requiredSafetyFeatures,
+        };
+    }
+    return promptAgentPayload(form);
+}
+
+export function toAgentUpdatePayload(form: AgentFormState) {
+    if (form.type === "code_agent") {
+        return {
+            visibility: form.visibility,
+            requiredSafetyFeatures: form.requiredSafetyFeatures,
+        };
+    }
+    return promptAgentPayload(form);
+}
+
+function promptAgentPayload(form: AgentFormState) {
     const systemPrompt = form.systemPrompt.trim();
     if (!systemPrompt) {
         throw new Error("System prompt is required for a prompt agent");
@@ -517,6 +562,10 @@ export function toAgentPayload(form: AgentFormState): AgentPayload {
         throw new Error("Base model is required for a prompt agent");
     }
     return {
+        name: form.name.trim(),
+        title: form.title.trim(),
+        description: form.description.trim(),
+        visibility: form.visibility,
         systemPrompt,
         baseModel,
         requiredSafetyFeatures: form.requiredSafetyFeatures,
@@ -563,17 +612,6 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         // validated against a quoted price.
         fallbacks: form.visibility === "public" ? form.fallbacks : [],
         ...formPricesToPayload(form, modality, imagePricing),
-    };
-}
-
-export function toAgentListingPayload(
-    form: ModelListingFormState,
-): AgentListingDetailsPayload {
-    return {
-        name: form.name.trim(),
-        title: form.title.trim(),
-        description: form.description.trim(),
-        visibility: form.visibility,
     };
 }
 

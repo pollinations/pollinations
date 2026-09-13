@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { buildDailyComparison } from "../src/lib/dailyComparison";
 import { formatValue } from "../src/lib/format";
 import {
     KPI_VIEWS,
@@ -24,6 +25,143 @@ describe("dashboard time range", () => {
     it("ignores unsupported or malformed URL values", () => {
         expect(weeksFromSearch("?weeks=52")).toBe(12);
         expect(weeksFromSearch("?weeks=nope")).toBe(12);
+    });
+});
+
+describe("daily week comparison", () => {
+    it("shows the full previous week and leaves future days blank for both metrics", () => {
+        const rows = [
+            { date: "2026-08-31", revenue: 289.15 },
+            { date: "2026-09-01", revenue: 364.94 },
+            { date: "2026-09-02", revenue: 215.24 },
+            { date: "2026-09-06", revenue: 514.88 },
+            { date: "2026-09-07", revenue: 342.63 },
+            { date: "2026-09-08", revenue: 356.27 },
+        ];
+
+        expect(
+            buildDailyComparison(
+                rows,
+                [
+                    {
+                        date: "2026-09-06",
+                        registrations: 91,
+                        snapshot_at: "2026-09-09T03:00:00Z",
+                    },
+                    {
+                        date: "2026-09-08",
+                        registrations: 102,
+                        snapshot_at: "2026-09-09T03:00:00Z",
+                    },
+                ],
+                new Date("2026-09-09T12:00:00Z"),
+            ),
+        ).toEqual([
+            {
+                week: "2026-09-07",
+                day: "Mon",
+                currentRevenue: 342.63,
+                previousRevenue: 289.15,
+                currentSignups: 0,
+                previousSignups: 0,
+            },
+            {
+                week: "2026-09-08",
+                day: "Tue",
+                currentRevenue: 356.27,
+                previousRevenue: 364.94,
+                currentSignups: 102,
+                previousSignups: 0,
+            },
+            {
+                week: "2026-09-09",
+                day: "Wed",
+                currentRevenue: 0,
+                previousRevenue: 215.24,
+                currentSignups: 0,
+                previousSignups: 0,
+            },
+            {
+                week: "2026-09-10",
+                day: "Thu",
+                currentRevenue: null,
+                previousRevenue: 0,
+                currentSignups: null,
+                previousSignups: 0,
+            },
+            {
+                week: "2026-09-11",
+                day: "Fri",
+                currentRevenue: null,
+                previousRevenue: 0,
+                currentSignups: null,
+                previousSignups: 0,
+            },
+            {
+                week: "2026-09-12",
+                day: "Sat",
+                currentRevenue: null,
+                previousRevenue: 0,
+                currentSignups: null,
+                previousSignups: 0,
+            },
+            {
+                week: "2026-09-13",
+                day: "Sun",
+                currentRevenue: null,
+                previousRevenue: 514.88,
+                currentSignups: null,
+                previousSignups: 91,
+            },
+        ]);
+    });
+
+    it("does not turn unavailable or stale data into zeroes", () => {
+        const days = buildDailyComparison(
+            null,
+            [
+                {
+                    date: "2026-09-07",
+                    registrations: 80,
+                    snapshot_at: "2026-09-08T03:00:00Z",
+                },
+            ],
+            new Date("2026-09-09T12:00:00Z"),
+        );
+        expect(
+            days.every(
+                (day) =>
+                    day.currentRevenue === null && day.previousRevenue === null,
+            ),
+        ).toBe(true);
+        expect(days[0].currentSignups).toBe(80);
+        expect(days[2].currentSignups).toBeNull();
+        expect(buildDailyComparison([], null)[0].previousSignups).toBeNull();
+    });
+
+    it("resets on Monday in UTC and completes all seven days on Sunday", () => {
+        const monday = buildDailyComparison(
+            [],
+            null,
+            new Date("2026-01-05T00:01:00Z"),
+        );
+        expect(monday[0].week).toBe("2026-01-05");
+        expect(monday.map((day) => day.currentRevenue)).toEqual([
+            0,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+        ]);
+        const sunday = buildDailyComparison(
+            [],
+            null,
+            new Date("2026-01-04T23:59:00Z"),
+        );
+        expect(sunday[0].week).toBe("2025-12-29");
+        expect(sunday.every((day) => day.currentRevenue === 0)).toBe(true);
     });
 });
 

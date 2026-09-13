@@ -662,6 +662,65 @@ describe("tracking observability", () => {
         expect(event.requestId).not.toBe("req-parent");
     });
 
+    it.each([
+        "proxy",
+        "endpoint_agent",
+        "code_agent",
+        "prompt_agent",
+    ] as const)("records the resolved listing type (%s) for KPI attribution", async (type) => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const endpoint: CommunityEndpointRuntime = {
+            ...createCommunityEndpoint(trackingUser.id),
+            type,
+        };
+        const entry = createCommunityEntry(endpoint);
+        const ctx = createExecutionContext();
+        const response = await createTestApp(
+            async () => {},
+            trackingUser,
+            {
+                requested: endpoint.modelId,
+                resolved: endpoint.modelId,
+                definition: entry.definition,
+                communityEndpoint: endpoint,
+            },
+            entry,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        expect(await tinybirdRequests[0].json()).toMatchObject({
+            communityEndpointType: type,
+            resolvedModelRequested: endpoint.modelId,
+            isFinal: true,
+        });
+    });
+
     it("leaves the parent request id unset for an ordinary call", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(

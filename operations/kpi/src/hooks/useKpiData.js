@@ -41,6 +41,11 @@ const SOURCES = [
         load: () => api.weekly("retention", RETENTION_WEEKS),
     },
     {
+        label: "Agent/MCP usage",
+        key: "agentMcpUsage",
+        load: (weeks) => api.weekly("agent-mcp-usage", weeks),
+    },
+    {
         label: "User segments",
         key: "segments",
         load: (weeks) => api.weekly("user-segments", weeks),
@@ -59,6 +64,7 @@ const REQUIRED = {
     registrations: "D1 (registrations)",
     wau: "Tinybird (WAU)",
     usage: "Tinybird (usage)",
+    agentMcpUsage: "Tinybird (agent/MCP usage)",
     revenue: "Revenue (Stripe)",
     dailyRevenue: "Revenue (daily Stripe)",
     dailyRegistrations: "Daily signups (D1 snapshot)",
@@ -152,6 +158,12 @@ export function useKpiData(weeks = DEFAULT_WEEKS) {
             mergeInto(weekMap, raw.revenue, (row) => ({
                 revenue: row.revenue,
                 packPurchases: row.purchases,
+            }));
+            mergeInto(weekMap, raw.agentMcpUsage, (row) => ({
+                agentRequests: row.agent_requests,
+                agentUsers: row.agent_users,
+                mcpCalls: row.mcp_calls,
+                mcpUsers: row.mcp_users,
             }));
             mergeInto(weekMap, raw.health, (row) => ({
                 availability: row.availability,

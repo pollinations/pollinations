@@ -1,4 +1,5 @@
 import type { ApiKeyType } from "../auth/api-key-creation.ts";
+import type { CommunityEndpointRuntime } from "../community-endpoints.ts";
 import type { PriceDefinition, Usage } from "../registry/registry.ts";
 import type { ContentFilterResult } from "./openai.ts";
 
@@ -71,6 +72,8 @@ export type TinybirdEvent = {
     // Model
     modelRequested?: string | null;
     resolvedModelRequested?: string;
+    /** Resolved request's listing type at execution time, not today's catalog. */
+    communityEndpointType?: CommunityEndpointRuntime["type"];
     modelUsed?: string;
     modelProviderUsed?: string;
     /** Named conditional pricing sheet selected for this billed request. */

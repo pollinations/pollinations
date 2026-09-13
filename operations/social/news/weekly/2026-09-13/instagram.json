@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-09-13",
+  "period_start": "2026-09-06",
+  "period_end": "2026-09-12",
+  "generated_at": "2026-09-13T06:32:41.130676+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-13/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-13/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-13/images/instagram-3.jpg"
+    }
+  ],
+  "text": "96 PRs merged this week. Agents got a workspace, a shell, and more room to think. Media models are increasingly using the same paths across Chat and Responses. Under the floorboards: stream validation, cache recovery, better fallbacks, clearer provider errors, and a more precise model catalog.\n\nThe garden remains extremely busy. 🌱🐝\n\nDetails live in the repo: github.com/pollinations/pollinations\n\n#pollinations #opensource #aitools #pixelart #creativecoding #buildinpublic #indiedev #aiagents #mcp #generativeai #developertools #8bitart",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

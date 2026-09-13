@@ -36,6 +36,7 @@ import {
     Dropdown,
     ExpandIcon,
     FileUpload,
+    IconButton,
     ImageIcon,
     PauseIcon,
     PlayIcon,
@@ -814,6 +815,25 @@ function AgentPicker({
                     </ScrollArea>
                 )}
             </Dropdown>
+            <Dropdown
+                className="max-w-[min(18rem,calc(100vw-2rem))] p-3"
+                panelStyle={routingThemeStyle()}
+                trigger={() => (
+                    <IconButton
+                        variant="ghost"
+                        aria-label="About agent privacy"
+                    >
+                        <span aria-hidden="true" className="font-bold">
+                            i
+                        </span>
+                    </IconButton>
+                )}
+            >
+                <Text size="xs" tone="muted">
+                    May use external models and tools. Avoid sharing sensitive
+                    information.
+                </Text>
+            </Dropdown>
         </div>
     );
 }
@@ -1263,10 +1283,6 @@ export function Chat({
                         disabled={sending}
                         onSelectAgent={selectAgent}
                     />
-                    <Text size="xs" tone="muted" className="mt-2">
-                        Agents may use external models and tools. Avoid
-                        sensitive data.
-                    </Text>
                 </div>
                 <ChatConversation
                     ref={transcriptRef}
@@ -1438,7 +1454,7 @@ export function Chat({
                                     ref={fileInputRef}
                                     type="file"
                                     aria-describedby={
-                                        supportsAttachments
+                                        files.length > 0
                                             ? "play-chat-upload-privacy"
                                             : undefined
                                     }
@@ -1460,7 +1476,7 @@ export function Chat({
                                     intent="info"
                                     aria-label="Add media"
                                     aria-describedby={
-                                        supportsAttachments
+                                        files.length > 0
                                             ? "play-chat-upload-privacy"
                                             : undefined
                                     }
@@ -1557,7 +1573,7 @@ export function Chat({
                                 )}
                             </div>
                         </ChatPromptInputFooter>
-                        {supportsAttachments && (
+                        {files.length > 0 && (
                             <UploadPrivacyNote
                                 id="play-chat-upload-privacy"
                                 className="px-3 pb-3"

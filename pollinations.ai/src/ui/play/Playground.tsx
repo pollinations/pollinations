@@ -1184,7 +1184,9 @@ export function Playground() {
                                         }
                                     }}
                                 />
-                                <UploadPrivacyNote />
+                                {referenceImages.length > 0 && (
+                                    <UploadPrivacyNote />
+                                )}
                             </FieldStack>
                         )}
 
@@ -1274,7 +1276,9 @@ export function Playground() {
                             </div>
                         )}
 
-                        {isVideoReferenceMode && <UploadPrivacyNote />}
+                        {isVideoReferenceMode && referenceImages.length > 0 && (
+                            <UploadPrivacyNote />
+                        )}
 
                         {(currentModel?.category === "image" ||
                             currentModel?.category === "video") && (

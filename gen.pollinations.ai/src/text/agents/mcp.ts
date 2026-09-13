@@ -4,9 +4,10 @@ import {
     safeMcpOutput,
 } from "@shared/agents/mcp-output.ts";
 
-import type {
-    ResponseFunctionCall,
-    ResponseFunctionCallOutput,
+import {
+    functionOutputText,
+    type ResponseFunctionCall,
+    type ResponseFunctionCallOutput,
 } from "@shared/schemas/response-function-items.ts";
 import { z } from "zod";
 
@@ -159,7 +160,7 @@ export function formatFunctionCall(
             name: tool?.name ?? call.name,
             arguments: call.arguments,
             status: "completed",
-            output: result.output,
+            output: functionOutputText(result.output),
             error: null,
         },
         seenUrls,

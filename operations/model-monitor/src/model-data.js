@@ -21,6 +21,8 @@ export function normalizeCatalogModel(model) {
 
 // Match statistics by the recorded ID only. An alias may have represented
 // another version in the past, so it must never transfer historical health.
+// Identity is the exception: what a model *is* comes from catalog metadata,
+// never from the shape of the recorded ID or the endpoint it was served on.
 export function mergeModelHealth(models, healthStats, catalogAvailable) {
     const stats = healthStats.filter((row) => row.model !== "undefined");
     const matchesEndpoint = (model, row) =>
@@ -46,11 +48,22 @@ export function mergeModelHealth(models, healthStats, catalogAvailable) {
                 ),
         )
         .map((row) => {
-            const type = row.event_type?.replace("generate.", "") || "unknown";
+            const eventType =
+                row.event_type?.replace("generate.", "") || "unknown";
             const sameName = models.filter((model) => model.name === row.model);
+            const aliased = models.find(
+                (model) =>
+                    model.aliases.includes(row.model) &&
+                    matchesEndpoint(model, row),
+            );
             let catalogStatus = "unregistered";
             let description = "Unregistered model";
             let community = row.provider === "community";
+            // Endpoints are coarser than categories: video and 3D both record
+            // image events. Only fall back to the event type when no catalog
+            // entry claims this ID.
+            let type = eventType;
+            let endpointType = eventType;
             if (catalogAvailable === false) {
                 catalogStatus = "catalog-unavailable";
                 description = "Unknown model while live catalog is unavailable";
@@ -58,23 +71,20 @@ export function mergeModelHealth(models, healthStats, catalogAvailable) {
                 catalogStatus = "anomaly";
                 community = sameName.some((model) => model.community);
                 const types = [...new Set(sameName.map((model) => model.type))];
-                description = `Unexpected ${type} traffic; registered as ${types.sort().join("/")}`;
-            } else if (
-                models.some(
-                    (model) =>
-                        model.aliases.includes(row.model) &&
-                        matchesEndpoint(model, row),
-                )
-            ) {
+                description = `Unexpected ${eventType} traffic; registered as ${types.sort().join("/")}`;
+            } else if (aliased) {
                 catalogStatus = "historical";
                 description =
                     "Historical ID, now an alias. Recorded traffic is kept separate from current model health.";
+                community = aliased.community;
+                type = aliased.type;
+                endpointType = aliased.endpointType;
             }
             return {
                 name: row.model || "(unknown)",
                 community,
                 type,
-                endpointType: type,
+                endpointType,
                 provider: row.provider,
                 description,
                 catalogStatus,

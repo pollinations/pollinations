@@ -148,7 +148,12 @@ export async function callInferencePortImage(
         dataCount: Array.isArray(data.data) ? data.data.length : undefined,
     });
 
-    if (!encodedImage && !imageUrl) {
+    let buffer: Buffer;
+    if (encodedImage) {
+        buffer = base64ToBuffer(encodedImage);
+    } else if (imageUrl) {
+        buffer = (await downloadUserImage(imageUrl)).buffer;
+    } else {
         throw new UpstreamError(502, {
             message: `InferencePort ${INFERENCEPORT_TITLE} returned no image`,
             requestUrl: new URL(endpoint),
@@ -158,9 +163,6 @@ export async function callInferencePortImage(
         });
     }
 
-    const buffer = encodedImage
-        ? base64ToBuffer(encodedImage)
-        : (await downloadUserImage(imageUrl)).buffer;
     const outputSafety = await analyzeImageSafety(buffer);
 
     return {

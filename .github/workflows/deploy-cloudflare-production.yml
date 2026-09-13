@@ -39,6 +39,10 @@ on:
         description: 'Repeat canonical allowlist cleanup after both Enter and Gen deploy (use service=all)'
         type: boolean
         default: false
+      configure_hosted_agents:
+        description: 'Apply Polli and Floret listing updates after both workers deploy (use service=all)'
+        type: boolean
+        default: false
 
 concurrency:
   group: pollinations-cloudflare-production
@@ -58,6 +62,7 @@ jobs:
       openrouter_only: ${{ inputs.sync_openrouter_only || steps.generation-secret-scope.outputs.openrouter_only == 'true' }}
       mcp_apps: ${{ steps.mcp-apps.outputs.apps || '[]' }}
       canonical_permissions: ${{ inputs.finalize_canonical_permissions || steps.filter.outputs.canonical_permissions == 'true' }}
+      agent_listings: ${{ inputs.configure_hosted_agents || steps.filter.outputs.agent_listings == 'true' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -98,6 +103,8 @@ jobs:
           filters: |
             canonical_permissions:
               - 'enter.pollinations.ai/drizzle/0062_standardize-model-permissions.sql'
+            agent_listings:
+              - 'enter.pollinations.ai/scripts/configure-hosted-agents.sql'
             enter:
               - 'enter.pollinations.ai/**'
               - 'shared/**'
@@ -111,6 +118,7 @@ jobs:
               # A migration-only repair must finish the blocked canonical
               # rollout, including Gen and the post-deploy permission cleanup.
               - 'enter.pollinations.ai/drizzle/0062_standardize-model-permissions.sql'
+              - 'enter.pollinations.ai/scripts/configure-hosted-agents.sql'
               - 'packages/mcp/**'
               - 'shared/**'
               - 'package.json'
@@ -368,6 +376,34 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
         run: npx wrangler d1 execute DB --remote --env production --file drizzle/0062_standardize-model-permissions.sql
+
+  configure-hosted-agents:
+    needs: [changes, deploy-enter, deploy-gen]
+    if: >-
+      !cancelled() &&
+      github.ref == 'refs/heads/production' &&
+      needs.changes.outputs.agent_listings == 'true' &&
+      needs.deploy-enter.result == 'success' &&
+      needs.deploy-gen.result == 'success'
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Install dependencies
+        run: npm ci
+      - name: Configure Polli and Floret listings
+        working-directory: enter.pollinations.ai
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+        run: npx wrangler d1 execute DB --remote --env production --file scripts/configure-hosted-agents.sql
+      - name: Verify agent catalog metadata
+        run: node enter.pollinations.ai/scripts/verify-hosted-agents.mjs
 
   deploy-media:
     needs: [changes, migrate]

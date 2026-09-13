@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-09-12",
+  "period_start": "2026-09-12",
+  "period_end": "2026-09-12",
+  "generated_at": "2026-09-13T06:31:17.380329+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-12/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: agents now get a persistent per-user filesystem + bash, with 3× the steps/tool calls to finish the job. also: DeepSeek V4.1 Flash, caller-defined model fallbacks, 1080p Minimax video, and 402 notices that link to top-up/key editing."
+}

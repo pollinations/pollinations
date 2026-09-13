@@ -1383,7 +1383,9 @@ test("does not retry a partially completed realtime deduction", async () => {
         user?.packBalance ?? 0,
         8,
     );
-    expect(session.upstream.tinybirdRequests).toHaveLength(0);
+    // Settlement error is caught (not thrown), so the generation event IS emitted
+    await waitForTinybirdRequests(session.upstream, 1);
+    expect(session.upstream.tinybirdRequests).toHaveLength(1);
 });
 
 test.each([

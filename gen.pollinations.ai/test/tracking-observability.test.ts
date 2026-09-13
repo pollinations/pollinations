@@ -3011,17 +3011,14 @@ it("reports committed wallet debit when API key reconciliation fails", async () 
         pollenBudget: 1,
     });
 
+    // Delete the API key BEFORE the request so reconciliation fails
+    // during handleBalanceDeduction (which runs inside waitUntil)
+    await db.delete(apiKeyTable).where(eq(apiKeyTable.id, apiKeyId));
+
     const tinybirdRequests: Request[] = [];
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
         const req = new Request(input, init);
         tinybirdRequests.push(req);
-        // Delete the API key row to simulate reconciliation failure
-        if (
-            !req.url.includes("tinybird.test") &&
-            !req.url.includes("tinybird")
-        ) {
-            await db.delete(apiKeyTable).where(eq(apiKeyTable.id, apiKeyId));
-        }
         return new Response("ok");
     });
 

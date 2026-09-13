@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 
 import pytest
+from fastapi.testclient import TestClient
 
 from floret import api
 from floret.tools import media
@@ -110,3 +111,36 @@ async def test_text_only_response_has_single_part(monkeypatch):
     markdown, parts = await api._build_content("Just words.", [])
     assert parts == [{"type": "text", "text": "Just words."}]
     assert markdown == "Just words."
+
+
+def test_nonstream_media_keeps_markdown_content_and_typed_parts(monkeypatch):
+    async def fake_run_agent(messages, **kwargs):
+        return {
+            "text": "Here you go.",
+            "artifacts": [
+                {"type": "image", "url": "https://x/img.jpg"},
+                {"type": "audio", "url": "https://x/audio.mp3", "transcript": "Hi"},
+            ],
+            "iterations": 1,
+        }
+
+    monkeypatch.setattr(api, "run_agent", fake_run_agent)
+    response = TestClient(api.app).post(
+        "/v1/chat/completions",
+        json={
+            "model": "floret",
+            "messages": [{"role": "user", "content": "hi"}],
+        },
+        headers={"Authorization": "Bearer ag_test-token"},
+    )
+
+    assert response.status_code == 200
+    message = response.json()["choices"][0]["message"]
+    assert isinstance(message["content"], str)
+    assert "![image](https://x/img.jpg)" in message["content"]
+    assert "[audio: Hi](https://x/audio.mp3)" in message["content"]
+    assert message["content_blocks"] == [
+        {"type": "text", "text": message["content"]},
+        {"type": "image_url", "image_url": {"url": "https://x/img.jpg"}},
+        {"type": "audio_url", "audio_url": {"url": "https://x/audio.mp3"}},
+    ]

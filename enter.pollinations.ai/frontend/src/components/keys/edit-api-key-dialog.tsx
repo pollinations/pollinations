@@ -13,7 +13,7 @@ import {
     LockIcon,
     ScrollArea,
 } from "@pollinations/ui";
-import type { FC } from "react";
+import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import {
@@ -29,6 +29,7 @@ interface EditApiKeyDialogProps {
     apiKey: ApiKey;
     onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onClose: () => void;
+    header?: ReactNode;
 }
 
 function cleanRedirectUris(uris: string[]): string[] {
@@ -39,6 +40,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     apiKey,
     onUpdate,
     onClose,
+    header,
 }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [name, setName] = useState(apiKey.name || "");
@@ -127,6 +129,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
             onOpenChange={(open) => !open && onClose()}
             contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
         >
+            {header}
             <div className="shrink-0 p-6 pb-4">
                 <DialogTitle className="text-xl font-bold mb-4">
                     {appKey ? "Edit App Key" : "Edit API Key"}

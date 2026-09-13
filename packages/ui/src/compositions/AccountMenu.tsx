@@ -1,27 +1,18 @@
-import type { ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
 import { ChevronIcon } from "../primitives/ChevronIcon.tsx";
 import { Dropdown, type DropdownProps } from "../primitives/Dropdown.tsx";
+import {
+    AccountIdentity,
+    type AccountIdentityProps,
+} from "./AccountIdentity.tsx";
 
-export type AccountMenuProps = {
-    name: string;
-    avatarUrl?: string | null;
-    /** Optional display content, such as the app allowance or session context. */
-    secondaryContent?: ReactNode;
+export type AccountMenuProps = AccountIdentityProps & {
     /** The caller owns navigation, permissions and sign-out behavior. */
     children: DropdownProps["children"];
-    className?: string;
     menuClassName?: string;
     side?: "top" | "bottom";
     menuLabel?: string;
 };
-
-function initials(name: string) {
-    const parts = name.trim().split(/\s+/).filter(Boolean);
-    if (parts.length === 0) return "?";
-    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-    return `${parts[0][0] ?? ""}${parts.at(-1)?.[0] ?? ""}`.toUpperCase();
-}
 
 export function AccountMenu({
     name,
@@ -51,31 +42,12 @@ export function AccountMenu({
                         className,
                     )}
                 >
-                    {avatarUrl ? (
-                        <img
-                            src={avatarUrl}
-                            alt=""
-                            className="polli:h-8 polli:w-8 polli:shrink-0 polli:rounded-full polli:object-cover"
-                        />
-                    ) : (
-                        <span
-                            role="img"
-                            aria-label={`${name} avatar`}
-                            className="polli:flex polli:h-8 polli:w-8 polli:shrink-0 polli:items-center polli:justify-center polli:rounded-full polli:bg-theme-bg-pale polli:text-xs polli:font-semibold polli:text-theme-text-strong"
-                        >
-                            {initials(name)}
-                        </span>
-                    )}
-                    <span className="polli:flex polli:min-w-0 polli:flex-1 polli:flex-col polli:items-start polli:text-left">
-                        <span className="polli:max-w-full polli:truncate polli:text-sm polli:font-medium">
-                            {name}
-                        </span>
-                        {secondaryContent != null && (
-                            <span className="polli:max-w-full polli:truncate polli:text-xs polli:text-theme-text-base">
-                                {secondaryContent}
-                            </span>
-                        )}
-                    </span>
+                    <AccountIdentity
+                        name={name}
+                        avatarUrl={avatarUrl}
+                        secondaryContent={secondaryContent}
+                        className="polli:flex-1 polli:bg-transparent polli:p-0 polli:pr-0"
+                    />
                     <ChevronIcon
                         expanded={open}
                         className="polli:ml-auto polli:h-4 polli:w-4 polli:text-theme-text-strong"

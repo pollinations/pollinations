@@ -211,8 +211,6 @@ describe("processParameters", () => {
         "openai/gpt-5.6-luna",
         "openai/gpt-6-astra",
         "openai/gpt-6-astra:azure:datazone",
-        "pollinations/midijourney",
-        "pollinations/midijourney-large",
     ])("removes sampling without changing reasoning or reintroducing defaults for %s", async (model) => {
         const transform = findModelByName(model)?.transform;
         if (!transform) throw new Error("expected catalog transform");

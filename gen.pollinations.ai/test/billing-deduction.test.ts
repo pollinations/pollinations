@@ -335,10 +335,14 @@ describe("billing deduction", () => {
             user: { tierBalance: 0, packBalance: 0 },
             pollenBudget: 0,
         });
-        // Set earningsEnabled metadata directly in the DB
+        // Ensure the key has the right attributes for resolveDevMarkup
         await db
             .update(apiKeyTable)
-            .set({ metadata: JSON.stringify({ earningsEnabled: true }) })
+            .set({
+                prefix: "pk",
+                enabled: true,
+                metadata: JSON.stringify({ earningsEnabled: true }),
+            })
             .where(eq(apiKeyTable.id, byopKeyId));
         // Delete the dev user so atomicCreditUserBalance affects 0 rows
         await db.delete(userTable).where(eq(userTable.id, devUserId));

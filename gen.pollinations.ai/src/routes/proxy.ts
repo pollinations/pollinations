@@ -232,10 +232,15 @@ function filterEntriesByPermissions(
     entries: GenerationModelEntry[],
     allowedModels: string[] | undefined,
     hasPaidBalance?: boolean,
+    pollen?: "quest",
 ): GenerationModelEntry[] {
     return entries.filter((entry) => {
         if (allowedModels && !allowedModels.includes(entry.id)) return false;
-        if (entry.info.paid_only && hasPaidBalance === false) return false;
+        if (
+            entry.info.paid_only &&
+            (hasPaidBalance === false || pollen === "quest")
+        )
+            return false;
         return true;
     });
 }
@@ -284,6 +289,7 @@ const modelsListHandler = (
                         await getEntries(c),
                         allowedModels,
                         paidBalance,
+                        c.var.auth?.agentRun?.pollen,
                     ),
                     community,
                 ).map((entry) => entry.info),
@@ -430,6 +436,7 @@ export const proxyRoutes = new Hono<Env>()
                     await getVisibleModelEntries(c),
                     allowedModels,
                     paidBalance,
+                    c.var.auth?.agentRun?.pollen,
                 ),
                 community,
             );
@@ -474,6 +481,7 @@ export const proxyRoutes = new Hono<Env>()
                 [visible],
                 c.var.auth?.apiKey?.permissions?.models,
                 hasPaidBalance(c),
+                c.var.auth?.agentRun?.pollen,
             );
             if (!entry) {
                 throw new HTTPException(404, {

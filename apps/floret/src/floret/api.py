@@ -19,8 +19,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 
-from floret.agent import run_agent, run_agent_events
+from floret import registry
+from floret.agent import run_agent, run_agent_events, select_brain
 from floret.config import _api_key_override, settings
+from floret.registry import PollenPolicy
 from floret.routing import (
     RoutingInput,
     RoutingPreferences,
@@ -66,6 +68,7 @@ class ChatRequest(BaseModel):
     stream: bool = False
     stream_options: dict[str, Any] | None = None
     routing: RoutingInput | None = None
+    pollen: PollenPolicy = "all"
 
 
 def _files_dir() -> str:
@@ -218,7 +221,30 @@ async def _sse_events(
     api_key: str | None,
     routing: RoutingPreferences,
     include_usage: bool,
+    pollen: PollenPolicy = "all",
+    catalog: dict[str, dict[str, Any]] | None = None,
 ) -> AsyncIterator[str]:
+    # Streaming runs after the endpoint returns; keep policy through media hosting too.
+    with registry.model_scope(catalog, pollen):
+        frames = _scoped_sse_events(
+            messages, model, api_key, routing, include_usage, pollen, catalog
+        )
+        try:
+            async for frame in frames:
+                yield frame
+        finally:
+            await frames.aclose()
+
+
+async def _scoped_sse_events(
+    messages: list[dict[str, Any]],
+    model: str,
+    api_key: str | None,
+    routing: RoutingPreferences,
+    include_usage: bool,
+    pollen: PollenPolicy,
+    catalog: dict[str, dict[str, Any]] | None,
+) -> AsyncGenerator[str, None]:
     """Translate agent events into OpenAI chat.completion.chunk SSE frames.
 
     Agent events are pumped through a queue so quiet stretches (long renders,
@@ -235,7 +261,9 @@ async def _sse_events(
 
     async def _pump() -> None:
         try:
-            async for event in run_agent_events(messages, routing=routing):
+            async for event in run_agent_events(
+                messages, routing=routing, pollen=pollen, catalog=catalog
+            ):
                 await queue.put(event)
         except Exception as exc:
             await queue.put(exc)
@@ -352,19 +380,26 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
             detail="Missing agent run token.",
         )
 
-    if settings.catalog_endpoint:
-        from floret.registry import warm_registry
-
+    catalog = None
+    token = _api_key_override.set(api_key or None)
+    try:
         try:
-            await warm_registry()
+            if settings.catalog_endpoint or request.pollen == "quest":
+                await registry.warm_registry()
+            if request.pollen == "quest":
+                catalog = await registry.fetch_model_catalog()
         except (httpx.HTTPError, ValueError):
             raise HTTPException(
                 status_code=503, detail="Model catalog unavailable."
             ) from None
-
-    token = _api_key_override.set(api_key or None)
-    try:
-        routing = await validate_routing(request.routing)
+        if request.pollen == "quest":
+            with registry.model_scope(catalog, request.pollen):
+                routing = await validate_routing(
+                    request.routing, catalog=registry.get_model_catalog()
+                )
+                select_brain(routing)
+        else:
+            routing = await validate_routing(request.routing)
     except RoutingValidationError as exc:
         raise HTTPException(
             status_code=422,
@@ -372,6 +407,12 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
         ) from exc
     except RoutingRegistryUnavailable as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=503, detail="Model catalog unavailable."
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     finally:
         _api_key_override.reset(token)
 
@@ -383,16 +424,21 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
                 api_key or None,
                 routing,
                 _include_stream_usage(request.stream_options),
+                request.pollen,
+                catalog,
             ),
             media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
     token = _api_key_override.set(api_key or None)
     try:
-        result = await run_agent(_to_openai_messages(request.messages), routing=routing)
-        markdown, content_parts = await _build_content(
-            result["text"], result["artifacts"]
-        )
+        with registry.model_scope(catalog, request.pollen):
+            result = await run_agent(
+                _to_openai_messages(request.messages), routing=routing
+            )
+            markdown, content_parts = await _build_content(
+                result["text"], result["artifacts"]
+            )
         return {
             "id": f"chatcmpl-polli-{uuid.uuid4().hex[:12]}",
             "object": "chat.completion",

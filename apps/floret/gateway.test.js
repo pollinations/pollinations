@@ -1,6 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import {
+    signAgentRunToken,
+    verifyAgentRunToken,
+} from "../../shared/auth/agent-run-token.ts";
 import { catalogOutbound, createGateway } from "./gateway.js";
+
+const allToken = await signAgentRunToken({
+    secret: "local-gateway-test-secret",
+    parentApiKeyId: "parent",
+    parentRequestId: "request",
+});
 
 function setup() {
     const calls = { agent: 0, review: [], auth: 0, refresh: 0 };
@@ -43,6 +53,10 @@ function setup() {
             calls.auth++;
             assert.equal(url, "https://enter.pollinations.ai/api/account/key");
             assert.equal(options.redirect, "manual");
+            await verifyAgentRunToken(
+                options.headers.Authorization.slice(7),
+                "local-gateway-test-secret",
+            );
             return Response.json({ valid: true });
         },
     );
@@ -54,7 +68,7 @@ test("text requests never allocate a shell or charge callers for catalog mainten
     const response = await gateway(
         new Request("https://floret.test/v1/chat/completions", {
             method: "POST",
-            headers: { Authorization: "Bearer ag_test" },
+            headers: { Authorization: `Bearer ${allToken}` },
             body: "private prompt",
         }),
         env,
@@ -104,6 +118,84 @@ test("read requests preserve current service and do not review catalog", async (
     assert.equal(calls.agent, 1);
     assert.equal(calls.auth, 0);
     assert.equal(pending.length, 0);
+});
+
+test("verified Quest runs cannot widen the policy forwarded to Floret", async () => {
+    const secret = "local-gateway-test-secret";
+    const bearer = await signAgentRunToken({
+        secret,
+        parentApiKeyId: "parent",
+        parentRequestId: "request",
+        pollen: "quest",
+    });
+    const seen = [];
+    const gateway = createGateway(
+        () => ({
+            fetch: async (request) => {
+                seen.push(await request.json());
+                assert.equal(
+                    request.headers.get("Authorization"),
+                    `Bearer ${bearer}`,
+                );
+                return new Response("ok");
+            },
+        }),
+        async (_url, options) => {
+            const claims = await verifyAgentRunToken(
+                options.headers.Authorization.slice(7),
+                secret,
+            );
+            assert.equal(claims.pollen, "quest");
+            return Response.json({ valid: true });
+        },
+    );
+    for (const pollen of [undefined, "all", "quest"]) {
+        const body = {
+            model: "floret",
+            messages: [],
+            stream: true,
+            ...(pollen ? { pollen } : {}),
+        };
+        const response = await gateway(
+            new Request("https://floret.test/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${bearer}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(body),
+            }),
+            {},
+        );
+        assert.equal(response.status, 200);
+        assert.deepEqual(seen.at(-1), { ...body, pollen: "quest" });
+    }
+});
+
+test("an unverified Quest claim never reaches Floret", async () => {
+    const bearer = await signAgentRunToken({
+        secret: "untrusted-gateway-test-secret",
+        parentApiKeyId: "parent",
+        parentRequestId: "request",
+        pollen: "quest",
+    });
+    const gateway = createGateway(
+        () => ({ fetch: () => assert.fail("Invalid token reached Floret") }),
+        async () => Response.json({ valid: false }),
+    );
+    const response = await gateway(
+        new Request("https://floret.test/v1/chat/completions", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${bearer}` },
+            body: JSON.stringify({
+                model: "floret",
+                pollen: "all",
+                messages: [],
+            }),
+        }),
+        {},
+    );
+    assert.equal(response.status, 401);
 });
 
 test("private snapshot strips storage internals and credentials", async () => {

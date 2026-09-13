@@ -85,6 +85,28 @@ function catalogResponse(catalog, status = 200) {
     });
 }
 
+function reviewResponse(recommendations, quest = []) {
+    return Response.json({
+        usage: { prompt_tokens: 10, completion_tokens: 5 },
+        choices: [
+            {
+                message: {
+                    content: JSON.stringify({
+                        recommendations,
+                        quest: { recommendations: quest },
+                    }),
+                },
+            },
+        ],
+    });
+}
+
+const promote = (model) => ({
+    model,
+    action: "promote",
+    reason: "Compatible public metadata; quality remains unmeasured.",
+});
+
 test("validates, normalizes, and semantically diffs public metadata", () => {
     const raw = validateCatalog([
         model("b", { description: "ignored presentation copy" }),
@@ -146,6 +168,10 @@ test("rejects malformed or empty catalogs", () => {
     );
     assert.throws(
         () => validateCatalog([model("a", { pricing: [] })]),
+        /invalid public metadata/,
+    );
+    assert.throws(
+        () => validateCatalog([model("a", { paid_only: "false" })]),
         /invalid public metadata/,
     );
 });
@@ -234,29 +260,8 @@ test("promoted incumbent survives an unrelated catalog revision", async () => {
             ]),
         ),
     );
-    const reviewResult = await instance.review(
-        "key",
-        async () =>
-            new Response(
-                JSON.stringify({
-                    usage: { prompt_tokens: 10, completion_tokens: 5 },
-                    choices: [
-                        {
-                            message: {
-                                content: JSON.stringify({
-                                    recommendations: [
-                                        {
-                                            model: "B",
-                                            action: "promote",
-                                            reason: "Public metadata is the better fit.",
-                                        },
-                                    ],
-                                }),
-                            },
-                        },
-                    ],
-                }),
-            ),
+    const reviewResult = await instance.review("key", async () =>
+        reviewResponse([promote("B")]),
     );
     assert.equal(reviewResult.status, "complete");
     assert.deepEqual((await instance.snapshot()).review.incumbents, [
@@ -277,6 +282,241 @@ test("promoted incumbent survives an unrelated catalog revision", async () => {
         { task_family: "image.general", model: "B" },
     ]);
     assert.equal(snapshot.catalog.find(({ name }) => name === "B").name, "B");
+});
+
+test("one shared review selects distinct all and Quest incumbents", async () => {
+    const { instance, storage } = authority();
+    await instance.refresh(async () =>
+        catalogResponse([
+            model("paid-winner", { paid_only: true }),
+            model("quest-winner", { paid_only: false }),
+        ]),
+    );
+    let calls = 0;
+    const reviewed = await instance.review(
+        "caller-key",
+        async (_url, request) => {
+            calls++;
+            const body = JSON.parse(request.body);
+            assert.match(body.messages[0].content, /quest/);
+            assert.match(body.messages[0].content, /paid_only/);
+            assert.deepEqual(
+                JSON.parse(body.messages[1].content)
+                    .map(({ name }) => name)
+                    .sort(),
+                ["paid-winner", "quest-winner"],
+            );
+            return reviewResponse(
+                [promote("paid-winner")],
+                [promote("quest-winner")],
+            );
+        },
+    );
+    assert.equal(reviewed.status, "complete");
+    assert.equal(calls, 1);
+    const snapshot = await instance.snapshot();
+    assert.deepEqual(snapshot.review.incumbents, [
+        { task_family: "text.general", model: "paid-winner" },
+    ]);
+    assert.deepEqual(snapshot.review.quest.incumbents, [
+        { task_family: "text.general", model: "quest-winner" },
+    ]);
+    assert.equal(snapshot.review.quest.catalogRevision, "1");
+    assert.equal(snapshot.review.quest.revision, "1");
+    assert.doesNotMatch(JSON.stringify(snapshot.review.quest), /paid-winner/);
+    assert.equal(snapshot.catalog.length, 2);
+    assert.doesNotMatch(
+        JSON.stringify([...storage.data.entries()]),
+        /caller-key/,
+    );
+
+    // Request-local consumers cannot mutate either shared view.
+    snapshot.review.quest.incumbents[0].model = "paid-winner";
+    assert.equal(
+        (await instance.snapshot()).review.quest.incumbents[0].model,
+        "quest-winner",
+    );
+});
+
+test("Quest review does not expose paid names embedded in advisory explanations", async () => {
+    const { instance } = authority();
+    await instance.refresh(async () =>
+        catalogResponse([
+            model("paid-secret-name", { paid_only: true }),
+            model("quest", { paid_only: false }),
+        ]),
+    );
+    const result = await instance.review("key", async () =>
+        reviewResponse(
+            [promote("paid-secret-name")],
+            [
+                {
+                    ...promote("quest"),
+                    reason: "Cheaper than paid-secret-name (also known as paid-secret-alias).",
+                },
+            ],
+        ),
+    );
+    assert.equal(result.status, "complete");
+    assert.doesNotMatch(
+        JSON.stringify((await instance.snapshot()).review.quest),
+        /paid-secret/,
+    );
+});
+
+test("existing all-only snapshot gains Quest review without changing public catalog", async () => {
+    const { instance, storage } = authority();
+    const catalog = [model("quest", { paid_only: false })];
+    await instance.refresh(async () => catalogResponse(catalog));
+    const old = await storage.get("current");
+    delete old.advisoryReview.quest;
+    await storage.put("current", old);
+    await storage.put("review:1", { status: "complete", attempts: 1 });
+    const refreshed = await instance.refresh(async () =>
+        catalogResponse(catalog),
+    );
+    assert.equal(refreshed.revision, 2);
+    assert.deepEqual(refreshed.rawCatalog, catalog);
+    assert.deepEqual(refreshed.advisoryReview.quest.incumbents, []);
+    const result = await instance.review("key", async (_url, request) => {
+        assert.equal(
+            JSON.parse(JSON.parse(request.body).messages[1].content)[0].name,
+            "quest",
+        );
+        return reviewResponse([promote("quest")], [promote("quest")]);
+    });
+    assert.equal(result.status, "complete");
+    assert.equal(
+        (await instance.snapshot()).review.quest.incumbents[0].model,
+        "quest",
+    );
+    assert.equal(
+        (await instance.refresh(async () => catalogResponse(catalog))).revision,
+        2,
+    );
+});
+
+test("Quest review rejects paid recommendations even when zero-priced", async () => {
+    const { instance } = authority();
+    await instance.refresh(async () =>
+        catalogResponse([
+            model("paid", {
+                paid_only: true,
+                pricing: { currency: "pollen", promptTextTokens: "0" },
+            }),
+            model("quest", { paid_only: false }),
+        ]),
+    );
+    const reviewed = await instance.review("caller-key", async () =>
+        reviewResponse([promote("paid")], [promote("paid")]),
+    );
+    assert.equal(reviewed.status, "failed");
+    assert.match(reviewed.reason, /invalid JSON/);
+    assert.deepEqual(
+        (await instance.snapshot()).review.quest.recommendations,
+        [],
+    );
+});
+
+test("omitted paid_only follows the Quest-eligible access default", async () => {
+    const { instance } = authority();
+    await instance.refresh(async () =>
+        catalogResponse([model("eligible-by-default")]),
+    );
+    const result = await instance.review("key", async () =>
+        reviewResponse(
+            [promote("eligible-by-default")],
+            [promote("eligible-by-default")],
+        ),
+    );
+    assert.equal(result.status, "complete");
+    assert.deepEqual((await instance.snapshot()).review.quest.incumbents, [
+        { task_family: "text.general", model: "eligible-by-default" },
+    ]);
+});
+
+test("an empty Quest pool remains empty without blocking the all-model review", async () => {
+    const { instance } = authority();
+    await instance.refresh(async () =>
+        catalogResponse([model("paid", { paid_only: true })]),
+    );
+    const result = await instance.review("key", async () =>
+        reviewResponse([promote("paid")]),
+    );
+    assert.equal(result.status, "complete");
+    const snapshot = await instance.snapshot();
+    assert.deepEqual(snapshot.review.incumbents, [
+        { task_family: "text.general", model: "paid" },
+    ]);
+    assert.deepEqual(snapshot.review.quest.incumbents, []);
+    assert.deepEqual(snapshot.review.quest.recommendations, []);
+});
+
+test("Quest incumbents persist independently and disappear after paid-only reclassification", async () => {
+    const { instance, storage } = authority();
+    const first = [
+        model("paid", { paid_only: true }),
+        model("quest", { paid_only: false }),
+    ];
+    await instance.refresh(async () => catalogResponse(first));
+    await instance.review("key", async () =>
+        reviewResponse([promote("paid")], [promote("quest")]),
+    );
+    await instance.refresh(async () =>
+        catalogResponse([
+            ...first,
+            model("image", { category: "image", paid_only: false }),
+        ]),
+    );
+    const second = await instance.snapshot();
+    assert.deepEqual(second.review.incumbents, [
+        { task_family: "text.general", model: "paid" },
+    ]);
+    assert.deepEqual(second.review.quest.incumbents, [
+        { task_family: "text.general", model: "quest" },
+    ]);
+    assert.equal(second.review.quest.catalogRevision, "2");
+    await instance.refresh(async () =>
+        catalogResponse([
+            model("paid", { paid_only: true }),
+            model("quest", { paid_only: true }),
+        ]),
+    );
+    assert.deepEqual((await instance.snapshot()).review.quest.incumbents, []);
+    assert.equal(
+        (await storage.get("revision:2")).advisoryReview.quest.incumbents[0]
+            .model,
+        "quest",
+    );
+});
+
+test("bounded advisory input retains Quest candidates beside a large paid text catalog", async () => {
+    const { instance } = authority();
+    await instance.refresh(async () =>
+        catalogResponse([
+            ...Array.from({ length: 100 }, (_, index) =>
+                model(`paid-${index}`, {
+                    paid_only: true,
+                    description: "p".repeat(256),
+                    context_length: 128_000,
+                }),
+            ),
+            model("zz-quest", { paid_only: false }),
+            model("zz-quest-image", { category: "image", paid_only: false }),
+        ]),
+    );
+    const result = await instance.review("key", async (_url, request) => {
+        const input = JSON.parse(request.body).messages[1].content;
+        assert.ok(input.length <= 32_000);
+        const candidates = JSON.parse(input);
+        assert.ok(candidates.some(({ name }) => name === "zz-quest"));
+        assert.ok(candidates.some(({ name }) => name === "zz-quest-image"));
+        return reviewResponse(
+            [],
+            [promote("zz-quest"), promote("zz-quest-image")],
+        );
+    });
+    assert.equal(result.status, "complete");
 });
 
 test("review is skipped without a caller key and never stores the key", async () => {
@@ -317,26 +557,7 @@ test("concurrent review calls produce one lease and one advisory request", async
         const requestBody = JSON.parse(request.body);
         assert.doesNotThrow(() => JSON.parse(requestBody.messages[1].content));
         await waiting;
-        return new Response(
-            JSON.stringify({
-                usage: { prompt_tokens: 10, completion_tokens: 5 },
-                choices: [
-                    {
-                        message: {
-                            content: JSON.stringify({
-                                recommendations: [
-                                    {
-                                        model: "candidate",
-                                        action: "promote",
-                                        reason: "Metadata indicates compatibility; quality is unmeasured.",
-                                    },
-                                ],
-                            }),
-                        },
-                    },
-                ],
-            }),
-        );
+        return reviewResponse([promote("candidate")]);
     };
     const first = instance.review("caller-key", reviewFetch);
     await new Promise((resolve) => setImmediate(resolve));
@@ -367,18 +588,7 @@ test("review result is discarded when catalog changes in flight", async () => {
     const review = instance.review("key", async () => {
         started();
         await waiting;
-        return new Response(
-            JSON.stringify({
-                usage: { prompt_tokens: 10, completion_tokens: 5 },
-                choices: [
-                    {
-                        message: {
-                            content: JSON.stringify({ recommendations: [] }),
-                        },
-                    },
-                ],
-            }),
-        );
+        return reviewResponse([]);
     });
     await reviewStarted;
     await instance.refresh(() =>

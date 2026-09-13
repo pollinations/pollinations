@@ -43,9 +43,13 @@ const textCacheAdapter: GenerationCacheAdapter = {
             Partial<AuthVariables & ModelVariables>;
         // Caller-scoped models carry a scope; everything else stays shared.
         const cacheScope = variables.model?.cacheScope;
-        const partition = cacheScope
+        const callerPartition = cacheScope
             ? `${cacheScope}:key:${variables.auth?.apiKey?.id ?? "anonymous"}`
             : undefined;
+        const partition =
+            variables.model?.pollen === "quest"
+                ? `${callerPartition ?? "shared"}:pollen:quest`
+                : callerPartition;
         return generateCacheKey(
             c.req.raw,
             bodyText,

@@ -1,4 +1,5 @@
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
+import { PollenSchema } from "@shared/schemas/pollen.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { z } from "zod";
 import { parseBooleanLike } from "@/util.ts";
@@ -23,6 +24,7 @@ const IntQueryParamSchema = z.preprocess((value) => {
 }, z.number().int().optional());
 
 export const GenerateTextRequestQueryParamsSchema = z.object({
+    pollen: PollenSchema.optional(),
     model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({
         description:
             "Text model to use. See /v1/models or /text/models for the full list of available models.",

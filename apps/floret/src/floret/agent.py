@@ -11,11 +11,13 @@ from typing import Any, cast
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionToolParam
 
+from floret import registry
 from floret.config import resolve_api_key, settings
 from floret.knowledge import build_system_prompt
+from floret.registry import PollenPolicy
 from floret.routing import RoutingPreferences
 from floret.tools import shell
-from floret.toolset import TOOL_SCHEMAS, dispatch, parse_args
+from floret.toolset import dispatch, parse_args, tool_schemas
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +52,20 @@ def _tool_call_fields(call: Any) -> tuple[str, str, str]:
     return call.id, call.function.name, call.function.arguments
 
 
+def select_brain(
+    routing: RoutingPreferences | None = None, model: str | None = None
+) -> str:
+    explicit = (routing.text if routing else None) or model
+    if registry.request_pollen() == "all":
+        return explicit or settings.brain_model
+    return registry.choose_model(
+        "text",
+        explicit,
+        endpoint="/v1/chat/completions",
+        required_capabilities=frozenset({"tools"}),
+    )
+
+
 async def _run_agent_events(
     messages: list[dict[str, Any]],
     *,
@@ -64,7 +80,7 @@ async def _run_agent_events(
     {"type": "final", "text", "artifacts", "iterations"}.
     """
     routing = routing or RoutingPreferences()
-    model = routing.text or model or settings.brain_model
+    model = select_brain(routing, model)
     max_iters = max_iters or settings.max_iters
     client = _client()
     semaphore = asyncio.Semaphore(settings.max_concurrency)
@@ -84,7 +100,7 @@ async def _run_agent_events(
         completion = await client.chat.completions.create(
             model=model,
             messages=cast(list[ChatCompletionMessageParam], convo),
-            tools=cast(list[ChatCompletionToolParam], TOOL_SCHEMAS),
+            tools=cast(list[ChatCompletionToolParam], tool_schemas()),
             tool_choice="auto",
         )
         msg = completion.choices[0].message
@@ -222,28 +238,24 @@ async def run_agent_events(
     model: str | None = None,
     max_iters: int | None = None,
     routing: RoutingPreferences | None = None,
+    pollen: PollenPolicy = "all",
+    catalog: dict[str, dict[str, Any]] | None = None,
 ) -> AsyncGenerator[dict[str, Any], None]:
     """Run one agent event stream in an isolated temporary workspace."""
-    from floret.registry import (
-        fetch_model_catalog,
-        reset_request_catalog,
-        set_request_catalog,
-        warm_registry,
-    )
-
     workspace, token = shell.create_workspace()
-    catalog_token = None
     try:
-        if settings.catalog_endpoint:
-            await warm_registry()
-            catalog_token = set_request_catalog(await fetch_model_catalog())
-        async for event in _run_agent_events(
-            messages, model=model, max_iters=max_iters, routing=routing
-        ):
-            yield event
+        if catalog is None and (settings.catalog_endpoint or pollen == "quest"):
+            await registry.warm_registry()
+            catalog = await registry.fetch_model_catalog()
+        with registry.model_scope(catalog, pollen):
+            if registry.request_pollen() == "quest" and routing is not None:
+                for pin in routing.explicit().values():
+                    registry.require_model(pin)
+            async for event in _run_agent_events(
+                messages, model=model, max_iters=max_iters, routing=routing
+            ):
+                yield event
     finally:
-        if catalog_token is not None:
-            reset_request_catalog(catalog_token)
         shell.cleanup_workspace(workspace, token)
 
 
@@ -253,13 +265,20 @@ async def run_agent(
     model: str | None = None,
     max_iters: int | None = None,
     routing: RoutingPreferences | None = None,
+    pollen: PollenPolicy = "all",
+    catalog: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Run the tool-calling loop over `messages` (OpenAI chat format).
 
     Returns {"text", "artifacts", "iterations"}.
     """
     events = run_agent_events(
-        messages, model=model, max_iters=max_iters, routing=routing
+        messages,
+        model=model,
+        max_iters=max_iters,
+        routing=routing,
+        pollen=pollen,
+        catalog=catalog,
     )
     try:
         async for event in events:

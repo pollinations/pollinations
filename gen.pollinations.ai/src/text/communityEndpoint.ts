@@ -34,11 +34,13 @@ import type { RequestData, TransformOptions } from "./types.js";
 async function mintDelegatedToken({
     endpoint,
     parentApiKeyId,
+    pollen,
     parentRequestId,
     secret,
 }: {
     endpoint: CommunityEndpointRuntime;
     parentApiKeyId: string | undefined;
+    pollen?: "quest";
     parentRequestId: string;
     secret: string;
 }): Promise<string | undefined> {
@@ -56,6 +58,7 @@ async function mintDelegatedToken({
     return signAgentRunToken({
         secret,
         parentApiKeyId,
+        pollen,
         parentRequestId,
         // The managed runtime uses the listing id (also its upstream model) to
         // select the prompt config. An external agent only needs spend scope.
@@ -75,6 +78,7 @@ export async function communityEndpointGatewayContext({
     userApiKey,
     parentRequestId,
     parentApiKeyId,
+    pollen,
 }: {
     endpoint: CommunityEndpointRuntime;
     modelDefinition: ModelDefinition;
@@ -84,16 +88,25 @@ export async function communityEndpointGatewayContext({
     userApiKey: string;
     parentRequestId: string;
     parentApiKeyId?: string;
+    pollen?: "quest";
 }): Promise<TransformOptions> {
-    const { messages: _messages, ...requestDataWithoutMessages } = requestData;
+    const {
+        messages: _messages,
+        pollen: _pollen,
+        ...requestDataWithoutMessages
+    } = requestData;
     const modelConfig = await communityEndpointModelConfig({
         endpoint,
         secret,
         parentRequestId,
         parentApiKeyId,
+        pollen,
     });
     return {
         ...requestDataWithoutMessages,
+        ...(pollen === "quest" && usesAgentRunToken(endpoint)
+            ? { pollen }
+            : {}),
         modelConfig,
         modelDef: modelDefinition,
         requestedModel: endpoint.modelId,
@@ -107,15 +120,18 @@ export async function communityEndpointModelConfig({
     secret,
     parentRequestId,
     parentApiKeyId,
+    pollen,
 }: {
     endpoint: CommunityEndpointRuntime;
     secret: string;
     parentRequestId: string;
     parentApiKeyId?: string;
+    pollen?: "quest";
 }): Promise<Record<string, unknown>> {
     const runToken = await mintDelegatedToken({
         endpoint,
         parentApiKeyId,
+        pollen,
         parentRequestId,
         secret,
     });

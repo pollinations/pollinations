@@ -121,6 +121,7 @@ async function responsesClientForAttempt(
         secret: c.env.BETTER_AUTH_SECRET,
         parentRequestId: c.get("requestId"),
         parentApiKeyId: c.var.auth?.apiKey?.id,
+        pollen: c.var.model?.pollen,
     });
     if (endpoint.type === "prompt_agent" || endpoint.type === "code_agent") {
         const apiKey = config.authKey;
@@ -156,7 +157,14 @@ async function handleDirectResponse(
                     attempt,
                 );
                 const result = await callDirectResponses(
-                    request,
+                    {
+                        ...request,
+                        ...(attempt.communityEndpoint &&
+                        attempt.communityEndpoint.type !== "proxy" &&
+                        c.var.model?.pollen === "quest"
+                            ? { pollen: "quest" }
+                            : {}),
+                    },
                     responsesClient.target,
                     responsesClient.fetcher,
                 );

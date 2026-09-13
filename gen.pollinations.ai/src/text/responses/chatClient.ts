@@ -40,7 +40,10 @@ export async function callChatViaResponses(
 
     const request = chatToResponsesRequest(messages, options);
     const { response, requestUrl } = await callDirectResponses(
-        request,
+        {
+            ...request,
+            ...(options.pollen === "quest" ? { pollen: "quest" } : {}),
+        },
         target,
         fetcher,
     );

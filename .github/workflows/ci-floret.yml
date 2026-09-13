@@ -4,11 +4,13 @@ on:
   pull_request:
     paths:
       - "apps/floret/**"
+      - "shared/auth/agent-run-token.ts"
       - ".github/workflows/ci-floret.yml"
   push:
     branches: [main]
     paths:
       - "apps/floret/**"
+      - "shared/auth/agent-run-token.ts"
       - ".github/workflows/ci-floret.yml"
 
 permissions:
@@ -29,6 +31,9 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "24"
+      - name: Install shared token dependencies
+        working-directory: .
+        run: npm ci
       - name: Install dependencies
         run: |
           python -m pip install '.[dev]'

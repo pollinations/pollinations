@@ -8,9 +8,11 @@ from __future__ import annotations
 
 import json
 import logging
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any
 
+from floret import registry
 from floret.routing import RoutingPreferences
 from floret.tools import gen, media, shell
 
@@ -305,6 +307,38 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
 ]
 
 
+def tool_schemas() -> list[dict[str, Any]]:
+    """Expose only request-eligible model choices without changing shared schemas."""
+    if registry.request_pollen() != "quest":
+        return TOOL_SCHEMAS
+    descriptions = {
+        "generate_image": "Generate images from text; omit model to auto-select. Use n for variations.",
+        "edit_image": "Edit an image from image_url and prompt. Join two reference URLs with '|'.",
+        "generate_video": (
+            "Generate video from text and optional start image/end_image. "
+            "A compatible eligible model is required for end frames. Frame URLs must be fetchable."
+        ),
+    }
+    result = []
+    for schema in TOOL_SCHEMAS:
+        name = schema["function"]["name"]
+        models = gen.tool_model_ids(name)
+        if models == []:
+            continue
+        scoped = deepcopy(schema)
+        function = scoped["function"]
+        if name in descriptions:
+            function["description"] = descriptions[name]
+        if models is not None:
+            function["parameters"]["properties"]["model"] = {
+                "type": "string",
+                "enum": sorted(models),
+                "description": "Eligible model ID; omit to auto-select where optional.",
+            }
+        result.append(scoped)
+    return result
+
+
 # --------------------------------------------------------------------------- #
 # Dispatch
 # --------------------------------------------------------------------------- #
@@ -363,7 +397,13 @@ async def dispatch(
             )
 
         if name == "text_to_speech":
-            model = call_args.get("model", "openai-audio")
+            model = (
+                gen._select_tool_model(name, call_args.get("model"))
+                if registry.request_pollen() == "quest"
+                else call_args.get("model", "openai-audio")
+            )
+            if registry.request_pollen() == "quest":
+                call_args["model"] = model
             from floret.registry import get_audio_endpoint
 
             endpoint = routing.audio_endpoint if routing and routing.audio else None
@@ -394,14 +434,19 @@ async def dispatch(
 
         if name in {"change_voice", "isolate_voice"}:
             endpoint = "voice-changer" if name == "change_voice" else "voice-isolator"
-            call_args.setdefault(
-                "model",
-                (
-                    "eleven-voice-changer"
-                    if name == "change_voice"
-                    else "eleven-voice-isolator"
-                ),
-            )
+            if registry.request_pollen() == "quest":
+                call_args["model"] = gen._select_tool_model(
+                    name, call_args.get("model")
+                )
+            else:
+                call_args.setdefault(
+                    "model",
+                    (
+                        "eleven-voice-changer"
+                        if name == "change_voice"
+                        else "eleven-voice-isolator"
+                    ),
+                )
             res = await gen.transform_audio(endpoint=endpoint, **call_args)
             art = {
                 "type": "audio",

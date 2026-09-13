@@ -10,6 +10,7 @@ import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import { MODEL_REQUESTED_HEADER } from "@shared/registry/usage-headers.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
+import { PollenSchema } from "@shared/schemas/pollen.ts";
 import type { SafetyFeature } from "@shared/schemas/safety.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -42,6 +43,8 @@ export type ModelVariables = {
          * which is the default for every static and external community model.
          */
         cacheScope?: string;
+        /** Signed or requested run restriction; omission permits all models. */
+        pollen?: "quest";
         /** Entry that serves the request when this model's upstream fails. */
         fallbackEntries?: GenerationModelEntry[];
     };
@@ -171,9 +174,11 @@ export function resolveModel(
     }>(async (c, next) => {
         // Extract model from request
         let rawModel: string | null = null;
+        let requestedPollen: unknown;
 
         if (c.req.method === "GET") {
             rawModel = c.req.query("model") || null;
+            requestedPollen = c.req.query("pollen");
         } else if (c.req.method === "POST") {
             const contentType = c.req.header("content-type") || "";
             if (contentType.includes("multipart/form-data")) {
@@ -188,11 +193,15 @@ export function resolveModel(
             } else if (hasJsonContentType(contentType)) {
                 try {
                     const body =
-                        getValidatedJsonBody<{ model?: string }>(c.req) ||
+                        getValidatedJsonBody<{
+                            model?: string;
+                            pollen?: unknown;
+                        }>(c.req) ||
                         ((await c.req.raw.clone().json()) as
-                            | { model?: string }
+                            | { model?: string; pollen?: unknown }
                             | undefined);
                     rawModel = body?.model || null;
+                    requestedPollen = body?.pollen;
                 } catch {
                     throw new HTTPException(400, {
                         message: "Invalid JSON body",
@@ -200,6 +209,15 @@ export function resolveModel(
                 }
             }
         }
+
+        const policy = PollenSchema.optional().safeParse(requestedPollen);
+        if (!policy.success) {
+            throw new HTTPException(400, {
+                message: "pollen must be quest or all",
+            });
+        }
+        const questOnly =
+            c.var.auth?.agentRun?.pollen === "quest" || policy.data === "quest";
 
         // Apply default based on event type
         const defaultModel =
@@ -229,13 +247,23 @@ export function resolveModel(
         // model the caller selected, so they inherit that model's permission.
         // Visible and community targets remain independently scoped: a key can
         // never be served — or billed for — a model it could not call directly.
+        if (questOnly) {
+            if (resolved.definition.paidOnly === true) {
+                throw new HTTPException(403, {
+                    message: `Model "${resolved.resolved}" requires purchased Pollen and is unavailable with pollen=quest`,
+                });
+            }
+            resolved.pollen = "quest";
+        }
         const allowedModels = c.var.auth?.apiKey?.permissions?.models;
-        if (allowedModels && resolved.fallbackEntries) {
+        if (resolved.fallbackEntries) {
             resolved.fallbackEntries = resolved.fallbackEntries.filter(
                 (entry) =>
-                    (entry.definition.fallbackOnly === true &&
-                        !entry.communityEndpoint) ||
-                    allowedModels.includes(entry.id),
+                    (!questOnly || entry.definition.paidOnly !== true) &&
+                    (!allowedModels ||
+                        (entry.definition.fallbackOnly === true &&
+                            !entry.communityEndpoint) ||
+                        allowedModels.includes(entry.id)),
             );
         }
         c.set("model", resolved);

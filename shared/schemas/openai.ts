@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { MODEL_CATEGORIES } from "../registry/registry.ts";
 import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
+import { PollenSchema } from "./pollen.ts";
 import { SafeSchema } from "./safety.ts";
 
 const FunctionParametersSchema = z.record(z.string(), z.any());
@@ -310,6 +311,7 @@ export const CreateChatCompletionRequestSchema = z
             description:
                 "AI model for text generation. See /v1/models for full list.",
         }),
+        pollen: PollenSchema.optional(),
         modalities: z.array(z.enum(["text", "audio"])).optional(),
         audio: z
             .object({

@@ -103,6 +103,7 @@ async function gatewayContext(
         userApiKey: c.var.auth?.apiKey?.rawKey || "",
         parentRequestId: c.get("requestId"),
         parentApiKeyId: c.var.auth?.apiKey?.id,
+        pollen: c.var.model?.pollen,
     });
     if (
         communityEndpoint.type !== "prompt_agent" &&
@@ -133,7 +134,11 @@ async function gatewayContext(
 }
 
 function withGatewayContext(c: TextContext, requestData: RequestData) {
-    const { messages: _messages, ...requestDataWithoutMessages } = requestData;
+    const {
+        messages: _messages,
+        pollen: _pollen,
+        ...requestDataWithoutMessages
+    } = requestData;
 
     return {
         ...requestDataWithoutMessages,

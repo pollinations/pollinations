@@ -12,6 +12,7 @@ from floret.registry import (
     find_model_meta,
     get_model_catalog,
     get_voices,
+    request_pollen,
 )
 
 # Curated guidance, grounded in the live lineup (2026-07-10). Maintain this by hand.
@@ -100,14 +101,21 @@ def build_system_prompt() -> str:
             counts[mod] = counts.get(mod, 0) + 1
     inventory = ", ".join(f"{v} {k}" for k, v in sorted(counts.items())) or "loading"
 
+    quest = request_pollen() == "quest"
+    scope = "Request" if quest else "Global"
     automatic = auto_selection_summary()
     guidance = (
-        "Global routing choices (catalog-based advice, not measured quality):\n"
+        f"{scope} routing choices (catalog-based advice, not measured quality):\n"
         + automatic
-        + "\nFor image/video generation omit model to use the current global choice. "
+        + f"\nFor image/video generation omit model to use the current {scope.lower()} choice. "
         "For specialized tasks choose a compatible model; explicit user pins take precedence."
         if automatic is not None
         else "Model strengths (curated):\n" + _best_at_block()
+    )
+    dialogue = (
+        " Use only models offered by the current tools and `list_models`."
+        if quest
+        else " For `eleven-dialogue`, format each line as `voice: text`."
     )
     return f"""You are Polli, an autonomous creative agent running on Pollinations. You can \
 generate text, images, video, and speech, transcribe audio, search the web, and run shell \
@@ -126,7 +134,7 @@ make multiple calls in one turn — they run in parallel.
 - For narration: WRITE the script yourself, then pass that exact script to `text_to_speech`. \
 The audio reads your text verbatim, so never pass an instruction — pass the words to be spoken.
 - `text_to_speech` also generates music, sound effects, and dialogue when given the matching \
-audio model. For `eleven-dialogue`, format each line as `voice: text`.
+audio model.{dialogue}
 - Pick models by strength (see below) or omit `model` to auto-select. Retry with a different \
 model if a tool returns an ERROR.
 - Media plumbing: `fetch_media` brings any media into the bash workspace (curl cannot \

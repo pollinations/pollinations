@@ -3,8 +3,10 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+from collections.abc import Iterator
+from contextlib import contextmanager
 from contextvars import ContextVar, Token
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 import httpx
 
@@ -24,6 +26,8 @@ _catalog_revision: str | None = None
 _request_eligible_models: ContextVar[frozenset[str] | None] = ContextVar(
     "request_eligible_models", default=None
 )
+PollenPolicy = Literal["quest", "all"]
+_request_pollen: ContextVar[PollenPolicy] = ContextVar("request_pollen", default="all")
 _lock = asyncio.Lock()
 _METADATA_KEYS = {
     "id",
@@ -32,6 +36,7 @@ _METADATA_KEYS = {
     "owned_by",
     "capabilities",
     "pricing",
+    "paid_only",
     "created",
     "input_modalities",
     "output_modalities",
@@ -307,6 +312,7 @@ def _infer_meta(item: dict[str, Any]) -> dict[str, Any]:
         "status": item.get("status"),
         "stage": item.get("stage"),
         "pricing": pricing,
+        "paid_only": item.get("paid_only", False),
         "capabilities": caps,
         "params": params,
         "supported_endpoints": supported_endpoints,
@@ -396,6 +402,99 @@ def reset_request_catalog(token: Token[frozenset[str] | None]) -> None:
     _request_eligible_models.reset(token)
 
 
+def request_pollen() -> PollenPolicy:
+    return _request_pollen.get()
+
+
+@contextmanager
+def model_scope(
+    catalog: dict[str, dict[str, Any]] | None, pollen: PollenPolicy = "all"
+) -> Iterator[None]:
+    """Keep caller permissions and model policy local to this run/task."""
+    if pollen not in {"quest", "all"}:
+        raise ValueError("pollen must be quest or all")
+    # A nested scope may narrow access, never widen its parent's policy or IDs.
+    effective = "quest" if request_pollen() == "quest" else pollen
+    allowed = _request_eligible_models.get()
+    if catalog is not None:
+        ids = frozenset(
+            mid
+            for mid, meta in catalog.items()
+            if effective == "all" or meta.get("paid_only", False) is False
+        )
+        allowed = ids if allowed is None else allowed & ids
+    catalog_token = _request_eligible_models.set(allowed)
+    policy_token = _request_pollen.set(effective)
+    try:
+        yield
+    finally:
+        _request_pollen.reset(policy_token)
+        _request_eligible_models.reset(catalog_token)
+
+
+def require_model(model_id: str) -> str:
+    """Validate every explicit/default/replacement model before generation."""
+    if request_pollen() == "all":
+        return model_id
+    meta = find_model_meta(get_model_catalog(), model_id)
+    if meta is None:
+        raise ValueError(f"Model {model_id!r} is not available for this run")
+    return str(meta["id"])
+
+
+def request_policy() -> PolicySnapshot | None:
+    if request_pollen() == "all":
+        return _policy_snapshot
+    if _policy_snapshot is not None and _policy_snapshot.quest is not None:
+        return _policy_snapshot.quest
+    return PolicySnapshot("unreviewed:quest", _catalog_revision or "", {}, ())
+
+
+def choose_model(
+    modality: str,
+    model_id: str | None = None,
+    *,
+    endpoint: str | None = None,
+    required_capabilities: frozenset[str] = frozenset(),
+    input_modalities: frozenset[str] = frozenset(),
+    output_modalities: frozenset[str] = frozenset(),
+    video_capabilities: frozenset[str] = frozenset(),
+    default: str = "",
+) -> str:
+    if request_pollen() == "all":
+        return model_id or default_model(modality, "", default)
+    pinned = require_model(model_id) if model_id else None
+    catalog = get_model_catalog()
+    if video_capabilities:
+        catalog = {
+            mid: meta
+            for mid, meta in catalog.items()
+            if video_capabilities
+            <= set(meta.get("params", {}).get("video_capabilities") or [])
+        }
+    policy = request_policy()
+    assert policy is not None
+    selected = select_model(
+        catalog,
+        policy,
+        SelectionRequest(
+            task_family=f"{modality}.general",
+            modality=modality,
+            endpoint=endpoint,
+            required_capabilities=required_capabilities,
+            input_modalities=input_modalities,
+            output_modalities=output_modalities,
+            pinned_model=pinned,
+        ),
+        catalog_revision=_catalog_revision or "",
+    )
+    if selected:
+        return selected
+    if pinned:
+        raise ValueError(f"Model {model_id!r} is not compatible with this request")
+    raise ValueError(f"No eligible {modality} model for this run")
+
+
 def find_model_meta(
     catalog: dict[str, dict[str, Any]], model_id: str
 ) -> dict[str, Any] | None:
@@ -448,10 +547,13 @@ def get_model_catalog() -> dict[str, dict[str, Any]]:
         return {}
     catalog = cast(dict[str, dict[str, Any]], models)
     eligible = _request_eligible_models.get()
-    if eligible is None:
+    if eligible is None and request_pollen() == "all":
         return catalog
     return {
-        model_id: meta for model_id, meta in catalog.items() if model_id in eligible
+        model_id: meta
+        for model_id, meta in catalog.items()
+        if (eligible is None or model_id in eligible)
+        and (request_pollen() == "all" or meta.get("paid_only", False) is False)
     }
 
 
@@ -486,7 +588,7 @@ def default_model(modality: str, prompt: str, local_default: str) -> str:
     selected = pick_model(modality, settings.default_tier, prompt, paid=settings.paid)
     if selected:
         return selected
-    if _policy_snapshot is not None:
+    if _policy_snapshot is not None or request_pollen() == "quest":
         raise ValueError(f"No eligible {modality} model in the current global catalog")
     return local_default
 
@@ -503,8 +605,11 @@ def auto_selection_summary() -> str | None:
 
 
 def get_voices() -> list[str]:
-    reg = _registry_cache or {}
-    audio_models = reg.get("by_modality", {}).get("audio", {})
+    audio_models = {
+        mid: meta
+        for mid, meta in get_model_catalog().items()
+        if "audio" in meta.get("modalities", [])
+    }
     voices: set[str] = set()
     for meta in audio_models.values():
         for v in meta.get("voices", []):
@@ -596,8 +701,11 @@ def pick_model(
                 "pick_model called without event loop; returning empty model"
             )
             return ""
-    catalog = (_registry_cache or {}).get("by_modality", {})
-    pool = catalog.get(modality, {})
+    pool = {
+        mid: meta
+        for mid, meta in get_model_catalog().items()
+        if modality in meta.get("modalities", [])
+    }
     if not pool:
         return ""
 
@@ -624,7 +732,7 @@ def pick_model(
     if not pool:
         return ""
 
-    policy = _policy_snapshot
+    policy = request_policy()
     revision = _catalog_revision
     if (
         policy is not None

@@ -40,10 +40,7 @@ import {
 } from "../../lib/sign-in-context.ts";
 import { AccountPermissionsInput } from "../keys/account-permissions-input.tsx";
 import { ExpiryDaysInput } from "../keys/expiry-days-input.tsx";
-import {
-    type KeyPermissions,
-    useKeyPermissions,
-} from "../keys/key-permissions.tsx";
+import { useKeyPermissions } from "../keys/key-permissions.tsx";
 import { ModelPermissionsInput } from "../keys/model-permissions-input.tsx";
 import { PollenBudgetInput } from "../keys/pollen-budget-input.tsx";
 import { getModelPricesFromCatalog } from "../models/model-catalog.ts";
@@ -82,15 +79,7 @@ function safeParseUrl(url: string): URL | null {
     }
 }
 
-export type AuthorizeConsent = KeyPermissions & { generationEnabled: boolean };
-
-export function Authorize({
-    initialConsent,
-    onConsentChange,
-}: {
-    initialConsent?: Partial<AuthorizeConsent>;
-    onConsentChange?: (consent: AuthorizeConsent) => void;
-} = {}) {
+export function Authorize() {
     const {
         redirect_url,
         user_code: rawUserCode,
@@ -136,9 +125,7 @@ export function Authorize({
         code: string;
         clientId: string | null;
     } | null>(null);
-    const initializedDeviceCode = useRef<string | null>(
-        initialConsent?.accountPermissions !== undefined ? user_code : null,
-    );
+    const initializedDeviceCode = useRef<string | null>(null);
     const [deviceRecovery, setDeviceRecovery] = useState<
         "code" | "retry" | "deny" | "sign-in" | null
     >(null);
@@ -157,45 +144,21 @@ export function Authorize({
         paid: number;
     } | null>(null);
     const [generationEnabled, setGenerationEnabled] = useState(
-        initialConsent?.generationEnabled ?? models?.length !== 0,
+        models?.length !== 0,
     );
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
 
-    const keyPermissions = useKeyPermissions({
-        ...getAuthorizeInitialPermissions({
+    const keyPermissions = useKeyPermissions(
+        getAuthorizeInitialPermissions({
             models,
             budget,
             expiry,
             permissions: urlScope,
         }),
-        ...initialConsent,
-    });
+    );
     const { setAccountPermissions } = keyPermissions;
-    const {
-        allowedModels: selectedModels,
-        pollenBudget,
-        expiryDays,
-        accountPermissions,
-    } = keyPermissions.permissions;
-    useEffect(() => {
-        onConsentChange?.({
-            allowedModels: selectedModels,
-            pollenBudget,
-            expiryDays,
-            accountPermissions,
-            generationEnabled,
-        });
-    }, [
-        selectedModels,
-        pollenBudget,
-        expiryDays,
-        accountPermissions,
-        generationEnabled,
-        onConsentChange,
-    ]);
-
     // The minted key is the signed-in user's, so it reaches their own private
     // models just as their dashboard keys do — but the anonymous catalog omits
     // them, so the consent screen has to learn them separately.

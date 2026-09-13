@@ -1,0 +1,43 @@
+{
+  "name": "pollinations-connect",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:ui": "npm run build --prefix ../../packages/sdk && npm run build --prefix ../../packages/ui",
+    "predev": "npm run build:ui && playwright install chromium",
+    "dev": "tsx dev.ts",
+    "reset": "tsx reset.ts",
+    "prebuild": "npm run build:ui",
+    "build": "npm run typecheck && vite build --config vite.live.config.ts",
+    "typecheck": "tsc --noEmit --project tsconfig.connect-lab.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.10.10",
+    "@cloudflare/workers-types": "^4.20260426.1",
+    "@hono/node-server": "^1.19.6",
+    "@pollinations/auth": "*",
+    "@pollinations/sdk": "*",
+    "@pollinations/ui": "*",
+    "@tanstack/react-router": "^1.139.3",
+    "better-call": "^1.4.0",
+    "esbuild": "^0.27.3",
+    "miniflare": "4.20260424.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tsx": "^4.20.6"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.17",
+    "@tanstack/router-plugin": "^1.139.3",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "playwright": "1.57.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.4",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.2.4"
+  }
+}

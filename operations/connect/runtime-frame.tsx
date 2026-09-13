@@ -1,0 +1,185 @@
+import { getLoginError } from "@shared/auth/login-errors.ts";
+import { useEffect, useRef } from "react";
+import { useConnectConditions } from "./conditions";
+import { dashboardScreenForLocation } from "./pollen-connect-dashboard";
+
+export type ObservedScreen = { node: string; title: string; path: string };
+
+export function observeScreen(doc: Document): ObservedScreen | undefined {
+    const current = doc.defaultView;
+    if (!current) return;
+    const { pathname: path, search } = current.location;
+    if (path === "/pollen-connect-screen.html") return;
+    const title = doc.querySelector("h1")?.textContent?.trim() ?? "";
+    const buttons = [...doc.querySelectorAll("button")].map((button) =>
+        button.textContent?.trim(),
+    );
+    const sdk = doc
+        .querySelector("[data-connect-state]")
+        ?.getAttribute("data-connect-state");
+    let node: string;
+    if (path === "/connect-example.html") {
+        node =
+            sdk === "signed-out"
+                ? "app-connect"
+                : sdk === "connection-error" || sdk === "connection-check-error"
+                  ? "app-callback-error"
+                  : sdk === "account-error"
+                    ? "app-account-error"
+                    : sdk === "checking-connection"
+                      ? "app-callback"
+                      : "app-connected";
+    } else if (path === "/__connect/identity") {
+        node = "github-handoff";
+    } else if (path === "/error") {
+        node = getLoginError(new URLSearchParams(search).get("error") ?? "").id;
+    } else if (path === "/authorize") {
+        const device = Boolean(new URLSearchParams(search).get("user_code"));
+        const alert = doc.querySelector('[role="alert"]');
+        const signingIn =
+            doc.querySelector("#sign-in-title") ||
+            buttons.some((text) => text?.includes("Sign in with GitHub"));
+        if (doc.querySelector("#connection-error-title")) {
+            node = device
+                ? "device-errors"
+                : /could not connect/.test(doc.body.textContent ?? "")
+                  ? "app-connection-failed"
+                  : "blocked";
+        } else if (signingIn) {
+            node = alert ? (device ? "sign-in-errors" : "error") : "sign-in";
+        } else if (/approved/i.test(title)) node = "device-result";
+        else if (/declined/i.test(title)) node = "device-declined";
+        else if (
+            buttons.includes("Allow access") ||
+            buttons.includes("Connecting…")
+        )
+            node = "consent";
+        else node = device ? "device-checking" : "loading";
+    } else if (path === "/device") {
+        node = doc.querySelector("#device-code-form")
+            ? "device-code"
+            : doc.querySelector('[role="alert"]')
+              ? "sign-in-errors"
+              : "sign-in";
+    } else if (path === "/edit-key") node = "account-key";
+    else if (path === "/top-up") node = "account-wallet";
+    else if (path === "/app/sign-in") node = "identity";
+    else if (path === "/connect-admin.html")
+        node = doc.querySelector('[data-admin-connected="true"]')
+            ? "dashboard-connected"
+            : "dashboard-sign-in";
+    else {
+        const dialogTitle =
+            doc.querySelector('[role="dialog"] h2')?.textContent ?? "";
+        node = dashboardScreenForLocation(path, dialogTitle);
+    }
+    return { node, title, path };
+}
+
+// Observe real navigation and DOM; never infer progress from a clicked label,
+// change a route's loader, or manufacture a response to advance the journey.
+export function RuntimeFrame({
+    src,
+    title,
+    interactive = true,
+    onReport,
+    onOpenDashboard,
+    onClose,
+    onKeyDown,
+}: {
+    src: string;
+    title: string;
+    interactive?: boolean;
+    onReport?: (screen: ObservedScreen) => void;
+    onOpenDashboard?: () => void;
+    onClose?: () => void;
+    onKeyDown?: (event: KeyboardEvent) => void;
+}) {
+    const { state, revision, restarting } = useConnectConditions();
+    const frame = useRef<HTMLIFrameElement>(null);
+    const observer = useRef<MutationObserver | undefined>(undefined);
+    const callbacks = useRef({
+        onReport,
+        onOpenDashboard,
+        onClose,
+        onKeyDown,
+    });
+    callbacks.current = {
+        onReport,
+        onOpenDashboard,
+        onClose,
+        onKeyDown,
+    };
+    useEffect(() => {
+        if (restarting) observer.current?.disconnect();
+        return () => observer.current?.disconnect();
+    }, [restarting]);
+    if (!state || restarting) return null;
+    return (
+        <iframe
+            key={revision}
+            ref={frame}
+            src={src}
+            title={title}
+            loading={interactive ? "eager" : "lazy"}
+            tabIndex={interactive ? 0 : -1}
+            inert={!interactive}
+            onLoad={() => {
+                observer.current?.disconnect();
+                const doc = frame.current?.contentDocument;
+                if (!doc?.defaultView) return;
+                doc.documentElement.inert = !interactive;
+                let last = "";
+                const report = () => {
+                    const screen = observeScreen(doc);
+                    if (!screen) return;
+                    const key = JSON.stringify(screen);
+                    if (key === last) return;
+                    last = key;
+                    callbacks.current.onReport?.(screen);
+                };
+                observer.current = new MutationObserver(report);
+                observer.current.observe(doc.documentElement, {
+                    subtree: true,
+                    childList: true,
+                    characterData: true,
+                    attributes: true,
+                    attributeFilter: [
+                        "data-connect-state",
+                        "data-admin-connected",
+                        "aria-busy",
+                    ],
+                });
+                report();
+                doc.defaultView.addEventListener("popstate", report);
+                doc.addEventListener("keydown", (event) => {
+                    if (event.key === "Escape") callbacks.current.onClose?.();
+                    callbacks.current.onKeyDown?.(event);
+                });
+                doc.addEventListener(
+                    "click",
+                    (event) => {
+                        const link = (event.target as Element)?.closest?.("a");
+                        if (!link || !interactive) return;
+                        if (
+                            link.dataset.pollinationsAction === "dashboard" &&
+                            callbacks.current.onOpenDashboard
+                        ) {
+                            event.preventDefault();
+                            event.stopImmediatePropagation();
+                            callbacks.current.onOpenDashboard();
+                        } else if (
+                            link.target === "_blank" &&
+                            new URL(link.href).origin === location.origin
+                        ) {
+                            event.preventDefault();
+                            event.stopImmediatePropagation();
+                            doc.defaultView?.location.assign(link.href);
+                        }
+                    },
+                    true,
+                );
+            }}
+        />
+    );
+}

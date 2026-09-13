@@ -1,0 +1,23 @@
+{
+    "extends": "../../enter.pollinations.ai/frontend/src/tsconfig.json",
+    "include": [
+        "pollen-connect-*.ts",
+        "pollen-connect-*.tsx",
+        "live-*.ts",
+        "live-*.tsx",
+        "enter-entry.ts",
+        "dev.ts",
+        "reset.ts",
+        "runtime.ts",
+        "fixtures.ts",
+        "server.ts",
+        "../../enter.pollinations.ai/worker-runtime.d.ts",
+        "../../enter.pollinations.ai/worker-bindings.d.ts",
+        "../../enter.pollinations.ai/frontend/src/**/*.ts",
+        "../../enter.pollinations.ai/frontend/src/**/*.tsx"
+    ],
+    "compilerOptions": {
+        "noUnusedLocals": true,
+        "noUnusedParameters": true
+    }
+}

@@ -92,8 +92,6 @@ export const ModelInfoSchema = z.object({
     output_modalities: z.array(z.enum(MODEL_OUTPUT_MODALITIES)).optional(),
     required_safety: z.array(z.enum(SAFETY_FEATURES)).optional(),
     supported_endpoints: z.array(z.string()).optional(),
-    supported_parameters: z.array(z.string()).optional(),
-    default_parameters: z.record(z.string(), z.unknown()).optional(),
     health: z
         .object({
             success_rate: z.number().min(0).max(1),
@@ -223,8 +221,6 @@ export function modelInfoFromDefinition(
         output_modalities: service.outputModalities,
         required_safety: service.requiredSafetyFeatures,
         supported_endpoints: service.supportedEndpoints,
-        supported_parameters: service.supportedParameters,
-        default_parameters: service.defaultParameters,
         video_capabilities: service.videoCapabilities,
         min_duration: service.minDuration,
         max_duration: service.maxDuration,

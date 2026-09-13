@@ -1,0 +1,35 @@
+{
+  "pr_number": 14839,
+  "title": "fix: preserve stream-read errors and terminal diagnostics",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14839",
+  "merged_at": "2026-09-13T23:49:08Z",
+  "labels": [],
+  "pr_body_excerpt": "- Preserve the original upstream stream-read message in error metrics instead of collapsing it into missing usage.\n- Keep the stream ending within the existing 16,000-character error-log budget, even with oversized chunks. Full billing input remains untouched.\n- Keep diagnostic helpers outside the main stream and tracking flow. No generation retries, timeout changes, or weaker billing validation.\n- Pin the merged gateway fix: https://github.com/pollinations/gateway/pull/13. Builds on #14730.\n- Verified: 95 Gen tests, Gen type-check, pinned-version formatting, and a real gateway → Gen → usage-validator connection-reset reproduction pass.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The stream keeps receipts",
+    "blurb": "When an upstream stream hiccups, the hive now keeps the actual note instead of filing everything under “missing usage.” Error logs stay neatly within their 16,000-character planter box while billing keeps its full input.",
+    "summary": "Gen now preserves original upstream stream-read error messages in metrics, caps terminal diagnostics at the existing 16,000-character error-log budget even for oversized chunks, and pins the corresponding gateway fix from gateway PR #13.",
+    "impact": "Developers get the real stream-read failure context in Gen diagnostics while usage validation and full billing input remain intact, making connection-reset and similar failures far easier to trace.",
+    "keywords": [
+      "gen",
+      "streaming",
+      "diagnostics",
+      "observability",
+      "gateway",
+      "billing",
+      "error-handling"
+    ],
+    "visual_concept": "A cozy stream-monitoring garden: Polli, wearing tiny mechanic goggles, tends a retro terminal beside a carefully bounded diagnostic log jar labeled “16K.” A friendly CRT Monitor Robot watches a winding data stream carrying a readable error note into the jar, while the untouched full billing ledger sits safely in a flower pot; code-plants and vines make the careful observability work feel warm rather than alarming.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny mechanic goggles as she carefully guides a flowing data stream into a retro terminal’s small glass log jar marked “16K”; a cute chunky CRT-monitor robot holds an intact billing ledger beside sprouting code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-13/PR-14839.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny mechanic goggles as she carefully guides a flowing data stream into a retro terminal’s small glass log jar marked “16K”; a cute chunky CRT-monitor robot holds an intact billing ledger beside sprouting code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-13T23:50:06.334853+00:00"
+}

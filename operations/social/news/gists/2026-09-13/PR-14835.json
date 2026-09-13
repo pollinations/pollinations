@@ -1,0 +1,34 @@
+{
+  "pr_number": 14835,
+  "title": "fix: always sync Gen secrets after production deploy",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14835",
+  "merged_at": "2026-09-13T23:35:00Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n- Restores full Gen secret synchronization after every production Gen deploy.\n- Removes the two opt-in Gen secret inputs and the OpenRouter-only special path added by #14825.\n- Leaves actual secret additions and rotations behind the existing approval policy; unchanged versioned values reconcile automatically.\n\n## Test plan\n- git diff --check\n- actionlint reports only the existing concurrency.queue warning, identical on main\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Secrets follow the deploy",
+    "blurb": "Every production Gen deploy now brings its full secret garden along for the ride. New and rotated secrets still wait behind the approval gate; the rest quietly stay in sync.",
+    "summary": "Production Gen deployments now automatically reconcile all existing versioned Gen secrets, replacing the opt-in inputs and OpenRouter-only synchronization path introduced in #14825.",
+    "impact": "Users get more reliable Gen production deployments because unchanged secret versions are synchronized on every deploy, while new secret additions and rotations remain approval-controlled.",
+    "keywords": [
+      "gen",
+      "production",
+      "deployments",
+      "secrets",
+      "cloudflare",
+      "reliability"
+    ],
+    "visual_concept": "Depict Polli as a careful release gardener carrying a watering can between a cozy production server greenhouse and a row of labeled secret jars, with every healthy code-plant receiving the same gentle sync. A small CRT monitor robot can confirm the synchronized deploy, while approval-gated new seeds sit safely behind a tiny garden gate.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny release-manager hard hat, carefully watering a row of glowing secret-jar code plants beside a retro production terminal; a cheerful CRT monitor robot shows a pixel checkmark while a small garden gate protects new seed packets. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, flowers and vines, retro gaming vibes, pixel-font text: \"SYNCED\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-13/PR-14835.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny release-manager hard hat, carefully watering a row of glowing secret-jar code plants beside a retro production terminal; a cheerful CRT monitor robot shows a pixel checkmark while a small garden gate protects new seed packets. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, flowers and vines, retro gaming vibes, pixel-font text: \"SYNCED\"."
+  },
+  "generated_at": "2026-09-13T23:35:56.752779+00:00"
+}

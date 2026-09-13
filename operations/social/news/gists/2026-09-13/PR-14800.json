@@ -1,0 +1,34 @@
+{
+  "pr_number": 14800,
+  "title": "feat: declare endpoint-agent input and output modalities",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14800",
+  "merged_at": "2026-09-13T23:43:49Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds optional input/output modality declarations through the existing endpoint-agent create, update and account-list APIs.\n- Reuses the same modality arrays and enums as text models, including multiple outputs and 3D; publishes them in /models and /v1/models.\n- Preserves declarations during unrelated edits and keeps unconfigured agents text-only. Routing, billing and prompt-agent inheritance are unchanged.\n- No new endpoints, migration, manual SQL or model-specific rules. Shared schemas provide the API documentation.\n- Validation: 154 local tests, Gen and Enter TypeScript checks, and Biome passed. The local Enter build wrapper hit a brand-asset copy error; direct TypeScript passed.\n\nAddresses #14162.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Agents declare their senses",
+    "blurb": "Endpoint agents can now say what they take in and what they make, from text to multiple outputs and 3D. The hive’s model catalog gets a little more honest about its capabilities.",
+    "summary": "Endpoint-agent create, update, and account-list APIs now support optional shared input/output modality declarations—including multiple output modalities and 3D—and publish them through /models and /v1/models.",
+    "impact": "Developers can discover each endpoint agent’s declared media capabilities in the standard model listings, while unconfigured agents remain text-only and existing routing, billing, and prompt-agent inheritance stay the same.",
+    "keywords": [
+      "endpoint-agents",
+      "modalities",
+      "models-api",
+      "3d",
+      "model-discovery",
+      "api"
+    ],
+    "visual_concept": "Polli, wearing tiny librarian glasses, updates a cozy garden catalog beside a CRT monitor robot. The catalog shows small pixel symbols for text, image, audio, video, and a tiny 3D cube growing from labeled code-plants, representing agents accurately declaring their inputs and multiple outputs.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, carefully pinning text, image, audio, video, and 3D cube icons onto a glowing model catalog while a cheerful CRT monitor robot holds the pages. Lime green (#ecf874) code-plants and pastel flowers grow around the retro terminal; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: 'INPUT / OUTPUT'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-13/PR-14800.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, carefully pinning text, image, audio, video, and 3D cube icons onto a glowing model catalog while a cheerful CRT monitor robot holds the pages. Lime green (#ecf874) code-plants and pastel flowers grow around the retro terminal; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: 'INPUT / OUTPUT'."
+  },
+  "generated_at": "2026-09-13T23:45:00.213439+00:00"
+}

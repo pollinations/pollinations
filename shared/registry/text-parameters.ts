@@ -292,6 +292,38 @@ export const CHAT_PARAMETERS = {
     ],
     museSpark: [...CHAT, "temperature", "tools"],
     openRouterMistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
+    // GMICloud route (2026-09-13): no penalties, stop, top_k or
+    // structured_outputs in supported_parameters.
+    openRouterHy3: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "response_format",
+        "temperature",
+        "top_p",
+        "seed",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
+    // AtlasCloud fallback route for Hy3 (2026-09-13): distinct provider, wider
+    // parameter surface than the GMICloud primary.
+    openRouterHy3AtlasCloud: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "top_k",
+        "min_p",
+        ...PENALTIES,
+        "repetition_penalty",
+        "stop",
+        "seed",
+        "logit_bias",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
     qwenCoderNext: [...EXTENDED_CHAT, "repetition_penalty", "logit_bias"],
     openRouterQwenCoderNext: [...SAMPLED_CHAT, "presence_penalty"],
     qwen37: [...EXTENDED_CHAT, ...OPENROUTER_REASONING],

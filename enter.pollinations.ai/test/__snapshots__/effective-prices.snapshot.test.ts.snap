@@ -2674,6 +2674,30 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000002,
     },
   },
+  "tencent/hy3": {
+    "cost": {
+      "completionTextTokens": 0.00000058,
+      "promptCachedTokens": 0.000000035,
+      "promptTextTokens": 0.00000014,
+    },
+    "price": {
+      "completionTextTokens": 0.00000058,
+      "promptCachedTokens": 0.000000035,
+      "promptTextTokens": 0.00000014,
+    },
+  },
+  "tencent/hy3:openrouter:atlas-cloud-fp8": {
+    "cost": {
+      "completionTextTokens": 0.0000008,
+      "promptCachedTokens": 0.00000005,
+      "promptTextTokens": 0.0000002,
+    },
+    "price": {
+      "completionTextTokens": 0.0000008,
+      "promptCachedTokens": 0.00000005,
+      "promptTextTokens": 0.0000002,
+    },
+  },
   "thinkingmachines/inkling": {
     "cost": {
       "completionTextTokens": 0.00000405,

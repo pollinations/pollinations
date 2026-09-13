@@ -223,6 +223,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         "minimax/minimax-m2.7",
         "deepinfra/fp8",
     ),
+    "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "gmicloud/bf16"),
+    "hy3-openrouter-atlas-cloud": createPinnedOpenRouterConfig(
+        "tencent/hy3",
+        "atlas-cloud/fp8",
+    ),
     // Reasoning models: explicit max_tokens default below. Without one, the
     // upstream provider's own default applies (Chutes AI defaults to 1024),
     // which reasoning models can burn entirely on their internal thinking

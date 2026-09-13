@@ -3,16 +3,17 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
 const SERVER_INSTRUCTIONS =
-    "A private, persistent computer with one tool: bash. Your files live " +
+    "A private, persistent computer with one tool: bash. Use worker mode for " +
+    "quick shell tasks and container mode for full Linux. Your files live " +
     "under /workspace; /workspace/README.md explains the memory layout.";
 
-const BASH_DESCRIPTION = `Run a bash command on your private, persistent computer. Files survive between runs, except /tmp, which is emptied after every call. cwd defaults to /workspace and is created if missing; keep one folder per project.
+const BASH_DESCRIPTION = `Run a bash command on your private, persistent computer. Files under /workspace survive between runs. cwd defaults to /workspace and persistent folders are created if missing; keep one folder per project.
 
-Available: coreutils, grep, sed, awk, jq, tar, find, xargs, diff, curl, git. Not available: Node, Python, package managers. curl and git clone reach any public URL.
+mode defaults to worker: fast startup with coreutils, grep, sed, awk, jq, tar, find, xargs, diff, curl and git, but no Node, Python or package managers. mode=container starts a full Debian container with Node.js, npm, apt, git, native binaries and outbound network; it has a slower cold start. Only /workspace persists when the container restarts.
 
 Write a file by passing its content in \`stdin\` and running \`cat > path\`; stdin is used as-is, no quoting.
 
-Send files out with \`assets publish <path>\`, which copies one file to media storage and prints an unlisted URL kept 30 days (tar a folder first), or \`git push\` to a repository you own with a token in the remote URL.
+In worker mode, send files out with \`assets publish <path>\`, which copies one file to media storage and prints an unlisted URL kept 30 days (tar a folder first). Either mode can use \`git push\` to a repository you own with a token in the remote URL.
 
 Output is stdout and stderr, truncated at 64 KB; a non-zero exit is an error.`;
 
@@ -21,6 +22,10 @@ export const HOME = "/workspace";
 const TMP_DIR = "/tmp";
 const MAX_OUTPUT_BYTES = 64 * 1024;
 const COMMAND_TIMEOUT_MS = 60_000;
+const BACKEND_BY_MODE = {
+    worker: "worker-shell",
+    container: "container-shell",
+} as const;
 
 export function createComputerMcpServer(workspace: WorkspaceClient): McpServer {
     const server = new McpServer(
@@ -41,22 +46,31 @@ export function createComputerMcpServer(workspace: WorkspaceClient): McpServer {
                     .string()
                     .optional()
                     .describe("Absolute working directory."),
+                mode: z
+                    .enum(["worker", "container"])
+                    .optional()
+                    .describe(
+                        "worker (default) for fast shell tasks; container for full Debian with Node.js, npm, apt and native binaries.",
+                    ),
             },
         },
-        async ({ command, stdin, cwd = HOME }, context) => {
+        async ({ command, stdin, cwd = HOME, mode = "worker" }, context) => {
             // stdin goes through a file in /tmp, not the runtime's stdin
             // option: @cloudflare/computer 0.3.0 hands stdin to the shell as
             // a latin1 byte string, and a `>` redirect then writes each UTF-8
-            // byte as its own character. A file read by `<` stays UTF-8.
+            // byte as its own character. A file read by `<` stays UTF-8. The
+            // container backend accepts UTF-8 stdin directly.
             const stdinPath =
-                stdin === undefined
+                stdin === undefined || mode === "container"
                     ? undefined
                     : `${TMP_DIR}/.stdin-${crypto.randomUUID()}`;
             try {
                 await workspace.fs
                     .mkdir(cwd, { recursive: true })
                     .catch(() => undefined);
-                await workspace.fs.mkdir(TMP_DIR, { recursive: true });
+                if (mode === "worker") {
+                    await workspace.fs.mkdir(TMP_DIR, { recursive: true });
+                }
                 if (stdinPath !== undefined) {
                     await workspace.fs.writeFile(stdinPath, stdin ?? "");
                 }
@@ -65,8 +79,12 @@ export function createComputerMcpServer(workspace: WorkspaceClient): McpServer {
                         ? command
                         : `{\n${command}\n} < ${stdinPath}`,
                     {
+                        backend: BACKEND_BY_MODE[mode],
                         cwd,
                         encoding: "utf8",
+                        ...(mode === "container" && stdin !== undefined
+                            ? { stdin }
+                            : {}),
                         timeoutMs: COMMAND_TIMEOUT_MS,
                     },
                 );
@@ -91,10 +109,12 @@ export function createComputerMcpServer(workspace: WorkspaceClient): McpServer {
                     };
                 } finally {
                     context.signal.removeEventListener("abort", onAbort);
-                    // /tmp does not persist: it is emptied after every call.
-                    await workspace.fs
-                        .rm(TMP_DIR, { recursive: true })
-                        .catch(() => undefined);
+                    if (mode === "worker") {
+                        // The worker shell's /tmp does not persist.
+                        await workspace.fs
+                            .rm(TMP_DIR, { recursive: true })
+                            .catch(() => undefined);
+                    }
                 }
             } catch (error) {
                 return {

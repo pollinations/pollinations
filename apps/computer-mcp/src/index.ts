@@ -3,10 +3,16 @@ import {
     type DurableObjectStorageLike,
     getWorkspace,
     type WorkspaceClient,
+    type WorkspaceOptions,
+    WorkspaceProxy,
     WorkspaceServiceProxy,
     withWorkspace,
 } from "@cloudflare/computer";
 import type { WorkspaceLike } from "@cloudflare/computer/assets";
+import {
+    CloudflareContainerBackend,
+    withWorkspaceContainer,
+} from "@cloudflare/computer/backends/container";
 import { WorkerShellBackend } from "@cloudflare/computer/backends/worker-shell";
 import { createGitClient } from "@cloudflare/computer/git";
 import curlModules from "@cloudflare/computer/shell/curl";
@@ -45,57 +51,74 @@ in it (for example /workspace/thesis) and pass that folder as cwd.
 
 ## Shell
 
-The only tool is bash (no Node, no Python; coreutils, grep, sed, awk,
-jq, tar, curl and git are available). Write a file by passing its
-content as stdin to \`cat > path\`.
+The only tool is bash. It defaults to \`mode: "worker"\`: fast startup with
+coreutils, grep, sed, awk, jq, tar, curl and git, but no Node, Python or package
+managers. Use \`mode: "container"\` for full Debian with Node.js, npm, apt,
+native binaries and outbound network. The container starts more slowly; only
+/workspace survives a container restart. Write a file by passing its content
+as stdin to \`cat > path\`.
 
 ## Importing and sharing
 
 - In: \`curl -o path <url>\` for any public URL; \`git clone <https-url>\`
   for any public repository.
-- Out: \`assets publish <path>\` copies one file to public media storage
-  and prints an unlisted URL that stays valid 30 days; tar a folder first.
+- Out: in worker mode, \`assets publish <path>\` copies one file to public
+  media storage and prints an unlisted URL that stays valid 30 days; tar a
+  folder first.
   For anything the user wants to keep, \`git push\` to a repository they
   own: they give you a token scoped to that one repository and you put it
   in the remote URL (https://x:TOKEN@github.com/user/repo.git). The token
   is stored in this computer's git config, nowhere else.
 `;
 
-// The Dynamic Worker running bash reaches this filesystem through the
-// service proxy, so the loader loopback needs the class exported here.
-export { WorkspaceServiceProxy };
+// Shell backends reach this Durable Object through these internal proxies.
+export { WorkspaceProxy, WorkspaceServiceProxy };
 
-export class Computer extends withWorkspace(
+class ComputerBase extends withWorkspaceContainer(
     class extends DurableObject<Env> {},
-    (self) => {
-        const { ctx, env } = self as unknown as {
-            ctx: DurableObjectState;
-            env: Env;
-        };
-        return {
-            storage: ctx.storage as unknown as DurableObjectStorageLike,
-            git: createGitClient(),
-            // Typed as unknown: comparing Workspace to WorkspaceLike makes tsc
-            // recurse through the fs overloads until it gives up.
-            assets: (workspace: unknown) =>
-                createMediaAssets(workspace as WorkspaceLike, env.MEDIA),
-            defaultGitIdentity: {
-                name: "Pollinations Agent",
-                email: "agent@pollinations.ai",
-            },
-            backends: [
-                new WorkerShellBackend({
-                    loader: env.LOADER,
-                    workspace: { binding: "COMPUTER", id: ctx.id.toString() },
-                    ctx,
-                    egress: { mode: "direct" },
-                    commands: [jqModules, curlModules],
-                }),
-            ],
-        };
-    },
 ) {
+    readonly workerShell = new WorkerShellBackend({
+        loader: this.env.LOADER,
+        workspace: { binding: "COMPUTER", id: this.ctx.id.toString() },
+        ctx: this.ctx,
+        egress: { mode: "direct" },
+        commands: [jqModules, curlModules],
+    });
+
+    readonly containerShell = new CloudflareContainerBackend({
+        container: () => this,
+        workspace: { binding: "COMPUTER", id: this.ctx.id.toString() },
+        egress: { mode: "direct" },
+    });
+}
+
+function workspaceOptions(
+    self: InstanceType<typeof ComputerBase>,
+): WorkspaceOptions {
+    const { ctx, env } = self as unknown as {
+        ctx: DurableObjectState;
+        env: Env;
+    };
+    return {
+        storage: ctx.storage as unknown as DurableObjectStorageLike,
+        git: createGitClient(),
+        // Typed as unknown: comparing Workspace to WorkspaceLike makes tsc
+        // recurse through the fs overloads until it gives up.
+        assets: (workspace: unknown) =>
+            createMediaAssets(workspace as WorkspaceLike, env.MEDIA),
+        defaultGitIdentity: {
+            name: "Pollinations Agent",
+            email: "agent@pollinations.ai",
+        },
+        backends: [self.workerShell, self.containerShell],
+    };
+}
+
+export class Computer extends withWorkspace(ComputerBase, workspaceOptions) {
     override async fetch(request: Request): Promise<Response> {
+        if (new URL(request.url).pathname === "/api") {
+            return this.containerShell.handleFetch(request);
+        }
         if (request.method !== "POST") {
             return new Response("Method Not Allowed", { status: 405 });
         }

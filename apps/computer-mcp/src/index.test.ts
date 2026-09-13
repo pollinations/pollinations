@@ -30,10 +30,11 @@ async function bash(
     command: string,
     stdin?: string,
     cwd?: string,
+    mode?: "worker" | "container",
 ): Promise<{ text: string; isError: boolean }> {
     const result = await client.callTool({
         name: "bash",
-        arguments: { command, stdin, cwd },
+        arguments: { command, stdin, cwd, mode },
     });
     const content = result.content as { type: string; text?: string }[];
     const text = content
@@ -63,7 +64,29 @@ describe("computer MCP worker", () => {
         const client = await connect("user-tools");
         const { tools } = await client.listTools();
         expect(tools.map((tool) => tool.name)).toEqual(["bash"]);
+        expect(
+            (
+                tools[0].inputSchema.properties?.mode as {
+                    enum?: string[];
+                }
+            ).enum,
+        ).toEqual(["worker", "container"]);
         expect(lastResponse?.headers.has(MCP_USAGE_HEADERS.cost)).toBe(false);
+        await client.close();
+    });
+
+    it("keeps worker mode as the default", async () => {
+        const client = await connect("user-worker-mode");
+        const implicit = await bash(client, "echo default");
+        const explicit = await bash(
+            client,
+            "echo worker",
+            undefined,
+            undefined,
+            "worker",
+        );
+        expect(implicit.text.trim()).toBe("default");
+        expect(explicit.text.trim()).toBe("worker");
         await client.close();
     });
 

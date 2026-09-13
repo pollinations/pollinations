@@ -329,21 +329,12 @@ describe("billing deduction", () => {
 
     it("preserves committed debit when dev credit fails", async () => {
         const payerId = await createUser({ tierBalance: 100, packBalance: 0 });
-        // Create a pk_ key with earnings enabled so resolveDevMarkup succeeds
         const { id: byopKeyId, userId: devUserId } = await createTestApiKey({
             type: "publishable",
             user: { tierBalance: 0, packBalance: 0 },
             pollenBudget: 0,
+            metadata: { earningsEnabled: true },
         });
-        // Ensure the key has the right attributes for resolveDevMarkup
-        await db
-            .update(apiKeyTable)
-            .set({
-                prefix: "pk",
-                enabled: true,
-                metadata: JSON.stringify({ earningsEnabled: true }),
-            })
-            .where(eq(apiKeyTable.id, byopKeyId));
         // Delete the dev user so atomicCreditUserBalance affects 0 rows
         await db.delete(userTable).where(eq(userTable.id, devUserId));
         const result = await handleBalanceDeduction({

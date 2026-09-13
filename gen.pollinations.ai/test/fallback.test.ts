@@ -821,23 +821,15 @@ describe("caller-listed model chains", () => {
         ]);
     });
 
-    it("names the whole list so a chain never reuses the primary's cache key", async () => {
-        const single = await resolveModelDefinition(
-            "openai-fast",
-            "generate.text",
-            env,
-        );
+    it("keeps the string the caller sent so a chain gets its own cache key", async () => {
         const chain = await resolveModelDefinition(
             "openai-fast,openai",
             "generate.text",
             env,
         );
 
-        expect(single.listedModels).toBeUndefined();
-        expect(chain.listedModels).toEqual([
-            "openai/gpt-5-nano",
-            "openai/gpt-5.4-nano",
-        ]);
+        expect(chain.requested).toBe("openai-fast,openai");
+        expect(chain.resolved).toBe("openai/gpt-5-nano");
     });
 
     it("holds every listed model to the endpoint it was called on", async () => {

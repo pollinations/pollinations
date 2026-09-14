@@ -1,0 +1,33 @@
+{
+  "pr_number": 14853,
+  "title": "Add aikhusus2025-ctrl to the list",
+  "author": "gggff123",
+  "url": "https://github.com/pollinations/pollinations/pull/14853",
+  "merged_at": "2026-09-14T14:03:09Z",
+  "labels": [],
+  "pr_body_excerpt": "Closes #14829",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One more bee in the hive",
+    "blurb": "The GitHub contributor list gained a new name. A small gate opened, and aikhusus2025-ctrl can now get on with the useful work.",
+    "summary": "Added the GitHub ID `aikhusus2025-ctrl` to the shared authorization list used by Pollinations services.",
+    "impact": "The newly listed contributor can access the GitHub-authenticated workflow that relies on this shared allowlist.",
+    "keywords": [
+      "github",
+      "authorization",
+      "contributors",
+      "auth",
+      "allowlist"
+    ],
+    "visual_concept": "A cozy garden-gate metaphor for adding a contributor to a shared GitHub authorization list: Polli, wearing a tiny maintainer cap, welcomes a new name onto a glowing retro terminal roster beside an open garden gate and code-plants.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny maintainer cap, adding a new glowing name to a retro terminal's contributor roster beside an open garden gate and sprouting code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, with subtle pixel-font text: 'WELCOME'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-14/PR-14853.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny maintainer cap, adding a new glowing name to a retro terminal's contributor roster beside an open garden gate and sprouting code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, with subtle pixel-font text: 'WELCOME'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-14T14:04:16.190874+00:00"
+}

@@ -68,6 +68,23 @@ export const IMAGE_FALLBACKS = {
             },
         },
     },
+    "black-forest-labs/flux.2-max": {
+        "black-forest-labs/flux.2-max:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-09-13").getTime(),
+            // OpenRouter (BFL's own "black-forest-labs/us-3" deployment),
+            // verified 2026-09-13: flat $0.07 per output megapixel, no input
+            // charge and no flat execution fee — replaces the Replicate
+            // adjustment entirely rather than adding to it.
+            cost: {
+                promptImageTokens: 0,
+                completionImageTokens: 0.07,
+            },
+            billing: {
+                adjustments: [],
+            },
+        },
+    },
     "qwen/qwen-image-3": {
         "qwen/qwen-image-3:replicate": {
             provider: "replicate",

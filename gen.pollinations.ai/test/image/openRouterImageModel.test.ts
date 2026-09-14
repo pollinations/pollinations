@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
 import {
+    callOpenRouterFlux2MaxAPI,
     callOpenRouterGeminiImageAPI,
     callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
@@ -255,6 +256,65 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
         ).rejects.toMatchObject({
             status: 400,
             message: "Request refused by content policy",
+        });
+    });
+});
+
+describe("OpenRouter FLUX.2 Max", () => {
+    it("pins the Black Forest Labs endpoint and forwards references", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const requests: Record<string, unknown>[] = [];
+        mockOpenRouterFetch(requests);
+
+        const result = await callOpenRouterFlux2MaxAPI("test prompt", {
+            ...baseParams,
+            model: "black-forest-labs/flux.2-max:openrouter",
+            image: [
+                "https://example.com/one.png",
+                "https://example.com/two.png",
+            ],
+        });
+
+        expect(requests[0]).toEqual({
+            model: "black-forest-labs/flux.2-max",
+            prompt: "test prompt",
+            n: 1,
+            seed: 42,
+            provider: {
+                only: ["black-forest-labs/us-3"],
+                allow_fallbacks: false,
+            },
+            aspect_ratio: "1:1",
+            input_references: [
+                {
+                    type: "image_url",
+                    image_url: { url: "https://example.com/one.png" },
+                },
+                {
+                    type: "image_url",
+                    image_url: { url: "https://example.com/two.png" },
+                },
+            ],
+        });
+        expect(result.trackingData).toEqual({
+            actualModel: "black-forest-labs/flux.2-max:openrouter",
+            usage: { completionImageTokens: 1.048576 },
+        });
+    });
+
+    it("rejects more than 8 reference images", async () => {
+        await expect(
+            callOpenRouterFlux2MaxAPI("test prompt", {
+                ...baseParams,
+                model: "black-forest-labs/flux.2-max:openrouter",
+                image: Array(9).fill("https://example.com/ref.png"),
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: "FLUX.2 Max supports at most 8 reference images",
         });
     });
 });

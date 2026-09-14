@@ -60,6 +60,7 @@ import {
 import {
     communityEndpoint as communityEndpointTable,
     session as sessionTable,
+    user as userTable,
 } from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
@@ -72,6 +73,7 @@ import {
     calculateUsageBilling,
     getRegistryModelDefinition,
     type ModelInputModality,
+    type ModelOutputModality,
 } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import {
@@ -117,6 +119,7 @@ type CommunityEndpointFixture = Omit<CommunityEndpointInsert, "title"> &
         modality?: CommunityEndpointModality;
         imagePricing?: CommunityEndpointImagePricing;
         inputModalities?: ModelInputModality[] | null;
+        outputModalities?: ModelOutputModality[];
         baseUrl?: string | null;
         api?: CommunityEndpointApi | null;
         upstreamModel?: string;
@@ -139,6 +142,7 @@ function insertCommunityEndpoints(
             modality: rawModality,
             imagePricing: rawImagePricing,
             inputModalities: rawInputModalities,
+            outputModalities,
             baseUrl,
             api: rawApi,
             upstreamModel,
@@ -171,6 +175,8 @@ function insertCommunityEndpoints(
                   ? {
                         perUserRpm: perUserRpm ?? null,
                         api,
+                        inputModalities: rawInputModalities ?? undefined,
+                        outputModalities,
                     }
                   : {
                         bearerTokenCiphertext:
@@ -571,40 +577,40 @@ describe("community endpoint helpers", () => {
         });
     });
 
-    it.each([
-        null,
-        undefined,
-    ])("parses media payloads without a text API (%s)", (api) => {
-        const payload = parseListingPayload(
-            "proxy",
-            JSON.stringify({
+    it.each([null, undefined])(
+        "parses media payloads without a text API (%s)",
+        (api) => {
+            const payload = parseListingPayload(
+                "proxy",
+                JSON.stringify({
+                    bearerTokenCiphertext: "ciphertext",
+                    modality: "image",
+                    api,
+                    imagePricing: "request",
+                    inputModalities: ["image", "image"],
+                    perUserRpm: null,
+                    fallbacks: ["owner/model"],
+                    prices: { completionImagePrice: 0.2 },
+                }),
+            );
+
+            expect(payload).toMatchObject({
                 bearerTokenCiphertext: "ciphertext",
+                api: null,
+                paidOnly: false,
                 modality: "image",
-                api,
                 imagePricing: "request",
-                inputModalities: ["image", "image"],
+                inputModalities: ["image"],
                 perUserRpm: null,
                 fallbacks: ["owner/model"],
-                prices: { completionImagePrice: 0.2 },
-            }),
-        );
-
-        expect(payload).toMatchObject({
-            bearerTokenCiphertext: "ciphertext",
-            api: null,
-            paidOnly: false,
-            modality: "image",
-            imagePricing: "request",
-            inputModalities: ["image"],
-            perUserRpm: null,
-            fallbacks: ["owner/model"],
-            prices: {
-                promptTextPrice: 0,
-                completionImagePrice: 0.2,
-                completionVideoPrice: 0,
-            },
-        });
-    });
+                prices: {
+                    promptTextPrice: 0,
+                    completionImagePrice: 0.2,
+                    completionVideoPrice: 0,
+                },
+            });
+        },
+    );
 
     it("rejects stored payloads that do not match their listing schema", () => {
         const textPayload = {
@@ -1760,60 +1766,57 @@ describe("community endpoint helpers", () => {
             expect(fetchMock).toHaveBeenCalledTimes(1);
         });
 
-        it.each([
-            undefined,
-            null,
-            {},
-            { duration: null },
-        ])("falls back to requested duration when usage is missing: %j", async (usage) => {
-            vi.stubGlobal(
-                "fetch",
-                vi.fn(async () =>
-                    Response.json({
-                        data: [{ b64_json: TEST_MP4_BASE64 }],
-                        usage,
-                    }),
-                ),
-            );
-            await expect(
-                callCommunityVideoEndpoint(
-                    await videoEndpoint(),
-                    "a sprout",
-                    { duration: 5 },
-                    secret,
-                ),
-            ).resolves.toMatchObject({
-                durationSeconds: 5,
-                trackingData: { usage: { completionVideoSeconds: 5 } },
-            });
-        });
+        it.each([undefined, null, {}, { duration: null }])(
+            "falls back to requested duration when usage is missing: %j",
+            async (usage) => {
+                vi.stubGlobal(
+                    "fetch",
+                    vi.fn(async () =>
+                        Response.json({
+                            data: [{ b64_json: TEST_MP4_BASE64 }],
+                            usage,
+                        }),
+                    ),
+                );
+                await expect(
+                    callCommunityVideoEndpoint(
+                        await videoEndpoint(),
+                        "a sprout",
+                        { duration: 5 },
+                        secret,
+                    ),
+                ).resolves.toMatchObject({
+                    durationSeconds: 5,
+                    trackingData: { usage: { completionVideoSeconds: 5 } },
+                });
+            },
+        );
 
-        it.each([
-            { duration: 0 },
-            { duration: -1 },
-            { duration: "5" },
-        ])("rejects invalid reported usage %j even when duration was requested", async (usage) => {
-            vi.stubGlobal(
-                "fetch",
-                vi.fn(async () =>
-                    Response.json({
-                        data: [{ b64_json: TEST_MP4_BASE64 }],
-                        usage,
-                    }),
-                ),
-            );
-            await expect(
-                callCommunityVideoEndpoint(
-                    await videoEndpoint(),
-                    "a sprout",
-                    { duration: 5 },
-                    secret,
-                ),
-            ).rejects.toMatchObject({
-                status: 502,
-                message: expect.stringContaining("usage.duration"),
-            });
-        });
+        it.each([{ duration: 0 }, { duration: -1 }, { duration: "5" }])(
+            "rejects invalid reported usage %j even when duration was requested",
+            async (usage) => {
+                vi.stubGlobal(
+                    "fetch",
+                    vi.fn(async () =>
+                        Response.json({
+                            data: [{ b64_json: TEST_MP4_BASE64 }],
+                            usage,
+                        }),
+                    ),
+                );
+                await expect(
+                    callCommunityVideoEndpoint(
+                        await videoEndpoint(),
+                        "a sprout",
+                        { duration: 5 },
+                        secret,
+                    ),
+                ).rejects.toMatchObject({
+                    status: 502,
+                    message: expect.stringContaining("usage.duration"),
+                });
+            },
+        );
 
         it("preserves upstream video failures", async () => {
             vi.stubGlobal(
@@ -6866,7 +6869,7 @@ fixtureTest(
     "manages my-models through account API with a key that has account keys permission",
     async () => {
         const ownerGithubUsername = `pk-${crypto.randomUUID().slice(0, 8)}`;
-        const { key } = await createTestApiKey({
+        const { key, userId } = await createTestApiKey({
             type: "publishable",
             accountPermissions: ["keys"],
             user: {
@@ -6913,7 +6916,7 @@ fixtureTest(
         expect(listResponse.status).toBe(200);
         await expect(listResponse.json()).resolves.toEqual({
             data: [],
-            provider: { name: null, url: null },
+            provider: { name: null, url: null, iconUrl: null },
         });
 
         const incompleteProviderResponse = await fetchEnterApi(
@@ -6951,6 +6954,26 @@ fixtureTest(
         );
         expect(insecureProviderResponse.status).toBe(400);
 
+        const invalidIconResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                "http://localhost:3000/api/account/my-models/provider",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        name: "Example AI",
+                        url: "https://example.com",
+                        iconUrl: "https://tracker.test/icon.svg",
+                    }),
+                },
+            ),
+        );
+        expect(invalidIconResponse.status).toBe(400);
+
         const providerResponse = await fetchEnterApi(
             enterApi,
             new Request(
@@ -6972,6 +6995,34 @@ fixtureTest(
         await expect(providerResponse.json()).resolves.toEqual({
             name: "Example AI",
             url: "https://example.com/",
+            iconUrl: null,
+        });
+
+        const iconProviderResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                "http://localhost:3000/api/account/my-models/provider",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        name: "Example AI",
+                        url: "https://example.com",
+                        iconUrl:
+                            "https://media.pollinations.ai/123e4567-e89b-12d3-a456-426614174000",
+                    }),
+                },
+            ),
+        );
+        expect(iconProviderResponse.status).toBe(200);
+        await expect(iconProviderResponse.json()).resolves.toEqual({
+            name: "Example AI",
+            url: "https://example.com/",
+            iconUrl:
+                "https://media.pollinations.ai/123e4567-e89b-12d3-a456-426614174000",
         });
 
         const createResponse = await fetchEnterApi(
@@ -7018,6 +7069,32 @@ fixtureTest(
         expect(created).not.toHaveProperty("bearerTokenCiphertext");
         expect(typeof created.id).toBe("string");
         const createdId = created.id as string;
+        const secondCreateResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name: "my-second-model",
+                    title: "My Second Model",
+                    description: "Account API model",
+                    api: "chat_completions",
+                    url: "https://api.example.com/v1/chat/completions",
+                    upstreamModel: "gpt-4.1-mini",
+                    bearerToken: "sk_saved_token",
+                    visibility: "public",
+                }),
+            }),
+        );
+        expect(secondCreateResponse.status).toBe(200);
+        const secondCreated = (await secondCreateResponse.json()) as Record<
+            string,
+            unknown
+        >;
+        expect(typeof secondCreated.id).toBe("string");
         await db
             .update(communityEndpointTable)
             .set({
@@ -7116,6 +7193,7 @@ fixtureTest(
             hidden: true,
             hiddenReason: "Hidden by owner",
         });
+        await maturePendingCommunityEndpoint(secondCreated.id as string);
 
         // Minimum-price policy is independent of visibility: any non-negative
         // owner price is accepted by this API.
@@ -7260,6 +7338,27 @@ fixtureTest(
             pending: { visibility: "public" },
         });
 
+        await db
+            .update(communityEndpointTable)
+            .set({
+                visibility: "public",
+                pendingVisibility: null,
+                pendingAt: null,
+                hiddenAt: null,
+                hiddenReason: null,
+                hiddenBy: null,
+            })
+            .where(eq(communityEndpointTable.id, createdId));
+        await db
+            .update(communityEndpointTable)
+            .set({ visibility: "public" })
+            .where(eq(communityEndpointTable.id, secondCreated.id as string));
+
+        const removedIconProxy = await fetchGen(
+            `https://gen.pollinations.ai/api/community-icons/${userId}.svg`,
+        );
+        expect(removedIconProxy.status).toBe(404);
+
         const secondListResponse = await fetchEnterApi(
             enterApi,
             new Request("http://localhost:3000/api/account/my-models", {
@@ -7271,19 +7370,53 @@ fixtureTest(
         expect(secondListResponse.status).toBe(200);
         const secondList = (await secondListResponse.json()) as {
             data: Record<string, unknown>[];
-            provider: { name: string | null; url: string | null };
+            provider: {
+                name: string | null;
+                url: string | null;
+                iconUrl: string | null;
+            };
         };
-        expect(secondList.data).toHaveLength(1);
+        expect(secondList.data).toHaveLength(2);
         expect(secondList.provider).toEqual({
             name: "Example AI",
             url: "https://example.com/",
+            iconUrl:
+                "https://media.pollinations.ai/123e4567-e89b-12d3-a456-426614174000",
         });
-        expect(secondList.data[0]).toMatchObject({
+        expect(
+            secondList.data.find(
+                (model) => model.title === "Updated Model Title",
+            ),
+        ).toMatchObject({
             title: "Updated Model Title",
             perUserRpm: 0.5,
         });
         expect(secondList.data[0]).not.toHaveProperty("bearerToken");
         expect(secondList.data[0]).not.toHaveProperty("bearerTokenCiphertext");
+
+        await db
+            .update(userTable)
+            .set({ communityProviderIconUrl: "https://tracker.test/icon.svg" })
+            .where(eq(userTable.id, userId));
+        const unsafeStoredIconResponse = await fetchEnterApi(
+            enterApi,
+            new Request("http://localhost:3000/api/account/my-models", {
+                headers: { Authorization: `Bearer ${key}` },
+            }),
+        );
+        expect(unsafeStoredIconResponse.status).toBe(200);
+        await expect(unsafeStoredIconResponse.json()).resolves.toMatchObject({
+            provider: { iconUrl: null },
+        });
+        await db
+            .update(userTable)
+            .set({
+                communityProviderIconUrl:
+                    "https://media.pollinations.ai/123e4567-e89b-12d3-a456-426614174000",
+            })
+            .where(eq(userTable.id, userId));
+
+        resetGenerationModelRegistryCache();
 
         const registryEntry = (
             await getCommunityModelRegistryEntries(env)
@@ -7295,8 +7428,56 @@ fixtureTest(
         expect(registryEntry?.info).toMatchObject({
             publisher: "Example AI",
             brand_url: "https://example.com/",
+            brand_icon_url:
+                "https://media.pollinations.ai/123e4567-e89b-12d3-a456-426614174000",
         });
         expect(registryEntry?.communityEndpoint.perUserRpm).toBe(0.5);
+
+        const registryEntries = await getCommunityModelRegistryEntries(env);
+        expect(
+            registryEntries.filter((entry) =>
+                [
+                    communityModelId(ownerGithubUsername, "my-test-model"),
+                    communityModelId(ownerGithubUsername, "my-second-model"),
+                ].includes(entry.id),
+            ),
+        ).toHaveLength(2);
+        for (const entry of registryEntries.filter((entry) =>
+            [
+                communityModelId(ownerGithubUsername, "my-test-model"),
+                communityModelId(ownerGithubUsername, "my-second-model"),
+            ].includes(entry.id),
+        )) {
+            expect(entry.info).toMatchObject({
+                brand_icon_url:
+                    "https://media.pollinations.ai/123e4567-e89b-12d3-a456-426614174000",
+            });
+        }
+
+        const removeIconResponse = await fetchEnterApi(
+            enterApi,
+            new Request(
+                "http://localhost:3000/api/account/my-models/provider",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        name: "Example AI",
+                        url: "https://example.com",
+                        iconUrl: null,
+                    }),
+                },
+            ),
+        );
+        expect(removeIconResponse.status).toBe(200);
+        await expect(removeIconResponse.json()).resolves.toEqual({
+            name: "Example AI",
+            url: "https://example.com/",
+            iconUrl: null,
+        });
 
         const clearLimitResponse = await fetchEnterApi(
             enterApi,
@@ -7588,6 +7769,81 @@ fixtureTest(
     },
 );
 
+fixtureTest(
+    "publishes endpoint-agent input and output modalities without changing its chat route",
+    async () => {
+        const ownerUserId = await createTestUser({
+            githubUsername: `owner-${crypto.randomUUID().slice(0, 8)}`,
+        });
+        const modalities: ModelInputModality[] = [
+            "text",
+            "image",
+            "audio",
+            "video",
+        ];
+        const outputModalities: ModelOutputModality[] = [
+            ...modalities,
+            "3d",
+            "embedding",
+        ];
+        const id = crypto.randomUUID();
+        await insertCommunityEndpoints({
+            id,
+            ownerUserId,
+            type: "endpoint_agent",
+            name: "multimodal-agent",
+            title: "Multimodal agent",
+            baseUrl: "https://agent.example.com/v1/chat/completions",
+            upstreamModel: "agent",
+            visibility: "public",
+            inputModalities: modalities,
+            outputModalities,
+        });
+        const entry = (await getCommunityModelRegistryEntries(env)).find(
+            (entry) => entry.communityEndpoint.id === id,
+        );
+        expect(entry?.definition).toMatchObject({
+            category: "text",
+            inputModalities: modalities,
+            outputModalities,
+        });
+        expect(entry?.communityEndpoint).toMatchObject({
+            api: "chat_completions",
+            baseUrl: "https://agent.example.com/v1/chat/completions",
+        });
+        expect(entry?.info).toMatchObject({
+            agent: true,
+            input_modalities: modalities,
+            output_modalities: outputModalities,
+        });
+        for (const path of ["/models", "/v1/models"]) {
+            const response = await fetchGen(
+                `https://gen.pollinations.ai${path}`,
+            );
+            expect(response.status).toBe(200);
+            type CatalogEntry = {
+                name?: string;
+                id?: string;
+                input_modalities?: string[];
+                output_modalities?: string[];
+            };
+            const body = await response.json<
+                CatalogEntry[] | { data: CatalogEntry[] }
+            >();
+            const models = Array.isArray(body) ? body : body.data;
+            expect(
+                models.find(
+                    (model: { name?: string; id?: string }) =>
+                        (model.name ?? model.id) === entry?.id,
+                ),
+            ).toMatchObject({
+                input_modalities: modalities,
+                output_modalities: outputModalities,
+            });
+        }
+    },
+);
+
 fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
     const modelName = `model-${crypto.randomUUID().slice(0, 8)}`;
@@ -7876,6 +8132,8 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
                     url: "https://updated-agent.example.com/v1/responses",
                     upstreamModel: "updated-endpoint-agent",
                     perUserRpm: 7,
+                    inputModalities: ["text", "image"],
+                    outputModalities: ["text", "3d"],
                     requiredSafetyFeatures: ["violence"],
                 }),
             },
@@ -7891,6 +8149,8 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         url: "https://updated-agent.example.com/v1/responses",
         upstreamModel: "updated-endpoint-agent",
         perUserRpm: 7,
+        inputModalities: ["text", "image"],
+        outputModalities: ["text", "3d"],
         requiredSafetyFeatures: ["violence"],
     });
     expect(endpointAgentResponse).not.toHaveProperty("agentId");
@@ -7923,6 +8183,10 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         upstreamModel: "updated-endpoint-agent",
         perUserRpm: 7,
         requiredSafetyFeatures: ["violence"],
+    });
+    expect(endpointAgentRegistryEntry?.info).toMatchObject({
+        input_modalities: ["text", "image"],
+        output_modalities: ["text", "3d"],
     });
     expect(
         endpointAgentRegistryEntry?.definition.requiredSafetyFeatures,

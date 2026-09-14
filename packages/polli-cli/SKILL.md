@@ -211,13 +211,13 @@ polli keys revoke <id>                                             # id comes fr
 polli harness --help                # supported harnesses
 polli harness bloom on              # create a dedicated key for Bloom CLI
 polli harness dsh on                # login if needed, mint key "polli-harness-dsh", write provider + default model
-polli harness dsh on --model kimi   # any tool-calling text model from `polli models`
+polli harness dsh on --model moonshotai/kimi-k2.6 # use the model ID from `polli models`
 polli harness dsh on --no-mcp       # configure the provider and skill without MCP tools
 polli harness dsh off               # restore the config backed up before "on"
 polli harness opencode on           # enable the Pollinations OpenCode plugin
 polli harness opencode off          # remove the plugin setup and stored key
 polli harness pi on                 # login if needed, mint key "polli-harness-pi", configure Pi with Pollinations
-polli harness pi on --model kimi    # any tool-calling text model from `polli models`
+polli harness pi on --model moonshotai/kimi-k2.6 # use the model ID from `polli models`
 polli harness pi off                # restore the Pi config backed up before "on"
 polli harness openclaw on           # login if needed, mint key "polli-harness-openclaw", add provider + Polli skill
 polli harness openclaw off          # remove the Pollinations provider, key, and skill

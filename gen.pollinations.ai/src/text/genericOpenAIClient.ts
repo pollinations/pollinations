@@ -203,6 +203,7 @@ export async function genericOpenAIClient(
 
         const preparedMessages = prepareMessages(messages);
         const {
+            key: _key,
             additionalHeaders: _additionalHeaders,
             jsonMode: _jsonMode,
             modelConfig: _modelConfig,

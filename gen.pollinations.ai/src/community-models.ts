@@ -43,6 +43,7 @@ export async function getCommunityModelRegistryEntries(
             ownerGithubUsername: schema.user.githubUsername,
             providerName: schema.user.communityProviderName,
             providerUrl: schema.user.communityProviderUrl,
+            providerIconUrl: schema.user.communityProviderIconUrl,
             name: schema.communityEndpoint.name,
             title: schema.communityEndpoint.title,
             description: schema.communityEndpoint.description,
@@ -104,6 +105,7 @@ export async function getCommunityModelRegistryEntries(
             description: row.description,
             providerName: row.providerName,
             providerUrl: row.providerUrl,
+            providerIconUrl: row.providerIconUrl,
             baseUrl,
             upstreamModel: row.upstreamModel,
             requiredSafetyFeatures: row.requiredSafetyFeatures,
@@ -113,8 +115,8 @@ export async function getCommunityModelRegistryEntries(
         };
         // An agent charges nothing of its own and fans out to nothing: the
         // caller pays for whatever it consumes downstream. All agent kinds
-        // share empty purchase fields; endpoint agents may override only the
-        // gateway's per-user rate limit from their payload.
+        // share empty purchase fields; endpoint agents declare their modalities
+        // and gateway per-user rate limit in their payload.
         const agentDefaults = {
             modality: "text" as const,
             imagePricing: "request" as const,
@@ -177,6 +179,8 @@ export async function getCommunityModelRegistryEntries(
                     perUserRpm: payload.perUserRpm,
                     type: "endpoint_agent",
                     api: payload.api,
+                    inputModalities: payload.inputModalities ?? null,
+                    outputModalities: payload.outputModalities,
                 };
                 break;
             }

@@ -66,6 +66,9 @@ const ModelRouteHealthRowSchema = z.object({
     event_type: z.string(),
     provider: z.string(),
     model_used: z.string(),
+    // 1 on a model's rollup row, 0 on a single route. ClickHouse returns
+    // GROUPING() and Bool aggregates as 0/1 rather than JSON booleans.
+    is_rollup: z.union([z.boolean(), z.number()]),
     fallback_used: z.union([z.boolean(), z.number()]),
     total_requests: z.number().int().nonnegative(),
     status_2xx: z.number().int().nonnegative(),
@@ -73,7 +76,7 @@ const ModelRouteHealthRowSchema = z.object({
     errors_5xx: z.number().int().nonnegative(),
     served: z.number().int().nonnegative(),
     fallback_rescues: z.number().int().nonnegative(),
-    primary_retried_503s: z.number().int().nonnegative(),
+    retried_503s: z.number().int().nonnegative(),
     last_error_at: z.string(),
     latency_p50_ms: z.number().nonnegative().nullable(),
     latency_p95_ms: z.number().nonnegative().nullable(),
@@ -331,7 +334,9 @@ export const modelStatusRoutes = new Hono<Env>()
             description: [
                 "Returns raw per-route health rows from the public Tinybird `model_route_health` pipe.",
                 "",
-                "Unlike `/v1/models/status`, this keeps `model_used`/`provider` per row instead of collapsing them, so every route a model has actually been served through — its primary and each fallback it has fallen through to — gets its own row with its own `status_2xx`/`errors_5xx`/latency. A model whose primary is down but is rescued by a fallback on every request shows a healthy row for the fallback and a failing row for the primary, both under the same `model`.",
+                "Returns two grains. A row with `is_rollup` 1 is a model total across all of its routes and carries no `model_used`/`provider`; a row with `is_rollup` 0 is a single execution route — the model's own primary, or a fallback it fell through to.",
+                "",
+                "Both count every upstream call, not just the one that settled the request, so a model rescued by a fallback scores below what `/v1/models/status` reports for it: that endpoint counts the caller's outcome, this one counts the infrastructure's. `served` on a route is how many calls it settled, and summing that across a model's routes gives the request count `/v1/models/status` reports.",
                 "",
                 "Routes that have never fired have no row here; this reflects observed traffic only, not the configured fallback list.",
                 "",

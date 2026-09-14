@@ -16,13 +16,14 @@ import {
     Table,
     TableBody,
     TableCell,
+    TableDisclosureButton,
     TableHead,
     TableHeaderCell,
     TableRow,
     Text,
 } from "@pollinations/ui";
 import { ModalityChip } from "@pollinations/ui/gen";
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { useModelMonitor } from "./hooks/useModelMonitor";
 import {
     computeHealthStatus,
@@ -30,6 +31,7 @@ import {
     migrateFavorites,
     modelKey,
     OFF_5XX_PERCENT,
+    primaryRouteStatus,
 } from "./model-data.js";
 
 const FAVORITES_KEY = "model-monitor-favorites";
@@ -130,11 +132,17 @@ function isAdminPath() {
 function statusSeverity(model) {
     if (model.catalogStatus === "historical") return 0;
     const health = computeHealthStatus(model.stats);
-    if (health === "off") return 6;
+    const routeStatus = primaryRouteStatus(model);
+    if (health === "off") return 7;
+    // A dead primary hiding behind a rescue is worse than what the headline
+    // (caller-visible) status alone says — surface it above plain
+    // "degraded" so Status sort doesn't bury it.
+    if (routeStatus === "primary-off") return 6;
     if (health === "degraded") return 5;
     if (model.catalogStatus === "unregistered") return 4;
     if (model.catalogStatus === "anomaly") return 3;
     if (model.catalogStatus === "catalog-unavailable") return 2;
+    if (routeStatus === "rescued") return 1;
     return 0;
 }
 
@@ -354,6 +362,163 @@ function StatusBadge({ stats }) {
     );
 }
 
+// Separate from the headline StatusBadge on purpose: the headline stays
+// caller-visible (that's the SLA), and this flags when it's only caller-visible
+// because a fallback is doing the primary's job.
+function PrimaryRouteBadge({ model }) {
+    const routeStatus = primaryRouteStatus(model);
+    if (!routeStatus) return null;
+    if (routeStatus === "primary-off") {
+        return (
+            <Chip
+                intent="danger"
+                size="sm"
+                title="This model's own upstream is failing; every response shown as healthy above came from a fallback"
+            >
+                Primary off
+            </Chip>
+        );
+    }
+    return (
+        <Chip
+            intent="warning"
+            size="sm"
+            title="This model's own upstream is struggling; a fallback is absorbing part of its traffic"
+        >
+            Rescued
+        </Chip>
+    );
+}
+
+// A single route's health, indented under its model in the same column
+// grid as the main rows — same cells, same numbers, just per-route instead
+// of collapsed across all of them.
+function RouteRow({ route, adminMode }) {
+    const total = route.total_requests || 0;
+    const total4xx = route.errors_4xx || 0;
+    const total5xx = route.errors_5xx || 0;
+    const nonUserErrorTotal = total - total4xx;
+    const pct4xx = total > 0 ? (total4xx / total) * 100 : 0;
+    const avgSec = route.avg_latency_ms ? route.avg_latency_ms / 1000 : null;
+    const p95Sec = route.latency_p95_ms ? route.latency_p95_ms / 1000 : null;
+    const status = computeHealthStatus(route);
+    const isPrimary = !route.fallback_used;
+
+    return (
+        <TableRow intent={rowIntent(status)} className="bg-theme-bg-active/30">
+            <TableCell className="w-8" />
+            <TableCell />
+            <TableCell className="w-full min-w-[16rem] max-w-0 overflow-hidden">
+                <div className="flex min-w-0 items-center gap-1.5 pl-4 text-micro">
+                    <span className="text-theme-text-muted">
+                        {isPrimary ? "Primary" : "Fallback"}
+                    </span>
+                    <span className="truncate font-medium text-theme-text-strong">
+                        {route.model_used}
+                    </span>
+                    {route.provider && (
+                        <span className="truncate text-theme-text-muted">
+                            ({route.provider})
+                        </span>
+                    )}
+                </div>
+            </TableCell>
+            <TableCell>
+                <div className="flex flex-wrap items-center gap-1">
+                    {status === "waiting" ? (
+                        <Chip intent="neutral" size="sm">
+                            No traffic
+                        </Chip>
+                    ) : status !== "on" ? (
+                        <Chip
+                            intent={healthIntent(status)}
+                            size="sm"
+                            className={
+                                status === "off" ? "animate-pulse" : undefined
+                            }
+                        >
+                            {status === "off" ? "Off" : "Degraded"}
+                        </Chip>
+                    ) : null}
+                    {route.primary_retried_503s > 0 && (
+                        <Chip
+                            intent="neutral"
+                            size="sm"
+                            title="Non-final 503s from this route that were retried elsewhere"
+                        >
+                            {route.primary_retried_503s} retried 503
+                            {route.primary_retried_503s === 1 ? "" : "s"}
+                        </Chip>
+                    )}
+                    {route.fallback_rescues > 0 && (
+                        <Chip
+                            intent="neutral"
+                            size="sm"
+                            title="Requests this fallback served after the primary failed"
+                        >
+                            {route.fallback_rescues} rescue
+                            {route.fallback_rescues === 1 ? "" : "s"}
+                        </Chip>
+                    )}
+                </div>
+            </TableCell>
+            {adminMode && <TableCell muted>{route.provider || "-"}</TableCell>}
+            <TableCell align="right" numeric muted>
+                {total > 0 ? nonUserErrorTotal.toLocaleString() : "-"}
+            </TableCell>
+            <TableCell
+                align="right"
+                numeric
+                className={get2xxColor(
+                    route.status_2xx || 0,
+                    nonUserErrorTotal,
+                )}
+            >
+                {formatPercent(route.status_2xx || 0, nonUserErrorTotal, true)}
+            </TableCell>
+            <TableCell align="right" numeric>
+                {total5xx > 0 ? (
+                    <span className="font-semibold text-intent-danger-text">
+                        {total5xx}
+                    </span>
+                ) : (
+                    <span className="text-theme-text-muted">-</span>
+                )}
+            </TableCell>
+            <TableCell align="right" numeric muted>
+                {pct4xx > 0
+                    ? pct4xx < 1
+                        ? `${pct4xx.toFixed(1)}%`
+                        : `${Math.round(pct4xx)}%`
+                    : "-"}
+            </TableCell>
+            <TableCell
+                align="right"
+                numeric
+                className={
+                    avgSec ? getLatencyColor(avgSec) : "text-theme-text-muted"
+                }
+            >
+                {avgSec ? `${avgSec.toFixed(1)}s` : "-"}
+            </TableCell>
+            <TableCell
+                align="right"
+                numeric
+                className={
+                    p95Sec ? getLatencyColor(p95Sec) : "text-theme-text-muted"
+                }
+            >
+                {p95Sec ? `${p95Sec.toFixed(1)}s` : "-"}
+            </TableCell>
+            <TableCell align="right" numeric muted className="whitespace-nowrap">
+                {route.tokens_per_second != null
+                    ? route.tokens_per_second.toFixed(1)
+                    : "-"}
+            </TableCell>
+        </TableRow>
+    );
+}
+
 function CatalogStatusBadge({ status }) {
     if (!status || status === "visible") {
         return null;
@@ -455,7 +620,20 @@ function App() {
     const [typeFilter, setTypeFilter] = useState(initialFilter?.type ?? null);
     const [favorites, setFavorites] = useState(loadFavorites);
     const [favoritesOnly, setFavoritesOnly] = useState(false);
+    const [expandedRoutes, setExpandedRoutes] = useState(() => new Set());
     const catalogUnavailable = endpointStatus.catalog === false;
+
+    const toggleRoutes = useCallback((key) => {
+        setExpandedRoutes((prev) => {
+            const next = new Set(prev);
+            if (next.has(key)) {
+                next.delete(key);
+            } else {
+                next.add(key);
+            }
+            return next;
+        });
+    }, []);
 
     useEffect(() => {
         saveFavorites(favorites);
@@ -870,10 +1048,16 @@ function App() {
                                     const isFavorite = favorites.includes(
                                         modelKey(model),
                                     );
+                                    const routeKey = modelKey(model);
+                                    const hasRoutes =
+                                        (model.routes?.length || 0) > 1;
+                                    const isExpanded =
+                                        hasRoutes &&
+                                        expandedRoutes.has(routeKey);
 
                                     return (
+                                        <Fragment key={routeKey}>
                                         <TableRow
-                                            key={modelKey(model)}
                                             intent={rowIntent(health)}
                                         >
                                             <TableCell className="w-8">
@@ -913,9 +1097,30 @@ function App() {
                                             </TableCell>
                                             <TableCell className="w-full min-w-[16rem] max-w-0 overflow-hidden">
                                                 <div className="min-w-0">
-                                                    <div className="truncate font-medium text-theme-text-strong">
-                                                        {modelLabel}
-                                                    </div>
+                                                    {hasRoutes ? (
+                                                        <TableDisclosureButton
+                                                            expanded={
+                                                                isExpanded
+                                                            }
+                                                            onClick={() =>
+                                                                toggleRoutes(
+                                                                    routeKey,
+                                                                )
+                                                            }
+                                                            className="w-full"
+                                                        >
+                                                            <span
+                                                                className="truncate font-medium text-theme-text-strong"
+                                                                title={`${model.routes.length} routes observed in this window`}
+                                                            >
+                                                                {modelLabel}
+                                                            </span>
+                                                        </TableDisclosureButton>
+                                                    ) : (
+                                                        <div className="truncate font-medium text-theme-text-strong">
+                                                            {modelLabel}
+                                                        </div>
+                                                    )}
                                                     {showCanonicalId && (
                                                         <div
                                                             className="truncate text-micro text-theme-text-muted"
@@ -931,6 +1136,11 @@ function App() {
                                                     {!historical && (
                                                         <StatusBadge
                                                             stats={stats}
+                                                        />
+                                                    )}
+                                                    {!historical && (
+                                                        <PrimaryRouteBadge
+                                                            model={model}
                                                         />
                                                     )}
                                                     <CatalogStatusBadge
@@ -1034,6 +1244,15 @@ function App() {
                                                     : "-"}
                                             </TableCell>
                                         </TableRow>
+                                        {isExpanded &&
+                                            model.routes.map((route) => (
+                                                <RouteRow
+                                                    key={`${routeKey}-${route.model_used}-${route.provider}-${route.fallback_used ? "fb" : "primary"}`}
+                                                    route={route}
+                                                    adminMode={adminMode}
+                                                />
+                                            ))}
+                                        </Fragment>
                                     );
                                 })
                             )}

@@ -135,3 +135,61 @@ export function computeHealthStatus(stats) {
     if (percent5xx >= DEGRADED_5XX_PERCENT) return "degraded";
     return "on";
 }
+
+// Attaches per-route rows (model_route_health) to each model the monitor
+// already built from model_health. Column names match model_health, so
+// computeHealthStatus works unchanged on a route row.
+//
+// Kept separate from mergeModelHealth: route data is an optional enrichment
+// (the /routes endpoint can fail independently of the headline health one),
+// and every consumer of `models` that doesn't care about routes is
+// unaffected by a shape it never asked for.
+export function attachRouteHealth(models, routeStats) {
+    const rows = (routeStats || []).filter((row) => row.model !== "undefined");
+    if (rows.length === 0) return models;
+    return models.map((model) => {
+        const eventType = `generate.${model.endpointType || model.type}`;
+        const routes = rows.filter(
+            (row) => row.model === model.name && row.event_type === eventType,
+        );
+        if (routes.length === 0) return model;
+        // Primary first (own calls, not a fallback target), then busiest
+        // fallback first — the order a reader would want to scan them in.
+        const sorted = [...routes].sort((a, b) => {
+            const aPrimary = !a.fallback_used;
+            const bPrimary = !b.fallback_used;
+            if (aPrimary !== bPrimary) return aPrimary ? -1 : 1;
+            return (b.total_requests || 0) - (a.total_requests || 0);
+        });
+        const primaryRoute = sorted.find((route) => !route.fallback_used) ?? null;
+        return { ...model, routes: sorted, primaryRoute };
+    });
+}
+
+function severityRank(health) {
+    if (health === "off") return 2;
+    if (health === "degraded") return 1;
+    return 0;
+}
+
+// Whether the model's own upstream tells a different story than the
+// caller-visible headline: a dead primary propped up by a fallback ("off"
+// looking "on"/"degraded" up top), or a primary that is merely struggling
+// while a fallback is quietly absorbing the difference ("rescued").
+// Returns null when there's nothing to flag, or no primary route was
+// observed in this window at all (never called, so nothing to compare).
+export function primaryRouteStatus(model) {
+    const primary = model.primaryRoute;
+    if (!primary) return null;
+    const primaryHealth = computeHealthStatus(primary);
+    if (primaryHealth === "waiting") return null;
+    const headlineHealth = computeHealthStatus(model.stats);
+    if (primaryHealth === "off") return "primary-off";
+    const rescued = (model.routes || []).some(
+        (route) => route.fallback_used && (route.fallback_rescues || 0) > 0,
+    );
+    if (rescued && severityRank(primaryHealth) > severityRank(headlineHealth)) {
+        return "rescued";
+    }
+    return null;
+}

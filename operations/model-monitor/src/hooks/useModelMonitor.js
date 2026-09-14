@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { mergeModelHealth, normalizeCatalogModel } from "../model-data.js";
+import {
+    attachRouteHealth,
+    mergeModelHealth,
+    normalizeCatalogModel,
+} from "../model-data.js";
 
 const MODEL_HEALTH_URL = "https://gen.pollinations.ai/v1/models/status";
+const MODEL_ROUTE_HEALTH_URL =
+    "https://gen.pollinations.ai/v1/models/status/routes";
 const MODEL_CATALOG_URL = "https://gen.pollinations.ai/models";
 
 // Minutes parameter for the parameterized model_health pipe
@@ -27,6 +33,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
         POLL_INTERVALS[aggregationWindow] || POLL_INTERVALS["60m"];
     const [models, setModels] = useState([]);
     const [healthStats, setHealthStats] = useState([]);
+    const [routeStats, setRouteStats] = useState([]);
     const [lastUpdated, setLastUpdated] = useState(null);
     const [catalogError, setCatalogError] = useState(null);
     const [healthError, setHealthError] = useState(null);
@@ -95,15 +102,39 @@ export function useModelMonitor(aggregationWindow = "60m") {
         }
     }, [aggregationWindow]);
 
-    const allModels = useMemo(
-        () => mergeModelHealth(models, healthStats, endpointStatus.catalog),
-        [models, healthStats, endpointStatus.catalog],
-    );
+    // Per-route breakdown (primary + fallbacks). Best-effort: a failure here
+    // only means route disclosure is unavailable, so it never sets the
+    // page-level error state the headline health fetch does.
+    const fetchRouteStats = useCallback(async () => {
+        try {
+            const minutes =
+                WINDOW_MINUTES[aggregationWindow] || WINDOW_MINUTES["60m"];
+            const url = `${MODEL_ROUTE_HEALTH_URL}?minutes=${minutes}`;
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Model route status API error: ${response.status}`);
+            }
+            const data = await response.json();
+            setRouteStats(data.data || []);
+        } catch (err) {
+            console.error("Failed to fetch route health stats:", err);
+        }
+    }, [aggregationWindow]);
+
+    const allModels = useMemo(() => {
+        const withHealth = mergeModelHealth(
+            models,
+            healthStats,
+            endpointStatus.catalog,
+        );
+        return attachRouteHealth(withHealth, routeStats);
+    }, [models, healthStats, routeStats, endpointStatus.catalog]);
 
     const refresh = useCallback(() => {
         fetchModels();
         fetchHealthStats();
-    }, [fetchModels, fetchHealthStats]);
+        fetchRouteStats();
+    }, [fetchModels, fetchHealthStats, fetchRouteStats]);
 
     useEffect(() => {
         refresh();

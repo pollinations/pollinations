@@ -1,0 +1,86 @@
+TOKEN tinybird_read_public READ
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+Per-route model health, one row per route actually called for a given
+public model. model_health groups by (model, event_type) and collapses
+model_used down to a single primary via topKIf(1), which is exactly right
+for "did the caller get a response?" but cannot answer "which route served
+it?" or "is the primary still alive?" — a model rescued on every request
+reads 100% healthy there.
+
+This pipe keeps model_used and model_provider_used as group-by keys instead
+of collapsing them, so every fallback route a model has ever fallen through
+to gets its own row alongside the primary's. Columns are named identically
+to model_health (status_2xx, errors_4xx, errors_5xx, latency_p50_ms, ...) so
+consumers can reuse the same health-status computation unchanged: within a
+single route's rows, model_used never differs, so no fallback_used filter is
+needed to isolate "this route's own" traffic the way model_health's own_calls
+must — every row already belongs to exactly one route.
+Time window is controlled by the `minutes` parameter (default 60).
+
+NODE model_route_health_stats
+SQL >
+    %
+    SELECT
+        resolved_model_requested as model,
+        event_type,
+        model_provider_used as provider,
+        model_used,
+        -- Constant within a group: a route either always serves as the
+        -- model's own primary or always arrives here as a fallback target.
+        -- max() just turns the constant into a scalar for the row.
+        max(fallback_used) as fallback_used,
+        count() as total_requests,
+        countIf(response_status >= 200 AND response_status < 300) as status_2xx,
+        countIf(response_status >= 400 AND response_status < 500) as errors_4xx,
+        countIf(response_status >= 500) as errors_5xx,
+        -- How many of this route's calls were the one the caller actually
+        -- received, as opposed to a call that was retried elsewhere.
+        countIf(is_final) as served,
+        countIf(
+            is_final AND fallback_used
+            AND response_status >= 200 AND response_status < 300
+        ) as fallback_rescues,
+        -- A non-final 503 from this route was retried elsewhere. Capacity
+        -- pressure, not a caller-visible failure.
+        countIf(NOT is_final AND response_status = 503) as primary_retried_503s,
+        maxIf(start_time, response_status >= 500) as last_error_at,
+        round(quantileIf(0.5)(response_time, response_status >= 200 AND response_status < 300), 0) as latency_p50_ms,
+        round(quantileIf(0.95)(response_time, response_status >= 200 AND response_status < 300), 0) as latency_p95_ms,
+        round(avgIf(response_time, response_status >= 200 AND response_status < 300), 0) as avg_latency_ms,
+        max(start_time) as last_request_at,
+        if(
+            sumIf(
+                response_time,
+                response_status >= 200 AND response_status < 300
+                AND (token_count_completion_text > 0 OR token_count_completion_reasoning > 0)
+                AND response_time > 0
+            ) > 0,
+            round(
+                sumIf(
+                    toUInt64(token_count_completion_text) + toUInt64(token_count_completion_reasoning),
+                    response_status >= 200 AND response_status < 300
+                    AND (token_count_completion_text > 0 OR token_count_completion_reasoning > 0)
+                    AND response_time > 0
+                )
+                / (
+                    sumIf(
+                        response_time,
+                        response_status >= 200 AND response_status < 300
+                        AND (token_count_completion_text > 0 OR token_count_completion_reasoning > 0)
+                        AND response_time > 0
+                    ) / 1000
+                ),
+                1
+            ),
+            NULL
+        ) as tokens_per_second
+    FROM generation_event_v2
+    -- No is_final filter: a route's own health must include the attempts
+    -- that were retried elsewhere, not just the one that reached the caller.
+    WHERE start_time >= now() - interval {{Int32(minutes, 60)}} minute
+    GROUP BY model, event_type, model_used, provider
+    ORDER BY model, event_type, total_requests DESC
+
+TYPE endpoint

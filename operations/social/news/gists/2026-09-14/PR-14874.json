@@ -1,0 +1,36 @@
+{
+  "pr_number": 14874,
+  "title": "Add manhwa studio to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14874",
+  "merged_at": "2026-09-14T17:58:37Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [manhwa studio](https://manhwa-studio-320488177521.asia-southeast1.run.app) to image\n- Create webtoon comics with character profiles, scene planning, Pollinations-generated panels, dialogue bubbles and a vertical comic canvas.\n\nFixes #14371",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Panels in the pollen",
+    "blurb": "A new manhwa studio has sprouted in the garden. Plan scenes, keep character profiles straight, and let Pollinations help fill a tall scroll of comic panels and dialogue.",
+    "summary": "Added Manhwa Studio to the image apps directory, providing a webtoon-comic workspace with character profiles, scene planning, Pollinations-generated panels, dialogue bubbles, and a vertical comic canvas.",
+    "impact": "Creators can now discover and use Manhwa Studio to turn planned scenes into vertically scrolling webtoon pages with generated art and dialogue in one place.",
+    "keywords": [
+      "community-app",
+      "manhwa-studio",
+      "webtoon",
+      "image-generation",
+      "comics",
+      "creative-tools"
+    ],
+    "visual_concept": "Depict Manhwa Studio as a cozy vertical webtoon workspace: a tall scrolling comic canvas with several pastel generated panels, character-profile cards, scene-planning notes, and dialogue bubbles. Polli, wearing a tiny manga artist beret and holding a pixel pen, helps arrange the panels while code-flowers and vines grow around the desk; the scene represents an app added to the community image-tools garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny manga artist beret and arranging a tall vertical webtoon canvas of pastel comic panels, character-profile cards, scene notes, and speech bubbles beside blooming code-plants; a retro monitor glows prominently lime green (#ecf874), with simple pixel text: \"MANHWA STUDIO\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) outlines and a warm cream garden-studio background, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-14/PR-14874.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny manga artist beret and arranging a tall vertical webtoon canvas of pastel comic panels, character-profile cards, scene notes, and speech bubbles beside blooming code-plants; a retro monitor glows prominently lime green (#ecf874), with simple pixel text: \"MANHWA STUDIO\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) outlines and a warm cream garden-studio background, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-14T17:59:39.080950+00:00",
+  "app_name": "manhwa studio",
+  "app_url": "https://manhwa-studio-320488177521.asia-southeast1.run.app"
+}

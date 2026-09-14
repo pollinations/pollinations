@@ -28,6 +28,8 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ manhwa studio](https://manhwa-studio-320488177521.asia-southeast1.run.app) | Create webtoon comics with character profiles, scene planning, Pollinations-generated panels, dialogue bubbles and a vertical comic canvas. | [@rudigunselawe-oss](https://github.com/rudigunselawe-oss) |
+| [🖼️ Co-Eco-Graph — Enchanted Contract Explorer](https://ceg-wine.vercel.app) | Paste any EVM contract address and explore its subgraph ecosystem as an interactive graph — subgraphs, entities, event handlers from The Graph, plus AI fairy-tale + fantasy illustration. Pollinations | [@alekcangp](https://github.com/alekcangp) |
 | [🖼️ Pollination_chatbot](https://pollinations-chatbot.vercel.app) | Ek simple aur friendly AI chatbot jo Pollinations ke text generation API (openai, mistral, gemini models) se power hota hai. Users apni Pollinations account se secure "Login with Pollinations" (BYOP a | [@zeroxmanhwa053-rgb](https://github.com/zeroxmanhwa053-rgb) |
 | [🖼️ Ziban](https://ziban.pages.dev) | Want to see how a fashion item will fit you before you buy? Ziban uses AI to help you visualize your style, so you can shop with more confidence. | [@ayub-kokabi](https://github.com/ayub-kokabi) |
 | [💬 Talk Ai Companion](https://talkaicompanion.com) | # Talk Talk (talkaicompanion.com) is a free AI girlfriend & AI companion chat app — talk online with 7 Indian AI companions who remember you, make live voice calls, and live inside 4 interactive stori | [@NamanSoni78](https://github.com/NamanSoni78) |
@@ -36,8 +38,6 @@
 | [🖼️ Men's Fashion Pins](https://fashionpins4u.blogspot.com/p/mens-fashion-pins.html) | Create attractive images of men's fashion for pinterest using pollinations. this app is using gpt-image-2 model. | [@hindi-status](https://github.com/hindi-status) |
 | [✍️ StoryCraft AI](https://khushalkks.github.io/pollinations) | StoryCraft AI is an interactive digital storybook and scene illustrator powered directly by Pollinations.ai Text and Image Generation APIs. It uses text.pollinations.ai to generate multi-chapter narra | [@khushalkks](https://github.com/khushalkks) |
 | [🖼️ PolliArena](https://polli-arena.cloudbr.eu.org) | Community-driven model benchmark and blind comparison arena for Pollinations image models with native BYOP (Connect User Wallets). Features: - ⚔️ Blind Battle Arena: Pit two secretly randomized models | [@samucastudent](https://github.com/samucastudent) |
-| [🖼️ Nectar MCP](https://github.com/pinkpixel-dev/nectar-mcp) | Nectar is a stdio MCP server for Pollinations image, video, and audio generation. It gives MCP clients a focused set of creative media tools. Generate and edit images, create videos, and generate spee | [@sizzlebop](https://github.com/sizzlebop) |
-| [🛠️ Pollin Uptime (HA Gateway)](https://brhost.eu.org) | Zero-downtime serverless AI gateway and multimodal playground with automatic 4-layer fallback cascade. Never hit 500 errors or rate limits again — seamlessly route Chat, Vision, Images, Video, and Voi | [@samucamg](https://github.com/samucamg) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-09-13** – **🤖 Polli gets two brains** Ask Polli now runs on GPT-5.6 Terra, while write workflows use GPT-6 Astra—specialized routing without changing your existing Gen auth or endpoint setup. [Try it](https://pollinations.ai/play)
+- **2026-09-13** – **✨ Agents declare their senses** Endpoint agents can now publish input and output modalities—including multiple outputs and 3D—through the standard [model listings](https://gen.pollinations.ai/v1/models).
+- **2026-09-13** – **📱 Agent and MCP KPIs land in the dashboard** Inspect weekly requests, unique users, and MCP calls separately, then export the numbers as CSV. Software has begun counting its own pollen. [Open your dashboard](https://enter.pollinations.ai/keys)
+- **2026-09-13** – **🎨 Floret knows her toolkit** Floret now clearly identifies herself and can point you toward image editing, voice changes, and background-noise removal when you need them. [Try it](https://pollinations.ai/play)
 - **2026-09-12** – **🚀 DeepSeek V4.1 Flash** is now on the unified text API: reasoning, tool use, and a 1M-token context window under `deepseek/deepseek-v4.1-flash`. [Try it](https://pollinations.ai/play)
 - **2026-09-12** – **🤖 A computer for every bee** Agents now get a private persistent `/workspace`, Bash, asset publishing, and the ability to push finished work to your own repos via `/mcp/computer`. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers)
 - **2026-09-12** – **🎨 1080p MiniMax video** Generate 5-, 10-, or 15-second 1080p clips with `minimax/minimax-h3-max-turbo`, including first/last-frame image-to-video. [API docs](https://gen.pollinations.ai/docs)
 - **2026-09-12** – **💡 Bring your own backup bees** Send up to four comma-separated models such as `?model=a,b,c` on any generation endpoint; Pollinations tries your fallback chain when a provider gets dramatic. [API docs](https://gen.pollinations.ai/docs)
 - **2026-09-12** – **✨ A friendly chat flower** Pollination_chatbot is a Pollinations-powered chat interface for OpenAI, Mistral, and Gemini models, with Login with Pollinations. [Try it](https://pollinations-chatbot.vercel.app) <!-- app -->
 - **2026-09-11** – **🚀 Managed Code Agents** Publish commit-pinned TypeScript agents from a public GitHub repo with the dashboard or Polli CLI—models, MCP tools, and AI SDK helpers included. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-09-11** – **✨ Model Parameters, Visible** Every public chat model now declares which request parameters it supports, so your app can inspect the knobs before turning them. [View models](https://gen.pollinations.ai/v1/models)
-- **2026-09-11** – **🎨 Polli Visual Studio** Discord communities can request richer page renders with full-page capture while Polli routes tasks to models by complexity.
-- **2026-09-11** – **🤖 NewEra AI Agent** Turn a plain-English app idea into a planned, coded, built, and deployed application from chat. [Try it](https://newera.namansoni.in) <!-- app -->
-- **2026-09-10** – **✨ StoryCraft AI** Turn an idea into a multi-chapter illustrated storybook, with Pollinations handling the words and scene art. [Try it](https://khushalkks.github.io/pollinations) <!-- app -->
 ---
 
 ## 🌱 Introduction

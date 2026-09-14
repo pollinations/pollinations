@@ -1,0 +1,15 @@
+DESCRIPTION >
+    Backfills historical Pointsflyer generation events (January–April 2026) from
+    generation_event into generation_event_v2, preserving unauthenticated request
+    rows (user_id = '' or 'undefined').
+
+NODE pointsflyer_recovery_v2_populate_node
+SQL >
+    SELECT *
+    FROM generation_event
+    WHERE start_time >= toDateTime('2026-01-01 00:00:00')
+      AND start_time < toDateTime('2026-05-01 00:00:00')
+      AND model_provider_used = 'pointsflyer'
+
+TYPE MATERIALIZED
+DATASOURCE generation_event_v2

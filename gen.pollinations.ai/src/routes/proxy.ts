@@ -361,11 +361,12 @@ const modelsListHandler = (
                 ),
                 source,
             );
-            // Missing or unavailable health data means unknown: listings stay
-            // valid without the health field.
-            const healthData = await fetchModelHealthData().catch(
-                () => undefined,
-            );
+            // Only fetch health data when the client requests reliable filtering.
+            // Missing health data means unknown: listings stay valid without it.
+            const healthData =
+                reliable === "true" || reliable === "1"
+                    ? await fetchModelHealthData().catch(() => undefined)
+                    : undefined;
             const infos = attachHealth(entries, healthData).map(
                 (entry) => entry.info,
             );
@@ -562,6 +563,7 @@ export const proxyRoutes = new Hono<Env>()
             // all collapse to the same 404 so the endpoint does not leak
             // existence information.
             const modelId = c.req.param("model");
+            const { reliable } = c.req.query();
             const visible = await resolveVisibleModelEntry(c, modelId);
             if (!visible) {
                 throw new HTTPException(404, {
@@ -581,9 +583,10 @@ export const proxyRoutes = new Hono<Env>()
             }
             // Health metadata flows into individual lookups from the same
             // cached window as the list endpoints.
-            const healthData = await fetchModelHealthData().catch(
-                () => undefined,
-            );
+            const healthData =
+                reliable === "true" || reliable === "1"
+                    ? await fetchModelHealthData().catch(() => undefined)
+                    : undefined;
             const [entry] = attachHealth([matched], healthData);
             return c.json(toOpenAIModelEntry(entry));
         },

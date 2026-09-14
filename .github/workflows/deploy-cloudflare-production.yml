@@ -118,6 +118,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.gen == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -131,6 +132,7 @@ jobs:
         run: npm ci
 
       - name: Test
+        timeout-minutes: 10
         run: npm test --workspace pollinations-gen
 
       - name: Typecheck
@@ -276,6 +278,7 @@ jobs:
     needs: [changes, migrate]
     if: needs.changes.outputs.media == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -293,6 +296,7 @@ jobs:
         working-directory: ./media.pollinations.ai
 
       - name: Test
+        timeout-minutes: 10
         run: npm test
         working-directory: ./media.pollinations.ai
 

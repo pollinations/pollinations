@@ -12,6 +12,7 @@ jobs:
   lint:
     name: Lint and build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -74,6 +75,7 @@ jobs:
           fi
 
       - name: Test maintenance scripts
+        timeout-minutes: 10
         run: >-
           node --test
           enter.pollinations.ai/scripts/*.test.mjs
@@ -100,6 +102,7 @@ jobs:
   enter:
     name: Test enter.pollinations.ai
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -135,6 +138,7 @@ jobs:
 
       - name: Test enter.pollinations.ai
         if: steps.enter-ts-files.outputs.any_changed == 'true'
+        timeout-minutes: 10
         working-directory: enter.pollinations.ai
         run: npm test
 
@@ -173,6 +177,7 @@ jobs:
   gen:
     name: Test gen.pollinations.ai
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -208,6 +213,7 @@ jobs:
 
       - name: Test gen.pollinations.ai
         if: steps.gen-files.outputs.any_changed == 'true'
+        timeout-minutes: 10
         run: npm test --workspace pollinations-gen
 
       - name: Typecheck gen.pollinations.ai

@@ -161,7 +161,8 @@ export function attachRouteHealth(models, routeStats) {
             if (aPrimary !== bPrimary) return aPrimary ? -1 : 1;
             return (b.total_requests || 0) - (a.total_requests || 0);
         });
-        const primaryRoute = sorted.find((route) => !route.fallback_used) ?? null;
+        const primaryRoute =
+            sorted.find((route) => !route.fallback_used) ?? null;
         return { ...model, routes: sorted, primaryRoute };
     });
 }
@@ -184,12 +185,13 @@ export function primaryRouteStatus(model) {
     const primaryHealth = computeHealthStatus(primary);
     if (primaryHealth === "waiting") return null;
     const headlineHealth = computeHealthStatus(model.stats);
+    // Only worth flagging when the headline disagrees. A model that is simply
+    // down already says so up top; repeating it per-route is pure noise.
+    if (severityRank(primaryHealth) <= severityRank(headlineHealth))
+        return null;
     if (primaryHealth === "off") return "primary-off";
     const rescued = (model.routes || []).some(
         (route) => route.fallback_used && (route.fallback_rescues || 0) > 0,
     );
-    if (rescued && severityRank(primaryHealth) > severityRank(headlineHealth)) {
-        return "rescued";
-    }
-    return null;
+    return rescued ? "rescued" : null;
 }

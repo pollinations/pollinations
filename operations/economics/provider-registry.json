@@ -161,6 +161,10 @@
     "qwen3.8-27b": "qwen/qwen3.8-27b"
   },
   "retiredModels": [
+    "midijourney",
+    "midijourney-large",
+    "pollinations/midijourney",
+    "pollinations/midijourney-large",
     "kimi-k2-thinking",
     "chickytutor",
     "claude-legacy",

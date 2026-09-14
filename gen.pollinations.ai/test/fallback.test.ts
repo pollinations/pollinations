@@ -795,30 +795,23 @@ describe("withModelFallbackResponse", () => {
 });
 
 describe("caller-listed model chains", () => {
-    it("quotes each caller choice and its catalog routes at that choice's price", async () => {
+    it("does not expand a listed alternative's configured fallbacks", async () => {
         const model = await resolveModelDefinition(
             "openai-fast,perplexity/sonar",
             "generate.text",
             env,
         );
-        expect(
-            model.fallbackEntries?.map((entry) => ({
-                id: entry.id,
-                quote: entry.quotedBy?.id,
-            })),
-        ).toEqual([
-            { id: "perplexity/sonar", quote: "perplexity/sonar" },
-            {
-                id: "perplexity/sonar:openrouter:perplexity",
-                quote: "perplexity/sonar",
-            },
+        expect(fallbackCandidates(model).map((entry) => entry.id)).toEqual([
+            "openai/gpt-5-nano",
+            "perplexity/sonar",
         ]);
     });
-    it("splits, trims and drops repeats", () => {
+    it("splits and trims without removing repeats", () => {
         expect(requestedModelIds("openai")).toEqual(["openai"]);
         expect(requestedModelIds(" openai , openai-fast ,openai")).toEqual([
             "openai",
             "openai-fast",
+            "openai",
         ]);
     });
 
@@ -828,7 +821,7 @@ describe("caller-listed model chains", () => {
         );
     });
 
-    it("tries a model's own routes before the caller's next choice", async () => {
+    it("replaces the primary model's configured fallbacks", async () => {
         const model = await resolveModelDefinition(
             "perplexity/sonar,openai-fast",
             "generate.text",
@@ -837,12 +830,11 @@ describe("caller-listed model chains", () => {
 
         expect(model.resolved).toBe("perplexity/sonar");
         expect(model.fallbackEntries?.map((entry) => entry.id)).toEqual([
-            "perplexity/sonar:openrouter:perplexity",
             "openai/gpt-5-nano",
         ]);
     });
 
-    it("resolves each listed alias once", async () => {
+    it("preserves repeated models even when named by different aliases", async () => {
         const model = await resolveModelDefinition(
             "openai-fast,gpt-5-nano,openai",
             "generate.text",
@@ -851,8 +843,46 @@ describe("caller-listed model chains", () => {
 
         expect(model.resolved).toBe("openai/gpt-5-nano");
         expect(model.fallbackEntries?.map((entry) => entry.id)).toEqual([
+            "openai/gpt-5-nano",
             "openai/gpt-5.4-nano",
         ]);
+    });
+
+    it("keeps configured fallbacks for a single-model request", async () => {
+        const model = await resolveModelDefinition(
+            "perplexity/sonar",
+            "generate.text",
+            env,
+        );
+        expect(model.fallbackEntries?.map((entry) => entry.id)).toEqual([
+            "perplexity/sonar:openrouter:perplexity",
+        ]);
+    });
+
+    it("tries repeated entries separately without inserting configured routes", async () => {
+        const model = await resolveModelDefinition(
+            "perplexity/sonar,perplexity/sonar,openai-fast",
+            "generate.text",
+            env,
+        );
+        const attempted: string[] = [];
+        const { index } = await withModelFallback(
+            fallbackCandidates(model),
+            async (candidate) => {
+                attempted.push(candidate.id);
+                if (attempted.length < 3)
+                    throw Object.assign(new Error("Unavailable"), {
+                        status: 503,
+                    });
+                return "ok";
+            },
+        );
+        expect(attempted).toEqual([
+            "perplexity/sonar",
+            "perplexity/sonar",
+            "openai/gpt-5-nano",
+        ]);
+        expect(index).toBe(2);
     });
 
     it("keeps the string the caller sent so a chain gets its own cache key", async () => {

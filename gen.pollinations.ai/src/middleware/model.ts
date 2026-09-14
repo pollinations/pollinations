@@ -92,14 +92,10 @@ const MAX_REQUESTED_MODELS = 4;
 /** The models a caller asked for, in the order they want them tried. */
 export function requestedModelIds(model: string): string[] {
     if (!model.includes(",")) return [model];
-    const ids = [
-        ...new Set(
-            model
-                .split(",")
-                .map((id) => id.trim())
-                .filter(Boolean),
-        ),
-    ];
+    const ids = model
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean);
     if (ids.length === 0) {
         throw new HTTPException(400, {
             message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
@@ -189,19 +185,10 @@ export async function resolveModelDefinition(
             supportedEndpoint,
         ),
     );
-    // A declared route is still the model the caller named, so it is tried
-    // before their next choice. Each caller choice supplies its own quote,
-    // including when one of that choice's declared routes serves instead.
-    const fallbackEntries = uniqueById(entry.id, [
-        ...(entry.fallbackEntries ?? []),
-        ...alternates.flatMap((alternate) =>
-            [alternate, ...(alternate.fallbackEntries ?? [])].map((target) => ({
-                ...target,
-                fallbackEntries: undefined,
-                quotedBy: alternate,
-            })),
-        ),
-    ]);
+    // Explicit lists replace configured fallbacks, preserving order and repeats.
+    const fallbackEntries = model.includes(",")
+        ? alternates
+        : (entry.fallbackEntries ?? []);
     // An agent run executes tools and spends the caller's balance, so its
     // answer belongs to that caller and must never be replayed to another —
     // whether it serves as the primary or as someone's listed alternate.
@@ -220,20 +207,6 @@ export async function resolveModelDefinition(
         ...(agent && { cacheScope: `agent:${agent.id}` }),
         ...(fallbackEntries.length > 0 && { fallbackEntries }),
     };
-}
-
-function uniqueById(
-    primaryId: string,
-    entries: GenerationModelEntry[],
-): GenerationModelEntry[] {
-    const seen = new Set([primaryId]);
-    const unique: GenerationModelEntry[] = [];
-    for (const entry of entries) {
-        if (seen.has(entry.id)) continue;
-        seen.add(entry.id);
-        unique.push(entry);
-    }
-    return unique;
 }
 
 /**
@@ -312,11 +285,9 @@ export function resolveModel(
         if (allowedModels && resolved.fallbackEntries) {
             resolved.fallbackEntries = resolved.fallbackEntries.filter(
                 (entry) =>
-                    (!entry.quotedBy ||
-                        allowedModels.includes(entry.quotedBy.id)) &&
-                    ((entry.definition.fallbackOnly === true &&
+                    (entry.definition.fallbackOnly === true &&
                         !entry.communityEndpoint) ||
-                        allowedModels.includes(entry.id)),
+                    allowedModels.includes(entry.id),
             );
         }
         c.set("model", resolved);

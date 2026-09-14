@@ -109,15 +109,14 @@ export async function requireModelAttemptAccess(
     c: Context<Env>,
     candidate: FallbackCandidate,
 ): Promise<void> {
-    const quotedBy = candidate.entry?.quotedBy;
-    if (quotedBy) {
+    if (candidate.entry && c.var.model.requested.includes(",")) {
         await checkBalance(
             {
                 ...c.var,
                 model: {
                     ...c.var.model,
-                    resolved: quotedBy.id,
-                    definition: quotedBy.definition,
+                    resolved: candidate.entry.id,
+                    definition: candidate.entry.definition,
                 },
             },
             c.env,

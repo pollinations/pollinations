@@ -741,9 +741,9 @@ test("media caller-lists share their native cache without colliding with a singl
     mocks,
 }) => {
     await mocks.enable("tinybird", "deepInfra");
-    const { key } = await createTestApiKey({ user: { tierBalance: 100 } });
+    const { key } = await createTestApiKey({ user: { packBalance: 100 } });
     const prompt = `media caller-list ${crypto.randomUUID()}`;
-    const model = "flux,zimage";
+    const model = "pruna,flux";
     for (const protocol of ["responses", "chat/completions"]) {
         const result = await fetchWorker(`/v1/${protocol}`, {
             method: "POST",
@@ -776,7 +776,7 @@ test("media caller-lists share their native cache without colliding with a singl
         mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
     ).toHaveLength(1);
     const single = await fetchWorker(
-        `/image/${encodeURIComponent(prompt)}?model=flux`,
+        `/image/${encodeURIComponent(prompt)}?model=pruna`,
         { headers: { authorization: `Bearer ${key}` } },
     );
     await single.response.arrayBuffer();
@@ -2651,30 +2651,42 @@ test.for([
         target: "qwen/qwen3.7-plus",
         stream: false,
         packBalance: 100,
+        repeatPrimary: false,
     },
     {
         primary: "openai/gpt-5-nano",
         target: "qwen/qwen3.7-plus",
         stream: true,
         packBalance: 100,
+        repeatPrimary: false,
     },
     {
         primary: "qwen/qwen3.7-plus",
         target: "openai/gpt-5-nano",
         stream: false,
         packBalance: 100,
+        repeatPrimary: false,
     },
     {
         primary: "openai/gpt-5-nano",
         target: "qwen/qwen3.7-plus",
         stream: false,
         packBalance: 0,
+        repeatPrimary: false,
     },
-] as const)("caller-list billing uses the serving choice ($primary -> $target, stream=$stream, paid=$packBalance)", async ({
+    {
+        primary: "openai/gpt-5-nano",
+        target: "qwen/qwen3.7-plus",
+        stream: false,
+        packBalance: 100,
+        repeatPrimary: true,
+    },
+] as const)("caller-list billing uses the serving choice ($primary -> $target, stream=$stream, paid=$packBalance, repeat=$repeatPrimary)", async ({
     primary,
     target,
     stream,
     packBalance,
+    repeatPrimary,
 }, { mocks }) => {
     await mocks.enable("tinybird", "portkeyDirect", "responsesDirect");
     const caller = await createTestApiKey({
@@ -2701,7 +2713,10 @@ test.for([
             authorization: `Bearer ${caller.key}`,
         },
         body: JSON.stringify({
-            model: `${primary},${target}`,
+            model: [
+                ...(repeatPrimary ? [primary, primary] : [primary]),
+                target,
+            ].join(","),
             stream,
             messages: [
                 {
@@ -2732,6 +2747,9 @@ test.for([
     }
     expect(result.response.status).toBe(200);
     expect(body).toContain(stream ? "snapshot stream" : "snapshot response");
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(
+        repeatPrimary ? 3 : 2,
+    );
     expect(billed).toHaveLength(1);
     expect(billed[0].modelUsed).toBe(target);
     expect(billed[0].resolvedModelRequested).toBe(primary);

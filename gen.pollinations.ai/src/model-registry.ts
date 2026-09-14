@@ -78,8 +78,6 @@ export type GenerationModelEntry = {
     // Entries that serve this model when its own upstream fails, in declared
     // order. A fallback's own list is not followed, so routing stays depth one.
     fallbackEntries?: GenerationModelEntry[];
-    /** Request-local caller choice whose price and balance rules apply. */
-    quotedBy?: GenerationModelEntry;
 };
 
 export type GenerationModelRegistry = {

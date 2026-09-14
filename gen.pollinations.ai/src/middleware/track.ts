@@ -306,8 +306,9 @@ export const track = (eventType: EventType) =>
                 const finalCandidate =
                     attempts.find((attempt) => attempt.settled)?.candidate ??
                     fallbackCandidates(modelInfo)[0];
-                const billingModel =
-                    finalCandidate.entry?.quotedBy ?? modelInfo;
+                const billingModel = modelInfo.requested.includes(",")
+                    ? (finalCandidate.entry ?? modelInfo)
+                    : modelInfo;
 
                 // Routes attach telemetry headers (x-moderation-*, cache
                 // status) to the final response AFTER the override is
@@ -668,9 +669,9 @@ export async function trackResponse(
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
-    const quotedBy =
-        candidate.entry?.quotedBy?.definition ??
-        requestTracking.modelDefinition;
+    const quotedBy = requestTracking.modelRequested?.includes(",")
+        ? (candidate.definition ?? requestTracking.modelDefinition)
+        : requestTracking.modelDefinition;
     const modelUsed = candidate.id || resolvedModelRequested;
     const modelProviderUsed =
         candidate.definition?.provider ?? requestTracking.modelProvider;

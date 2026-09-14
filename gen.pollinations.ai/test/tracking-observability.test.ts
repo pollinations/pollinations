@@ -2934,26 +2934,28 @@ function candidateFixture(
 }
 
 describe("trackResponse modelUsed", () => {
-    it("bills a caller choice's catalog route at that choice's price, not the first model's", async () => {
+    it("bills the caller-selected model at its own price, not the first model's", async () => {
         const model = await resolveModelDefinition(
             "openai-fast,qwen3.7-flash",
             "generate.text",
             env,
         );
         const candidate = fallbackCandidates(model).find(
-            (entry) => entry.id === "qwen/qwen3.7-flash:alibaba",
+            (entry) => entry.id === "qwen/qwen3.7-flash",
         );
         expect(candidate).toBeDefined();
-        if (!candidate)
-            throw new Error("Missing caller choice's provider route");
+        if (!candidate) throw new Error("Missing caller-selected model");
         const tracking = await trackResponse(
             "generate.text",
-            requestTrackingFixture(false, "openai/gpt-5-nano"),
+            {
+                ...requestTrackingFixture(false, "openai/gpt-5-nano"),
+                modelRequested: model.requested,
+            },
             Response.json(
                 { choices: [] },
                 {
                     headers: {
-                        "x-model-used": "qwen/qwen3.7-flash:alibaba",
+                        "x-model-used": "qwen/qwen3.7-flash",
                         "x-usage-prompt-cached-tokens": "1000000",
                         "x-usage-prompt-cache-type": "ephemeral",
                     },
@@ -2961,9 +2963,9 @@ describe("trackResponse modelUsed", () => {
             ),
             candidate,
         );
-        expect(tracking.cost?.totalCost).toBeCloseTo(0.02, 12);
+        expect(tracking.cost?.totalCost).toBeCloseTo(0.04, 12);
         expect(tracking.price?.totalPrice).toBeCloseTo(0.04, 12);
-        expect(tracking.modelUsed).toBe("qwen/qwen3.7-flash:alibaba");
+        expect(tracking.modelUsed).toBe("qwen/qwen3.7-flash");
     });
     it("attributes a failed generation to the resolved model", async () => {
         const tracking = await trackResponse(

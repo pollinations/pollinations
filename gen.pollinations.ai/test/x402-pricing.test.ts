@@ -4,9 +4,14 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { validator } from "@shared/middleware/validator.ts";
+import {
+    calculateUsageBilling,
+    getRegistryModelDefinition,
+} from "@shared/registry/registry.ts";
 import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
 import { test } from "@shared/test/fixtures/index.ts";
+import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import {
     type PaymentResumeCandidate,
     WEFT_REQUEST_EXTENSION_KEY,
@@ -14,12 +19,13 @@ import {
 } from "@weftlabs/sdk/facilitator/middleware";
 import type { PaymentPayload } from "@x402/core/types";
 import { Hono } from "hono";
-import { expect } from "vitest";
+import { afterEach, beforeEach, expect, vi } from "vitest";
 import { app as generationRoutes } from "../src/index.ts";
 import {
     prepareMetadata,
     generateCacheKey as textCacheKey,
 } from "../src/utils/text-cache.ts";
+import { createX402Event } from "../src/x402/accounting.ts";
 import { executeX402Request } from "../src/x402/execution.ts";
 import {
     finalX402Operation,
@@ -37,6 +43,20 @@ import { X402_STREAM_DONE } from "../src/x402/stream.ts";
 const ROUTE = "/v1/chat/completions";
 const PAY_TO = "0x000000000000000000000000000000000000dEaD";
 const x402Env = { ...env, WEFT_PAY_TO: PAY_TO, WEFT_NETWORK: "eip155:84532" };
+const tinybird = createMockTinybird();
+
+beforeEach(() => {
+    tinybird.reset();
+    const fetch = globalThis.fetch;
+    vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
+        const url = new URL(
+            input instanceof Request ? input.url : String(input),
+        );
+        const handler = tinybird.handlerMap[url.host];
+        return handler ? handler(new Request(input, init)) : fetch(input, init);
+    });
+});
+afterEach(() => vi.restoreAllMocks());
 
 const generationApp = {
     async request(
@@ -155,22 +175,25 @@ test.each([
         { model: "elevenmusic", input: "piano", duration: 30 },
     ],
     ["POST", "/v1/audio/speech", { model: "lyria", input: "piano" }],
-] as const)("does not advertise an unsupported media ceiling on %s %s", async (method, path, body) => {
-    const response = await generationApp.request(
-        path,
-        {
-            method,
-            headers: {
-                "content-type": "application/json",
-                "idempotency-key": crypto.randomUUID(),
+] as const)(
+    "does not advertise an unsupported media ceiling on %s %s",
+    async (method, path, body) => {
+        const response = await generationApp.request(
+            path,
+            {
+                method,
+                headers: {
+                    "content-type": "application/json",
+                    "idempotency-key": crypto.randomUUID(),
+                },
+                ...(body && { body: JSON.stringify(body) }),
             },
-            ...(body && { body: JSON.stringify(body) }),
-        },
-        x402Env,
-    );
-    expect(response.status).toBe(400);
-    expect(response.headers.has("payment-required")).toBe(false);
-});
+            x402Env,
+        );
+        expect(response.status).toBe(400);
+        expect(response.headers.has("payment-required")).toBe(false);
+    },
+);
 
 test("prices image and speech usage with the requested model's Pollen rates", async () => {
     const quote = await quoteX402Request(x402Env as CloudflareBindings, {
@@ -241,36 +264,42 @@ test.each([
     expect(response.headers.has("payment-required")).toBe(true);
 });
 
-test.each([
-    { n: 2 },
-    { prompt: "" },
-    { response_format: "invalid" },
-])("returns the same image validation errors with either payment rail: %j", async (options) => {
-    const init = {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-            model: "flux",
-            prompt: "validation parity",
-            ...options,
-        }),
-    };
-    const x402 = await generationApp.request("/v1/images/generations", init);
-    const pollen = await generationApp.request("/v1/images/generations", init, {
-        ...x402Env,
-        WEFT_PAY_TO: "",
-    });
-    expect(x402.status).toBe(400);
-    expect(pollen.status).toBe(400);
-    const x402Error = await x402.json<{ error: Record<string, unknown> }>();
-    const pollenError = await pollen.json<{
-        error: Record<string, unknown>;
-    }>();
-    const { timestamp: _x402Time, ...x402Details } = x402Error.error;
-    const { timestamp: _pollenTime, ...pollenDetails } = pollenError.error;
-    expect(x402Details).toEqual(pollenDetails);
-    expect(x402.headers.has("payment-required")).toBe(false);
-});
+test.each([{ n: 2 }, { prompt: "" }, { response_format: "invalid" }])(
+    "returns the same image validation errors with either payment rail: %j",
+    async (options) => {
+        const init = {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+                model: "flux",
+                prompt: "validation parity",
+                ...options,
+            }),
+        };
+        const x402 = await generationApp.request(
+            "/v1/images/generations",
+            init,
+        );
+        const pollen = await generationApp.request(
+            "/v1/images/generations",
+            init,
+            {
+                ...x402Env,
+                WEFT_PAY_TO: "",
+            },
+        );
+        expect(x402.status).toBe(400);
+        expect(pollen.status).toBe(400);
+        const x402Error = await x402.json<{ error: Record<string, unknown> }>();
+        const pollenError = await pollen.json<{
+            error: Record<string, unknown>;
+        }>();
+        const { timestamp: _x402Time, ...x402Details } = x402Error.error;
+        const { timestamp: _pollenTime, ...pollenDetails } = pollenError.error;
+        expect(x402Details).toEqual(pollenDetails);
+        expect(x402.headers.has("payment-required")).toBe(false);
+    },
+);
 
 test("uses the normal multipart speech parser for the payment quote", async () => {
     const body = new FormData();
@@ -293,15 +322,14 @@ test("keeps harmless text extensions accepted by the normal validator", async ()
     expect(offer.accepts[0].scheme).toBe("upto");
 });
 
-test.each([
-    "/models",
-    "/image/models",
-    "/v1/models",
-])("keeps the normal catalog at %s", async (path) => {
-    const response = await generationApp.request(path);
-    expect(response.status).toBe(200);
-    expect(response.headers.has("payment-required")).toBe(false);
-});
+test.each(["/models", "/image/models", "/v1/models"])(
+    "keeps the normal catalog at %s",
+    async (path) => {
+        const response = await generationApp.request(path);
+        expect(response.status).toBe(200);
+        expect(response.headers.has("payment-required")).toBe(false);
+    },
+);
 const request = (
     overrides: Record<string, unknown> = {},
 ): CreateChatCompletionRequest =>
@@ -424,6 +452,9 @@ function operationApp(
     app.use(ROUTE, runX402Operation);
     app.post(ROUTE, (c) => {
         counts.work += 1;
+        c.header("x-model-used", "openai/gpt-oss-20b");
+        c.header("x-usage-prompt-text-tokens", "10");
+        c.header("x-usage-completion-text-tokens", "1");
         if (
             (c.req.valid("json" as never) as CreateChatCompletionRequest).stream
         ) {
@@ -551,41 +582,45 @@ test.each([
         },
     ],
     ["search", { web_search_options: { search_context_size: "low" } }],
-])("rejects unsupported %s before advertising payment", async (_name, change) => {
-    const app = generationApp;
-    const response = await app.request(
-        ROUTE,
-        {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(request(change)),
-        },
-        x402Env,
-    );
-    expect(response.status).toBe(400);
-    expect(response.headers.get("PAYMENT-REQUIRED")).toBeNull();
-});
-
-test.each([
-    "gpt-5.6-sol",
-])("rejects model %s with unsupported billing", async (model) => {
-    const app = generationApp;
-    const response = await app.request(
-        ROUTE,
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Idempotency-Key": crypto.randomUUID(),
+])(
+    "rejects unsupported %s before advertising payment",
+    async (_name, change) => {
+        const app = generationApp;
+        const response = await app.request(
+            ROUTE,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(request(change)),
             },
-            body: JSON.stringify(request({ model })),
-        },
-        x402Env,
-    );
+            x402Env,
+        );
+        expect(response.status).toBe(400);
+        expect(response.headers.get("PAYMENT-REQUIRED")).toBeNull();
+    },
+);
 
-    expect(response.status).toBe(400);
-    expect(response.headers.get("PAYMENT-REQUIRED")).toBeNull();
-});
+test.each(["gpt-5.6-sol"])(
+    "rejects model %s with unsupported billing",
+    async (model) => {
+        const app = generationApp;
+        const response = await app.request(
+            ROUTE,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Idempotency-Key": crypto.randomUUID(),
+                },
+                body: JSON.stringify(request({ model })),
+            },
+            x402Env,
+        );
+
+        expect(response.status).toBe(400);
+        expect(response.headers.get("PAYMENT-REQUIRED")).toBeNull();
+    },
+);
 
 test("rejects multiple completions that exceed the single-completion payment bound", async () => {
     const app = generationApp;
@@ -967,6 +1002,7 @@ test("concurrent generated replays both return the same settled response", async
         omitFirstReceipt: true,
     });
     expect((await firstApp.request(key, request(), payment)).status).toBe(200);
+    expect(tinybird.state.events).toHaveLength(0);
 
     const retryApp = operationApp(replayEnv, counts, verifier, {
         settlementBarrier: 2,
@@ -990,6 +1026,61 @@ test("concurrent generated replays both return the same settled response", async
         firstRetry.headers.get("PAYMENT-RESPONSE"),
     );
     expect(counts).toEqual({ work: 1, payment: 1, settlement: 3 });
+    await vi.waitFor(() => expect(tinybird.state.events).toHaveLength(1));
+});
+
+test("settled retries record revenue once without a Pollen account", async () => {
+    const counts = { work: 0, payment: 0, settlement: 0 };
+    const app = operationApp(x402Env as CloudflareBindings, counts);
+    const key = crypto.randomUUID();
+    const payment = paymentHeader(paymentPayload(uniqueNonce()));
+    expect((await app.request(key, request(), payment)).status).toBe(200);
+    await vi.waitFor(() => expect(tinybird.state.events).toHaveLength(1));
+    expect((await app.request(key, request(), payment)).status).toBe(200);
+    expect(tinybird.state.events).toHaveLength(1);
+    expect(tinybird.state.events[0]).toMatchObject({
+        selectedMeterSlug: "v1:meter:crypto",
+        isBilledUsage: true,
+        totalPrice: 0.001,
+        modelUsed: "openai/gpt-oss-20b",
+        tokenCountPromptText: 10,
+        tokenCountCompletionText: 1,
+    });
+    expect(tinybird.state.events[0].userId).toBeUndefined();
+    expect(tinybird.state.events[0].balances).toBeUndefined();
+    expect(counts).toEqual({ work: 1, payment: 1, settlement: 1 });
+});
+
+test("x402 accounting separates the requested price from the exact serving model's cost", async () => {
+    const usage = { promptTextTokens: 10, completionTextTokens: 1 };
+    const served = "openai/gpt-5.4-nano";
+    const row = await createX402Event(
+        x402Env as CloudflareBindings,
+        chatRequest(request()),
+        new Response("ok", {
+            headers: {
+                "x-model-used": served,
+                "x-usage-prompt-text-tokens": "10",
+                "x-usage-completion-text-tokens": "1",
+            },
+        }),
+        "accounting-fallback",
+        new Date(),
+    );
+    const billing = calculateUsageBilling({
+        model: "openai/gpt-oss-20b",
+        usage,
+        servedBy: getRegistryModelDefinition(served),
+        quotedBy: getRegistryModelDefinition("openai/gpt-oss-20b"),
+    });
+    expect(row).toMatchObject({
+        modelUsed: served,
+        resolvedModelRequested: "openai/gpt-oss-20b",
+        fallbackUsed: true,
+        totalCost: billing.cost.totalCost,
+        totalPrice: 0.001,
+        devPrice: billing.price.totalPrice,
+    });
 });
 
 test("generated response rejects a forged signature with the same payment identity", async () => {
@@ -1123,54 +1214,55 @@ test("shared routes keep cache hits free but replay a signed buyer's private rec
     expect(counts).toEqual({ work: 1, payment: 1, settlement: 1 });
 });
 
-test.each([
-    "json",
-    "multipart",
-])("preserves a paid %s speech request when handing it to durable execution", async (encoding) => {
-    const payload = {
-        model: "elevenflash",
-        input: "Hello 🧶",
-        voice: "alloy",
-    };
-    const form = new FormData();
-    for (const [key, value] of Object.entries(payload)) form.set(key, value);
-    const requests: Request[] = [];
-    const response = await generationApp.request(
-        "/v1/audio/speech",
-        {
-            method: "POST",
-            headers: {
-                ...(encoding === "json" && {
-                    "content-type": "application/json",
-                }),
-                "payment-signature": paymentHeader(
-                    paymentPayload(uniqueNonce()),
-                ),
-                "idempotency-key": crypto.randomUUID(),
+test.each(["json", "multipart"])(
+    "preserves a paid %s speech request when handing it to durable execution",
+    async (encoding) => {
+        const payload = {
+            model: "elevenflash",
+            input: "Hello 🧶",
+            voice: "alloy",
+        };
+        const form = new FormData();
+        for (const [key, value] of Object.entries(payload))
+            form.set(key, value);
+        const requests: Request[] = [];
+        const response = await generationApp.request(
+            "/v1/audio/speech",
+            {
+                method: "POST",
+                headers: {
+                    ...(encoding === "json" && {
+                        "content-type": "application/json",
+                    }),
+                    "payment-signature": paymentHeader(
+                        paymentPayload(uniqueNonce()),
+                    ),
+                    "idempotency-key": crypto.randomUUID(),
+                },
+                body: encoding === "json" ? JSON.stringify(payload) : form,
             },
-            body: encoding === "json" ? JSON.stringify(payload) : form,
-        },
-        {
-            ...x402Env,
-            GENERATION_COORDINATOR: {
-                getByName: () => ({
-                    fetch: async (url: string, init: RequestInit) => {
-                        requests.push(new Request(url, init));
-                        return new Response("detached");
-                    },
-                }),
-            },
-        } as unknown as CloudflareBindings,
-    );
-    expect(response.status).toBe(200);
-    expect(requests).toHaveLength(1);
-    const forwarded = requests[0];
-    const body =
-        encoding === "json"
-            ? await forwarded.json()
-            : Object.fromEntries(await forwarded.formData());
-    expect(body).toEqual(payload);
-});
+            {
+                ...x402Env,
+                GENERATION_COORDINATOR: {
+                    getByName: () => ({
+                        fetch: async (url: string, init: RequestInit) => {
+                            requests.push(new Request(url, init));
+                            return new Response("detached");
+                        },
+                    }),
+                },
+            } as unknown as CloudflareBindings,
+        );
+        expect(response.status).toBe(200);
+        expect(requests).toHaveLength(1);
+        const forwarded = requests[0];
+        const body =
+            encoding === "json"
+                ? await forwarded.json()
+                : Object.fromEntries(await forwarded.formData());
+        expect(body).toEqual(payload);
+    },
+);
 
 test("does not offer payment for an implicit HEAD route", async () => {
     const response = await generationApp.request(

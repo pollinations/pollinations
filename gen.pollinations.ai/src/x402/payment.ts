@@ -22,6 +22,7 @@ import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 import type { PaymentResponseSnapshot } from "../durable-objects/GenerationCoordinator.ts";
+import { createX402Event } from "./accounting.ts";
 import {
     priceActualUsage,
     quoteX402Request,
@@ -316,6 +317,7 @@ export const finalX402Operation = createMiddleware<Env>(async (c, next) => {
 });
 
 export const runX402Operation = createMiddleware<Env>(async (c, next) => {
+    const startTime = new Date();
     const authorization =
         c.req.header("payment-signature") || c.req.header("x-payment");
     if (!authorization) {
@@ -378,6 +380,13 @@ export const runX402Operation = createMiddleware<Env>(async (c, next) => {
             claimId,
             response,
             Date.now() + FINAL_RESPONSE_TTL_MS,
+            await createX402Event(
+                c.env,
+                describeX402Request(c),
+                c.res,
+                claimId,
+                startTime,
+            ),
         ))
     ) {
         return c.text("Payment operation ownership expired", 503);

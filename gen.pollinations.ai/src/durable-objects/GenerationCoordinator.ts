@@ -1,4 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
+import type { TinybirdEvent } from "@shared/schemas/generation-event.ts";
 import type {
     GenerationCacheIdentity,
     GenerationJob,
@@ -6,6 +7,7 @@ import type {
     GenerationRequestSnapshot,
 } from "@/middleware/generation-deduplication.ts";
 import { executeGeneration } from "@/utils/execute-generation.ts";
+import { sendX402Event } from "../x402/accounting.ts";
 import { executeX402Request } from "../x402/execution.ts";
 import { X402LiveStream } from "../x402/stream.ts";
 
@@ -49,6 +51,7 @@ type PaymentOperation = {
     leaseUntil?: number;
     response?: Omit<PaymentResponseSnapshot, "body"> & { bodyKey: string };
     expiresAt?: number;
+    accounting?: TinybirdEvent;
 };
 
 export type PaymentOperationStart =
@@ -329,6 +332,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         claimId: string,
         response: PaymentResponseSnapshot,
         expiresAt: number,
+        accounting?: TinybirdEvent,
     ): Promise<boolean> {
         let completed = false;
         await this.ctx.blockConcurrencyWhile(async () => {
@@ -350,6 +354,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                 paymentProof,
                 state: "generated",
                 expiresAt,
+                accounting,
             });
             await this.ctx.storage.setAlarm(expiresAt);
             completed = true;
@@ -393,8 +398,15 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                 paymentProof,
                 state: "final",
                 expiresAt,
+                accounting: operation.accounting,
             });
             await this.ctx.storage.setAlarm(expiresAt);
+            // Only the first generated -> final transition emits revenue.
+            // Retain the event with the receipt for reconciliation if ingestion fails.
+            if (operation.accounting)
+                this.ctx.waitUntil(
+                    sendX402Event(operation.accounting, this.env),
+                );
             completed = true;
         });
         return completed;

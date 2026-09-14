@@ -15,7 +15,7 @@ import {
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
 import { withSafetyHeaders } from "@/middleware/safety.ts";
-import { getAgentModel, requireEndpointAgent } from "@/schemas/agent-model.ts";
+import { requireEndpointAgent } from "@/schemas/agent-model.ts";
 import {
     type FallbackCandidate,
     fallbackCandidates,
@@ -110,7 +110,7 @@ async function responsesClientForAttempt(
     c: ResponsesContext,
     attempt: DirectResponsesCandidate,
 ): Promise<{ target: DirectResponsesTarget; fetcher?: typeof fetch }> {
-    const agentModel = getAgentModel(c.req.raw.headers);
+    const agentModel = c.var.model.agentModel;
     requireEndpointAgent(agentModel, attempt.communityEndpoint?.type);
     if (attempt.responsesTarget) return { target: attempt.responsesTarget };
     const endpoint = attempt.communityEndpoint;

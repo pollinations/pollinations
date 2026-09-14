@@ -14,32 +14,40 @@ import type { LoggerVariables } from "@/middleware/logger.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { generateCacheKey } from "@/utils/text-cache.ts";
 
-it("partitions text cache by the normalized agent model header", async () => {
+it("shares cache identity between agent model body and header options", async () => {
     for (const path of ["/v1/chat/completions", "/v1/responses", "/text"]) {
-        const key = (model?: string, header = "X-Pollinations-Agent-Model") =>
+        const key = (model?: string, source = "header") =>
             generateCacheKey(
                 new Request(`https://gen.pollinations.ai${path}`, {
                     method: "POST",
-                    headers: model === undefined ? {} : { [header]: model },
+                    headers:
+                        model === undefined || source === "body"
+                            ? {}
+                            : { "X-Pollinations-Agent-Model": model },
                 }),
-                JSON.stringify({ model: "owner/agent", messages: [] }),
+                JSON.stringify({
+                    model: "owner/agent",
+                    messages: [],
+                    ...(source === "body" ? { agent_model: model } : {}),
+                }),
             );
         expect(await key("brain-one")).not.toBe(await key("brain-two"));
         expect(await key("brain-one")).not.toBe(await key());
         expect(await key(" brain-one ")).toBe(await key("brain-one"));
-        expect(await key("brain-one", "agent-model")).toBe(
-            await key("brain-one"),
-        );
+        expect(await key(" brain-one ", "body")).toBe(await key("brain-one"));
         expect(
             await generateCacheKey(
                 new Request(`https://gen.pollinations.ai${path}`, {
                     method: "POST",
                     headers: {
-                        "agent-model": "brain-one",
                         "X-Pollinations-Agent-Model": "brain-one",
                     },
                 }),
-                JSON.stringify({ model: "owner/agent", messages: [] }),
+                JSON.stringify({
+                    model: "owner/agent",
+                    messages: [],
+                    agent_model: "brain-one",
+                }),
             ),
         ).toBe(await key("brain-one"));
     }

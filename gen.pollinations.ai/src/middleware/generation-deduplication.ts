@@ -16,10 +16,7 @@ import type {
 } from "@/middleware/generation-cache.ts";
 import { hashGenerationCacheIdentity } from "@/middleware/generation-cache.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
-import {
-    AGENT_MODEL_HEADER,
-    AGENT_MODEL_SHORT_HEADER,
-} from "@/schemas/agent-model.ts";
+import { AGENT_MODEL_HEADER } from "@/schemas/agent-model.ts";
 
 const EXECUTOR_HEADERS = new Set([
     "accept",
@@ -31,7 +28,6 @@ const EXECUTOR_HEADERS = new Set([
     "x-original-client-ip",
     SAFETY_HEADER_NAME.toLowerCase(),
     AGENT_MODEL_HEADER,
-    AGENT_MODEL_SHORT_HEADER,
 ]);
 
 export type GenerationErrorSnapshot = {

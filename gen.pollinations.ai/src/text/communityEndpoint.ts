@@ -87,7 +87,11 @@ export async function communityEndpointGatewayContext({
     parentApiKeyId?: string;
     agentModel?: string;
 }): Promise<TransformOptions> {
-    const { messages: _messages, ...requestDataWithoutMessages } = requestData;
+    const {
+        messages: _messages,
+        agent_model: _agentModel,
+        ...requestDataWithoutMessages
+    } = requestData;
     const modelConfig = await communityEndpointModelConfig({
         endpoint,
         secret,

@@ -2812,10 +2812,7 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
                 }),
             );
 
-            for (const header of [
-                "agent-model",
-                "X-Pollinations-Agent-Model",
-            ]) {
+            for (const source of ["body", "header"]) {
                 for (const agentModel of ["", "   ", "x".repeat(129)]) {
                     const invalid = await fetchGen(
                         new Request(`https://gen.pollinations.ai${path}`, {
@@ -2823,11 +2820,19 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
                             headers: {
                                 Authorization: `Bearer ${apiKey}`,
                                 "Content-Type": "application/json",
-                                [header]: agentModel,
+                                ...(source === "header"
+                                    ? {
+                                          "X-Pollinations-Agent-Model":
+                                              agentModel,
+                                      }
+                                    : {}),
                             },
                             body: JSON.stringify({
                                 model: modelId,
                                 ...input,
+                                ...(source === "body"
+                                    ? { agent_model: agentModel }
+                                    : {}),
                             }),
                         }),
                     );
@@ -2841,34 +2846,34 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
                     headers: {
                         Authorization: `Bearer ${apiKey}`,
                         "Content-Type": "application/json",
-                        "agent-model": "test/one",
                         "X-Pollinations-Agent-Model": "test/two",
                     },
-                    body: JSON.stringify({ model: modelId, ...input }),
+                    body: JSON.stringify({
+                        model: modelId,
+                        ...input,
+                        agent_model: "test/one",
+                    }),
                 }),
             );
             expect(conflict.status).toBe(400);
             await conflict.text();
-            for (const agentModel of [undefined, "test/brain"]) {
-                const legacyBody = await fetchGen(
+            for (const agentModel of [1, null]) {
+                const invalidBody = await fetchGen(
                     new Request(`https://gen.pollinations.ai${path}`, {
                         method: "POST",
                         headers: {
                             Authorization: `Bearer ${apiKey}`,
                             "Content-Type": "application/json",
-                            ...(agentModel
-                                ? { "X-Pollinations-Agent-Model": agentModel }
-                                : {}),
                         },
                         body: JSON.stringify({
                             model: modelId,
                             ...input,
-                            agent_model: "test/old-brain",
+                            agent_model: agentModel,
                         }),
                     }),
                 );
-                expect(legacyBody.status).toBe(400);
-                await legacyBody.text();
+                expect(invalidBody.status).toBe(400);
+                await invalidBody.text();
             }
             expect(upstreamModels).toEqual([]);
 
@@ -2877,6 +2882,7 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
                     undefined,
                     "test/brain-one",
                     "test/brain-two",
+                    "test/brain-both",
                 ]) {
                     const response = await fetchGen(
                         new Request(`https://gen.pollinations.ai${path}`, {
@@ -2884,11 +2890,10 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
                             headers: {
                                 Authorization: `Bearer ${apiKey}`,
                                 "Content-Type": "application/json",
-                                ...(agentModel
+                                ...(agentModel &&
+                                agentModel !== "test/brain-one"
                                     ? {
-                                          [agentModel === "test/brain-one"
-                                              ? "agent-model"
-                                              : "X-Pollinations-Agent-Model"]:
+                                          "X-Pollinations-Agent-Model":
                                               agentModel,
                                       }
                                     : {}),
@@ -2900,6 +2905,12 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
                                 ),
                                 ...input,
                                 stream,
+                                ...([
+                                    "test/brain-one",
+                                    "test/brain-both",
+                                ].includes(agentModel ?? "")
+                                    ? { agent_model: agentModel }
+                                    : {}),
                                 ...(stream && api === "chat_completions"
                                     ? {
                                           stream_options: {
@@ -2938,45 +2949,60 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
                 "polli",
                 "test/brain-one",
                 "test/brain-two",
+                "test/brain-both",
                 "polli",
                 "test/brain-one",
                 "test/brain-two",
+                "test/brain-both",
             ]);
         },
     );
 }
 
 fixtureTest(
-    "rejects agent model headers on non-agent text and media routes",
+    "rejects agent model overrides on non-agent text and media routes",
     async ({ apiKey }) => {
         for (const path of ["/v1/chat/completions", "/v1/responses", "/text"]) {
             for (const model of [DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL]) {
-                const response = await fetchGen(
-                    new Request(`https://gen.pollinations.ai${path}`, {
-                        method: "POST",
-                        headers: {
-                            Authorization: `Bearer ${apiKey}`,
-                            "Content-Type": "application/json",
-                            "X-Pollinations-Agent-Model": "test/brain",
-                        },
-                        body: JSON.stringify({
-                            model,
-                            ...(path === "/v1/responses"
-                                ? { input: "hello" }
-                                : {
-                                      messages: [
-                                          { role: "user", content: "hello" },
-                                      ],
-                                  }),
+                for (const source of ["header", "body"]) {
+                    const response = await fetchGen(
+                        new Request(`https://gen.pollinations.ai${path}`, {
+                            method: "POST",
+                            headers: {
+                                Authorization: `Bearer ${apiKey}`,
+                                "Content-Type": "application/json",
+                                ...(source === "header"
+                                    ? {
+                                          "X-Pollinations-Agent-Model":
+                                              "test/brain",
+                                      }
+                                    : {}),
+                            },
+                            body: JSON.stringify({
+                                model,
+                                ...(source === "body"
+                                    ? { agent_model: "test/brain" }
+                                    : {}),
+                                ...(path === "/v1/responses"
+                                    ? { input: "hello" }
+                                    : {
+                                          messages: [
+                                              {
+                                                  role: "user",
+                                                  content: "hello",
+                                              },
+                                          ],
+                                      }),
+                            }),
                         }),
-                    }),
-                );
-                expect(response.status).toBe(400);
-                const body = await response.text();
-                if (path !== "/text" || model === DEFAULT_TEXT_MODEL) {
-                    expect(body).toContain(
-                        "X-Pollinations-Agent-Model is supported only by endpoint agents",
                     );
+                    expect(response.status).toBe(400);
+                    const body = await response.text();
+                    if (path !== "/text" || model === DEFAULT_TEXT_MODEL) {
+                        expect(body).toContain(
+                            "agent_model and X-Pollinations-Agent-Model are supported only by endpoint agents",
+                        );
+                    }
                 }
             }
         }
@@ -3129,7 +3155,7 @@ fixtureTest(
         );
         expect(overrideResponse.status).toBe(400);
         expect(await overrideResponse.text()).toContain(
-            "X-Pollinations-Agent-Model is supported only by endpoint agents",
+            "agent_model and X-Pollinations-Agent-Model are supported only by endpoint agents",
         );
 
         const responses = await fetchGen(

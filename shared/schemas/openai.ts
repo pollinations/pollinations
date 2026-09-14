@@ -303,6 +303,16 @@ const ChatCompletionStreamOptionsSchema = z
     .nullable()
     .optional();
 
+export const AgentModelSchema = z
+    .string()
+    .trim()
+    .min(1)
+    .max(128)
+    .optional()
+    .describe(
+        'Override an endpoint agent\'s inner model. Omit to use its registered default. With the OpenAI Python SDK, pass extra_body={"agent_model": "model-id"}. Alternatively use X-Pollinations-Agent-Model; both must agree when supplied together.',
+    );
+
 export const CreateChatCompletionRequestSchema = z
     .object({
         messages: z.array(ChatCompletionRequestMessageSchema),
@@ -310,6 +320,7 @@ export const CreateChatCompletionRequestSchema = z
             description:
                 "AI model for text generation. See /v1/models for full list.",
         }),
+        agent_model: AgentModelSchema,
         modalities: z.array(z.enum(["text", "audio"])).optional(),
         audio: z
             .object({
@@ -379,12 +390,7 @@ export const CreateChatCompletionRequestSchema = z
             .max(128)
             .optional(), // deprecated, supported
     })
-    .passthrough()
-    .refine((body) => !("agent_model" in body), {
-        message:
-            "Use the X-Pollinations-Agent-Model header instead of agent_model in the body",
-        path: ["agent_model"],
-    });
+    .passthrough();
 
 export type CreateChatCompletionRequest = z.infer<
     typeof CreateChatCompletionRequestSchema
@@ -418,6 +424,7 @@ const ResponseFunctionToolSchema = z
 export const CreateResponseRequestSchema = z
     .object({
         model: z.string().optional().default(DEFAULT_TEXT_MODEL),
+        agent_model: AgentModelSchema,
         input: z.union([z.string(), z.array(z.unknown()).min(1)]),
         instructions: z.string().nullish(),
         reasoning: z.record(z.string(), z.any()).nullish(),

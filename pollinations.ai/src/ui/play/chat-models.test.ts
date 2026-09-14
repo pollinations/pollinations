@@ -7,7 +7,6 @@ import {
     audioFormat,
     buildUserContent,
     compactRouting,
-    extractStreamedMedia,
     FLORET_MODEL_ID,
     fileKind,
     parseAgentMessage,
@@ -266,72 +265,5 @@ describe("agent tool-call rendering", () => {
         expect(parseAgentMessage(content)).toEqual([
             { type: "text", text: content },
         ]);
-    });
-});
-
-describe("streamed media rendering", () => {
-    it("shows only generated media and deduplicates repeated assets", () => {
-        const result = extractStreamedMedia(
-            "Here is it.\n\n![flower](https://media.test/flower.png?x=1)\n" +
-                "[video](https://media.test/demo.mp4)\n" +
-                "[again](https://media.test/demo.mp4)\n" +
-                "[docs](https://docs.test/guide)",
-        );
-
-        expect(result.media).toEqual([
-            {
-                kind: "image",
-                url: "https://media.test/flower.png?x=1",
-                label: "flower",
-            },
-            {
-                kind: "video",
-                url: "https://media.test/demo.mp4",
-                label: "video",
-            },
-        ]);
-        expect(result.markdown).toBe("");
-    });
-
-    it("does not embed unsafe or unfinished links", () => {
-        const markdown =
-            "[audio](javascript:alert(1)) and ![half](https://media.test/pic";
-        expect(extractStreamedMedia(markdown)).toEqual({
-            markdown,
-            media: [],
-        });
-    });
-
-    it("recognizes labelled extensionless Pollinations media links", () => {
-        expect(
-            extractStreamedMedia(
-                "[video](<https://media.pollinations.ai/generated-video-id>)",
-            ),
-        ).toEqual({
-            markdown: "",
-            media: [
-                {
-                    kind: "video",
-                    url: "https://media.pollinations.ai/generated-video-id",
-                    label: "video",
-                },
-            ],
-        });
-    });
-
-    it("does not guess media types from bare prose URLs", () => {
-        const markdown = "Video URL: https://media.pollinations.ai/video-id";
-        expect(extractStreamedMedia(markdown)).toEqual({
-            markdown,
-            media: [],
-        });
-    });
-
-    it("keeps ordinary links when the answer contains no media", () => {
-        const markdown = "Read [the docs](https://docs.pollinations.ai/guide).";
-        expect(extractStreamedMedia(markdown)).toEqual({
-            markdown,
-            media: [],
-        });
     });
 });

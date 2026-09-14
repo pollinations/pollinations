@@ -100,6 +100,14 @@ export const ModelInfoSchema = z.object({
     output_modalities: z.array(z.enum(MODEL_OUTPUT_MODALITIES)).optional(),
     required_safety: z.array(z.enum(SAFETY_FEATURES)).optional(),
     supported_endpoints: z.array(z.string()).optional(),
+    health: z
+        .object({
+            success_rate: z.number().min(0).max(1),
+            samples: z.number().int().nonnegative(),
+            window_minutes: z.number().int().positive(),
+            as_of: z.string().datetime(),
+        })
+        .optional(),
     video_capabilities: z.array(z.enum(VIDEO_CAPABILITIES)).optional(),
     min_duration: z.number().positive().optional(),
     max_duration: z.number().positive().optional(),

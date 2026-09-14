@@ -60,6 +60,29 @@ Newer Claude and Gemini models may omit sampling controls entirely. On
 Sonnet 4.6, `response_format` supports `json_schema`, not `json_object`.
 Reasoning effort levels and forced-tool restrictions remain model-specific.
 
+Chat model listings also expose `supported_parameters` — the OpenAI-compatible
+Chat Completions request parameters a model accepts through Pollinations — and
+`default_parameters`, which lists only the defaults the gateway itself applies
+(unset parameters use the upstream model's own defaults). These fields describe
+the Chat Completions and `/text` routes, not the native Responses API.
+
+Model lists also accept two discovery filters: `?source=official|community`
+picks built-in or community models, and `?reliable=true` keeps only models
+whose health window shows a success rate of at least 0.9. A matching
+`X-Pollinations-Model-Source` header works for clients whose fixed base URLs
+cannot carry query strings (the query parameter wins when both are set).
+Rich listings also expose minimal `health` metadata — `success_rate` (0-1;
+fallback rescues count as successes, caller-side 4xx failures are excluded),
+`samples`, `window_minutes` (60), and the `as_of` freshness timestamp. Models
+without health data carry no `health` field; experimental (`alpha`) status
+stays separate from reliability.
+
+```bash
+curl "https://gen.pollinations.ai/v1/models?source=official"
+curl "https://gen.pollinations.ai/v1/models?reliable=true"
+curl -H "X-Pollinations-Model-Source: official" "https://gen.pollinations.ai/v1/models"
+```
+
 ## Community Models
 
 Community models and agents use a canonical `community/owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `community=true` to return only community models or `community=false` to exclude them.

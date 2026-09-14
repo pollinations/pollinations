@@ -28,13 +28,15 @@ async function connect(userId: string): Promise<Client> {
 async function bash(
     client: Client,
     command: string,
-    stdin?: string,
-    cwd?: string,
-    mode?: "worker" | "container",
+    options: {
+        stdin?: string;
+        mode?: "worker" | "container";
+        workspace?: string;
+    } = {},
 ): Promise<{ text: string; isError: boolean }> {
     const result = await client.callTool({
         name: "bash",
-        arguments: { command, stdin, cwd, mode },
+        arguments: { command, ...options },
     });
     const content = result.content as { type: string; text?: string }[];
     const text = content
@@ -71,6 +73,15 @@ describe("computer MCP worker", () => {
                 }
             ).enum,
         ).toEqual(["worker", "container"]);
+        expect(tools[0].inputSchema.properties).toHaveProperty("workspace");
+        expect(
+            (
+                tools[0].inputSchema.properties?.workspace as {
+                    default?: string;
+                }
+            ).default,
+        ).toBe("default");
+        expect(tools[0].inputSchema.properties).not.toHaveProperty("cwd");
         expect(lastResponse?.headers.has(MCP_USAGE_HEADERS.cost)).toBe(false);
         await client.close();
     });
@@ -78,13 +89,7 @@ describe("computer MCP worker", () => {
     it("keeps worker mode as the default", async () => {
         const client = await connect("user-worker-mode");
         const implicit = await bash(client, "echo default");
-        const explicit = await bash(
-            client,
-            "echo worker",
-            undefined,
-            undefined,
-            "worker",
-        );
+        const explicit = await bash(client, "echo worker", { mode: "worker" });
         expect(implicit.text.trim()).toBe("default");
         expect(explicit.text.trim()).toBe("worker");
         await client.close();
@@ -114,11 +119,9 @@ describe("computer MCP worker", () => {
 
     it("writes files from stdin that persist across connections", async () => {
         const client = await connect("user-files");
-        const write = await bash(
-            client,
-            "cat > /workspace/memory/facts.md",
-            "favourite colour: 'blue' $HOME `date` — “naïve” ✓\n",
-        );
+        const write = await bash(client, "cat > /workspace/memory/facts.md", {
+            stdin: "favourite colour: 'blue' $HOME `date` — “naïve” ✓\n",
+        });
         expect(write.isError).toBe(false);
         const edit = await bash(
             client,
@@ -140,7 +143,7 @@ describe("computer MCP worker", () => {
         const write = await bash(
             client,
             "echo scratch > /tmp/note.txt && cat /tmp/note.txt",
-            "unused stdin",
+            { stdin: "unused stdin" },
         );
         expect(write.text.trim()).toBe("scratch");
         const later = await bash(client, "ls /tmp");
@@ -168,23 +171,31 @@ describe("computer MCP worker", () => {
         await bob.close();
     });
 
-    it("creates the cwd folder and keeps projects on one computer", async () => {
+    it("defaults to one workspace and keeps named workspaces isolated", async () => {
         const client = await connect("user-projects");
-        const write = await bash(
-            client,
-            "echo 'thesis plan' > plan.md",
-            undefined,
-            "/workspace/thesis",
-        );
+        await bash(client, "echo 'default plan' > plan.md");
+        const write = await bash(client, "echo 'thesis plan' > plan.md", {
+            workspace: "thesis",
+        });
         expect(write.isError).toBe(false);
-        const ls = await bash(
-            client,
-            "ls /workspace/thesis && head -1 ../README.md",
-            undefined,
-            "/workspace/thesis",
-        );
-        expect(ls.text).toContain("plan.md");
-        expect(ls.text).toContain("# Your computer");
+        const named = await bash(client, "cat plan.md && head -1 README.md", {
+            workspace: "thesis",
+        });
+        expect(named.text).toContain("thesis plan");
+        expect(named.text).toContain("# Your computer");
+        const defaultWorkspace = await bash(client, "cat plan.md");
+        expect(defaultWorkspace.text.trim()).toBe("default plan");
+        await client.close();
+    });
+
+    it("rejects invalid workspace names without touching the default", async () => {
+        const client = await connect("user-invalid-workspace");
+        const invalid = await bash(client, "touch should-not-exist", {
+            workspace: "../escape",
+        });
+        expect(invalid.isError).toBe(true);
+        const check = await bash(client, "test ! -e should-not-exist");
+        expect(check.isError).toBe(false);
         await client.close();
     });
 
@@ -193,8 +204,7 @@ describe("computer MCP worker", () => {
         const clone = await bash(
             client,
             "git clone https://github.com/octocat/Hello-World.git hello >/dev/null 2>&1 && cat hello/README",
-            undefined,
-            "/workspace/import",
+            { workspace: "import" },
         );
         expect(clone.isError).toBe(false);
         expect(clone.text).toContain("Hello World!");
@@ -204,7 +214,7 @@ describe("computer MCP worker", () => {
     it("publishes a file to media storage with assets publish", async () => {
         const client = await connect("user-publish");
         const html = "<h1>héllo — “quotes”</h1>\n";
-        await bash(client, "cat > /workspace/report.html", html);
+        await bash(client, "cat > /workspace/report.html", { stdin: html });
         const publish = await bash(
             client,
             "assets publish /workspace/report.html",

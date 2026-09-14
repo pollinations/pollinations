@@ -123,18 +123,22 @@ connections from [MCP Connectors](https://enter.pollinations.ai/account#connecto
 
 ### Computer MCP
 
-The Computer server gives each account a private filesystem under `/workspace`
-and a bash shell. Files persist between requests and agent runs; nothing runs
-while idle. There is one tool, `bash`, with `command`, optional `stdin` (for
-example file content for `cat > path`), optional `cwd`, and optional `mode`.
+The Computer server gives each account named private filesystems and a bash
+shell. The optional `workspace` argument defaults to `default`; each stable
+lowercase name selects an isolated `/workspace`. Files persist between requests
+and agent runs; nothing runs while idle. There is one tool, `bash`, with
+`command`, optional `stdin` (for example file content for `cat > path`),
+optional `workspace`, and optional `mode`. Commands begin in `/workspace`;
+use `cd` inside a command when needed.
 Worker mode is the fast default and provides curl, coreutils, `grep`, `sed`,
 `awk`, `jq`, `tar`, and `git`. Container mode starts full Debian with Node.js,
 npm, apt, git, native binaries, and outbound network. Both modes share the
-same durable `/workspace`; only that directory survives a container restart.
+same named workspace; only `/workspace` survives a container restart.
 A `/workspace/README.md` is created on first use and describes a simple memory
-layout (`memory/facts.md` plus a dated `memory/log/`). Keep one folder per
-project. Nothing is shared between accounts. Files come in with `curl` or
-`git clone` and go out with `assets publish <path>`, which copies a file to
+layout (`memory/facts.md` plus a dated `memory/log/`). Use separate workspace
+names for unrelated projects. Nothing is shared between accounts. Files come
+in with `curl` or `git clone` and go out with `assets publish <path>`, which
+copies a file to
 [media.pollinations.ai](https://media.pollinations.ai) and prints an unlisted
 URL that expires after 30 days (`assets publish` runs in worker mode), or with
 `git push` to a repository the caller owns. Every call costs the same flat

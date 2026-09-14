@@ -4,10 +4,10 @@ import { z } from "zod";
 
 const SERVER_INSTRUCTIONS =
     "A private, persistent computer with one tool: bash. Use worker mode for " +
-    "quick shell tasks and container mode for full Linux. Your files live " +
-    "under /workspace; /workspace/README.md explains the memory layout.";
+    "quick shell tasks and container mode for full Linux. Choose a workspace " +
+    "for isolated files; /workspace/README.md explains the memory layout.";
 
-const BASH_DESCRIPTION = `Run a bash command on your private, persistent computer. Files under /workspace survive between runs. cwd defaults to /workspace and persistent folders are created if missing; keep one folder per project.
+const BASH_DESCRIPTION = `Run a bash command in a private, persistent workspace. workspace defaults to "default"; use a stable lowercase name for a separate filesystem. Commands start in /workspace, whose files survive between runs. Use \`cd\` inside the command when needed.
 
 mode defaults to worker: fast startup with coreutils, grep, sed, awk, jq, tar, find, xargs, diff, curl and git, but no Node, Python or package managers. mode=container starts a full Debian container with Node.js, npm, apt, git, native binaries and outbound network; it has a slower cold start. Only /workspace persists when the container restarts.
 
@@ -18,6 +18,8 @@ In worker mode, send files out with \`assets publish <path>\`, which copies one 
 Output is stdout and stderr, truncated at 64 KB; a non-zero exit is an error.`;
 
 export const HOME = "/workspace";
+export const DEFAULT_WORKSPACE = "default";
+export const WORKSPACE_NAME_PATTERN = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 
 const TMP_DIR = "/tmp";
 const MAX_OUTPUT_BYTES = 64 * 1024;
@@ -42,10 +44,13 @@ export function createComputerMcpServer(workspace: WorkspaceClient): McpServer {
                     .string()
                     .optional()
                     .describe("Text fed to the command's standard input."),
-                cwd: z
+                workspace: z
                     .string()
-                    .optional()
-                    .describe("Absolute working directory."),
+                    .regex(WORKSPACE_NAME_PATTERN)
+                    .default(DEFAULT_WORKSPACE)
+                    .describe(
+                        'Persistent filesystem name; defaults to "default". Use 1-64 lowercase letters, numbers, dots, underscores or hyphens.',
+                    ),
                 mode: z
                     .enum(["worker", "container"])
                     .optional()
@@ -54,7 +59,7 @@ export function createComputerMcpServer(workspace: WorkspaceClient): McpServer {
                     ),
             },
         },
-        async ({ command, stdin, cwd = HOME, mode = "worker" }, context) => {
+        async ({ command, stdin, mode = "worker" }, context) => {
             // stdin goes through a file in /tmp, not the runtime's stdin
             // option: @cloudflare/computer 0.3.0 hands stdin to the shell as
             // a latin1 byte string, and a `>` redirect then writes each UTF-8
@@ -65,9 +70,6 @@ export function createComputerMcpServer(workspace: WorkspaceClient): McpServer {
                     ? undefined
                     : `${TMP_DIR}/.stdin-${crypto.randomUUID()}`;
             try {
-                await workspace.fs
-                    .mkdir(cwd, { recursive: true })
-                    .catch(() => undefined);
                 if (mode === "worker") {
                     await workspace.fs.mkdir(TMP_DIR, { recursive: true });
                 }
@@ -80,7 +82,7 @@ export function createComputerMcpServer(workspace: WorkspaceClient): McpServer {
                         : `{\n${command}\n} < ${stdinPath}`,
                     {
                         backend: BACKEND_BY_MODE[mode],
-                        cwd,
+                        cwd: HOME,
                         encoding: "utf8",
                         ...(mode === "container" && stdin !== undefined
                             ? { stdin }

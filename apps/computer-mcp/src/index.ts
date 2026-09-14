@@ -24,7 +24,12 @@ import {
     MCP_USER_ID_HEADER,
 } from "../../../shared/registry/mcp.ts";
 import { createMediaAssets, type MediaService } from "./assets.ts";
-import { createComputerMcpServer, HOME } from "./server.ts";
+import {
+    createComputerMcpServer,
+    DEFAULT_WORKSPACE,
+    HOME,
+    WORKSPACE_NAME_PATTERN,
+} from "./server.ts";
 
 const TOOL_CALL_RATE = "computer.tool_call.v1";
 
@@ -37,9 +42,9 @@ type Env = {
 const README_PATH = `${HOME}/README.md`;
 const README = `# Your computer
 
-This is your private, persistent computer. Everything you write survives
-between runs. /workspace is your home folder: keep one folder per project
-in it (for example /workspace/thesis) and pass that folder as cwd.
+This is one of your private, persistent workspaces. Everything under
+/workspace survives between runs. Use a separate workspace name for an
+unrelated project; "default" is used when no name is given.
 
 ## Memory convention
 
@@ -56,7 +61,8 @@ coreutils, grep, sed, awk, jq, tar, curl and git, but no Node, Python or package
 managers. Use \`mode: "container"\` for full Debian with Node.js, npm, apt,
 native binaries and outbound network. The container starts more slowly; only
 /workspace survives a container restart. Write a file by passing its content
-as stdin to \`cat > path\`.
+as stdin to \`cat > path\`. Commands start in /workspace; use \`cd\` inside a
+command when needed.
 
 ## Importing and sharing
 
@@ -142,7 +148,10 @@ export class Computer extends withWorkspace(ComputerBase, workspaceOptions) {
 type JsonRpcPayload = {
     id?: string | number | null;
     method?: string;
-    params?: { name?: string };
+    params?: {
+        name?: string;
+        arguments?: { workspace?: unknown };
+    };
 };
 
 async function readJsonRpc(request: Request): Promise<JsonRpcPayload> {
@@ -187,10 +196,25 @@ export default {
                 { status: 401 },
             );
         }
-        // One Durable Object per user; its SQLite holds the whole filesystem.
-        const stub = env.COMPUTER.get(
-            env.COMPUTER.idFromName(`user:${userId}`),
-        );
+        const workspaceName = requestedWorkspace(await readJsonRpc(request));
+        // Keep the existing default object's name so current files remain.
+        const objectName =
+            workspaceName === DEFAULT_WORKSPACE
+                ? `user:${userId}`
+                : `user:${userId}:workspace:${workspaceName}`;
+        // One Durable Object per user and workspace; its SQLite holds the
+        // isolated filesystem and its lazy container backend.
+        const stub = env.COMPUTER.get(env.COMPUTER.idFromName(objectName));
         return stub.fetch(request);
     },
 } satisfies ExportedHandler<Env>;
+
+function requestedWorkspace(payload: JsonRpcPayload): string {
+    const value = payload.params?.arguments?.workspace;
+    return payload.method === "tools/call" &&
+        payload.params?.name === "bash" &&
+        typeof value === "string" &&
+        WORKSPACE_NAME_PATTERN.test(value)
+        ? value
+        : DEFAULT_WORKSPACE;
+}

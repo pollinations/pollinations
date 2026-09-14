@@ -5,21 +5,23 @@ plus a bash shell, exposed as a Streamable HTTP MCP server. Nothing runs while
 idle.
 
 Built on [`@cloudflare/computer`](https://github.com/cloudflare/computer)
-(preview). Each user gets one Durable Object whose SQLite holds the
-whole filesystem. The single `bash` tool defaults to
+(preview). Each user/workspace pair gets one Durable Object whose SQLite holds
+its filesystem. The single `bash` tool defaults to
 [just-bash](https://github.com/vercel-labs/just-bash) in a throwaway Dynamic
 Worker that talks back to the Durable Object for file access. Set
 `mode: "container"` to lazily start a Debian Cloudflare Container with Node.js,
-npm, apt, git, native binaries and outbound network. Both modes use the same
-durable `/workspace`; only that directory survives a container restart.
+npm, apt, git, native binaries and outbound network. Both modes use the named
+workspace's durable `/workspace`; only that directory survives a container
+restart.
 
 ## The tool
 
 One tool, `bash`, with `command`, optional `stdin` (file content for
-`cat > path`, passed as-is, no quoting), optional `cwd` (default
-`/workspace`) and optional `mode` (`worker` by default or `container`).
-Persistent folders under `/workspace` are created if missing; projects are
-folders in it. Nothing is shared between users. Files come in with `curl -o`
+`cat > path`, passed as-is, no quoting), optional `mode` (`worker` by default
+or `container`) and optional `workspace` (`default` when omitted). Each stable
+lowercase workspace name selects a separate filesystem. Commands begin in
+`/workspace`; use `cd` inside a command when needed. Nothing is shared between
+users. Files come in with `curl -o`
 (any public URL) or `git clone` (any public repository) and go out with
 `assets publish <path>`, which copies
 one file to the Pollinations media service (`MEDIA` service binding, the same
@@ -40,8 +42,9 @@ current facts in `memory/facts.md` and a dated append-only journal in
 The Worker is private (`workers_dev: false`, no routes). Gen's
 `/mcp/computer` route authenticates the caller, then calls this Worker through
 the `COMPUTER_MCP` service binding with the `x-pollinations-user-id` header
-set. That header selects the Durable Object (`user:<userId>`), so a missing header
-is a 401 here.
+set. That header and the tool's workspace name select the Durable Object. The
+default keeps the existing `user:<userId>` object; named workspaces use
+`user:<userId>:workspace:<name>`. A missing user header is a 401 here.
 The registry entry lives in `shared/registry/mcp.ts`.
 
 ## Local

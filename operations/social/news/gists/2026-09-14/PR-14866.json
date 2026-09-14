@@ -1,0 +1,34 @@
+{
+  "pr_number": 14866,
+  "title": "refactor: pass requests intact to background generation",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14866",
+  "merged_at": "2026-09-14T15:46:26Z",
+  "labels": [],
+  "pr_body_excerpt": "- Passes all request headers and body fields to our background worker without an allowlist or replay-time credential stripping. Stored jobs can therefore contain caller credentials.\n- Keeps credentials out of cache identity and leaves provider header construction separate. Excludes the Pollinations JSON key at the final Chat Completions provider boundary.\n- Preserves adapted requests and multipart files; tests raw JSON/binary bodies and custom headers.\n- Extracted from the discussion on #14815 so new request headers do not require deduplication changes. Verified 239 targeted tests, formatting, and Gen type-checking.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Requests keep their luggage",
+    "blurb": "Background generation now carries the whole request along instead of unpacking it at the door. Custom headers, adapted payloads, and multipart files can make the trip intact.",
+    "summary": "Background generation now forwards complete request headers and bodies—including custom headers, raw JSON or binary payloads, adapted requests, and multipart files—while keeping cache identity and provider-header construction separate.",
+    "impact": "Developers can use new request headers and richer payload formats with background jobs without needing deduplication changes, while Pollinations JSON credentials remain excluded at the final Chat Completions provider boundary.",
+    "keywords": [
+      "background generation",
+      "request passthrough",
+      "headers",
+      "multipart",
+      "deduplication",
+      "chat completions"
+    ],
+    "visual_concept": "A cozy mailroom-garden scene represents a background worker receiving sealed request parcels intact: custom-header envelopes, a JSON scroll, and a multipart file crate travel along a vine-lined conveyor toward a softly glowing retro terminal. Polli, wearing a tiny postal cap, carefully escorts the complete bundle while a CRT monitor robot checks the destination label; the separate cache shelf stays neatly organized nearby.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny postal cap as she carries sealed request envelopes, a JSON scroll, and a multipart file crate along a vine-covered conveyor into a glowing retro background-worker terminal; a friendly CRT monitor robot sorts a separate cache shelf amid flowers and code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font label “INTACT”, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-14/PR-14866.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny postal cap as she carries sealed request envelopes, a JSON scroll, and a multipart file crate along a vine-covered conveyor into a glowing retro background-worker terminal; a friendly CRT monitor robot sorts a separate cache shelf amid flowers and code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font label “INTACT”, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-14T15:47:33.294752+00:00"
+}

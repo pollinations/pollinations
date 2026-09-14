@@ -46,15 +46,6 @@ def test_catalog_is_authenticated_and_fetched_each_time(monkeypatch):
     assert calls[0][1]["headers"] == {"Authorization": "Bearer sk_one"}
 
 
-@pytest.mark.parametrize("payload", [{"data": None}, []])
-def test_catalog_requires_model_list(monkeypatch, payload):
-    monkeypatch.setattr(
-        plugin.httpx, "get", lambda *args, **kwargs: response(200, payload)
-    )
-    with pytest.raises(ValueError, match="Unexpected Pollinations model catalog"):
-        plugin.fetch_models("sk_test")
-
-
 @pytest.mark.parametrize("failure", [httpx.ConnectError("offline"), 401, 503])
 def test_catalog_failure_does_not_break_plugin_registration(monkeypatch, failure):
     def fail(*args, **kwargs):
@@ -71,21 +62,16 @@ def test_catalog_failure_does_not_break_plugin_registration(monkeypatch, failure
     assert registered == []
 
 
-def test_registration_isolates_bad_records_and_maps_capabilities(monkeypatch):
+def test_registration_filters_models_and_maps_capabilities(monkeypatch):
     catalog = [
-        model("bad-endpoints", supported_endpoints=True),
-        model("bad-inputs", input_modalities=1),
-        model("bad-outputs", output_modalities=None),
         model(
             "openai/test",
             input_modalities=["text", "image"],
             tools=True,
             reasoning=True,
         ),
-        model("openai/test"),
         model("responses-only", supported_endpoints=["/v1/responses"]),
         model("image", category="image", output_modalities=["image"]),
-        None,
     ]
     monkeypatch.setattr(plugin.llm, "get_key", lambda *args: "sk_test")
     monkeypatch.setattr(plugin, "fetch_models", lambda key: catalog)

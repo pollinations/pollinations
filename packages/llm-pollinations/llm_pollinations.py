@@ -27,27 +27,13 @@ def fetch_models(key: str) -> list[dict]:
         timeout=10,
     )
     response.raise_for_status()
-    payload = response.json()
-    models = payload.get("data") if isinstance(payload, dict) else None
-    if not isinstance(models, list):
-        raise ValueError("Unexpected Pollinations model catalog")
-    return models
+    return response.json()["data"]
 
 
-def _is_chat_model(model: object) -> bool:
-    if not isinstance(model, dict):
-        return False
-    endpoints = model.get("supported_endpoints")
-    inputs = model.get("input_modalities")
-    outputs = model.get("output_modalities")
+def _is_chat_model(model: dict) -> bool:
     return (
-        isinstance(model.get("id"), str)
-        and bool(model["id"])
-        and isinstance(endpoints, list)
-        and "/v1/chat/completions" in endpoints
-        and isinstance(inputs, list)
-        and isinstance(outputs, list)
-        and "text" in outputs
+        "/v1/chat/completions" in model["supported_endpoints"]
+        and "text" in model["output_modalities"]
     )
 
 
@@ -61,11 +47,9 @@ def register_models(register):
     except (httpx.HTTPError, ValueError):
         return
 
-    seen = set()
     for model in catalog:
-        if not _is_chat_model(model) or model["id"] in seen:
+        if not _is_chat_model(model):
             continue
-        seen.add(model["id"])
         options = {
             "model_id": f"pollinations/{model['id']}",
             "model_name": model["id"],

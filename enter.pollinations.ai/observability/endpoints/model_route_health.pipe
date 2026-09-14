@@ -39,7 +39,10 @@ SQL >
         -- received, as opposed to a call that was retried elsewhere.
         countIf(is_final) as served,
         countIf(
-            is_final AND fallback_used
+            -- Qualified: the SELECT aliases `fallback_used` to max(fallback_used)
+            -- above, and an unqualified reference here would resolve to that
+            -- aggregate, which ClickHouse rejects as a nested aggregate.
+            is_final AND generation_event_v2.fallback_used
             AND response_status >= 200 AND response_status < 300
         ) as fallback_rescues,
         -- A non-final 503 from this route was retried elsewhere. Capacity

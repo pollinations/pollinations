@@ -1447,7 +1447,7 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 5, // Pollinations route cap.
     },
     "inferenceport-ai/lightning-image-turbo": {
-        aliases: ["lightning-image-turbo"],
+        aliases: [],
         provider: "inferenceport",
         publisher: "InferencePort",
         category: "image",

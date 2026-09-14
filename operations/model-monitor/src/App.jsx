@@ -373,7 +373,7 @@ function PrimaryRouteBadge({ model }) {
         <Chip
             intent="danger"
             size="sm"
-            title="This model's own upstream is failing; every response shown as healthy above came from a fallback"
+            title="This model's primary route has a higher error rate than the overall result; fallbacks are rescuing requests"
         >
             Primary off
         </Chip>

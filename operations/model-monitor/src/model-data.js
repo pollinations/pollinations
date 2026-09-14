@@ -137,8 +137,8 @@ export function computeHealthStatus(stats) {
 }
 
 // model_route_health returns two grains in one response. Rollup rows are a
-// model's score across every route it was served through; route rows are the
-// individual primary and fallbacks that add up to it.
+// model's final request outcomes; route rows count individual attempts, so
+// their request counts can exceed the model total.
 export const rollupRows = (routeStats) =>
     (routeStats || []).filter(
         (row) => row.is_rollup && row.model !== "undefined",

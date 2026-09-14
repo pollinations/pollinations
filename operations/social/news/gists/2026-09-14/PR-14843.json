@@ -1,0 +1,34 @@
+{
+  "pr_number": 14843,
+  "title": "feat(ui): share inline media and copyable code blocks",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14843",
+  "merged_at": "2026-09-14T00:20:12Z",
+  "labels": [],
+  "pr_body_excerpt": "- Extracts the shared Markdown and CodeBlock changes from website v2 (#14472), including the media rendering merged in #14813.\n- Keeps images, audio and video inline; supports the existing generated-media links without file extensions.\n- Adds labelled, wrapping code blocks using the existing copy button.\n- Three files only: no website pages, global styles, dependencies or auth changes.\n- Verified all 23 UI tests, TypeScript, full SDK/UI builds and Biome.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Media stays in the garden",
+    "blurb": "Markdown can now keep its images, audio, and video right where the conversation put them. Code blocks also gained labels, wrapping, and a copy button—because scrolling sideways is not a personality trait.",
+    "summary": "The shared UI Markdown renderer now displays inline images, audio, and video—including generated-media URLs without file extensions—and adds labelled, wrapping CodeBlock components with the existing copy control.",
+    "impact": "Apps using the shared UI can present generated media directly in Markdown and give readers readable, one-click-copyable code snippets without sending them away to a link.",
+    "keywords": [
+      "markdown",
+      "inline-media",
+      "code-blocks",
+      "ui",
+      "copy-button",
+      "generated-media"
+    ],
+    "visual_concept": "A cozy shared Markdown workbench: Polli tends a little code-garden where an image, audio waveform, and video thumbnail bloom inline from one document, while a labelled code scroll wraps neatly beside a chunky copy-button stamp. The scene represents media remaining embedded in the reading flow and code becoming easier to scan and reuse.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blushes, a happy smile, light-blue rounded wings, and tiny librarian glasses, tending a Markdown garden on a retro CRT desk: image flowers, a soft audio waveform vine, and a tiny video tile grow inline from a document while a labelled wrapping code scroll has a chunky copy-button stamp. Include prominent lime green (#ecf874), warm cream with mint, lavender, and peach pastel gradients, small flowers and code-plants, dark purple (#110518) outlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; subtle pixel text reads “COPY”. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-14/PR-14843.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blushes, a happy smile, light-blue rounded wings, and tiny librarian glasses, tending a Markdown garden on a retro CRT desk: image flowers, a soft audio waveform vine, and a tiny video tile grow inline from a document while a labelled wrapping code scroll has a chunky copy-button stamp. Include prominent lime green (#ecf874), warm cream with mint, lavender, and peach pastel gradients, small flowers and code-plants, dark purple (#110518) outlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; subtle pixel text reads “COPY”. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-14T00:21:17.657119+00:00"
+}

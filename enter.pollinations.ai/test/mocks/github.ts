@@ -49,6 +49,13 @@ export type MockGithubState = {
     }>;
     requests: Array<{ method: string; path: string; url: string }>;
     failQuestSearch: boolean;
+    userInstallations: Array<{
+        id: number;
+        account: { id: number; login: string };
+        target_type: "User" | "Organization";
+        html_url: string;
+        repository_selection: "all" | "selected";
+    }>;
 };
 
 export function createMockGithub(): MockAPI<MockGithubState> {
@@ -67,13 +74,16 @@ export function createMockGithub(): MockAPI<MockGithubState> {
         repos: [],
         requests: [],
         failQuestSearch: false,
+        userInstallations: [],
     };
 
     const githubAuth = createMiddleware(async (c, next) => {
         const authHeader = c.req.header("Authorization");
         // Real GitHub rejects OAuth client_id/secret Basic auth with 401, so the
         // mock must too — accepting it hid a live 401 behind green tests.
-        const isUserToken = authHeader?.includes("mock_github_auth_token");
+        const isUserToken =
+            authHeader?.includes("mock_github_auth_token") ||
+            authHeader?.includes("mock_github_app_user_token");
         if (!isUserToken) {
             return c.json({ message: "Bad credentials" }, 401);
         }
@@ -153,6 +163,12 @@ export function createMockGithub(): MockAPI<MockGithubState> {
         .get("/user", (c) => {
             return c.json(state.user);
         })
+        .get("/user/installations", (c) => {
+            return c.json({
+                total_count: state.userInstallations.length,
+                installations: state.userInstallations,
+            });
+        })
         .get("/user/:id", (c) => {
             if (Number(c.req.param("id")) !== state.user.id) {
                 return c.json({ message: "Not Found" }, 404);
@@ -170,13 +186,37 @@ export function createMockGithub(): MockAPI<MockGithubState> {
         });
 
     // OAuth app (no auth needed)
-    const githubOAuth = new Hono().post("/login/oauth/access_token", (c) => {
-        return c.json({
-            access_token: "mock_github_auth_token",
-            token_type: "bearer",
-            scope: "read:user user:email",
+    const githubOAuth = new Hono()
+        .use("*", trackRequest)
+        .post("/login/oauth/access_token", async (c) => {
+            const body = await c.req.parseBody();
+            if (body.client_id === "test_github_connect_client_id") {
+                const refreshing = body.grant_type === "refresh_token";
+                if (
+                    refreshing &&
+                    body.refresh_token !== "mock_github_app_refresh_token"
+                ) {
+                    return c.json({ error: "invalid_grant" }, 400);
+                }
+                return c.json({
+                    access_token: refreshing
+                        ? "mock_github_app_user_token_refreshed"
+                        : "mock_github_app_user_token",
+                    expires_in: 28800,
+                    refresh_token: refreshing
+                        ? "mock_github_app_refresh_token_rotated"
+                        : "mock_github_app_refresh_token",
+                    refresh_token_expires_in: 15897600,
+                    token_type: "bearer",
+                    scope: "",
+                });
+            }
+            return c.json({
+                access_token: "mock_github_auth_token",
+                token_type: "bearer",
+                scope: "read:user user:email",
+            });
         });
-    });
 
     const handlerMap = {
         "github.com": createHonoMockHandler(githubOAuth),
@@ -186,6 +226,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
     const reset = () => {
         state.secretScanningPublicKeys = [];
         state.requests = [];
+        state.userInstallations = [];
     };
 
     return {

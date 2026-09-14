@@ -165,6 +165,20 @@ export default defineConfig(async ({ mode }) => {
                             },
                             ENTER: async (request: Request) => {
                                 const url = new URL(request.url);
+                                if (url.pathname === "/api/mcp/github") {
+                                    if (
+                                        !request.headers.has("authorization") ||
+                                        request.headers.has("cookie")
+                                    ) {
+                                        return new Response(
+                                            "Unsafe GitHub forwarding",
+                                            { status: 500 },
+                                        );
+                                    }
+                                    return new Response(
+                                        "github proxied through enter",
+                                    );
+                                }
                                 if (
                                     url.pathname ===
                                     "/api/docs/open-api/generate-schema"

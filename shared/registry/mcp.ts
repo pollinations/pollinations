@@ -22,6 +22,7 @@ type McpServerDefinitionBase = {
     name: string;
     description: string;
     binding: McpBindingName;
+    path?: string;
     pricing: McpPricingDefinition;
     userScoped?: boolean;
     accountPath?: string;
@@ -42,7 +43,8 @@ export type McpBindingName =
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
-    | "COMPUTER_MCP";
+    | "COMPUTER_MCP"
+    | "ENTER";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -194,6 +196,21 @@ export const MCP_SERVERS = [
         provider: "cloudflare",
         userScoped: true,
         pricing: COMPUTER_MCP_PRICING,
+    },
+    {
+        id: "github",
+        name: "GitHub",
+        description:
+            "Read and search files, issues, and pull requests in your connected GitHub repositories.",
+        binding: "ENTER",
+        path: "/api/mcp/github",
+        billing: "downstream",
+        userScoped: true,
+        accountPath: "/account#github",
+        pricing: {
+            description: "No Pollen charge. GitHub API rate limits apply.",
+            rates: [],
+        },
     },
 ] as const satisfies readonly McpServerDefinition[];
 

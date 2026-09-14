@@ -2,6 +2,11 @@
 GITHUB_CLIENT_ID=your_github_client_id
 GITHUB_CLIENT_SECRET=your_github_client_secret
 
+# Separate GitHub App for delegated access to user-selected repositories
+GITHUB_CONNECT_APP_CLIENT_ID=your_connect_app_client_id
+GITHUB_CONNECT_APP_CLIENT_SECRET=your_connect_app_client_secret
+GITHUB_CONNECT_APP_SLUG=your_connect_app_slug
+
 # Auth
 BETTER_AUTH_SECRET=your_better_auth_secret_at_least_32_chars
 

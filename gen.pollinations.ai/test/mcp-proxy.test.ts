@@ -124,6 +124,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     ],
                 },
             },
+            {
+                id: "github",
+                name: "GitHub",
+                description:
+                    "Read and search files, issues, and pull requests in your connected GitHub repositories.",
+                url: "https://gen.pollinations.ai/mcp/github",
+                pricing: {
+                    description:
+                        "No Pollen charge. GitHub API rate limits apply.",
+                    rates: [],
+                },
+            },
         ],
     });
 });
@@ -169,6 +181,24 @@ test("requires a Pollinations credential before invoking an MCP server", async (
         },
     );
     expect(response.status).toBe(401);
+});
+
+test("routes GitHub MCP to Enter with caller auth and without cookies", async () => {
+    const { key } = await createTestApiKey();
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/github",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe("github proxied through enter");
 });
 
 test("proxies FFmpeg without caller credentials and bills reported usage", async () => {

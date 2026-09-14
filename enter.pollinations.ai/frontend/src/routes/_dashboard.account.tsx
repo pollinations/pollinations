@@ -17,6 +17,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
 import { ConnectedApps } from "../components/account/connected-apps.tsx";
+import { GitHubConnection } from "../components/account/github-connection.tsx";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
 const DELETE_CONFIRMATION = "DELETE";
@@ -259,6 +260,8 @@ function AccountPage() {
                     )}
                 </Section>
             )}
+
+            <GitHubConnection />
 
             <div id="connectors" className="scroll-mt-6">
                 <ConnectedApps />

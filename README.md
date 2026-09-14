@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-09-10** – **✨ StoryCraft AI** Turn an idea into a multi-chapter illustrated storybook, with Pollinations handling the words and scene art. [Try it](https://khushalkks.github.io/pollinations) <!-- app -->
-- **2026-09-10** – **🎨 Men’s Fashion Pins** Generate polished Pinterest artwork for men’s fashion with `gpt-image-2`. Pocket squares now have an API. [Try it](https://fashionpins4u.blogspot.com/p/mens-fashion-pins.html) <!-- app -->
-- **2026-09-10** – **💡 YouTube Transcription AI** Turn YouTube transcripts into structured summaries, English translations, and concept-cover images. [Try it](https://www.mrpaloma.com/trascrivere-video-youtube-pollinations) <!-- app -->
-- **2026-09-10** – **🔗 Bloom harness for Polli CLI** Connect Bloom CLI to Pollinations text models with `polli harness bloom on`, then inspect or remove the setup without disturbing the rest of your `.env`.
-- **2026-09-09** – **✨ Media joins the chat** Generate images, video, audio, and 3D through OpenAI-compatible `/v1/chat/completions` and `/v1/responses`, with shareable public URLs returned in the reply. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-09-09** – **💡 Vectors join the hive** The JavaScript/TypeScript SDK now has `embeddings()` for text, batches, and multimodal inputs—no hand-rolled `/v1/embeddings` requests required. [SDK](https://www.npmjs.com/package/@pollinations/sdk)
-- **2026-09-09** – **🎨 Polli moves into GIMP** Generate images as new GIMP 3 layers, or edit a selection or active layer into a new layer while leaving the original alone. The plugin remembers your private auth after a restart.
-- **2026-09-09** – **🌟 Let the models duel** PolliArena runs blind, side-by-side image-model battles so you can find out which model you actually prefer, rather than which one has the loudest name. [Try it](https://polli-arena.cloudbr.eu.org) <!-- app -->
-- **2026-09-08** – **🎨 GPT Image 2.5 arrives** Paid users can generate and edit with `openai/gpt-image-2.5-flare` and `openai/gpt-image-2.5-sunburst`, including native quality controls and PNG transparency. [Try it](https://pollinations.ai/play)
-- **2026-09-08** – **✨ Generated media gets permanent-ish homes** Images, video, audio, edits, and 3D outputs now return stable Media links instead of accidentally starting another generation when revisited. Old cached creations can be recovered too. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-09-13** – **🤖 Polli gets two brains** Ask Polli now runs on GPT-5.6 Terra, while write workflows use GPT-6 Astra—specialized routing without changing your existing Gen auth or endpoint setup. [Try it](https://pollinations.ai/play)
+- **2026-09-13** – **✨ Agents declare their senses** Endpoint agents can now publish input and output modalities—including multiple outputs and 3D—through the standard [model listings](https://gen.pollinations.ai/v1/models).
+- **2026-09-13** – **📱 Agent and MCP KPIs land in the dashboard** Inspect weekly requests, unique users, and MCP calls separately, then export the numbers as CSV. Software has begun counting its own pollen. [Open your dashboard](https://enter.pollinations.ai/keys)
+- **2026-09-13** – **🎨 Floret knows her toolkit** Floret now clearly identifies herself and can point you toward image editing, voice changes, and background-noise removal when you need them. [Try it](https://pollinations.ai/play)
+- **2026-09-12** – **🚀 DeepSeek V4.1 Flash** is now on the unified text API: reasoning, tool use, and a 1M-token context window under `deepseek/deepseek-v4.1-flash`. [Try it](https://pollinations.ai/play)
+- **2026-09-12** – **🤖 A computer for every bee** Agents now get a private persistent `/workspace`, Bash, asset publishing, and the ability to push finished work to your own repos via `/mcp/computer`. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers)
+- **2026-09-12** – **🎨 1080p MiniMax video** Generate 5-, 10-, or 15-second 1080p clips with `minimax/minimax-h3-max-turbo`, including first/last-frame image-to-video. [API docs](https://gen.pollinations.ai/docs)
+- **2026-09-12** – **💡 Bring your own backup bees** Send up to four comma-separated models such as `?model=a,b,c` on any generation endpoint; Pollinations tries your fallback chain when a provider gets dramatic. [API docs](https://gen.pollinations.ai/docs)
+- **2026-09-12** – **✨ A friendly chat flower** Pollination_chatbot is a Pollinations-powered chat interface for OpenAI, Mistral, and Gemini models, with Login with Pollinations. [Try it](https://pollinations-chatbot.vercel.app) <!-- app -->
+- **2026-09-11** – **🚀 Managed Code Agents** Publish commit-pinned TypeScript agents from a public GitHub repo with the dashboard or Polli CLI—models, MCP tools, and AI SDK helpers included. [API Docs](https://gen.pollinations.ai/docs)
 ---
 
 ## 🌱 Introduction

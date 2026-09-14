@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import os
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -46,6 +48,19 @@ class _FakeBrain:
 @pytest.fixture(autouse=True)
 def _stub_env(monkeypatch):
     monkeypatch.setattr(agent_mod, "build_system_prompt", lambda: "SYSTEM")
+
+
+async def test_brain_receives_floret_identity(monkeypatch: pytest.MonkeyPatch) -> None:
+    from floret.knowledge import build_system_prompt
+
+    brain = _FakeBrain([_assistant("Hello!")])
+    monkeypatch.setattr(agent_mod, "_client", lambda: brain)
+    monkeypatch.setattr(agent_mod, "build_system_prompt", build_system_prompt)
+
+    await agent_mod.run_agent([{"role": "user", "content": "hey"}])
+
+    assert brain.calls[0][0]["role"] == "system"
+    assert brain.calls[0][0]["content"].startswith("You are Floret,")
 
 
 async def test_two_parallel_tool_calls_both_execute(monkeypatch):
@@ -328,6 +343,73 @@ async def test_iteration_cap_forces_final_answer(monkeypatch):
     )
     assert result["iterations"] == 3
     assert result["text"] == "forced final"
+
+
+async def test_run_workspace_is_shared_by_tools_then_cleaned(monkeypatch, tmp_path):
+    seen = []
+
+    async def dispatch(name, args, routing=None):
+        from floret.tools import shell
+        from floret.toolset import ToolResult
+
+        path = shell._workdir()
+        seen.append(path)
+        marker = Path(path, "marker")
+        if name == "first":
+            marker.write_text("ok", encoding="utf-8")
+        else:
+            assert marker.read_text(encoding="utf-8") == "ok"
+        return ToolResult(brain="ok")
+
+    monkeypatch.setattr(agent_mod, "dispatch", dispatch)
+    monkeypatch.setattr(agent_mod.settings, "temp_dir", str(tmp_path))
+    brain = _FakeBrain(
+        [
+            _assistant("one", [_tool_call("c1", "first", "{}")]),
+            _assistant("two", [_tool_call("c2", "second", "{}")]),
+            _assistant("done", None),
+        ]
+    )
+    monkeypatch.setattr(agent_mod, "_client", lambda: brain)
+
+    await agent_mod.run_agent([{"role": "user", "content": "work"}])
+
+    assert seen[0] == seen[1]
+    assert not os.path.exists(seen[0])
+
+
+async def test_concurrent_runs_use_distinct_workspaces(monkeypatch, tmp_path):
+    seen = []
+
+    async def dispatch(name, args, routing=None):
+        from floret.tools import shell
+        from floret.toolset import ToolResult
+
+        seen.append(shell._workdir())
+        await asyncio.sleep(0)
+        return ToolResult(brain="ok")
+
+    monkeypatch.setattr(agent_mod, "dispatch", dispatch)
+    monkeypatch.setattr(agent_mod.settings, "temp_dir", str(tmp_path))
+    brains = iter(
+        [
+            _FakeBrain(
+                [_assistant("a", [_tool_call("a", "x", "{}")]), _assistant("done")]
+            ),
+            _FakeBrain(
+                [_assistant("b", [_tool_call("b", "x", "{}")]), _assistant("done")]
+            ),
+        ]
+    )
+    monkeypatch.setattr(agent_mod, "_client", lambda: next(brains))
+
+    await asyncio.gather(
+        agent_mod.run_agent([{"role": "user", "content": "a"}]),
+        agent_mod.run_agent([{"role": "user", "content": "b"}]),
+    )
+
+    assert len(set(seen)) == 2
+    assert all(not os.path.exists(path) for path in seen)
 
 
 async def test_routing_object_reaches_dispatch(monkeypatch):

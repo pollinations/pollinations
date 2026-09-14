@@ -29,6 +29,7 @@ import {
     sendErrorEventToTinybird,
     sendToTinybird,
 } from "@shared/events.ts";
+import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
 import {
     collectRequestInputs,
     stringifyRequestInputs,
@@ -99,6 +100,7 @@ import {
     isResponsesFailure,
     normalizeResponsesTerminalEvent,
 } from "@/text/responses/tracking.ts";
+import { summarizeStreamForLog } from "@/text/streamSummary.ts";
 import { generateRandomId, parseBooleanLike } from "@/util.ts";
 import { releaseApiKeyBudgetReservation } from "@/utils/generation-access.ts";
 import {
@@ -118,6 +120,7 @@ type RequestTrackingData = {
     modelRequested: string | null;
     resolvedModelRequested: string;
     modelProvider?: string;
+    communityEndpointType?: InsertGenerationEvent["communityEndpointType"];
     modelDefinition: ModelDefinition;
     modelCostDefinition: CostDefinition;
     modelPriceDefinition: PriceDefinition;
@@ -146,8 +149,7 @@ type ResponseTrackingData = {
     // merged, multiplier applied). The tracking event records this sheet so
     // recorded rates always reproduce the billed totals.
     priceDefinition?: PriceDefinition;
-    // Applied cost variant name (financial identity; modelUsed stays
-    // observational).
+    // Applied rate sheet; the public model ID stays the same across variants.
     costVariant?: string;
     contentFilterResults?: GenerationEventContentFilterParams;
     // A failure the response status cannot show. Replaces the status-derived
@@ -204,7 +206,8 @@ export const track = (eventType: EventType) =>
         const userTracking = requestIdentity(c.var.auth);
 
         let responseOverride: Response | null = null;
-        let pricingInput: PricingInput | undefined;
+        // What the caller asked for; a provider's response may refine it.
+        let pricingInput = requestedPricingInput(c.req);
         /** Filled by the fallback loop; this middleware turns it into rows. */
         const attempts: FallbackAttempt[] = [];
 
@@ -485,11 +488,9 @@ export const track = (eventType: EventType) =>
                             duration_ms:
                                 endTime.getTime() - startTime.getTime(),
                             error_code: errorTracking?.errorResponseCode,
-                            error_class:
-                                errorTracking?.errorResponseCode ===
-                                "usage_missing"
-                                    ? "UpstreamUsageError"
-                                    : "UpstreamFinishReasonError",
+                            error_class: streamErrorClass(
+                                errorTracking?.errorResponseCode,
+                            ),
                             message: errorTracking?.errorMessage,
                             upstream_status: response.status,
                             upstream_body: stringifyErrorOutput(
@@ -656,6 +657,7 @@ async function trackRequest(
         modelRequested,
         resolvedModelRequested,
         modelProvider,
+        communityEndpointType: modelInfo.communityEndpoint?.type,
         modelDefinition,
         modelCostDefinition,
         modelPriceDefinition,
@@ -700,12 +702,12 @@ export async function trackResponse(
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
-    const modelCalled = candidate.id || resolvedModelRequested;
+    const modelUsed = candidate.id || resolvedModelRequested;
     const modelProviderUsed =
         candidate.definition?.provider ?? requestTracking.modelProvider;
     const cacheHit = response.headers.get("x-cache") === "HIT";
     const fallbackUsed =
-        modelCalled !== resolvedModelRequested || parseFallbackUsed(response);
+        modelUsed !== resolvedModelRequested || parseFallbackUsed(response);
     const notBilled = (
         extra?: Partial<ResponseTrackingData>,
     ): ResponseTrackingData => ({
@@ -717,21 +719,14 @@ export async function trackResponse(
         ...extra,
     });
 
-    // A cache hit called no model, so it must not claim one. A failure did
-    // call a model, and recording which one is the only way an error row can
-    // say what failed — otherwise model_used falls back to the datasource
-    // DEFAULT 'undefined' and per-model upstream health is unqueryable.
-    //
-    // Which model that was: the one the request resolved to, unless the
-    // fallback loop moved on and stopped on a different one. Only the loop
-    // knows that, so it reports the id it stopped on and modelCalled prefers
-    // it.
+    // Record the exact attempted registry ID, not the provider's model name.
+    // Cache hits made no upstream attempt and must not claim one.
     if (cacheHit) {
         return notBilled();
     }
     if (!response.ok) {
         return notBilled({
-            modelUsed: modelCalled,
+            modelUsed,
         });
     }
 
@@ -754,7 +749,7 @@ export async function trackResponse(
                 kind: contentTypeGuard.kind,
             },
         );
-        return notBilled({ modelUsed: modelCalled });
+        return notBilled({ modelUsed });
     }
 
     const { modelUsage, output, contentFilterResults } =
@@ -767,7 +762,9 @@ export async function trackResponse(
         ? { ...pricingInput, ...modelUsage.pricingInput }
         : pricingInput;
     const finishError =
-        eventType === "generate.text" ? finishReasonError(output) : undefined;
+        eventType === "generate.text"
+            ? finishReasonError(output, !!modelUsage)
+            : undefined;
     if (finishError) {
         // Keep the proxy response untouched; only billing and health reflect
         // the upstream protocol's explicit terminal failure.
@@ -786,7 +783,7 @@ export async function trackResponse(
                 output,
                 input: billingInput,
             }),
-            modelUsed: modelUsage?.model ?? modelCalled,
+            modelUsed,
             modelProviderUsed,
             usage,
             contentFilterResults,
@@ -797,11 +794,12 @@ export async function trackResponse(
                         ? CONTENT_POLICY_ERROR_CODE
                         : "upstream_finish_reason_error"),
                 errorMessage:
-                    finishError.code === "usage_missing"
+                    finishError.message ??
+                    (finishError.code === "usage_missing"
                         ? "Upstream stream failed usage validation"
                         : finishError.status === CONTENT_POLICY_STATUS
                           ? "Upstream rejected generation for content policy"
-                          : "Upstream ended generation with finish_reason=error",
+                          : "Upstream ended generation with finish_reason=error"),
             },
             errorOutput: output,
         };
@@ -829,7 +827,7 @@ export async function trackResponse(
                 ...notBilled(),
                 ...adjustmentOnlyBilling,
                 responseStatus: 502,
-                modelUsed: modelCalled,
+                modelUsed,
                 usage: {},
                 contentFilterResults,
                 errorTracking: {
@@ -848,14 +846,15 @@ export async function trackResponse(
                 isBilledUsage: hasBillablePrice,
                 fallbackUsed,
                 ...adjustmentOnlyBilling,
-                modelUsed: modelCalled,
+                modelUsed,
+                modelProviderUsed,
                 usage: {},
                 contentFilterResults,
             };
         }
         return notBilled({
             contentFilterResults,
-            modelUsed: modelCalled,
+            modelUsed,
         });
     }
     // Cost follows the model that ran; price follows the one the caller asked
@@ -886,22 +885,47 @@ export async function trackResponse(
         adjustments,
         priceDefinition,
         costVariant,
-        modelUsed: modelUsage.model,
+        modelUsed,
         modelProviderUsed,
         usage: modelUsage.usage,
         contentFilterResults,
     };
 }
 
+function streamErrorClass(code: string | undefined): string {
+    if (code === "usage_missing") return "UpstreamUsageError";
+    if (code === "upstream_stream_error") return "UpstreamStreamError";
+    return "UpstreamFinishReasonError";
+}
+
 function finishReasonError(
     output: unknown,
-): { status: number; code?: "usage_missing" } | undefined {
+    hasUsage: boolean,
+):
+    | {
+          status: number;
+          code?: "usage_missing" | "upstream_stream_error";
+          message?: string;
+      }
+    | undefined {
     if (!output || typeof output !== "object") return undefined;
     const streamEvents = (output as { streamEvents?: unknown }).streamEvents;
     const events = Array.isArray(streamEvents) ? streamEvents : [output];
     for (const event of events) {
         if (!event || typeof event !== "object") continue;
         const eventError = (event as { error?: unknown }).error;
+        if (
+            eventError &&
+            typeof eventError === "object" &&
+            (eventError as { code?: unknown }).code === "upstream_stream_error"
+        ) {
+            const { message } = eventError as { message?: unknown };
+            return {
+                status: 502,
+                code: "upstream_stream_error",
+                message: typeof message === "string" ? message : undefined,
+            };
+        }
         if (
             (eventError &&
                 typeof eventError === "object" &&
@@ -927,6 +951,11 @@ function finishReasonError(
                 finish_reason?: unknown;
                 error?: unknown;
             };
+            // Filtered completions with valid usage remain billable. Without
+            // usage, preserve the rejection rather than report missing usage.
+            if (!hasUsage && finish.finish_reason === "content_filter") {
+                return { status: CONTENT_POLICY_STATUS };
+            }
             if (finish.finish_reason !== "error") continue;
             return {
                 status: isContentPolicyViolation(JSON.stringify(finish.error))
@@ -940,7 +969,7 @@ function finishReasonError(
 
 function stringifyErrorOutput(output: unknown): string {
     try {
-        return JSON.stringify(output).slice(0, 16_000);
+        return JSON.stringify(summarizeStreamForLog(output)).slice(0, 16_000);
     } catch (error) {
         return JSON.stringify({
             error: "error_output_json_stringify_failed",
@@ -1007,19 +1036,30 @@ function getContentTypeGuard(
     return null;
 }
 
+const STREAM_DONE = Symbol("stream-done");
+
 async function* extractResponseStream(
     response: Response,
 ): AsyncGenerator<unknown> {
     if (!response.body) return;
 
     const textDecoder = new TextDecoderStream();
+    // The parser only dispatches on a blank line; some providers close after
+    // a single newline, so terminate the last event ourselves.
+    const closeLastEvent = new TransformStream<string, string>({
+        flush: (controller) => controller.enqueue("\n\n"),
+    });
     const sseParser = new EventSourceParserStream();
     const eventStream = response.body
         .pipeThrough(textDecoder)
+        .pipeThrough(closeLastEvent)
         .pipeThrough(sseParser);
 
     for await (const event of asyncIteratorStream(eventStream)) {
-        if (event.data === "[DONE]") return;
+        if (event.data === "[DONE]") {
+            yield STREAM_DONE;
+            return;
+        }
 
         let data: unknown;
         try {
@@ -1185,6 +1225,7 @@ function createTrackingEvent({
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
+        communityEndpointType: requestTracking.communityEndpointType,
         modelProviderUsed:
             responseTracking.modelProviderUsed ?? requestTracking.modelProvider,
         costVariant: responseTracking.costVariant,
@@ -1215,6 +1256,17 @@ function createTrackingEvent({
         ...responseTracking.contentFilterResults,
         ...errorTracking,
     };
+}
+
+/** Pricing inputs the caller states in the validated request body. */
+function requestedPricingInput(request: HonoRequest): PricingInput | undefined {
+    const body = request.valid("json" as never) as
+        | { web_search_options?: { search_context_size?: unknown } }
+        | undefined;
+    const size = body?.web_search_options?.search_context_size;
+    return size === "low" || size === "medium" || size === "high"
+        ? { searchContextSize: size }
+        : undefined;
 }
 
 async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
@@ -1359,9 +1411,16 @@ async function extractUsageAndContentFilterResultsStream(
     let hasExplicitCacheHit = false;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
+    // Every chunk is kept: billing rules scan them all (Gemini grounding
+    // metadata can sit on any chunk); only the error log is trimmed.
     const streamEvents: unknown[] = [];
+    let doneSeen = false;
 
     for await (const event of events) {
+        if (event === STREAM_DONE) {
+            doneSeen = true;
+            continue;
+        }
         const parseResult = EventSchema.safeParse(event);
         // Optional choice/filter metadata must not invalidate genuine usage.
         const usageResult = EventSchema.shape.usage.safeParse(
@@ -1417,16 +1476,13 @@ async function extractUsageAndContentFilterResultsStream(
     // community endpoint that name is its upstream's, and after a rescue it
     // belongs to a different owner's model than the one that served.
     const servedModel = servedModelId || model;
+    const output =
+        streamEvents.length > 0 ? { streamEvents, doneSeen } : undefined;
     if (!servedModel || !usage) {
         log.error("No usage object found in event stream");
-        return {
-            modelUsage: null,
-            output: streamEvents.length > 0 ? { streamEvents } : undefined,
-            contentFilterResults,
-        };
+        return { modelUsage: null, output, contentFilterResults };
     }
 
-    const output = streamEvents.length > 0 ? { streamEvents } : undefined;
     return {
         modelUsage: {
             model: servedModel,
@@ -1555,6 +1611,7 @@ export function collectErrorData(status: number, error?: Error): ErrorData {
         source = error.requestUrl?.hostname;
         explicitCode = error.errorCode;
     }
+    if (error instanceof PaymentRequiredError) explicitCode = error.errorCode;
     // Note: errorStack and errorDetails removed to reduce D1 memory usage
     // Stack traces and details are still logged but not stored in the database
     return {

@@ -190,6 +190,7 @@ export type ModelDefinition = {
     // User-facing metadata
     title: string; // Human display name, e.g. "FLUX.1 Kontext"
     brandUrl?: string;
+    brandIconUrl?: string;
     // Backward compatibility: public descriptions currently include the title
     // prefix ("Title - description"). Prefer `title` for display names.
     description?: string;
@@ -198,11 +199,10 @@ export type ModelDefinition = {
     tools?: boolean;
     /** Internal route limitation: false when forced/named tool selection fails. */
     supportsForcedToolChoice?: boolean;
+    /** Controls honored by this model through `/v1/chat/completions`. */
+    supportedParameters?: string[];
     reasoning?: boolean;
     search?: boolean;
-    // Supported Perplexity search-context sizes; first entry is the default.
-    // A single entry is fixed and ignores request overrides.
-    searchContextSizes?: ("low" | "high")[];
     codeExecution?: boolean;
     contextLength?: number;
     voices?: string[];

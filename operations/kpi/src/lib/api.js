@@ -9,6 +9,7 @@ async function getRows(path) {
 }
 
 export const registrations = () => getRows("/kpi/registrations");
+export const dailyRegistrations = () => getRows("/kpi/registrations/daily");
 export const activations = () => getRows("/kpi/activations");
 export const revenue = (weeks) => getRows(`/kpi/revenue?weeks_back=${weeks}`);
 export const dailyRevenue = () => getRows("/kpi/revenue/daily");

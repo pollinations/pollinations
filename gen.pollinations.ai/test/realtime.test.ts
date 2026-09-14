@@ -662,6 +662,7 @@ test("serves GPT Live Transcribe through Azure and bills streamed duration", asy
     expect(balances?.tierBalance).toBeCloseTo(1 - expectedPrice, 8);
     expect(balances?.packBalance).toBe(0);
     expect(telemetry.resolvedModelRequested).toBe("openai/gpt-live-transcribe");
+    expect(telemetry.modelUsed).toBe("openai/gpt-live-transcribe");
     expect(telemetry.modelProviderUsed).toBe("azure");
     expect(telemetry.tokenCountPromptAudioSeconds).toBe(60);
     expect(telemetry.totalCost).toBeCloseTo(expectedCost, 12);

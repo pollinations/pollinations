@@ -750,9 +750,15 @@ test("Perplexity request search fees are added by declarative billing rules", ()
     };
     const cases = [
         ["perplexity/sonar", 2.005, undefined],
+        ["perplexity/sonar", 2.008, { searchContextSize: "medium" as const }],
         ["perplexity/sonar", 2.012, { searchContextSize: "high" as const }],
-        ["perplexity/sonar-pro", 18.014, undefined],
-        ["perplexity/sonar-reasoning-pro", 10.014, undefined],
+        ["perplexity/sonar-pro", 18.006, undefined],
+        [
+            "perplexity/sonar-pro",
+            18.014,
+            { searchContextSize: "high" as const },
+        ],
+        ["perplexity/sonar-reasoning-pro", 10.006, undefined],
     ] as const;
 
     for (const [model, total, input] of cases) {
@@ -883,57 +889,46 @@ test("dedicated Vertex Gemini Search detects streamed grounding", () => {
 // display-safe price metadata asserted below.
 test("Perplexity billing keeps executable rules private", () => {
     const perplexityFees = [
-        [
-            "perplexity/sonar-pro",
-            "perplexity.sonar_pro_high.search_request.v1",
-            14 / 1000,
-        ],
-        [
-            "perplexity/sonar-reasoning-pro",
-            "perplexity.sonar_reasoning_high.search_request.v1",
-            14 / 1000,
-        ],
+        ["perplexity/sonar", "sonar", [5, 8, 12]],
+        ["perplexity/sonar-pro", "sonar_pro", [6, 10, 14]],
+        ["perplexity/sonar-reasoning-pro", "sonar_reasoning", [6, 10, 14]],
     ] as const;
-
-    expect(
-        getRegistryModelDefinition("perplexity/sonar").billing?.adjustments,
-    ).toMatchObject([
-        {
-            id: "perplexity.sonar_low.search_request.v1",
-            unitCost: 5 / 1000,
-        },
-        {
-            id: "perplexity.sonar_high.search_request.v1",
-            unitCost: 12 / 1000,
-        },
-    ]);
-    const sonarRules =
-        getRegistryModelDefinition("perplexity/sonar").billing?.adjustments;
-    expect(sonarRules?.[0]?.countUnits({}, { searchContextSize: "low" })).toBe(
-        1,
-    );
-    expect(sonarRules?.[1]?.countUnits({}, { searchContextSize: "low" })).toBe(
-        0,
-    );
-    expect(sonarRules?.[0]?.countUnits({}, { searchContextSize: "high" })).toBe(
-        0,
-    );
-    expect(sonarRules?.[1]?.countUnits({}, { searchContextSize: "high" })).toBe(
-        1,
-    );
-
-    for (const [model, ruleId, unitCost] of perplexityFees) {
-        const adjustment = getRegistryModelDefinition(model as ModelName)
-            .billing?.adjustments?.[0];
-        expect(adjustment).toMatchObject({
-            id: ruleId,
-            kind: "search_request",
-            unit: "request",
-            unitCost,
-        });
-        // Request fee applies to every request, independent of output content.
-        expect(adjustment?.countUnits({})).toBe(1);
+    for (const [model, family, fees] of perplexityFees) {
+        expect(
+            getRegistryModelDefinition(model as ModelName).billing?.adjustments,
+        ).toMatchObject(
+            ["low", "medium", "high"].map((size, index) => ({
+                id: `perplexity.${family}_${size}.search_request.v1`,
+                kind: "search_request",
+                unit: "request",
+                unitCost: fees[index] / 1000,
+            })),
+        );
     }
+
+    // Exactly one tier bills per request: the one the response reports, else
+    // the one the caller asked for, else Perplexity's default (low).
+    const [low, medium, high] =
+        getRegistryModelDefinition("perplexity/sonar").billing?.adjustments ??
+        [];
+    const units = (output: unknown, input?: { searchContextSize: "high" }) =>
+        [low, medium, high].map((rule) => rule?.countUnits(output, input));
+    expect(units({})).toEqual([1, 0, 0]);
+    expect(units({}, { searchContextSize: "high" })).toEqual([0, 0, 1]);
+    expect(units({ usage: { search_context_size: "medium" } })).toEqual([
+        0, 1, 0,
+    ]);
+    expect(
+        units(
+            { usage: { search_context_size: "low" } },
+            { searchContextSize: "high" },
+        ),
+    ).toEqual([1, 0, 0]);
+    expect(
+        units({
+            streamEvents: [{ usage: { search_context_size: "high" } }, {}],
+        }),
+    ).toEqual([0, 0, 1]);
 
     // Public catalog exposes display-safe pricing, never executable billing.
     for (const model of getTextModelsInfo()) {

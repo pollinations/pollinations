@@ -1,6 +1,7 @@
+import type { AgentOutputItem } from "@shared/agents/output.ts";
+import { functionOutputText } from "@shared/schemas/response-function-items.ts";
 import OpenAI from "openai";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AgentOutputItem } from "../../../src/text/agents/output.ts";
 import {
     handlePromptAgentResponsesRequest,
     PromptAgentResponsesRequestSchema,
@@ -252,9 +253,14 @@ describe("prompt-agent runtime", () => {
             type: "function_call_output",
             call_id: "c1",
             status: "completed",
-            output: JSON.stringify({
-                content: [{ type: "text", text: "found" }],
-            }),
+            output: [
+                {
+                    type: "input_text",
+                    text: JSON.stringify({
+                        content: [{ type: "text", text: "found" }],
+                    }),
+                },
+            ],
         });
         expect(chatOutputText(json)).toBe(
             "checking \n\n" +
@@ -304,6 +310,189 @@ describe("prompt-agent runtime", () => {
         for (const request of mcpRequests) {
             expect(request.headers.get("Authorization")).toBe(
                 `Bearer ${BASE_RUNTIME.apiKey}`,
+            );
+        }
+    });
+
+    it.each([
+        { stream: false, fail: false },
+        { stream: true, fail: false },
+        { stream: true, fail: true },
+    ])("preserves the step limit and session cleanup: $stream/$fail", async ({
+        stream,
+        fail,
+    }) => {
+        let modelCalls = 0;
+        let toolCalls = 0;
+        const closedSessions: (string | null)[] = [];
+        vi.stubGlobal(
+            "fetch",
+            async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (request.url === EXA_MCP_PROXY_URL) {
+                    if (request.method === "GET")
+                        return new Response(null, { status: 405 });
+                    if (request.method === "DELETE") {
+                        closedSessions.push(
+                            request.headers.get("Mcp-Session-Id"),
+                        );
+                        return new Response(null, { status: 200 });
+                    }
+                    const body = (await request.json()) as {
+                        id?: number;
+                        method: string;
+                    };
+                    if (body.method === "initialize") {
+                        return Response.json(
+                            {
+                                jsonrpc: "2.0",
+                                id: body.id,
+                                result: {
+                                    protocolVersion: "2025-06-18",
+                                    capabilities: { tools: {} },
+                                    serverInfo: {
+                                        name: "test-mcp",
+                                        version: "1.0.0",
+                                    },
+                                },
+                            },
+                            { headers: { "Mcp-Session-Id": "loop-session" } },
+                        );
+                    }
+                    if (body.method === "notifications/initialized")
+                        return new Response(null, { status: 202 });
+                    if (body.method === "tools/list")
+                        return Response.json({
+                            jsonrpc: "2.0",
+                            id: body.id,
+                            result: {
+                                tools: [
+                                    {
+                                        name: "echo",
+                                        inputSchema: { type: "object" },
+                                    },
+                                ],
+                            },
+                        });
+                    expect(body.method).toBe("tools/call");
+                    toolCalls++;
+                    return Response.json({
+                        jsonrpc: "2.0",
+                        id: body.id,
+                        result: { content: [{ type: "text", text: "ok" }] },
+                    });
+                }
+                modelCalls++;
+                if (fail && modelCalls === 2) {
+                    return new Response(
+                        new ReadableStream({
+                            start(controller) {
+                                controller.error(new Error("Upstream failed"));
+                            },
+                        }),
+                        {
+                            headers: { "content-type": "text/event-stream" },
+                        },
+                    );
+                }
+                const message = {
+                    role: "assistant",
+                    content: null,
+                    tool_calls: [
+                        {
+                            index: 0,
+                            id: `call-${modelCalls}`,
+                            type: "function",
+                            function: {
+                                name: "mcp__exa__echo",
+                                arguments: "{}",
+                            },
+                        },
+                    ],
+                };
+                const usage = {
+                    prompt_tokens: 1,
+                    completion_tokens: 1,
+                    total_tokens: 2,
+                };
+                if (!stream)
+                    return Response.json({
+                        choices: [
+                            { index: 0, message, finish_reason: "tool_calls" },
+                        ],
+                        usage,
+                    });
+                return new Response(
+                    `${[
+                        {
+                            choices: [
+                                {
+                                    index: 0,
+                                    delta: message,
+                                    finish_reason: null,
+                                },
+                            ],
+                        },
+                        {
+                            choices: [
+                                {
+                                    index: 0,
+                                    delta: {},
+                                    finish_reason: "tool_calls",
+                                },
+                            ],
+                            usage,
+                        },
+                    ]
+                        .map((chunk) => `data: ${JSON.stringify(chunk)}\n\n`)
+                        .join("")}data: [DONE]\n\n`,
+                    {
+                        headers: { "content-type": "text/event-stream" },
+                    },
+                );
+            },
+        );
+        const response = await runAgent(
+            {
+                messages: [{ role: "user", content: "Keep using tools" }],
+                stream,
+            },
+            {
+                ...BASE_RUNTIME,
+                config: { ...BASE_RUNTIME.config, mcpServers: ["exa"] },
+            },
+        );
+        expect(response.status).toBe(200);
+        const body = stream
+            ? responseStreamEvents(await response.text()).find(
+                  (event) =>
+                      event.type ===
+                      (fail ? "response.failed" : "response.incomplete"),
+              )?.response
+            : await response.json();
+        expect(closedSessions).toEqual(["loop-session"]);
+        if (fail) {
+            expect(modelCalls).toBe(2);
+            expect(toolCalls).toBe(1);
+            expect(body).toMatchObject({
+                status: "failed",
+                error: { message: "Upstream failed" },
+            });
+        } else {
+            expect(modelCalls).toBe(24);
+            expect(toolCalls).toBe(24);
+            expect(body).toMatchObject({
+                status: "incomplete",
+                incomplete_details: { reason: "max_output_tokens" },
+                usage: {
+                    input_tokens: 24,
+                    output_tokens: 24,
+                    total_tokens: 48,
+                    tool_call_counts: { mcp_call: 24 },
+                },
+            });
+            expect(responseOutputText(body)).toBe(
+                "\n\nThe agent reached its maximum number of tool-use steps without a final answer.",
             );
         }
     });
@@ -370,7 +559,7 @@ describe("prompt-agent runtime", () => {
                                     role: "assistant",
                                     content: "",
                                     tool_calls: Array.from(
-                                        { length: 17 },
+                                        { length: 49 },
                                         (_, index) => ({
                                             id: `call-${index}`,
                                             type: "function",
@@ -418,8 +607,8 @@ describe("prompt-agent runtime", () => {
             usage: { tool_call_counts: { mcp_call: number } };
         };
         expect(response.status).toBe(200);
-        expect(mcpToolCalls).toBe(16);
-        expect(body.usage.tool_call_counts.mcp_call).toBe(16);
+        expect(mcpToolCalls).toBe(48);
+        expect(body.usage.tool_call_counts.mcp_call).toBe(48);
     });
 
     it.each([
@@ -972,7 +1161,7 @@ describe("prompt-agent runtime", () => {
             });
             expect(events[5]).toMatchObject({
                 output_index: 1,
-                item: { ...output[1], output: "", status: "in_progress" },
+                item: { ...output[1], output: [], status: "in_progress" },
             });
             const chunks = responseStreamEvents(
                 await new Response(chatStream).text(),
@@ -1008,23 +1197,28 @@ describe("prompt-agent runtime", () => {
                     id: expect.stringMatching(/^fco_/),
                     call_id: "c1",
                     status: "completed",
-                    output: JSON.stringify({
-                        content: [
-                            {
-                                type: "text",
-                                text: "[image output omitted; use an HTTPS resource link]",
-                            },
-                            {
-                                type: "resource_link",
-                                uri: "https://images.example/pirate.png",
-                                name: "Generated image",
-                            },
-                            {
-                                type: "text",
-                                text: '{"data":[{"url":"https://images.example/pirate.png"}]}',
-                            },
-                        ],
-                    }),
+                    output: [
+                        {
+                            type: "input_text",
+                            text: JSON.stringify({
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: "[image output omitted; use an HTTPS resource link]",
+                                    },
+                                    {
+                                        type: "resource_link",
+                                        uri: "https://images.example/pirate.png",
+                                        name: "Generated image",
+                                    },
+                                    {
+                                        type: "text",
+                                        text: '{"data":[{"url":"https://images.example/pirate.png"}]}',
+                                    },
+                                ],
+                            }),
+                        },
+                    ],
                 },
                 {
                     type: "message",
@@ -1666,7 +1860,7 @@ describe("prompt-agent runtime", () => {
             id: expect.stringMatching(/^fco_/),
             call_id: "c1",
             status: "completed",
-            output: expect.any(String),
+            output: [{ type: "input_text", text: expect.any(String) }],
         };
         expect(json).toMatchObject({
             status: "completed",
@@ -1687,7 +1881,7 @@ describe("prompt-agent runtime", () => {
         if (toolResult.type !== "function_call_output") {
             throw new Error("Missing completed tool result");
         }
-        expect(JSON.parse(toolResult.output)).toEqual({
+        expect(JSON.parse(functionOutputText(toolResult.output))).toEqual({
             isError: true,
             content: [
                 { type: "text", text: expect.stringContaining(failureMessage) },

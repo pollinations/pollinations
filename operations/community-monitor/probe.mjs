@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
-import { parseChatStream } from "./chat-stream.mjs";
+import {
+    hasChatProbeMarker,
+    parseChatStream,
+    probeErrorDetails,
+} from "./chat-stream.mjs";
 import {
     imageProbeRequest,
     imageProbeResult,
@@ -37,10 +41,13 @@ const EST_PROMPT_TOKENS = 20;
 const EST_COMPLETION_TOKENS = 8;
 const EST_IMAGE_OUTPUT_TOKENS = 1120;
 
+// Keep the persisted image cadence key stable across the catalog rename.
+const stateModelId = (id) => id.replace(/^community\//, "");
+
 const modelArgIndex = process.argv.indexOf("--model");
-const onlyModel = modelArgIndex === -1 ? null : process.argv[modelArgIndex + 1];
+let onlyModel = modelArgIndex === -1 ? null : process.argv[modelArgIndex + 1];
 if (modelArgIndex !== -1 && !onlyModel) {
-    console.error("--model requires an owner/model id");
+    console.error("--model requires a community/owner/model id");
     process.exit(1);
 }
 const categoryArgIndex = process.argv.indexOf("--category");
@@ -175,17 +182,6 @@ function imageBillingSanityFlags(usage) {
     return flags;
 }
 
-function finalCompletionContent(content) {
-    if (typeof content !== "string") return "";
-    const withoutReasoning = content
-        .replace(/<thought>[\s\S]*?<\/thought>/gi, "")
-        .replace(/<think>[\s\S]*?<\/think>/gi, "");
-    // An unclosed reasoning wrapper means the response ended before its final
-    // answer. Do not accept a copy of the marker from inside that reasoning.
-    if (/<(?:thought|think)>/i.test(withoutReasoning)) return "";
-    return withoutReasoning.trim();
-}
-
 async function probeText(model) {
     const started = Date.now();
     const requestPath = "/v1/chat/completions";
@@ -216,11 +212,27 @@ async function probeText(model) {
         let usage;
         let content;
         let protocolError;
+        let errorCode;
+        let errorMessage;
+        let upstreamStatus;
         if (res.ok) {
-            ({ usage, content, protocolError } = parseChatStream(body));
+            ({
+                usage,
+                content,
+                protocolError,
+                errorCode,
+                errorMessage,
+                upstreamStatus,
+            } = parseChatStream(body));
+        } else {
+            try {
+                ({ errorCode, errorMessage, upstreamStatus } =
+                    probeErrorDetails(JSON.parse(body)?.error));
+            } catch {
+                // Do not persist raw non-JSON error bodies.
+            }
         }
-        const finalContent = finalCompletionContent(content);
-        const hasProbeMarker = finalContent.includes(marker);
+        const hasProbeMarker = hasChatProbeMarker(content, marker);
         const contentPreview =
             typeof content === "string" && content.trim()
                 ? JSON.stringify(content.trim().slice(0, 200))
@@ -246,13 +258,17 @@ async function probeText(model) {
             usage,
             probeMarker: marker,
             protocolError,
+            errorCode,
+            errorMessage,
+            upstreamStatus,
             detail: res.ok
                 ? protocolError
-                    ? protocolError
+                    ? (errorMessage ?? protocolError)
                     : hasProbeMarker
                       ? undefined
                       : `successful response did not contain the probe marker in its final completion; received ${contentPreview}`
-                : body.slice(0, 300),
+                : (errorMessage ??
+                  `text request failed with HTTP ${res.status}`),
         };
         if (res.ok && !protocolError) {
             result.billingFlags = billingSanityFlags(usage, content);
@@ -334,7 +350,9 @@ function probe(model) {
                   ? (onlyOperation ?? "generate")
                   : nextImageOperation(
                         model,
-                        state.spend?.lastImageProbeOperation?.[model.name],
+                        state.spend?.lastImageProbeOperation?.[
+                            stateModelId(model.name)
+                        ],
                     ),
           )
         : probeText(model);
@@ -363,7 +381,10 @@ function actualCost(result, priceByModel) {
 }
 
 const models = await fetchCommunityModels();
-const listedTarget = models.find((model) => model.name === onlyModel);
+const listedTarget = models.find(
+    (model) => model.name === onlyModel || model.aliases?.includes(onlyModel),
+);
+if (listedTarget) onlyModel = listedTarget.name;
 if (
     onlyOperation &&
     ((listedTarget?.category ?? onlyCategory) !== "image" ||
@@ -408,7 +429,9 @@ const state = readState();
 const now = Date.now();
 const lastImageProbeAt = state.spend?.lastImageProbeAt ?? {};
 const imageProbeDue = (model) => {
-    const previous = Date.parse(lastImageProbeAt[model.name] ?? "");
+    const previous = Date.parse(
+        lastImageProbeAt[stateModelId(model.name)] ?? "",
+    );
     return (
         !Number.isFinite(previous) || now - previous >= IMAGE_PROBE_INTERVAL_MS
     );
@@ -470,7 +493,10 @@ const nextState = {
             ...Object.fromEntries(
                 results
                     .filter((result) => result.category === "image")
-                    .map((result) => [result.model, result.operation]),
+                    .map((result) => [
+                        stateModelId(result.model),
+                        result.operation,
+                    ]),
             ),
         },
         lastImageProbeAt: {
@@ -478,7 +504,10 @@ const nextState = {
             ...Object.fromEntries(
                 modelsToProbe
                     .filter((model) => model.category === "image")
-                    .map((model) => [model.name, new Date(now).toISOString()]),
+                    .map((model) => [
+                        stateModelId(model.name),
+                        new Date(now).toISOString(),
+                    ]),
             ),
         },
     },

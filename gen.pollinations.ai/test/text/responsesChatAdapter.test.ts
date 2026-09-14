@@ -605,6 +605,53 @@ describe("Chat Completions over Responses", () => {
     it.each([
         false,
         true,
+    ])("preserves generic tool JSON containing content without MCP media rendering (stream=%s)", async (stream) => {
+        const result = {
+            answer: 42,
+            content: [
+                { type: "application-record", value: "<keep this>" },
+                {
+                    type: "resource_link",
+                    uri: "https://example.com/domain-image.png",
+                    name: "Domain data, not generated media",
+                    mimeType: "image/png",
+                },
+            ],
+        };
+        const completion = await hostedCompletion(
+            [
+                { ...hostedCall, name: "lookup" },
+                { ...hostedResult, output: JSON.stringify(result) },
+            ],
+            stream,
+        );
+        const events = stream ? await streamEvents(completion) : [completion];
+        const content = stream
+            ? events
+                  .map((event) => event.choices?.[0]?.delta?.content ?? "")
+                  .join("")
+            : completion.choices?.[0].message?.content;
+        if (typeof content !== "string")
+            throw new Error("Expected text output");
+        expect(content).toContain("&quot;answer&quot;:42");
+        expect(content).toContain("&quot;application-record&quot;");
+        expect(content).toContain("&lt;keep this&gt;");
+        expect(content).toContain("Domain data, not generated media");
+        expect(content).not.toContain("![Generated image]");
+        expect(content).not.toContain("output omitted");
+        expect(content?.split("<details")).toHaveLength(2);
+        expect(
+            events.some(
+                (event) =>
+                    event.choices?.[0]?.delta?.tool_calls ??
+                    event.choices?.[0]?.message?.tool_calls,
+            ),
+        ).toBe(false);
+    });
+
+    it.each([
+        false,
+        true,
     ])("keeps generic hosted errors separate from pending client functions (stream=%s)", async (stream) => {
         const completion = await hostedCompletion(
             [

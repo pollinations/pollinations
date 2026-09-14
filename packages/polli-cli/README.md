@@ -98,12 +98,12 @@ polli agents list            # managed prompt agents
 polli my-models list         # invite-only community text, image, and transcription models
 ```
 
-Manage agents with API-shaped JSON config files plus their callable model name
-and catalog title:
+Manage agents with API-shaped JSON config files:
 
 ```bash
 polli agents get <id>
 polli agents create --config agent.json --name my-agent --title "My Agent"
+polli agents create --config code-agent.json
 polli agents update <id> --config agent.json
 polli agents delete <id>
 ```
@@ -131,8 +131,8 @@ restores the backup.
 ```bash
 polli harness --help              # supported harnesses
 polli harness bloom on            # creates a dedicated key for Bloom CLI
-polli harness dsh on              # DeepSeek Harness → Pollinations (default model: deepseek)
-polli harness dsh on --model kimi
+polli harness dsh on              # DeepSeek Harness → Pollinations
+polli harness dsh on --model moonshotai/kimi-k2.6
 polli harness dsh on --no-mcp     # skip MCP tool configuration
 polli harness opencode on         # enables the Pollinations OpenCode plugin + default model
 polli harness openclaw on         # adds the Pollinations provider + Polli skill to OpenClaw

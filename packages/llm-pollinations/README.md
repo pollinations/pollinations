@@ -46,9 +46,9 @@ print(model.prompt("Hello from Python").text())
 
 The plugin delegates prompting, streaming, conversations, attachments, and
 tools to LLM's `Chat` and `AsyncChat` classes. Vision, tools, and reasoning are
-enabled only when advertised by `/v1/models`. Catalog results are cached per
-key for 15 minutes. Temporary network and server failures use the last cache;
-authentication errors do not.
+enabled only when advertised by `/v1/models`. Model registration fetches the
+authenticated catalog without a local cache. If discovery fails, no Pollinations
+models are registered; other LLM providers remain available.
 
 ## Develop and publish
 

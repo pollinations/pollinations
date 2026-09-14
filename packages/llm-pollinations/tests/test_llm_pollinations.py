@@ -1,7 +1,3 @@
-import json
-import os
-import time
-
 import httpx
 import llm
 import pytest
@@ -35,63 +31,44 @@ def test_reuses_llm_openai_compatible_models():
     assert plugin.PollinationsChat.key_env_var == "POLLINATIONS_API_KEY"
 
 
-def test_catalog_is_authenticated_cached_and_key_scoped(tmp_path, monkeypatch):
-    monkeypatch.setattr(plugin.llm, "user_dir", lambda: tmp_path)
+def test_catalog_is_authenticated_and_fetched_each_time(monkeypatch):
     calls = []
 
     def get(url, **kwargs):
         calls.append((url, kwargs))
-        return response(200, {"data": [model()]})
+        return response(200, {"data": [model(str(len(calls)))]})
 
     monkeypatch.setattr(plugin.httpx, "get", get)
-    assert plugin.fetch_models("sk_one") == [model()]
-    assert plugin.fetch_models("sk_one") == [model()]
-    assert len(calls) == 1
+    assert plugin.fetch_models("sk_one") == [model("1")]
+    assert plugin.fetch_models("sk_one") == [model("2")]
+    assert len(calls) == 2
+    assert all(url == plugin.MODELS_URL for url, _ in calls)
     assert calls[0][1]["headers"] == {"Authorization": "Bearer sk_one"}
-    assert plugin._cache_path("sk_one") != plugin._cache_path("sk_two")
-    assert "sk_one" not in plugin._cache_path("sk_one").name
 
 
-def test_corrupt_cache_is_refetched(tmp_path, monkeypatch):
-    monkeypatch.setattr(plugin.llm, "user_dir", lambda: tmp_path)
-    path = plugin._cache_path("sk_test")
-    path.write_text("{", encoding="utf-8")
+@pytest.mark.parametrize("payload", [{"data": None}, []])
+def test_catalog_requires_model_list(monkeypatch, payload):
     monkeypatch.setattr(
-        plugin.httpx, "get", lambda *args, **kwargs: response(200, {"data": [model()]})
+        plugin.httpx, "get", lambda *args, **kwargs: response(200, payload)
     )
-    assert plugin.fetch_models("sk_test") == [model()]
-    assert json.loads(path.read_text()) == [model()]
+    with pytest.raises(ValueError, match="Unexpected Pollinations model catalog"):
+        plugin.fetch_models("sk_test")
 
 
-@pytest.mark.parametrize("failure", [httpx.ConnectError("offline"), 503])
-def test_stale_cache_fallback_for_temporary_failures(tmp_path, monkeypatch, failure):
-    monkeypatch.setattr(plugin.llm, "user_dir", lambda: tmp_path)
-    path = plugin._cache_path("sk_test")
-    path.write_text(json.dumps([model("cached")]), encoding="utf-8")
-    old = time.time() - plugin.CACHE_SECONDS - 1
-    os.utime(path, (old, old))
-
+@pytest.mark.parametrize("failure", [httpx.ConnectError("offline"), 401, 503])
+def test_catalog_failure_does_not_break_plugin_registration(monkeypatch, failure):
     def fail(*args, **kwargs):
         if isinstance(failure, int):
             return response(failure, {"error": "temporary"})
         raise failure
 
     monkeypatch.setattr(plugin.httpx, "get", fail)
-    assert plugin.fetch_models("sk_test") == [model("cached")]
-
-
-def test_authentication_failure_does_not_use_stale_cache(tmp_path, monkeypatch):
-    monkeypatch.setattr(plugin.llm, "user_dir", lambda: tmp_path)
-    path = plugin._cache_path("sk_test")
-    path.write_text(json.dumps([model("cached")]), encoding="utf-8")
-    os.utime(path, (0, 0))
-    monkeypatch.setattr(
-        plugin.httpx,
-        "get",
-        lambda *args, **kwargs: response(401, {"error": "invalid key"}),
-    )
-    with pytest.raises(httpx.HTTPStatusError):
+    with pytest.raises(httpx.HTTPError):
         plugin.fetch_models("sk_test")
+    monkeypatch.setattr(plugin.llm, "get_key", lambda *args: "sk_test")
+    registered = []
+    plugin.register_models(lambda *items: registered.extend(items))
+    assert registered == []
 
 
 def test_registration_isolates_bad_records_and_maps_capabilities(monkeypatch):

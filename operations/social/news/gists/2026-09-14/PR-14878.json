@@ -1,0 +1,34 @@
+{
+  "pr_number": 14878,
+  "title": "fix: restore Observability Grafana startup and health checks",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14878",
+  "merged_at": "2026-09-14T19:10:28Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fixes Observability returning `Internal Server Error` after successful login: Grafana redirects the default container startup probe to public HTTPS, which the private container transport rejects.\n- Probes `/grafana/api/health`, uses the same endpoint for scheduled checks, reports Grafana's actual health, and leaves proxy redirects for the browser to follow.\n- Fixes deployment verification skipping the final URL without a trailing newline; adds real HTTP regression tests to the Applications workflow.\n- Validation: 28 auth tests, 5 deployment tests, Biome, frontend/Worker build, Docker image and deployment dry run pass. Real Grafana reproduces the old redirect and returns 200 at the new probe. Authenticated iframe renders through the local gateway; production data and Cloudflare container rollout still need live verification (local container emulation failed internally).\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Grafana Finds Its Way Home",
+    "blurb": "The observability garden’s signposts now point Grafana health checks to its local door, while browsers can still take the scenic HTTPS route. The dashboard stops getting lost after login.",
+    "summary": "Restored Grafana startup and post-login access by probing `/grafana/api/health` over the private container transport, while retaining browser-facing proxy redirects and adding HTTP deployment regressions.",
+    "impact": "Operators can again use the authenticated Grafana iframe and receive Grafana’s real health status, with deployment verification correctly checking the final URL even when its input lacks a trailing newline.",
+    "keywords": [
+      "observability",
+      "grafana",
+      "health-checks",
+      "deployment",
+      "proxy",
+      "regression-tests"
+    ],
+    "visual_concept": "Polli, wearing a tiny operator headset, guides a cheerful CRT-monitor robot through a cozy garden shed observability station. A lime-green health-check path leads directly to a small Grafana dashboard door, while a separate winding HTTPS path is clearly reserved for browser visitors; little code-plants and healthy status flowers show the repaired routing.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing a tiny operator headset as she guides a cheerful CRT-monitor robot toward a glowing `/grafana/api/health` sign beside a healthy dashboard door; lime green (#ecf874) health-check vines and code-flowers grow around a warm garden-shed server nook, with a separate browser path gently curving toward HTTPS. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, pixel-font text: \"HEALTHY\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-14/PR-14878.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing a tiny operator headset as she guides a cheerful CRT-monitor robot toward a glowing `/grafana/api/health` sign beside a healthy dashboard door; lime green (#ecf874) health-check vines and code-flowers grow around a warm garden-shed server nook, with a separate browser path gently curving toward HTTPS. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, pixel-font text: \"HEALTHY\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-14T19:11:32.634972+00:00"
+}

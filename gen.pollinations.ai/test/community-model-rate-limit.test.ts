@@ -35,7 +35,7 @@ describe("model rate limiting", () => {
         for (const model of ["flare", "sunburst"] as const) {
             expect(
                 IMAGE_SERVICES[`openai/gpt-image-2.5-${model}`].perUserRpm,
-            ).toBe(6);
+            ).toBe(12);
             expect(
                 IMAGE_SERVICES[`openai/gpt-image-2.5-${model}:openai`]
                     .perUserRpm,

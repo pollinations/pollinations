@@ -21,7 +21,6 @@ import {
     ChatMessage,
     ChatMessageActions,
     ChatMessageContent,
-    ChatMessageHeader,
     ChatPromptInput,
     ChatPromptInputFooter,
     ChatPromptTextarea,
@@ -293,7 +292,7 @@ function activeTool(message: PollinationsUIMessage): string | undefined {
         : activity.name;
 }
 
-function MessageCard({
+export function MessageCard({
     message,
     assistantName,
     isStreaming,
@@ -341,11 +340,10 @@ function MessageCard({
                 <ChatMessage
                     from={isUser ? "user" : "assistant"}
                     className="max-w-full"
+                    aria-label={
+                        isUser ? "Your message" : `${assistantName} message`
+                    }
                 >
-                    <ChatMessageHeader
-                        from={isUser ? "user" : "assistant"}
-                        label={isUser ? "You" : assistantName}
-                    />
                     <ChatMessageContent className="flex flex-col gap-3">
                         {contentParts.map((part, index) =>
                             part.type === "text" ? (
@@ -405,6 +403,7 @@ function MessageCard({
                             {copyText && (
                                 <CopyButton
                                     value={copyText}
+                                    tooltip={null}
                                     aria-label="Copy response"
                                     className="flex cursor-pointer items-center gap-1.5 rounded-full px-2 py-1 text-xs text-theme-text-soft hover:bg-theme-bg-hover hover:text-theme-text-strong"
                                 >
@@ -443,17 +442,19 @@ function AgentPicker({
     isLoading,
     disabled,
     onSelectAgent,
+    onClearChat,
 }: {
     agents: AgentChoice[];
     selectedAgentId: string | null;
     isLoading: boolean;
     disabled: boolean;
     onSelectAgent: (agentId: string) => void;
+    onClearChat?: () => void;
 }) {
     const selected = agents.find((agent) => agent.id === selectedAgentId);
 
     return (
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
             <Text as="span" size="sm" weight="bold" className="shrink-0">
                 Agent
             </Text>
@@ -500,6 +501,16 @@ function AgentPicker({
                     </ScrollArea>
                 )}
             </Dropdown>
+            {onClearChat && (
+                <button
+                    type="button"
+                    className="polli-control inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-transparent px-2 py-1 text-sm text-theme-text-muted hover:text-theme-text-strong"
+                    onClick={onClearChat}
+                >
+                    <TrashIcon className="h-4 w-4" />
+                    Clear chat
+                </button>
+            )}
         </div>
     );
 }
@@ -607,7 +618,7 @@ function RoutingPanel({
     return (
         <div
             id="play-chat-routing"
-            className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+            className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
         >
             {CHAT_ROUTING_CAPABILITIES.map((field) => (
                 <RoutingSelector
@@ -948,15 +959,29 @@ export function Chat({
                         isLoading={catalog.isLoading}
                         disabled={sending}
                         onSelectAgent={selectAgent}
+                        onClearChat={
+                            messages.some(
+                                (message) => !message.metadata?.localOnly,
+                            )
+                                ? () => {
+                                      uploadAbortRef.current?.abort();
+                                      void stop();
+                                      setMessages([
+                                          welcomeMessage(selectedAgent),
+                                      ]);
+                                      setDraft("");
+                                      setFiles([]);
+                                      setLocalError(null);
+                                      clearError();
+                                      composerRef.current?.focus();
+                                  }
+                                : undefined
+                        }
                     />
-                    <Text size="xs" tone="muted" className="mt-2">
-                        Agents may use external models and tools. Avoid
-                        sensitive data.
-                    </Text>
                 </div>
                 <ChatConversation
                     ref={transcriptRef}
-                    className="min-h-0 flex-1"
+                    className="play-chat-conversation min-h-0 flex-1"
                     viewportClassName="play-chat-transcript py-3"
                     aria-label="Conversation"
                     aria-busy={sending}
@@ -1049,41 +1074,46 @@ export function Chat({
                         }}
                         onDrop={onComposerDrop}
                     >
-                        <FileUpload
-                            value={files}
-                            onChange={handleFiles}
-                            onReject={(rejected) => {
-                                const problems = new Set(
-                                    rejected.map(({ file, reason }) => {
-                                        if (reason === "count")
-                                            return `You can attach up to ${MAX_ATTACHMENTS} files.`;
-                                        if (reason === "size")
-                                            return `${file.name} is larger than 20 MB.`;
-                                        return `${file.name} is not a supported file type.`;
-                                    }),
-                                );
-                                setLocalError([...problems].join(" "));
-                            }}
-                            maxFiles={MAX_ATTACHMENTS}
-                            maxSizeBytes={MAX_ATTACHMENT_BYTES}
-                            accept={attachmentAccept}
-                            variant="inline"
-                            disabled={!canAttach}
-                            className="px-3 pt-3"
-                            previewIcon={<ImageIcon className="h-5 w-5" />}
-                        />
-                        <ChatPromptTextarea
-                            aria-label="Message"
-                            ref={composerRef}
-                            value={draft}
-                            onChange={(event) => setDraft(event.target.value)}
-                            onKeyDown={onComposerKeyDown}
-                            onPaste={onComposerPaste}
-                            disabled={!isHydrated || sending}
-                            placeholder={`Message ${assistantName}…`}
-                            rows={3}
-                        />
-                        <ChatPromptInputFooter>
+                        <div className="play-chat-composer-field rounded-lg">
+                            <FileUpload
+                                value={files}
+                                onChange={handleFiles}
+                                onReject={(rejected) => {
+                                    const problems = new Set(
+                                        rejected.map(({ file, reason }) => {
+                                            if (reason === "count")
+                                                return `You can attach up to ${MAX_ATTACHMENTS} files.`;
+                                            if (reason === "size")
+                                                return `${file.name} is larger than 20 MB.`;
+                                            return `${file.name} is not a supported file type.`;
+                                        }),
+                                    );
+                                    setLocalError([...problems].join(" "));
+                                }}
+                                maxFiles={MAX_ATTACHMENTS}
+                                maxSizeBytes={MAX_ATTACHMENT_BYTES}
+                                accept={attachmentAccept}
+                                variant="inline"
+                                disabled={!canAttach}
+                                className="play-chat-attachments px-3 pt-4 pb-1"
+                                previewIcon={<ImageIcon className="h-5 w-5" />}
+                            />
+                            <ChatPromptTextarea
+                                className="play-chat-draft"
+                                aria-label="Message"
+                                ref={composerRef}
+                                value={draft}
+                                onChange={(event) =>
+                                    setDraft(event.target.value)
+                                }
+                                onKeyDown={onComposerKeyDown}
+                                onPaste={onComposerPaste}
+                                disabled={!isHydrated || sending}
+                                placeholder={`Message ${assistantName}…`}
+                                rows={3}
+                            />
+                        </div>
+                        <ChatPromptInputFooter className="pt-2">
                             {selectedAgent?.id === FLORET_MODEL_ID && (
                                 <TabButton
                                     type="button"
@@ -1124,7 +1154,7 @@ export function Chat({
                                     ref={fileInputRef}
                                     type="file"
                                     aria-describedby={
-                                        supportsAttachments
+                                        files.length > 0
                                             ? "play-chat-upload-privacy"
                                             : undefined
                                     }
@@ -1146,7 +1176,7 @@ export function Chat({
                                     intent="info"
                                     aria-label="Add media"
                                     aria-describedby={
-                                        supportsAttachments
+                                        files.length > 0
                                             ? "play-chat-upload-privacy"
                                             : undefined
                                     }
@@ -1170,31 +1200,6 @@ export function Chat({
                                 </Button>
                             </span>
                             <div className="ml-auto flex items-center gap-2">
-                                {messages.some(
-                                    (message) => !message.metadata?.localOnly,
-                                ) && (
-                                    <Button
-                                        intent="danger"
-                                        size="lg"
-                                        aria-label="New chat"
-                                        title="New chat"
-                                        className="h-12 w-12 shrink-0 p-0"
-                                        onClick={() => {
-                                            uploadAbortRef.current?.abort();
-                                            void stop();
-                                            setMessages([
-                                                welcomeMessage(selectedAgent),
-                                            ]);
-                                            setDraft("");
-                                            setFiles([]);
-                                            setLocalError(null);
-                                            clearError();
-                                            composerRef.current?.focus();
-                                        }}
-                                    >
-                                        <TrashIcon className="h-5 w-5" />
-                                    </Button>
-                                )}
                                 {sending ? (
                                     <Button
                                         intent="danger"
@@ -1243,12 +1248,15 @@ export function Chat({
                                 )}
                             </div>
                         </ChatPromptInputFooter>
-                        {supportsAttachments && (
-                            <UploadPrivacyNote
-                                id="play-chat-upload-privacy"
-                                className="px-3 pb-3"
-                            />
-                        )}
+                        <div className="space-y-1 pt-2">
+                            <Text size="xs" tone="muted">
+                                May use third-party models and tools. Don’t
+                                share sensitive information.
+                            </Text>
+                            {files.length > 0 && (
+                                <UploadPrivacyNote id="play-chat-upload-privacy" />
+                            )}
+                        </div>
                     </ChatPromptInput>
                 </form>
             </div>

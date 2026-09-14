@@ -5,6 +5,7 @@ import {
     Outlet,
     useRouterState,
 } from "@tanstack/react-router";
+import { useLayoutEffect, useRef } from "react";
 import { routeHead } from "../routeMeta";
 import { pageCardClassName } from "../ui/site/PageCard";
 import { SiteFooter } from "../ui/site/SiteFooter";
@@ -53,9 +54,28 @@ function NotFoundPage() {
  * children, never auth state, which is what keeps this site SDK-free.
  */
 function RootLayout() {
+    const mainRef = useRef<HTMLElement>(null);
+    const pathname = useRouterState({
+        select: (state) => (state.resolvedLocation ?? state.location).pathname,
+    });
+    const previousPath = useRef(pathname);
     const isPlay = useRouterState({
         select: (state) => state.location.pathname === "/play",
     });
+
+    useLayoutEffect(() => {
+        if (previousPath.current === pathname) return;
+        previousPath.current = pathname;
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+            return;
+
+        // Animate the existing surface, never remount the outlet or delay navigation.
+        const animation = mainRef.current?.animate(
+            [{ opacity: 0.65 }, { opacity: 1 }],
+            { duration: 180, easing: "ease-out" },
+        );
+        return () => animation?.cancel();
+    }, [pathname]);
 
     return (
         <div className="flex min-h-dvh flex-col bg-app-bg font-body text-theme-text-base">
@@ -63,6 +83,7 @@ function RootLayout() {
             <SiteHeader />
             <div className="site-shell mb-6 flex flex-1 flex-col pt-4 min-[700px]:pt-0">
                 <main
+                    ref={mainRef}
                     className={cn(
                         "flex flex-1 flex-col",
                         isPlay ? "gap-6" : pageCardClassName,

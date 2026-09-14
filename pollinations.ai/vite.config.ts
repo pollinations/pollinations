@@ -3,7 +3,7 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 
 // Brand SVGs resolve from source rather than dist, matching enter's frontend
 // so the two sites can't drift on the wordmark.
@@ -12,6 +12,14 @@ const uiBrand = fileURLToPath(
 );
 
 export default defineConfig({
+    test: {
+        server: {
+            deps: {
+                // Apply React deduplication to the linked UI's hook-based primitives.
+                inline: [/@ark-ui\/react/, /@zag-js\/react/],
+            },
+        },
+    },
     plugins: [
         // Must run before react() so the generated route tree exists.
         tanstackRouter({

@@ -307,7 +307,7 @@ export class PollinationsChatTransport
                         }
                         const lower = contentBuffer.toLowerCase();
                         const toolIndex = lower.indexOf("<details");
-                        const literalIndex = contentBuffer.search(/[`~]/);
+                        const literalIndex = contentBuffer.search(/[`~\\]/);
                         const starts = [toolIndex, literalIndex].filter(
                             (index) => index >= 0,
                         );
@@ -334,6 +334,13 @@ export class PollinationsChatTransport
                             continue;
                         }
 
+                        if (contentBuffer.startsWith("\\")) {
+                            if (contentBuffer.length === 1 && !final) return;
+                            emitText(
+                                consume(Math.min(2, contentBuffer.length)),
+                            );
+                            continue;
+                        }
                         if (/^[`~]/.test(contentBuffer)) {
                             const delimiter =
                                 contentBuffer.match(/^(`+|~+)/)?.[0];

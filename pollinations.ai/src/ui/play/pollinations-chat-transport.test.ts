@@ -216,6 +216,33 @@ describe("PollinationsChatTransport", () => {
         ).toBe("const a = [\n  1,\n];");
     });
 
+    it("preserves text and image order across streamed chunk boundaries", async () => {
+        const source =
+            "Before\n\n![Day](https://example.test/day.png)\n\nBetween\n\n![Night](https://example.test/night.png)\n\nAfter";
+        const partitions = [
+            [source],
+            [...source],
+            ...Array.from({ length: source.length - 1 }, (_, index) => [
+                source.slice(0, index + 1),
+                source.slice(index + 1),
+            ]),
+        ];
+        for (const partition of partitions) {
+            const chunks = await chunksFrom(
+                partition.map((text, index) =>
+                    contentChunk(text, String(index)),
+                ),
+            );
+            const content = chunks
+                .map((chunk) => {
+                    if (chunk.type === "text-delta") return chunk.delta;
+                    return "";
+                })
+                .join("");
+            expect(content).toBe(source);
+        }
+    });
+
     it("passes markdown image links straight through as text, split across provider chunks", async () => {
         const chunks = await chunksFrom([
             contentChunk("![Res", "chunk-1"),
@@ -232,6 +259,7 @@ describe("PollinationsChatTransport", () => {
     });
 
     it.each([
+        '\\<details type="tool_calls" done="true" id="sample" name="EXAMPLE" arguments="{}"><summary>Tool Executed</summary>{}</details>',
         "![Result](https://example.test/result.png)",
         "[Video](<https://example.test/result.mp4>)",
     ])("renders markdown media links independently of every chunk boundary: %s", async (content) => {

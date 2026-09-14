@@ -136,16 +136,24 @@ export function computeHealthStatus(stats) {
     return "on";
 }
 
-// Attaches per-route rows (model_route_health) to each model the monitor
-// already built from model_health. Column names match model_health, so
-// computeHealthStatus works unchanged on a route row.
+// model_route_health returns two grains in one response. Rollup rows are a
+// model's score across every route it was served through; route rows are the
+// individual primary and fallbacks that add up to it.
+export const rollupRows = (routeStats) =>
+    (routeStats || []).filter(
+        (row) => row.is_rollup && row.model !== "undefined",
+    );
+
+// Attaches the per-route rows to each model, whose own stats are already the
+// matching rollup row. Column names match across both grains, so
+// computeHealthStatus and the table formatters work unchanged on either.
 //
-// Kept separate from mergeModelHealth: route data is an optional enrichment
-// (the /routes endpoint can fail independently of the headline health one),
-// and every consumer of `models` that doesn't care about routes is
-// unaffected by a shape it never asked for.
+// Kept separate from mergeModelHealth so the identity and catalog-anomaly rules
+// stay in one place and this only adds the drill-down.
 export function attachRouteHealth(models, routeStats) {
-    const rows = (routeStats || []).filter((row) => row.model !== "undefined");
+    const rows = (routeStats || []).filter(
+        (row) => !row.is_rollup && row.model !== "undefined",
+    );
     if (rows.length === 0) return models;
     return models.map((model) => {
         const eventType = `generate.${model.endpointType || model.type}`;
@@ -165,6 +173,14 @@ export function attachRouteHealth(models, routeStats) {
             sorted.find((route) => !route.fallback_used) ?? null;
         return { ...model, routes: sorted, primaryRoute };
     });
+}
+
+/** Requests a fallback saved after the model's own route had already failed. */
+export function rescuedCount(model) {
+    return (model.routes || []).reduce(
+        (total, route) => total + (route.fallback_rescues || 0),
+        0,
+    );
 }
 
 function severityRank(health) {

@@ -672,6 +672,8 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Successful text JSON responses contain usage. Text streams contain a usage chunk before `[DONE]`; missing text-provider usage fails the response.",
                 "",
+                "Metadata is passed unchanged to endpoint agents; see the agent’s documentation for supported keys.",
+                "",
                 mediaResponseDescription,
             ].join("\n"),
             responses: {
@@ -717,6 +719,8 @@ export const proxyRoutes = new Hono<Env>()
                 "Response storage, previous response IDs, conversations, background execution, and encrypted or referenced state are not supported. Direct providers may accept caller-supplied function tools; managed prompt agents ignore these definitions and use only their configured MCP tools. Completed MCP output items can be replayed as history without executing them again.",
                 "",
                 "Successful text JSON responses and terminal streaming events contain usage; missing text-provider usage fails the response.",
+                "",
+                "Metadata is passed unchanged to endpoint agents; see the agent’s documentation for supported keys.",
                 "",
                 mediaResponseDescription,
             ].join("\n"),

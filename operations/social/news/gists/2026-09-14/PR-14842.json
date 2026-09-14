@@ -1,0 +1,33 @@
+{
+  "pr_number": 14842,
+  "title": "feat: land community publisher icons with rendering fixes",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14842",
+  "merged_at": "2026-09-14T00:56:20Z",
+  "labels": [],
+  "pr_body_excerpt": "- Lands @tomdacatto’s publisher icons from #14734 with the rendering fixes from tomdacatto/pollinations#3, updated against main.\n- Keeps one media URL field and the existing storage/catalog paths. Fixes overlapping icons and solid-square backgrounds; removes redundant intermediate validation.\n- Squash merge with Tom credited as co-author. His agreed 5-Pollen reward will be recorded directly for quest #14837 because this integration PR has a different author.\n- No upload UI, new credentials, or production promotion. Focused tests, both worker typechecks, Enter build, and Biome pass; CI reruns after the main update.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Publishers get their faces back",
+    "blurb": "Community publishers can now bring their own little flags to the model garden. Icons render cleanly in the catalog instead of piling up or arriving as mysterious solid squares.",
+    "summary": "Added a single `icon_url` media field for community providers and rendered publisher icons across the Community Endpoints view and model catalog, with fixes for overlapping icons and opaque square backgrounds.",
+    "impact": "Users browsing community models now see each publisher’s icon displayed cleanly in catalog rows and endpoint profiles, making provenance easier to spot at a glance.",
+    "keywords": [
+      "community-models",
+      "publisher-icons",
+      "model-catalog",
+      "community-endpoints",
+      "frontend"
+    ],
+    "visual_concept": "Depict the community model catalog as a cozy garden bulletin board where distinct publisher-icon tiles are neatly planted and no longer overlap or have solid background blocks. Polli, wearing a tiny curator beret, carefully hangs a clean icon plaque while a helpful CRT monitor robot admires the organized provider garden; include flowers and code-plants to connect the catalog to the hive.",
+    "image_prompt": "A cozy pixel art community model garden with neatly spaced publisher-icon plaques on a warm cream catalog board, each tile cleanly framed instead of overlapping, surrounded by small flowers and code-plants glowing lime green (#ecf874). The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny curator beret and carefully straightens an icon plaque while a cute CRT-monitor robot watches happily. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-14/PR-14842.jpg",
+    "prompt": "A cozy pixel art community model garden with neatly spaced publisher-icon plaques on a warm cream catalog board, each tile cleanly framed instead of overlapping, surrounded by small flowers and code-plants glowing lime green (#ecf874). The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny curator beret and carefully straightens an icon plaque while a cute CRT-monitor robot watches happily. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-14T00:57:20.023531+00:00"
+}

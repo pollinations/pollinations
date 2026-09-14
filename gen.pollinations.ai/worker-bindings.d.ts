@@ -4,6 +4,7 @@ interface CloudflareBindings {
     FFMPEG_MCP: Fetcher;
     EXA_MCP: Fetcher;
     COMPOSIO_MCP: Fetcher;
+    COMPUTER_MCP: Fetcher;
     PORTKEY?: Fetcher;
     KLEIN_VPC?: Fetcher;
     BETTER_AUTH_SECRET: string;
@@ -26,8 +27,6 @@ interface CloudflareBindings {
     KV: KVNamespace;
     MEDIA: Service<import("../media.pollinations.ai/src/media-upload.ts").MediaUpload>;
     TEXT_BUCKET: R2Bucket;
-    /** Temporary old binary-cache source; used only for reads. */
-    LEGACY_MEDIA_BUCKET: R2Bucket;
     GENERATION_COORDINATOR: DurableObjectNamespace<
         import("./src/durable-objects/GenerationCoordinator.ts").GenerationCoordinator
     >;

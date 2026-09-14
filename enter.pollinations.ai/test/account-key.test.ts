@@ -135,8 +135,16 @@ test(
         await mocks.enable("tinybird");
         const created = await createApiKeyViaApi(sessionToken, {
             name: "current-key-with-retired-model",
-            allowedModels: ["openai/gpt-5-nano", "retired-model"],
+            allowedModels: ["openai/gpt-5-nano"],
         });
+        await env.DB.prepare("UPDATE apikey SET permissions = ? WHERE id = ?")
+            .bind(
+                JSON.stringify({
+                    models: ["openai/gpt-5-nano", "retired-model"],
+                }),
+                created.id,
+            )
+            .run();
 
         const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
             headers: {

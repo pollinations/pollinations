@@ -2,6 +2,14 @@
   "name": "polli",
   "private": true,
   "dependencies": {
-    "@colbymchenry/codegraph": "1.6.0"
+    "@colbymchenry/codegraph": "1.6.0",
+    "@tailwindcss/postcss": "4.1.14",
+    "esbuild": "0.25.9",
+    "lucide-react": "0.544.0",
+    "playwright": "1.62.0",
+    "postcss": "8.5.28",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "tailwindcss": "4.1.14"
   }
 }

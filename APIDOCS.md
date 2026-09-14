@@ -285,7 +285,7 @@ Managed prompt agents accept `reasoning.effort` (Responses) and `reasoning_effor
 
 ### Media models in conversations
 
-Image, video, audio and 3D models that advertise these endpoints in [`/models`](/models) accept a text prompt. Only the last user message's text (or a string Responses `input`) is used; history, instructions and text-generation settings are ignored. Attachments return HTTP 400. Use the native media endpoints for edits and generation settings.
+Image, video, audio and 3D models that advertise these endpoints in [`/models`](/models) accept a text prompt. Only the last user message is used; history, instructions and text-generation settings are ignored. Its text parts (or a string Responses `input`) form the prompt. Image parts (`image_url` in Chat, `input_image` in Responses, as URLs or data URIs) are the source images of image models and the start frame of video models that list `image` under `input_modalities`, exactly as `/v1/images/edits` does; other models, including 3D, return HTTP 400 for them, and any other attachment type returns HTTP 400. Use the native media endpoints for generation settings.
 
 Empty prompts, malformed Unicode and prompts consisting only of `.` or `..` return HTTP 400. Reference-required models return their normal missing-input error.
 
@@ -410,7 +410,7 @@ Media models that advertise this endpoint in `/models` also accept text prompts.
 | `top_p` | `number` \| `null` | — |
 | `tools` | `object`[] | — |
 | `tool_choice` | `"none"` \| `"auto"` \| `"required"` \| `object` | — |
-| `parallel_tool_calls` | `boolean` | default: `true` |
+| `parallel_tool_calls` | `boolean` | — |
 | `user` | `string` | — |
 | `prompt_cache_key` | `string` | — |
 | `prompt_cache_options` | [`PromptCacheOptions`](#promptcacheoptions) | — |
@@ -568,7 +568,7 @@ Use `/v1/chat/completions` when you need the full OpenAI-compatible JSON respons
 | `top_p` | `number` \| `null` | — |
 | `tools` | `object`[] | — |
 | `tool_choice` | `"none"` \| `"auto"` \| `"required"` \| `object` | — |
-| `parallel_tool_calls` | `boolean` | default: `true` |
+| `parallel_tool_calls` | `boolean` | — |
 | `user` | `string` | — |
 | `prompt_cache_key` | `string` | — |
 | `prompt_cache_options` | [`PromptCacheOptions`](#promptcacheoptions) | — |

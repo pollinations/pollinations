@@ -5,7 +5,7 @@ const GEN = "https://gen.pollinations.ai";
 const TINYBIRD = "https://api.europe-west2.gcp.tinybird.co";
 const WINDOW_DAYS = 7;
 const MIN_ELIGIBLE_REQUESTS = 20;
-const MIN_SUCCESS_RATE = 0.7;
+const MIN_SUCCESS_RATE = 0.75;
 const MIN_CURRENT_SUCCESS_RATE = 0.8;
 const OUTPUT_PATH =
     process.env.SEVEN_DAY_HEALTH_PATH ??
@@ -19,7 +19,7 @@ if (!token) {
 
 const sql = `
 SELECT
-    resolved_model_requested AS model,
+    replaceRegexpOne(resolved_model_requested, '^community/', '') AS model,
     countIf(is_final) AS total_final,
     countIf(is_final AND response_status >= 200 AND response_status < 300) AS successes,
     countIf(is_final AND response_status >= 500) AS failures_5xx,
@@ -115,12 +115,8 @@ const catalog = Array.isArray(catalogPayload)
     : (catalogPayload.data ?? []);
 const activeCommunityModels = new Map(
     catalog
-        .filter(
-            (model) =>
-                model.community &&
-                (model.category === "text" || model.category === "image"),
-        )
-        .map((model) => [model.name, model]),
+        .filter((model) => model.community)
+        .map((model) => [model.name.replace(/^community\//, ""), model]),
 );
 
 const healthPayload = await healthResponse.json();
@@ -166,7 +162,7 @@ const models = healthPayload.data
                   ? health48h
                   : null;
         return {
-            model: row.model,
+            model: model.name,
             category: model.category,
             totalFinalRequests: Number(row.total_final),
             eligibleRequests,

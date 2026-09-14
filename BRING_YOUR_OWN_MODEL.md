@@ -1,6 +1,6 @@
 # Publish a Model
 
-Publishing a model lets you connect an endpoint to Pollinations and call it through `gen.pollinations.ai` under an `owner/model` id. Pollinations handles authentication, Pollen billing, model discovery, and routing; the model continues to run on infrastructure you control.
+Publishing a model lets you connect an endpoint to Pollinations and call it through `gen.pollinations.ai` under an `community/owner/model` id. Pollinations handles authentication, Pollen billing, model discovery, and routing; the model continues to run on infrastructure you control.
 
 Model publishing and [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md) solve different problems. Model publishing supplies a model to the Pollinations catalog. The wallet flow lets users authorize an app to spend their own Pollen. An app can use either or both.
 
@@ -76,7 +76,7 @@ Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen ea
 2. Choose **Add model**.
 3. For text, choose **Chat Completions** or **Responses** and enter that API's exact endpoint URL, model id, and bearer token. Other model families use a base URL; video uses an exact generation URL.
 4. Run the endpoint test before publishing. Model discovery is optional; Responses endpoints do not need `/models` or a Chat Completions endpoint.
-5. Save the model as private, then call its `owner/model` id through the normal Pollinations endpoint.
+5. Save the model as private, then call its `community/owner/model` id through the normal Pollinations endpoint.
 6. If your account has publisher access, change visibility to public and set prices when it is ready for other users.
 
 ### Model names
@@ -130,7 +130,7 @@ Token prices cannot exceed 50 Pollen per 1M tokens. Fixed image prices cannot ex
 
 ## Call Your Model
 
-Use the generated `owner/model` id anywhere the corresponding Pollinations endpoint accepts a model:
+Use the generated `community/owner/model` id anywhere the corresponding Pollinations endpoint accepts a model:
 
 ```bash
 curl https://gen.pollinations.ai/v1/chat/completions \

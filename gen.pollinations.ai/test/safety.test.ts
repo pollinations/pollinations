@@ -343,7 +343,7 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
         expect(await stored?.text()).toBe(secondPrompt);
     });
 
-    it("uses the redacted prompt for OpenAI image cache URLs", async () => {
+    it("uses the redacted prompt for the OpenAI image cache identity", async () => {
         guardrailResponse = intervened(
             {
                 sensitiveInformationPolicy: {
@@ -378,7 +378,7 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
                 c.json({
                     prompt: (c.req.valid("json" as never) as { prompt: string })
                         .prompt,
-                    url: c.var.generationCacheUrl?.toString(),
+                    identity: c.var.generationCacheBody,
                 }),
             );
 
@@ -396,12 +396,12 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
         );
         const result = await response.json<{
             prompt: string;
-            url: string;
+            identity: string;
         }>();
 
         expect(result.prompt).toBe("portrait of {EMAIL}");
-        expect(result.url).toContain("portrait%20of%20%7BEMAIL%7D");
-        expect(result.url).not.toContain("a%40example.com");
+        expect(result.identity).toContain("portrait of {EMAIL}");
+        expect(result.identity).not.toContain("a@example.com");
     });
 
     it("accepts safety from the request header", async () => {

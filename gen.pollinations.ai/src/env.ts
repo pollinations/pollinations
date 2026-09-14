@@ -12,7 +12,9 @@ import type { TextVariables } from "./text/types.ts";
 import type { X402Variables } from "./x402/payment.ts";
 
 export type Env = {
-    Bindings: CloudflareBindings;
+    Bindings: CloudflareBindings & {
+        CODE_AGENTS?: DispatchNamespace;
+    };
     Variables: RequestIdVariables &
         LoggerVariables &
         ErrorVariables &

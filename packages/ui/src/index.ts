@@ -1,4 +1,8 @@
 export {
+    AccountIdentity,
+    type AccountIdentityProps,
+} from "./compositions/AccountIdentity.tsx";
+export {
     AccountMenu,
     type AccountMenuProps,
 } from "./compositions/AccountMenu.tsx";

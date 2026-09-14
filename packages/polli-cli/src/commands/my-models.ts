@@ -76,12 +76,20 @@ interface PromptAgentMyModel extends MyModelBase {
     type: "prompt_agent";
 }
 
+interface CodeAgentMyModel extends MyModelBase {
+    type: "code_agent";
+}
+
 interface EndpointAgentMyModel extends MyModelBase {
     type: "endpoint_agent";
     perUserRpm: number | null;
 }
 
-type MyModel = ProxyMyModel | PromptAgentMyModel | EndpointAgentMyModel;
+type MyModel =
+    | ProxyMyModel
+    | PromptAgentMyModel
+    | CodeAgentMyModel
+    | EndpointAgentMyModel;
 
 function addPriceOptions(command: Command): Command {
     for (const [flag, description] of PRICE_FLAGS) {
@@ -253,7 +261,7 @@ function printModels(models: MyModel[]) {
                     ? "-"
                     : (model.upstreamModel ?? "-"),
             api:
-                model.type === "prompt_agent"
+                model.type === "prompt_agent" || model.type === "code_agent"
                     ? "responses"
                     : (model.api ?? "-"),
             endpoint: model.url ?? model.baseUrl ?? "-",

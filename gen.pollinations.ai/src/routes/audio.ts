@@ -51,7 +51,7 @@ import {
     type FallbackCandidate,
     withModelFallbackResponse,
 } from "../fallback.ts";
-import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { requireModelAttemptAccess } from "../utils/generation-access.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 import type { SimpleAudioQuery } from "./generation-handlers.ts";
 import {
@@ -165,7 +165,7 @@ async function withAudioFallback(
         c.var.model,
         attempt,
         c.var.track?.attempts,
-        (candidate) => enforceModelRateLimit(c, candidate),
+        (candidate) => requireModelAttemptAccess(c, candidate),
     );
 }
 type AudioRefChunk = {

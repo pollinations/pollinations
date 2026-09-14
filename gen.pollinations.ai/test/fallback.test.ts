@@ -1,3 +1,4 @@
+import { env } from "cloudflare:test";
 import { communityEndpointPrices } from "@shared/community-endpoints.ts";
 import { UpstreamError } from "@shared/error.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
@@ -21,6 +22,10 @@ import {
     withModelFallback,
     withModelFallbackResponse,
 } from "../src/fallback.ts";
+import {
+    requestedModelIds,
+    resolveModelDefinition,
+} from "../src/middleware/model.ts";
 import type { GenerationModelEntry } from "../src/model-registry.ts";
 
 function registryEntry(
@@ -60,6 +65,7 @@ function communityEntry(
     paidOnly = false,
 ): GenerationModelEntry {
     const entry = registryEntry(id, fallbacks, rate);
+    entry.definition.paidOnly = paidOnly;
     entry.visible = visibility === "public" && hiddenAt === null;
     entry.definition.hidden = hiddenAt !== null;
     entry.communityEndpoint = {
@@ -79,6 +85,20 @@ function communityEntry(
 }
 
 describe("registry fallback linking", () => {
+    it("rejects Quest-to-paid catalog fallbacks but allows paid-to-Quest", () => {
+        const quest = registryEntry("quest", ["paid"]);
+        const paid = registryEntry("paid", ["quest"]);
+        paid.definition.paidOnly = true;
+        const entries = [quest, paid];
+        linkFallbackEntries(
+            entries,
+            new Map(entries.map((entry) => [entry.id, entry])),
+        );
+        expect(quest.fallbackEntries).toBeUndefined();
+        expect(paid.fallbackEntries?.map((entry) => entry.id)).toEqual([
+            "quest",
+        ]);
+    });
     it("marks provider routes as hidden, fallback-only registry entries", () => {
         expect(IMAGE_SERVICES["tongyi-mai/z-image-turbo"].fallbacks).toContain(
             "tongyi-mai/z-image-turbo:fal",
@@ -771,5 +791,114 @@ describe("withModelFallbackResponse", () => {
             "config.targets[1]",
         );
         await expect(response.json()).resolves.toEqual({ model: "target" });
+    });
+});
+
+describe("caller-listed model chains", () => {
+    it("does not expand a listed alternative's configured fallbacks", async () => {
+        const model = await resolveModelDefinition(
+            "openai-fast,perplexity/sonar",
+            "generate.text",
+            env,
+        );
+        expect(fallbackCandidates(model).map((entry) => entry.id)).toEqual([
+            "openai/gpt-5-nano",
+            "perplexity/sonar",
+        ]);
+    });
+    it("splits and trims without removing repeats", () => {
+        expect(requestedModelIds("openai")).toEqual(["openai"]);
+        expect(requestedModelIds(" openai , openai-fast ,openai")).toEqual([
+            "openai",
+            "openai-fast",
+            "openai",
+        ]);
+    });
+
+    it("rejects a list longer than the attempt cap", () => {
+        expect(() => requestedModelIds("a,b,c,d,e")).toThrowError(
+            /at most 4 are tried/,
+        );
+    });
+
+    it("replaces the primary model's configured fallbacks", async () => {
+        const model = await resolveModelDefinition(
+            "perplexity/sonar,openai-fast",
+            "generate.text",
+            env,
+        );
+
+        expect(model.resolved).toBe("perplexity/sonar");
+        expect(model.fallbackEntries?.map((entry) => entry.id)).toEqual([
+            "openai/gpt-5-nano",
+        ]);
+    });
+
+    it("preserves repeated models even when named by different aliases", async () => {
+        const model = await resolveModelDefinition(
+            "openai-fast,gpt-5-nano,openai",
+            "generate.text",
+            env,
+        );
+
+        expect(model.resolved).toBe("openai/gpt-5-nano");
+        expect(model.fallbackEntries?.map((entry) => entry.id)).toEqual([
+            "openai/gpt-5-nano",
+            "openai/gpt-5.4-nano",
+        ]);
+    });
+
+    it("keeps configured fallbacks for a single-model request", async () => {
+        const model = await resolveModelDefinition(
+            "perplexity/sonar",
+            "generate.text",
+            env,
+        );
+        expect(model.fallbackEntries?.map((entry) => entry.id)).toEqual([
+            "perplexity/sonar:openrouter:perplexity",
+        ]);
+    });
+
+    it("tries repeated entries separately without inserting configured routes", async () => {
+        const model = await resolveModelDefinition(
+            "perplexity/sonar,perplexity/sonar,openai-fast",
+            "generate.text",
+            env,
+        );
+        const attempted: string[] = [];
+        const { index } = await withModelFallback(
+            fallbackCandidates(model),
+            async (candidate) => {
+                attempted.push(candidate.id);
+                if (attempted.length < 3)
+                    throw Object.assign(new Error("Unavailable"), {
+                        status: 503,
+                    });
+                return "ok";
+            },
+        );
+        expect(attempted).toEqual([
+            "perplexity/sonar",
+            "perplexity/sonar",
+            "openai/gpt-5-nano",
+        ]);
+        expect(index).toBe(2);
+    });
+
+    it("keeps the string the caller sent so a chain gets its own cache key", async () => {
+        const chain = await resolveModelDefinition(
+            "openai-fast,openai",
+            "generate.text",
+            env,
+        );
+
+        expect(chain.requested).toBe("openai-fast,openai");
+        expect(chain.resolved).toBe("openai/gpt-5-nano");
+    });
+
+    it("holds every listed model to the endpoint it was called on", async () => {
+        await expect(
+            resolveModelDefinition("openai-fast,flux", "generate.text", env),
+        ).rejects.toThrowError(/is a image model/);
     });
 });

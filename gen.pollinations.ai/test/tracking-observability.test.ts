@@ -42,18 +42,25 @@ import { HTTPException } from "hono/http-exception";
 import { requestId } from "hono/request-id";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
-import type { FallbackAttempt, FallbackCandidate } from "@/fallback.ts";
 import type {
     GenerationCacheAdapter,
     GenerationCacheVariables,
 } from "@/middleware/generation-cache.ts";
 import { logger } from "@/middleware/logger.ts";
-import type { ModelVariables } from "@/middleware/model.ts";
+import {
+    type ModelVariables,
+    resolveModelDefinition,
+} from "@/middleware/model.ts";
 import {
     reduceAdjustmentsToEventFields,
     track,
     trackResponse,
 } from "@/middleware/track.ts";
+import {
+    type FallbackAttempt,
+    type FallbackCandidate,
+    fallbackCandidates,
+} from "../src/fallback.ts";
 import worker from "../src/index.ts";
 import {
     type GenerationModelEntry,
@@ -2511,7 +2518,11 @@ describe("tracking observability", () => {
                     return new Response(
                         'data: {"choices":[{"index":0,"delta":{"content":"streamed"},"finish_reason":null}]}\n\n' +
                             `data: ${JSON.stringify(terminal)}\n\ndata: [DONE]\n\n`,
-                        { headers: { "Content-Type": "text/event-stream" } },
+                        {
+                            headers: {
+                                "Content-Type": "text/event-stream",
+                            },
+                        },
                     );
                 }
                 if (url.pathname === "/v0/events") {
@@ -2923,6 +2934,39 @@ function candidateFixture(
 }
 
 describe("trackResponse modelUsed", () => {
+    it("bills the caller-selected model at its own price, not the first model's", async () => {
+        const model = await resolveModelDefinition(
+            "openai-fast,qwen3.7-flash",
+            "generate.text",
+            env,
+        );
+        const candidate = fallbackCandidates(model).find(
+            (entry) => entry.id === "qwen/qwen3.7-flash",
+        );
+        expect(candidate).toBeDefined();
+        if (!candidate) throw new Error("Missing caller-selected model");
+        const tracking = await trackResponse(
+            "generate.text",
+            {
+                ...requestTrackingFixture(false, "openai/gpt-5-nano"),
+                modelRequested: model.requested,
+            },
+            Response.json(
+                { choices: [] },
+                {
+                    headers: {
+                        "x-model-used": "qwen/qwen3.7-flash",
+                        "x-usage-prompt-cached-tokens": "1000000",
+                        "x-usage-prompt-cache-type": "ephemeral",
+                    },
+                },
+            ),
+            candidate,
+        );
+        expect(tracking.cost?.totalCost).toBeCloseTo(0.04, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(0.04, 12);
+        expect(tracking.modelUsed).toBe("qwen/qwen3.7-flash");
+    });
     it("attributes a failed generation to the resolved model", async () => {
         const tracking = await trackResponse(
             "generate.text",
@@ -3209,7 +3253,11 @@ describe("trackResponse missing usage", () => {
         const event = {
             model: "openai/gpt-5.4-nano",
             ...metadata,
-            usage: { prompt_tokens: 2, completion_tokens: 1, total_tokens: 3 },
+            usage: {
+                prompt_tokens: 2,
+                completion_tokens: 1,
+                total_tokens: 3,
+            },
         };
         const tracking = await trackResponse(
             "generate.text",

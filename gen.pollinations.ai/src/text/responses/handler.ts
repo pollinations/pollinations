@@ -21,7 +21,7 @@ import {
     formatFallbackTarget,
     withModelFallback,
 } from "../../fallback.ts";
-import { enforceModelRateLimit } from "../../utils/model-rate-limit.ts";
+import { requireModelAttemptAccess } from "../../utils/generation-access.ts";
 import { assertStreamContentType } from "../../utils/upstream-response.ts";
 import { createPromptAgentResponsesClient } from "../agents/client.ts";
 import { createCodeAgentResponsesClient } from "../agents/code-client.ts";
@@ -201,7 +201,7 @@ async function handleDirectResponse(
                 return { ...result, usage: parsed.data.usage };
             },
             c.var.track?.attempts,
-            (attempt) => enforceModelRateLimit(c, attempt),
+            (attempt) => requireModelAttemptAccess(c, attempt),
         );
         c.set("upstreamRequestUrl", result.requestUrl);
 

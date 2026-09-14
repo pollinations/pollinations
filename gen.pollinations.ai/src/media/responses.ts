@@ -9,7 +9,7 @@ import {
     imageCache,
     model3dCache,
 } from "@/middleware/media-cache.ts";
-import { resolveModel } from "@/middleware/model.ts";
+import { requestedModelIds, resolveModel } from "@/middleware/model.ts";
 import { track } from "@/middleware/track.ts";
 import {
     responsesToChatCompletion,
@@ -89,7 +89,7 @@ export function mediaResponses(protocol: MediaProtocol) {
         const registry = await getGenerationModelRegistry(c.env);
         const entry =
             typeof body.model === "string"
-                ? registry.resolve(body.model)
+                ? registry.resolve(requestedModelIds(body.model)[0])
                 : null;
         const route = entry && mediaPromptRoute(entry);
         if (!entry || !route) return next();
@@ -116,7 +116,12 @@ export function mediaResponses(protocol: MediaProtocol) {
                         `${route}${encodeURIComponent(prompt)}`,
                         ctx.req.url,
                     );
-                    url.searchParams.set("model", entry.id);
+                    url.searchParams.set(
+                        "model",
+                        ctx.var.model.requested.includes(",")
+                            ? ctx.var.model.requested
+                            : entry.id,
+                    );
                     if (body.safe !== undefined)
                         url.searchParams.set("safe", String(body.safe));
                     ctx.set("generationRequestUrl", url);

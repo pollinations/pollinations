@@ -1,6 +1,5 @@
 import {
     type CommunityEndpointRuntime,
-    isCommunityFallbackBalanceAllowed,
     isCommunityFallbackPricingAllowed,
     MAX_FALLBACK_TARGETS,
     usesAgentRunToken,
@@ -268,7 +267,6 @@ function isUsableCommunityFallback(
     if (primary.modality !== candidate.modality) return false;
     if (usesAgentRunToken(candidate)) return false;
     if (primary.imagePricing !== candidate.imagePricing) return false;
-    if (!isCommunityFallbackBalanceAllowed(primary, candidate)) return false;
     if (
         !from.supportedEndpoints.every((endpoint) =>
             target.supportedEndpoints.includes(endpoint),
@@ -294,6 +292,8 @@ export function linkFallbackEntries(
         for (const targetId of declared) {
             const target = byIdOrAlias.get(targetId);
             if (!target || target === entry) continue;
+            if (!entry.definition.paidOnly && target.definition.paidOnly)
+                continue;
             if (entry.communityEndpoint) {
                 const targetEndpoint = target.communityEndpoint;
                 if (targetEndpoint?.hiddenAt != null) continue;
@@ -328,8 +328,8 @@ export type FallbackAttempt = {
  * Runs `attempt` against each candidate until one succeeds.
  *
  * Placed around the upstream call itself rather than around the request, so
- * authentication, balance and moderation run exactly once no matter how many
- * models are tried. A local per-candidate guard may run immediately before an
+ * authentication and moderation are not repeated. Caller-selected alternatives
+ * recheck their own balance rules in the local guard immediately before an
  * attempt. Every candidate is tried at most once: the dominant failure is an
  * exhausted quota, and asking the same endpoint again would only spend more of
  * a budget that is already gone.

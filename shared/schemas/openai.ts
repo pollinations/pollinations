@@ -308,7 +308,7 @@ export const CreateChatCompletionRequestSchema = z
         messages: z.array(ChatCompletionRequestMessageSchema),
         model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({
             description:
-                "AI model for text generation. See /v1/models for full list.",
+                "AI model for text generation. See /v1/models for full list. List up to four comma-separated models to try in order, including repeated models. This replaces configured fallbacks; the model that serves determines the price and whether paid Pollen is required. Single-model requests keep their configured fallbacks and original pricing rules.",
         }),
         agent_model: z.string().trim().min(1).max(128).optional().meta({
             description:

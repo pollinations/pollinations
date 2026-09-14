@@ -7,7 +7,9 @@ import { validator } from "@shared/middleware/validator.ts";
 import {
     calculateUsageBilling,
     getRegistryModelDefinition,
+    type UsageType,
 } from "@shared/registry/registry.ts";
+import { calculateUsagePriceCeiling } from "@shared/registry/usage-ceiling.ts";
 import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
 import { test } from "@shared/test/fixtures/index.ts";
@@ -21,6 +23,8 @@ import type { PaymentPayload } from "@x402/core/types";
 import { Hono } from "hono";
 import { afterEach, beforeEach, expect, vi } from "vitest";
 import { app as generationRoutes } from "../src/index.ts";
+import { getGenerationModelRegistry } from "../src/model-registry.ts";
+import { quoteGenerationRequest } from "../src/utils/request-pricing.ts";
 import {
     prepareMetadata,
     generateCacheKey as textCacheKey,
@@ -124,6 +128,212 @@ async function challenge(
 }
 
 const usd = (accepts: { amount: string }) => Number(accepts.amount) / 1e6;
+
+test.each([
+    ["promptTextTokens", 100],
+    ["completionImageTokens", 2],
+    ["completionAudioTokens", 100],
+    ["promptAudioSeconds", 2.5],
+    ["completionAudioSeconds", 3.5],
+    ["completionVideoSeconds", 4.5],
+] satisfies [
+    UsageType,
+    number,
+][])("the shared price ceiling handles %s without an endpoint or payment rail", (unit, maximum) => {
+    const definition = {
+        ...getRegistryModelDefinition("black-forest-labs/flux.1-schnell"),
+        cost: { [unit]: 0.01 },
+        priceMultiplier: 1.5,
+    };
+    const ceiling = calculateUsagePriceCeiling("test-model", definition, [
+        { units: [unit], maximum },
+    ]);
+    expect(ceiling).toBeCloseTo(maximum * 0.01 * 1.5, 8);
+    for (const amount of [0, maximum / 2, maximum]) {
+        const actual = calculateUsageBilling({
+            model: "test-model",
+            servedBy: definition,
+            usage: { [unit]: amount },
+        }).price.totalPrice;
+        expect(actual).toBeLessThanOrEqual(ceiling as number);
+    }
+});
+
+test("a shared prompt cap covers cached usage and every rate variant without double-counting", () => {
+    const definition = {
+        ...getRegistryModelDefinition("black-forest-labs/flux.1-schnell"),
+        cost: {
+            promptTextTokens: 0.01,
+            promptCachedTokens: 0.002,
+            completionTextTokens: 0.02,
+        },
+        costVariants: {
+            expensive: { promptCachedTokens: 0.03, completionTextTokens: 0.04 },
+        },
+        selectCostVariant: () => "expensive",
+        priceMultiplier: 1.5,
+    };
+    const ceiling = calculateUsagePriceCeiling("test-model", definition, [
+        { units: ["promptTextTokens", "promptCachedTokens"], maximum: 100 },
+        { units: ["completionTextTokens"], maximum: 10 },
+    ]);
+    expect(ceiling).toBeCloseTo((100 * 0.03 + 10 * 0.04) * 1.5, 8);
+    for (const cached of [0, 40, 100]) {
+        const billing = calculateUsageBilling({
+            model: "test-model",
+            servedBy: definition,
+            usage: {
+                promptTextTokens: 100 - cached,
+                promptCachedTokens: cached,
+                completionTextTokens: 10,
+            },
+        });
+        expect(billing.price.totalPrice).toBeLessThanOrEqual(ceiling as number);
+    }
+});
+
+test("the shared ceiling refuses an unbounded rate, including one introduced by a variant", () => {
+    const definition = getRegistryModelDefinition(
+        "black-forest-labs/flux.1-schnell",
+    );
+    for (const rates of [
+        { cost: { ...definition.cost, promptImageTokens: 0.01 } },
+        { costVariants: { edit: { promptImageTokens: 0.01 } } },
+    ]) {
+        expect(
+            calculateUsagePriceCeiling("flux", { ...definition, ...rates }, [
+                { units: ["completionImageTokens"], maximum: 1 },
+            ]),
+        ).toBeNull();
+    }
+});
+
+test("output-derived fees cannot be quoted from bounded usage alone", () => {
+    expect(
+        calculateUsagePriceCeiling(
+            "test-model",
+            {
+                ...getRegistryModelDefinition(
+                    "black-forest-labs/flux.1-schnell",
+                ),
+                billing: {
+                    adjustments: [
+                        {
+                            id: "search",
+                            description: "Search",
+                            kind: "search",
+                            unit: "request",
+                            unitCost: 0.01,
+                            publicPricing: {
+                                label: "Search",
+                                quantity: 1,
+                                unit: "request",
+                            },
+                            countUnits: () => {
+                                throw new Error("Must not infer future output");
+                            },
+                        },
+                    ],
+                },
+            },
+            [{ units: ["completionImageTokens"], maximum: 1 }],
+        ),
+    ).toBeNull();
+});
+
+test.each([
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    -1,
+])("the shared ceiling rejects invalid rates and bounds: %s", (value) => {
+    const definition = getRegistryModelDefinition(
+        "black-forest-labs/flux.1-schnell",
+    );
+    expect(
+        calculateUsagePriceCeiling("flux", definition, [
+            { units: ["completionImageTokens"], maximum: value },
+        ]),
+    ).toBeNull();
+    expect(
+        calculateUsagePriceCeiling(
+            "flux",
+            { ...definition, cost: { completionImageTokens: value } },
+            [{ units: ["completionImageTokens"], maximum: 1 }],
+        ),
+    ).toBeNull();
+});
+
+test("only x402 adds its payment minimum to a shared generation quote", async () => {
+    const registry = await getGenerationModelRegistry(
+        x402Env as CloudflareBindings,
+    );
+    const body = { model: "flux" };
+    const entry = registry.resolve("flux");
+    if (!entry) throw new Error("Missing image model");
+    const cheap = quoteGenerationRequest(
+        {
+            ...entry,
+            definition: {
+                ...entry.definition,
+                cost: { completionImageTokens: 0.0001 },
+                priceMultiplier: 1,
+            },
+        },
+        body,
+    );
+    expect(cheap?.maximum).toBe(0.0001);
+    const generation = quoteGenerationRequest(entry, body);
+    if (!generation) throw new Error("Missing image quote");
+    const payment = await quoteX402Request(x402Env as CloudflareBindings, {
+        method: "GET",
+        path: "/image/flower",
+        headers: {},
+        body,
+    });
+    expect(payment.maximum).toBe(
+        Math.max(
+            0.001,
+            Math.ceil((generation.maximum - Number.EPSILON) * 1e6) / 1e6,
+        ),
+    );
+    expect(payment.usage).toEqual(generation.usage);
+});
+
+test("generation quotes cover higher cached-token rates without inheriting the x402 output cap", async () => {
+    const registry = await getGenerationModelRegistry(
+        x402Env as CloudflareBindings,
+    );
+    const entry = registry.resolve("openai");
+    if (!entry) throw new Error("Missing text model");
+    const body = chatRequest({
+        model: "openai",
+        max_tokens: 8192,
+        messages: [{ role: "user", content: "Hello" }],
+    }).body;
+    const quote = quoteGenerationRequest(
+        {
+            ...entry,
+            definition: {
+                ...entry.definition,
+                cost: {
+                    promptTextTokens: 0.01,
+                    promptCachedTokens: 0.02,
+                    completionTextTokens: 0.03,
+                },
+                costVariants: undefined,
+                selectCostVariant: undefined,
+                billing: undefined,
+                priceMultiplier: 1,
+            },
+        },
+        body,
+    );
+    const promptBytes = new TextEncoder().encode(JSON.stringify(body)).length;
+    expect(quote?.maximum).toBeCloseTo(promptBytes * 0.02 + 8192 * 0.03, 8);
+    await expect(
+        quoteX402Request(x402Env as CloudflareBindings, chatRequest(body)),
+    ).rejects.toThrow("x402 max_tokens cannot exceed 4096");
+});
 
 test.each([
     ["GET", "/image/a%20blue%20flower?model=flux", undefined],

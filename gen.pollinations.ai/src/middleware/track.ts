@@ -727,7 +727,9 @@ export async function trackResponse(
         ? { ...pricingInput, ...modelUsage.pricingInput }
         : pricingInput;
     const finishError =
-        eventType === "generate.text" ? finishReasonError(output) : undefined;
+        eventType === "generate.text"
+            ? finishReasonError(output, !!modelUsage)
+            : undefined;
     if (finishError) {
         // Keep the proxy response untouched; only billing and health reflect
         // the upstream protocol's explicit terminal failure.
@@ -861,7 +863,10 @@ function streamErrorClass(code: string | undefined): string {
     return "UpstreamFinishReasonError";
 }
 
-function finishReasonError(output: unknown):
+function finishReasonError(
+    output: unknown,
+    hasUsage: boolean,
+):
     | {
           status: number;
           code?: "usage_missing" | "upstream_stream_error";
@@ -911,6 +916,11 @@ function finishReasonError(output: unknown):
                 finish_reason?: unknown;
                 error?: unknown;
             };
+            // Filtered completions with valid usage remain billable. Without
+            // usage, preserve the rejection rather than report missing usage.
+            if (!hasUsage && finish.finish_reason === "content_filter") {
+                return { status: CONTENT_POLICY_STATUS };
+            }
             if (finish.finish_reason !== "error") continue;
             return {
                 status: isContentPolicyViolation(JSON.stringify(finish.error))

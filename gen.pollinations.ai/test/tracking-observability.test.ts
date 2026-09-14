@@ -3150,6 +3150,41 @@ describe("trackResponse modelUsed", () => {
 });
 
 describe("trackResponse missing usage", () => {
+    it.each([false, true])(
+        "classifies content_filter without changing usage billing (usage present: %s)",
+        async (hasUsage) => {
+            const event = {
+                model: "openai/gpt-5.4-nano",
+                choices: [{ delta: {}, finish_reason: "content_filter" }],
+                usage: hasUsage
+                    ? {
+                          prompt_tokens: 2,
+                          completion_tokens: 1,
+                          total_tokens: 3,
+                      }
+                    : null,
+            };
+            const upstream = new Blob([
+                `data: ${JSON.stringify(event)}\n\ndata: [DONE]\n\n`,
+            ]).stream();
+            const tracking = await trackResponse(
+                "generate.text",
+                requestTrackingFixture(true),
+                new Response(requireChatStreamUsage(upstream), {
+                    headers: { "content-type": "text/event-stream" },
+                }),
+                candidateFixture(),
+            );
+            expect(tracking.responseStatus).toBe(hasUsage ? 200 : 422);
+            expect(tracking.isBilledUsage).toBe(hasUsage);
+            expect(tracking.errorTracking?.errorResponseCode).toBe(
+                hasUsage ? undefined : "content_policy_violation",
+            );
+            if (hasUsage) expect(tracking.cost?.totalCost).toBeGreaterThan(0);
+            else expect(tracking.cost?.totalCost).toBe(0);
+        },
+    );
+
     it("does not bill earlier usage when the stream subsequently fails validation", async () => {
         const event = {
             model: "openai/gpt-5.4-nano",

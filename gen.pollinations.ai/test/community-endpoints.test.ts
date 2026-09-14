@@ -73,6 +73,7 @@ import {
     calculateUsageBilling,
     getRegistryModelDefinition,
     type ModelInputModality,
+    type ModelOutputModality,
 } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import {
@@ -118,6 +119,7 @@ type CommunityEndpointFixture = Omit<CommunityEndpointInsert, "title"> &
         modality?: CommunityEndpointModality;
         imagePricing?: CommunityEndpointImagePricing;
         inputModalities?: ModelInputModality[] | null;
+        outputModalities?: ModelOutputModality[];
         baseUrl?: string | null;
         api?: CommunityEndpointApi | null;
         upstreamModel?: string;
@@ -140,6 +142,7 @@ function insertCommunityEndpoints(
             modality: rawModality,
             imagePricing: rawImagePricing,
             inputModalities: rawInputModalities,
+            outputModalities,
             baseUrl,
             api: rawApi,
             upstreamModel,
@@ -172,6 +175,8 @@ function insertCommunityEndpoints(
                   ? {
                         perUserRpm: perUserRpm ?? null,
                         api,
+                        inputModalities: rawInputModalities ?? undefined,
+                        outputModalities,
                     }
                   : {
                         bearerTokenCiphertext:
@@ -7600,6 +7605,81 @@ fixtureTest(
     },
 );
 
+fixtureTest(
+    "publishes endpoint-agent input and output modalities without changing its chat route",
+    async () => {
+        const ownerUserId = await createTestUser({
+            githubUsername: `owner-${crypto.randomUUID().slice(0, 8)}`,
+        });
+        const modalities: ModelInputModality[] = [
+            "text",
+            "image",
+            "audio",
+            "video",
+        ];
+        const outputModalities: ModelOutputModality[] = [
+            ...modalities,
+            "3d",
+            "embedding",
+        ];
+        const id = crypto.randomUUID();
+        await insertCommunityEndpoints({
+            id,
+            ownerUserId,
+            type: "endpoint_agent",
+            name: "multimodal-agent",
+            title: "Multimodal agent",
+            baseUrl: "https://agent.example.com/v1/chat/completions",
+            upstreamModel: "agent",
+            visibility: "public",
+            inputModalities: modalities,
+            outputModalities,
+        });
+        const entry = (await getCommunityModelRegistryEntries(env)).find(
+            (entry) => entry.communityEndpoint.id === id,
+        );
+        expect(entry?.definition).toMatchObject({
+            category: "text",
+            inputModalities: modalities,
+            outputModalities,
+        });
+        expect(entry?.communityEndpoint).toMatchObject({
+            api: "chat_completions",
+            baseUrl: "https://agent.example.com/v1/chat/completions",
+        });
+        expect(entry?.info).toMatchObject({
+            agent: true,
+            input_modalities: modalities,
+            output_modalities: outputModalities,
+        });
+        for (const path of ["/models", "/v1/models"]) {
+            const response = await fetchGen(
+                `https://gen.pollinations.ai${path}`,
+            );
+            expect(response.status).toBe(200);
+            type CatalogEntry = {
+                name?: string;
+                id?: string;
+                input_modalities?: string[];
+                output_modalities?: string[];
+            };
+            const body = await response.json<
+                CatalogEntry[] | { data: CatalogEntry[] }
+            >();
+            const models = Array.isArray(body) ? body : body.data;
+            expect(
+                models.find(
+                    (model: { name?: string; id?: string }) =>
+                        (model.name ?? model.id) === entry?.id,
+                ),
+            ).toMatchObject({
+                input_modalities: modalities,
+                output_modalities: outputModalities,
+            });
+        }
+    },
+);
+
 fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
     const modelName = `model-${crypto.randomUUID().slice(0, 8)}`;
@@ -7888,6 +7968,8 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
                     url: "https://updated-agent.example.com/v1/responses",
                     upstreamModel: "updated-endpoint-agent",
                     perUserRpm: 7,
+                    inputModalities: ["text", "image"],
+                    outputModalities: ["text", "3d"],
                     requiredSafetyFeatures: ["violence"],
                 }),
             },
@@ -7903,6 +7985,8 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         url: "https://updated-agent.example.com/v1/responses",
         upstreamModel: "updated-endpoint-agent",
         perUserRpm: 7,
+        inputModalities: ["text", "image"],
+        outputModalities: ["text", "3d"],
         requiredSafetyFeatures: ["violence"],
     });
     expect(endpointAgentResponse).not.toHaveProperty("agentId");
@@ -7935,6 +8019,10 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         upstreamModel: "updated-endpoint-agent",
         perUserRpm: 7,
         requiredSafetyFeatures: ["violence"],
+    });
+    expect(endpointAgentRegistryEntry?.info).toMatchObject({
+        input_modalities: ["text", "image"],
+        output_modalities: ["text", "3d"],
     });
     expect(
         endpointAgentRegistryEntry?.definition.requiredSafetyFeatures,

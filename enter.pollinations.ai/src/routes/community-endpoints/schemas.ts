@@ -10,6 +10,7 @@ import {
     CommunityEndpointAdvertisedSchema,
     CommunityEndpointApiSchema,
     type CommunityEndpointPriceKey,
+    EndpointAgentListingPayloadSchema,
     MAX_FALLBACK_TARGETS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
@@ -179,8 +180,14 @@ const ProxyCreateSchema = z.union([
 export const CreateEndpointSchema = ProxyCreateSchema;
 export type ProxyCreateInput = z.infer<typeof ProxyCreateSchema>;
 
+const EndpointAgentModalityFields = EndpointAgentListingPayloadSchema.pick({
+    inputModalities: true,
+    outputModalities: true,
+}).shape;
+
 export const CreateEndpointAgentSchema = z
     .object({
+        ...EndpointAgentModalityFields,
         name: EndpointFieldsSchema.name,
         title: EndpointFieldsSchema.title,
         description: EndpointFieldsSchema.description,
@@ -238,6 +245,7 @@ export const CodeAgentUpdateSchema = z
 const EndpointAgentUpdateSchema = z
     .object({
         ...CommonUpdateFieldsSchema,
+        ...EndpointAgentModalityFields,
         api: CommunityEndpointApiSchema.optional(),
         url: EndpointFieldsSchema.url.optional(),
         upstreamModel: EndpointFieldsSchema.upstreamModel,
@@ -246,7 +254,9 @@ const EndpointAgentUpdateSchema = z
     .strict()
     .superRefine(validateEndpointUpdate);
 
-export const UpdateEndpointSchema = ProxyUpdateSchema;
+export const UpdateEndpointSchema = ProxyUpdateSchema.safeExtend({
+    outputModalities: EndpointAgentModalityFields.outputModalities,
+});
 
 const UPDATE_SCHEMA_BY_TYPE = {
     proxy: ProxyUpdateSchema,
@@ -380,6 +390,7 @@ const CodeAgentEndpointResponseSchema = z
 export const EndpointAgentResponseSchema = z
     .object({
         ...CommunityEndpointResponseFieldsSchema,
+        ...EndpointAgentModalityFields,
         type: z.literal("endpoint_agent"),
         api: CommunityEndpointApiSchema,
         url: EndpointFieldsSchema.url,

@@ -467,6 +467,13 @@
     {
       "idx": 66,
       "version": "6",
+      "when": 1789148979189,
+      "tag": "0065_community_provider_icon_url",
+      "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "6",
       "when": 1789221616961,
       "tag": "0066_app-key-top-up",
       "breakpoints": true

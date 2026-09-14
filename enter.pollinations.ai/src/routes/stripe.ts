@@ -86,12 +86,21 @@ export const stripeRoutes = new Hono<Env>()
         // Create Stripe client
         const stripe = createStripeClient(c.env);
 
-        // Return checkout sessions to the Pollen page for this environment.
+        // App purchases use their validated return URL. Other checkouts return
+        // to the standalone top-up page or Pollen dashboard on this origin.
         const baseUrl =
             c.env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
         const pollenUrl = purchase
             ? new URL(purchase.returnTo)
-            : new URL("/pollen", baseUrl);
+            : new URL(
+                  c.req.query("return") === "top-up" ? "/top-up" : "/pollen",
+                  baseUrl,
+              );
+        if (!purchase) {
+            const appRedirect = c.req.query("redirect");
+            if (appRedirect)
+                pollenUrl.searchParams.set("redirect", appRedirect);
+        }
         pollenUrl.searchParams.set("pack", pack.packKey);
         if (purchase) pollenUrl.searchParams.set("app_top_up", purchase.id);
         const pollenReturnUrl = pollenUrl.toString();
@@ -269,8 +278,19 @@ export const stripeRoutes = new Hono<Env>()
     .post("/billing/portal", async (c) => {
         const user = await requireSessionUser(c);
 
+        const body = (await c.req.json().catch(() => null)) as {
+            return?: unknown;
+            redirect?: unknown;
+        } | null;
+
         try {
-            const session = await createBillingPortalSession(c.env, user.id);
+            const session = await createBillingPortalSession(c.env, user.id, {
+                topUp: body?.return === "top-up",
+                redirect:
+                    typeof body?.redirect === "string"
+                        ? body.redirect
+                        : undefined,
+            });
 
             if (!session.url) {
                 return c.json(

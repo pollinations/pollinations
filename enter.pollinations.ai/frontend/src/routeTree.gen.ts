@@ -9,11 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TopUpRouteImport } from './routes/top-up'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as RefundsRouteImport } from './routes/refunds'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ErrorRouteImport } from './routes/error'
+import { Route as EditKeyRouteImport } from './routes/edit-key'
 import { Route as DeviceRouteImport } from './routes/device'
 import { Route as BuyRouteImport } from './routes/buy'
 import { Route as AuthorizeRouteImport } from './routes/authorize'
@@ -29,6 +31,11 @@ import { Route as DashboardKeysRouteImport } from './routes/_dashboard.keys'
 import { Route as DashboardActivityRouteImport } from './routes/_dashboard.activity'
 import { Route as DashboardAccountRouteImport } from './routes/_dashboard.account'
 
+const TopUpRoute = TopUpRouteImport.update({
+  id: '/top-up',
+  path: '/top-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -52,6 +59,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const ErrorRoute = ErrorRouteImport.update({
   id: '/error',
   path: '/error',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EditKeyRoute = EditKeyRouteImport.update({
+  id: '/edit-key',
+  path: '/edit-key',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DeviceRoute = DeviceRouteImport.update({
@@ -129,11 +141,13 @@ export interface FileRoutesByFullPath {
   '/authorize': typeof AuthorizeRoute
   '/buy': typeof BuyRoute
   '/device': typeof DeviceRoute
+  '/edit-key': typeof EditKeyRoute
   '/error': typeof ErrorRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
+  '/top-up': typeof TopUpRoute
   '/account': typeof DashboardAccountRoute
   '/activity': typeof DashboardActivityRoute
   '/keys': typeof DashboardKeysRoute
@@ -149,11 +163,13 @@ export interface FileRoutesByTo {
   '/authorize': typeof AuthorizeRoute
   '/buy': typeof BuyRoute
   '/device': typeof DeviceRoute
+  '/edit-key': typeof EditKeyRoute
   '/error': typeof ErrorRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
+  '/top-up': typeof TopUpRoute
   '/account': typeof DashboardAccountRoute
   '/activity': typeof DashboardActivityRoute
   '/keys': typeof DashboardKeysRoute
@@ -171,11 +187,13 @@ export interface FileRoutesById {
   '/authorize': typeof AuthorizeRoute
   '/buy': typeof BuyRoute
   '/device': typeof DeviceRoute
+  '/edit-key': typeof EditKeyRoute
   '/error': typeof ErrorRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
+  '/top-up': typeof TopUpRoute
   '/_dashboard/account': typeof DashboardAccountRoute
   '/_dashboard/activity': typeof DashboardActivityRoute
   '/_dashboard/keys': typeof DashboardKeysRoute
@@ -193,11 +211,13 @@ export interface FileRouteTypes {
     | '/authorize'
     | '/buy'
     | '/device'
+    | '/edit-key'
     | '/error'
     | '/privacy'
     | '/refunds'
     | '/sign-in'
     | '/terms'
+    | '/top-up'
     | '/account'
     | '/activity'
     | '/keys'
@@ -213,11 +233,13 @@ export interface FileRouteTypes {
     | '/authorize'
     | '/buy'
     | '/device'
+    | '/edit-key'
     | '/error'
     | '/privacy'
     | '/refunds'
     | '/sign-in'
     | '/terms'
+    | '/top-up'
     | '/account'
     | '/activity'
     | '/keys'
@@ -234,11 +256,13 @@ export interface FileRouteTypes {
     | '/authorize'
     | '/buy'
     | '/device'
+    | '/edit-key'
     | '/error'
     | '/privacy'
     | '/refunds'
     | '/sign-in'
     | '/terms'
+    | '/top-up'
     | '/_dashboard/account'
     | '/_dashboard/activity'
     | '/_dashboard/keys'
@@ -256,16 +280,25 @@ export interface RootRouteChildren {
   AuthorizeRoute: typeof AuthorizeRoute
   BuyRoute: typeof BuyRoute
   DeviceRoute: typeof DeviceRoute
+  EditKeyRoute: typeof EditKeyRoute
   ErrorRoute: typeof ErrorRoute
   PrivacyRoute: typeof PrivacyRoute
   RefundsRoute: typeof RefundsRoute
   SignInRoute: typeof SignInRoute
   TermsRoute: typeof TermsRoute
+  TopUpRoute: typeof TopUpRoute
   AppSignInRoute: typeof AppSignInRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/top-up': {
+      id: '/top-up'
+      path: '/top-up'
+      fullPath: '/top-up'
+      preLoaderRoute: typeof TopUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -299,6 +332,13 @@ declare module '@tanstack/react-router' {
       path: '/error'
       fullPath: '/error'
       preLoaderRoute: typeof ErrorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/edit-key': {
+      id: '/edit-key'
+      path: '/edit-key'
+      fullPath: '/edit-key'
+      preLoaderRoute: typeof EditKeyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/device': {
@@ -434,11 +474,13 @@ const rootRouteChildren: RootRouteChildren = {
   AuthorizeRoute: AuthorizeRoute,
   BuyRoute: BuyRoute,
   DeviceRoute: DeviceRoute,
+  EditKeyRoute: EditKeyRoute,
   ErrorRoute: ErrorRoute,
   PrivacyRoute: PrivacyRoute,
   RefundsRoute: RefundsRoute,
   SignInRoute: SignInRoute,
   TermsRoute: TermsRoute,
+  TopUpRoute: TopUpRoute,
   AppSignInRoute: AppSignInRoute,
 }
 export const routeTree = rootRouteImport

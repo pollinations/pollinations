@@ -2,7 +2,7 @@
   "version": "6",
   "dialect": "sqlite",
   "id": "db678a07-7668-4fb9-a3a9-9597679f6650",
-  "prevId": "e982edc8-154d-4595-80a9-fec6f747bdb0",
+  "prevId": "5392969e-d495-4c8a-a3bb-e641f0c4f94a",
   "tables": {
     "account": {
       "name": "account",
@@ -2080,6 +2080,13 @@
         },
         "community_provider_url": {
           "name": "community_provider_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "community_provider_icon_url": {
+          "name": "community_provider_icon_url",
           "type": "text",
           "primaryKey": false,
           "notNull": false,

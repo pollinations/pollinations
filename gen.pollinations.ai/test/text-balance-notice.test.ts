@@ -324,10 +324,76 @@ describe("text balance notice", () => {
     });
 });
 
-it("keeps API key budget exhaustion as HTTP 402", async () => {
+it.each([
+    { metadata: undefined, referer: undefined, redirect: null },
+    {
+        metadata: { redirectOrigin: "https://app.example" },
+        referer: "https://chat.example/c/1",
+        redirect: "https://app.example",
+    },
+    {
+        metadata: undefined,
+        referer: "https://chat.example/c/1",
+        redirect: "https://chat.example",
+    },
+])("links key budget exhaustion to the key editor (redirect=$redirect)", async ({
+    metadata,
+    referer,
+    redirect,
+}) => {
     const caller = await createTestApiKey({
         user: { packBalance: 10 },
         pollenBudget: 0,
+        metadata,
+    });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        Response.json({ data: [] }),
+    );
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(
+        new Request("https://gen.pollinations.ai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${caller.key}`,
+                "Content-Type": "application/json",
+                ...(referer && { Referer: referer }),
+            },
+            body: JSON.stringify({
+                model,
+                messages: [{ role: "user", content: "hello" }],
+            }),
+        }),
+        env,
+        ctx,
+    );
+    const text = await response.text();
+    if (!TEXT_BALANCE_NOTICE_ENABLED) {
+        expect(response.status, text).toBe(402);
+        expect(text).toContain("KEY_BUDGET_EXHAUSTED");
+    } else {
+        expect(response.status, text).toBe(200);
+        const link = new URL(
+            `https://enter.pollinations.ai/edit-key?id=${caller.id}&ref=agent_key_budget`,
+        );
+        if (redirect) link.searchParams.set("redirect", redirect);
+        expect(text).toContain(`[raise the key budget](${link})`);
+        expect(text).toContain("Topping up the wallet does not raise");
+        expect(text).not.toContain("complete a quest");
+    }
+    await waitOnExecutionContext(ctx);
+});
+
+it("omits the quest link when only paid Pollen can cover the model", async () => {
+    const paidOnlyModel = "inception/mercury-2";
+    await env.KV.put(
+        "model-stats-v3",
+        JSON.stringify({
+            value: { data: [{ model: paidOnlyModel, avg_cost_usd: 0.001 }] },
+            ttl: 3600,
+        }),
+    );
+    const caller = await createTestApiKey({
+        user: { tierBalance: 100, packBalance: 0 },
     });
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
         Response.json({ data: [] }),
@@ -341,14 +407,22 @@ it("keeps API key budget exhaustion as HTTP 402", async () => {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                model,
+                model: paidOnlyModel,
                 messages: [{ role: "user", content: "hello" }],
             }),
         }),
         env,
         ctx,
     );
-    expect(response.status).toBe(402);
-    expect(await response.text()).toContain("KEY_BUDGET_EXHAUSTED");
+    const text = await response.text();
+    if (!TEXT_BALANCE_NOTICE_ENABLED) {
+        expect(response.status, text).toBe(402);
+        expect(text).toContain("INSUFFICIENT_BALANCE");
+    } else {
+        expect(response.status, text).toBe(200);
+        expect(text).toContain("needs paid Pollen");
+        expect(text).toContain("/top-up?ref=agent_low_balance_topup");
+        expect(text).not.toContain("complete a quest");
+    }
     await waitOnExecutionContext(ctx);
 });

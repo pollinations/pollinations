@@ -2,6 +2,7 @@ import { runtimeModule, sdkModules } from "virtual:code-agent-sdk";
 import { generateText, jsonSchema, tool } from "ai";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createWorker as createComposioWorker } from "../../apps/composio-mcp/worker.js";
+import { functionOutputText } from "../../shared/schemas/response-function-items.ts";
 import {
     deleteCodeAgent,
     deployCodeAgent,
@@ -230,14 +231,22 @@ describe("code agent AI SDK", () => {
         ).toEqual([
             expect.objectContaining({
                 call_id: "lookup-call",
-                output: fail
-                    ? JSON.stringify({
-                          isError: true,
-                          content: [
-                              { type: "text", text: "Lookup unavailable" },
-                          ],
-                      })
-                    : '{"answer":42}',
+                output: [
+                    {
+                        type: "input_text",
+                        text: fail
+                            ? JSON.stringify({
+                                  isError: true,
+                                  content: [
+                                      {
+                                          type: "text",
+                                          text: "Lookup unavailable",
+                                      },
+                                  ],
+                              })
+                            : '{"answer":42}',
+                    },
+                ],
             }),
         ]);
         const replay = await responseBody(
@@ -419,7 +428,9 @@ describe("code agent AI SDK", () => {
             (item) => item.type === "function_call_output",
         );
         expect(results).toHaveLength(17);
-        expect(JSON.parse(results[16].output)).toMatchObject({ isError: true });
+        expect(
+            JSON.parse(functionOutputText(results[16].output)),
+        ).toMatchObject({ isError: true });
     });
 });
 

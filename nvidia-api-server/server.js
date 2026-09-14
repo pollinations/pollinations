@@ -1,6 +1,6 @@
 // @bun
 // server.ts
-import { readFileSync } from "fs";
+import { readFileSync } from "node:fs";
 
 var PORT = Number(process.env.PORT || 8080);
 var NVIDIA_BASE_URL = (

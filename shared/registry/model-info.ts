@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ModelHealthSchema } from "../schemas/model-health.ts";
 import { SAFETY_FEATURES } from "../schemas/safety.ts";
 import { publicPriceInfo, toFixedPoint } from "./public-pricing";
 import {
@@ -36,6 +37,7 @@ export type ModelCapability = z.infer<typeof ModelCapabilitySchema>;
 //         completionTextTokens, completionReasoningTokens, completionAudioTokens,
 //         completionImageTokens, completionVideoSeconds, completionVideoTokens
 export const ModelInfoSchema = z.object({
+    health: ModelHealthSchema.optional(),
     name: z.string(),
     aliases: z.array(z.string()),
     category: z.enum(MODEL_CATEGORIES),

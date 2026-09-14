@@ -1,3 +1,4 @@
+import { ModelHealthSchema } from "./model-health.ts";
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
@@ -730,6 +731,7 @@ export type CreateChatCompletionResponse = z.infer<
 
 export const OpenAIModelSchema = z
     .object({
+        health: ModelHealthSchema.optional(),
         id: z.string(),
         object: z.literal("model"),
         created: z.number(),

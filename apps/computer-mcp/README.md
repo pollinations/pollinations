@@ -43,8 +43,8 @@ The Worker is private (`workers_dev: false`, no routes). Gen's
 `/mcp/computer` route authenticates the caller, then calls this Worker through
 the `COMPUTER_MCP` service binding with the `x-pollinations-user-id` header
 set. That header and the tool's workspace name select the Durable Object. The
-default keeps the existing `user:<userId>` object; named workspaces use
-`user:<userId>:workspace:<name>`. A missing user header is a 401 here.
+object name is `user:<userId>:workspace:<name>`. A missing user header is a 401
+here.
 The registry entry lives in `shared/registry/mcp.ts`.
 
 ## Local

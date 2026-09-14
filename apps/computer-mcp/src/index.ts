@@ -197,14 +197,13 @@ export default {
             );
         }
         const workspaceName = requestedWorkspace(await readJsonRpc(request));
-        // Keep the existing default object's name so current files remain.
-        const objectName =
-            workspaceName === DEFAULT_WORKSPACE
-                ? `user:${userId}`
-                : `user:${userId}:workspace:${workspaceName}`;
         // One Durable Object per user and workspace; its SQLite holds the
         // isolated filesystem and its lazy container backend.
-        const stub = env.COMPUTER.get(env.COMPUTER.idFromName(objectName));
+        const stub = env.COMPUTER.get(
+            env.COMPUTER.idFromName(
+                `user:${userId}:workspace:${workspaceName}`,
+            ),
+        );
         return stub.fetch(request);
     },
 } satisfies ExportedHandler<Env>;

@@ -343,9 +343,11 @@ export const modelStatusRoutes = new Hono<Env>()
             description: [
                 "Returns raw per-route health rows from the public Tinybird `model_route_health` pipe.",
                 "",
-                "Returns two grains. A row with `is_rollup` 1 is a model total across all of its routes and carries no `model_used`/`provider`; a row with `is_rollup` 0 is a single execution route — the model's own primary, or a fallback it fell through to.",
+                "Returns two grains. A row with `is_rollup` 1 counts the model’s final request outcomes, has an empty `model_used`, and reports the most frequent observed provider; a row with `is_rollup` 0 is a single execution route — the model's own primary, or a fallback it fell through to.",
                 "",
-                "Both count every upstream call, not just the one that settled the request, so a model rescued by a fallback scores below what `/v1/models/status` reports for it: that endpoint counts the caller's outcome, this one counts the infrastructure's. `served` on a route is how many calls it settled, and summing that across a model's routes gives the request count `/v1/models/status` reports.",
+                "Rollup counts match `/v1/models/status`: a rescued request counts as its final outcome. Route rows count every attempt, including failures retried elsewhere. `served` on a route counts final outcomes; summing it across a model’s routes gives the rollup request count. Route attempt counts can exceed that total.",
+                "",
+                "Rollup latency measures full request duration. Route latency measures the successful attempt through response completion, excluding earlier attempts; rows without attempt timing do not contribute to route latency. Token throughput uses full request duration at both grains.",
                 "",
                 "Routes that have never fired have no row here; this reflects observed traffic only, not the configured fallback list.",
                 "",

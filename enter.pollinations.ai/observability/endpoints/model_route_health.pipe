@@ -87,9 +87,23 @@ SQL >
         -- caller-visible failure.
         countIf(NOT is_final AND response_status = 503) as retried_503s,
         maxIf(start_time, response_status >= 500) as last_error_at,
-        round(quantileIf(0.5)(response_time, response_status >= 200 AND response_status < 300), 0) as latency_p50_ms,
-        round(quantileIf(0.95)(response_time, response_status >= 200 AND response_status < 300), 0) as latency_p95_ms,
-        round(avgIf(response_time, response_status >= 200 AND response_status < 300), 0) as avg_latency_ms,
+        -- Route latency excludes earlier attempts. Historical rows without
+        -- attempt timing are omitted instead of assigning request latency.
+        round(if(
+            GROUPING(model_used) = 1,
+            quantileIf(0.5)(response_time, response_status >= 200 AND response_status < 300),
+            quantileIf(0.5)(attempt_response_time, response_status >= 200 AND response_status < 300)
+        ), 0) as latency_p50_ms,
+        round(if(
+            GROUPING(model_used) = 1,
+            quantileIf(0.95)(response_time, response_status >= 200 AND response_status < 300),
+            quantileIf(0.95)(attempt_response_time, response_status >= 200 AND response_status < 300)
+        ), 0) as latency_p95_ms,
+        round(if(
+            GROUPING(model_used) = 1,
+            avgIf(response_time, response_status >= 200 AND response_status < 300),
+            avgIf(attempt_response_time, response_status >= 200 AND response_status < 300)
+        ), 0) as avg_latency_ms,
         max(start_time) as last_request_at,
         -- Completion tokens per second of full request duration, same
         -- definition as model_health. Computed per group, so the rollup is the

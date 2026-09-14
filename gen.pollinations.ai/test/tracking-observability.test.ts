@@ -2542,8 +2542,8 @@ describe("tracking observability", () => {
                 }),
             });
         const response = await worker.fetch(request(), env, ctx);
-        await waitOnExecutionContext(ctx);
         const body = await response.text();
+        await waitOnExecutionContext(ctx);
         expect(response.status, body).toBe(200);
         const after = await getUserBalance(db, caller.userId);
         const events = (

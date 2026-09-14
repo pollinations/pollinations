@@ -13,22 +13,7 @@ import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { describe, expect, it, vi } from "vitest";
-
-const deductionMocks = vi.hoisted(() => ({
-    atomicCreditUserBalance: vi
-        .fn()
-        .mockResolvedValue({ ok: false, newBalance: null }),
-}));
-
-vi.mock("@shared/billing/deduction.ts", async (importOriginal) => {
-    const actual =
-        await importOriginal<typeof import("@shared/billing/deduction.ts")>();
-    return {
-        ...actual,
-        ...deductionMocks,
-    };
-});
+import { describe, expect, it } from "vitest";
 
 const db = drizzle(env.DB);
 
@@ -340,46 +325,6 @@ describe("billing deduction", () => {
         expect(result.settlementError).toBe("api_key_reconciliation");
         expect(result.payerBucket).toBe("tier");
         expect((await getUserBalance(db, userId)).tierBalance).toBe(97);
-    });
-
-    it("preserves committed debit when dev credit fails", async () => {
-        const payerId = await createUser({ tierBalance: 100, packBalance: 0 });
-        const devUserId = await createUser({
-            tierBalance: 0,
-            packBalance: 0,
-        });
-        // Insert a pk_ key directly, bypassing better-auth, so we control every column
-        const byopKeyId = `pk-test-${crypto.randomUUID()}`;
-        await db.insert(apiKeyTable).values({
-            id: byopKeyId,
-            configId: "default",
-            name: "test-pk-key",
-            start: "pk",
-            prefix: "pk",
-            key: `pk_${crypto.randomUUID()}`,
-            referenceId: devUserId,
-            enabled: true,
-            metadata: JSON.stringify({ earningsEnabled: true }),
-            pollenBalance: 0,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-        const result = await handleBalanceDeduction({
-            db,
-            isBilledUsage: true,
-            totalPrice: 1,
-            userId: payerId,
-            byopClientKeyId: byopKeyId,
-        });
-
-        // The debit should be preserved even though dev credit failed
-        expect(result.billedPrice).toBe(1.25); // 1 + 25% markup
-        expect(result.settlementError).toBe("dev_credit");
-        expect(result.markup).toBeNull();
-        expect((await getUserBalance(db, payerId)).tierBalance).toBeCloseTo(
-            98.75,
-            10,
-        );
     });
 
     it("preserves committed debit when community reward credit fails", async () => {

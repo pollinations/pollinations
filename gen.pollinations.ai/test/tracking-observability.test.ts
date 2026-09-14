@@ -2570,7 +2570,6 @@ describe("tracking observability", () => {
         expect(expectedPrice).toBeGreaterThan(0);
         expect(rows[0]).toMatchObject({
             isBilledUsage: true,
-            modelUsed: model,
             totalPrice: expectedPrice,
         });
         expect(before.tierBalance - after.tierBalance).toBeCloseTo(

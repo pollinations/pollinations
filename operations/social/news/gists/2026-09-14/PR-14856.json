@@ -1,0 +1,33 @@
+{
+  "pr_number": 14856,
+  "title": "fix: backfill community app screenshots",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14856",
+  "merged_at": "2026-09-14T13:36:35Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds 14 screenshot URLs to the app catalog.\n- Leaves Open WebUI without a screenshot because its app screen requires authorization.\n- Validated all 849 catalog entries, formatting, and a structural comparison confirming that only 14 screenshot fields change.",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fourteen apps get portraits",
+    "blurb": "Fourteen community apps finally got their little catalog headshots. Open WebUI remains tastefully behind its authorization gate, where it belongs.",
+    "summary": "Backfilled screenshot URLs for 14 app catalog entries after validating all 849 entries, while leaving Open WebUI unchanged because its screen requires authorization.",
+    "impact": "Visitors browsing the community app catalog will now see screenshots for 14 more apps, making those projects easier to recognize before opening them.",
+    "keywords": [
+      "community",
+      "app-catalog",
+      "screenshots",
+      "discovery",
+      "apps"
+    ],
+    "visual_concept": "Depict Polli as a tiny gallery curator hanging 14 miniature pixel-art app screenshots along a cozy garden catalog wall, with code-plants and flowers around the display. Include one politely locked, unlabeled frame for Open WebUI to represent its authorization-only screen without making it feel excluded.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny curator beret, carefully hanging a row of 14 miniature app screenshot frames on a lime green (#ecf874) garden catalog wall; code-plants and pastel flowers grow beneath, while one small frame has a gentle pixel lock icon. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-14/PR-14856.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny curator beret, carefully hanging a row of 14 miniature app screenshot frames on a lime green (#ecf874) garden catalog wall; code-plants and pastel flowers grow beneath, while one small frame has a gentle pixel lock icon. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-14T13:37:35.664451+00:00"
+}

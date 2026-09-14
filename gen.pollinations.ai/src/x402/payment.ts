@@ -21,8 +21,8 @@ import { every } from "hono/combine";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
-import type { PaymentResponseSnapshot } from "../durable-objects/GenerationCoordinator.ts";
 import { createX402Event } from "./accounting.ts";
+import type { PaymentResponseSnapshot } from "./coordinator.ts";
 import {
     priceActualUsage,
     quoteX402Request,

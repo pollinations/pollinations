@@ -13,6 +13,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { GenerationJob } from "@/middleware/generation-deduplication.ts";
 import worker from "../src/index.ts";
+import * as paymentExecution from "../src/x402/execution.ts";
 
 function testJob(key: string, body?: string): GenerationJob {
     return {
@@ -51,6 +52,166 @@ afterEach(() => {
 });
 
 describe("GenerationCoordinator", () => {
+    it("replays receipts stored before the module extraction and preserves their expiry", async () => {
+        const stub = env.GENERATION_COORDINATOR.getByName(
+            `stored-payment-${crypto.randomUUID()}`,
+        );
+        const expiresAt = Date.now() + 60_000;
+        const response = {
+            status: 200,
+            statusText: "OK",
+            headers: [["payment-response", "existing-receipt"]] as [
+                string,
+                string,
+            ][],
+            body: new Uint8Array([0, 255, 1]),
+        };
+        await runInDurableObject(stub, async (_coordinator, state) => {
+            const bodyKey = `x402/${state.id.toString()}/response`;
+            await env.TEXT_BUCKET.put(bodyKey, response.body);
+            // Existing persisted contract, not constructed by the new module.
+            await state.storage.put("payment-operation", {
+                fingerprint: "request",
+                paymentIdentity: "payer",
+                paymentProof: "proof",
+                state: "final",
+                expiresAt,
+                response: {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: response.headers,
+                    bodyKey,
+                },
+            });
+        });
+        expect(
+            await stub.getFinalPaymentOperation("request", "payer", "proof"),
+        ).toEqual({ status: "final", response });
+        expect(
+            await stub.getFinalPaymentOperation(
+                "request",
+                "payer",
+                "different-proof",
+            ),
+        ).toEqual({ status: "payment-conflict" });
+        await runInDurableObject(stub, async (coordinator, state) => {
+            await coordinator.alarm();
+            expect(await state.storage.getAlarm()).toBe(expiresAt);
+            await state.storage.deleteAlarm();
+        });
+        expect(
+            await stub.getFinalPaymentOperation("request", "payer", "proof"),
+        ).toEqual({ status: "final", response });
+    });
+
+    it("rejects an expired owner's completion after a retry acquires the lease", async () => {
+        const stub = env.GENERATION_COORDINATOR.getByName(
+            `lease-payment-${crypto.randomUUID()}`,
+        );
+        const now = Date.now();
+        vi.spyOn(Date, "now").mockReturnValue(now);
+        expect(
+            await stub.startPaymentOperation(
+                "request",
+                "payer",
+                "proof",
+                "first",
+                now + 1000,
+            ),
+        ).toEqual({ status: "owner" });
+        expect(
+            await stub.startPaymentOperation(
+                "request",
+                "payer",
+                "proof",
+                "second",
+                now + 2000,
+            ),
+        ).toEqual({ status: "running" });
+        vi.spyOn(Date, "now").mockReturnValue(now + 1001);
+        expect(
+            await stub.startPaymentOperation(
+                "request",
+                "payer",
+                "proof",
+                "second",
+                now + 2000,
+            ),
+        ).toEqual({ status: "owner" });
+        const response = {
+            status: 200,
+            statusText: "OK",
+            headers: [] as [string, string][],
+            body: new Uint8Array([1]),
+        };
+        const expiresAt = now + 60_000;
+        expect(
+            await stub.completePaymentOperation(
+                "request",
+                "payer",
+                "proof",
+                "first",
+                response,
+                expiresAt,
+            ),
+        ).toBe(false);
+        expect(
+            await stub.completePaymentOperation(
+                "request",
+                "payer",
+                "proof",
+                "second",
+                response,
+                expiresAt,
+            ),
+        ).toBe(true);
+        expect(
+            await stub.getGeneratedPaymentOperation(
+                "request",
+                "payer",
+                "proof",
+            ),
+        ).toEqual({ status: "generated" });
+    });
+
+    it.each([
+        "pollen",
+        "x402",
+    ])("fails closed and clears a %s request with a missing body chunk", async (rail) => {
+        vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
+        const stub = env.GENERATION_COORDINATOR.getByName(
+            `missing-body-${crypto.randomUUID()}`,
+        );
+        await runInDurableObject(stub, async (coordinator, state) => {
+            const body = "x".repeat(1_000_001);
+            const pending =
+                rail === "x402"
+                    ? coordinator.fetch(
+                          new Request(
+                              "https://gen.pollinations.ai/not-a-generation-route",
+                              { method: "POST", body },
+                          ),
+                      )
+                    : coordinator.startAndWait(
+                          testJob(crypto.randomUUID(), body),
+                      );
+            await waitForAlarm(state);
+            await state.storage.delete("body:0");
+            await coordinator.alarm();
+            await state.storage.deleteAlarm();
+            const outcome = await pending;
+            if (outcome instanceof Response) {
+                expect(outcome.status).toBe(503);
+                expect(await outcome.text()).toContain("failed");
+            } else {
+                expect(outcome.status).toBe("failed");
+                if (outcome.status === "failed")
+                    expect(outcome.error.httpStatus).toBe(503);
+            }
+            expect(await state.storage.list()).toEqual(new Map());
+        });
+    });
+
     it("returns live streams over HTTP and keeps the request when a caller disconnects", async () => {
         vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
         const stub = env.GENERATION_COORDINATOR.getByName(
@@ -61,13 +222,25 @@ describe("GenerationCoordinator", () => {
             method: "GET",
             headers: [] as [string, string][],
         };
+        let finish!: () => void;
+        const generating = new Promise<void>((resolve) => {
+            finish = resolve;
+        });
+        vi.spyOn(paymentExecution, "executeX402Request").mockImplementation(
+            async (_request, _env, _ctx, execution) => {
+                const publish = execution.onStream(
+                    new Headers({ "content-type": "text/event-stream" }),
+                );
+                publish(new TextEncoder().encode('data: {"choices":[]}\n\n'));
+                await generating;
+                return new Response("Payment failed", { status: 503 });
+            },
+        );
+        let alarm: Promise<void> | undefined;
         const owner = stub.fetch(request.url, request);
         await runInDurableObject(stub, async (coordinator, state) => {
             await waitForAlarm(state);
-            const publish = coordinator["openPaymentStream"](
-                new Headers({ "content-type": "text/event-stream" }),
-            );
-            publish(new TextEncoder().encode('data: {"choices":[]}\n\n'));
+            alarm = coordinator.alarm();
         });
         const response = await owner;
         expect(response.status).toBe(200);
@@ -79,19 +252,16 @@ describe("GenerationCoordinator", () => {
         await reader.cancel();
 
         const rejoined = await stub.fetch(request.url, request);
-        await runInDurableObject(stub, async (coordinator, state) => {
+        await runInDurableObject(stub, async (_coordinator, state) => {
             const stored =
                 await state.storage.get<Record<string, unknown>>(
                     "payment-request",
                 );
             expect(stored).toBeDefined();
-            // Fail the existing alarm after it has opened the stream. This must
+            // Fail execution after it has opened the stream. This must
             // terminate every reader, not return a second HTTP response.
-            await state.storage.put("payment-request", {
-                ...stored,
-                started: true,
-            });
-            await coordinator.alarm();
+            finish();
+            await alarm;
             await state.storage.deleteAlarm();
             expect(await state.storage.get("payment-request")).toBeUndefined();
         });
@@ -115,10 +285,12 @@ describe("GenerationCoordinator", () => {
                     headers: [] as [string, string][],
                     body: new Uint8Array(2_100_000),
                 };
-                const owner =
-                    coordinator["startPaymentRequestAndWait"](request);
-                const joiner =
-                    coordinator["startPaymentRequestAndWait"](request);
+                const owner = coordinator.fetch(
+                    new Request(request.url, request),
+                );
+                const joiner = coordinator.fetch(
+                    new Request(request.url, request),
+                );
                 await waitForAlarm(state);
                 expect(await state.storage.get("body:2")).toBeInstanceOf(
                     Uint8Array,
@@ -152,11 +324,11 @@ describe("GenerationCoordinator", () => {
         const response = await runInDurableObject(
             stub,
             async (coordinator, state) => {
-                const pending = coordinator["startPaymentRequestAndWait"]({
-                    url: "https://gen.pollinations.ai/not-a-generation-route",
-                    method: "GET",
-                    headers: [],
-                });
+                const pending = coordinator.fetch(
+                    new Request(
+                        "https://gen.pollinations.ai/not-a-generation-route",
+                    ),
+                );
                 await waitForAlarm(state);
                 const stored =
                     await state.storage.get<Record<string, unknown>>(

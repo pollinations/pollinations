@@ -102,6 +102,20 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "tencent/hy3": {
+        "tencent/hy3:openrouter:atlas-cloud-fp8": {
+            supportedParameters: CHAT_PARAMETERS.openRouterHy3AtlasCloud,
+            provider: "openrouter",
+            addedDate: new Date("2026-09-13").getTime(),
+            // AtlasCloud route rates (2026-09-13); higher than GMICloud's but
+            // the most reliable of Hy3's six OpenRouter endpoints.
+            cost: {
+                promptTextTokens: perMillion(0.2),
+                promptCachedTokens: perMillion(0.05),
+                completionTextTokens: perMillion(0.8),
+            },
+        },
+    },
     "qwen/qwen3.8-27b": {
         "qwen/qwen3.8-27b:openrouter:akashml-fp8": {
             supportedParameters: CHAT_PARAMETERS.qwen38Akash,

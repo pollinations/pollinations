@@ -105,6 +105,30 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Hy3 to GMICloud on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "tencent/hy3",
+        });
+
+        expect(result.options.model).toBe("tencent/hy3");
+        expect(result.options.provider).toEqual({
+            only: ["gmicloud/bf16"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("routes the Hy3 AtlasCloud fallback to the exact OpenRouter endpoint", () => {
+        const result = resolveModelConfig(messages, {
+            model: "tencent/hy3:openrouter:atlas-cloud-fp8",
+        });
+
+        expect(result.options.model).toBe("tencent/hy3");
+        expect(result.options.provider).toEqual({
+            only: ["atlas-cloud/fp8"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Inkling to Together on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "thinkingmachines/inkling-small",

@@ -1571,6 +1571,34 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "tencent/hy3": {
+        supportedParameters: CHAT_PARAMETERS.openRouterHy3,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Tencent",
+        category: "text",
+        addedDate: new Date("2026-09-13").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter GMICloud (bf16) route rates (2026-09-13). Tencent's
+            // own direct route bills a time-of-day rate the registry can't
+            // represent, and DeepInfra was degraded at research time — both
+            // were passed over for this flat-rate, high-uptime route.
+            promptTextTokens: perMillion(0.14),
+            promptCachedTokens: perMillion(0.035),
+            completionTextTokens: perMillion(0.58),
+        },
+        title: "Hy3",
+        description:
+            "Mixture-of-experts reasoning for agentic workflows and production tool-use",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
     "meituan/longcat-2.0": {
         supportedParameters: CHAT_PARAMETERS.longcat,
         aliases: ["longcat-2.0", "longcat-2", "longcat"],

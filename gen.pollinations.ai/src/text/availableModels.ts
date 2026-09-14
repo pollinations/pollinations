@@ -674,6 +674,14 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoning,
     },
     {
+        name: "tencent/hy3",
+        config: portkeyConfig["tencent/hy3"],
+    },
+    {
+        name: "tencent/hy3:openrouter:atlas-cloud-fp8",
+        config: portkeyConfig["hy3-openrouter-atlas-cloud"],
+    },
+    {
         name: "minimax/minimax-m3",
         config: portkeyConfig["accounts/fireworks/models/minimax-m3"],
         transform: fireworksThinking,

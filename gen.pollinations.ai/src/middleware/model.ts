@@ -190,14 +190,17 @@ export async function resolveModelDefinition(
         ),
     );
     // A declared route is still the model the caller named, so it is tried
-    // before their next choice. An alternate contributes only itself, so the
-    // chain stays as short as the list the caller can see.
+    // before their next choice. Each caller choice supplies its own quote,
+    // including when one of that choice's declared routes serves instead.
     const fallbackEntries = uniqueById(entry.id, [
         ...(entry.fallbackEntries ?? []),
-        ...alternates.map((alternate) => ({
-            ...alternate,
-            fallbackEntries: undefined,
-        })),
+        ...alternates.flatMap((alternate) =>
+            [alternate, ...(alternate.fallbackEntries ?? [])].map((target) => ({
+                ...target,
+                fallbackEntries: undefined,
+                quotedBy: alternate,
+            })),
+        ),
     ]);
     // An agent run executes tools and spends the caller's balance, so its
     // answer belongs to that caller and must never be replayed to another —
@@ -309,9 +312,11 @@ export function resolveModel(
         if (allowedModels && resolved.fallbackEntries) {
             resolved.fallbackEntries = resolved.fallbackEntries.filter(
                 (entry) =>
-                    (entry.definition.fallbackOnly === true &&
+                    (!entry.quotedBy ||
+                        allowedModels.includes(entry.quotedBy.id)) &&
+                    ((entry.definition.fallbackOnly === true &&
                         !entry.communityEndpoint) ||
-                    allowedModels.includes(entry.id),
+                        allowedModels.includes(entry.id)),
             );
         }
         c.set("model", resolved);

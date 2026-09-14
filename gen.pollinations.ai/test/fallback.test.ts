@@ -65,6 +65,7 @@ function communityEntry(
     paidOnly = false,
 ): GenerationModelEntry {
     const entry = registryEntry(id, fallbacks, rate);
+    entry.definition.paidOnly = paidOnly;
     entry.visible = visibility === "public" && hiddenAt === null;
     entry.definition.hidden = hiddenAt !== null;
     entry.communityEndpoint = {
@@ -84,6 +85,20 @@ function communityEntry(
 }
 
 describe("registry fallback linking", () => {
+    it("rejects Quest-to-paid catalog fallbacks but allows paid-to-Quest", () => {
+        const quest = registryEntry("quest", ["paid"]);
+        const paid = registryEntry("paid", ["quest"]);
+        paid.definition.paidOnly = true;
+        const entries = [quest, paid];
+        linkFallbackEntries(
+            entries,
+            new Map(entries.map((entry) => [entry.id, entry])),
+        );
+        expect(quest.fallbackEntries).toBeUndefined();
+        expect(paid.fallbackEntries?.map((entry) => entry.id)).toEqual([
+            "quest",
+        ]);
+    });
     it("marks provider routes as hidden, fallback-only registry entries", () => {
         expect(IMAGE_SERVICES["tongyi-mai/z-image-turbo"].fallbacks).toContain(
             "tongyi-mai/z-image-turbo:fal",
@@ -780,6 +795,25 @@ describe("withModelFallbackResponse", () => {
 });
 
 describe("caller-listed model chains", () => {
+    it("quotes each caller choice and its catalog routes at that choice's price", async () => {
+        const model = await resolveModelDefinition(
+            "openai-fast,perplexity/sonar",
+            "generate.text",
+            env,
+        );
+        expect(
+            model.fallbackEntries?.map((entry) => ({
+                id: entry.id,
+                quote: entry.quotedBy?.id,
+            })),
+        ).toEqual([
+            { id: "perplexity/sonar", quote: "perplexity/sonar" },
+            {
+                id: "perplexity/sonar:openrouter:perplexity",
+                quote: "perplexity/sonar",
+            },
+        ]);
+    });
     it("splits, trims and drops repeats", () => {
         expect(requestedModelIds("openai")).toEqual(["openai"]);
         expect(requestedModelIds(" openai , openai-fast ,openai")).toEqual([

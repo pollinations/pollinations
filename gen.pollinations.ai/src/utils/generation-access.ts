@@ -8,12 +8,16 @@ import { withByopMarkup } from "@shared/billing/markup.ts";
 import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
 import { getModelStats } from "@shared/utils/model-stats.ts";
 import { drizzle } from "drizzle-orm/d1";
+import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
+import type { Env } from "@/env.ts";
+import type { FallbackCandidate } from "@/fallback.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import { getEstimatedPrice } from "@/utils/model-stats.ts";
+import { enforceModelRateLimit } from "./model-rate-limit.ts";
 
 type GenerationAccessVariables = AuthVariables &
     BalanceVariables &
@@ -81,7 +85,13 @@ export async function reserveApiKeyBudget(
     if (!apiKeyId || amount === undefined) return;
 
     const db = drizzle(env.DB);
-    const reservation = await atomicReserveApiKeyBalance(db, apiKeyId, amount);
+    const reserved = vars.balance.apiKeyReservation?.amount ?? 0;
+    if (vars.balance.apiKeyReservation && amount <= reserved) return;
+    const reservation = await atomicReserveApiKeyBalance(
+        db,
+        apiKeyId,
+        amount - reserved,
+    );
     if (!reservation.ok) {
         throw new PaymentRequiredError(
             "KEY_BUDGET_EXHAUSTED",
@@ -90,8 +100,31 @@ export async function reserveApiKeyBudget(
     }
     vars.balance.apiKeyReservation = {
         apiKeyId,
-        amount: reservation.reserved,
+        amount: reserved + reservation.reserved,
     };
+}
+
+/** Catalog routes keep the existing quote; a caller choice must afford its own. */
+export async function requireModelAttemptAccess(
+    c: Context<Env>,
+    candidate: FallbackCandidate,
+): Promise<void> {
+    const quotedBy = candidate.entry?.quotedBy;
+    if (quotedBy) {
+        await checkBalance(
+            {
+                ...c.var,
+                model: {
+                    ...c.var.model,
+                    resolved: quotedBy.id,
+                    definition: quotedBy.definition,
+                },
+            },
+            c.env,
+        );
+        await reserveApiKeyBudget(c.var, c.env);
+    }
+    await enforceModelRateLimit(c, candidate);
 }
 
 export async function releaseApiKeyBudgetReservation(

@@ -40,29 +40,12 @@ describe("chat media placement", () => {
         );
     });
 
-    it("keeps images between their surrounding paragraphs with native controls", () => {
+    it("keeps images between their surrounding paragraphs", () => {
         const html = renderMessage([
-            { type: "text", text: "Daytime scene" },
             {
-                type: "data-media",
-                id: "day",
-                data: {
-                    kind: "image",
-                    url: "https://example.test/day.png",
-                    label: "Day",
-                },
+                type: "text",
+                text: "Daytime scene\n\n![Day](https://example.test/day.png)\n\nNighttime scene\n\n![Night](https://example.test/night.png)\n\nCompare the lighting.",
             },
-            { type: "text", text: "Nighttime scene" },
-            {
-                type: "data-media",
-                id: "night",
-                data: {
-                    kind: "image",
-                    url: "https://example.test/night.png",
-                    label: "Night",
-                },
-            },
-            { type: "text", text: "Compare the lighting." },
         ]);
 
         const positions = [
@@ -74,24 +57,18 @@ describe("chat media placement", () => {
         ].map((text) => html.indexOf(text));
         expect(positions.every((position) => position >= 0)).toBe(true);
         expect(positions).toEqual([...positions].sort((a, b) => a - b));
-        expect(html.match(/aria-label="Download image"/g)).toHaveLength(2);
-        expect(html.match(/aria-label="Enlarge image"/g)).toHaveLength(2);
         expect(html.match(/<img /g)).toHaveLength(2);
     });
 
     it("renders a media-only response inside the message", () => {
         const html = renderMessage([
             {
-                type: "data-media",
-                data: {
-                    kind: "image",
-                    url: "https://example.test/image.png",
-                    label: "Result",
-                },
+                type: "text",
+                text: "![Result](https://example.test/image.png)",
             },
         ]);
         expect(html).toContain("Floret");
         expect(html).toContain('alt="Result"');
-        expect(html).not.toContain('aria-label="Copy response"');
+        expect(html).toContain('aria-label="Copy response"');
     });
 });

@@ -47,12 +47,6 @@ export interface AgentChoice {
 
 export type ChatAttachmentKind = "image" | "video" | "audio" | "file";
 
-export interface RenderedMedia {
-    kind: Exclude<ChatAttachmentKind, "file">;
-    url: string;
-    label?: string;
-}
-
 type JsonValue =
     | string
     | number
@@ -336,67 +330,4 @@ export function buildUserContent(
         ...(trimmedText ? [{ type: "text" as const, text: trimmedText }] : []),
         ...parts,
     ];
-}
-
-function mediaKind(
-    url: string,
-    isImageSyntax: boolean,
-    label: string,
-): RenderedMedia["kind"] | null {
-    if (isImageSyntax) return "image";
-    try {
-        const parsedUrl = new URL(url);
-        const pathExtension = extension(parsedUrl.pathname);
-        for (const [kind, extensions] of Object.entries(FILE_EXTENSIONS)) {
-            if (extensions.has(pathExtension))
-                return kind as RenderedMedia["kind"];
-        }
-        if (parsedUrl.hostname === "media.pollinations.ai") {
-            const hint = label.toLowerCase();
-            if (/\b(video|clip|movie)\b/.test(hint)) return "video";
-            if (/\b(audio|sound|music|voice|speech)\b/.test(hint))
-                return "audio";
-            if (/\b(image|photo|picture)\b/.test(hint)) return "image";
-        }
-    } catch {
-        return null;
-    }
-    return null;
-}
-
-export function extractStreamedMedia(markdown: string): {
-    markdown: string;
-    media: RenderedMedia[];
-} {
-    const media: RenderedMedia[] = [];
-    const seen = new Set<string>();
-    const remember = (
-        url: string,
-        isImageSyntax: boolean,
-        label: string,
-    ): boolean => {
-        const kind = mediaKind(url, isImageSyntax, label);
-        if (!kind) return false;
-        if (!seen.has(url)) {
-            seen.add(url);
-            media.push({ kind, url, label: label || undefined });
-        }
-        return true;
-    };
-    const markdownLinkPattern =
-        /(!?)\[([^\]]*)\]\(\s*<?(https?:\/\/[^\s)>]+)>?\s*\)/gi;
-    const displayMarkdown = markdown.replace(
-        markdownLinkPattern,
-        (source, imageMarker: string, label: string, url: string) =>
-            remember(url, imageMarker === "!", label) ? "" : source,
-    );
-
-    const cleanedMarkdown = displayMarkdown.replace(/\n{3,}/g, "\n\n").trim();
-
-    return {
-        // Generated media is the answer. The native player already provides
-        // playback, expansion, and download controls without duplicate prose.
-        markdown: media.length > 0 ? "" : cleanedMarkdown,
-        media,
-    };
 }

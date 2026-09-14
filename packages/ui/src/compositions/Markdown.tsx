@@ -20,6 +20,44 @@ function textContent(value: ReactNode): string {
     return "";
 }
 
+const VIDEO_EXTENSIONS = new Set(["m4v", "mov", "mp4", "webm"]);
+const AUDIO_EXTENSIONS = new Set([
+    "aac",
+    "flac",
+    "m4a",
+    "mp3",
+    "ogg",
+    "opus",
+    "wav",
+]);
+
+function urlExtension(src: string): string {
+    const path = src.split(/[?#]/, 1)[0];
+    return path.split(".").pop()?.toLowerCase() ?? "";
+}
+
+function inlineMedia(src: string | undefined, label: string | undefined) {
+    if (!src) return null;
+    const extension = urlExtension(src);
+    // Agent tool results use these labels for stored URLs without extensions.
+    const video =
+        VIDEO_EXTENSIONS.has(extension) || label === "Generated video";
+    const audio =
+        AUDIO_EXTENSIONS.has(extension) || label === "Generated audio";
+    if (!video && !audio) return null;
+    const Element = video ? "video" : "audio";
+    return (
+        <Element
+            src={src}
+            aria-label={label}
+            controls
+            playsInline={video || undefined}
+            preload="metadata"
+            className="polli:max-w-full polli:rounded-lg"
+        />
+    );
+}
+
 function MarkdownCodeBlock({ children }: { children?: ReactNode }) {
     const child = isValidElement<{
         children?: ReactNode;
@@ -65,7 +103,25 @@ const components: Components = {
         />
     ),
     pre: ({ children }) => <MarkdownCodeBlock>{children}</MarkdownCodeBlock>,
+    img: ({ node, src, alt, ...props }) => {
+        const media = inlineMedia(
+            typeof src === "string" ? src : undefined,
+            alt,
+        );
+        if (media) return media;
+        return (
+            <img
+                src={src}
+                alt={alt}
+                loading="lazy"
+                className="polli:max-w-full polli:rounded-lg"
+                {...props}
+            />
+        );
+    },
     a: ({ node, href, ...props }) => {
+        const media = inlineMedia(href, textContent(props.children));
+        if (media) return media;
         const external =
             typeof href === "string" &&
             !href.startsWith("#") &&

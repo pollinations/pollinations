@@ -31,16 +31,11 @@ import {
     CloudUploadIcon,
     CopyButton,
     cn,
-    Dialog,
     Dropdown,
-    ExpandIcon,
     FileUpload,
     ImageIcon,
-    PauseIcon,
-    PlayIcon,
     RocketIcon,
     ScrollArea,
-    Slider,
     TabButton,
     Text,
     ToolCallDetails,
@@ -74,12 +69,10 @@ import {
     FLORET_MODEL_ID,
     fileKind,
     isCancellation,
-    type RenderedMedia,
     type RoutingChoice,
     type RoutingSelection,
     routingChoices,
 } from "./chat-models";
-import { MediaDownloadButton } from "./MediaDownloadButton";
 import {
     PollinationsChatTransport,
     type PollinationsUIMessage,
@@ -257,300 +250,6 @@ function AttachmentView({ attachment }: { attachment: PreparedAttachment }) {
     );
 }
 
-function MediaView({ media }: { media: RenderedMedia }) {
-    const [open, setOpen] = useState(false);
-    const [downloadError, setDownloadError] = useState<string | null>(null);
-
-    if (media.kind === "audio") {
-        return <AudioPlayer media={media} />;
-    }
-
-    const label = media.label || `Generated ${media.kind}`;
-    const isVideo = media.kind === "video";
-
-    return (
-        <>
-            <div
-                className={cn(
-                    "relative w-full max-w-sm overflow-hidden rounded-xl shadow-well",
-                    isVideo ? "bg-black" : "bg-theme-bg-pale",
-                )}
-            >
-                {isVideo ? (
-                    <VideoPlayer media={media} />
-                ) : (
-                    <button
-                        type="button"
-                        aria-label={`View ${label} larger`}
-                        onClick={() => setOpen(true)}
-                        className="block w-full cursor-zoom-in focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-theme-border"
-                    >
-                        <img
-                            src={media.url}
-                            alt={label}
-                            loading="lazy"
-                            className="play-chat-media-preview"
-                        />
-                    </button>
-                )}
-                <div className="absolute top-2 right-2 flex gap-2">
-                    <Button
-                        type="button"
-                        size="sm"
-                        aria-label={`Enlarge ${media.kind}`}
-                        title={`Enlarge ${media.kind}`}
-                        onClick={() => setOpen(true)}
-                        className="h-9 w-9 min-w-9 rounded-full bg-surface-opaque p-0 shadow-well [&>svg]:size-4"
-                    >
-                        <ExpandIcon />
-                    </Button>
-                    <MediaDownloadButton
-                        source={media.url}
-                        filename={`pollinations-${media.kind}`}
-                        label={`Download ${media.kind}`}
-                        onError={setDownloadError}
-                        className="h-9 w-9 min-w-9 rounded-full bg-surface-opaque p-0 shadow-well [&>svg]:size-4"
-                    />
-                </div>
-            </div>
-            {downloadError && (
-                <Text size="xs" role="alert">
-                    {downloadError}
-                </Text>
-            )}
-            <Dialog
-                open={open}
-                onOpenChange={setOpen}
-                ariaLabel={`${label} preview`}
-                size="xl"
-                backdropBlur={false}
-                contentClassName="relative border-0 p-3 sm:p-4"
-            >
-                <Button
-                    type="button"
-                    aria-label="Close media preview"
-                    onClick={() => setOpen(false)}
-                    className="absolute top-5 right-5 z-10 h-10 w-10 min-w-10 p-0 [&>svg]:size-5"
-                >
-                    <XIcon />
-                </Button>
-                {open &&
-                    (isVideo ? (
-                        <div className="relative overflow-hidden rounded-lg bg-black">
-                            <VideoPlayer media={media} expanded autoPlay />
-                        </div>
-                    ) : (
-                        <img
-                            src={media.url}
-                            alt={label}
-                            className="max-h-[calc(100dvh-5rem)] w-full rounded-lg object-contain"
-                        />
-                    ))}
-            </Dialog>
-        </>
-    );
-}
-
-function AudioPlayer({ media }: { media: RenderedMedia }) {
-    const audioRef = useRef<HTMLAudioElement>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(0);
-    const [downloadError, setDownloadError] = useState<string | null>(null);
-
-    const togglePlayback = () => {
-        const audio = audioRef.current;
-        if (!audio) return;
-        if (audio.paused) {
-            void audio.play().catch(() => setIsPlaying(false));
-        } else {
-            audio.pause();
-        }
-    };
-
-    return (
-        <>
-            <div className="flex w-full max-w-sm items-center gap-3 rounded-xl bg-theme-bg-pale p-2 shadow-well">
-                {/* biome-ignore lint/a11y/useMediaCaption: Generated media does not include a caption track. */}
-                <audio
-                    ref={audioRef}
-                    src={media.url}
-                    preload="metadata"
-                    onLoadedMetadata={(event) => {
-                        const nextDuration = event.currentTarget.duration;
-                        setDuration(
-                            Number.isFinite(nextDuration) ? nextDuration : 0,
-                        );
-                    }}
-                    onTimeUpdate={(event) =>
-                        setCurrentTime(event.currentTarget.currentTime)
-                    }
-                    onPlay={() => setIsPlaying(true)}
-                    onPause={() => setIsPlaying(false)}
-                    onEnded={() => setIsPlaying(false)}
-                    className="hidden"
-                />
-                <button
-                    type="button"
-                    aria-label={isPlaying ? "Pause audio" : "Play audio"}
-                    onClick={togglePlayback}
-                    className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-well transition-colors hover:bg-theme-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-border"
-                >
-                    {isPlaying ? (
-                        <PauseIcon className="size-4" />
-                    ) : (
-                        <PlayIcon className="size-4" />
-                    )}
-                </button>
-                <Slider
-                    aria-label="Audio timeline"
-                    min={0}
-                    max={duration || 0}
-                    step={0.01}
-                    value={Math.min(currentTime, duration || 0)}
-                    disabled={duration <= 0}
-                    onChange={(event) => {
-                        const nextTime = Number(event.currentTarget.value);
-                        if (audioRef.current)
-                            audioRef.current.currentTime = nextTime;
-                        setCurrentTime(nextTime);
-                    }}
-                    style={
-                        {
-                            "--polli-slider-fill":
-                                "var(--polli-color-brand-accent)",
-                            "--polli-slider-track":
-                                "var(--polli-color-bg-active)",
-                            "--polli-slider-thumb-border":
-                                "var(--polli-color-brand-accent)",
-                        } as CSSProperties
-                    }
-                />
-                <MediaDownloadButton
-                    source={media.url}
-                    filename="pollinations-audio"
-                    label="Download audio"
-                    onError={setDownloadError}
-                    className="h-9 w-9 min-w-9 shrink-0 rounded-full bg-surface-opaque p-0 shadow-well [&>svg]:size-4"
-                />
-            </div>
-            {downloadError && (
-                <Text size="xs" role="alert">
-                    {downloadError}
-                </Text>
-            )}
-        </>
-    );
-}
-
-function VideoPlayer({
-    media,
-    expanded = false,
-    autoPlay = false,
-}: {
-    media: RenderedMedia;
-    expanded?: boolean;
-    autoPlay?: boolean;
-}) {
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(0);
-
-    const togglePlayback = () => {
-        const video = videoRef.current;
-        if (!video) return;
-        if (video.paused) {
-            void video.play().catch(() => setIsPlaying(false));
-        } else {
-            video.pause();
-        }
-    };
-
-    return (
-        <>
-            {/* biome-ignore lint/a11y/useMediaCaption: Generated media does not include a caption track. */}
-            <video
-                ref={videoRef}
-                src={media.url}
-                autoPlay={autoPlay}
-                playsInline
-                preload="metadata"
-                onLoadedMetadata={(event) => {
-                    const nextDuration = event.currentTarget.duration;
-                    setDuration(
-                        Number.isFinite(nextDuration) ? nextDuration : 0,
-                    );
-                }}
-                onTimeUpdate={(event) =>
-                    setCurrentTime(event.currentTarget.currentTime)
-                }
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-                onEnded={() => setIsPlaying(false)}
-                className={cn(
-                    "w-full bg-black object-contain",
-                    expanded
-                        ? "max-h-[calc(100dvh-5rem)]"
-                        : "play-chat-media-preview",
-                )}
-            />
-            <div
-                className={cn(
-                    "absolute flex items-center",
-                    expanded
-                        ? "inset-x-0 bottom-0 gap-3 bg-black/65 px-3 py-2 text-white"
-                        : "bottom-2 left-2",
-                )}
-            >
-                <button
-                    type="button"
-                    aria-label={isPlaying ? "Pause video" : "Play video"}
-                    onClick={togglePlayback}
-                    className={cn(
-                        "inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2",
-                        expanded
-                            ? "h-8 w-8 text-white hover:bg-white/15 focus-visible:ring-white"
-                            : "h-9 w-9 bg-surface-opaque text-theme-text-strong shadow-well hover:bg-theme-bg-hover focus-visible:ring-theme-border",
-                    )}
-                >
-                    {isPlaying ? (
-                        <PauseIcon className="size-4" />
-                    ) : (
-                        <PlayIcon className="size-4" />
-                    )}
-                </button>
-                {expanded && (
-                    <Slider
-                        aria-label="Video timeline"
-                        min={0}
-                        max={duration || 0}
-                        step={0.01}
-                        value={Math.min(currentTime, duration || 0)}
-                        disabled={duration <= 0}
-                        onChange={(event) => {
-                            const nextTime = Number(event.currentTarget.value);
-                            if (videoRef.current)
-                                videoRef.current.currentTime = nextTime;
-                            setCurrentTime(nextTime);
-                        }}
-                        style={
-                            {
-                                "--polli-slider-fill":
-                                    "var(--polli-color-brand-accent)",
-                                "--polli-slider-track":
-                                    "rgb(255 255 255 / 0.35)",
-                                "--polli-slider-thumb-border":
-                                    "var(--polli-color-brand-accent)",
-                            } as CSSProperties
-                        }
-                    />
-                )}
-            </div>
-        </>
-    );
-}
-
 function ToolPart({ part }: { part: DynamicToolUIPart }) {
     const isError = part.state === "output-error";
     const output = part.state === "output-available" ? part.output : undefined;
@@ -611,10 +310,7 @@ export function MessageCard({
     const isUser = message.role === "user";
     const attachments = message.metadata?.attachments ?? [];
     const contentParts = message.parts.filter(
-        (part) =>
-            part.type === "text" ||
-            part.type === "dynamic-tool" ||
-            part.type === "data-media",
+        (part) => part.type === "text" || part.type === "dynamic-tool",
     );
     const cancelled = message.parts.some(
         (part) => part.type === "data-responseStatus",
@@ -667,11 +363,6 @@ export function MessageCard({
                                         {part.text}
                                     </Markdown>
                                 )
-                            ) : part.type === "data-media" ? (
-                                <MediaView
-                                    key={`media:${part.id ?? part.data.url}`}
-                                    media={part.data}
-                                />
                             ) : (
                                 <ToolPart key={part.toolCallId} part={part} />
                             ),

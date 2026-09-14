@@ -439,11 +439,11 @@ test("catalog returns quest definitions without ledger stats", async ({
     expect(byId.get("early_adopter")?.title).toBe("Early adopter");
     expectStableCatalogFields("github_established", {
         state: "available",
-        rewardAmount: 3,
+        rewardAmount: 2,
         balanceBucket: "tier",
     });
     expect(byId.get("github_established")?.goal).toEqual({
-        target: 730,
+        target: 1095,
         unit: "days",
     });
     expectStableCatalogFields("app_paid_request", {
@@ -1468,7 +1468,7 @@ test("github established-account quest records once per GitHub identity", async 
         {
             idempotencyKey: `quest:github_established:github:${user.githubId}`,
             userId: user.id,
-            pollenAmount: 3,
+            pollenAmount: 2,
             balanceBucket: "tier",
         },
     ]);
@@ -1508,7 +1508,7 @@ test("github established-account quest waits until the threshold", async ({
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     mocks.github.state.user.created_at = new Date(
-        Date.now() - 729 * 24 * 60 * 60 * 1000,
+        Date.now() - 1094 * 24 * 60 * 60 * 1000,
     ).toISOString();
     await mocks.enable("github", "tinybird");
 
@@ -1517,8 +1517,8 @@ test("github established-account quest waits until the threshold", async ({
 
     expect(beforeThreshold.progress).toContainEqual({
         questId: "github_established",
-        current: 729,
-        target: 730,
+        current: 1094,
+        target: 1095,
         unit: "days",
     });
 
@@ -1534,7 +1534,7 @@ test("github established-account quest waits until the threshold", async ({
     ).toBe(true);
 
     mocks.github.state.user.created_at = new Date(
-        Date.now() - 730 * 24 * 60 * 60 * 1000,
+        Date.now() - 1095 * 24 * 60 * 60 * 1000,
     ).toISOString();
     await checkQuestsForUser(env, user.id);
 

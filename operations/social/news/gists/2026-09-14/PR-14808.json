@@ -1,0 +1,35 @@
+{
+  "pr_number": 14808,
+  "title": "feat: add Pollinations provider for LLM",
+  "author": "ismailbanouigu",
+  "url": "https://github.com/pollinations/pollinations/pull/14808",
+  "merged_at": "2026-09-14T11:51:54Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #14660\r\n\r\n- Adds an installable `llm-pollinations` package built on LLM 0.35's native `Chat` and `AsyncChat` classes.\r\n- Loads the authenticated `/v1/models` catalog, registers compatible models as `pollinations/<model-id>`, and maps vision, tools, and reasoning from catalog data.\r\n- Fetches the authenticated catalog at model registration, without local caching or stale fallback.\n- Documents direct key and Polli CLI setup and adds path-scoped Python CI for tests and distribution builds.\r\n\r\nVerification:\r\n- Python CI: 8 tests and distribution builds passed after updating with main\r\n- `python -m build`: wheel and sdist built\r\n- LLM smoke: normal, streaming, multi-turn chat, image attachment, tools, and sync/async Python API\r\n- Follow-up: 61 runtime lines; retains native LLM requests and filters by chat endpoint and text output.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive speaks LLM",
+    "blurb": "Pollinations now has an installable plugin for Simon Willison's LLM CLI and Python library. Point it at your Polli key, and the catalog arrives ready to chat, reason, see images, and call tools.",
+    "summary": "Added the installable `llm-pollinations` package for LLM 0.35, registering authenticated `/v1/models` chat-capable text models as `pollinations/<model-id>` with catalog-driven vision, tools, and reasoning support.",
+    "impact": "LLM CLI and Python users can use Pollinations models through native sync or async chat, streaming, multi-turn conversations, image attachments, and tool calls after configuring a direct key or Polli CLI login.",
+    "keywords": [
+      "llm",
+      "python",
+      "plugin",
+      "models",
+      "chat",
+      "polli",
+      "api"
+    ],
+    "visual_concept": "A cozy garden-workshop where Polli connects a retro terminal running the LLM CLI to a flowering model catalog. The monitor robot eagerly reads model cards for chat, vision, tools, and reasoning while code-vines grow from the connection, making the plugin feel like a natural bridge into the Pollinations hive.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing tiny programmer glasses as she plugs a glowing retro terminal labeled “LLM” into a blooming catalog of model-card flowers; a chunky CRT monitor robot happily holds cards marked chat, vision, tools, and reason. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream garden shed with code-plants and gentle screen glow, warm lighting, retro gaming vibes, pixel-font text: “POLLINATIONS/…”, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-14/PR-14808.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing tiny programmer glasses as she plugs a glowing retro terminal labeled “LLM” into a blooming catalog of model-card flowers; a chunky CRT monitor robot happily holds cards marked chat, vision, tools, and reason. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream garden shed with code-plants and gentle screen glow, warm lighting, retro gaming vibes, pixel-font text: “POLLINATIONS/…”, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-14T11:53:07.393974+00:00"
+}

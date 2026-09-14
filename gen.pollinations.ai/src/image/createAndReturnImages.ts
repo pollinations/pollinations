@@ -310,9 +310,9 @@ const AZURE_API_VERSION = "2025-04-01-preview";
 // Every endpoint is a resource dedicated to a single model: Azure abuse blocks
 // are per-resource, so sharing one resource across models turns a block into a
 // multi-model outage (issue #12446). Keep it one model per resource.
-// Exception: gpt-image-2.5 quota is a single subscription-wide Global Standard
-// pool (12 RPM per model, not per region), so both 2.5 deployments live on the
-// shared Sweden Central resource; extra regions would add no capacity.
+// gpt-image-2.5 quota is a single subscription-wide Global Standard pool
+// (12 RPM per model, not per region), so each 2.5 model has exactly one
+// dedicated resource; extra regions would add no capacity.
 const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
     "openai/gpt-image-1-mini": [
         {
@@ -399,9 +399,9 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
         {
             provider: "azure",
             baseUrl:
-                "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-2.5-flare",
+                "https://myceli-prod-img-25-flare-sweden.cognitiveservices.azure.com/openai/deployments/gpt-image-2.5-flare",
             modelName: "gpt-image-2.5-flare",
-            apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_25_FLARE_SWEDEN_API_KEY",
             region: "swedencentral",
         },
     ],
@@ -418,9 +418,9 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
         {
             provider: "azure",
             baseUrl:
-                "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-2.5-sunburst",
+                "https://myceli-prod-img-25-sunburst-sweden.cognitiveservices.azure.com/openai/deployments/gpt-image-2.5-sunburst",
             modelName: "gpt-image-2.5-sunburst",
-            apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_25_SUNBURST_SWEDEN_API_KEY",
             region: "swedencentral",
         },
     ],

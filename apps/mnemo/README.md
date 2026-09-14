@@ -9,7 +9,7 @@ Mnemo uses the **Computer MCP** to store memories in isolated text files. Each u
 ## Features
 
 - **Remembers facts** — stores personal details, preferences, stories
-- **Isolated memory** — each user has their own file (`/tmp/mnemo_memory_<USER_ID>.txt`)
+- **Isolated memory** — each user has their own file (`/workspace/mnemo/memory_<USER_ID>.txt`)
 - **Recall** — ask "what do you remember?" to see stored facts
 - **Forget** — say "forget everything" to delete your memory
 

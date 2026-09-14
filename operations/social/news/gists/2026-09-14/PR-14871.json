@@ -1,0 +1,36 @@
+{
+  "pr_number": 14871,
+  "title": "Add Co-Eco-Graph — Enchanted Contract Explorer to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14871",
+  "merged_at": "2026-09-14T17:11:51Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Co-Eco-Graph — Enchanted Contract Explorer](https://ceg-wine.vercel.app) to image\n- Paste any EVM contract address and explore its subgraph ecosystem as an interactive graph — subgraphs, entities, event handlers from The Graph, plus AI fairy-tale + fantasy illustration. Pollinations \n\nFixes #14867",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Follow the contract vines",
+    "blurb": "Co-Eco-Graph joined the image garden: paste an EVM contract address and watch its subgraph ecosystem turn into an explorable fairy-tale map. Smart contracts have event handlers now. Naturally, they needed enchanted forest paths.",
+    "summary": "Added Co-Eco-Graph — Enchanted Contract Explorer to the app image, letting people paste an EVM contract address to explore its The Graph subgraphs, entities, and event handlers as an interactive graph with AI fantasy illustration.",
+    "impact": "Users can now discover Co-Eco-Graph from the image and trace an EVM contract's connected indexing ecosystem through a visual, storybook-style interface.",
+    "keywords": [
+      "community-app",
+      "EVM",
+      "smart-contracts",
+      "The Graph",
+      "interactive-graph",
+      "AI-art"
+    ],
+    "visual_concept": "Depict Co-Eco-Graph as a cozy enchanted ecosystem map: a glowing contract-address scroll feeds into branching graph vines, with labeled node-flowers for subgraphs, entities, and event handlers. Polli, wearing tiny wizard glasses and carrying a map pointer, follows the illuminated connections through the garden while a friendly CRT monitor robot eagerly studies the graph.",
+    "image_prompt": "A cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny wizard glasses and guiding a friendly CRT-monitor robot through an enchanted EVM contract garden. A glowing address scroll becomes branching lime green (#ecf874) code-vines connecting flower-like graph nodes labeled simply “SUBGRAPH,” “ENTITY,” and “EVENT,” with warm cream, mint, lavender, and peach scenery; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-14/PR-14871.jpg",
+    "prompt": "A cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny wizard glasses and guiding a friendly CRT-monitor robot through an enchanted EVM contract garden. A glowing address scroll becomes branching lime green (#ecf874) code-vines connecting flower-like graph nodes labeled simply “SUBGRAPH,” “ENTITY,” and “EVENT,” with warm cream, mint, lavender, and peach scenery; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-09-14T17:12:57.432036+00:00",
+  "app_name": "Co-Eco-Graph — Enchanted Contract Explorer",
+  "app_url": "https://ceg-wine.vercel.app"
+}

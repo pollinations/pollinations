@@ -40,6 +40,7 @@ Install: `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
 | Check balance | `polli usage` |
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
 | Manage invite-only community models | `polli my-models list` |
+| Update the CLI | `polli update` (global installs only; npx/local get instructions) |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup

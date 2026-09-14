@@ -1,0 +1,34 @@
+{
+  "pr_number": 14841,
+  "title": "feat: add agent usage quests",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14841",
+  "merged_at": "2026-09-14T00:04:54Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds one-time quests: use any agent (0.25 Pollen), and create an agent used at least once (2 Pollen). The creator’s own successful test counts.\n- Reuses existing request events and the normal reward ledger/claim flow. No new event fields, Gen changes, or D1 migrations. Prompt, code, and externally hosted agents qualify; failed/internal calls and proxies do not.\n- Keeps a small Tinybird summary: the direct 3-month query scanned 83.6M rows and took 5.7s. Creator matching uses the recorded GitHub username; username changes before claiming can lose historical eligibility.\n- Verified: 37 quest tests including exact credits and duplicate claims, typecheck, Biome, 14 SQL cases against staging, and Tinybird dry-run validation.\n- Rollout prerequisite: deploy the additive Tinybird summary and endpoint to staging, verify, then production before activating Enter. Nothing deployed. Backfill covers 3 months of classified agent events; flags persist afterward.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Agents, meet the quest garden",
+    "blurb": "Two new quest seeds are ready for the agent garden: try any agent for 0.25 Pollen, or create one that gets used for 2 Pollen. Your own successful test run counts too, because shipping an agent should not require finding a ceremonial second person.",
+    "summary": "Added one-time Enter quests rewarding 0.25 Pollen for using any qualifying agent and 2 Pollen for creating an agent that is successfully used at least once, using existing classified request events and the normal reward claim ledger.",
+    "impact": "Prompt, code, and externally hosted agents can earn these rewards after rollout, with a three-month backfill of classified agent events and duplicate claims prevented by the existing quest flow.",
+    "keywords": [
+      "quests",
+      "pollen",
+      "agents",
+      "rewards",
+      "enter",
+      "tinybird"
+    ],
+    "visual_concept": "Depict Polli tending a cozy agent garden where three kinds of code-plants—prompt scroll, code terminal, and small hosted-server pot—have sprouted into reward flowers labeled 0.25 and 2 Pollen. Polli should be actively testing one plant with a tiny clipboard, while the eager CRT Monitor Robot confirms a successful run; use small quest badges and a normal ledger book to show that usage becomes a claimable reward.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt and checking a thriving agent garden of prompt-scroll, code-terminal, and hosted-server plants; a cute CRT monitor robot proudly displays a green successful-run check beside a ledger and flowers marked \"0.25\" and \"2 POLLEN.\" Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with vines and pixel flowers, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-14/PR-14841.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt and checking a thriving agent garden of prompt-scroll, code-terminal, and hosted-server plants; a cute CRT monitor robot proudly displays a green successful-run check beside a ledger and flowers marked \"0.25\" and \"2 POLLEN.\" Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with vines and pixel flowers, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-14T00:06:02.936026+00:00"
+}

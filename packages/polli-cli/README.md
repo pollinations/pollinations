@@ -57,6 +57,14 @@ polli gen chat --model openai                         # interactive multi-turn
 
 `gen text` streams by default. File-output commands pick a sensible default path if `--output` is omitted.
 
+## Update
+
+```bash
+polli update                          # updates a global npm install of @pollinations/cli
+```
+
+For npx runs (`npx @pollinations/cli@latest ...`) and project-local installs the command prints matching instructions instead of creating a second global installation.
+
 ## Discover
 
 ```bash

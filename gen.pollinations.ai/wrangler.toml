@@ -187,6 +187,9 @@ new_classes = ["CommunityModelRateLimiter"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
+WEFT_FACILITATOR_URL = "https://x402.weft.network"
+WEFT_PAY_TO = "0x657d15ea5f5a2877e766137861d7deee1a9422dc"
+WEFT_NETWORK = "eip155:8453"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"

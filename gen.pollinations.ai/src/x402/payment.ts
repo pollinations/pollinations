@@ -36,7 +36,7 @@ import {
     x402StreamReceipt,
 } from "./stream.ts";
 
-// x402.weft.network is Base mainnet. This preview is Sepolia-only.
+// Default to testnet; production explicitly sets its facilitator and network.
 const DEFAULT_FACILITATOR_URL = "https://x402.staging.weft.network";
 const DEFAULT_NETWORK = "eip155:84532";
 const FINAL_RESPONSE_TTL_MS = 30 * 24 * 60 * 60 * 1000;

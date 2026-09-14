@@ -1,6 +1,6 @@
 ## Authentication
 
-All generation requests require an API key from [enter.pollinations.ai](https://enter.pollinations.ai/keys). Model listing endpoints work without authentication.
+Generation requests use an API key from [enter.pollinations.ai](https://enter.pollinations.ai/keys), or x402 payments for the supported requests below. Model listing endpoints work without authentication.
 
 | Type | Prefix | Use case | Rate limits | Description |
 |------|--------|----------|-------------|-------------|
@@ -17,9 +17,14 @@ Two ways to authenticate generation requests:
 
 For detailed integration guidance on user-pays authorization, including OAuth discovery and token exchange, see [Connect User Wallets](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md).
 
-### x402 payments (staging preview)
+### x402 payments
 
-On `https://staging.gen.pollinations.ai`, supported requests can use Weft x402 payments without a Pollinations API key. Settlement goes through `https://x402.staging.weft.network` on Base Sepolia (`eip155:84532`). `https://x402.weft.network` is production / Base mainnet — do not use it for this preview. Production Pollinations still requires an API key.
+Supported requests can pay in USDC through Weft without a Pollinations API key. Use Base mainnet for production and Base Sepolia test USDC for staging; do not mix their wallets, credentials or networks.
+
+| Environment | API base URL | Payment network | Facilitator |
+|-------------|--------------|-----------------|-------------|
+| Production | `https://gen.pollinations.ai` | Base (`eip155:8453`) | `https://x402.weft.network` |
+| Staging | `https://staging.gen.pollinations.ai` | Base Sepolia (`eip155:84532`) | `https://x402.staging.weft.network` |
 
 | Endpoint | Supported requests |
 |----------|--------------------|
@@ -34,4 +39,4 @@ Retry a disconnected request with the same URL, body, safety header, idempotency
 
 For streaming chat, the initial challenge is still an ordinary JSON `402`. Once payment authorization is verified, the retry returns `200 text/event-stream` with chat events immediately. Actual usage is settled at the end. Before `[DONE]`, a Pollinations-specific `event: x402.payment` carries `data: {"paymentResponse":"<encoded PAYMENT-RESPONSE>"}`. Live responses cannot carry the eventual receipt in HTTP headers; completed replays also include the `PAYMENT-RESPONSE` header. Wait for the receipt and `[DONE]` to confirm completion. A generation or payment failure emits an error event without `[DONE]`; retry with the same key and signature. Disconnecting does not cancel generation or settlement. Retries replay from the beginning, not from an event offset. Use a direct streaming-capable client; a payment proxy may buffer the response.
 
-Video, uploads, token-priced images, duration-priced audio, search and community endpoints are not included in this preview. Requests without a supported ceiling must use a Pollinations API key. Supplying `Authorization` or a `key` query parameter always selects normal Pollen authentication, even if the credential is invalid.
+Video, uploads, token-priced images, duration-priced audio, search and community endpoints are not supported by x402. Requests without a supported ceiling must use a Pollinations API key. Supplying `Authorization` or a `key` query parameter always selects normal Pollen authentication, even if the credential is invalid.

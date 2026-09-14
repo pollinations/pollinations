@@ -99,7 +99,10 @@ const resumeX402Operation = (
     candidate: PaymentResumeCandidate,
 ) => resumeOperation(bindings, key, chatRequest(body), candidate);
 
-async function challenge(body: unknown) {
+async function challenge(
+    body: unknown,
+    bindings: CloudflareBindings = x402Env,
+) {
     const app = generationApp;
     const response = await app.request(
         ROUTE,
@@ -111,7 +114,7 @@ async function challenge(body: unknown) {
             },
             body: JSON.stringify(body),
         },
-        x402Env,
+        bindings,
     );
     expect(response.status).toBe(402);
     expect(response.headers.get("content-type")).toContain("application/json");
@@ -493,6 +496,23 @@ test("anonymous callers get an upto challenge on the existing route", async () =
     expect(extensions["weft.request"].info).toEqual({
         model: "openai/gpt-oss-20b",
         max_tokens: 100,
+    });
+});
+
+test("explicit production settings advertise Base USDC and the configured recipient", async () => {
+    const payTo = "0x0000000000000000000000000000000000000007";
+    const { accepts } = await challenge(request(), {
+        ...x402Env,
+        WEFT_FACILITATOR_URL: "https://x402.weft.network",
+        WEFT_NETWORK: "eip155:8453",
+        WEFT_PAY_TO: payTo,
+    });
+
+    expect(accepts[0]).toMatchObject({
+        scheme: "upto",
+        network: "eip155:8453",
+        asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        payTo,
     });
 });
 

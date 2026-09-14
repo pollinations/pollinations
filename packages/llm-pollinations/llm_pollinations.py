@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
-import tempfile
 import time
 from pathlib import Path
 
@@ -41,25 +39,6 @@ def _read_cache(path: Path) -> list[dict] | None:
     return value if isinstance(value, list) else None
 
 
-def _write_cache(path: Path, models: list[dict]) -> None:
-    """Replace the cache atomically so concurrent LLM processes cannot truncate it."""
-    temporary_path = None
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        descriptor, temporary_path = tempfile.mkstemp(
-            dir=path.parent, prefix=f".{path.name}.", suffix=".tmp"
-        )
-        with os.fdopen(descriptor, "w", encoding="utf-8") as temporary_file:
-            json.dump(models, temporary_file)
-        os.replace(temporary_path, path)
-    except OSError:
-        if temporary_path:
-            try:
-                Path(temporary_path).unlink(missing_ok=True)
-            except OSError:
-                pass
-
-
 def fetch_models(key: str) -> list[dict]:
     """Load the authenticated catalog with a short cache and stale fallback."""
     path = _cache_path(key)
@@ -91,7 +70,11 @@ def fetch_models(key: str) -> list[dict]:
             raise
         return cached
 
-    _write_cache(path, models)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(models), encoding="utf-8")
+    except OSError:
+        pass
     return models
 
 
@@ -104,20 +87,11 @@ def _is_chat_model(model: object) -> bool:
     return (
         isinstance(model.get("id"), str)
         and bool(model["id"])
-        and model.get("category") == "text"
         and isinstance(endpoints, list)
         and "/v1/chat/completions" in endpoints
         and isinstance(inputs, list)
-        and "text" in inputs
         and isinstance(outputs, list)
         and "text" in outputs
-    )
-
-
-def _advertises(model: dict, flag: str, capability: str) -> bool:
-    capabilities = model.get("capabilities")
-    return model.get(flag) is True or (
-        isinstance(capabilities, list) and capability in capabilities
     )
 
 
@@ -141,7 +115,7 @@ def register_models(register):
             "model_name": model["id"],
             "api_base": API_BASE,
             "vision": "image" in model["input_modalities"],
-            "supports_tools": _advertises(model, "tools", "tool_calling"),
-            "reasoning": _advertises(model, "reasoning", "reasoning"),
+            "supports_tools": model.get("tools") is True,
+            "reasoning": model.get("reasoning") is True,
         }
         register(PollinationsChat(**options), PollinationsAsyncChat(**options))

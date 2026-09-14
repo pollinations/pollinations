@@ -35,9 +35,7 @@ def test_reuses_llm_openai_compatible_models():
     assert plugin.PollinationsChat.key_env_var == "POLLINATIONS_API_KEY"
 
 
-def test_catalog_is_authenticated_cached_atomically_and_key_scoped(
-    tmp_path, monkeypatch
-):
+def test_catalog_is_authenticated_cached_and_key_scoped(tmp_path, monkeypatch):
     monkeypatch.setattr(plugin.llm, "user_dir", lambda: tmp_path)
     calls = []
 
@@ -52,7 +50,17 @@ def test_catalog_is_authenticated_cached_atomically_and_key_scoped(
     assert calls[0][1]["headers"] == {"Authorization": "Bearer sk_one"}
     assert plugin._cache_path("sk_one") != plugin._cache_path("sk_two")
     assert "sk_one" not in plugin._cache_path("sk_one").name
-    assert not list(tmp_path.glob("*.tmp"))
+
+
+def test_corrupt_cache_is_refetched(tmp_path, monkeypatch):
+    monkeypatch.setattr(plugin.llm, "user_dir", lambda: tmp_path)
+    path = plugin._cache_path("sk_test")
+    path.write_text("{", encoding="utf-8")
+    monkeypatch.setattr(
+        plugin.httpx, "get", lambda *args, **kwargs: response(200, {"data": [model()]})
+    )
+    assert plugin.fetch_models("sk_test") == [model()]
+    assert json.loads(path.read_text()) == [model()]
 
 
 @pytest.mark.parametrize("failure", [httpx.ConnectError("offline"), 503])
@@ -99,7 +107,7 @@ def test_registration_isolates_bad_records_and_maps_capabilities(monkeypatch):
         ),
         model("openai/test"),
         model("responses-only", supported_endpoints=["/v1/responses"]),
-        model("image", category="image"),
+        model("image", category="image", output_modalities=["image"]),
         None,
     ]
     monkeypatch.setattr(plugin.llm, "get_key", lambda *args: "sk_test")
@@ -116,6 +124,11 @@ def test_registration_isolates_bad_records_and_maps_capabilities(monkeypatch):
     assert sync.api_base == plugin.API_BASE
     assert sync.vision and sync.supports_tools
     assert "reasoning_effort" in sync.Options.model_fields
+
+
+def test_filter_uses_endpoint_and_text_output_not_category():
+    assert plugin._is_chat_model(model(category=None, input_modalities=["image"]))
+    assert not plugin._is_chat_model(model(output_modalities=["audio"]))
 
 
 def test_registration_requires_key(monkeypatch):

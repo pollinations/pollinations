@@ -277,12 +277,12 @@ export const dsh: HarnessAdapter = {
     label: LABEL,
     description: "Configure DeepSeek Harness as a Pollinations provider",
     restartHint:
-        "Changes apply on the next request. Start DeepSeek Harness with: npx @deepseek-ai/dsh web",
+        "Changes apply on the next request. Start DeepSeek Harness with: npx @deepseek-ai/dsh@latest web",
 
     async on(ctx, options) {
         if (!commandExists("npx", ctx.env)) {
             throw new Error(
-                "DeepSeek Harness requires npx. Install Node.js, then run: npx @deepseek-ai/dsh web",
+                "DeepSeek Harness requires npx. Install Node.js, then run: npx @deepseek-ai/dsh@latest web",
             );
         }
         const model = options.model ?? DEFAULT_MODEL;

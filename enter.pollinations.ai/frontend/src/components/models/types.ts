@@ -65,6 +65,7 @@ export type ModelPrice = {
     description?: string;
     publisher?: string;
     brandUrl?: string;
+    brandIconUrl?: string;
     inputModalities?: string[];
     outputModalities?: string[];
     supportedEndpoints?: string[];

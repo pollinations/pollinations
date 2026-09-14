@@ -20,7 +20,7 @@ export interface ChatMessage {
 /** Options bag threaded through transforms and generation functions. */
 export interface TransformOptions {
     model?: string;
-    metadata?: Record<string, string>;
+    metadata?: Record<string, string> | null;
     modelDef?: unknown;
     modelConfig?: Record<string, unknown>;
     requestedModel?: string;

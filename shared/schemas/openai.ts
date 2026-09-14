@@ -148,7 +148,9 @@ const ChatCompletionRequestMessageContentPartSchema = z
         ChatCompletionRequestMessageContentPartAudioSchema,
         ChatCompletionRequestMessageContentPartFileSchema,
         // Allow any other content types for provider-specific extensions
-        z.object({ type: z.string() }).passthrough(),
+        z
+            .object({ type: z.string() })
+            .passthrough(),
     ])
     .meta({ $id: "MessageContentPart" });
 
@@ -310,7 +312,7 @@ export const CreateChatCompletionRequestSchema = z
         }),
         metadata: z
             .record(z.string(), z.string())
-            .optional()
+            .nullish()
             .describe(
                 "Passed unchanged to endpoint agents. Each agent documents the metadata keys it accepts.",
             ),
@@ -438,7 +440,7 @@ export const CreateResponseRequestSchema = z
         tools: z.array(ResponseFunctionToolSchema).optional(),
         tool_choice: z.any().optional(),
         parallel_tool_calls: z.boolean().optional(),
-        metadata: z.record(z.string(), z.string()).optional(),
+        metadata: z.record(z.string(), z.string()).nullish(),
         user: z.string().optional(),
         safety_identifier: z.string().max(64).optional(),
         prompt_cache_key: z.string().optional(),
@@ -563,7 +565,9 @@ const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionMessageContentPartThinkingSchema,
     ChatCompletionMessageContentPartRedactedThinkingSchema,
     // Allow any other content types for provider-specific extensions (video, audio, file, etc.)
-    z.object({ type: z.string() }).passthrough(),
+    z
+        .object({ type: z.string() })
+        .passthrough(),
 ]);
 
 const ChatCompletionResponseMessageSchema = z.object({

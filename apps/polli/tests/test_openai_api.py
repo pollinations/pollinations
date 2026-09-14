@@ -162,6 +162,16 @@ class OpenAIAPITests(unittest.TestCase):
             self.assertTrue(params["_explicit_model"])
             self.assertNotIn("metadata", params)
 
+    def test_metadata_validation_matches_between_endpoints(self):
+        for path, body in (
+            ("/v1/chat/completions", {"messages": [{"role": "user", "content": "Hi"}]}),
+            ("/v1/responses", {"input": "Hi"}),
+        ):
+            for metadata, status in ((None, 200), ({}, 200), ({"model": 123}, 400)):
+                with self.subTest(path=path, metadata=metadata):
+                    response = self.client.post(path, headers=self.headers, json={**body, "metadata": metadata})
+                    self.assertEqual(response.status_code, status)
+
     def test_blank_model_is_rejected(self):
         response = self.client.post(
             "/v1/responses",

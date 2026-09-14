@@ -557,240 +557,225 @@ describe("Chat Completions over Responses", () => {
         });
     }
 
-    it.each([false, true])(
-        "renders executed function pairs once, without client tool calls (stream=%s)",
-        async (stream) => {
-            const output = [
-                hostedCall,
-                hostedResult,
-                {
-                    type: "message",
-                    id: "msg_after",
-                    content: [
-                        { type: "output_text", text: "Here is your image." },
-                    ],
-                },
-            ];
-            const completion = await hostedCompletion(output, stream);
-            const events = stream
-                ? await streamEvents(completion)
-                : [completion];
-            const content = stream
-                ? events
-                      .map((event) => event.choices?.[0]?.delta?.content ?? "")
-                      .join("")
-                : completion.choices?.[0].message?.content;
-            if (typeof content !== "string")
-                throw new Error("Expected text output");
-            expect(content).toContain("Tool Executed");
-            expect(content).toContain(
-                "![Generated image](<https://example.com/cat.png>)",
-            );
-            expect(content?.split("<details")).toHaveLength(2);
-            expect(content).toMatch(/Tool Executed[\s\S]*Here is your image/);
-            expect(
-                events.some(
-                    (event) =>
-                        event.choices?.[0]?.delta?.tool_calls ??
-                        event.choices?.[0]?.message?.tool_calls,
-                ),
-            ).toBe(false);
-            expect(
-                events.some(
-                    (event) => event.choices?.[0]?.finish_reason === "stop",
-                ),
-            ).toBe(true);
-            expect(
-                events.find((event) => event.usage)?.usage.prompt_tokens_details
-                    .cache_write_tokens,
-            ).toBe(2);
-            if (stream) expect(events.at(-1)).toBe("[DONE]");
-        },
-    );
-
-    it.each([false, true])(
-        "preserves generic tool JSON containing content without MCP media rendering (stream=%s)",
-        async (stream) => {
-            const result = {
-                answer: 42,
-                content: [
-                    { type: "application-record", value: "<keep this>" },
-                    {
-                        type: "resource_link",
-                        uri: "https://example.com/domain-image.png",
-                        name: "Domain data, not generated media",
-                        mimeType: "image/png",
-                    },
-                ],
-            };
-            const completion = await hostedCompletion(
-                [
-                    { ...hostedCall, name: "lookup" },
-                    { ...hostedResult, output: JSON.stringify(result) },
-                ],
-                stream,
-            );
-            const events = stream
-                ? await streamEvents(completion)
-                : [completion];
-            const content = stream
-                ? events
-                      .map((event) => event.choices?.[0]?.delta?.content ?? "")
-                      .join("")
-                : completion.choices?.[0].message?.content;
-            if (typeof content !== "string")
-                throw new Error("Expected text output");
-            expect(content).toContain("&quot;answer&quot;:42");
-            expect(content).toContain("&quot;application-record&quot;");
-            expect(content).toContain("&lt;keep this&gt;");
-            expect(content).toContain("Domain data, not generated media");
-            expect(content).not.toContain("![Generated image]");
-            expect(content).not.toContain("output omitted");
-            expect(content?.split("<details")).toHaveLength(2);
-            expect(
-                events.some(
-                    (event) =>
-                        event.choices?.[0]?.delta?.tool_calls ??
-                        event.choices?.[0]?.message?.tool_calls,
-                ),
-            ).toBe(false);
-        },
-    );
-
-    it.each([false, true])(
-        "keeps generic hosted errors separate from pending client functions (stream=%s)",
-        async (stream) => {
-            const completion = await hostedCompletion(
-                [
-                    { ...hostedCall, name: "weather" },
-                    {
-                        ...hostedResult,
-                        output: JSON.stringify({
-                            isError: true,
-                            content: [{ type: "text", text: "City not found" }],
-                        }),
-                    },
-                    {
-                        ...hostedCall,
-                        id: "fc_client",
-                        call_id: "call_client",
-                        name: "ask_user",
-                    },
-                ],
-                stream,
-            );
-            const events = stream
-                ? await streamEvents(completion)
-                : [completion];
-            const content = stream
-                ? events
-                      .map((event) => event.choices?.[0]?.delta?.content ?? "")
-                      .join("")
-                : completion.choices?.[0].message?.content;
-            expect(content).toContain("Tool Failed");
-            expect(content).toContain("City not found");
-            const calls = events.flatMap(
+    it.each([
+        false,
+        true,
+    ])("renders executed function pairs once, without client tool calls (stream=%s)", async (stream) => {
+        const output = [
+            hostedCall,
+            hostedResult,
+            {
+                type: "message",
+                id: "msg_after",
+                content: [{ type: "output_text", text: "Here is your image." }],
+            },
+        ];
+        const completion = await hostedCompletion(output, stream);
+        const events = stream ? await streamEvents(completion) : [completion];
+        const content = stream
+            ? events
+                  .map((event) => event.choices?.[0]?.delta?.content ?? "")
+                  .join("")
+            : completion.choices?.[0].message?.content;
+        if (typeof content !== "string")
+            throw new Error("Expected text output");
+        expect(content).toContain("Tool Executed");
+        expect(content).toContain(
+            "![Generated image](<https://example.com/cat.png>)",
+        );
+        expect(content?.split("<details")).toHaveLength(2);
+        expect(content).toMatch(/Tool Executed[\s\S]*Here is your image/);
+        expect(
+            events.some(
                 (event) =>
                     event.choices?.[0]?.delta?.tool_calls ??
-                    event.choices?.[0]?.message?.tool_calls ??
-                    [],
-            );
-            expect(calls).toHaveLength(1);
-            expect(calls[0]).toMatchObject({
-                id: "call_client",
-                function: { name: "ask_user" },
-            });
-            if (stream) expect(calls[0].index).toBe(0);
-            expect(
-                events.some(
-                    (event) =>
-                        event.choices?.[0]?.finish_reason === "tool_calls",
-                ),
-            ).toBe(true);
-        },
-    );
+                    event.choices?.[0]?.message?.tool_calls,
+            ),
+        ).toBe(false);
+        expect(
+            events.some(
+                (event) => event.choices?.[0]?.finish_reason === "stop",
+            ),
+        ).toBe(true);
+        expect(
+            events.find((event) => event.usage)?.usage.prompt_tokens_details
+                .cache_write_tokens,
+        ).toBe(2);
+        if (stream) expect(events.at(-1)).toBe("[DONE]");
+    });
 
-    it.each([false, true])(
-        "rejects malformed, incomplete, duplicate and unmatched results without successful usage (stream=%s)",
-        async (stream) => {
-            for (const output of [
-                [hostedResult],
-                [hostedCall, { ...hostedResult, output: null }],
-                [hostedCall, { ...hostedResult, status: "incomplete" }],
-                [
-                    hostedCall,
-                    hostedResult,
-                    { ...hostedResult, id: "fco_duplicate" },
-                ],
-                [
-                    hostedCall,
-                    { ...hostedCall, id: "fc_duplicate" },
-                    hostedResult,
-                ],
-            ]) {
-                if (!stream) {
-                    await expect(
-                        hostedCompletion(output, false),
-                    ).rejects.toMatchObject({ status: 502 });
-                } else {
-                    const events = await streamEvents(
-                        await hostedCompletion(output, true),
-                    );
-                    expect(events.at(-1)).toMatchObject({
-                        error: { type: "upstream_error" },
-                    });
-                    expect(events.some((event) => event.usage)).toBe(false);
-                    expect(
-                        events.some(
-                            (event) => event.choices?.[0]?.delta?.tool_calls,
-                        ),
-                    ).toBe(false);
-                    expect(events).not.toContain("[DONE]");
-                }
-                vi.restoreAllMocks();
+    it.each([
+        false,
+        true,
+    ])("preserves generic tool JSON containing content without MCP media rendering (stream=%s)", async (stream) => {
+        const result = {
+            answer: 42,
+            content: [
+                { type: "application-record", value: "<keep this>" },
+                {
+                    type: "resource_link",
+                    uri: "https://example.com/domain-image.png",
+                    name: "Domain data, not generated media",
+                    mimeType: "image/png",
+                },
+            ],
+        };
+        const completion = await hostedCompletion(
+            [
+                { ...hostedCall, name: "lookup" },
+                { ...hostedResult, output: JSON.stringify(result) },
+            ],
+            stream,
+        );
+        const events = stream ? await streamEvents(completion) : [completion];
+        const content = stream
+            ? events
+                  .map((event) => event.choices?.[0]?.delta?.content ?? "")
+                  .join("")
+            : completion.choices?.[0].message?.content;
+        if (typeof content !== "string")
+            throw new Error("Expected text output");
+        expect(content).toContain("&quot;answer&quot;:42");
+        expect(content).toContain("&quot;application-record&quot;");
+        expect(content).toContain("&lt;keep this&gt;");
+        expect(content).toContain("Domain data, not generated media");
+        expect(content).not.toContain("![Generated image]");
+        expect(content).not.toContain("output omitted");
+        expect(content?.split("<details")).toHaveLength(2);
+        expect(
+            events.some(
+                (event) =>
+                    event.choices?.[0]?.delta?.tool_calls ??
+                    event.choices?.[0]?.message?.tool_calls,
+            ),
+        ).toBe(false);
+    });
+
+    it.each([
+        false,
+        true,
+    ])("keeps generic hosted errors separate from pending client functions (stream=%s)", async (stream) => {
+        const completion = await hostedCompletion(
+            [
+                { ...hostedCall, name: "weather" },
+                {
+                    ...hostedResult,
+                    output: JSON.stringify({
+                        isError: true,
+                        content: [{ type: "text", text: "City not found" }],
+                    }),
+                },
+                {
+                    ...hostedCall,
+                    id: "fc_client",
+                    call_id: "call_client",
+                    name: "ask_user",
+                },
+            ],
+            stream,
+        );
+        const events = stream ? await streamEvents(completion) : [completion];
+        const content = stream
+            ? events
+                  .map((event) => event.choices?.[0]?.delta?.content ?? "")
+                  .join("")
+            : completion.choices?.[0].message?.content;
+        expect(content).toContain("Tool Failed");
+        expect(content).toContain("City not found");
+        const calls = events.flatMap(
+            (event) =>
+                event.choices?.[0]?.delta?.tool_calls ??
+                event.choices?.[0]?.message?.tool_calls ??
+                [],
+        );
+        expect(calls).toHaveLength(1);
+        expect(calls[0]).toMatchObject({
+            id: "call_client",
+            function: { name: "ask_user" },
+        });
+        if (stream) expect(calls[0].index).toBe(0);
+        expect(
+            events.some(
+                (event) => event.choices?.[0]?.finish_reason === "tool_calls",
+            ),
+        ).toBe(true);
+    });
+
+    it.each([
+        false,
+        true,
+    ])("rejects malformed, incomplete, duplicate and unmatched results without successful usage (stream=%s)", async (stream) => {
+        for (const output of [
+            [hostedResult],
+            [hostedCall, { ...hostedResult, output: null }],
+            [hostedCall, { ...hostedResult, status: "incomplete" }],
+            [
+                hostedCall,
+                hostedResult,
+                { ...hostedResult, id: "fco_duplicate" },
+            ],
+            [hostedCall, { ...hostedCall, id: "fc_duplicate" }, hostedResult],
+        ]) {
+            if (!stream) {
+                await expect(
+                    hostedCompletion(output, false),
+                ).rejects.toMatchObject({ status: 502 });
+            } else {
+                const events = await streamEvents(
+                    await hostedCompletion(output, true),
+                );
+                expect(events.at(-1)).toMatchObject({
+                    error: { type: "upstream_error" },
+                });
+                expect(events.some((event) => event.usage)).toBe(false);
+                expect(
+                    events.some(
+                        (event) => event.choices?.[0]?.delta?.tool_calls,
+                    ),
+                ).toBe(false);
+                expect(events).not.toContain("[DONE]");
             }
-        },
-    );
+            vi.restoreAllMocks();
+        }
+    });
 
-    it.each([false, true])(
-        "still renders native provider MCP items (stream=%s)",
-        async (stream) => {
-            const completion = await hostedCompletion(
-                [
-                    {
-                        type: "mcp_call",
-                        id: "mcp_native",
-                        server_label: "weather",
-                        name: "lookup",
-                        arguments: "{}",
-                        status: "failed",
-                        output: null,
-                        error: {
-                            type: "http_error",
-                            code: 503,
-                            message: "Weather service unavailable",
-                        },
+    it.each([
+        false,
+        true,
+    ])("still renders native provider MCP items (stream=%s)", async (stream) => {
+        const completion = await hostedCompletion(
+            [
+                {
+                    type: "mcp_call",
+                    id: "mcp_native",
+                    server_label: "weather",
+                    name: "lookup",
+                    arguments: "{}",
+                    status: "failed",
+                    output: null,
+                    error: {
+                        type: "http_error",
+                        code: 503,
+                        message: "Weather service unavailable",
                     },
-                ],
-                stream,
-            );
-            const events = stream
-                ? await streamEvents(completion)
-                : [completion];
-            const content = stream
-                ? events
-                      .map((event) => event.choices?.[0]?.delta?.content ?? "")
-                      .join("")
-                : completion.choices?.[0].message?.content;
-            expect(content).toContain("Tool Failed");
-            expect(content).toContain("Weather service unavailable");
-            expect(
-                events.some(
-                    (event) => event.choices?.[0]?.finish_reason === "stop",
-                ),
-            ).toBe(true);
-        },
-    );
+                },
+            ],
+            stream,
+        );
+        const events = stream ? await streamEvents(completion) : [completion];
+        const content = stream
+            ? events
+                  .map((event) => event.choices?.[0]?.delta?.content ?? "")
+                  .join("")
+            : completion.choices?.[0].message?.content;
+        expect(content).toContain("Tool Failed");
+        expect(content).toContain("Weather service unavailable");
+        expect(
+            events.some(
+                (event) => event.choices?.[0]?.finish_reason === "stop",
+            ),
+        ).toBe(true);
+    });
 
     it("recovers output carried only by done and terminal events", async () => {
         mockStream([
@@ -996,23 +981,20 @@ describe("Chat Completions over Responses", () => {
             "hosted search",
             { web_search_options: { search_context_size: "low" } },
         ],
-    ])(
-        "rejects unsupported %s before calling upstream",
-        async (_name, extra) => {
-            const fetchSpy = vi.spyOn(globalThis, "fetch");
-            await expect(
-                callChatViaResponses([{ role: "user", content: "Hi" }], {
-                    model: "provider-model",
-                    modelConfig,
-                    ...extra,
-                } as TransformOptions),
-            ).rejects.toMatchObject({
-                status: 400,
-                errorCode: "unsupported_parameter",
-            });
-            expect(fetchSpy).not.toHaveBeenCalled();
-        },
-    );
+    ])("rejects unsupported %s before calling upstream", async (_name, extra) => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            callChatViaResponses([{ role: "user", content: "Hi" }], {
+                model: "provider-model",
+                modelConfig,
+                ...extra,
+            } as TransformOptions),
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "unsupported_parameter",
+        });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
 
     it("ignores seed and repetition_penalty without changing mapped controls", () => {
         const options = {

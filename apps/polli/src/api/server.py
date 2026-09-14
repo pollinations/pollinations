@@ -30,7 +30,7 @@ class ChatRequest(BaseModel):
     messages: list[Message] = Field(min_length=1)
     model: str = Field(default="polli", min_length=1, max_length=128)
     stream: bool = False
-    metadata: dict[str, str] = Field(default_factory=dict)
+    metadata: dict[str, str] | None = None
     stream_options: dict[str, Any] | None = None
     user_name: str = "http_user"
     image_urls: list[str] = Field(default_factory=list)
@@ -51,6 +51,7 @@ class ResponsesRequest(BaseModel):
     input: str | list[dict[str, Any]]
     instructions: str | None = None
     stream: bool = False
+    metadata: dict[str, str] | None = None
     user_name: str = "http_user"
 
     @model_validator(mode="after")
@@ -110,7 +111,7 @@ def _request_args(request: ChatRequest, config: Any) -> dict[str, Any]:
             if isinstance(part, dict) and part.get("type") in {"text", "input_text"}
         )
     params = request.model_dump(exclude_none=True, exclude=_LOCAL_KEYS)
-    model = request.metadata.get("model", request.model)
+    model = (request.metadata or {}).get("model", request.model)
     params["model"] = _model_name(model, config)
     params["_explicit_model"] = model != "polli"
     return {

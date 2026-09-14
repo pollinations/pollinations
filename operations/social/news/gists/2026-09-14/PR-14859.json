@@ -1,0 +1,34 @@
+{
+  "pr_number": 14859,
+  "title": "Add production Weft seller key",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14859",
+  "merged_at": "2026-09-14T13:23:56Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds the explicitly approved `WEFT_SELLER_API_KEY` to Gen's encrypted production SOPS file; no existing secret material changes.\n- Includes the key in the optional generation-secret upload list so the existing production workflow will not skip it.\n- Keeps payment activation separate: no receiving-wallet configuration, merge, secret upload or production deployment was performed. Related integration: #14483.\n- Verified SOPS decryption and exact key round-trip, unchanged existing values/ciphertexts, no plaintext key in the file, script syntax, Biome and whitespace checks.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "A key joins the keyring",
+    "blurb": "The Weft seller credential has been tucked into Gen’s encrypted production keyring, with the delivery script taught to carry it along. Payment activation remains a separate button, because production deserves its little rituals.",
+    "summary": "Registered the approved WEFT_SELLER_API_KEY in Gen’s encrypted production SOPS secrets and added it to the optional generation-secret upload list, without changing existing secret values or activating payments.",
+    "impact": "Production secret uploads can now include the Weft seller credential when payment activation is ready, while the current payment and deployment setup remains unchanged.",
+    "keywords": [
+      "weft",
+      "secrets",
+      "sops",
+      "production",
+      "payments",
+      "gen"
+    ],
+    "visual_concept": "A secure production keyring for the Weft payment integration: Polli carefully carries a tiny labeled key toward a locked, glowing retro terminal while a code-plant grows beside it. The scene represents encrypted secret preparation rather than payment activation, so the terminal is in a calm standby state.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny locksmith tool belt as she carefully places a small \"WEFT\" key into a locked retro terminal keyring; a code-plant in a lime green (#ecf874) pot grows nearby, and the terminal softly shows \"READY\" in simple pixel text. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-14/PR-14859.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny locksmith tool belt as she carefully places a small \"WEFT\" key into a locked retro terminal keyring; a code-plant in a lime green (#ecf874) pot grows nearby, and the terminal softly shows \"READY\" in simple pixel text. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-14T13:24:57.106221+00:00"
+}

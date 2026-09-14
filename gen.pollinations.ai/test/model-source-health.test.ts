@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
-import {
-    filterBySource,
-    healthFor,
-    isReliable,
-} from "@/routes/proxy.ts";
-import { RELIABLE_SUCCESS_RATE_THRESHOLD } from "@/schemas/models.ts";
 import type { GenerationModelEntry } from "@/model-registry.ts";
+import { filterBySource, healthFor, isReliable } from "@/routes/proxy.ts";
+import { RELIABLE_SUCCESS_RATE_THRESHOLD } from "@/schemas/models.ts";
 
 function fakeEntry(community: boolean): GenerationModelEntry {
     return {
@@ -72,9 +68,7 @@ describe("model health metadata", () => {
         expect(health?.success_rate).toBeCloseTo(83 / 90);
         expect(health?.samples).toBe(100);
         expect(health?.window_minutes).toBe(60);
-        expect(new Date(health?.as_of ?? "").getTime()).toBe(
-            OPTIONS.timestamp,
-        );
+        expect(new Date(health?.as_of ?? "").getTime()).toBe(OPTIONS.timestamp);
     });
 
     it("means unknown without health rows", () => {

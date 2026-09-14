@@ -120,7 +120,11 @@ export async function fetchModelHealthData(
         if (stale) {
             log("Falling back to stale cache for %d minutes", minutes);
             setCacheEntry(minutes, stale);
-            return { data: stale.data, timestamp: stale.timestamp, stale: true };
+            return {
+                data: stale.data,
+                timestamp: stale.timestamp,
+                stale: true,
+            };
         }
         return null;
     }

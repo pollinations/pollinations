@@ -27,14 +27,6 @@ on:
           - gen
           - media
         default: all
-      sync_openrouter_only:
-        description: 'Sync only the approved OpenRouter secret to Gen'
-        type: boolean
-        default: false
-      sync_generation_secrets:
-        description: 'Sync Gen secrets only after separate scoped approval (OpenRouter-only takes precedence)'
-        type: boolean
-        default: false
       sync_discord_secrets:
         description: 'Sync the approved Discord secrets to Enter'
         type: boolean
@@ -280,8 +272,8 @@ jobs:
       - name: Setup SOPS
         uses: nhedger/setup-sops@v3
 
-      # Secret uploads require an explicit production dispatch after separate
-      # scoped approval. Normal code promotions preserve the deployed secrets.
+      # Re-apply the reviewed production secrets after every Gen deploy so the
+      # deployed worker stays in sync with the encrypted source of truth.
       # Deploy BEFORE pushing secrets: a fresh `wrangler deploy` makes the
       # latest worker version the deployed one. `wrangler secret bulk` edits
       # the latest version's settings and fails (Cloudflare 10214) if that
@@ -297,22 +289,10 @@ jobs:
         run: npm run deploy:production --workspace pollinations-gen
 
       - name: Push generation secrets
-        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production' && inputs.sync_generation_secrets && !inputs.sync_openrouter_only
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GEN }}
         run: npm run push-secrets:production --workspace pollinations-gen
-
-      - name: Push approved OpenRouter secret only
-        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production' && inputs.sync_openrouter_only
-        env:
-          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GEN }}
-        run: |
-          set -euo pipefail
-          sops --decrypt gen.pollinations.ai/secrets/prod.vars.json \
-            | jq '{OPENROUTER_API_KEY}' \
-            | ./node_modules/.bin/wrangler secret bulk - --config gen.pollinations.ai/wrangler.toml --env production
 
       - name: Verify production VPC binding
         env:

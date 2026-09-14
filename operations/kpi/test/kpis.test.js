@@ -15,6 +15,15 @@ import { DEFAULT_WEEKS, WEEK_RANGES, weeksFromSearch } from "../src/lib/range";
 const community = KPIS.find((row) => row.key === "communityModels");
 
 describe("agent and MCP KPI rows", () => {
+    it("labels the agent volume as observed runs and explains historical coverage", () => {
+        const row = KPIS.find((item) => item.key === "agentUsage");
+        expect(kpiView(row, 0).name).toBe("Agents · observed runs");
+        for (const view of row.views) {
+            expect(view.tooltip).toContain("recorded internal model/tool call");
+            expect(view.tooltip).toContain("Aug 24, 2026");
+        }
+    });
+
     it.each([
         ["agentUsage", "agentRequests", "agentUsers"],
         ["mcpUsage", "mcpCalls", "mcpUsers"],

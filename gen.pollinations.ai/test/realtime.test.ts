@@ -108,6 +108,7 @@ function mockRealtimeProvider(initialMessage?: string, estimatedCost = 0) {
     let upstreamServer: WebSocket | undefined;
     let upstreamServerAccepted = false;
     const tinybirdRequests: Request[] = [];
+    const errorEvents: Request[] = [];
 
     const fetchMock = vi
         .spyOn(globalThis, "fetch")
@@ -115,6 +116,10 @@ function mockRealtimeProvider(initialMessage?: string, estimatedCost = 0) {
             const request = new Request(input, init);
             if (request.url.includes("/v0/events?name=generation_event_v2")) {
                 tinybirdRequests.push(request);
+                return new Response("", { status: 202 });
+            }
+            if (request.url.includes("/v0/events?name=error_event")) {
+                errorEvents.push(request);
                 return new Response("", { status: 202 });
             }
             // checkBalance fetches the model-stats pipe for estimated pricing.
@@ -154,6 +159,7 @@ function mockRealtimeProvider(initialMessage?: string, estimatedCost = 0) {
     return {
         fetchMock,
         tinybirdRequests,
+        errorEvents,
         get request() {
             if (!upstreamRequest) {
                 throw new Error("Expected upstream realtime request");
@@ -239,6 +245,16 @@ async function waitForTinybirdRequests(
 ) {
     for (let attempt = 0; attempt < 20; attempt++) {
         if (upstream.tinybirdRequests.length >= count) return;
+        await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+}
+
+async function waitForErrorEvents(
+    upstream: ReturnType<typeof mockRealtimeProvider>,
+    count = 1,
+) {
+    for (let attempt = 0; attempt < 20; attempt++) {
+        if (upstream.errorEvents.length >= count) return;
         await new Promise((resolve) => setTimeout(resolve, 10));
     }
 }
@@ -1387,6 +1403,11 @@ test("does not retry a partially completed realtime deduction", async () => {
     // Settlement error is caught (not thrown), so the generation event IS emitted
     await waitForTinybirdRequests(session.upstream, 1);
     expect(session.upstream.tinybirdRequests).toHaveLength(1);
+    // The settlement failure should also emit an error_event
+    await waitForErrorEvents(session.upstream, 1);
+    expect(session.upstream.errorEvents).toHaveLength(1);
+    const errorBody = await session.upstream.errorEvents[0].text();
+    expect(errorBody).toContain("settlement_api_key_reconciliation");
 });
 
 test.each([

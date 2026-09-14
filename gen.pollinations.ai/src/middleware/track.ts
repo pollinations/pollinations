@@ -2,6 +2,7 @@ import { getLogger } from "@logtape/logtape";
 import type { ApiKeyType } from "@shared/auth/api-key-creation.ts";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
+import { emitSettlementErrorEvent } from "@shared/billing/settle-error-event.ts";
 import {
     type CommunityModelRewardResolution,
     handleBalanceDeduction,
@@ -536,52 +537,32 @@ export const track = (eventType: EventType) =>
                 );
 
                 if (settlementError) {
-                    const settlementMessage: Record<SettlementError, string> = {
-                        api_key_reconciliation:
-                            "API key budget reconciliation failed after committed debit",
-                        dev_credit:
-                            "Dev markup credit failed after committed debit",
-                        community_reward_credit:
-                            "Community model reward credit failed after committed debit",
-                    };
-                    await sendErrorEventToTinybird(
-                        {
-                            timestamp: endTime.toISOString(),
-                            kind: "server_error",
-                            severity: "error",
-                            request_id: finalEvent.requestId,
-                            environment: finalEvent.environment,
-                            route_path: finalEvent.requestPath,
-                            method: c.req.method,
-                            status: 200,
-                            duration_ms:
-                                endTime.getTime() - startTime.getTime(),
-                            error_class: "SettlementFailure",
-                            error_code: `settlement_${settlementError}`,
-                            message: settlementMessage[settlementError],
-                            edge_colo: (
-                                c.req.raw as Request & {
-                                    cf?: { colo?: string };
-                                }
-                            ).cf?.colo,
-                            model_requested:
-                                finalEvent.modelRequested ?? undefined,
-                            resolved_model_requested:
-                                finalEvent.resolvedModelRequested,
-                            request_inputs: stringifyRequestInputs(
-                                await collectRequestInputs(c),
-                            ),
-                            user_id: finalEvent.userId,
-                            user_tier: finalEvent.userTier,
-                            api_key_id: finalEvent.apiKeyId,
-                        },
-                        getTinybirdDatasourceIngestUrl(
-                            c.env.TINYBIRD_INGEST_URL,
-                            "error_event",
+                    await emitSettlementErrorEvent({
+                        settlementError,
+                        requestId: finalEvent.requestId,
+                        environment: finalEvent.environment,
+                        requestPath: finalEvent.requestPath,
+                        method: c.req.method,
+                        startTime,
+                        endTime,
+                        modelRequested: finalEvent.modelRequested ?? undefined,
+                        resolvedModelRequested:
+                            finalEvent.resolvedModelRequested,
+                        requestInputs: stringifyRequestInputs(
+                            await collectRequestInputs(c),
                         ),
-                        c.env.TINYBIRD_INGEST_TOKEN,
+                        userId: finalEvent.userId,
+                        userTier: finalEvent.userTier,
+                        apiKeyId: finalEvent.apiKeyId,
+                        edgeColo: (
+                            c.req.raw as Request & {
+                                cf?: { colo?: string };
+                            }
+                        ).cf?.colo,
+                        tinybirdIngestUrl: c.env.TINYBIRD_INGEST_URL,
+                        tinybirdIngestToken: c.env.TINYBIRD_INGEST_TOKEN,
                         log,
-                    );
+                    });
                 }
 
                 if (shouldRunAutoTopUp) {

@@ -1,10 +1,7 @@
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
+import { emitSettlementErrorEvent } from "@shared/billing/settle-error-event.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
-import {
-    getTinybirdDatasourceIngestUrl,
-    sendErrorEventToTinybird,
-    sendToTinybird,
-} from "@shared/events.ts";
+import { sendToTinybird } from "@shared/events.ts";
 import {
     type McpUsageReceipt,
     parseMcpUsageHeaders,
@@ -149,43 +146,24 @@ async function settleUsage(
         ),
     );
     if (deduction?.settlementError) {
-        const settlementMessage: Record<string, string> = {
-            api_key_reconciliation:
-                "API key budget reconciliation failed after committed debit",
-            dev_credit: "Dev markup credit failed after committed debit",
-            community_reward_credit:
-                "Community model reward credit failed after committed debit",
-        };
         c.executionCtx.waitUntil(
-            sendErrorEventToTinybird(
-                {
-                    timestamp: endedAt.toISOString(),
-                    kind: "server_error",
-                    severity: "error",
-                    request_id: event.requestId,
-                    environment: event.environment,
-                    route_path: event.requestPath,
-                    method: "POST",
-                    status: 200,
-                    duration_ms: endedAt.getTime() - startedAt.getTime(),
-                    error_class: "SettlementFailure",
-                    error_code: `settlement_${deduction.settlementError}`,
-                    message:
-                        settlementMessage[deduction.settlementError] ??
-                        "Settlement failed after committed debit",
-                    model_requested: event.modelRequested ?? undefined,
-                    resolved_model_requested: event.resolvedModelRequested,
-                    user_id: event.userId,
-                    user_tier: event.userTier,
-                    api_key_id: event.apiKeyId,
-                },
-                getTinybirdDatasourceIngestUrl(
-                    c.env.TINYBIRD_INGEST_URL,
-                    "error_event",
-                ),
-                c.env.TINYBIRD_INGEST_TOKEN,
-                c.var.log,
-            ),
+            emitSettlementErrorEvent({
+                settlementError: deduction.settlementError,
+                requestId: event.requestId,
+                environment: event.environment,
+                requestPath: event.requestPath,
+                method: "POST",
+                startTime: startedAt,
+                endTime: endedAt,
+                modelRequested: event.modelRequested ?? undefined,
+                resolvedModelRequested: event.resolvedModelRequested,
+                userId: event.userId,
+                userTier: event.userTier,
+                apiKeyId: event.apiKeyId,
+                tinybirdIngestUrl: c.env.TINYBIRD_INGEST_URL,
+                tinybirdIngestToken: c.env.TINYBIRD_INGEST_TOKEN,
+                log: c.var.log,
+            }),
         );
     }
 }

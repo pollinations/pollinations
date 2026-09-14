@@ -6,6 +6,7 @@ const CONTAINER_NAME = "primary";
 const ROOT_URL =
     workerEnv.GF_SERVER_ROOT_URL || "https://observability.pollinations.ai";
 const DOMAIN = new URL(ROOT_URL).host;
+const HEALTH_URL = new URL("/grafana/api/health", ROOT_URL).href;
 const BRAND_HEAD_TAGS = `
 <meta name="description" content="Pollinations operations dashboards">
 <meta property="og:title" content="pollinations.ai">
@@ -31,6 +32,8 @@ function requiredSecret(name) {
 export class ObservabilityGrafana extends Container {
     defaultPort = 3000;
     requiredPorts = [3000];
+    // The default probe hits /, which Grafana redirects to its public HTTPS URL.
+    pingEndpoint = `${DOMAIN}/grafana/api/health`;
     sleepAfter = "10m";
     envVars = {
         GF_SECURITY_ADMIN_USER: workerEnv.GF_ADMIN_USER || "admin",
@@ -64,10 +67,12 @@ export class ObservabilityGrafana extends Container {
     };
 }
 
-async function grafana(env) {
+async function grafanaFetch(request, env) {
     const container = env.OBSERVABILITY_GRAFANA.getByName(CONTAINER_NAME);
     await container.startAndWaitForPorts();
-    return container;
+    // The SDK uses HTTP for the private hop. Let the browser follow redirects;
+    // following Grafana's public HTTPS redirects inside the container fails.
+    return container.fetch(new Request(request, { redirect: "manual" }));
 }
 
 class BrandHeadInjector {
@@ -80,16 +85,18 @@ export default {
     async fetch(request, env) {
         const url = new URL(request.url);
         if (url.pathname === "/api/health") {
-            await grafana(env);
-            return Response.json(
-                { ok: true },
-                { headers: { "Cache-Control": "no-store" } },
-            );
+            const response = await grafanaFetch(new Request(HEALTH_URL), env);
+            return new Response(response.body, {
+                status: response.status,
+                headers: {
+                    "Content-Type": "application/json",
+                    "Cache-Control": "no-store",
+                },
+            });
         }
 
         const app = createObservabilityApp(async (verifiedRequest) => {
-            const container = await grafana(env);
-            const response = await container.fetch(verifiedRequest);
+            const response = await grafanaFetch(verifiedRequest, env);
             if (
                 (response.headers.get("content-type") || "").includes(
                     "text/html",
@@ -105,10 +112,8 @@ export default {
     },
 
     async scheduled(_controller, env, ctx) {
-        const healthRequest = new Request(`${ROOT_URL}/api/health`);
         ctx.waitUntil(
-            grafana(env)
-                .then((container) => container.fetch(healthRequest))
+            grafanaFetch(new Request(HEALTH_URL), env)
                 .then((response) => {
                     if (!response.ok) {
                         console.warn(

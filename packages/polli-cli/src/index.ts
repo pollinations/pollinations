@@ -9,6 +9,7 @@ import { earningsCommand } from "./commands/earnings.js";
 import { createGenCommand } from "./commands/gen/index.js";
 import { harnessCommand } from "./commands/harness.js";
 import { keysCommand } from "./commands/keys.js";
+import { updateCommand } from "./commands/update.js";
 import { modelsCommand } from "./commands/models.js";
 import { myModelsCommand } from "./commands/my-models.js";
 import { questsCommand } from "./commands/quests.js";
@@ -64,6 +65,7 @@ program
 // Auth & account
 program.addCommand(authCommand);
 program.addCommand(keysCommand);
+program.addCommand(updateCommand);
 program.addCommand(usageCommand);
 program.addCommand(earningsCommand);
 program.addCommand(questsCommand);

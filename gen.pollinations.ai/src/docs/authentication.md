@@ -1,6 +1,6 @@
 ## Authentication
 
-Generation requests use an API key from [enter.pollinations.ai](https://enter.pollinations.ai/keys), or x402 payments for the supported requests below. Model listing endpoints work without authentication.
+Generation requests use an API key from [enter.pollinations.ai](https://enter.pollinations.ai/keys), or [x402 payments](/docs#tag/x402-payments) for supported requests. Model listing endpoints work without authentication.
 
 | Type | Prefix | Use case | Rate limits | Description |
 |------|--------|----------|-------------|-------------|
@@ -16,27 +16,3 @@ Two ways to authenticate generation requests:
 - Query param: `?key=YOUR_API_KEY`
 
 For detailed integration guidance on user-pays authorization, including OAuth discovery and token exchange, see [Connect User Wallets](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md).
-
-### x402 payments
-
-Supported requests can pay in USDC through Weft without a Pollinations API key. Use Base mainnet for production and Base Sepolia test USDC for staging; do not mix their wallets, credentials or networks.
-
-| Environment | API base URL | Payment network | Facilitator |
-|-------------|--------------|-----------------|-------------|
-| Production | `https://gen.pollinations.ai` | Base (`eip155:8453`) | `https://x402.weft.network` |
-| Staging | `https://staging.gen.pollinations.ai` | Base Sepolia (`eip155:84532`) | `https://x402.staging.weft.network` |
-
-| Endpoint | Supported requests |
-|----------|--------------------|
-| `POST /v1/chat/completions`, `POST /text` | Text-only chat, including `stream: true`, with `max_tokens` between 1 and 4096; models billed only for prompt/cache/completion text tokens |
-| `GET /image/{prompt}` | Single images with a fixed per-image price |
-| `POST /v1/images/generations` | The same image models, with `response_format: "b64_json"` or `"url"` |
-| `POST /v1/audio/speech` | Character-priced speech, for example `elevenflash` |
-
-Requests use the same validation, generation, and response formats as API-key requests. Public cache hits do not require payment. On a cache miss, send a unique `Idempotency-Key` header. The initial `402` response advertises a maximum in `PAYMENT-REQUIRED`; an x402-capable client authorizes that ceiling and retries with `PAYMENT-SIGNATURE`. The final charge uses measured usage at the model's Pollen price, with a $0.001 minimum, and cannot exceed the authorization. The authorization permits settlement for up to 16 minutes.
-
-Retry a disconnected request with the same URL, body, safety header, idempotency key and payment signature. Completed responses and payment receipts are retained for 30 days. Use a new key for a new generation. Requests and generated bodies are currently limited to 20 MiB, excluding the final payment receipt.
-
-For streaming chat, the initial challenge is still an ordinary JSON `402`. Once payment authorization is verified, the retry returns `200 text/event-stream` with chat events immediately. Actual usage is settled at the end. Before `[DONE]`, a Pollinations-specific `event: x402.payment` carries `data: {"paymentResponse":"<encoded PAYMENT-RESPONSE>"}`. Live responses cannot carry the eventual receipt in HTTP headers; completed replays also include the `PAYMENT-RESPONSE` header. Wait for the receipt and `[DONE]` to confirm completion. A generation or payment failure emits an error event without `[DONE]`; retry with the same key and signature. Disconnecting does not cancel generation or settlement. Retries replay from the beginning, not from an event offset. Use a direct streaming-capable client; a payment proxy may buffer the response.
-
-Video, uploads, token-priced images, duration-priced audio, search and community endpoints are not supported by x402. Requests without a supported ceiling must use a Pollinations API key. Supplying `Authorization` or a `key` query parameter always selects normal Pollen authentication, even if the credential is invalid.

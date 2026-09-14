@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🖼️",
+    "name": "manhwa studio",
+    "url": "https://manhwa-studio-320488177521.asia-southeast1.run.app",
+    "description": "Create webtoon comics with character profiles, scene planning, Pollinations-generated panels, dialogue bubbles and a vertical comic canvas.",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "rudigunselawe-oss",
+    "githubUserId": "322422732",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-03",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14371",
+    "approvedDate": "2026-09-14",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🖼️",
     "name": "Co-Eco-Graph — Enchanted Contract Explorer",
     "url": "https://ceg-wine.vercel.app",
     "description": "Paste any EVM contract address and explore its subgraph ecosystem as an interactive graph — subgraphs, entities, event handlers from The Graph, plus AI fairy-tale + fantasy illustration. Pollinations ",

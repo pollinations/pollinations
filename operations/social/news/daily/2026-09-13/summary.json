@@ -1,0 +1,55 @@
+{
+  "date": "2026-09-13",
+  "period_start": "2026-09-13",
+  "period_end": "2026-09-13",
+  "title": "Endpoint agents can now describe what they make",
+  "summary": "A busy garden day: endpoint agents gained discoverable media skills, community models got stricter reliability checks, and the ecosystem gained better visibility into how agents are actually used.\n\nEndpoint agents can declare shared input and output modalities—including multiple outputs and 3D—and expose those capabilities through /models and /v1/models. Polli’s read and write workflows can also route through dedicated brain models without changing the outer endpoint identity or existing authentication behavior.\n\nCommunity model monitoring now measures real traffic across audio, video, embeddings, and text, with reliability floors and sustained-recovery checks keeping flaky providers out of the way. Gen production deploys now synchronize versioned secrets automatically, while stream diagnostics retain the actual upstream failure context instead of losing it to the void.\n\nThe Ecosystem dashboard can break out agent and MCP adoption by requests, calls, and unique users, with weekly comparisons, explorer views, and CSV export. Referral arrival tracking also now covers agent_key_budget links for signed-in and signed-out visitors.",
+  "pr_count": 11,
+  "prs": [
+    {
+      "number": 14799,
+      "date": "2026-09-13"
+    },
+    {
+      "number": 14800,
+      "date": "2026-09-13"
+    },
+    {
+      "number": 14803,
+      "date": "2026-09-13"
+    },
+    {
+      "number": 14809,
+      "date": "2026-09-13"
+    },
+    {
+      "number": 14819,
+      "date": "2026-09-13"
+    },
+    {
+      "number": 14833,
+      "date": "2026-09-13"
+    },
+    {
+      "number": 14835,
+      "date": "2026-09-13"
+    },
+    {
+      "number": 14836,
+      "date": "2026-09-13"
+    },
+    {
+      "number": 14838,
+      "date": "2026-09-13"
+    },
+    {
+      "number": 14839,
+      "date": "2026-09-13"
+    },
+    {
+      "number": 14840,
+      "date": "2026-09-13"
+    }
+  ],
+  "generated_at": "2026-09-14T06:39:02.992318+00:00"
+}

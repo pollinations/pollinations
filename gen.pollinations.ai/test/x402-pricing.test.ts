@@ -737,6 +737,25 @@ test("actual settlement fails closed without valid model and usage headers", asy
     ).rejects.toThrow(/completion.*usage header/i);
 });
 
+test.each([
+    "x-usage-prompt-text-tokens",
+    "x-usage-completion-text-tokens",
+])("rejects empty %s instead of treating missing usage as zero", async (name) => {
+    const headers = new Headers({
+        "x-model-used": "gpt-oss",
+        "x-usage-prompt-text-tokens": "10",
+        "x-usage-completion-text-tokens": "1",
+    });
+    headers.set(name, "");
+    await expect(priceActualUsage(x402Env, request(), headers)).rejects.toThrow(
+        /invalid usage header/i,
+    );
+    headers.set(name, "0");
+    await expect(
+        priceActualUsage(x402Env, request(), headers),
+    ).resolves.toBeGreaterThanOrEqual(0.001);
+});
+
 test("metered actual does not exceed the conservative maximum", async () => {
     const advertised = await challenge(request({ max_tokens: 1_000 }));
     const actual = await priceActualUsage(

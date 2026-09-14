@@ -224,7 +224,7 @@ function parseUsage(headers: Headers, quote: X402Quote): Usage {
         if (raw === null) continue;
         found = true;
         const value = Number(raw);
-        if (!Number.isSafeInteger(value) || value < 0) {
+        if (!raw.trim() || !Number.isSafeInteger(value) || value < 0) {
             throw new Error(`Invalid usage header: ${header}`);
         }
         usage[usageType as keyof Usage] = value;

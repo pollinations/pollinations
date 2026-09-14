@@ -424,12 +424,13 @@ const IMAGE_BASE_SERVICES = {
     },
     "openai/gpt-image-2.5-flare": {
         aliases: [],
-        provider: "openai",
+        provider: "azure",
         publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2026-09-08").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        perUserRpm: 6,
         cost: {
             // https://developers.openai.com/api/docs/models/gpt-image-2.5-flare
             promptTextTokens: perMillion(5),
@@ -446,12 +447,13 @@ const IMAGE_BASE_SERVICES = {
     },
     "openai/gpt-image-2.5-sunburst": {
         aliases: [],
-        provider: "openai",
+        provider: "azure",
         publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2026-09-08").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        perUserRpm: 6,
         cost: {
             // https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst
             promptTextTokens: perMillion(5),

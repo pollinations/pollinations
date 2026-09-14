@@ -53,6 +53,7 @@ import {
     REALTIME_MODEL_NAMES,
 } from "@shared/registry/realtime.ts";
 import {
+    AgentModelSchema,
     CreateChatCompletionRequestSchema,
     CreateChatCompletionResponseSchema,
     CreateImageEditRequestSchema,
@@ -71,7 +72,7 @@ import {
 import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
-import { AgentModelHeadersSchema } from "@/schemas/agent-model.ts";
+
 import {
     CreateEmbeddingRequestSchema,
     CreateEmbeddingResponseSchema,
@@ -111,6 +112,10 @@ import {
     textBodyLimit,
 } from "./generation-handlers.ts";
 import { handleRealtimeWebSocket } from "./realtime.ts";
+
+const AgentModelHeadersSchema = z.object({
+    "x-pollinations-agent-model": AgentModelSchema,
+});
 
 const ModelInfoListSchema = z.array(ModelInfoSchema).meta({
     description: "List of models with pricing and metadata",
@@ -673,7 +678,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Successful text JSON responses contain usage. Text streams contain a usage chunk before `[DONE]`; missing text-provider usage fails the response.",
                 "",
-                "For endpoint agents, set `agent_model` in the JSON body (OpenAI SDK: `extra_body`) or send `X-Pollinations-Agent-Model` to choose the inner model. Keep the agent in `model`. Omit both to use its registered default; if both are supplied, they must agree.",
+                "For endpoint agents, set `agent_model` in the JSON body (OpenAI SDK: `extra_body`) or send `X-Pollinations-Agent-Model` to choose the inner model. Keep the agent in `model`. Omit both to use its registered default; the body value takes precedence over the header.",
                 "",
                 mediaResponseDescription,
             ].join("\n"),
@@ -721,7 +726,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Successful text JSON responses and terminal streaming events contain usage; missing text-provider usage fails the response.",
                 "",
-                "For endpoint agents, set `agent_model` in the JSON body (OpenAI SDK: `extra_body`) or send `X-Pollinations-Agent-Model` to choose the inner model. Keep the agent in `model`. Omit both to use its registered default; if both are supplied, they must agree.",
+                "For endpoint agents, set `agent_model` in the JSON body (OpenAI SDK: `extra_body`) or send `X-Pollinations-Agent-Model` to choose the inner model. Keep the agent in `model`. Omit both to use its registered default; the body value takes precedence over the header.",
                 "",
                 mediaResponseDescription,
             ].join("\n"),

@@ -12,7 +12,7 @@ import {
 import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
-import { getAgentModel } from "@/schemas/agent-model.ts";
+import { getAgentModel } from "@/text/requestUtils.ts";
 import {
     attachFallbackTarget,
     type FallbackCandidate,

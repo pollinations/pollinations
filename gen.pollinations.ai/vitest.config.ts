@@ -36,7 +36,6 @@ const genAliases = [
     "middleware/track.ts",
     "middleware/validator.ts",
     "routes/generation-executor.ts",
-    "schemas/agent-model.ts",
     "schemas/embeddings.ts",
     "schemas/image.ts",
     "schemas/model3d.ts",

@@ -308,7 +308,7 @@ export const AgentModelSchema = z
     .max(128)
     .optional()
     .describe(
-        'Override an endpoint agent\'s inner model. Omit to use its registered default. With the OpenAI Python SDK, pass extra_body={"agent_model": "model-id"}. Alternatively use X-Pollinations-Agent-Model; both must agree when supplied together.',
+        'Override an endpoint agent\'s inner model. Omit to use its registered default. With the OpenAI Python SDK, pass extra_body={"agent_model": "model-id"}. Alternatively use X-Pollinations-Agent-Model; the body value takes precedence over the header.',
     );
 
 export const CreateChatCompletionRequestSchema = z

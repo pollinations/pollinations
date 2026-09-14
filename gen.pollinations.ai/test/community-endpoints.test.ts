@@ -2843,23 +2843,6 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
                     await invalid.text();
                 }
             }
-            const conflict = await fetchGen(
-                new Request(`https://gen.pollinations.ai${path}`, {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${apiKey}`,
-                        "Content-Type": "application/json",
-                        "X-Pollinations-Agent-Model": "test/two",
-                    },
-                    body: JSON.stringify({
-                        model: modelId,
-                        ...input,
-                        agent_model: "test/one",
-                    }),
-                }),
-            );
-            expect(conflict.status).toBe(400);
-            await conflict.text();
             for (const agentModel of [1, null]) {
                 const invalidBody = await fetchGen(
                     new Request(`https://gen.pollinations.ai${path}`, {
@@ -2897,7 +2880,9 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
                                 agentModel !== "test/brain-one"
                                     ? {
                                           "X-Pollinations-Agent-Model":
-                                              agentModel,
+                                              agentModel === "test/brain-both"
+                                                  ? "test/ignored-header"
+                                                  : agentModel,
                                       }
                                     : {}),
                             },

@@ -40,7 +40,7 @@ it("shares cache identity between agent model body and header options", async ()
                 new Request(`https://gen.pollinations.ai${path}`, {
                     method: "POST",
                     headers: {
-                        "X-Pollinations-Agent-Model": "brain-one",
+                        "X-Pollinations-Agent-Model": "ignored-header",
                     },
                 }),
                 JSON.stringify({

@@ -13,6 +13,7 @@ import { modelsCommand } from "./commands/models.js";
 import { myModelsCommand } from "./commands/my-models.js";
 import { questsCommand } from "./commands/quests.js";
 import { uploadCommand } from "./commands/upload.js";
+import { updateCommand } from "./commands/update.js";
 import { usageCommand } from "./commands/usage.js";
 
 import { setKeyOverride } from "./lib/config.js";
@@ -80,6 +81,9 @@ program.addCommand(uploadCommand);
 // Discovery
 program.addCommand(modelsCommand);
 program.addCommand(docsCommand);
+
+// Self-update
+program.addCommand(updateCommand);
 
 // Show help when run with no args
 if (process.argv.length <= 2) {

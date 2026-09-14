@@ -1,0 +1,34 @@
+{
+  "pr_number": 14815,
+  "title": "refactor: pass agent configuration through metadata",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/14815",
+  "merged_at": "2026-09-14T22:58:47Z",
+  "labels": [],
+  "pr_body_excerpt": "- Passes metadata unchanged to endpoint agents on Chat Completions, Responses, and POST /text. Agents document and interpret their own keys.\n- Removes agent_model and the custom model header handling. Uses ordinary body forwarding and cache keys, with no key allowlist or gateway model override.\n- Updates Polli to read metadata.model and migrates both GitHub workflow callers. Documents the convention in Polli’s README.\n- Tests: 199 gateway, 17 workflow, and 26 Polli API tests passed; Gen type-checking and formatting passed.\n- Rollout: deploy the Polli update before switching the gateway/callers so the requested inner model continues to be honored.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Agents pack their own metadata",
+    "blurb": "Agent configuration now travels in the request metadata instead of hitching a ride through special gateway plumbing. Polli has learned the convention too, because apparently even bees appreciate fewer custom headers.",
+    "summary": "Chat Completions, Responses, and POST /text now forward agent metadata unchanged to endpoint agents, with Polli reading the requested inner model from metadata.model.",
+    "impact": "Agent builders can define and interpret their own metadata keys across all three text endpoints, while ordinary request forwarding and cache keys preserve the selected inner model without agent_model or a custom model header.",
+    "keywords": [
+      "agents",
+      "metadata",
+      "chat-completions",
+      "responses-api",
+      "polli",
+      "text-api"
+    ],
+    "visual_concept": "Depict metadata as neatly labeled seed packets being delivered directly from API request envelopes to a cozy endpoint-agent garden, rather than routed through a tangle of special pipes. Polli, wearing tiny librarian glasses, checks a packet labeled \"metadata.model\" beside a retro terminal while code-plants bloom around the agent garden.",
+    "image_prompt": "A cozy pixel art garden-workshop where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush marks, a small happy smile, and small rounded light blue translucent wings, wears tiny librarian glasses and carries a seed packet labeled \"metadata.model\" to a retro terminal growing tidy code-plants; lime green (#ecf874) request envelopes flow directly into the garden, with no tangled pipes. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle CRT glow, and a small pixel-font sign reading \"METADATA\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-14/PR-14815.jpg",
+    "prompt": "A cozy pixel art garden-workshop where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush marks, a small happy smile, and small rounded light blue translucent wings, wears tiny librarian glasses and carries a seed packet labeled \"metadata.model\" to a retro terminal growing tidy code-plants; lime green (#ecf874) request envelopes flow directly into the garden, with no tangled pipes. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle CRT glow, and a small pixel-font sign reading \"METADATA\"."
+  },
+  "generated_at": "2026-09-14T22:59:50.184251+00:00"
+}

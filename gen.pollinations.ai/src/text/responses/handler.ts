@@ -15,7 +15,6 @@ import {
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
 import { withSafetyHeaders } from "@/middleware/safety.ts";
-import { getAgentModel } from "@/text/requestUtils.ts";
 import {
     type FallbackCandidate,
     fallbackCandidates,
@@ -109,7 +108,6 @@ function directResponsesCandidates(
 async function responsesClientForAttempt(
     c: ResponsesContext,
     attempt: DirectResponsesCandidate,
-    request: CreateResponseRequest,
 ): Promise<{ target: DirectResponsesTarget; fetcher?: typeof fetch }> {
     if (attempt.responsesTarget) return { target: attempt.responsesTarget };
     const endpoint = attempt.communityEndpoint;
@@ -123,7 +121,6 @@ async function responsesClientForAttempt(
         secret: c.env.BETTER_AUTH_SECRET,
         parentRequestId: c.get("requestId"),
         parentApiKeyId: c.var.auth?.apiKey?.id,
-        agentModel: getAgentModel(c.req.raw.headers, request.agent_model),
     });
     if (endpoint.type === "prompt_agent" || endpoint.type === "code_agent") {
         const apiKey = config.authKey;
@@ -134,7 +131,7 @@ async function responsesClientForAttempt(
             ? createPromptAgentResponsesClient(c, endpoint, apiKey)
             : createCodeAgentResponsesClient(c, endpoint, apiKey);
     }
-    const target = responsesTargetFromConfig(String(config.model), config);
+    const target = responsesTargetFromConfig(endpoint.upstreamModel, config);
     if (!target) {
         throw new ResponsesInvalidRequestError(
             `Model ${attempt.id} does not support the stateless Responses API`,
@@ -157,7 +154,6 @@ async function handleDirectResponse(
                 const responsesClient = await responsesClientForAttempt(
                     c,
                     attempt,
-                    request,
                 );
                 const result = await callDirectResponses(
                     request,

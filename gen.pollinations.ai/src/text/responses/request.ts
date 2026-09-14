@@ -61,7 +61,6 @@ export function buildDirectResponsesRequestBody(
         store: false,
     };
     delete body.safe;
-    delete body.agent_model;
 
     const toolChoice = body.tool_choice;
     if (

@@ -12,7 +12,6 @@ import {
 import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
-import { getAgentModel } from "@/text/requestUtils.ts";
 import {
     attachFallbackTarget,
     type FallbackCandidate,
@@ -104,7 +103,6 @@ async function gatewayContext(
         userApiKey: c.var.auth?.apiKey?.rawKey || "",
         parentRequestId: c.get("requestId"),
         parentApiKeyId: c.var.auth?.apiKey?.id,
-        agentModel: getAgentModel(c.req.raw.headers, requestData.agent_model),
     });
     if (
         communityEndpoint.type !== "prompt_agent" &&
@@ -135,11 +133,7 @@ async function gatewayContext(
 }
 
 function withGatewayContext(c: TextContext, requestData: RequestData) {
-    const {
-        messages: _messages,
-        agent_model: _agentModel,
-        ...requestDataWithoutMessages
-    } = requestData;
+    const { messages: _messages, ...requestDataWithoutMessages } = requestData;
 
     return {
         ...requestDataWithoutMessages,

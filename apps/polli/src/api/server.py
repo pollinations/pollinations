@@ -30,6 +30,7 @@ class ChatRequest(BaseModel):
     messages: list[Message] = Field(min_length=1)
     model: str = Field(default="polli", min_length=1, max_length=128)
     stream: bool = False
+    metadata: dict[str, str] = Field(default_factory=dict)
     stream_options: dict[str, Any] | None = None
     user_name: str = "http_user"
     image_urls: list[str] = Field(default_factory=list)
@@ -64,6 +65,7 @@ _LOCAL_KEYS = {
     "model",
     "stream",
     "stream_options",
+    "metadata",
     "user_name",
     "image_urls",
     "video_urls",
@@ -108,8 +110,9 @@ def _request_args(request: ChatRequest, config: Any) -> dict[str, Any]:
             if isinstance(part, dict) and part.get("type") in {"text", "input_text"}
         )
     params = request.model_dump(exclude_none=True, exclude=_LOCAL_KEYS)
-    params["model"] = _model_name(request.model, config)
-    params["_explicit_model"] = request.model != "polli"
+    model = request.metadata.get("model", request.model)
+    params["model"] = _model_name(model, config)
+    params["_explicit_model"] = model != "polli"
     return {
         "user_message": content or "",
         "discord_username": request.user_name,

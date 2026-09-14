@@ -380,10 +380,7 @@ for (const [name, source, brain] of [
             const body = JSON.parse(calls[0].options.body);
             assert.equal(body.model, "pollinations-router/polli");
             assert.equal(body.agent_model, undefined);
-            assert.equal(
-                calls[0].options.headers["X-Pollinations-Agent-Model"],
-                brain,
-            );
+            assert.equal(body.metadata.model, brain);
             assert.deepEqual(body.messages, [
                 { role: "system", content: "first\nsecond" },
                 { role: "user", content: "question" },

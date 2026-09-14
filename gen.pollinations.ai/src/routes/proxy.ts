@@ -53,7 +53,6 @@ import {
     REALTIME_MODEL_NAMES,
 } from "@shared/registry/realtime.ts";
 import {
-    AgentModelSchema,
     CreateChatCompletionRequestSchema,
     CreateChatCompletionResponseSchema,
     CreateImageEditRequestSchema,
@@ -72,7 +71,6 @@ import {
 import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
-
 import {
     CreateEmbeddingRequestSchema,
     CreateEmbeddingResponseSchema,
@@ -112,10 +110,6 @@ import {
     textBodyLimit,
 } from "./generation-handlers.ts";
 import { handleRealtimeWebSocket } from "./realtime.ts";
-
-const AgentModelHeadersSchema = z.object({
-    "x-pollinations-agent-model": AgentModelSchema,
-});
 
 const ModelInfoListSchema = z.array(ModelInfoSchema).meta({
     description: "List of models with pricing and metadata",
@@ -211,25 +205,25 @@ const model3dHandlers = factory.createHandlers(
 // Group access/coordination to stay within Hono's typed handler-count limit.
 const chatCompletionHandlers = factory.createHandlers(
     textBodyLimit,
-    validator("header", AgentModelHeadersSchema),
     validator("json", CreateChatCompletionRequestSchema),
     mediaResponses("chat/completions"),
     resolveModel("generate.text"),
     every(textBalanceNotice, track("generate.text")),
     textCache,
-    every(generationAccess, deduplicateGeneration, apiKeyBudgetReservation),
+    every(generationAccess, deduplicateGeneration),
+    apiKeyBudgetReservation,
     generateChatCompletion,
 );
 
 const responsesHandlers = factory.createHandlers(
     textBodyLimit,
-    validator("header", AgentModelHeadersSchema),
     validator("json", CreateResponseRequestSchema),
     mediaResponses("responses"),
     resolveModel("generate.text"),
     every(textBalanceNotice, track("generate.text")),
     textCache,
-    every(generationAccess, deduplicateGeneration, apiKeyBudgetReservation),
+    every(generationAccess, deduplicateGeneration),
+    apiKeyBudgetReservation,
     generateCreateResponse,
 );
 
@@ -678,7 +672,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Successful text JSON responses contain usage. Text streams contain a usage chunk before `[DONE]`; missing text-provider usage fails the response.",
                 "",
-                "For endpoint agents, set `agent_model` in the JSON body (OpenAI SDK: `extra_body`) or send `X-Pollinations-Agent-Model` to choose the inner model. Keep the agent in `model`. Omit both to use its registered default; the body value takes precedence over the header.",
+                "Metadata is passed unchanged to endpoint agents; see the agent’s documentation for supported keys.",
                 "",
                 mediaResponseDescription,
             ].join("\n"),
@@ -726,7 +720,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Successful text JSON responses and terminal streaming events contain usage; missing text-provider usage fails the response.",
                 "",
-                "For endpoint agents, set `agent_model` in the JSON body (OpenAI SDK: `extra_body`) or send `X-Pollinations-Agent-Model` to choose the inner model. Keep the agent in `model`. Omit both to use its registered default; the body value takes precedence over the header.",
+                "Metadata is passed unchanged to endpoint agents; see the agent’s documentation for supported keys.",
                 "",
                 mediaResponseDescription,
             ].join("\n"),
@@ -819,12 +813,12 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         textBodyLimit,
-        validator("header", AgentModelHeadersSchema),
         validator("json", CreateChatCompletionRequestSchema),
         resolveModel("generate.text"),
         every(textBalanceNotice, track("generate.text")),
         textCache,
-        every(generationAccess, deduplicateGeneration),
+        generationAccess,
+        deduplicateGeneration,
         apiKeyBudgetReservation,
         generateTextContent,
     )

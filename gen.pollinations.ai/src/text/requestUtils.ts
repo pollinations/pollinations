@@ -3,15 +3,6 @@ import type { GenerateTextRequestQueryParams } from "@/schemas/text.ts";
 import { normalizeSeed } from "@/util.ts";
 import type { ChatMessage, RequestData } from "./types.js";
 
-export function getAgentModel(
-    headers: Headers,
-    bodyModel?: unknown,
-): string | undefined {
-    return typeof bodyModel === "string"
-        ? bodyModel.trim()
-        : headers.get("x-pollinations-agent-model")?.trim();
-}
-
 export function requestsJson(json: unknown, jsonMode: unknown): boolean {
     return (
         Boolean(jsonMode) ||

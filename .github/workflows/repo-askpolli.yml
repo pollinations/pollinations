@@ -125,6 +125,9 @@ jobs:
                   return next;
                 });
               }
+              if (body.model === "pollinations-router/polli") {
+                body.metadata = { ...body.metadata, model: "openai/gpt-5.6-terra" };
+              }
               let upstream;
               try {
                 upstream = await fetch(UPSTREAM, {
@@ -132,9 +135,6 @@ jobs:
                   headers: {
                     "Content-Type": "application/json",
                     Authorization: request.headers.authorization || "",
-                    ...(body.model === "pollinations-router/polli"
-                      ? { "X-Pollinations-Agent-Model": "openai/gpt-5.6-terra" }
-                      : {}),
                   },
                   body: JSON.stringify(body),
                 });

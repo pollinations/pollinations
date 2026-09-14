@@ -14,7 +14,6 @@ import {
 } from "@shared/schemas/safety.ts";
 import stableStringify from "fast-json-stable-stringify";
 import type { Context } from "hono";
-import { getAgentModel } from "@/text/requestUtils.ts";
 
 // Parameters to exclude from cache key (auth + cache control)
 const EXCLUDED_PARAMS = ["key", "no-cache"];
@@ -93,7 +92,6 @@ export async function generateCacheKey(
     ];
     const hasQuerySafe = url.searchParams.has("safe");
     let hasBodySafe = false;
-    let bodyAgentModel: string | undefined;
     let usesSafety = hasActiveSafety(url.searchParams.get("safe"));
 
     // Add filtered body for POST/PUT requests
@@ -101,15 +99,11 @@ export async function generateCacheKey(
         try {
             // Try to parse as JSON and filter auth fields
             const bodyObj = JSON.parse(bodyText);
-            bodyAgentModel = bodyObj.agent_model;
             hasBodySafe = Object.hasOwn(bodyObj, "safe");
             usesSafety ||= hasActiveSafety(bodyObj.safe);
             const filteredBody: Record<string, unknown> = {};
             for (const [key, value] of Object.entries(bodyObj)) {
-                if (
-                    key !== "agent_model" &&
-                    !EXCLUDED_PARAMS.includes(key.toLowerCase())
-                ) {
+                if (!EXCLUDED_PARAMS.includes(key.toLowerCase())) {
                     filteredBody[key] = value;
                 }
             }
@@ -122,9 +116,6 @@ export async function generateCacheKey(
             parts.push(bodyText);
         }
     }
-    const agentModel = getAgentModel(request.headers, bodyAgentModel);
-    if (agentModel !== undefined)
-        parts.push(`x-pollinations-agent-model:${agentModel}`);
     const safeHeader = request.headers.get(SAFETY_HEADER_NAME);
     if (safeHeader !== null && !hasQuerySafe && !hasBodySafe) {
         parts.push(`${SAFETY_HEADER_NAME}:${safeHeader}`);

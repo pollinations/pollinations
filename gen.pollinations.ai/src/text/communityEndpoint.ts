@@ -75,7 +75,6 @@ export async function communityEndpointGatewayContext({
     userApiKey,
     parentRequestId,
     parentApiKeyId,
-    agentModel,
 }: {
     endpoint: CommunityEndpointRuntime;
     modelDefinition: ModelDefinition;
@@ -85,19 +84,13 @@ export async function communityEndpointGatewayContext({
     userApiKey: string;
     parentRequestId: string;
     parentApiKeyId?: string;
-    agentModel?: string;
 }): Promise<TransformOptions> {
-    const {
-        messages: _messages,
-        agent_model: _agentModel,
-        ...requestDataWithoutMessages
-    } = requestData;
+    const { messages: _messages, ...requestDataWithoutMessages } = requestData;
     const modelConfig = await communityEndpointModelConfig({
         endpoint,
         secret,
         parentRequestId,
         parentApiKeyId,
-        agentModel,
     });
     return {
         ...requestDataWithoutMessages,
@@ -114,13 +107,11 @@ export async function communityEndpointModelConfig({
     secret,
     parentRequestId,
     parentApiKeyId,
-    agentModel,
 }: {
     endpoint: CommunityEndpointRuntime;
     secret: string;
     parentRequestId: string;
     parentApiKeyId?: string;
-    agentModel?: string;
 }): Promise<Record<string, unknown>> {
     const runToken = await mintDelegatedToken({
         endpoint,
@@ -143,10 +134,7 @@ export async function communityEndpointModelConfig({
     return {
         provider: "openai",
         authKey,
-        model:
-            endpoint.type === "endpoint_agent"
-                ? (agentModel ?? endpoint.upstreamModel)
-                : endpoint.upstreamModel,
+        model: endpoint.upstreamModel,
         ...(endpoint.api === "responses"
             ? { responsesEndpoint: endpoint.baseUrl }
             : { directEndpoint: endpoint.baseUrl }),

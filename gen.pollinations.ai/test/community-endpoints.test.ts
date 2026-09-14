@@ -2531,14 +2531,17 @@ describe("community endpoint helpers", () => {
             expect(claims).toMatchObject({ parentApiKeyId: "parent-key-id" });
         });
 
-        it("maps the agent header to the inner model without changing identity or delegation", async () => {
+        it("passes arbitrary metadata without changing model identity or delegation", async () => {
             const endpoint = endpointAgent();
             const context = await communityEndpointGatewayContext({
-                agentModel: "test/brain",
                 endpoint,
                 modelDefinition: communityModelDefinition(endpoint),
                 requestData: {
                     model: endpoint.modelId,
+                    metadata: {
+                        model: "test/brain",
+                        custom_key: "custom value",
+                    },
                     messages: [{ role: "user", content: "hello" }],
                 },
                 secret,
@@ -2549,7 +2552,11 @@ describe("community endpoint helpers", () => {
             });
 
             expect(context.requestedModel).toBe(endpoint.modelId);
-            expect(context.modelConfig?.model).toBe("test/brain");
+            expect(context.modelConfig?.model).toBe(endpoint.upstreamModel);
+            expect(context.metadata).toEqual({
+                model: "test/brain",
+                custom_key: "custom value",
+            });
             expect(context).not.toHaveProperty("agent_model");
             const token = String(context.modelConfig?.authKey);
             expect(token).toMatch(/^ag_/);
@@ -2650,7 +2657,7 @@ describe("community endpoint helpers", () => {
 for (const protocol of ["chat_completions", "responses", "text"] as const) {
     const api = protocol === "text" ? "chat_completions" : protocol;
     fixtureTest(
-        `routes ${protocol} agent model headers through JSON and SSE with caller-scoped delegation`,
+        `routes ${protocol} metadata through JSON and SSE with caller-scoped delegation`,
         async ({ apiKey }) => {
             const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
             const modelName = `agent-${crypto.randomUUID().slice(0, 8)}`;
@@ -2708,7 +2715,14 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
                             unknown
                         >;
                         expect(body).not.toHaveProperty("agent_model");
-                        const innerModel = String(body.model);
+                        expect(body.model).toBe("polli");
+                        const metadata = body.metadata as
+                            | Record<string, string>
+                            | undefined;
+                        if (metadata)
+                            expect(metadata.custom_key).toBe("unchanged");
+                        const innerModel =
+                            metadata?.model ?? String(body.model);
                         upstreamModels.push(innerModel);
                         const usage = {
                             prompt_tokens: 2,
@@ -2815,54 +2829,6 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
                 }),
             );
 
-            for (const source of ["body", "header"]) {
-                for (const agentModel of ["", "   ", "x".repeat(129)]) {
-                    const invalid = await fetchGen(
-                        new Request(`https://gen.pollinations.ai${path}`, {
-                            method: "POST",
-                            headers: {
-                                Authorization: `Bearer ${apiKey}`,
-                                "Content-Type": "application/json",
-                                ...(source === "header"
-                                    ? {
-                                          "X-Pollinations-Agent-Model":
-                                              agentModel,
-                                      }
-                                    : {}),
-                            },
-                            body: JSON.stringify({
-                                model: modelId,
-                                ...input,
-                                ...(source === "body"
-                                    ? { agent_model: agentModel }
-                                    : {}),
-                            }),
-                        }),
-                    );
-                    expect(invalid.status).toBe(400);
-                    await invalid.text();
-                }
-            }
-            for (const agentModel of [1, null]) {
-                const invalidBody = await fetchGen(
-                    new Request(`https://gen.pollinations.ai${path}`, {
-                        method: "POST",
-                        headers: {
-                            Authorization: `Bearer ${apiKey}`,
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                            model: modelId,
-                            ...input,
-                            agent_model: agentModel,
-                        }),
-                    }),
-                );
-                expect(invalidBody.status).toBe(400);
-                await invalidBody.text();
-            }
-            expect(upstreamModels).toEqual([]);
-
             for (const stream of [false, true]) {
                 for (const agentModel of [
                     undefined,
@@ -2876,15 +2842,6 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
                             headers: {
                                 Authorization: `Bearer ${apiKey}`,
                                 "Content-Type": "application/json",
-                                ...(agentModel &&
-                                agentModel !== "test/brain-one"
-                                    ? {
-                                          "X-Pollinations-Agent-Model":
-                                              agentModel === "test/brain-both"
-                                                  ? "test/ignored-header"
-                                                  : agentModel,
-                                      }
-                                    : {}),
                             },
                             body: JSON.stringify({
                                 model: legacyCommunityModelId(
@@ -2893,11 +2850,13 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
                                 ),
                                 ...input,
                                 stream,
-                                ...([
-                                    "test/brain-one",
-                                    "test/brain-both",
-                                ].includes(agentModel ?? "")
-                                    ? { agent_model: agentModel }
+                                ...(agentModel
+                                    ? {
+                                          metadata: {
+                                              model: agentModel,
+                                              custom_key: "unchanged",
+                                          },
+                                      }
                                     : {}),
                                 ...(stream && api === "chat_completions"
                                     ? {
@@ -3083,11 +3042,10 @@ fixtureTest(
                 headers: {
                     Authorization: `Bearer ${apiKey}`,
                     "Content-Type": "application/json",
-                    "X-Pollinations-Agent-Model": "test/brain",
                 },
                 body: JSON.stringify({
                     model: modelId,
-                    agent_model: "test/brain",
+                    metadata: { model: "test/brain" },
                     messages: [{ role: "user", content: "hello" }],
                     max_tokens: 5,
                 }),

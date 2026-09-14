@@ -14,43 +14,23 @@ import type { LoggerVariables } from "@/middleware/logger.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { generateCacheKey } from "@/utils/text-cache.ts";
 
-it("shares cache identity between agent model body and header options", async () => {
-    for (const path of ["/v1/chat/completions", "/v1/responses", "/text"]) {
-        const key = (model?: string, source = "header") =>
-            generateCacheKey(
-                new Request(`https://gen.pollinations.ai${path}`, {
-                    method: "POST",
-                    headers:
-                        model === undefined || source === "body"
-                            ? {}
-                            : { "X-Pollinations-Agent-Model": model },
-                }),
-                JSON.stringify({
-                    model: "owner/agent",
-                    messages: [],
-                    ...(source === "body" ? { agent_model: model } : {}),
-                }),
-            );
-        expect(await key("brain-one")).not.toBe(await key("brain-two"));
-        expect(await key("brain-one")).not.toBe(await key());
-        expect(await key(" brain-one ")).toBe(await key("brain-one"));
-        expect(await key(" brain-one ", "body")).toBe(await key("brain-one"));
-        expect(
-            await generateCacheKey(
-                new Request(`https://gen.pollinations.ai${path}`, {
-                    method: "POST",
-                    headers: {
-                        "X-Pollinations-Agent-Model": "ignored-header",
-                    },
-                }),
-                JSON.stringify({
-                    model: "owner/agent",
-                    messages: [],
-                    agent_model: "brain-one",
-                }),
-            ),
-        ).toBe(await key("brain-one"));
-    }
+it("includes arbitrary agent metadata in cache identity", async () => {
+    const request = new Request(
+        "https://gen.pollinations.ai/v1/chat/completions",
+        { method: "POST" },
+    );
+    const key = (metadata: Record<string, string>) =>
+        generateCacheKey(
+            request,
+            JSON.stringify({ model: "owner/agent", messages: [], metadata }),
+        );
+    expect(await key({ model: "one" })).not.toBe(await key({ model: "two" }));
+    expect(await key({ custom_key: "one" })).not.toBe(
+        await key({ custom_key: "two" }),
+    );
+    expect(await key({ model: "one", custom_key: "two" })).toBe(
+        await key({ custom_key: "two", model: "one" }),
+    );
 });
 
 const testLog = {

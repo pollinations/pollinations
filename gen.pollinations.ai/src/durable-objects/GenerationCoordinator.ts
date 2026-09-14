@@ -6,8 +6,8 @@ import type {
     GenerationRequestSnapshot,
 } from "@/middleware/generation-deduplication.ts";
 import { executeGeneration } from "@/utils/execute-generation.ts";
-import { createAnonymousX402Routes } from "../routes/x402.ts";
-import { X402LiveStream } from "../utils/x402-stream.ts";
+import { executeX402Request } from "../x402/execution.ts";
+import { X402LiveStream } from "../x402/stream.ts";
 
 const JOB_KEY = "job";
 const BODY_KEY_PREFIX = "body:";
@@ -168,11 +168,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                 });
                 const request = await this.restoreRequest(stored);
                 const pending: Promise<unknown>[] = [];
-                response = await createAnonymousX402Routes(
-                    this.env,
-                    true,
-                    (headers) => this.openPaymentStream(headers),
-                ).fetch(
+                response = await executeX402Request(
                     new Request(request.url, {
                         method: request.method,
                         headers: request.headers,
@@ -186,6 +182,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                         passThroughOnException: () => {},
                         props: {},
                     } as ExecutionContext,
+                    { onStream: (headers) => this.openPaymentStream(headers) },
                 );
                 await Promise.allSettled(pending);
             }

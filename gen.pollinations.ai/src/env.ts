@@ -9,6 +9,7 @@ import type { SafetyVariables } from "@/middleware/safety.ts";
 import type { ModelVariables } from "./middleware/model.ts";
 import type { TrackVariables } from "./middleware/track.ts";
 import type { TextVariables } from "./text/types.ts";
+import type { X402Variables } from "./x402/payment.ts";
 
 export type Env = {
     Bindings: CloudflareBindings;
@@ -22,5 +23,6 @@ export type Env = {
         SafetyVariables &
         TrackVariables &
         ModelVariables &
-        TextVariables;
+        TextVariables &
+        X402Variables;
 };

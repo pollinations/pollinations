@@ -25,10 +25,10 @@ On `https://staging.gen.pollinations.ai`, supported requests can use Weft x402 p
 |----------|--------------------|
 | `POST /v1/chat/completions`, `POST /text` | Text-only chat, including `stream: true`, with `max_tokens` between 1 and 4096; models billed only for prompt/cache/completion text tokens |
 | `GET /image/{prompt}` | Single images with a fixed per-image price |
-| `POST /v1/images/generations` | The same image models, with `response_format: "b64_json"` |
+| `POST /v1/images/generations` | The same image models, with `response_format: "b64_json"` or `"url"` |
 | `POST /v1/audio/speech` | Character-priced speech, for example `elevenflash` |
 
-Send a unique `Idempotency-Key` header. The initial `402` response advertises a maximum in `PAYMENT-REQUIRED`; an x402-capable client authorizes that ceiling and retries with `PAYMENT-SIGNATURE`. The final charge uses measured usage at the model's Pollen price, with a $0.001 minimum, and cannot exceed the authorization. The authorization permits settlement for up to 16 minutes.
+Requests use the same validation, generation, and response formats as API-key requests. Public cache hits do not require payment. On a cache miss, send a unique `Idempotency-Key` header. The initial `402` response advertises a maximum in `PAYMENT-REQUIRED`; an x402-capable client authorizes that ceiling and retries with `PAYMENT-SIGNATURE`. The final charge uses measured usage at the model's Pollen price, with a $0.001 minimum, and cannot exceed the authorization. The authorization permits settlement for up to 16 minutes.
 
 Retry a disconnected request with the same URL, body, safety header, idempotency key and payment signature. Completed responses and payment receipts are retained for 30 days. Use a new key for a new generation. Requests and generated bodies are currently limited to 20 MiB, excluding the final payment receipt.
 

@@ -9,11 +9,13 @@ import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
 import { getModelStats } from "@shared/utils/model-stats.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { createMiddleware } from "hono/factory";
+import type { Env } from "@/env.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import { getEstimatedPrice } from "@/utils/model-stats.ts";
+import { authorizeX402 } from "@/x402/payment.ts";
 
 type GenerationAccessVariables = AuthVariables &
     BalanceVariables &
@@ -135,9 +137,8 @@ export async function requireGenerationAccess(
     await checkBalance(vars, env);
 }
 
-export const generationAccess = createMiddleware<GenerationAccessEnv>(
-    async (c, next) => {
-        await requireGenerationAccess(c.var, c.env);
-        await next();
-    },
-);
+export const generationAccess = createMiddleware<Env>(async (c, next) => {
+    if (c.var.x402Request) return authorizeX402(c, next);
+    await requireGenerationAccess(c.var, c.env);
+    await next();
+});

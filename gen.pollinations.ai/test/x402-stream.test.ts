@@ -5,7 +5,7 @@ import {
     X402_STREAM_DONE,
     X402LiveStream,
     x402StreamReceipt,
-} from "../src/utils/x402-stream.ts";
+} from "../src/x402/stream.ts";
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();

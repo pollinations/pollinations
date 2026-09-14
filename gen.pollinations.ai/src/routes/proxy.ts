@@ -93,6 +93,7 @@ import {
     apiKeyBudgetReservation,
     generationAccess,
 } from "@/utils/generation-access.ts";
+import { x402Payment } from "@/x402/payment.ts";
 import {
     type GenerationModelEntry,
     getGenerationModelRegistry,
@@ -206,7 +207,7 @@ const chatCompletionHandlers = factory.createHandlers(
     textBodyLimit,
     validator("json", CreateChatCompletionRequestSchema),
     mediaResponses("chat/completions"),
-    resolveModel("generate.text"),
+    every(resolveModel("generate.text"), x402Payment()),
     track("generate.text"),
     textCache,
     every(generationAccess, deduplicateGeneration),
@@ -809,7 +810,7 @@ export const proxyRoutes = new Hono<Env>()
         }),
         textBodyLimit,
         validator("json", CreateChatCompletionRequestSchema),
-        resolveModel("generate.text"),
+        every(resolveModel("generate.text"), x402Payment()),
         track("generate.text"),
         textCache,
         generationAccess,
@@ -910,7 +911,7 @@ export const proxyRoutes = new Hono<Env>()
             }),
         ),
         validator("query", GenerateImageRequestQueryParamsSchema),
-        resolveModel("generate.image"),
+        every(resolveModel("generate.image"), x402Payment()),
         ...imageVideoHandlers,
     )
     .get(
@@ -1134,7 +1135,7 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         validator("json", CreateImageRequestSchema),
-        resolveModel("generate.image"),
+        every(resolveModel("generate.image"), x402Payment()),
         track("generate.image"),
         every(prepareOpenAIImageGeneration, formatOpenAIImageResponse),
         prepareGenerationRequest,

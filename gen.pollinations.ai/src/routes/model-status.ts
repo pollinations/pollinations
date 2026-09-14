@@ -218,8 +218,17 @@ const fetchModelHealth =
 const fetchModelRouteHealth =
     createTinybirdPipeFetcher<ModelRouteHealthResponse>("model_route_health");
 
+/** Only set for local and staging runs; absent in production. */
+type TinybirdQueryEnv = {
+    TINYBIRD_QUERY_HOST?: string;
+    TINYBIRD_QUERY_TOKEN?: string;
+    TINYBIRD_QUERY_DEPLOYMENT?: string;
+};
+
 function tinybirdOverrides(c: Context<Env>): TinybirdOverrides {
-    const env = c.env as Record<string, string | undefined>;
+    // Through unknown: the bindings carry namespaces and databases too, so
+    // they do not overlap a bag of optional strings.
+    const env = c.env as unknown as TinybirdQueryEnv;
     return {
         host: env.TINYBIRD_QUERY_HOST,
         token: env.TINYBIRD_QUERY_TOKEN,

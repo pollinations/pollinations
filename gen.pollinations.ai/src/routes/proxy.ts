@@ -25,6 +25,16 @@ import {
 import { mediaResponses } from "../media/responses.ts";
 import { textBalanceNotice } from "../middleware/text-balance-notice.ts";
 import {
+    attachmentFor,
+    attachmentKeysFor,
+    filterEntriesByReliability,
+    getModelHealthAttachments,
+    type ModelHealthAttachment,
+    type ModelsReliabilityFilter,
+    parseReliabilityParam,
+    parseSourceHeader,
+} from "../model-health.ts";
+import {
     formatOpenAIImageResponse,
     handleImageGeneration,
     prepareOpenAIImageEdit,
@@ -262,9 +272,10 @@ function filterEntriesByCommunityParam(
     );
 }
 
-// Factory for model-list endpoints: validates the community query parameter,
-// filters by API key permissions, paid balance, and community flag,
-// then returns the model list as JSON.
+// Factory for model-list endpoints: validates the community and reliability
+// query parameters, filters by API key permissions, paid balance, community
+// flag, and reliability, then returns the model list as JSON with health
+// metadata attached.
 const modelsListHandler = (
     getEntries: (
         c: Context<Env>,
@@ -273,20 +284,56 @@ const modelsListHandler = (
     [
         validator("query", ModelListQueryParamsSchema),
         async (c: Context<Env>) => {
-            const { community } = c.req.valid(
+            const { community, reliability: reliabilityParam } = c.req.valid(
                 "query" as never,
             ) as ModelListQueryParams;
+            let reliability: ModelsReliabilityFilter;
+            let communityValue = community;
+            try {
+                reliability = parseReliabilityParam(
+                    reliabilityParam,
+                    c.req.header("X-Model-Reliability"),
+                );
+                if (communityValue === undefined) {
+                    communityValue = parseSourceHeader(
+                        undefined,
+                        c.req.header("X-Model-Source"),
+                    ) as typeof communityValue;
+                }
+            } catch (err) {
+                throw new HTTPException(400, {
+                    message:
+                        err instanceof Error ? err.message : "Invalid filter",
+                });
+            }
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
-            return c.json(
+            const visibleEntries = await getEntries(c);
+            const attachments = await getModelHealthAttachments(
+                attachmentKeysFor(visibleEntries),
+            );
+            const entries = filterEntriesByReliability(
                 filterEntriesByCommunityParam(
                     filterEntriesByPermissions(
-                        await getEntries(c),
+                        visibleEntries,
                         allowedModels,
                         paidBalance,
                     ),
-                    community,
-                ).map((entry) => entry.info),
+                    communityValue,
+                ),
+                reliability,
+                attachments,
+            );
+            return c.json(
+                entries.map((entry) => {
+                    const attachment = attachmentFor(attachments, entry);
+                    if (!attachment) return entry.info;
+                    return {
+                        ...entry.info,
+                        reliability: attachment.reliability,
+                        health: attachment.health,
+                    };
+                }),
             );
         },
     ] as const;
@@ -333,7 +380,13 @@ async function getVisibleVideoModelEntries(c: Context<Env>) {
 // /v1/models/:model (retrieve). `created` derives from the registry addedDate
 // so both endpoints return stable timestamps instead of per-request wall-clock
 // values.
-function toOpenAIModelEntry(entry: GenerationModelEntry) {
+function toOpenAIModelEntry(
+    entry: GenerationModelEntry,
+    attachments?: Map<string, ModelHealthAttachment>,
+) {
+    const attachment = attachments
+        ? attachmentFor(attachments, entry)
+        : undefined;
     return {
         id: entry.info.name,
         object: "model" as const,
@@ -361,6 +414,10 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         }),
         ...(entry.info.per_user_rpm !== undefined && {
             per_user_rpm: entry.info.per_user_rpm,
+        }),
+        ...(attachment && {
+            reliability: attachment.reliability,
+            health: attachment.health,
         }),
     };
 }
@@ -405,7 +462,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models (OpenAI-compatible)",
             description:
-                'Returns available models in the OpenAI-compatible format (`{object: "list", data: [...]}`), with Pollinations pricing and capability extensions. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` for richer metadata. When authenticated: the owner\'s private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.',
+                'Returns available models in the OpenAI-compatible format (`{object: "list", data: [...]}`), with Pollinations pricing and capability extensions. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Each entry carries `reliability` (`reliable`, `unreliable`, or `unknown` when there is no usable health data) and a minimal `health` object (success rate, sample count, window, freshness). When authenticated: the owner\'s private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models. Pass `?reliability=reliable` to keep only models with a high recent success rate. Clients that append `/models` to a base URL and cannot add query strings can send `X-Model-Source: official|community|all` and `X-Model-Reliability: reliable|all` headers instead (query params win when both are present).',
             responses: {
                 200: {
                     description: "Success",
@@ -420,22 +477,51 @@ export const proxyRoutes = new Hono<Env>()
         }),
         validator("query", ModelListQueryParamsSchema),
         async (c) => {
-            const { community } = c.req.valid(
+            const { community, reliability: reliabilityParam } = c.req.valid(
                 "query" as never,
             ) as ModelListQueryParams;
+            let reliability: ModelsReliabilityFilter;
+            let communityValue = community;
+            try {
+                reliability = parseReliabilityParam(
+                    reliabilityParam,
+                    c.req.header("X-Model-Reliability"),
+                );
+                if (communityValue === undefined) {
+                    communityValue = parseSourceHeader(
+                        undefined,
+                        c.req.header("X-Model-Source"),
+                    ) as typeof communityValue;
+                }
+            } catch (err) {
+                throw new HTTPException(400, {
+                    message:
+                        err instanceof Error ? err.message : "Invalid filter",
+                });
+            }
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
-            const modelEntries = filterEntriesByCommunityParam(
-                filterEntriesByPermissions(
-                    await getVisibleModelEntries(c),
-                    allowedModels,
-                    paidBalance,
+            const visibleEntries = await getVisibleModelEntries(c);
+            const attachments = await getModelHealthAttachments(
+                attachmentKeysFor(visibleEntries),
+            );
+            const modelEntries = filterEntriesByReliability(
+                filterEntriesByCommunityParam(
+                    filterEntriesByPermissions(
+                        visibleEntries,
+                        allowedModels,
+                        paidBalance,
+                    ),
+                    communityValue,
                 ),
-                community,
+                reliability,
+                attachments,
             );
             return c.json({
                 object: "list" as const,
-                data: modelEntries.map(toOpenAIModelEntry),
+                data: modelEntries.map((entry) =>
+                    toOpenAIModelEntry(entry, attachments),
+                ),
             });
         },
     )
@@ -480,7 +566,12 @@ export const proxyRoutes = new Hono<Env>()
                     message: `Model '${modelId}' not found`,
                 });
             }
-            return c.json(toOpenAIModelEntry(entry));
+            return c.json(
+                toOpenAIModelEntry(
+                    entry,
+                    await getModelHealthAttachments(attachmentKeysFor([entry])),
+                ),
+            );
         },
     )
     .get(
@@ -489,7 +580,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models",
             description:
-                "Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+                "Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Each entry carries `reliability` and a minimal `health` object (see `/v1/models`). When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models. Pass `?reliability=reliable` to keep only models with a high recent success rate.",
             responses: {
                 200: {
                     description: "Success",

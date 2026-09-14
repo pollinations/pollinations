@@ -1,7 +1,7 @@
 import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
 import debug from "debug";
-import { Hono } from "hono";
 import type { Context } from "hono";
+import { Hono } from "hono";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "@/env.ts";
@@ -99,6 +99,13 @@ type ModelRouteHealthResponse = z.infer<typeof ModelRouteHealthResponseSchema>;
 
 type CacheEntry<T> = { data: T; timestamp: number };
 
+/** Local/staging targeting. Unset in production, where the constants apply. */
+type TinybirdOverrides = {
+    host?: string;
+    token?: string;
+    deployment?: string;
+};
+
 function parseMinutes(value: string | undefined): number | null {
     if (value === undefined) return DEFAULT_MINUTES;
     if (!/^\d+$/.test(value)) return null;
@@ -130,10 +137,24 @@ function createTinybirdPipeFetcher<T>(pipeName: string) {
         }
     }
 
-    async function fetchFresh(minutes: number): Promise<T> {
-        const url = new URL(`/v0/pipes/${pipeName}.json`, TINYBIRD_HOST);
-        url.searchParams.set("token", TINYBIRD_PUBLIC_TOKEN);
+    async function fetchFresh(
+        minutes: number,
+        overrides?: TinybirdOverrides,
+    ): Promise<T> {
+        const url = new URL(
+            `/v0/pipes/${pipeName}.json`,
+            overrides?.host || TINYBIRD_HOST,
+        );
+        url.searchParams.set(
+            "token",
+            overrides?.token || TINYBIRD_PUBLIC_TOKEN,
+        );
         url.searchParams.set("minutes", String(minutes));
+        // Lets a non-promoted Tinybird deployment be targeted locally, which is
+        // the only way to exercise this route against staging before promote.
+        if (overrides?.deployment) {
+            url.searchParams.set("__tb__deployment", overrides.deployment);
+        }
         log("Fetching %s from Tinybird: %s", pipeName, url.toString());
 
         const response = await fetch(url.toString());
@@ -145,6 +166,7 @@ function createTinybirdPipeFetcher<T>(pipeName: string) {
 
     return async function fetchWithCache(
         minutes: number,
+        overrides?: TinybirdOverrides,
     ): Promise<{ data: T; timestamp: number; stale: boolean }> {
         const now = Date.now();
         const cached = cache.get(minutes);
@@ -163,7 +185,7 @@ function createTinybirdPipeFetcher<T>(pipeName: string) {
         }
 
         try {
-            const data = await fetchFresh(minutes);
+            const data = await fetchFresh(minutes, overrides);
             const timestamp = Date.now();
             setCacheEntry(minutes, { data, timestamp });
             return { data, timestamp, stale: false };
@@ -192,6 +214,15 @@ const fetchModelHealth =
     createTinybirdPipeFetcher<ModelHealthResponse>("model_health");
 const fetchModelRouteHealth =
     createTinybirdPipeFetcher<ModelRouteHealthResponse>("model_route_health");
+
+function tinybirdOverrides(c: Context<Env>): TinybirdOverrides {
+    const env = c.env as Record<string, string | undefined>;
+    return {
+        host: env.TINYBIRD_QUERY_HOST,
+        token: env.TINYBIRD_QUERY_TOKEN,
+        deployment: env.TINYBIRD_QUERY_DEPLOYMENT,
+    };
+}
 
 function parseMinutesOrRespond(c: Context<Env>) {
     const format = c.req.query("format");
@@ -276,6 +307,7 @@ export const modelStatusRoutes = new Hono<Env>()
             try {
                 const { data, timestamp, stale } = await fetchModelHealth(
                     parsed.minutes,
+                    tinybirdOverrides(c),
                 );
                 c.header(
                     DATA_TIMESTAMP_HEADER,
@@ -324,8 +356,10 @@ export const modelStatusRoutes = new Hono<Env>()
             if ("error" in parsed) return parsed.error;
 
             try {
-                const { data, timestamp, stale } =
-                    await fetchModelRouteHealth(parsed.minutes);
+                const { data, timestamp, stale } = await fetchModelRouteHealth(
+                    parsed.minutes,
+                    tinybirdOverrides(c),
+                );
                 c.header(
                     DATA_TIMESTAMP_HEADER,
                     new Date(timestamp).toISOString(),

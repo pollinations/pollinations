@@ -13,7 +13,6 @@ import type { EventType } from "@shared/schemas/generation-event.ts";
 import type { SafetyFeature } from "@shared/schemas/safety.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import { getAgentModel, requireEndpointAgent } from "@/schemas/agent-model.ts";
 import {
     type GenerationModelEntry,
     getGenerationModelRegistry,
@@ -37,8 +36,6 @@ export type ModelVariables = {
         /** Static registry definition, or a dynamic definition resolved from D1. */
         definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
-        /** Requested inner model for an endpoint agent. */
-        agentModel?: string;
         /**
          * Extra cache-key scope for models whose output is not shareable
          * between callers. Unset means the response is cacheable platform-wide,
@@ -174,7 +171,6 @@ export function resolveModel(
     }>(async (c, next) => {
         // Extract model from request
         let rawModel: string | null = null;
-        let bodyAgentModel: string | undefined;
 
         if (c.req.method === "GET") {
             rawModel = c.req.query("model") || null;
@@ -192,15 +188,11 @@ export function resolveModel(
             } else if (hasJsonContentType(contentType)) {
                 try {
                     const body =
-                        getValidatedJsonBody<{
-                            model?: string;
-                            agent_model?: string;
-                        }>(c.req) ||
+                        getValidatedJsonBody<{ model?: string }>(c.req) ||
                         ((await c.req.raw.clone().json()) as
-                            | { model?: string; agent_model?: string }
+                            | { model?: string }
                             | undefined);
                     rawModel = body?.model || null;
-                    bodyAgentModel = body?.agent_model;
                 } catch {
                     throw new HTTPException(400, {
                         message: "Invalid JSON body",
@@ -246,11 +238,6 @@ export function resolveModel(
                     allowedModels.includes(entry.id),
             );
         }
-        resolved.agentModel = getAgentModel(c.req.raw.headers, bodyAgentModel);
-        requireEndpointAgent(
-            resolved.agentModel,
-            resolved.communityEndpoint?.type,
-        );
         c.set("model", resolved);
         c.header(MODEL_REQUESTED_HEADER, resolved.resolved);
         await next();

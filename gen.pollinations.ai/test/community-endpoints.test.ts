@@ -2963,56 +2963,6 @@ for (const protocol of ["chat_completions", "responses", "text"] as const) {
 }
 
 fixtureTest(
-    "rejects agent model overrides on non-agent text and media routes",
-    async ({ apiKey }) => {
-        for (const path of ["/v1/chat/completions", "/v1/responses", "/text"]) {
-            for (const model of [DEFAULT_TEXT_MODEL, DEFAULT_IMAGE_MODEL]) {
-                for (const source of ["header", "body"]) {
-                    const response = await fetchGen(
-                        new Request(`https://gen.pollinations.ai${path}`, {
-                            method: "POST",
-                            headers: {
-                                Authorization: `Bearer ${apiKey}`,
-                                "Content-Type": "application/json",
-                                ...(source === "header"
-                                    ? {
-                                          "X-Pollinations-Agent-Model":
-                                              "test/brain",
-                                      }
-                                    : {}),
-                            },
-                            body: JSON.stringify({
-                                model,
-                                ...(source === "body"
-                                    ? { agent_model: "test/brain" }
-                                    : {}),
-                                ...(path === "/v1/responses"
-                                    ? { input: "hello" }
-                                    : {
-                                          messages: [
-                                              {
-                                                  role: "user",
-                                                  content: "hello",
-                                              },
-                                          ],
-                                      }),
-                            }),
-                        }),
-                    );
-                    expect(response.status).toBe(400);
-                    const body = await response.text();
-                    if (path !== "/text" || model === DEFAULT_TEXT_MODEL) {
-                        expect(body).toContain(
-                            "agent_model and X-Pollinations-Agent-Model are supported only by endpoint agents",
-                        );
-                    }
-                }
-            }
-        }
-    },
-);
-
-fixtureTest(
     "routes Chat through an exact community URL with its saved token and rejects Responses",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
@@ -3152,14 +3102,16 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     model: modelId,
+                    agent_model: "test/brain",
                     messages: [{ role: "user", content: "hello" }],
+                    max_tokens: 5,
                 }),
             }),
         );
-        expect(overrideResponse.status).toBe(400);
-        expect(await overrideResponse.text()).toContain(
-            "agent_model and X-Pollinations-Agent-Model are supported only by endpoint agents",
-        );
+        expect(overrideResponse.status).toBe(200);
+        expect(await overrideResponse.json()).toMatchObject({
+            model: "gpt-4.1-mini",
+        });
 
         const responses = await fetchGen(
             new Request("https://gen.pollinations.ai/v1/responses", {
@@ -3187,7 +3139,7 @@ fixtureTest(
         const upstreamCalls = fetchMock.mock.calls.filter(
             ([input, init]) => new Request(input, init).url === chatUrl,
         );
-        expect(upstreamCalls).toHaveLength(2);
+        expect(upstreamCalls).toHaveLength(3);
     },
 );
 

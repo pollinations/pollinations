@@ -3,13 +3,10 @@ import {
     createMcpHandler,
 } from "../../packages/mcp/src/server.js";
 
-const mcpHandler = createMcpHandler(
-    () => buildServer({ includeAuthTools: false }),
-    {
-        legacy: "stateless",
-        onerror: (error) => console.error(error),
-    },
-);
+const mcpHandler = createMcpHandler(() => buildServer(), {
+    legacy: "stateless",
+    onerror: (error) => console.error(error),
+});
 
 function readBearerToken(request) {
     const authorization = request.headers.get("authorization");
@@ -56,6 +53,24 @@ export default {
 
         const token = readBearerToken(request);
         if (!token) return unauthorizedResponse();
+
+        if (
+            request.method === "POST" &&
+            Array.isArray(
+                await request
+                    .clone()
+                    .json()
+                    .catch(() => null),
+            )
+        ) {
+            return Response.json(
+                {
+                    error: "invalid_request",
+                    message: "Batch requests are not supported.",
+                },
+                { status: 400 },
+            );
+        }
 
         return mcpHandler.fetch(request, {
             authInfo: {

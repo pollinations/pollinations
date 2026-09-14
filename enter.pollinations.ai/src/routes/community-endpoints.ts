@@ -1,18 +1,24 @@
+import { validateCommunityEndpointUrl } from "@shared/community-endpoint-urls.ts";
 import {
+    COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     type CommunityEndpointVisibility,
     communityModelId,
     type EndpointAgentListingPayload,
+    effectiveCommunityEndpointVisibility,
     isCommunityEndpointOwnerAllowed,
-    normalizeCommunityEndpointBaseUrl,
+    legacyCommunityModelId,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityProviderUrl,
     type ProxyListingPayload,
     parseListingPayload,
+    pendingCommunityEndpointChangeIsReady,
+    resolveEffectiveProxyListing,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import { resolveModelName } from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
-import { and, desc, eq, or } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -20,11 +26,16 @@ import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import { deleteCodeAgent } from "../services/code-agent.ts";
 import {
+    type CommunityEndpointTestResult,
     listCommunityEndpointModels,
+    testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
+    testCommunitySpeechEndpoint,
     testCommunityTranscriptionEndpoint,
+    testCommunityVideoEndpoint,
 } from "../services/community-endpoint-openai.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 import {
@@ -37,6 +48,9 @@ import {
     changesProxyPayload,
     deriveCreateProxyPolicy,
     deriveUpdatedProxyPolicy,
+    hasProxyPricingInput,
+    proxyPricingChanged,
+    withoutProxyPricingChanges,
 } from "./community-endpoints/proxy-policy.ts";
 import {
     assertValidUpdate,
@@ -58,9 +72,9 @@ import {
 
 const ENDPOINT_PROBE_THROTTLE_SECONDS = 30;
 type Db = ReturnType<typeof drizzle<typeof schema>>;
-function normalizeInputBaseUrl(value: string): string {
+function validateInputEndpointUrl(value: string): string {
     try {
-        return normalizeCommunityEndpointBaseUrl(value);
+        return validateCommunityEndpointUrl(value);
     } catch (error) {
         throw new HTTPException(400, {
             message:
@@ -145,9 +159,28 @@ async function requireOwnedEndpoint(db: Db, id: string, ownerUserId: string) {
 async function ensureModelNameAvailable(
     db: Db,
     ownerUserId: string,
+    ownerGithubUsername: string,
     name: string,
     currentId?: string,
 ): Promise<void> {
+    const bundledModelExists = [
+        communityModelId(ownerGithubUsername, name),
+        legacyCommunityModelId(ownerGithubUsername, name),
+    ].some((modelId) => {
+        try {
+            resolveModelName(modelId);
+            return true;
+        } catch {
+            // Both the canonical ID and its generation alias must be available.
+            return false;
+        }
+    });
+    if (bundledModelExists) {
+        throw new HTTPException(400, {
+            message:
+                "Community model ID conflicts with a bundled model or alias",
+        });
+    }
     const existing = await db.query.communityEndpoint.findFirst({
         columns: { id: true },
         where: and(
@@ -260,7 +293,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         toCommunityEndpointResponse(
                             endpoint,
                             ownerGithubUsername,
-                            c.env.AGENT_RUNTIME_BASE_URL,
                         ),
                     ),
                     provider: {
@@ -366,13 +398,23 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 throw new HTTPException(404, { message: "Model not found" });
             }
             if (endpoint.type !== "proxy") return c.json({ data: [] });
-            const endpointPayload = parseListingPayload(
+            const currentPayload = parseListingPayload(
                 "proxy",
                 endpoint.payload,
             );
-            if (!endpointPayload) {
+            if (!currentPayload) {
                 throw new Error(`Invalid proxy payload for ${endpoint.id}`);
             }
+            const endpointPayload = resolveEffectiveProxyListing({
+                visibility: endpoint.visibility,
+                payload: currentPayload,
+                pendingVisibility: endpoint.pendingVisibility,
+                pendingPayload: parseListingPayload(
+                    "proxy",
+                    endpoint.pendingPayload,
+                ),
+                pendingAt: endpoint.pendingAt,
+            }).payload;
             const primary: FallbackPrimary = {
                 modelId: communityModelId(ownerGithubUsername, endpoint.name),
                 ownerUserId: user.id,
@@ -391,12 +433,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 .innerJoin(
                     schema.user,
                     eq(schema.communityEndpoint.ownerUserId, schema.user.id),
-                )
-                .where(
-                    or(
-                        eq(schema.communityEndpoint.visibility, "public"),
-                        eq(schema.communityEndpoint.ownerUserId, user.id),
-                    ),
                 );
             const data = candidates
                 .flatMap(({ endpoint: row, ownerGithubUsername: owner }) => {
@@ -416,7 +452,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🤖 Community Agents"],
             summary: "Create Endpoint Agent",
             description:
-                "Register an agent running on an external OpenAI-compatible endpoint. Pollinations sends a short-lived agent run token instead of a stored bearer credential. Private is the default; public agents require an allowlisted account. API keys require `account:keys`.",
+                "Register an agent running on an external OpenAI-compatible endpoint. Pollinations sends a short-lived agent run token instead of a stored bearer credential. Private is the default; public agents require an allowlisted account and become public after 3 hours. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Created endpoint agent",
@@ -441,10 +477,19 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 db,
                 user.id,
             );
-            await ensureModelNameAvailable(db, user.id, input.name);
+            await ensureModelNameAvailable(
+                db,
+                user.id,
+                ownerGithubUsername,
+                input.name,
+            );
             await enforcePublishingAccess(db, user.id, input.visibility);
+            const queuesPublication = input.visibility === "public";
             const payload: EndpointAgentListingPayload = {
                 perUserRpm: input.perUserRpm,
+                api: input.api,
+                inputModalities: input.inputModalities,
+                outputModalities: input.outputModalities,
             };
             const [row] = await db
                 .insert(schema.communityEndpoint)
@@ -454,21 +499,22 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     name: input.name,
                     title: input.title,
                     description: input.description || null,
-                    visibility: input.visibility,
+                    visibility: queuesPublication
+                        ? "private"
+                        : input.visibility,
+                    pendingVisibility: queuesPublication ? "public" : null,
+                    pendingAt: queuesPublication ? new Date() : null,
                     type: "endpoint_agent",
-                    baseUrl: normalizeInputBaseUrl(input.baseUrl),
+                    baseUrl: validateInputEndpointUrl(input.url),
                     upstreamModel: input.upstreamModel ?? input.name,
+                    requiredSafetyFeatures: input.requiredSafetyFeatures,
                     payload: JSON.stringify(payload),
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
                 .returning();
             return c.json(
-                toCommunityEndpointResponse(
-                    row,
-                    ownerGithubUsername,
-                    c.env.AGENT_RUNTIME_BASE_URL,
-                ),
+                toCommunityEndpointResponse(row, ownerGithubUsername),
             );
         },
     )
@@ -478,7 +524,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Create My Model",
             description:
-                "Register a private or public community text, image, or transcription model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a private or public community text, image, video, transcription, speech, or embedding model. Private is the default. Public models require an allowlisted account and become public after 3 hours. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community model",
@@ -503,22 +549,35 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 db,
                 user.id,
             );
-            await ensureModelNameAvailable(db, user.id, input.name);
-            const policy = deriveCreateProxyPolicy(input);
+            await ensureModelNameAvailable(
+                db,
+                user.id,
+                ownerGithubUsername,
+                input.name,
+            );
+            const targetPolicy = deriveCreateProxyPolicy(input);
+            const queuesPublication = input.visibility === "public";
+            const policy = queuesPublication
+                ? deriveCreateProxyPolicy({ ...input, visibility: "private" })
+                : targetPolicy;
             const modelId = communityModelId(ownerGithubUsername, input.name);
+            const bearerTokenCiphertext = await encryptSecret(
+                normalizeInputBearerToken(input.bearerToken),
+                c.env.BETTER_AUTH_SECRET,
+            );
+            const api = input.modality === "text" ? input.api : null;
+            const fallbacks = input.fallbacks
+                ? await resolveFallbacks(db, input.fallbacks, {
+                      modelId,
+                      ownerUserId: user.id,
+                      ...targetPolicy,
+                  })
+                : [];
             const payload: ProxyListingPayload = {
-                bearerTokenCiphertext: await encryptSecret(
-                    normalizeInputBearerToken(input.bearerToken),
-                    c.env.BETTER_AUTH_SECRET,
-                ),
+                bearerTokenCiphertext,
+                api,
                 ...policy,
-                fallbacks: input.fallbacks
-                    ? await resolveFallbacks(db, input.fallbacks, {
-                          modelId,
-                          ownerUserId: user.id,
-                          ...policy,
-                      })
-                    : [],
+                fallbacks,
             };
             await enforcePublishingAccess(db, user.id, input.visibility);
             const [row] = await db
@@ -529,21 +588,32 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     name: input.name,
                     title: input.title,
                     description: input.description || null,
-                    visibility: input.visibility,
+                    visibility: queuesPublication
+                        ? "private"
+                        : input.visibility,
                     type: "proxy",
-                    baseUrl: normalizeInputBaseUrl(input.baseUrl),
+                    baseUrl: validateInputEndpointUrl(
+                        input.modality === "text" ? input.url : input.baseUrl,
+                    ),
                     upstreamModel: input.upstreamModel ?? input.name,
+                    requiredSafetyFeatures: input.requiredSafetyFeatures,
                     payload: JSON.stringify(payload),
+                    pendingPayload: queuesPublication
+                        ? JSON.stringify({
+                              bearerTokenCiphertext,
+                              api,
+                              ...targetPolicy,
+                              fallbacks,
+                          } satisfies ProxyListingPayload)
+                        : null,
+                    pendingVisibility: queuesPublication ? "public" : null,
+                    pendingAt: queuesPublication ? new Date() : null,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
                 .returning();
             return c.json(
-                toCommunityEndpointResponse(
-                    row,
-                    ownerGithubUsername,
-                    c.env.AGENT_RUNTIME_BASE_URL,
-                ),
+                toCommunityEndpointResponse(row, ownerGithubUsername),
             );
         },
     )
@@ -596,7 +666,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Test My Model Endpoint",
             description:
-                "Test an OpenAI-compatible upstream model before registering it. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
+                "Test an upstream model before registering it. Text tests call the selected Chat Completions or Responses URL in JSON and streaming modes; both must return valid token usage. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint; video tests call the exact configured URL and validate completed MP4 data; speech tests send a short sample and accept a valid binary audio response. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Endpoint test result",
@@ -626,22 +696,59 @@ export const communityEndpointsRoutes = new Hono<Env>()
             );
             if (throttled) return throttled;
             try {
-                const result =
-                    input.modality === "image"
-                        ? await testCommunityImageEndpoint(input)
-                        : input.modality === "transcription"
-                          ? await testCommunityTranscriptionEndpoint(input)
-                          : await testCommunityEndpoint(input);
+                const endpointInput = {
+                    ...input,
+                    baseUrl: validateInputEndpointUrl(
+                        input.modality === "text" ? input.url : input.baseUrl,
+                    ),
+                };
+                let result: CommunityEndpointTestResult;
+                if (input.modality === "text") {
+                    result = await testCommunityEndpoint({
+                        api: input.api,
+                        url: endpointInput.baseUrl,
+                        bearerToken: input.bearerToken,
+                        model: input.model,
+                    });
+                } else if (input.modality === "video") {
+                    result = await testCommunityVideoEndpoint(endpointInput);
+                } else {
+                    if (!input.model) {
+                        throw new HTTPException(400, {
+                            message:
+                                "model is required unless modality is video",
+                        });
+                    }
+                    const modelInput = { ...endpointInput, model: input.model };
+                    result =
+                        input.modality === "image"
+                            ? await testCommunityImageEndpoint(modelInput)
+                            : input.modality === "transcription"
+                              ? await testCommunityTranscriptionEndpoint(
+                                    modelInput,
+                                )
+                              : input.modality === "speech"
+                                ? await testCommunitySpeechEndpoint(modelInput)
+                                : await testCommunityEmbeddingEndpoint(
+                                      modelInput,
+                                  );
+                }
                 return c.json({
                     ok: true,
                     message:
                         input.modality === "image"
                             ? result.inputModalities?.includes("image")
                                 ? "Generation and editing endpoints responded with image data"
-                                : "Generation endpoint responded; editing is not supported"
-                            : input.modality === "transcription"
-                              ? "Endpoint responded with transcription text"
-                              : "Endpoint responded with usage",
+                                : `Generation endpoint responded; editing test failed: ${result.imageEditError}`
+                            : input.modality === "video"
+                              ? "Endpoint responded with playable video"
+                              : input.modality === "transcription"
+                                ? "Endpoint responded with transcription text"
+                                : input.modality === "speech"
+                                  ? "Endpoint responded with audio data"
+                                  : input.modality === "embedding"
+                                    ? "Endpoint responded with embedding data"
+                                    : "JSON and streaming requests returned valid token usage",
                     ...result,
                 });
             } catch (error) {
@@ -655,7 +762,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Update My Model",
             description:
-                "Update a community model owned by the authenticated account. Changing visibility to public publishes it and requires an allowlisted account; public models may be free or priced. API keys require `account:keys`.",
+                "Update a community model owned by the authenticated account. Code-agent names, titles, and descriptions come from GitHub; an empty description is ignored. Changing visibility to public requires an allowlisted account and takes effect after 3 hours; public models may be free or priced. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Updated community model",
@@ -690,6 +797,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             await ensureModelNameAvailable(
                 db,
                 user.id,
+                ownerGithubUsername,
                 input.name ?? endpoint.name,
                 id,
             );
@@ -699,48 +807,150 @@ export const communityEndpointsRoutes = new Hono<Env>()
             > = {
                 updatedAt: new Date(),
             };
+            const pendingReady = pendingCommunityEndpointChangeIsReady(
+                endpoint.pendingAt,
+            );
+            const currentVisibility = effectiveCommunityEndpointVisibility(
+                endpoint.visibility,
+                endpoint.pendingVisibility,
+                endpoint.pendingAt,
+            );
+            let pendingPayload = pendingReady ? null : endpoint.pendingPayload;
+            let pendingVisibility = pendingReady
+                ? null
+                : endpoint.pendingVisibility;
+            let pendingAt = pendingReady ? null : endpoint.pendingAt;
             if (input.name !== undefined) update.name = input.name;
             if (input.title !== undefined) update.title = input.title;
-            if (input.description !== undefined) {
+            if (
+                endpoint.type !== "code_agent" &&
+                input.description !== undefined
+            ) {
                 update.description = input.description || null;
             }
+            if (input.requiredSafetyFeatures !== undefined) {
+                update.requiredSafetyFeatures = input.requiredSafetyFeatures;
+            }
             if (input.hidden !== undefined) {
+                if (
+                    !input.hidden &&
+                    (input.visibility ?? currentVisibility) === "public" &&
+                    endpoint.hiddenAt &&
+                    Date.now() <
+                        endpoint.hiddenAt.getTime() +
+                            COMMUNITY_ENDPOINT_CHANGE_DELAY_MS
+                ) {
+                    throw new HTTPException(400, {
+                        message:
+                            "Community models can be relisted 3 hours after they were hidden",
+                    });
+                }
                 update.hiddenAt = input.hidden ? new Date() : null;
                 update.hiddenReason = input.hidden ? "Hidden by owner" : null;
                 update.hiddenBy = input.hidden ? "owner" : null;
             }
-            const effectiveVisibility = input.visibility ?? endpoint.visibility;
-            await enforcePublishingAccess(db, user.id, effectiveVisibility);
-            update.visibility = effectiveVisibility;
-            if (endpoint.type === "prompt_agent") {
-                // Prompt configuration is edited through /account/agents.
+            await enforcePublishingAccess(
+                db,
+                user.id,
+                input.visibility ?? currentVisibility,
+            );
+            let nextVisibility = currentVisibility;
+            if (input.visibility === "private") {
+                nextVisibility = "private";
+                pendingPayload = null;
+                pendingVisibility = null;
+                pendingAt = null;
+            } else if (
+                input.visibility === "public" &&
+                currentVisibility === "private"
+            ) {
+                pendingVisibility = "public";
+                pendingAt ??= new Date();
+            }
+            update.visibility = nextVisibility;
+            if (
+                endpoint.type === "prompt_agent" ||
+                endpoint.type === "code_agent"
+            ) {
+                // Managed configuration is edited through /account/agents.
                 // This route only updates shared listing state such as hidden.
             } else if (endpoint.type === "endpoint_agent") {
-                if (!parseListingPayload("endpoint_agent", endpoint.payload)) {
+                const current = parseListingPayload(
+                    "endpoint_agent",
+                    endpoint.payload,
+                );
+                if (!current) {
                     throw new Error(
                         `Invalid endpoint_agent payload for ${endpoint.id}`,
                     );
                 }
-                if (input.baseUrl !== undefined) {
-                    update.baseUrl = normalizeInputBaseUrl(input.baseUrl);
+                if (input.url !== undefined) {
+                    update.baseUrl = validateInputEndpointUrl(input.url);
                 }
                 if (input.upstreamModel !== undefined) {
                     update.upstreamModel = input.upstreamModel;
                 }
-                if (input.perUserRpm !== undefined) {
-                    update.payload = JSON.stringify({
-                        perUserRpm: input.perUserRpm,
-                    });
-                }
+                update.payload = JSON.stringify({
+                    ...current,
+                    perUserRpm:
+                        input.perUserRpm === undefined
+                            ? current.perUserRpm
+                            : input.perUserRpm,
+                    api: input.api ?? current.api,
+                    inputModalities:
+                        input.inputModalities ?? current.inputModalities,
+                    outputModalities:
+                        input.outputModalities ?? current.outputModalities,
+                });
             } else {
-                const stored = parseListingPayload("proxy", endpoint.payload);
-                if (!stored) {
+                const current = parseListingPayload("proxy", endpoint.payload);
+                if (!current) {
                     throw new Error(`Invalid proxy payload for ${endpoint.id}`);
                 }
+                const stored = resolveEffectiveProxyListing({
+                    visibility: endpoint.visibility,
+                    payload: current,
+                    pendingVisibility: endpoint.pendingVisibility,
+                    pendingPayload: parseListingPayload(
+                        "proxy",
+                        endpoint.pendingPayload,
+                    ),
+                    pendingAt: endpoint.pendingAt,
+                }).payload;
+                const queued = parseListingPayload("proxy", pendingPayload);
+                const targetBase = queued ?? stored;
+                if (
+                    (stored.modality === "text" &&
+                        input.baseUrl !== undefined) ||
+                    (stored.modality !== "text" && input.api !== undefined)
+                ) {
+                    throw new HTTPException(400, {
+                        message:
+                            "Text endpoints accept api and url; media endpoints accept baseUrl",
+                    });
+                }
+                const targetVisibility = pendingVisibility ?? nextVisibility;
+                const targetPolicy = deriveUpdatedProxyPolicy(
+                    targetBase,
+                    input,
+                    targetVisibility,
+                );
+                const delayPricing =
+                    targetVisibility === "public" &&
+                    (currentVisibility === "public" ||
+                        pendingVisibility === "public") &&
+                    hasProxyPricingInput(input);
+                const pricingChanged = proxyPricingChanged(
+                    targetBase,
+                    targetPolicy,
+                );
+                const immediateInput = delayPricing
+                    ? withoutProxyPricingChanges(input)
+                    : input;
                 const policy = deriveUpdatedProxyPolicy(
                     stored,
-                    input,
-                    effectiveVisibility,
+                    immediateInput,
+                    nextVisibility,
                 );
                 const fallbacks =
                     input.fallbacks === undefined
@@ -751,31 +961,56 @@ export const communityEndpointsRoutes = new Hono<Env>()
                                   input.name ?? endpoint.name,
                               ),
                               ownerUserId: user.id,
-                              ...policy,
+                              ...targetPolicy,
                           });
-                if (input.baseUrl !== undefined) {
-                    update.baseUrl = normalizeInputBaseUrl(input.baseUrl);
+                const bearerTokenCiphertext =
+                    input.bearerToken === undefined
+                        ? stored.bearerTokenCiphertext
+                        : await encryptSecret(
+                              normalizeInputBearerToken(input.bearerToken),
+                              c.env.BETTER_AUTH_SECRET,
+                          );
+                const api = input.api ?? stored.api;
+                const url = input.url ?? input.baseUrl;
+                if (url !== undefined) {
+                    update.baseUrl = validateInputEndpointUrl(url);
                 }
                 if (input.upstreamModel !== undefined) {
                     update.upstreamModel = input.upstreamModel;
                 }
-                if (changesProxyPayload(input)) {
+                if (pendingReady || changesProxyPayload(input)) {
                     const payload: ProxyListingPayload = {
-                        bearerTokenCiphertext:
-                            input.bearerToken === undefined
-                                ? stored.bearerTokenCiphertext
-                                : await encryptSecret(
-                                      normalizeInputBearerToken(
-                                          input.bearerToken,
-                                      ),
-                                      c.env.BETTER_AUTH_SECRET,
-                                  ),
+                        bearerTokenCiphertext,
+                        api,
                         ...policy,
                         fallbacks,
                     };
                     update.payload = JSON.stringify(payload);
                 }
+                const queuesPublication =
+                    input.visibility === "public" &&
+                    currentVisibility === "private";
+                if ((delayPricing && pricingChanged) || queuesPublication) {
+                    const targetPayload: ProxyListingPayload = {
+                        bearerTokenCiphertext,
+                        api,
+                        ...targetPolicy,
+                        fallbacks,
+                    };
+                    pendingPayload = JSON.stringify(targetPayload);
+                    if (pricingChanged) {
+                        pendingAt = new Date();
+                    }
+                } else if (queued && input.api !== undefined) {
+                    pendingPayload = JSON.stringify({
+                        ...queued,
+                        api,
+                    } satisfies ProxyListingPayload);
+                }
             }
+            update.pendingPayload = pendingPayload;
+            update.pendingVisibility = pendingVisibility;
+            update.pendingAt = pendingAt;
             const [row] = await db
                 .update(schema.communityEndpoint)
                 .set(update)
@@ -787,11 +1022,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 )
                 .returning();
             return c.json(
-                toCommunityEndpointResponse(
-                    row,
-                    ownerGithubUsername,
-                    c.env.AGENT_RUNTIME_BASE_URL,
-                ),
+                toCommunityEndpointResponse(row, ownerGithubUsername),
             );
         },
     )
@@ -823,7 +1054,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const { id } = c.req.param();
             const db = drizzle(c.env.DB, { schema });
             requireAccountPermission(c.var.auth.apiKey, "keys");
-            await requireOwnedEndpoint(db, id, user.id);
+            const endpoint = await requireOwnedEndpoint(db, id, user.id);
             await db
                 .delete(schema.communityEndpoint)
                 .where(
@@ -832,6 +1063,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         eq(schema.communityEndpoint.ownerUserId, user.id),
                     ),
                 );
+            if (endpoint.type === "code_agent") {
+                await deleteCodeAgent(c.env, id).catch((error) => {
+                    console.error("Failed to remove code agent Worker", error);
+                });
+            }
             return c.json({ id });
         },
     );

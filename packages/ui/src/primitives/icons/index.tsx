@@ -26,6 +26,14 @@ export function AccountIcon(props: IconProps) {
     );
 }
 
+export function ArrowRightIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M5 12h14M13 6l6 6-6 6" />
+        </svg>
+    );
+}
+
 export function BeakerIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
@@ -280,6 +288,14 @@ export function TerminalIcon(props: IconProps) {
     );
 }
 
+export function ToolIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M14.7 6.3a4 4 0 0 0-5-5l2.1 2.1-2.4 2.4-2.1-2.1a4 4 0 0 0 5 5l7.4 7.4a2 2 0 0 1-2.8 2.8l-7.4-7.4" />
+        </svg>
+    );
+}
+
 export function TargetIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
@@ -306,6 +322,15 @@ export function UsageIcon(props: IconProps) {
             <path d="M7 18h10" />
             <path d="M7.5 12.5 6 11" />
             <path d="M16.5 12.5 18 11" />
+        </svg>
+    );
+}
+
+export function WarningIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M10.3 3.1 1.8 17a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.1a2 2 0 0 0-3.4 0Z" />
+            <path d="M12 9v4M12 17h.01" />
         </svg>
     );
 }
@@ -363,6 +388,17 @@ export function XIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
             <path d="M18 6 6 18M6 6l12 12" />
+        </svg>
+    );
+}
+
+export function TrashIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M4 7h16" />
+            <path d="M9 7V4h6v3" />
+            <path d="m6 7 1 14h10l1-14" />
+            <path d="M10 11v6M14 11v6" />
         </svg>
     );
 }
@@ -461,6 +497,23 @@ export function SparkleIcon(props: IconProps) {
             <path d="M22 5h-4" />
             <path d="M4 17v2" />
             <path d="M5 18H3" />
+        </svg>
+    );
+}
+
+export function StarIcon({
+    filled = false,
+    ...props
+}: IconProps & { filled?: boolean }) {
+    return (
+        <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            {...strokeProps}
+            fill={filled ? "currentColor" : "none"}
+            {...props}
+        >
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
         </svg>
     );
 }

@@ -6,6 +6,10 @@ import { Hono } from "hono";
 import { createMiddleware } from "hono/factory";
 
 export type MockGithubState = {
+    secretScanningPublicKeys: Array<{
+        key_identifier: string;
+        key: string;
+    }>;
     user: {
         id: number;
         login: string;
@@ -29,6 +33,7 @@ export type MockGithubState = {
         closedByPullRequestsReferences?: Array<{
             number: number;
             mergedAt: string | null;
+            author: { databaseId?: number | null } | null;
         }>;
     }>;
     mergedPullRequests: Array<{
@@ -55,6 +60,7 @@ export type MockGithubState = {
 
 export function createMockGithub(): MockAPI<MockGithubState> {
     const state: MockGithubState = {
+        secretScanningPublicKeys: [],
         user: {
             id: 12345,
             login: "testuser",
@@ -95,6 +101,9 @@ export function createMockGithub(): MockAPI<MockGithubState> {
 
     const githubAPI = new Hono()
         .use("*", trackRequest)
+        .get("/meta/public_keys/secret_scanning", (c) =>
+            c.json({ public_keys: state.secretScanningPublicKeys }),
+        )
         .get("/search/issues", (c) => {
             if (state.failQuestSearch) {
                 return c.json({ message: "rate limited" }, 403);
@@ -177,15 +186,26 @@ export function createMockGithub(): MockAPI<MockGithubState> {
         });
 
     // OAuth app (no auth needed)
-    const githubOAuth = new Hono().post(
-        "/login/oauth/access_token",
-        async (c) => {
+    const githubOAuth = new Hono()
+        .use("*", trackRequest)
+        .post("/login/oauth/access_token", async (c) => {
             const body = await c.req.parseBody();
             if (body.client_id === "test_github_connect_client_id") {
+                const refreshing = body.grant_type === "refresh_token";
+                if (
+                    refreshing &&
+                    body.refresh_token !== "mock_github_app_refresh_token"
+                ) {
+                    return c.json({ error: "invalid_grant" }, 400);
+                }
                 return c.json({
-                    access_token: "mock_github_app_user_token",
+                    access_token: refreshing
+                        ? "mock_github_app_user_token_refreshed"
+                        : "mock_github_app_user_token",
                     expires_in: 28800,
-                    refresh_token: "mock_github_app_refresh_token",
+                    refresh_token: refreshing
+                        ? "mock_github_app_refresh_token_rotated"
+                        : "mock_github_app_refresh_token",
                     refresh_token_expires_in: 15897600,
                     token_type: "bearer",
                     scope: "",
@@ -196,8 +216,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
                 token_type: "bearer",
                 scope: "read:user user:email",
             });
-        },
-    );
+        });
 
     const handlerMap = {
         "github.com": createHonoMockHandler(githubOAuth),
@@ -205,6 +224,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
     };
 
     const reset = () => {
+        state.secretScanningPublicKeys = [];
         state.requests = [];
         state.userInstallations = [];
     };

@@ -25,8 +25,7 @@ export type QuestCategory = (typeof QUEST_CATEGORIES)[number];
  *   - "perUser" — each GitHub identity earns it independently. Key includes the
  *                 immutable GitHub user ID (`quest:${id}:github:${githubId}`).
  *   - "once"    — one reward total, whoever triggers it. Key omits the userId
- *                 (`quest:${id}`), so it can only ever be recorded once. Used by
- *                 issue bounties: one issue, one reward, regardless of assignee.
+ *                 (`quest:${id}`), so it can only ever be recorded once.
  */
 export type QuestScope = "perUser" | "once";
 

@@ -21,7 +21,7 @@ Alpha (in-progress rebuild — pin an exact version):
 
 ```bash
 npm install @pollinations/sdk@alpha
-# or pin exactly: npm install @pollinations/sdk@5.1.0-alpha.5
+# or pin exactly: npm install @pollinations/sdk@5.1.0-alpha.6
 ```
 
 ### CDN / `<script>` tag
@@ -157,8 +157,8 @@ console.log(`Logged in as ${me.name} (${me.preferred_username})`);
 ### React auth provider
 
 React apps can use the `@pollinations/sdk/react` subpath for shared login
-state. The provider only owns the session token and OAuth flow; account data is
-loaded by opt-in hooks.
+state. The provider handles the OAuth authorization-code + PKCE flow and stores
+the resulting delegated API token; account data is loaded by opt-in hooks.
 
 ```tsx
 import {
@@ -200,7 +200,7 @@ SDK response shapes plus `{ isLoading, error, refresh }`.
 `PolliProvider` is **SSR-safe** but is a **client component** (it uses `useState` / `useEffect` and reads from `window.localStorage`):
 
 - **First paint contract**: state starts `null` on both server and client, so initial HTML always renders as logged-out. No hydration mismatch.
-- **Hydration**: after mount, the provider reads the session token from storage (default `localStorage`) and parses any `#api_key=…&state=…` fragment from an OAuth redirect. No account data is fetched until an account hook is mounted.
+- **Hydration**: after mount, the provider reads the session token from storage (default `localStorage`) or exchanges an OAuth callback code using its saved PKCE verifier. The original query/hash route is restored after login. No account data is fetched until an account hook is mounted.
 - **Next.js App Router**: mount the provider inside a client component. Either put it in a file with `"use client"` at the top, or wrap a small client subtree from a server component:
 
   ```tsx
@@ -471,6 +471,35 @@ const response = await chat([
 ]);
 ```
 
+## Embeddings
+
+Generate vector embeddings (OpenAI-compatible) for text or multimodal input:
+
+```javascript
+import { embeddings } from '@pollinations/sdk';
+
+// Single text
+const { data, usage } = await embeddings('Hello world');
+console.log(data[0].embedding); // [0.012, -0.034, ...]
+
+// Batch with options
+const batch = await embeddings(['first document', 'second document'], {
+  model: 'gemini-2',
+  dimensions: 768,
+});
+console.log(batch.data.length, batch.usage.total_tokens);
+```
+
+### Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `model` | string | Embedding model; uses the server default when omitted |
+| `dimensions` | number | Output dimensions, 128-4096 (model-specific limits apply) |
+| `encodingFormat` | string | `'float'` (default) or `'base64'` |
+| `taskType` | string | Gemini task hint, e.g. `'RETRIEVAL_QUERY'` |
+| `inputType` | string | Cohere retrieval role: `'query'` or `'document'` |
+
 ## List Available Models
 
 ```javascript
@@ -508,9 +537,10 @@ try {
   const image = await generateImage('test');
 } catch (err) {
   if (err instanceof PollinationsError) {
-    console.error(err.message);  // Error message
-    console.error(err.code);     // Error code (BAD_REQUEST, UNAUTHORIZED, INSUFFICIENT_BALANCE, etc.)
-    console.error(err.status);   // HTTP status (400, 401, 402, 403, 500)
+    console.error(err.message);    // Error message
+    console.error(err.code);       // Error code (BAD_REQUEST, UNAUTHORIZED, INSUFFICIENT_BALANCE, etc.)
+    console.error(err.status);     // HTTP status (400, 401, 402, 403, 500)
+    console.error(err.requestId);  // Server request ID — include it in support reports
   }
 }
 ```
@@ -560,6 +590,7 @@ import type {
 | `videoUrl(prompt, options?)` | Get video URL |
 | `generateAudio(text, options?)` | Text-to-speech / music |
 | `transcribe(audio, options?)` | Speech-to-text |
+| `embeddings(input, options?)` | Vector embeddings |
 | `upload(data, options?)` | Upload media, optionally publishing it with `tags` |
 | `getTextModels()` | List text models |
 | `getImageModels()` | List image models |

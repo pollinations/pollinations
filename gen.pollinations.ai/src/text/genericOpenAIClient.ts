@@ -1,5 +1,9 @@
 import { collectUpstreamHeaders, remapUpstreamStatus } from "@shared/error.ts";
 import debug from "debug";
+import {
+    CONTENT_POLICY_STATUS,
+    isContentPolicyViolation,
+} from "../image/utils/contentModeration.ts";
 import { prepareMessages } from "./textGenerationUtils.js";
 import type {
     ChatCompletion,
@@ -23,11 +27,17 @@ function isClientInputError(details: unknown): boolean {
     );
 }
 
+function apiErrorStatus(details: unknown, status: number): number {
+    if (isContentPolicyViolation(JSON.stringify(details))) {
+        return CONTENT_POLICY_STATUS;
+    }
+    return isClientInputError(details) ? 400 : remapUpstreamStatus(status);
+}
+
 // Attach internal response metadata as non-enumerable properties so downstream
 // handling can use it without adding fields to OpenAI-compatible response bodies.
-function withResponseMetadata(
+function withUpstreamRequestUrl(
     completion: ChatCompletion,
-    fallbackTarget: string | undefined,
     requestUrl: URL,
 ): ChatCompletion {
     Object.defineProperty(completion, "upstreamRequestUrl", {
@@ -36,22 +46,12 @@ function withResponseMetadata(
         configurable: true,
         writable: true,
     });
-    if (fallbackTarget !== undefined) {
-        Object.defineProperty(completion, "fallbackTarget", {
-            value: fallbackTarget,
-            enumerable: false,
-            configurable: true,
-            writable: true,
-        });
-    }
     return completion;
 }
 
 function ensureOpenAISseDone(
-    source: ReadableStream<Uint8Array> | null,
-): ReadableStream<Uint8Array> | null {
-    if (!source) return source;
-
+    source: ReadableStream<Uint8Array>,
+): ReadableStream<Uint8Array> {
     const decoder = new TextDecoder();
     const encoder = new TextEncoder();
     let seenDone = false;
@@ -97,8 +97,44 @@ function extractErrorMessage(details: unknown): string | null {
     return typeof message === "string" && message.trim() ? message : null;
 }
 
+/**
+ * Some OpenAI-compatible gateways return an upstream rate limit inside an
+ * otherwise successful completion. Normalize explicit rate limits and policy
+ * rejections; other finish errors (e.g. malformed tool output) stay unchanged.
+ */
+function responseBodyError(
+    completion: ChatCompletion,
+): ChatCompletion["error"] {
+    if (completion.error) return completion.error;
+
+    for (const choice of completion.choices ?? []) {
+        if (choice.finish_reason !== "error") continue;
+        const details = choice.error;
+        if (!details || typeof details !== "object") continue;
+        const embedded = details as { code?: unknown; status?: unknown };
+        if (
+            embedded.code !== 429 &&
+            embedded.status !== 429 &&
+            !isContentPolicyViolation(JSON.stringify(details))
+        )
+            continue;
+
+        return {
+            message: extractErrorMessage(details) ?? undefined,
+            status:
+                typeof embedded.status === "number"
+                    ? embedded.status
+                    : typeof embedded.code === "number"
+                      ? embedded.code
+                      : undefined,
+            details,
+        };
+    }
+}
+
 function createApiError(
     response: Response,
+    responseBody: string,
     details: unknown,
     modelName: string,
     requestUrl: URL,
@@ -108,11 +144,10 @@ function createApiError(
     const error = new Error(
         detailMessage ? `${statusMessage}: ${detailMessage}` : statusMessage,
     ) as ServiceError;
-    error.status = isClientInputError(details)
-        ? 400
-        : remapUpstreamStatus(response.status);
+    error.status = apiErrorStatus(details, response.status);
     error.upstreamStatus = response.status;
     error.details = details;
+    error.responseBody = responseBody;
     error.model = modelName;
     error.requestUrl = requestUrl;
     error.upstreamHeaders = collectUpstreamHeaders(response.headers);
@@ -209,6 +244,7 @@ export async function genericOpenAIClient(
         try {
             response = await fetcher(endpointUrl, {
                 method: "POST",
+                redirect: "manual",
                 headers,
                 body: JSON.stringify(requestBody),
             });
@@ -228,23 +264,28 @@ export async function genericOpenAIClient(
                 `[${requestId}] API error (${response.status}):`,
                 errorDetails,
             );
-            throw createApiError(response, errorDetails, modelName, requestUrl);
+            throw createApiError(
+                response,
+                errorText,
+                errorDetails,
+                modelName,
+                requestUrl,
+            );
         }
-
-        // Portkey reports which fallback target served the call via this header
-        // (e.g. "config.targets[0]" = primary, "config.targets[1]" = first
-        // fallback). Surface it so tracking can record whether a fallback fired.
-        const fallbackTarget =
-            response.headers.get("x-portkey-last-used-option-index") ??
-            undefined;
 
         if (options.stream) {
             log(
                 `[${requestId}] Streaming response, status: ${response.status}`,
             );
 
+            if (!response.body) {
+                throw withUpstreamContext(
+                    new Error("Text model returned an empty stream"),
+                    requestUrl,
+                );
+            }
             const streamToReturn = ensureOpenAISseDone(response.body);
-            return withResponseMetadata(
+            return withUpstreamRequestUrl(
                 {
                     id: `genericopenai-${requestId}`,
                     object: "chat.completion.chunk",
@@ -260,35 +301,43 @@ export async function genericOpenAIClient(
                         },
                     ],
                 },
-                fallbackTarget,
                 requestUrl,
             );
         }
 
         let data: ChatCompletion;
+        let responseBody: string | undefined;
         try {
-            data = (await response.json()) as ChatCompletion;
+            responseBody = await response.text();
+            data = JSON.parse(responseBody) as ChatCompletion;
         } catch (thrown: unknown) {
-            throw withUpstreamContext(thrown, requestUrl);
+            const error = withUpstreamContext(thrown, requestUrl);
+            error.responseBody = responseBody;
+            error.upstreamStatus = response.status;
+            error.upstreamHeaders = collectUpstreamHeaders(response.headers);
+            throw error;
         }
-        if (data.error) {
+        const responseError = responseBodyError(data);
+        if (responseError) {
             const errorDetails =
-                typeof data.error === "string"
-                    ? { message: data.error }
-                    : data.error;
+                typeof responseError === "string"
+                    ? { message: responseError }
+                    : responseError;
             const error = new Error(
                 errorDetails.message || "Text generation failed",
             ) as ServiceError;
-            error.status = isClientInputError(errorDetails)
-                ? 400
-                : typeof errorDetails.status === "number"
-                  ? remapUpstreamStatus(errorDetails.status)
-                  : 502;
-            error.upstreamStatus =
+            const upstreamStatus =
                 typeof errorDetails.status === "number"
                     ? errorDetails.status
-                    : undefined;
-            error.details = errorDetails.details;
+                    : typeof errorDetails.code === "number" &&
+                        errorDetails.code >= 400 &&
+                        errorDetails.code <= 599
+                      ? errorDetails.code
+                      : undefined;
+            error.status = apiErrorStatus(errorDetails, upstreamStatus ?? 502);
+            error.upstreamStatus = upstreamStatus;
+            error.details = errorDetails.details ?? errorDetails;
+            error.responseBody = responseBody;
             error.model = modelName;
             error.requestUrl = requestUrl;
             error.upstreamHeaders = collectUpstreamHeaders(response.headers);
@@ -319,14 +368,13 @@ export async function genericOpenAIClient(
             },
         );
 
-        return withResponseMetadata(
+        return withUpstreamRequestUrl(
             {
                 ...data,
                 id: data.id || `genericopenai-${requestId}`,
                 object: data.object || "chat.completion",
                 choices,
             },
-            fallbackTarget,
             requestUrl,
         );
     } catch (thrown: unknown) {

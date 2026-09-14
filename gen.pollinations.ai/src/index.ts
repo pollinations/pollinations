@@ -27,6 +27,7 @@ import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
+import { mcpRoutes } from "./routes/mcp.ts";
 import { modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
@@ -73,6 +74,7 @@ function robotsTxt(): Response {
             "Disallow: /video/",
             "Disallow: /audio/",
             "Disallow: /embeddings/",
+            "Disallow: /mcp/",
             "Disallow: /v1/",
             "Disallow: /api/",
         ].join("\n"),
@@ -145,6 +147,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     })
     .route("/docs", createDocsRoutes(app))
     .route("/v1/audio", audioRoutes)
+    .route("/", mcpRoutes)
     // Conventional, discoverable alias for the merged OpenAPI spec. JSON-only;
     // the ?format=yaml passthrough stays on /docs/open-api/generate-schema.
     // Must be registered before the "/" proxy catch-all or it gets shadowed.

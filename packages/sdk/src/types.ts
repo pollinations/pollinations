@@ -43,6 +43,8 @@ export interface ImageGenerateOptions extends RequestOptions {
     width?: number;
     /** Image height in pixels (default: 1024) */
     height?: number;
+    /** Model-specific output resolution tier (for example, "1k" or "2k") */
+    resolution?: string;
     /** Seed for reproducible generation (default: random) */
     seed?: number;
     /** Enable safety content filters (default: false) */
@@ -93,6 +95,8 @@ export interface VideoGenerateOptions extends RequestOptions {
     duration?: number;
     /** Aspect ratio (e.g., '16:9', '9:16', '1:1') */
     aspectRatio?: string;
+    /** Model-specific output resolution tier (for example, "720p" or "1080p") */
+    resolution?: string;
     /** Seed for reproducible generation */
     seed?: number;
     /** Enable audio generation where supported by the selected video model */
@@ -254,10 +258,28 @@ export type BuiltInToolType =
     | "computer_use"
     | "file_search";
 
+/** Capabilities that router models can delegate to downstream models. */
+export const CHAT_ROUTING_CAPABILITIES = [
+    "text",
+    "web_search",
+    "image_generation",
+    "image_editing",
+    "video",
+    "audio",
+] as const;
+
+/** Capability names accepted by router-model routing preferences. */
+export type ChatRoutingCapability = (typeof CHAT_ROUTING_CAPABILITIES)[number];
+
+/** Optional downstream-model overrides for router models. */
+export type ChatRouting = Partial<Record<ChatRoutingCapability, string>>;
+
 /** Options for chat completions (POST endpoint) */
 export interface ChatOptions extends RequestOptions {
     /** Text model to use (server default: 'openai') */
     model?: TextModel;
+    /** Per-capability downstream model overrides for router models. */
+    routing?: ChatRouting;
     /** Temperature 0-2 (default: 1) */
     temperature?: number;
     /** Top P sampling 0-1 (default: 1) */
@@ -274,6 +296,8 @@ export interface ChatOptions extends RequestOptions {
     stop?: string | string[];
     /** Seed for reproducible generation */
     seed?: number;
+    /** Keep generation private (default: false) */
+    private?: boolean;
     /** Enable streaming response (default: false) */
     stream?: boolean;
     /** Include usage stats in streaming response */
@@ -396,8 +420,14 @@ export interface ChatStreamChunk {
     choices: Array<{
         index: number;
         delta: {
-            role?: "assistant";
-            content?: string;
+            role?: Exclude<MessageRole, "function">;
+            content?: string | null;
+            /** Deprecated OpenAI function-call delta. */
+            function_call?: {
+                name?: string;
+                arguments?: string;
+            };
+            refusal?: string | null;
             tool_calls?: Array<{
                 index: number;
                 id?: string;
@@ -413,9 +443,13 @@ export interface ChatStreamChunk {
             | "length"
             | "tool_calls"
             | "content_filter"
+            | "function_call"
             | null;
+        logprobs?: ChatChoice["logprobs"];
     }>;
-    usage?: CompletionUsage;
+    usage?: CompletionUsage | null;
+    service_tier?: "auto" | "default" | "flex" | "scale" | "priority" | null;
+    system_fingerprint?: string;
 }
 
 // ============================================================================
@@ -515,6 +549,78 @@ export interface TranscriptionVerboseResponse extends TranscriptionResponse {
 }
 
 // ============================================================================
+// Embeddings
+// ============================================================================
+
+/** Embedding model (use getModels() to fetch available models) */
+export type EmbeddingModel = string;
+
+/** A multimodal content part accepted by embedding models */
+export type EmbeddingContentPart =
+    | TextContentPart
+    | ImageContentPart
+    | { type: "input_audio"; input_audio: { data: string; format: string } }
+    | VideoContentPart;
+
+/**
+ * Input for embeddings: a text, a batch of texts, or multimodal content
+ * parts (text, image_url, input_audio, video_url).
+ */
+export type EmbeddingInput =
+    | string
+    | string[]
+    | EmbeddingContentPart
+    | EmbeddingContentPart[];
+
+/** Gemini text-specific task hint */
+export type EmbeddingTaskType =
+    | "SEMANTIC_SIMILARITY"
+    | "CLASSIFICATION"
+    | "CLUSTERING"
+    | "RETRIEVAL_DOCUMENT"
+    | "RETRIEVAL_QUERY"
+    | "CODE_RETRIEVAL_QUERY"
+    | "QUESTION_ANSWERING"
+    | "FACT_VERIFICATION";
+
+/** Options for embeddings (POST /v1/embeddings) */
+export interface EmbeddingsOptions extends RequestOptions {
+    /** Embedding model to use; uses the server default when omitted */
+    model?: EmbeddingModel;
+    /** Output embedding dimensions, 128-4096 (model-specific limits apply) */
+    dimensions?: number;
+    /** Output encoding for the embedding vector (default: 'float') */
+    encodingFormat?: "float" | "base64";
+    /** Gemini text-specific task hint */
+    taskType?: EmbeddingTaskType;
+    /** Cohere-specific input role: 'document' when indexing, 'query' when searching */
+    inputType?: "query" | "document";
+}
+
+/** A single embedding result */
+export interface Embedding {
+    object: "embedding";
+    /** Float vector, or base64 Float32 (little-endian) when encodingFormat='base64' */
+    embedding: number[] | string;
+    /** Index of the embedding in the list */
+    index: number;
+}
+
+/** Token usage for an embeddings request */
+export interface EmbeddingUsage {
+    prompt_tokens: number;
+    total_tokens: number;
+}
+
+/** Embeddings response (OpenAI-compatible) */
+export interface EmbeddingsResponse {
+    object: "list";
+    data: Embedding[];
+    model: string;
+    usage: EmbeddingUsage;
+}
+
+// ============================================================================
 // Media Upload
 // ============================================================================
 
@@ -601,6 +707,36 @@ export interface AccountBalance {
     };
 }
 
+/** Quest reward earned by the authenticated account */
+export interface AccountQuestReward {
+    id: string;
+    questId: string | null;
+    title: string;
+    pollenAmount: number;
+    balanceBucket: string;
+    earnedAt: string;
+    claimedAt: string | null;
+}
+
+/** Quest catalog entry with the authenticated account's status */
+export interface AccountQuest {
+    id: string;
+    title: string;
+    description: string;
+    category: string;
+    state: "available" | "completed" | "coming_soon";
+    status: "open" | "completed" | "coming_soon";
+    rewardAmount: number;
+    balanceBucket: "tier" | "pack";
+    url: string | null;
+    reward: AccountQuestReward | null;
+}
+
+/** Quest status response */
+export interface AccountQuestsResponse {
+    quests: AccountQuest[];
+}
+
 /** Usage record */
 export interface UsageRecord {
     timestamp: string;
@@ -677,6 +813,37 @@ export interface DailyUsageResponse {
     usage: DailyUsageRecord[];
     count: number;
 }
+
+/** Developer earnings row for one (date, earning entity) bucket */
+export interface DeveloperEarningsRow {
+    /** Date bucket (YYYY-MM-DD); empty string on rollup rows */
+    date: string;
+    /** Earning entity id (BYOP app key or community model) */
+    entity_id: string;
+    entity_name: string;
+    source: "byop_markup" | "community_model";
+    requests: number;
+    paid_requests: number;
+    tier_requests: number;
+    baseline_price: number;
+    pollen_earned: number;
+    paid_earned: number;
+    tier_earned: number;
+    cost_usd: number;
+    reward_rate: number;
+}
+
+/** Response for GET /account/earnings */
+export interface DeveloperEarningsResponse {
+    daily: DeveloperEarningsRow[];
+    perEntity: DeveloperEarningsRow[];
+}
+
+/** Options for fetching developer earnings (time-window selection) */
+export type EarningsOptions = Pick<
+    DailyUsageOptions,
+    "days" | "granularity" | "period"
+>;
 
 /** API key validation response */
 export interface KeyInfo {
@@ -780,6 +947,7 @@ export const MODEL_CATEGORIES = [
     "video",
     "text",
     "audio",
+    "3d",
     "embedding",
     "realtime",
 ] as const;
@@ -787,11 +955,26 @@ export const MODEL_CATEGORIES = [
 /** Model category */
 export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
 
+/** Inputs accepted by a model */
+export type ModelInputModality = "text" | "image" | "audio" | "video";
+
+/** Outputs produced by a model */
+export type ModelOutputModality =
+    | "text"
+    | "image"
+    | "audio"
+    | "video"
+    | "embedding"
+    | "3d";
+
 /** Per-model video frame-control capabilities (video models only) */
 export type VideoCapability =
     | "start_frame"
     | "end_frame"
     | "keyframes"
+    | "reference_images"
+    | "reference_videos"
+    | "reference_audios"
     | "audio_output";
 
 /** Per-model agentic/text capabilities */
@@ -811,15 +994,17 @@ export interface ModelInfo {
     /** Display name. Present on registry endpoints (/models, /text/models, …); absent on OpenAI-compatible /v1/models. */
     title?: string;
     category?: ModelCategory;
-    brand?: string;
+    /** Human-readable model publisher, not the inference provider. Replaces brand. */
+    publisher?: string;
     description?: string;
     aliases?: string[];
     community?: boolean;
     agent?: boolean;
     base_model?: string;
-    input_modalities?: string[];
-    output_modalities?: string[];
+    input_modalities?: ModelInputModality[];
+    output_modalities?: ModelOutputModality[];
     video_capabilities?: VideoCapability[];
+    resolutions?: string[];
     min_duration?: number;
     max_duration?: number;
     default_duration?: number;

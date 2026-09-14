@@ -95,7 +95,7 @@ export const PerUserRateLimit: FC<{ value?: number | null }> = ({ value }) => {
             tapEnabled
             displayContents
         >
-            <ModelRateValue value={value} unit="req /minute" />
+            <ModelRateValue value={value} unit="RPM" />
         </Tooltip>
     );
 };

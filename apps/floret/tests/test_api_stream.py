@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 
@@ -25,12 +26,23 @@ def _no_network(monkeypatch):
     monkeypatch.setattr("floret.registry.warm_registry", noop)
 
 
-def _request_body(stream: bool) -> dict:
-    return {
+def _request_body(stream: bool, stream_options: dict | None = None) -> dict:
+    body = {
         "model": "floret",
         "messages": [{"role": "user", "content": "hi"}],
         "stream": stream,
     }
+    if stream_options is not None:
+        body["stream_options"] = stream_options
+    return body
+
+
+def _stream_payloads(body: str) -> list[dict]:
+    return [
+        json.loads(line[len("data: ") :])
+        for line in body.split("\n")
+        if line.startswith("data: {")
+    ]
 
 
 # Every request must carry a credential to spend; the gateway supplies a
@@ -170,9 +182,45 @@ def test_stream_routing_is_validated_once_and_propagated(monkeypatch):
     assert response_body.rstrip().endswith("data: [DONE]")
 
 
+async def test_stream_close_waits_for_agent_cleanup(monkeypatch):
+    cleanup_started = asyncio.Event()
+    cleanup_finished = asyncio.Event()
+
+    async def fake_events(messages, **kwargs):
+        try:
+            yield {
+                "type": "tool_start",
+                "id": "call_1",
+                "name": "bash",
+                "arguments": "{}",
+            }
+            await asyncio.Future()
+        finally:
+            cleanup_started.set()
+            await asyncio.sleep(0)
+            cleanup_finished.set()
+
+    monkeypatch.setattr(api_mod, "run_agent_events", fake_events)
+    stream = api_mod._sse_events(
+        [], "floret", "ag_test-token", RoutingPreferences(), False
+    )
+    await anext(stream)
+    await anext(stream)
+
+    await stream.aclose()
+
+    assert cleanup_started.is_set()
+    assert cleanup_finished.is_set()
+
+
 def test_stream_true_returns_openai_sse_chunks(monkeypatch):
     async def fake_events(messages, **kwargs):
-        yield {"type": "tool_start", "name": "generate_image"}
+        yield {
+            "type": "tool_start",
+            "id": "call_image_1",
+            "name": "generate_image",
+            "arguments": '{"prompt":"cat"}',
+        }
         yield {
             "type": "final",
             "text": "done!",
@@ -202,9 +250,84 @@ def test_stream_true_returns_openai_sse_chunks(monkeypatch):
     assert payloads[-1]["choices"][0]["finish_reason"] == "stop"
 
     content = "".join(p["choices"][0]["delta"].get("content") or "" for p in payloads)
-    assert "generate_image" in content  # tool progress is surfaced
+    assert "generate_image" not in content  # tool progress never enters history
     assert "done!" in content  # final text is streamed
     assert "http://img/x.png" in content  # media embedded as markdown
+    tool_calls = [
+        call
+        for payload in payloads
+        for call in payload["choices"][0]["delta"].get("tool_calls", [])
+    ]
+    assert tool_calls == [
+        {
+            "index": 0,
+            "id": "call_image_1",
+            "type": "function",
+            "function": {
+                "name": "generate_image",
+                "arguments": '{"prompt":"cat"}',
+            },
+        }
+    ]
+
+
+@pytest.mark.parametrize("stream_options", [None, {"include_usage": False}])
+def test_stream_omits_usage_when_not_requested(monkeypatch, stream_options):
+    async def fake_events(messages, **kwargs):
+        yield {"type": "final", "text": "done", "artifacts": [], "iterations": 1}
+
+    monkeypatch.setattr(api_mod, "run_agent_events", fake_events)
+    response = TestClient(api_mod.app).post(
+        "/v1/chat/completions",
+        json=_request_body(stream=True, stream_options=stream_options),
+        headers=_HEADERS,
+    )
+
+    assert response.status_code == 200
+    assert all("usage" not in payload for payload in _stream_payloads(response.text))
+
+
+def test_stream_requested_usage_is_terminal_after_stop(monkeypatch):
+    async def fake_events(messages, **kwargs):
+        yield {"type": "final", "text": "done", "artifacts": [], "iterations": 1}
+
+    monkeypatch.setattr(api_mod, "run_agent_events", fake_events)
+    response = TestClient(api_mod.app).post(
+        "/v1/chat/completions",
+        json=_request_body(stream=True, stream_options={"include_usage": True}),
+        headers=_HEADERS,
+    )
+
+    assert response.status_code == 200
+    payloads = _stream_payloads(response.text)
+    assert all(payload["usage"] is None for payload in payloads[:-1])
+    assert payloads[-2]["choices"][0]["finish_reason"] == "stop"
+    assert payloads[-1]["choices"] == []
+    assert payloads[-1]["usage"] == {
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "total_tokens": 0,
+    }
+
+
+def test_stream_error_never_emits_success_usage(monkeypatch):
+    async def failing_events(messages, **kwargs):
+        raise RuntimeError("broken")
+        yield  # pragma: no cover
+
+    monkeypatch.setattr(api_mod, "run_agent_events", failing_events)
+    response = TestClient(api_mod.app).post(
+        "/v1/chat/completions",
+        json=_request_body(stream=True, stream_options={"include_usage": True}),
+        headers=_HEADERS,
+    )
+
+    assert response.status_code == 200
+    payloads = _stream_payloads(response.text)
+    assert all(payload["usage"] is None for payload in payloads)
+    assert payloads[-1]["choices"][0]["finish_reason"] == "stop"
+    assert "Generation failed." in response.text
+    assert "broken" not in response.text
 
 
 def test_stream_emits_keepalives_during_silence(monkeypatch):

@@ -12,8 +12,11 @@ const coverage = (week) =>
         ? (week.revenue / week.costUsd) * 100
         : null;
 
+const failuresPerThousand = (availability) =>
+    Number.isFinite(availability) ? (100 - availability) * 10 : null;
+
 // The KPI catalogue. Rows with `views` are the same measure in another
-// unit and cycle in place; the rest have a single definition.
+// unit or quantity and cycle in place; the rest have a single definition.
 export const KPIS = [
     {
         key: "registrations",
@@ -126,6 +129,14 @@ export const KPIS = [
         ],
     },
     {
+        key: "paidPollenPct",
+        name: "Paid Pollen share",
+        category: "Revenue",
+        format: "percentPrecise",
+        tooltip:
+            "Paid Pollen spent / (Paid + Quest Pollen spent) × 100. Tracks how much generation consumption is funded by purchased credit. Source: Tinybird (weekly_usage_stats).",
+    },
+    {
         key: "grossMargin",
         name: "Gross margin",
         category: "Efficiency",
@@ -148,16 +159,25 @@ export const KPIS = [
         category: "Health",
         views: [
             {
-                name: "Service availability",
-                format: "percent",
+                name: "Server errors / 1K",
+                format: "perThousand",
+                lowerIsBetter: true,
+                calc: (w) => failuresPerThousand(w.availability),
                 tooltip:
-                    "(Total − 5xx) / total × 100. User errors (4xx) do not count as downtime.",
+                    "Non-community 5xx / (2xx + 5xx) × 1,000. A normalized failure rate that stays comparable as traffic changes. Community models have a separate KPI; user errors (4xx) are excluded.",
+            },
+            {
+                name: "Service availability",
+                format: "percentPrecise",
+                tooltip:
+                    "Non-community 2xx / (2xx + 5xx) × 100. Community models have a separate availability KPI; user errors (4xx) are excluded because they do not indicate service downtime.",
             },
             {
                 name: "5xx errors",
+                lowerIsBetter: true,
                 calc: (w) => w.serverErrors5xx,
                 tooltip:
-                    "Server errors behind the availability figure. 90% availability reads mild; the same week in raw failed requests does not.",
+                    "Non-community server errors behind the availability figure. Community-model errors are excluded and reported separately.",
             },
         ],
     },
@@ -207,8 +227,45 @@ export const KPIS = [
             {
                 key: "communityAvailability",
                 name: "Community models · availability",
+                format: "percentPrecise",
                 tooltip:
                     "Community-model 2xx / (2xx + 5xx) × 100. 4xx is excluded from the denominator — auth, balance, rate-limit and bad-input errors are the caller's, not an endpoint being down. Includes top-level managed-agent runs until agent attribution exists.",
+            },
+        ],
+    },
+    {
+        key: "agentUsage",
+        category: "Ecosystem",
+        views: [
+            {
+                key: "agentRequests",
+                name: "Agents · observed runs",
+                tooltip:
+                    "Distinct top-level agent runs with at least one recorded internal model/tool call, linked by the verified run token's parent request ID. All outcomes count. Excludes ordinary community models, nested runs, cache hits, and runs with no recorded child call. Comparable history starts Aug 24, 2026; earlier weeks show —. Source: Tinybird (weekly_agent_mcp_usage).",
+            },
+            {
+                key: "agentUsers",
+                name: "Agents · unique users",
+                tooltip:
+                    "Distinct authenticated users of observed top-level agent runs, deduplicated across agents. Only runs with a recorded internal model/tool call are covered; excludes ordinary community models, nested runs, and cache hits. Comparable history starts Aug 24, 2026; earlier weeks show —.",
+            },
+        ],
+    },
+    {
+        key: "mcpUsage",
+        category: "Ecosystem",
+        views: [
+            {
+                key: "mcpCalls",
+                name: "MCP · recorded calls",
+                tooltip:
+                    "Recorded MCP tool calls through Gen: Exa, FFmpeg, Computer, and Composio. Includes calls inside agents and recorded errors. Excludes Pollinations' own MCP server, discovery calls, and failures before a usage receipt. Not total MCP traffic. Source: Tinybird (weekly_agent_mcp_usage).",
+            },
+            {
+                key: "mcpUsers",
+                name: "MCP · unique users",
+                tooltip:
+                    "Distinct authenticated users of recorded MCP tool calls, deduplicated across Exa, FFmpeg, Computer, and Composio. Includes calls inside agents. Pollinations' own MCP server and discovery calls are not covered.",
             },
         ],
     },

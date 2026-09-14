@@ -28,9 +28,9 @@ async function cacheExists(
     env: CloudflareBindings,
     cache: GenerationCacheIdentity,
 ): Promise<boolean> {
-    const bucket =
-        cache.storage === "media" ? env.IMAGE_BUCKET : env.TEXT_BUCKET;
-    return (await bucket.head(cache.key)) !== null;
+    return cache.storage === "media"
+        ? env.MEDIA.has(cache.key)
+        : (await env.TEXT_BUCKET.head(cache.key)) !== null;
 }
 
 function unavailable(message: string): GenerationOutcome {
@@ -113,17 +113,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             }
 
             const job = await this.restore(stored);
-            const execution = await executeGeneration(
-                new Request(job.request.url, {
-                    method: job.request.method,
-                    headers: job.request.headers,
-                    body: job.request.body?.slice().buffer,
-                }),
-                job.auth,
-                job.requestId,
-                job.balanceCheckResult,
-                this.env,
-            );
+            const execution = await executeGeneration(job, this.env);
             settlement = execution.settlement;
             await this.finish(execution.result, stored.bodyChunks);
         } catch (error) {
@@ -158,6 +148,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             auth: job.auth,
             requestId: job.requestId,
             balanceCheckResult: job.balanceCheckResult,
+            apiKeyBudgetEstimate: job.apiKeyBudgetEstimate,
             request,
             bodyChunks: chunks.length,
             started: false,
@@ -201,6 +192,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             auth: job.auth,
             requestId: job.requestId,
             balanceCheckResult: job.balanceCheckResult,
+            apiKeyBudgetEstimate: job.apiKeyBudgetEstimate,
             request: { ...job.request, ...(body !== undefined && { body }) },
         };
     }

@@ -13,6 +13,7 @@ export type DropdownProps = {
     children: ReactNode | ((close: () => void) => ReactNode);
     /** Panel placement relative to the trigger. */
     align?: "start" | "end";
+    side?: "top" | "bottom";
     /** Controlled open state. Omit to let the Dropdown manage its own. */
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
@@ -24,6 +25,7 @@ export const Dropdown: FC<DropdownProps> = ({
     trigger,
     children,
     align = "start",
+    side = "bottom",
     open: openProp,
     onOpenChange,
     className,
@@ -42,7 +44,7 @@ export const Dropdown: FC<DropdownProps> = ({
             open={open}
             onOpenChange={(details) => setOpen(details.open)}
             positioning={{
-                placement: align === "end" ? "bottom-end" : "bottom-start",
+                placement: `${side}-${align}`,
             }}
         >
             <Popover.Trigger asChild>{trigger(open)}</Popover.Trigger>

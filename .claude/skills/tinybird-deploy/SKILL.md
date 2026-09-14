@@ -162,7 +162,7 @@ tb --help | rg "deployment"
 
 ## Validation Reports Datasource or Pipe Deletion
 
-Stop. Do not rerun with `--allow-destructive-operations`. Either restore the missing local definition from a staging pull in `temp/`, or ask the user before deleting anything.
+Investigate the deletion. Restore accidentally missing definitions from a staging pull in `temp/`. For an intentional staging migration/reset within the task, verify the workspace and rerun with `--allow-destructive-operations` under root `AGENTS.md`'s disposable-staging rule. Production deletions require explicit permission.
 
 ## Pipe Timeout Issues
 
@@ -184,5 +184,5 @@ If a pipe times out with large `weeks_back`:
 - **Always use `--cloud`**: Without it, CLI tries to use Tinybird Local.
 - **Do NOT use `tb push`**: It is deprecated for this workflow.
 - **Avoid `tb deploy`**: Use explicit `deployment create` commands so promotion is never accidental.
-- **No destructive operations by default**: Never pass `--allow-destructive-operations` without explicit permission.
+- **Destructive operations**: Follow root `AGENTS.md`'s staging and production rules; the commands above default to non-destructive validation and deployment.
 - **Run from observability directory**: Not from repo root.

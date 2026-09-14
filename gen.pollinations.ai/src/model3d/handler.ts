@@ -1,6 +1,5 @@
-import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { HttpError } from "@shared/http-error.ts";
 import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
@@ -22,12 +21,12 @@ export async function generate3dResponse(
     body: Record<string, unknown> = {},
 ): Promise<Response> {
     syncModel3dEnvironment(c.env);
-    const originalPrompt = decodePrompt(prompt || "");
+    const originalPrompt = prompt || "";
     const safeParams = parseModel3dParams(c, body);
     c.var.track.setPricingInput({ resolution: safeParams.resolution });
 
     try {
-        const { response, servedEntry } = await withModelFallbackResponse(
+        return await withModelFallbackResponse(
             c.var.model,
             async (candidate) => {
                 const params = { ...safeParams, model: candidate.id };
@@ -40,11 +39,9 @@ export async function generate3dResponse(
                     headers: mediaHeaders(originalPrompt, params, result),
                 });
             },
-            c.var.track?.failedCalls,
+            c.var.track?.attempts,
             (candidate) => enforceModelRateLimit(c, candidate),
         );
-        if (servedEntry) c.set("servedModelEntry", servedEntry);
-        return response;
     } catch (error) {
         throw3dError(error);
     }
@@ -59,14 +56,6 @@ export async function handle3dPrompt(
             ? (c.req.valid("json" as never) as Record<string, unknown>)
             : {};
     return generate3dResponse(c, prompt, body);
-}
-
-export function decodePrompt(rawPrompt: string): string {
-    try {
-        return decodeURIComponent(rawPrompt);
-    } catch {
-        return rawPrompt;
-    }
 }
 
 export function parseModel3dParams(
@@ -95,11 +84,13 @@ export function parseModel3dParams(
 
 export function assertNonEmptyMedia(result: Model3dGenerationResult): void {
     if (!result.buffer || result.buffer.length === 0) {
-        throw new HttpError("3D provider returned an empty response", 502);
+        throw UpstreamError.fromProvider(502, {
+            message: "3D provider returned an empty response",
+        });
     }
 }
 
-function contentDisposition(prompt: string): string {
+function contentDisposition(prompt: string, contentType: string): string {
     const baseFilename = prompt
         .slice(0, 100)
         .replace(/[^a-z0-9\s-]/gi, "")
@@ -107,7 +98,11 @@ function contentDisposition(prompt: string): string {
         .replace(/-+/g, "-")
         .replace(/^-|-$/g, "")
         .toLowerCase();
-    return `inline; filename="${baseFilename || "generated-model"}.glb"`;
+    const filename = baseFilename || "generated-model";
+    if (contentType === "model/ply") {
+        return `inline; filename="${filename}.ply"`;
+    }
+    return `inline; filename="${filename}.glb"`;
 }
 
 export function mediaHeaders(
@@ -119,7 +114,10 @@ export function mediaHeaders(
         "Content-Type": result.contentType,
         "Cache-Control": IMMUTABLE_CACHE_CONTROL,
     });
-    headers.set("Content-Disposition", contentDisposition(prompt));
+    headers.set(
+        "Content-Disposition",
+        contentDisposition(prompt, result.contentType),
+    );
 
     const modelUsed = result.trackingData?.actualModel || safeParams.model;
     const usage = result.trackingData?.usage || { completionImageTokens: 1 };
@@ -134,16 +132,6 @@ export function mediaHeaders(
 export function throw3dError(error: unknown): never {
     if (error instanceof UpstreamError) throw error;
 
-    if (error instanceof HttpError) {
-        throw new UpstreamError(remapUpstreamStatus(error.status), {
-            message: error.message,
-            // Propagate only — the code is decided at the throw site.
-            errorCode: error.errorCode,
-            upstreamStatus: error.status,
-            responseBody: JSON.stringify({ message: error.message }),
-            cause: error,
-        });
-    }
     const message = error instanceof Error ? error.message : String(error);
     throw new UpstreamError(500, {
         message: message || "3D model generation failed",

@@ -3,23 +3,31 @@ import {
     Button,
     CopyButton,
     Dialog,
+    DiscordIcon,
     FieldStack,
     GitHubIcon,
     Heading,
     Input,
-    LockIcon,
     Section,
     Surface,
     Text,
+    TrashIcon,
 } from "@pollinations/ui";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
-import { config } from "../config.ts";
+import { ConnectedApps } from "../components/account/connected-apps.tsx";
+import { GitHubConnection } from "../components/account/github-connection.tsx";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
 const DELETE_CONFIRMATION = "DELETE";
+
+type DiscordConnection = {
+    id: string;
+    username: string | null;
+    displayName: string | null;
+    avatarUrl: string | null;
+};
 
 export const Route = createFileRoute("/_dashboard/account")({
     beforeLoad: ({ context, location }) => {
@@ -34,55 +42,90 @@ export const Route = createFileRoute("/_dashboard/account")({
 });
 
 function AccountPage() {
-    const { user, githubUsername } = DashboardRoute.useLoaderData();
+    const { user, githubUsername, discordAvailable } =
+        DashboardRoute.useLoaderData();
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [githubApp, setGithubApp] = useState<{
-        configured: boolean;
-        connected: boolean;
-        authorized?: boolean;
-        login?: string | null;
-        installationCount?: number;
-        repositorySelection?: "all" | "selected" | null;
-        personalInstalled?: boolean;
-        manageUrl?: string | null;
-    } | null>(null);
-    const [githubAppPending, setGithubAppPending] = useState(false);
-    const [githubAppError, setGithubAppError] = useState<string | null>(null);
+    const [discordConnection, setDiscordConnection] = useState<
+        DiscordConnection | null | undefined
+    >();
+    const [connectionPending, setConnectionPending] = useState(false);
+    const [connectionError, setConnectionError] = useState<string | null>(null);
 
     useEffect(() => {
-        void apiClient["github-app"].status.$get().then(async (response) => {
-            if (response.ok) setGithubApp(await response.json());
-        });
-    }, []);
+        if (!discordAvailable) return;
+        void (async () => {
+            try {
+                const { data, error } = await authClient.listAccounts();
+                if (error) throw error;
+
+                const account = data?.find(
+                    (account) => account.providerId === "discord",
+                );
+                if (!account) {
+                    setDiscordConnection(null);
+                    return;
+                }
+
+                const infoResponse = await authClient
+                    .accountInfo({
+                        query: { accountId: account.accountId },
+                    })
+                    .catch(() => null);
+                const info = infoResponse?.data;
+                const profile = info?.data as
+                    | { username?: unknown }
+                    | undefined;
+                setDiscordConnection({
+                    id: account.accountId,
+                    username:
+                        typeof profile?.username === "string"
+                            ? profile.username
+                            : null,
+                    displayName: info?.user.name || null,
+                    avatarUrl: info?.user.image || null,
+                });
+            } catch {
+                setConnectionError("Could not load connected accounts.");
+                setDiscordConnection(null);
+            }
+        })();
+    }, [discordAvailable]);
 
     if (!user) return null;
 
     const displayName = user.name || githubUsername || "Pollinations user";
 
-    async function disconnectGithubApp(): Promise<void> {
-        setGithubAppPending(true);
-        setGithubAppError(null);
-        const { error } = await authClient.unlinkAccount({
-            providerId: "github-app",
-        });
-        if (error) {
-            setGithubAppError("Could not disconnect the GitHub App.");
-        } else {
-            setGithubApp((current) =>
-                current
-                    ? {
-                          configured: current.configured,
-                          connected: false,
-                          authorized: false,
-                          login: null,
-                          installationCount: 0,
-                          repositorySelection: null,
-                          manageUrl: null,
-                      }
-                    : current,
+    async function handleDiscordConnection(): Promise<void> {
+        setConnectionPending(true);
+        setConnectionError(null);
+
+        try {
+            if (discordConnection) {
+                const { error } = await authClient.unlinkAccount({
+                    providerId: "discord",
+                });
+                if (error) {
+                    setConnectionError("Could not disconnect Discord.");
+                } else {
+                    setDiscordConnection(null);
+                }
+                return;
+            }
+
+            const { error } = await authClient.linkSocial({
+                provider: "discord",
+                callbackURL: "/account",
+            });
+            if (error) setConnectionError("Could not connect Discord.");
+        } catch {
+            setConnectionError(
+                discordConnection
+                    ? "Could not disconnect Discord."
+                    : "Could not connect Discord.",
             );
+        } finally {
+            setConnectionPending(false);
         }
-        setGithubAppPending(false);
     }
 
     return (
@@ -152,98 +195,77 @@ function AccountPage() {
                 </Surface>
             </Section>
 
-            <Section title="Connections" framed>
-                <Surface
-                    variant="card"
-                    className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-                >
-                    <div className="flex items-center gap-3">
-                        <GitHubIcon className="h-6 w-6 shrink-0" />
-                        <div>
-                            <Text tone="strong" weight="semibold">
-                                GitHub account
-                            </Text>
-                            <Text size="sm" tone="muted">
-                                @{githubUsername} · Connected for sign-in
-                            </Text>
-                        </div>
-                    </div>
-                </Surface>
-
-                {githubApp?.configured && (
-                    <>
-                        <Surface
-                            variant="card"
-                            className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-                        >
+            {discordAvailable && (
+                <Section title="Connected accounts" framed>
+                    <Surface
+                        variant="card"
+                        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                        <div className="flex items-center gap-3">
+                            {discordConnection?.avatarUrl ? (
+                                <img
+                                    src={discordConnection.avatarUrl}
+                                    alt="Discord avatar"
+                                    className="h-10 w-10 shrink-0 rounded-full"
+                                />
+                            ) : (
+                                <DiscordIcon className="h-6 w-6 shrink-0" />
+                            )}
                             <div>
                                 <Text tone="strong" weight="semibold">
-                                    Pollinations GitHub App
+                                    Discord
                                 </Text>
                                 <Text size="sm" tone="muted">
-                                    {githubApp.connected
+                                    {discordConnection
                                         ? [
-                                              githubApp.login &&
-                                                  `@${githubApp.login}`,
-                                              `${githubApp.installationCount ?? 0} installation${githubApp.installationCount === 1 ? "" : "s"}`,
-                                              githubApp.repositorySelection ===
-                                              "all"
-                                                  ? "All repositories"
-                                                  : "Selected repositories",
+                                              discordConnection.displayName,
+                                              discordConnection.username &&
+                                                  `@${discordConnection.username}`,
                                           ]
                                               .filter(Boolean)
                                               .join(" · ")
-                                        : githubApp.authorized
-                                          ? `@${githubApp.login} · Authorized; select repositories to finish connecting.`
-                                          : "Let Pollinations work with repositories you choose."}
+                                        : discordConnection === undefined
+                                          ? "Checking connection..."
+                                          : "Connect your Discord identity for community features."}
                                 </Text>
-                                {githubApp.connected && (
+                                {discordConnection && (
                                     <Text size="sm" tone="muted">
-                                        Manage repository access or uninstall on
-                                        GitHub.
+                                        Discord ID: {discordConnection.id}
                                     </Text>
                                 )}
                             </div>
-                            <div className="flex shrink-0 flex-wrap gap-2 self-start sm:self-center">
-                                <Button
-                                    type="button"
-                                    disabled={githubAppPending}
-                                    onClick={() => {
-                                        window.location.assign(
-                                            githubApp.connected &&
-                                                githubApp.manageUrl
-                                                ? githubApp.manageUrl
-                                                : `${config.apiBaseUrl}/github-app/install`,
-                                        );
-                                    }}
-                                >
-                                    {githubApp.connected
-                                        ? "Manage on GitHub"
-                                        : "Connect GitHub App"}
-                                </Button>
-                                {githubApp.authorized && (
-                                    <Button
-                                        type="button"
-                                        disabled={githubAppPending}
-                                        onClick={() =>
-                                            void disconnectGithubApp()
-                                        }
-                                    >
-                                        {githubAppPending
-                                            ? "Disconnecting..."
-                                            : "Disconnect"}
-                                    </Button>
-                                )}
-                            </div>
-                        </Surface>
-                        {githubAppError && (
-                            <Text size="sm" tone="muted">
-                                {githubAppError}
-                            </Text>
-                        )}
-                    </>
-                )}
-            </Section>
+                        </div>
+                        <Button
+                            type="button"
+                            className="shrink-0 self-start sm:self-center"
+                            disabled={
+                                discordConnection === undefined ||
+                                connectionPending
+                            }
+                            onClick={() => void handleDiscordConnection()}
+                        >
+                            {connectionPending
+                                ? "Working..."
+                                : discordConnection
+                                  ? "Disconnect Discord"
+                                  : discordConnection === undefined
+                                    ? "Checking..."
+                                    : "Connect Discord"}
+                        </Button>
+                    </Surface>
+                    {connectionError && (
+                        <Text size="sm" tone="muted">
+                            {connectionError}
+                        </Text>
+                    )}
+                </Section>
+            )}
+
+            <GitHubConnection />
+
+            <div id="connectors" className="scroll-mt-6">
+                <ConnectedApps />
+            </div>
 
             <Section title="Danger zone" framed>
                 <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -261,7 +283,7 @@ function AccountPage() {
                 </div>
                 <div className="space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                     <p className="flex items-start gap-1.5">
-                        <LockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <TrashIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
                             Permanently close your account and revoke access.
                         </span>

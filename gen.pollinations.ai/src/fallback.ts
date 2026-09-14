@@ -7,18 +7,17 @@ import {
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
-import { firstContentPolicyMessage } from "./image/utils/contentModeration.ts";
+import {
+    firstContentPolicyMessage,
+    providerErrorText,
+} from "./image/utils/contentModeration.ts";
 import type { GenerationModelEntry } from "./model-registry.ts";
 
-/**
- * Upstream statuses that make a request move on to the model's next fallback
- * target.
- *
- * 400 and 422 are left out on purpose: those are caller errors and retrying
- * them elsewhere cannot succeed. 401/402/403/404 are included because they mean
- * the primary's credentials or upstream model are broken, which the fallback may
- * survive.
- */
+/** Formats the served target marker in Portkey's header shape. */
+export function formatFallbackTarget(index: number): string {
+    return `config.targets[${index}]`;
+}
+
 /**
  * Internal-only marker: which declared target served. Must stay
  * non-enumerable so JSON bodies and R2 cache snapshots never leak it.
@@ -29,7 +28,7 @@ export function attachFallbackTarget<T extends object>(
 ): T {
     if (index <= 0) return value;
     Object.defineProperty(value, "fallbackTarget", {
-        value: `config.targets[${index}]`,
+        value: formatFallbackTarget(index),
         enumerable: false,
         configurable: true,
         writable: true,
@@ -37,9 +36,16 @@ export function attachFallbackTarget<T extends object>(
     return value;
 }
 
-export const FALLBACK_ON_STATUS_CODES = [
-    401, 402, 403, 404, 408, 429, 500, 502, 503, 504,
-];
+/**
+ * Non-5xx upstream statuses that make a request move on to the model's next
+ * fallback target. Every upstream 5xx retries without needing to be listed.
+ *
+ * 400 and 422 are left out on purpose: those are caller errors and retrying
+ * them elsewhere cannot succeed. 401/402/403/404 are included because they mean
+ * the primary's credentials or upstream model are broken, which the fallback may
+ * survive.
+ */
+export const FALLBACK_ON_STATUS_CODES = [401, 402, 403, 404, 408, 429];
 
 /**
  * Network-level failures — unreachable host, expired cert, refused connection —
@@ -56,11 +62,11 @@ export function isNetworkFailure(error: unknown): boolean {
 }
 
 /**
- * The upstream failure shapes the generation clients throw. The image client
- * throws the provider's status as-is; the text client remaps it before throwing
- * (429 → 502, see remapUpstreamStatus) and keeps the original in
- * `upstreamStatus`, so the unremapped one is preferred and the list above can
- * name the statuses providers actually send.
+ * Generation clients preserve the original provider status in `upstreamStatus`
+ * when mapping gateway failures (e.g. 429 → 502). Prefer that original status
+ * for retries. A successful
+ * upstream status is the exception: if its body is malformed, the client wraps
+ * that provider failure in a retryable status such as 502.
  */
 type UpstreamFailure = {
     status?: unknown;
@@ -112,8 +118,15 @@ function isGatewayRoutingFailure(failure: UpstreamFailure): boolean {
 }
 
 function upstreamStatus(failure: UpstreamFailure): number | undefined {
-    const status = failure.upstreamStatus ?? failure.status;
-    return typeof status === "number" ? status : undefined;
+    const upstream = failure.upstreamStatus;
+    if (typeof upstream === "number" && (upstream < 200 || upstream >= 300)) {
+        return upstream;
+    }
+    return typeof failure.status === "number"
+        ? failure.status
+        : typeof upstream === "number"
+          ? upstream
+          : undefined;
 }
 
 /** The deadline we send to Portkey is the request's terminal time budget. */
@@ -134,13 +147,10 @@ function isPortkeyRequestTimeout(failure: UpstreamFailure): boolean {
 }
 
 /**
- * Every place a provider might have put its reason. Content-policy detection is
- * a case-insensitive substring match, so the whole details bag is worth handing
- * over rather than the one field each client happens to parse out — the image
- * client nests the raw body under `details.body`, the text client puts the
- * parsed body in `details` itself.
+ * Read provider error fields consistently with the image boundary, without
+ * mistaking echoed request inputs for a content-policy rejection.
  */
-function upstreamFailureText(failure: UpstreamFailure): (string | null)[] {
+function upstreamFailureText(failure: UpstreamFailure): (string | undefined)[] {
     const { details } = failure;
     let detailsText: string | null = null;
     if (typeof details === "string") {
@@ -152,7 +162,15 @@ function upstreamFailureText(failure: UpstreamFailure): (string | null)[] {
             // A details bag we cannot serialize still leaves error.message.
         }
     }
-    return [detailsText, failure.message ?? null];
+    return [
+        providerErrorText(detailsText),
+        providerErrorText(
+            typeof failure.responseBody === "string"
+                ? failure.responseBody
+                : undefined,
+        ),
+        providerErrorText(failure.message),
+    ];
 }
 
 /**
@@ -167,10 +185,7 @@ function upstreamFailureText(failure: UpstreamFailure): (string | null)[] {
  * delegating endpoint, a failed secret decryption all reach here as a plain
  * Error and are rethrown untouched.
  */
-export function isRetryableFallbackError(
-    error: unknown,
-    allowedStatusCodes: readonly number[] = FALLBACK_ON_STATUS_CODES,
-): boolean {
+export function isRetryableFallbackError(error: unknown): boolean {
     if (isNetworkFailure(error)) return true;
     if (!(error instanceof Error)) return false;
     const failure = error as UpstreamFailure;
@@ -182,10 +197,13 @@ export function isRetryableFallbackError(
     if (isPortkeyRequestTimeout(failure)) return false;
     // A dead endpoint reaches us as the gateway's own 400 rather than as a
     // network error, because the gateway is the one that could not connect.
-    const gatewayRoutingFailure =
-        allowedStatusCodes === FALLBACK_ON_STATUS_CODES &&
-        isGatewayRoutingFailure(failure);
-    if (!allowedStatusCodes.includes(status) && !gatewayRoutingFailure) {
+    const gatewayRoutingFailure = isGatewayRoutingFailure(failure);
+    const serverError = status >= 500 && status <= 599;
+    if (
+        !serverError &&
+        !FALLBACK_ON_STATUS_CODES.includes(status) &&
+        !gatewayRoutingFailure
+    ) {
         return false;
     }
     return !firstContentPolicyMessage(upstreamFailureText(failure));
@@ -247,6 +265,7 @@ function isUsableCommunityFallback(
     const primary = from.communityEndpoint;
     const candidate = target.communityEndpoint;
     if (!primary || !candidate) return false;
+    if (primary.modality !== candidate.modality) return false;
     if (usesAgentRunToken(candidate)) return false;
     if (primary.imagePricing !== candidate.imagePricing) return false;
     if (!isCommunityFallbackBalanceAllowed(primary, candidate)) return false;
@@ -295,19 +314,14 @@ export function linkFallbackEntries(
     }
 }
 
-/**
- * One upstream call that failed, as the loop saw it.
- *
- * `terminal` marks the failure that ended the request — the only thing about a
- * failed generation that the error response cannot say for itself, since it
- * carries no candidate name.
- */
-export type FailedCall = {
+/** One upstream call in the fallback loop, in order. */
+export type FallbackAttempt = {
     candidate: FallbackCandidate;
-    error: unknown;
     startedAt: Date;
     endedAt: Date;
-    terminal: boolean;
+    error?: unknown;
+    /** True when this call served or ended the request. */
+    settled: boolean;
 };
 
 /**
@@ -320,21 +334,27 @@ export type FailedCall = {
  * exhausted quota, and asking the same endpoint again would only spend more of
  * a budget that is already gone.
  *
- * Every failed call is appended to `failures`, including the one that ends the
- * request. Recording is not the same as retrying: this loop decides only which
- * candidate to try next, and leaves what any of it means to whoever reads the
- * list.
+ * Every upstream call is appended to `attempts`, including the one that serves
+ * or ends the request. Recording is not the same as retrying: this loop decides
+ * only which candidate to try next, and leaves what any of it means to whoever
+ * reads the ordered trace.
  *
  * Safe for streaming: the clients throw before returning a body, so a failed
  * attempt has sent the caller nothing.
  */
-export async function withModelFallback<T>(
-    candidates: FallbackCandidate[],
-    attempt: (candidate: FallbackCandidate) => Promise<T>,
-    failures?: FailedCall[],
-    beforeAttempt?: (candidate: FallbackCandidate) => Promise<void>,
-): Promise<{ result: T; candidate: FallbackCandidate; index: number }> {
-    const allowedStatusCodes = candidates[0]?.definition?.fallbackOnStatusCodes;
+export async function withModelFallback<
+    T,
+    Candidate extends FallbackCandidate = FallbackCandidate,
+>(
+    candidates: Candidate[],
+    attempt: (candidate: Candidate) => Promise<T>,
+    attempts?: FallbackAttempt[],
+    beforeAttempt?: (candidate: Candidate) => Promise<void>,
+    shouldFallback: (
+        error: unknown,
+        candidate: Candidate,
+    ) => boolean = isRetryableFallbackError,
+): Promise<{ result: T; candidate: Candidate; index: number }> {
     for (const [index, candidate] of candidates.entries()) {
         // Local gates are not upstream failures and must not trigger or be
         // attributed to another fallback candidate.
@@ -344,17 +364,24 @@ export async function withModelFallback<T>(
         // own latency.
         const startedAt = new Date();
         try {
-            return { result: await attempt(candidate), candidate, index };
+            const result = await attempt(candidate);
+            attempts?.push({
+                candidate,
+                startedAt,
+                endedAt: new Date(),
+                settled: true,
+            });
+            return { result, candidate, index };
         } catch (error) {
             const terminal =
                 index === candidates.length - 1 ||
-                !isRetryableFallbackError(error, allowedStatusCodes);
-            failures?.push({
+                !shouldFallback(error, candidate);
+            attempts?.push({
                 candidate,
                 error,
                 startedAt,
                 endedAt: new Date(),
-                terminal,
+                settled: terminal,
             });
             if (terminal) throw error;
         }
@@ -368,17 +395,17 @@ export async function withModelFallback<T>(
 export async function withModelFallbackResponse(
     model: PrimaryModel,
     attempt: (candidate: FallbackCandidate) => Promise<Response>,
-    failures?: FailedCall[],
+    attempts?: FallbackAttempt[],
     beforeAttempt?: (candidate: FallbackCandidate) => Promise<void>,
-): Promise<{ response: Response; servedEntry?: GenerationModelEntry }> {
-    const { result, candidate, index } = await withModelFallback(
+): Promise<Response> {
+    const { result, index } = await withModelFallback(
         fallbackCandidates(model),
         attempt,
-        failures,
+        attempts,
         beforeAttempt,
     );
     if (index > 0) {
-        result.headers.set(FALLBACK_TARGET_HEADER, `config.targets[${index}]`);
+        result.headers.set(FALLBACK_TARGET_HEADER, formatFallbackTarget(index));
     }
-    return { response: result, servedEntry: candidate.entry };
+    return result;
 }

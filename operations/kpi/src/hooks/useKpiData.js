@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import * as api from "../lib/api";
+import { buildDailyComparison } from "../lib/dailyComparison";
 import { currentWeekStart } from "../lib/format";
+import { DEFAULT_WEEKS } from "../lib/range";
 
-const WEEKS = 12;
 const RETENTION_WEEKS = 8;
 
 /**
@@ -12,17 +13,27 @@ const RETENTION_WEEKS = 8;
 const SOURCES = [
     { label: "GitHub stars", key: "github", load: api.github },
     { label: "Registrations", key: "registrations", load: api.registrations },
-    { label: "Revenue", key: "revenue", load: () => api.revenue(WEEKS) },
+    {
+        label: "Daily signups",
+        key: "dailyRegistrations",
+        load: api.dailyRegistrations,
+    },
+    { label: "Revenue", key: "revenue", load: api.revenue },
+    {
+        label: "Daily revenue",
+        key: "dailyRevenue",
+        load: api.dailyRevenue,
+    },
     {
         label: "Health stats",
         key: "health",
-        load: () => api.weekly("health", WEEKS),
+        load: (weeks) => api.weekly("health", weeks),
     },
-    { label: "WAU", key: "wau", load: () => api.weekly("wau", WEEKS) },
+    { label: "WAU", key: "wau", load: (weeks) => api.weekly("wau", weeks) },
     {
         label: "Usage stats",
         key: "usage",
-        load: () => api.weekly("usage", WEEKS),
+        load: (weeks) => api.weekly("usage", weeks),
     },
     {
         label: "Retention",
@@ -30,9 +41,14 @@ const SOURCES = [
         load: () => api.weekly("retention", RETENTION_WEEKS),
     },
     {
+        label: "Agent/MCP usage",
+        key: "agentMcpUsage",
+        load: (weeks) => api.weekly("agent-mcp-usage", weeks),
+    },
+    {
         label: "User segments",
         key: "segments",
-        load: () => api.weekly("user-segments", WEEKS),
+        load: (weeks) => api.weekly("user-segments", weeks),
     },
     { label: "Activations", key: "activations", load: api.activations },
     {
@@ -48,7 +64,10 @@ const REQUIRED = {
     registrations: "D1 (registrations)",
     wau: "Tinybird (WAU)",
     usage: "Tinybird (usage)",
+    agentMcpUsage: "Tinybird (agent/MCP usage)",
     revenue: "Revenue (Stripe)",
+    dailyRevenue: "Revenue (daily Stripe)",
+    dailyRegistrations: "Daily signups (D1 snapshot)",
     // A failed GitHub call returns an empty list, which is indistinguishable
     // from a week with no submissions unless we name it here.
     appSubmissions: "GitHub (app submissions)",
@@ -66,7 +85,7 @@ function mergeInto(weekMap, rows, project) {
     }
 }
 
-export function useKpiData() {
+export function useKpiData(weeks = DEFAULT_WEEKS) {
     const [state, setState] = useState({
         loading: true,
         done: [],
@@ -82,11 +101,17 @@ export function useKpiData() {
         let cancelled = false;
 
         async function load() {
+            setState((prev) => ({
+                ...prev,
+                loading: true,
+                done: [],
+                active: SOURCES[0].label,
+            }));
             const raw = {};
             for (const source of SOURCES) {
                 if (cancelled) return;
                 setState((prev) => ({ ...prev, active: source.label }));
-                raw[source.key] = await source.load().catch(() => null);
+                raw[source.key] = await source.load(weeks).catch(() => null);
                 if (cancelled) return;
                 setState((prev) => ({
                     ...prev,
@@ -124,6 +149,7 @@ export function useKpiData() {
                 // matched to the week's traffic, so it is the revenue side of
                 // gross margin.
                 pollenRevenue: row.revenue_usd,
+                paidPollenPct: row.paid_pollen_pct,
                 communityUserPct: row.served_community_user_pct,
                 communityUserPctAll: row.community_user_pct,
                 communityRequestPct: row.community_request_pct,
@@ -132,6 +158,12 @@ export function useKpiData() {
             mergeInto(weekMap, raw.revenue, (row) => ({
                 revenue: row.revenue,
                 packPurchases: row.purchases,
+            }));
+            mergeInto(weekMap, raw.agentMcpUsage, (row) => ({
+                agentRequests: row.agent_requests,
+                agentUsers: row.agent_users,
+                mcpCalls: row.mcp_calls,
+                mcpUsers: row.mcp_users,
             }));
             mergeInto(weekMap, raw.health, (row) => ({
                 availability: row.availability,
@@ -159,12 +191,12 @@ export function useKpiData() {
 
             // Pipes disagree on how far back they reach — registrations and
             // activations run to Oct 2025, the Tinybird pipes only cover the
-            // last WEEKS. The table needs the window every source can fill;
-            // the acquisition chart keeps the whole history.
+            // last selected range. The table needs the window every source
+            // can fill; the acquisition chart keeps the whole history.
             const allWeeks = [...weekMap.values()].sort((a, b) =>
                 a.week.localeCompare(b.week),
             );
-            const weeklyData = allWeeks.slice(-(WEEKS + 1));
+            const weeklyData = allWeeks.slice(-(weeks + 1));
 
             if (cancelled) return;
             setState((prev) => ({
@@ -181,6 +213,11 @@ export function useKpiData() {
                     w3: row.w3_retention,
                     w4: row.w4_retention,
                 })),
+                dailyComparison: buildDailyComparison(
+                    raw.dailyRevenue,
+                    raw.dailyRegistrations,
+                ),
+                signupsSyncedAt: raw.dailyRegistrations?.[0]?.snapshot_at,
                 github: raw.github ?? { stars: 0, forks: 0 },
             }));
         }
@@ -189,7 +226,7 @@ export function useKpiData() {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [weeks]);
 
     const partialWeekStart = currentWeekStart();
     const fullWeeks = state.weeklyData.filter(

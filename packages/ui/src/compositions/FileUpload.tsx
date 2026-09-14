@@ -333,7 +333,7 @@ export function FileUpload({
                             )}
                         </ul>
 
-                        {maxFiles > 1 && (
+                        {Number.isFinite(maxFiles) && maxFiles > 1 && (
                             <span className="polli:text-xs polli:text-theme-text-muted">
                                 {value.length} / {maxFiles} files
                             </span>

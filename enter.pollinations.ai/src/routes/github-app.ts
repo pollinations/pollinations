@@ -60,7 +60,7 @@ export const githubAppRoutes = new Hono<Env>()
         let accessToken: string;
         try {
             const tokens = await c.var.auth.client.api.getAccessToken({
-                body: { providerId: PROVIDER_ID, accountId: account.id },
+                body: { providerId: PROVIDER_ID, accountId: account.accountId },
                 headers: c.req.raw.headers,
             });
             accessToken = tokens.accessToken;

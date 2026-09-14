@@ -1,5 +1,6 @@
 import { env, SELF } from "cloudflare:test";
 import { account as accountTable } from "@shared/db/better-auth.ts";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
 import { test } from "./fixtures.ts";
@@ -129,6 +130,7 @@ test("connects an installed GitHub App with encrypted delegated tokens", async (
             headers: {
                 "Content-Type": "application/json",
                 Cookie: cookie(sessionToken),
+                Origin: "http://localhost:3000",
             },
             body: JSON.stringify({ providerId: "github-app" }),
         },
@@ -157,10 +159,113 @@ test("rejects authorization from a different GitHub account", async ({
     expect(githubAppAccount).toBeUndefined();
 });
 
+test("refreshes expired GitHub App user tokens through Better Auth", async ({
+    mocks,
+    sessionToken,
+}) => {
+    await mocks.enable("github");
+    const callback = await authorizeGithubApp(sessionToken);
+    expect(callback.status).toBe(302);
+
+    const db = drizzle(env.DB);
+    const [account] = await db
+        .select()
+        .from(accountTable)
+        .where(eq(accountTable.providerId, "github-app"));
+    await db
+        .update(accountTable)
+        .set({ accessTokenExpiresAt: new Date(Date.now() - 60_000) })
+        .where(eq(accountTable.id, account.id));
+    mocks.github.state.requests = [];
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/github-app/status",
+        { headers: { Cookie: cookie(sessionToken) } },
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+        authorized: true,
+        login: "testuser",
+    });
+    expect(
+        mocks.github.state.requests.filter(
+            ({ path }) => path === "/login/oauth/access_token",
+        ),
+    ).toHaveLength(1);
+
+    const [refreshed] = await db
+        .select()
+        .from(accountTable)
+        .where(eq(accountTable.id, account.id));
+    expect(refreshed.accessTokenExpiresAt?.getTime()).toBeGreaterThan(
+        Date.now(),
+    );
+    expect(refreshed.accessToken).not.toBe(account.accessToken);
+    expect(refreshed.accessToken).not.toBe(
+        "mock_github_app_user_token_refreshed",
+    );
+    expect(refreshed.refreshToken).not.toBe(account.refreshToken);
+    expect(refreshed.refreshToken).not.toBe(
+        "mock_github_app_refresh_token_rotated",
+    );
+});
+
+test("existing plaintext GitHub login tokens remain usable", async ({
+    sessionToken,
+}) => {
+    const db = drizzle(env.DB);
+    const [account] = await db
+        .select()
+        .from(accountTable)
+        .where(eq(accountTable.providerId, "github"));
+    await db
+        .update(accountTable)
+        .set({ accessToken: "mock_github_auth_token" })
+        .where(eq(accountTable.id, account.id));
+
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/auth/get-access-token",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: cookie(sessionToken),
+                Origin: "http://localhost:3000",
+            },
+            body: JSON.stringify({
+                providerId: "github",
+                accountId: account.accountId,
+            }),
+        },
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+        accessToken: "mock_github_auth_token",
+    });
+});
+
 test("does not allow the delegated GitHub App provider for sign-up", async ({
     mocks,
 }) => {
     await mocks.enable("github");
+    const response = await SELF.fetch(
+        "http://localhost:3000/api/auth/sign-in/oauth2",
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ providerId: "github-app" }),
+        },
+    );
+    expect(response.status).toBe(400);
+});
+
+test("does not allow standalone sign-in through an already linked GitHub App", async ({
+    mocks,
+    sessionToken,
+}) => {
+    await mocks.enable("github");
+    expect((await authorizeGithubApp(sessionToken)).status).toBe(302);
+
     const response = await SELF.fetch(
         "http://localhost:3000/api/auth/sign-in/oauth2",
         {

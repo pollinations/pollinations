@@ -1,5 +1,7 @@
 import {
+    Chip,
     cn,
+    InlineLink,
     TableBody,
     TableCell,
     TableHead,
@@ -11,20 +13,18 @@ import { useMemo } from "react";
 import {
     DataTable,
     GROUP_BORDER,
-    HeaderHint,
     type SortColumn,
     TableScroller,
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
 import { StatCards } from "../components/StatCards";
-import { fmtPeriod, fmtUnsignedPct, fmtUsd } from "../lib/format";
-import { creditRunway, type RunwayRow } from "../lib/insights";
+import { fmtPeriod, fmtUsd } from "../lib/format";
+import {
+    type ProviderAccountBalanceRow,
+    providerAccountBalanceRows,
+} from "../lib/providerBalances";
 import type { Data } from "../types";
-
-export function visibleRunwayRows(rows: RunwayRow[], vendor: string) {
-    return rows.filter((row) => vendor === "all" || row.vendor === vendor);
-}
 
 // Urgency color for a depletion date: red under 30 days, amber under 90.
 export function depletionTone(date: string | null, now: Date): string {
@@ -35,133 +35,108 @@ export function depletionTone(date: string | null, now: Date): string {
     return "text-theme-text-soft";
 }
 
-// Same 30/90-day urgency, mapped to a stat-card tone.
-function depletionStatTone(
-    date: string,
-    now: Date,
-): "base" | "pos" | "neg" | "warn" {
-    const days = (Date.parse(date) - now.getTime()) / 86_400_000;
-    if (days < 30) return "neg";
-    if (days < 90) return "warn";
-    return "base";
+export function isActiveBalanceRow(
+    row: Pick<ProviderAccountBalanceRow, "active">,
+) {
+    return row.active;
 }
 
-function remainingTone(value: number) {
-    return value < 0 ? "text-intent-danger-text" : "";
+export function needsBalanceAttention(
+    row: Pick<
+        ProviderAccountBalanceRow,
+        "active" | "balanceStatus" | "balanceTracking"
+    >,
+) {
+    return row.active && row.balanceTracking && row.balanceStatus !== "checked";
 }
 
-function optionalBurn(value: number) {
-    return value > 0.005 ? fmtUsd(value) : "–";
+function balanceTone(value: number | null) {
+    return value != null && value < -0.005 ? "text-intent-danger-text" : "";
 }
 
-export function burnedPct(row: Pick<RunwayRow, "burnedUsd" | "grantedUsd">) {
-    if (row.grantedUsd <= 0) return null;
-    return (row.burnedUsd / row.grantedUsd) * 100;
+function optionalUsd(value: number | null) {
+    return value == null ? "–" : fmtUsd(value);
 }
 
-export function isActiveCreditRow(row: Pick<RunwayRow, "finished">) {
-    return !row.finished;
-}
-
-function ActiveDot({ active }: { active: boolean }) {
+function BalanceStatus({ row }: { row: ProviderAccountBalanceRow }) {
+    const status = row.balanceStatus;
+    const needsAttention = status === "stale" || status === "not_checked";
+    const label =
+        status === "not_applicable"
+            ? "No balance"
+            : status === "archived"
+              ? row.balanceAsOf
+                  ? fmtPeriod(row.balanceAsOf)
+                  : "No snapshot"
+              : status === "stale"
+                ? row.balanceAsOf
+                    ? fmtPeriod(row.balanceAsOf)
+                    : "Stale"
+                : status === "checked"
+                  ? row.balanceAsOf
+                      ? fmtPeriod(row.balanceAsOf)
+                      : "Checked"
+                  : "Not checked";
     return (
-        <span
-            role="img"
-            aria-label={active ? "active" : "inactive"}
-            title={active ? "active" : "inactive"}
-            className={`inline-block h-2.5 w-2.5 rounded-full ${
-                active ? "bg-intent-success-text" : "bg-intent-danger-text"
-            }`}
-        />
-    );
-}
-
-function GrantsHint({ row }: { row: RunwayRow }) {
-    return (
-        <Tooltip
-            triggerAs="span"
-            content={
-                <span className="block max-w-72">
-                    {row.grants.map((grant) => (
-                        <span
-                            className="block"
-                            key={`${grant.label}|${grant.startDate}`}
-                        >
-                            {grant.label || "unlabeled"} ·{" "}
-                            {fmtUsd(grant.grantedUsd)} · from{" "}
-                            {fmtPeriod(grant.startDate)}
-                            {grant.expires
-                                ? ` · expires ${fmtPeriod(grant.expires)}`
-                                : ""}
-                        </span>
-                    ))}
+        <span className="flex flex-col whitespace-nowrap text-sm">
+            <span
+                className={
+                    needsAttention
+                        ? "text-intent-warning-text"
+                        : "text-theme-text-soft"
+                }
+            >
+                {label}
+            </span>
+            {row.balanceNote && (
+                <span className="max-w-56 truncate text-xs text-theme-text-soft">
+                    {row.balanceNote}
                 </span>
-            }
-        >
-            <span>{row.vendor}</span>
-        </Tooltip>
+            )}
+        </span>
     );
 }
 
-export function CreditsTab({
-    data,
-    vendor = "all",
-}: {
-    data: Data;
-    vendor?: string;
-}) {
+export function BalancesTab({ data }: { data: Data }) {
     const now = useMemo(() => new Date(), []);
-    const allRows = useMemo(() => creditRunway(data, now), [data, now]);
     const rows = useMemo(
-        () => visibleRunwayRows(allRows, vendor),
-        [allRows, vendor],
+        () => providerAccountBalanceRows(data, now),
+        [data, now],
     );
     const totals = useMemo(() => {
-        let granted = 0;
-        let burned = 0;
-        let remaining = 0;
-        let vendors = 0;
-        let next: {
-            vendor: string;
-            date: string;
-            reason: string | null;
-        } | null = null;
+        let cashBalance = 0;
+        let creditBalance = 0;
+        let active = 0;
+        let checked = 0;
+        let attention = 0;
         for (const row of rows) {
-            granted += row.grantedUsd;
-            burned += row.burnedUsd;
-            remaining += row.remainingUsd;
-            vendors += 1;
-            if (
-                !row.finished &&
-                row.depletionDate != null &&
-                (next == null || row.depletionDate < next.date)
-            ) {
-                next = {
-                    vendor: row.vendor,
-                    date: row.depletionDate,
-                    reason: row.depletionReason,
-                };
-            }
+            if (!row.active) continue;
+            cashBalance += Math.max(row.cashBalanceUsd ?? 0, 0);
+            creditBalance += Math.max(row.creditBalanceUsd ?? 0, 0);
+            if (!row.balanceTracking) continue;
+            active += 1;
+            if (row.balanceStatus === "checked") checked += 1;
+            if (needsBalanceAttention(row)) attention += 1;
         }
-        return { granted, burned, remaining, vendors, next };
+        return { cashBalance, creditBalance, active, checked, attention };
     }, [rows]);
-    const burnedPctTotal =
-        totals.granted > 0 ? (totals.burned / totals.granted) * 100 : null;
-
-    const sortColumns = useMemo<SortColumn<RunwayRow>[]>(
+    const sortColumns = useMemo<SortColumn<ProviderAccountBalanceRow>[]>(
         () => [
-            { key: "active", value: (row) => isActiveCreditRow(row) },
             { key: "vendor", value: (row) => row.vendor },
-            { key: "grantedUsd", value: (row) => row.grantedUsd },
-            { key: "burnedPct", value: (row) => burnedPct(row) },
-            { key: "preWindowBurnUsd", value: (row) => row.preWindowBurnUsd },
-            { key: "remainingUsd", value: (row) => row.remainingUsd },
+            { key: "account", value: (row) => row.accountLabel },
+            { key: "login", value: (row) => row.loginEmail },
+            { key: "active", value: (row) => Number(row.active) },
             {
-                key: "currentMonthBurnUsd",
-                value: (row) => row.currentMonthBurnUsd,
+                key: "collectionMethod",
+                value: (row) => row.collectionMethod,
             },
-            { key: "lastMonthBurnUsd", value: (row) => row.lastMonthBurnUsd },
-            { key: "depletionDate", value: (row) => row.depletionDate },
+            { key: "balanceAsOf", value: (row) => row.balanceAsOf },
+            { key: "creditBalanceUsd", value: (row) => row.creditBalanceUsd },
+            {
+                key: "creditDepletionDate",
+                value: (row) => row.creditDepletionDate,
+            },
+            { key: "cashBalanceUsd", value: (row) => row.cashBalanceUsd },
         ],
         [],
     );
@@ -172,37 +147,14 @@ export function CreditsTab({
             <StatCards
                 items={[
                     {
-                        label: "Credit",
-                        value: fmtUsd(totals.granted),
-                        detail: `${totals.vendors} vendor${totals.vendors === 1 ? "" : "s"}`,
+                        label: "Free credit",
+                        value: fmtUsd(totals.creditBalance),
+                        detail: `Active accounts · ${totals.checked} of ${totals.active} tracked balances checked`,
                     },
                     {
-                        label: "Burned",
-                        value: fmtUnsignedPct(burnedPctTotal),
-                        detail: fmtUsd(totals.burned),
-                    },
-                    {
-                        label: "Remaining",
-                        value: fmtUsd(totals.remaining),
-                        detail: "naive upper bound",
-                    },
-                    {
-                        label: "Next runs out",
-                        value: (
-                            <span className="text-xl leading-tight">
-                                {totals.next
-                                    ? `${totals.next.vendor} · ${fmtPeriod(totals.next.date)}`
-                                    : "–"}
-                            </span>
-                        ),
-                        tone: totals.next
-                            ? depletionStatTone(totals.next.date, now)
-                            : "base",
-                        detail: totals.next
-                            ? totals.next.reason === "expiry"
-                                ? "credit expiry"
-                                : "at current rate"
-                            : "no runway risk",
+                        label: "Cash prepaid",
+                        value: fmtUsd(totals.cashBalance),
+                        detail: `${totals.attention} active balance${totals.attention === 1 ? "" : "s"} need${totals.attention === 1 ? "s" : ""} attention`,
                     },
                 ]}
             />
@@ -211,190 +163,184 @@ export function CreditsTab({
                     <TableHead>
                         <TableRow>
                             <TableHeaderCell
+                                rowSpan={2}
+                                {...headerProps("vendor")}
+                            >
+                                Vendor
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                rowSpan={2}
+                                {...headerProps("account")}
+                            >
+                                Account
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                rowSpan={2}
+                                {...headerProps("login")}
+                            >
+                                Login
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                rowSpan={2}
                                 {...headerProps("active")}
+                            >
+                                Status
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                rowSpan={2}
+                                {...headerProps("collectionMethod")}
+                            >
+                                Collection
+                            </TableHeaderCell>
+                            <TableHeaderCell rowSpan={2}>
+                                Access
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                rowSpan={2}
+                                {...headerProps("balanceAsOf")}
+                            >
+                                Last checked
+                            </TableHeaderCell>
+                            <TableHeaderCell
+                                colSpan={2}
                                 align="center"
-                            >
-                                <HeaderHint hint="green = credit remains in the pool. red = the pool is finished; rows are muted but kept in the same table for context.">
-                                    active
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell {...headerProps("vendor")}>
-                                vendor
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("grantedUsd")}
-                                align="right"
                                 className={GROUP_BORDER}
                             >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "Total credit for the vendor (hover the vendor for the per-credit split). EUR converted at the credit's start month.",
-                                        tables: "op_cloud_api",
-                                        sources: "API, CLI, BQ, HC",
-                                    }}
-                                >
-                                    Credit
-                                </HeaderHint>
+                                Free credit
                             </TableHeaderCell>
                             <TableHeaderCell
-                                {...headerProps("burnedPct")}
-                                align="right"
-                            >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "Credit used as a share of total credit.",
-                                        tables: "op_cloud_api",
-                                        formula: "burned ÷ credit",
-                                    }}
-                                >
-                                    Burned %
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("preWindowBurnUsd")}
-                                align="right"
-                            >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "Opening credit burn before the 2026 window. Hidden from the Cloud OP raw table.",
-                                        tables: "op_cloud_api",
-                                        formula: "-credit",
-                                    }}
-                                >
-                                    2025
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("remainingUsd")}
-                                align="right"
-                            >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "Credit balance minus credit used. Includes 2025 opening burn when that balance is recorded.",
-                                        formula: "credit − burned",
-                                    }}
-                                >
-                                    Remaining
-                                </HeaderHint>
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                {...headerProps("currentMonthBurnUsd")}
+                                rowSpan={2}
                                 align="right"
                                 className={GROUP_BORDER}
+                                {...headerProps("cashBalanceUsd")}
                             >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "Credit burn so far in the running month.",
-                                        tables: "op_cloud_api",
-                                    }}
-                                >
-                                    This Month
-                                </HeaderHint>
+                                Cash prepaid
                             </TableHeaderCell>
+                        </TableRow>
+                        <TableRow>
                             <TableHeaderCell
-                                {...headerProps("lastMonthBurnUsd")}
                                 align="right"
+                                className={GROUP_BORDER}
+                                {...headerProps("creditBalanceUsd")}
                             >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "Credit burn in the last complete month.",
-                                        tables: "op_cloud_api",
-                                    }}
-                                >
-                                    Last Month
-                                </HeaderHint>
+                                Left
                             </TableHeaderCell>
                             <TableHeaderCell
-                                {...headerProps("depletionDate")}
-                                className={GROUP_BORDER}
+                                {...headerProps("creditDepletionDate")}
                             >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "Estimated date the credit runs out at the recent burn rate, or the credit expiry — whichever is sooner. Red under 30 days, amber under 90.",
-                                    }}
-                                >
-                                    Runs Out
-                                </HeaderHint>
+                                Runs out
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {withUniqueRowKeys(sorted, (row) => row.vendor).map(
-                            ({ key, row }) => (
-                                <TableRow
-                                    key={key}
-                                    className={
-                                        row.finished ? "opacity-60" : undefined
-                                    }
+                        {withUniqueRowKeys(
+                            sorted,
+                            (row) => `${row.vendor}|${row.accountId}`,
+                        ).map(({ key, row }) => (
+                            <TableRow
+                                key={key}
+                                className={
+                                    !isActiveBalanceRow(row)
+                                        ? "opacity-60"
+                                        : undefined
+                                }
+                            >
+                                <TableCell>{row.label}</TableCell>
+                                <TableCell>
+                                    <Tooltip
+                                        triggerAs="span"
+                                        content={row.accountId}
+                                    >
+                                        <span>{row.accountLabel}</span>
+                                    </Tooltip>
+                                </TableCell>
+                                <TableCell className="whitespace-nowrap text-xs text-theme-text-soft">
+                                    {row.loginEmail ?? "–"}
+                                </TableCell>
+                                <TableCell>
+                                    <Chip
+                                        intent={
+                                            row.active ? "success" : "neutral"
+                                        }
+                                        size="sm"
+                                    >
+                                        {row.active ? "active" : "inactive"}
+                                    </Chip>
+                                </TableCell>
+                                <TableCell className="uppercase text-xs text-theme-text-soft">
+                                    {row.collectionMethod ?? "–"}
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                        {row.access.length === 0
+                                            ? "–"
+                                            : row.access.map(
+                                                  (target, index) => (
+                                                      <InlineLink
+                                                          key={`${target.url}|${index}`}
+                                                          href={target.url}
+                                                          className="text-xs"
+                                                      >
+                                                          {target.label ??
+                                                              (row.access
+                                                                  .length > 1
+                                                                  ? new URL(
+                                                                        target.url,
+                                                                    ).hostname.split(
+                                                                        ".",
+                                                                    )[0]
+                                                                  : "Open")}
+                                                      </InlineLink>
+                                                  ),
+                                              )}
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <BalanceStatus row={row} />
+                                </TableCell>
+                                <TableCell
+                                    align="right"
+                                    numeric
+                                    className={GROUP_BORDER}
                                 >
-                                    <TableCell className="text-center">
-                                        <ActiveDot
-                                            active={isActiveCreditRow(row)}
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <GrantsHint row={row} />
-                                    </TableCell>
-                                    <TableCell
-                                        className={cn(
-                                            GROUP_BORDER,
-                                            "text-right",
-                                        )}
-                                    >
-                                        {fmtUsd(row.grantedUsd)}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        {fmtUnsignedPct(burnedPct(row))}
-                                    </TableCell>
-                                    <TableCell className="text-right text-theme-text-soft">
-                                        {optionalBurn(row.preWindowBurnUsd)}
-                                    </TableCell>
-                                    <TableCell
-                                        className={cn(
-                                            "text-right",
-                                            remainingTone(row.remainingUsd),
-                                        )}
-                                    >
-                                        {fmtUsd(row.remainingUsd)}
-                                    </TableCell>
-                                    <TableCell
-                                        className={cn(
-                                            GROUP_BORDER,
-                                            "text-right text-theme-text-soft",
-                                        )}
-                                    >
-                                        {fmtUsd(row.currentMonthBurnUsd)}
-                                    </TableCell>
-                                    <TableCell className="text-right text-theme-text-soft">
-                                        {fmtUsd(row.lastMonthBurnUsd)}
-                                    </TableCell>
-                                    <TableCell
-                                        className={cn(
-                                            GROUP_BORDER,
-                                            depletionTone(
-                                                row.depletionDate,
-                                                now,
-                                            ),
-                                        )}
-                                    >
-                                        {row.finished
-                                            ? row.finishedDate
-                                                ? fmtPeriod(row.finishedDate)
-                                                : "–"
-                                            : row.depletionDate
-                                              ? `${fmtPeriod(row.depletionDate)}${row.depletionReason === "expiry" ? " (expiry)" : ""}`
+                                    {optionalUsd(row.creditBalanceUsd)}
+                                </TableCell>
+                                <TableCell
+                                    className={depletionTone(
+                                        row.creditDepletionDate,
+                                        now,
+                                    )}
+                                >
+                                    <span>
+                                        {row.creditDepletionDate
+                                            ? new Date(
+                                                  `${row.creditDepletionDate}T12:00:00Z`,
+                                              ).toLocaleDateString("en-US", {
+                                                  month: "short",
+                                                  day: "numeric",
+                                                  year: "numeric",
+                                                  timeZone: "UTC",
+                                              })
+                                            : (row.creditBalanceUsd ?? 0) > 0 &&
+                                                !row.creditTermsKnown
+                                              ? row.expiryAssumed
+                                                  ? "Assumed"
+                                                  : "Unverified"
                                               : "–"}
-                                    </TableCell>
-                                </TableRow>
-                            ),
-                        )}
+                                    </span>
+                                </TableCell>
+                                <TableCell
+                                    align="right"
+                                    numeric
+                                    className={cn(
+                                        GROUP_BORDER,
+                                        balanceTone(row.cashBalanceUsd),
+                                    )}
+                                >
+                                    {optionalUsd(row.cashBalanceUsd)}
+                                </TableCell>
+                            </TableRow>
+                        ))}
                     </TableBody>
                 </DataTable>
             </TableScroller>

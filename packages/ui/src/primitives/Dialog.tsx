@@ -8,6 +8,7 @@ const sizeClasses = {
     sm: "polli:max-w-md",
     md: "polli:max-w-xl",
     lg: "polli:max-w-2xl",
+    xl: "polli:max-w-6xl",
 } as const;
 
 export type DialogProps = {

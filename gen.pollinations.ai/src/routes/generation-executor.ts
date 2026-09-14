@@ -3,6 +3,7 @@ import { DEFAULT_3D_MODEL } from "@shared/registry/model3d.ts";
 import {
     CreateChatCompletionRequestSchema,
     CreateImageRequestSchema,
+    CreateResponseRequestSchema,
 } from "@shared/schemas/openai.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { Hono } from "hono";
@@ -28,6 +29,8 @@ import {
     Generate3dRequestQueryParamsSchema,
 } from "@/schemas/model3d.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
+import { generateCreateResponse } from "@/text/responses/handler.ts";
+import { apiKeyBudgetReservation } from "@/utils/generation-access.ts";
 import {
     handleSimpleAudio,
     handleSpeech,
@@ -47,9 +50,8 @@ import {
     textBodyLimit,
 } from "./generation-handlers.ts";
 import {
-    formatOpenAIImageGeneration,
-    handleImageEdit,
     handleImageGeneration,
+    prepareOpenAIImageEditReplay,
     prepareOpenAIImageGeneration,
 } from "./images.ts";
 
@@ -58,6 +60,7 @@ const factory = createFactory<Env>();
 const imageVideoHandlers = factory.createHandlers(
     track("generate.image"),
     imageExecutionCache,
+    apiKeyBudgetReservation,
     generateImageVideo,
 );
 
@@ -65,6 +68,7 @@ const model3dHandlers = factory.createHandlers(
     resolveModel("generate.image", { defaultModel: DEFAULT_3D_MODEL }),
     track("generate.image"),
     model3dExecutionCache,
+    apiKeyBudgetReservation,
     generateModel3d,
 );
 
@@ -77,7 +81,19 @@ generationExecutorRoutes.post(
     resolveModel("generate.text"),
     track("generate.text"),
     textExecutionCache,
+    apiKeyBudgetReservation,
     generateChatCompletion,
+);
+
+generationExecutorRoutes.post(
+    "/v1/responses",
+    textBodyLimit,
+    validator("json", CreateResponseRequestSchema),
+    resolveModel("generate.text"),
+    track("generate.text"),
+    textExecutionCache,
+    apiKeyBudgetReservation,
+    generateCreateResponse,
 );
 
 generationExecutorRoutes.post(
@@ -88,6 +104,7 @@ generationExecutorRoutes.post(
     track("generate.embedding"),
     prepareGenerationRequest,
     textExecutionCache,
+    apiKeyBudgetReservation,
     generateEmbeddingsResponse,
 );
 
@@ -98,6 +115,7 @@ generationExecutorRoutes.post(
     resolveModel("generate.text"),
     track("generate.text"),
     textExecutionCache,
+    apiKeyBudgetReservation,
     generateTextContent,
 );
 
@@ -108,6 +126,7 @@ generationExecutorRoutes.get(
     resolveModel("generate.text"),
     track("generate.text"),
     textExecutionCache,
+    apiKeyBudgetReservation,
     generateSimpleText,
 );
 
@@ -123,6 +142,7 @@ generationExecutorRoutes.post(
     track("generate.image"),
     prepareGenerationRequest,
     model3dExecutionCache,
+    apiKeyBudgetReservation,
     generateModel3d,
 );
 
@@ -158,6 +178,7 @@ generationExecutorRoutes.get(
     }),
     track("generate.audio"),
     audioExecutionCache,
+    apiKeyBudgetReservation,
     handleSimpleAudio,
 );
 
@@ -167,9 +188,9 @@ generationExecutorRoutes.post(
     resolveModel("generate.image"),
     track("generate.image"),
     prepareOpenAIImageGeneration,
-    formatOpenAIImageGeneration,
     prepareGenerationRequest,
     imageExecutionCache,
+    apiKeyBudgetReservation,
     handleImageGeneration,
 );
 
@@ -177,32 +198,36 @@ generationExecutorRoutes.post(
     "/v1/images/edits",
     resolveModel("generate.image", { defaultModel: "flux" }),
     track("generate.image"),
+    prepareOpenAIImageEditReplay,
     prepareGenerationRequest,
-    textExecutionCache,
-    handleImageEdit,
+    imageExecutionCache,
+    apiKeyBudgetReservation,
+    handleImageGeneration,
 );
 
 generationExecutorRoutes.post(
     "/v1/audio/voice-changer",
     resolveModel("generate.audio", {
-        defaultModel: "eleven-voice-changer",
+        defaultModel: "elevenlabs/eleven-multilingual-sts-v2",
         supportedEndpoint: "/v1/audio/voice-changer",
     }),
     track("generate.audio"),
     prepareGenerationRequest,
     audioExecutionCache,
+    apiKeyBudgetReservation,
     handleVoiceChanger,
 );
 
 generationExecutorRoutes.post(
     "/v1/audio/voice-isolator",
     resolveModel("generate.audio", {
-        defaultModel: "eleven-voice-isolator",
+        defaultModel: "elevenlabs/voice-isolator",
         supportedEndpoint: "/v1/audio/voice-isolator",
     }),
     track("generate.audio"),
     prepareGenerationRequest,
     audioExecutionCache,
+    apiKeyBudgetReservation,
     handleVoiceIsolator,
 );
 
@@ -214,6 +239,7 @@ generationExecutorRoutes.post(
     track("generate.audio"),
     prepareGenerationRequest,
     audioExecutionCache,
+    apiKeyBudgetReservation,
     handleSpeech,
 );
 
@@ -226,6 +252,7 @@ generationExecutorRoutes.post(
     track("generate.audio"),
     prepareGenerationRequest,
     textExecutionCache,
+    apiKeyBudgetReservation,
     handleSpeechWithTimestamps,
 );
 
@@ -238,5 +265,6 @@ generationExecutorRoutes.post(
     track("generate.audio"),
     prepareGenerationRequest,
     textExecutionCache,
+    apiKeyBudgetReservation,
     handleTranscription,
 );

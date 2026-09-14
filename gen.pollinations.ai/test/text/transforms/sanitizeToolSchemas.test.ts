@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { findModelByName } from "../../../src/text/availableModels.js";
 import { sanitizeToolSchemas } from "../../../src/text/transforms/sanitizeToolSchemas.js";
 
 type FunctionTool = {
@@ -153,5 +154,38 @@ describe("sanitizeToolSchemas", () => {
         const tools = result.options.tools as FunctionTool[];
         expect(tools[0].function?.name).toBe("simple_tool");
         expect((await transform(messages, {})).options.tools).toBeUndefined();
+    });
+
+    it("is limited to direct Vertex while OpenRouter schemas pass through", async () => {
+        const tools = [
+            {
+                type: "function",
+                function: {
+                    name: "bounded_value",
+                    parameters: {
+                        type: "object",
+                        properties: {
+                            value: { type: "number", exclusiveMinimum: 0 },
+                        },
+                    },
+                },
+            },
+        ];
+        const vertexTransform = findModelByName("gemini-search")?.transform;
+        const openRouterTransform = findModelByName("gemini")?.transform;
+        if (!vertexTransform || !openRouterTransform) {
+            throw new Error("Gemini transforms missing");
+        }
+
+        const vertex = await vertexTransform([], { tools });
+        const openRouter = await openRouterTransform([], { tools });
+        const vertexTool = vertex.options.tools?.[0] as
+            | FunctionTool
+            | undefined;
+
+        expect(vertexTool?.function?.parameters).not.toHaveProperty(
+            "properties.value.exclusiveMinimum",
+        );
+        expect(openRouter.options.tools).toEqual(tools);
     });
 });

@@ -1,6 +1,8 @@
 # Terms of Service
 
-**Updated: 2026-08-22**
+**Updated: 2026-09-04**
+
+_2026-09-04 — Added terms for the Polli Discord bot and related assistant service._
 
 _2026-07-02 — Pollen purchases now include a service fee shown before payment, and prices are shown exclusive of tax; applicable VAT or similar taxes are added at checkout._
 
@@ -144,3 +146,42 @@ When we process personal data on your behalf, you are the **controller** and we 
 - **Model / inference compute providers** (for text/image/video generation)
 
 **Data residency.** Depending on the selected model, provider, and availability, Customer Data may be processed in the EEA, the United States, or other locations where our model and infrastructure providers operate. Where personal data leaves the EEA, we use approved safeguards such as EU Standard Contractual Clauses and appropriate supplementary measures.
+
+---
+
+## 16) Polli Discord Bot
+
+**Effective date: 2026-09-04**
+
+Polli is the Pollinations.ai Discord bot and related assistant service operated by **Myceli.AI OÜ**. This section supplements the rest of these Terms. By using Polli, you agree to these Terms and the applicable Discord, GitHub, community, and repository rules.
+
+### Eligibility and Service
+
+You must be at least 16, meet Discord's minimum age requirements in your country, and be legally able to agree to these Terms.
+
+Depending on configuration and permissions, Polli may answer questions, process messages and attachments, search accessible Discord or public GitHub content, perform authorized GitHub actions, generate visual content, and provide an API interface. Features may be limited or unavailable because of permissions, configuration, provider availability, rate limits, or safety controls.
+
+### Authorized and Acceptable Use
+
+You may request only information and actions you are authorized to access or perform. Do not use Polli to:
+
+- Violate law, another person's rights, or another platform's rules.
+- Access or expose private information, bypass permissions, or misrepresent your authorization.
+- Harass others, distribute malware, steal credentials, spam, or disrupt services.
+- Submit credentials, tokens, secrets, or unnecessary sensitive personal data.
+
+Authorized security testing must be lawful, scoped, non-destructive, and approved by the relevant system owner.
+
+### Content, Output, and Actions
+
+You retain your rights in submitted content and permit us to process it only as needed to operate, secure, and improve Polli and fulfill your requests. Content may be sent to the providers described in the [Privacy Policy](/privacy).
+
+Polli uses automated models and tools. Its output may be inaccurate, incomplete, outdated, insecure, or unsuitable for your purpose and is not professional advice. Review consequential output, code, commands, and repository changes before relying on or approving them.
+
+Requested GitHub comments, issues, pull requests, commits, or other actions may be public, persistent, indexed, or difficult to reverse.
+
+### Availability and Enforcement
+
+Polli depends on third-party services and is provided as available. We may change, limit, suspend, or discontinue features and may restrict access to protect users, services, or third parties. The warranties, liability limits, governing law, and other provisions elsewhere in these Terms, including the liability cap in Section 10, apply to Polli.
+
+Questions about Polli may be sent to **hello@pollinations.ai**.

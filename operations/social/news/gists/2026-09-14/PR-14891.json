@@ -1,0 +1,34 @@
+{
+  "pr_number": 14891,
+  "title": "chore: add Azure keys for dedicated gpt-image-2.5 resources",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14891",
+  "merged_at": "2026-09-14T23:33:39Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `AZURE_MYCELI_PROD_IMG_25_FLARE_SWEDEN_API_KEY` and `AZURE_MYCELI_PROD_IMG_25_SUNBURST_SWEDEN_API_KEY` to Gen dev, staging and production SOPS files for the dedicated Sweden Central resources.\n- Includes both names in the generation-secret upload allowlist so the first deployment actually installs them. Existing encrypted secret values are unchanged.\n- User explicitly approved both additions to the SOPS files and Cloudflare production, plus the separately pending `WEFT_SELLER_API_KEY` production addition.\n- Merge and promote this prerequisite first through `Deploy / Cloudflare production`; verify the bindings before merging and promoting #14890. No routing changes in this PR.\n- Verified script syntax, Biome, and encrypted-field comparisons: exactly two added keys per environment, no changed or removed existing values.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sweden Gets Its Keys",
+    "blurb": "Two dedicated GPT-Image 2.5 resource keys have been tucked into the generation hive and added to the deployment satchel. The routing garden is unchanged; the new bulbs are simply ready to grow.",
+    "summary": "Added the two Azure Sweden Central GPT-Image 2.5 resource keys, Flare and Sunburst, to Gen development, staging, and production SOPS configurations and to the generation-secret upload allowlist.",
+    "impact": "The next Gen deployments can install the dedicated Sweden Central GPT-Image 2.5 credentials consistently across all environments, ready for the follow-up routing work.",
+    "keywords": [
+      "azure",
+      "gpt-image-2.5",
+      "secrets",
+      "sweden-central",
+      "deployment",
+      "gen"
+    ],
+    "visual_concept": "A cozy secret-delivery scene: Polli carries two carefully labeled key packets toward a small retro terminal garden in a snowy-yet-warm Sweden Central setting. Two lime-green code-plants named Flare and Sunburst sit beside the terminal, symbolizing provisioned resources awaiting connection rather than a live routing change.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light-blue wings, and a tiny winter scarf, carefully placing two glowing key packets beside a retro terminal and two budding code-plants labeled “FLARE” and “SUNBURST”; the terminal garden glows prominently lime green (#ecf874), with warm cream, mint, and lavender snow-dusted pastels. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow and flowers growing around the secret-delivery station, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-14/PR-14891.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light-blue wings, and a tiny winter scarf, carefully placing two glowing key packets beside a retro terminal and two budding code-plants labeled “FLARE” and “SUNBURST”; the terminal garden glows prominently lime green (#ecf874), with warm cream, mint, and lavender snow-dusted pastels. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow and flowers growing around the secret-delivery station, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-14T23:34:56.086203+00:00"
+}

@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-09-13** – **🤖 Polli gets two brains** Ask Polli now runs on GPT-5.6 Terra, while write workflows use GPT-6 Astra—specialized routing without changing your existing Gen auth or endpoint setup. [Try it](https://pollinations.ai/play)
+- **2026-09-13** – **✨ Agents declare their senses** Endpoint agents can now publish input and output modalities—including multiple outputs and 3D—through the standard [model listings](https://gen.pollinations.ai/v1/models).
+- **2026-09-13** – **📱 Agent and MCP KPIs land in the dashboard** Inspect weekly requests, unique users, and MCP calls separately, then export the numbers as CSV. Software has begun counting its own pollen. [Open your dashboard](https://enter.pollinations.ai/keys)
+- **2026-09-13** – **🎨 Floret knows her toolkit** Floret now clearly identifies herself and can point you toward image editing, voice changes, and background-noise removal when you need them. [Try it](https://pollinations.ai/play)
 - **2026-09-12** – **🚀 DeepSeek V4.1 Flash** is now on the unified text API: reasoning, tool use, and a 1M-token context window under `deepseek/deepseek-v4.1-flash`. [Try it](https://pollinations.ai/play)
 - **2026-09-12** – **🤖 A computer for every bee** Agents now get a private persistent `/workspace`, Bash, asset publishing, and the ability to push finished work to your own repos via `/mcp/computer`. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers)
 - **2026-09-12** – **🎨 1080p MiniMax video** Generate 5-, 10-, or 15-second 1080p clips with `minimax/minimax-h3-max-turbo`, including first/last-frame image-to-video. [API docs](https://gen.pollinations.ai/docs)
 - **2026-09-12** – **💡 Bring your own backup bees** Send up to four comma-separated models such as `?model=a,b,c` on any generation endpoint; Pollinations tries your fallback chain when a provider gets dramatic. [API docs](https://gen.pollinations.ai/docs)
 - **2026-09-12** – **✨ A friendly chat flower** Pollination_chatbot is a Pollinations-powered chat interface for OpenAI, Mistral, and Gemini models, with Login with Pollinations. [Try it](https://pollinations-chatbot.vercel.app) <!-- app -->
 - **2026-09-11** – **🚀 Managed Code Agents** Publish commit-pinned TypeScript agents from a public GitHub repo with the dashboard or Polli CLI—models, MCP tools, and AI SDK helpers included. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-09-11** – **✨ Model Parameters, Visible** Every public chat model now declares which request parameters it supports, so your app can inspect the knobs before turning them. [View models](https://gen.pollinations.ai/v1/models)
-- **2026-09-11** – **🎨 Polli Visual Studio** Discord communities can request richer page renders with full-page capture while Polli routes tasks to models by complexity.
-- **2026-09-11** – **🤖 NewEra AI Agent** Turn a plain-English app idea into a planned, coded, built, and deployed application from chat. [Try it](https://newera.namansoni.in) <!-- app -->
-- **2026-09-10** – **✨ StoryCraft AI** Turn an idea into a multi-chapter illustrated storybook, with Pollinations handling the words and scene art. [Try it](https://khushalkks.github.io/pollinations) <!-- app -->
 ---
 
 ## 🌱 Introduction

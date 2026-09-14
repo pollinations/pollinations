@@ -824,6 +824,7 @@ type CommunityEndpointRuntimeBase = {
     description: string | null;
     providerName?: string | null;
     providerUrl?: string | null;
+    providerIconUrl?: string | null;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     inputModalities: ModelInputModality[] | null;
@@ -897,6 +898,7 @@ export type CommunityModelDefinitionInput = {
     description: string | null;
     providerName?: string | null;
     providerUrl?: string | null;
+    providerIconUrl?: string | null;
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[] | null;
@@ -1072,6 +1074,7 @@ export function communityModelDefinition(
         perUserRpm: endpoint.perUserRpm,
         publisher: providerName || "Community",
         brandUrl: providerName && providerUrl ? providerUrl : undefined,
+        brandIconUrl: endpoint.providerIconUrl ?? undefined,
         category: spec.category,
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,

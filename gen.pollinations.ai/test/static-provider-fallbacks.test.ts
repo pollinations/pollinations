@@ -49,9 +49,9 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
-        "meta/llama-4-scout:openrouter:vertex-us-east5",
+        "meta/llama-4-scout:openrouter:novita-bf16",
         "meta-llama/llama-4-scout",
-        "google-vertex/us-east5",
+        "novita/bf16",
     ],
     ["x-ai/grok-4.20:openrouter:xai-zdr", "x-ai/grok-4.20", "xai/zdr"],
     ["x-ai/grok-4.3:openrouter:xai-zdr", "x-ai/grok-4.3", "xai/zdr"],
@@ -437,11 +437,11 @@ describe("static provider fallbacks", () => {
             completionTextTokens: (0.6 / 1_000_000) * 1.055,
         });
         expect(
-            TEXT_SERVICES["meta/llama-4-scout:openrouter:vertex-us-east5"].cost,
+            TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"].cost,
         ).toMatchObject({
-            promptTextTokens: (0.25 / 1_000_000) * 1.055,
-            promptImageTokens: (0.25 / 1_000_000) * 1.055,
-            completionTextTokens: (0.7 / 1_000_000) * 1.055,
+            promptTextTokens: (0.18 / 1_000_000) * 1.055,
+            promptImageTokens: (0.18 / 1_000_000) * 1.055,
+            completionTextTokens: (0.59 / 1_000_000) * 1.055,
         });
         expect(
             IMAGE_SERVICES["qwen/qwen-image-3:replicate"].cost,
@@ -473,44 +473,36 @@ describe("static provider fallbacks", () => {
         });
     });
 
-    it("keeps Llama Vertex inside its verified request limits", () => {
+    it("rescues ordinary Scout requests without weakening its public contract", () => {
+        const primary = TEXT_SERVICES["meta/llama-4-scout"];
         const route =
-            TEXT_SERVICES["meta/llama-4-scout:openrouter:vertex-us-east5"];
-        expect(supportsTextFallbackRequest(route, {})).toBe(true);
-        expect(
-            supportsTextFallbackRequest(route, { tool_choice: "none" }),
-        ).toBe(true);
-        expect(
-            supportsTextFallbackRequest(route, { tool_choice: "auto" }),
-        ).toBe(true);
-        expect(
-            supportsTextFallbackRequest(route, {
-                tool_choice: { type: "allowed_tools", mode: "auto" },
-            }),
-        ).toBe(true);
-        expect(
-            supportsTextFallbackRequest(route, { tool_choice: "required" }),
-        ).toBe(false);
+            TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"];
+        expect(primary).toMatchObject({
+            tools: true,
+            contextLength: 327680,
+            paidOnly: true,
+            priceMultiplier: 1,
+        });
+        expect(primary.cost.promptTextTokens).toBe((0.1 / 1_000_000) * 1.055);
         expect(
             supportsTextFallbackRequest(route, {
-                tool_choice: {
-                    type: "function",
-                    function: { name: "weather" },
-                },
+                messages: [{ role: "user", content: "Hello" }],
+                stream: true,
+                max_tokens: 128,
             }),
-        ).toBe(false);
-        expect(
-            supportsTextFallbackRequest(route, {
-                function_call: { name: "weather" },
-            }),
-        ).toBe(false);
-        expect(supportsTextFallbackRequest(route, { max_tokens: 8192 })).toBe(
+        ).toBe(true);
+        expect(supportsTextFallbackRequest(route, { max_tokens: 16384 })).toBe(
             true,
         );
-        expect(supportsTextFallbackRequest(route, { max_tokens: 8193 })).toBe(
-            false,
-        );
-
+        for (const field of [
+            "max_tokens",
+            "max_completion_tokens",
+            "max_output_tokens",
+        ]) {
+            expect(supportsTextFallbackRequest(route, { [field]: 16385 })).toBe(
+                false,
+            );
+        }
         const images = (count: number) => ({
             messages: [
                 {
@@ -522,8 +514,101 @@ describe("static provider fallbacks", () => {
                 },
             ],
         });
-        expect(supportsTextFallbackRequest(route, images(5))).toBe(true);
-        expect(supportsTextFallbackRequest(route, images(6))).toBe(false);
+        expect(supportsTextFallbackRequest(route, images(10))).toBe(true);
+        expect(supportsTextFallbackRequest(route, images(11))).toBe(false);
+    });
+
+    it.each([
+        { tools: [{ type: "function", function: { name: "weather" } }] },
+        { tool_choice: "auto" },
+        { tool_choice: "required" },
+        { functions: [{ name: "weather" }] },
+        { function_call: { name: "weather" } },
+        { parallel_tool_calls: false },
+        { response_format: { type: "json_object" } },
+        {
+            response_format: {
+                type: "json_schema",
+                json_schema: { name: "answer" },
+            },
+        },
+        { text: { format: { type: "json_object" } } },
+        { min_p: 0.1 },
+        { logit_bias: { "123": 1 } },
+        {
+            messages: [
+                {
+                    role: "assistant",
+                    tool_calls: [
+                        {
+                            type: "function",
+                            function: { name: "weather", arguments: "{}" },
+                        },
+                    ],
+                },
+            ],
+        },
+        {
+            messages: [
+                { role: "tool", content: "sunny", tool_call_id: "call_1" },
+            ],
+        },
+        { messages: [{ role: "function", name: "weather", content: "sunny" }] },
+        {
+            input: [
+                {
+                    type: "function_call",
+                    name: "weather",
+                    arguments: "{}",
+                    call_id: "call_1",
+                },
+            ],
+        },
+        {
+            input: [
+                {
+                    type: "function_call_output",
+                    call_id: "call_1",
+                    output: "sunny",
+                },
+            ],
+        },
+    ])("keeps unsupported Scout requests on the primary: %j", (request) => {
+        const before = JSON.stringify(request);
+        expect(
+            supportsTextFallbackRequest(
+                TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"],
+                request,
+            ),
+        ).toBe(false);
+        expect(JSON.stringify(request)).toBe(before);
+        expect(
+            supportsTextFallbackRequest(
+                TEXT_SERVICES["meta/llama-4-scout"],
+                request,
+            ),
+        ).toBe(true);
+    });
+
+    it("bounds Scout fallback requests by UTF-8 bytes for both transports", () => {
+        const route =
+            TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"];
+        for (const key of ["messages", "input"]) {
+            const request = {
+                [key]: "a".repeat(65536 - JSON.stringify({ [key]: "" }).length),
+            };
+            expect(supportsTextFallbackRequest(route, request)).toBe(true);
+            expect(
+                supportsTextFallbackRequest(route, {
+                    [key]: `${request[key]}a`,
+                }),
+            ).toBe(false);
+            expect(
+                supportsTextFallbackRequest(route, {
+                    [key]: "🌸".repeat(20000),
+                }),
+            ).toBe(false);
+        }
     });
 
     it("binds fallback-only text ids to their exact provider routes", () => {

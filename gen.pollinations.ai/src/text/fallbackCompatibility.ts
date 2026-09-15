@@ -37,12 +37,43 @@ function requestedCompletionTokens(request: Record<string, unknown>): number {
     );
 }
 
+function hasToolHistory(value: unknown): boolean {
+    if (Array.isArray(value)) return value.some(hasToolHistory);
+    if (!value || typeof value !== "object") return false;
+    const item = value as Record<string, unknown>;
+    return (
+        item.role === "tool" ||
+        item.role === "function" ||
+        item.type === "function_call" ||
+        item.type === "function_call_output" ||
+        item.function_call != null ||
+        (Array.isArray(item.tool_calls) && item.tool_calls.length > 0) ||
+        Object.values(item).some(hasToolHistory)
+    );
+}
+
 /** Whether a fallback route can honor this text request's public contract. */
 export function supportsTextFallbackRequest(
     definition: ModelDefinition | undefined,
     request: Record<string, unknown>,
 ): boolean {
     if (!definition) return true;
+    if (
+        definition.unsupportedParameters?.some(
+            (parameter) => request[parameter] != null,
+        ) ||
+        (definition.tools === false &&
+            (hasToolHistory(request.messages) || hasToolHistory(request.input)))
+    ) {
+        return false;
+    }
+    if (
+        definition.maxRequestBytes !== undefined &&
+        new TextEncoder().encode(JSON.stringify(request)).byteLength >
+            definition.maxRequestBytes
+    ) {
+        return false;
+    }
     if (
         definition.supportsForcedToolChoice === false &&
         (forcesToolChoice(request.tool_choice) ||

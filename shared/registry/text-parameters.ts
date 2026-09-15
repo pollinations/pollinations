@@ -253,7 +253,15 @@ export const CHAT_PARAMETERS = {
         "seed",
         "reasoning_effort",
     ],
-    openRouterLlamaScout: [...SAMPLED_CHAT, ...PENALTIES, "top_k", "seed"],
+    openRouterLlamaScoutNovita: [
+        ...CHAT,
+        ...SAMPLING,
+        ...PENALTIES,
+        "stop",
+        "top_k",
+        "seed",
+        "repetition_penalty",
+    ],
     openRouterMinimax27: [
         ...SAMPLED_CHAT,
         ...PENALTIES,

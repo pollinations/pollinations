@@ -21,6 +21,79 @@ afterEach(() => {
 });
 
 describe("generateTextPortkey", () => {
+    it.each([
+        429, 503,
+    ])("rescues Scout upstream %i through Novita at the original quote", async (status) => {
+        const primary = "meta/llama-4-scout" as const;
+        const fallback = "meta/llama-4-scout:openrouter:novita-bf16" as const;
+        const routes: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                expect(String(input)).toBe(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                );
+                const body = JSON.parse(String(init?.body));
+                expect(body.model).toBe("meta-llama/llama-4-scout");
+                expect(body.provider.allow_fallbacks).toBe(false);
+                const route = body.provider.only[0];
+                routes.push(route);
+                if (route === "deepinfra/fp8") {
+                    return Response.json(
+                        { error: { message: "Capacity exhausted" } },
+                        { status },
+                    );
+                }
+                expect(body.max_tokens).toBe(128);
+                return Response.json({
+                    model: "meta-llama/llama-4-scout",
+                    provider: "Novita",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "Red." },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    // Fresh 1-image Novita probe; images are included in prompt_tokens.
+                    usage: {
+                        prompt_tokens: 167,
+                        completion_tokens: 3,
+                        total_tokens: 170,
+                    },
+                });
+            },
+        );
+        const { result, candidate, index } = await withModelFallback(
+            [primary, ...TEXT_SERVICES[primary].fallbacks].map((id) => ({
+                id,
+                definition: TEXT_SERVICES[id as keyof typeof TEXT_SERVICES],
+            })),
+            ({ id }) =>
+                generateTextPortkey(
+                    [{ role: "user", content: "Name the color." }],
+                    { model: id, max_tokens: 128 },
+                ),
+        );
+        expect(routes).toEqual(["deepinfra/fp8", "novita/bf16"]);
+        expect(candidate.id).toBe(fallback);
+        expect(index).toBe(1);
+        expect(result.choices?.[0]?.message?.content).toBe("Red.");
+        const billing = calculateUsageBilling({
+            model: primary,
+            usage: openaiUsageToUsage(
+                result.usage as Parameters<typeof openaiUsageToUsage>[0],
+            ),
+            servedBy: TEXT_SERVICES[fallback],
+            quotedBy: TEXT_SERVICES[primary],
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(
+            ((167 * 0.18 + 3 * 0.59) / 1_000_000) * 1.055,
+            12,
+        );
+        // Customer charges use the ledger's eight-decimal precision.
+        expect(billing.price.totalPrice).toBe(0.00001857);
+    });
+
     it("falls back from East US to Sweden Grok and bills image and reasoning usage", async () => {
         const hosts: string[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(

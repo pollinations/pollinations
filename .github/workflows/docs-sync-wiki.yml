@@ -1,0 +1,48 @@
+name: Docs / Sync Wiki
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/wiki/**'
+      - '.github/workflows/docs-sync-wiki.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: docs-wiki-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  sync-wiki:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Checkout wiki repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: .wiki-repo
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync and push wiki files
+        run: |
+          cd .wiki-repo
+          # Remove existing wiki files except .git directory
+          find . -maxdepth 1 ! -name '.git' ! -name '.' -exec rm -rf {} +
+          # Copy updated markdown files from repo
+          cp -r ../.github/wiki/* .
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No wiki changes to sync."
+          else
+            git commit -m "docs(wiki): sync wiki from main [skip ci]"
+            git push origin master
+          fi

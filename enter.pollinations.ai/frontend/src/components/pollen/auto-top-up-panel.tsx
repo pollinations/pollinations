@@ -1,4 +1,5 @@
 import { apiClient } from "@frontend/api.ts";
+import { apiErrorMessage } from "@frontend/lib/api-error.ts";
 import {
     Button,
     CardIcon,
@@ -200,7 +201,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                 typeof payload.url === "string" ? payload.url : null;
             if (!response.ok || !portalUrl) {
                 throw new Error(
-                    extractErrorMessage(payload, "Failed to open Stripe"),
+                    apiErrorMessage(payload, "Failed to open Stripe"),
                 );
             }
             window.location.href = portalUrl;
@@ -223,10 +224,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                 const payload = await response.json().catch(() => ({}));
                 if (!response.ok) {
                     throw new Error(
-                        extractErrorMessage(
-                            payload,
-                            "Failed to save auto top-up",
-                        ),
+                        apiErrorMessage(payload, "Failed to save auto top-up"),
                     );
                 }
                 const nextBillingState = payload as BillingState;
@@ -576,17 +574,6 @@ function normalizePackAmount(value: number | null | undefined): number {
                 : closest,
         firstPack,
     ).amountUsd;
-}
-
-function extractErrorMessage(payload: unknown, fallback: string): string {
-    if (!payload || typeof payload !== "object") return fallback;
-    const { error, message } = payload as {
-        error?: unknown;
-        message?: unknown;
-    };
-    if (typeof error === "string") return error;
-    if (typeof message === "string") return message;
-    return fallback;
 }
 
 function isStripeBillingReturn(): boolean {

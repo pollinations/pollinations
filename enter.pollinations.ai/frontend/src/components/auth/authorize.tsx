@@ -27,6 +27,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
 import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
+import { apiResponseError } from "../../lib/api-error.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
 import {
     deviceCodeMessages,
@@ -126,7 +127,7 @@ export function Authorize() {
         clientId: string | null;
     } | null>(null);
     const initializedDeviceCode = useRef<string | null>(null);
-    const [deviceRecovery, setDeviceRecovery] = useState<
+    const [recovery, setRecovery] = useState<
         "code" | "retry" | "deny" | "sign-in" | null
     >(null);
     const {
@@ -248,7 +249,7 @@ export function Authorize() {
         setAppLookupStatus("idle");
         if (isDeviceMode) {
             setError(null);
-            setDeviceRecovery(null);
+            setRecovery(null);
             setDeviceRequest(null);
             setAttribution(null);
             setAppLookupStatus("pending");
@@ -265,7 +266,7 @@ export function Authorize() {
                                 ? "unavailable"
                                 : "invalid",
                         );
-                        setDeviceRecovery(
+                        setRecovery(
                             device.error === "unavailable" ? "retry" : "code",
                         );
                         setError(deviceCodeMessages[device.error]);
@@ -303,7 +304,7 @@ export function Authorize() {
                 } catch {
                     if (!active) return;
                     setAppLookupStatus("unavailable");
-                    setDeviceRecovery("retry");
+                    setRecovery("retry");
                     setError("Couldn’t check this connection. Try again.");
                 }
             }
@@ -434,7 +435,7 @@ export function Authorize() {
         if (!canAuthorize || isAuthorizing) return;
 
         setPendingAction("authorize");
-        if (isDeviceMode) setDeviceRecovery("retry");
+        if (isDeviceMode) setRecovery("retry");
         setError(null);
 
         try {
@@ -489,11 +490,9 @@ export function Authorize() {
                     },
                 });
                 if (!res.ok) {
-                    const data = await res.json().catch(() => null);
-                    throw new Error(
-                        (data as { message?: string })?.message ||
-                            "Failed to approve device",
-                        { cause: res.status },
+                    throw await apiResponseError(
+                        res,
+                        "Failed to approve device",
                     );
                 }
                 setDeviceOutcome("approved");
@@ -531,15 +530,12 @@ export function Authorize() {
                         // The key was minted but can't be delivered — don't
                         // leave an active orphan in the account.
                         authClient.apiKey.delete({ keyId: id }).catch(() => {});
-                        const data = (await res?.json().catch(() => null)) as {
-                            message?: string;
-                            error?: { message?: string };
-                        } | null;
-                        throw new Error(
-                            data?.message ||
-                                data?.error?.message ||
-                                "Failed to create authorization code",
-                        );
+                        throw res
+                            ? await apiResponseError(
+                                  res,
+                                  "Failed to create authorization code",
+                              )
+                            : new Error("Failed to create authorization code");
                     }
                     const { code } = (await res.json()) as { code: string };
                     url.searchParams.set("code", code);
@@ -553,9 +549,8 @@ export function Authorize() {
                 window.location.href = url.toString();
             }
         } catch (e) {
-            const sessionExpired =
-                isDeviceMode && e instanceof Error && e.cause === 401;
-            if (sessionExpired) setDeviceRecovery("sign-in");
+            const sessionExpired = e instanceof Error && e.cause === 401;
+            if (sessionExpired) setRecovery("sign-in");
             setError(
                 sessionExpired
                     ? "Your pollinations.ai session expired. Sign in again to continue."
@@ -573,7 +568,7 @@ export function Authorize() {
             if (!user || deviceRequest?.code !== user_code) return;
             setPendingAction("deny");
             setError(null);
-            setDeviceRecovery("deny");
+            setRecovery("deny");
             try {
                 const response = await apiClient.device.deny.$post({
                     json: { userCode: user_code },
@@ -585,7 +580,7 @@ export function Authorize() {
                 setDeviceOutcome("denied");
             } catch (e) {
                 const sessionExpired = e instanceof Error && e.cause === 401;
-                if (sessionExpired) setDeviceRecovery("sign-in");
+                if (sessionExpired) setRecovery("sign-in");
                 setError(
                     sessionExpired
                         ? "Your pollinations.ai session expired. Sign in again to continue."
@@ -613,14 +608,13 @@ export function Authorize() {
         }
     }
 
-    const showingConnectionError =
-        !!error && (!isDeviceMode || deviceRecovery !== "sign-in");
+    const showingConnectionError = !!error && recovery !== "sign-in";
     const showingSignIn =
         isPending ||
         !user ||
         !!signInError ||
         isSigningIn ||
-        deviceRecovery === "sign-in";
+        recovery === "sign-in";
     const accountHeader = user ? (
         <AuthAccountIdentity
             user={user}
@@ -652,23 +646,23 @@ export function Authorize() {
                 account={accountHeader}
                 error={error}
                 verified={appLookupStatus === "valid"}
-                operation={deviceRecovery === "deny" ? "decline" : "connect"}
+                operation={recovery === "deny" ? "decline" : "connect"}
                 pending={isAttributionPending || isAuthorizing}
                 onRetry={
-                    deviceRecovery === "code"
+                    recovery === "code"
                         ? () =>
                               navigate({
                                   to: "/device",
                                   search: { user_code: "" },
                               })
                         : appLookupStatus === "unavailable" ||
-                            deviceRecovery === "retry" ||
-                            deviceRecovery === "deny"
+                            recovery === "retry" ||
+                            recovery === "deny"
                           ? () => setLookupAttempt((attempt) => attempt + 1)
                           : undefined
                 }
                 retryLabel={
-                    deviceRecovery === "code" ? "Enter another code" : undefined
+                    recovery === "code" ? "Enter another code" : undefined
                 }
                 onBack={
                     isDeviceMode
@@ -705,12 +699,12 @@ export function Authorize() {
                 }
                 error={displayedError}
                 errorTitle={
-                    !signInError && deviceRecovery === "sign-in"
+                    !signInError && recovery === "sign-in"
                         ? "Session expired"
                         : undefined
                 }
                 actions={
-                    (!error || deviceRecovery === "sign-in") && (
+                    (!error || recovery === "sign-in") && (
                         <GitHubSignInButton
                             onClick={signIn}
                             isSigningIn={
@@ -723,11 +717,9 @@ export function Authorize() {
                                       ? "Checking app…"
                                       : undefined
                             }
-                            retry={
-                                !!signInError || deviceRecovery === "sign-in"
-                            }
+                            retry={!!signInError || recovery === "sign-in"}
                             retryLabel={
-                                deviceRecovery === "sign-in"
+                                recovery === "sign-in"
                                     ? "Sign in again"
                                     : undefined
                             }

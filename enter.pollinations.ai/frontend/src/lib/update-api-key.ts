@@ -1,5 +1,6 @@
 import { apiClient } from "../api.ts";
 import type { ApiKeyUpdateParams } from "../components/keys/types.ts";
+import { apiResponseError } from "./api-error.ts";
 
 /** Server-side fields of a key (budget, models, expiry, permissions). */
 export async function updateApiKey(
@@ -17,14 +18,9 @@ export async function updateApiKey(
         },
     });
     if (!response.ok) {
-        const error = (await response.json().catch(() => null)) as {
-            message?: string;
-            error?: { message?: string };
-        } | null;
-        throw new Error(
-            error?.error?.message ||
-                error?.message ||
-                "Couldn’t save app access. Try again.",
+        throw await apiResponseError(
+            response,
+            "Couldn’t save app access. Try again.",
         );
     }
 }

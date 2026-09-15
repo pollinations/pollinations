@@ -1,5 +1,6 @@
 import { expiryDaysToExpiresIn } from "@shared/auth/authorize-config.ts";
 import { apiClient } from "../api.ts";
+import { apiResponseError } from "./api-error.ts";
 
 type Permissions = {
     allowedModels?: string[] | null;
@@ -50,14 +51,7 @@ export async function createKeyWithPermissions({
     });
 
     if (!response.ok) {
-        const err = (await response.json().catch(() => null)) as {
-            message?: string;
-            error?: { message?: string };
-        } | null;
-        throw new Error(
-            err?.message || err?.error?.message || "Failed to create API key",
-            { cause: response.status },
-        );
+        throw await apiResponseError(response, "Failed to create API key");
     }
 
     const data = (await response.json()) as {

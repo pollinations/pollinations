@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-    ensureModelQuerySource,
+    ensureModelQueryDefaults,
     getModelQueryDraftFilter,
     getModelQueryDraftSuggestionValue,
     getModelQueryFilterTokens,
@@ -88,17 +88,51 @@ describe("parseModelQuery", () => {
     });
 });
 
-describe("model query source", () => {
-    it("preselects official without replacing an explicit source", () => {
-        expect(ensureModelQuerySource("")).toBe("source:official");
-        expect(ensureModelQuerySource("capability:reasoning")).toBe(
-            "source:official capability:reasoning",
+describe("model query defaults", () => {
+    it("preselects official and reliable without replacing explicit or unfinished filters", () => {
+        expect(ensureModelQueryDefaults("")).toBe(
+            "source:official reliability:reliable",
         );
-        expect(ensureModelQuerySource("source:community")).toBe(
-            "source:community",
+        expect(ensureModelQueryDefaults("capability:reasoning")).toBe(
+            "source:official reliability:reliable capability:reasoning",
         );
-        expect(ensureModelQuerySource("source:")).toBe("source:");
+        expect(ensureModelQueryDefaults("source:community")).toBe(
+            "reliability:reliable source:community",
+        );
+        expect(ensureModelQueryDefaults("source: reliability:")).toBe(
+            "source: reliability:",
+        );
+        expect(
+            ensureModelQueryDefaults("SOURCE:community reliability:all"),
+        ).toBe("SOURCE:community reliability:all");
     });
+});
+
+it("filters by the API health result without hiding unknown models in all mode", () => {
+    for (const status of ["on", "degraded", "off", "unknown"] as const) {
+        for (const stale of [false, true]) {
+            const candidate = model({
+                health: {
+                    status,
+                    stale,
+                    success_rate: null,
+                    sample_size: 0,
+                    checked_at: null,
+                    window_minutes: 1440,
+                },
+            });
+            expect(matches(candidate, "reliability:reliable")).toBe(
+                status === "on" && !stale,
+            );
+            expect(matches(candidate, "reliability:all")).toBe(true);
+        }
+    }
+    expect(matches(model(), "reliability:reliable")).toBe(false);
+    expect(matches(model(), "reliability:all")).toBe(true);
+    expect(getModelQuerySuggestions("reliability:", [])).toEqual([
+        "reliability:all ",
+        "reliability:reliable ",
+    ]);
 });
 
 describe("model query filter tokens", () => {
@@ -311,6 +345,7 @@ describe("getModelQuerySuggestions", () => {
             "capability:",
             "id:",
             "publisher:",
+            "reliability:",
             "source:",
             "type:",
         ]);

@@ -40,7 +40,7 @@ import {
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
 import {
-    ensureModelQuerySource,
+    ensureModelQueryDefaults,
     getExplicitModelQuerySource,
     getModelQueryDraftFilter,
     getModelQueryDraftSuggestionValue,
@@ -239,6 +239,7 @@ const isSourceSuggestion = (option: string): boolean =>
 const MODEL_FILTER_LABELS: Record<ModelQueryFilter["key"], string> = {
     access: "Access",
     source: "Source",
+    reliability: "Reliability",
     publisher: "Publisher",
     id: "ID",
     type: "Type",
@@ -312,7 +313,7 @@ export const Models: FC = () => {
     const urlSearch = modelSearch[searchParam] ?? "";
     const initialSearch =
         activePrimaryTab === "models"
-            ? ensureModelQuerySource(urlSearch)
+            ? ensureModelQueryDefaults(urlSearch)
             : urlSearch;
     const [search, setSearch] = useState(initialSearch);
     const [draftFilter, setDraftFilter] = useState<
@@ -371,17 +372,22 @@ export const Models: FC = () => {
     );
     const renderedFilterTokens = filterTokens;
     const renderedDraftFilter = draftFilter;
-    const modelModels = useMemo(
-        () =>
-            allModels.filter(
-                (model) =>
-                    !model.agent &&
-                    (explicitModelSource === undefined ||
-                        Boolean(model.community) ===
-                            (explicitModelSource === "community")),
+    const modelModels = useMemo(() => {
+        const reliabilityQuery = {
+            terms: [],
+            filters: parsedQuery.filters.filter(
+                ({ key }) => key === "reliability",
             ),
-        [allModels, explicitModelSource],
-    );
+        };
+        return allModels.filter(
+            (model) =>
+                !model.agent &&
+                matchesModelQuery(model, reliabilityQuery) &&
+                (explicitModelSource === undefined ||
+                    Boolean(model.community) ===
+                        (explicitModelSource === "community")),
+        );
+    }, [allModels, explicitModelSource, parsedQuery]);
     const modelSections = useMemo(
         () => categorizeModels(modelModels),
         [modelModels],
@@ -596,7 +602,7 @@ export const Models: FC = () => {
         setEditingFilterToken(undefined);
         const nextSearch =
             activePrimaryTab === "models"
-                ? ensureModelQuerySource(urlSearch)
+                ? ensureModelQueryDefaults(urlSearch)
                 : urlSearch;
         setDraftFilter(
             getModelQueryDraftFilter(nextSearch, false, supportedFilterKeys),

@@ -16,6 +16,7 @@
 .connect-review-stack button { align-self: flex-end; max-width: 100%; }
 .connect-review-stack .connect-device-status { align-items: flex-end; }
 @media (max-width: 760px) {
+    .connect-workspace:has(.screens-gallery) .connect-content,
     .connect-workspace:has(.connect-review-float) .connect-content { margin-right: min(200px, 44vw); }
     .connect-review-float { right: 12px; }
     .connect-review-stack { width: min(176px, calc(44vw - 24px)); }

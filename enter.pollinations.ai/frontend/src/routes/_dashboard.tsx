@@ -118,6 +118,7 @@ function DashboardLayout() {
             onSignOut={data.user ? handleSignOut : undefined}
             accountArea={data.user ? undefined : <SignedOutAccountArea />}
             showFooterLinks={Boolean(data.user)}
+            showQuestStatus={Boolean(data.user)}
             walletArea={
                 data.user ? (
                     <Await

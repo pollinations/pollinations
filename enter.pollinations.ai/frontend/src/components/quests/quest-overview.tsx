@@ -34,6 +34,7 @@ import type {
     QuestCatalogResponse,
     QuestCheckResult,
 } from "../../backend-types.ts";
+import { QUEST_STATUS_UPDATED_EVENT } from "./quest-nav-status.ts";
 
 type QuestCatalogItem = QuestCatalogResponse["quests"][number];
 type QuestProgress = QuestCheckResult["progress"][number];
@@ -712,6 +713,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                         loading: false,
                         error: null,
                     }));
+                    window.dispatchEvent(new Event(QUEST_STATUS_UPDATED_EVENT));
                     return;
                 }
                 // Not ok (throttled or failed) — just stop the indicator.
@@ -751,6 +753,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
                 loading: false,
                 error: null,
             }));
+            window.dispatchEvent(new Event(QUEST_STATUS_UPDATED_EVENT));
         } catch (error) {
             setState((current) => ({
                 ...current,

@@ -248,6 +248,99 @@ it.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
     240_000,
 );
 
+it.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
+    "verifies consent identity, grants and fields through the real App and Device pages",
+    async () => {
+        const { startRuntime } = await import("../runtime");
+        let probe: ReviewCase | undefined;
+        const service = createCaptureService({
+            loadCases: async () => ({
+                reviewCasesForFlow: (flow, section) =>
+                    reviewCasesForFlow(flow, section).map((item) =>
+                        probe?.id === item.id ? probe : item,
+                    ),
+            }),
+            loadRuntime: async () => startRuntime,
+        });
+        try {
+            // Busy approval requests are held before key creation. No successful
+            // approval or reusable credential is needed to review the form.
+            for (const [flow, ids] of [
+                [
+                    "app",
+                    [
+                        "consent",
+                        "consent-no-pollen",
+                        "consent-paid-required",
+                        "consent-checking",
+                        "consent-models-loading",
+                        "consent-models-error",
+                        "consent-connecting",
+                    ],
+                ],
+                [
+                    "device",
+                    [
+                        "consent",
+                        "consent-no-pollen",
+                        "consent-paid-required",
+                        "device-checking",
+                        "device-approving",
+                        "device-denying",
+                    ],
+                ],
+            ] as const) {
+                for (const id of ids) {
+                    const result = await capture(service, flow, "main", id);
+                    expect(
+                        result.status,
+                        result.status === "error" ? result.error : id,
+                    ).toBe("ready");
+                }
+            }
+            const consent = reviewCasesForFlow("app", "main").find(
+                ({ id }) => id === "consent",
+            );
+            if (!consent) throw new Error("Missing consent recipe");
+            // The same real page must fail when the recipe expects a different
+            // app, grant or limit. This exercises the capture verifier itself.
+            for (const mismatch of [
+                {
+                    selector: "#authorize-dialog-title",
+                    text: "Another app",
+                },
+                {
+                    selector:
+                        'label:has(input[aria-label="Share display name and email"]:not(:checked))',
+                },
+                {
+                    selector: 'input[name="pollen-budget"][value="3"]',
+                },
+                {
+                    selector: 'input[name="expiry-days"][value="14"]',
+                },
+            ]) {
+                probe = {
+                    ...consent,
+                    expected: [...consent.expected, mismatch],
+                };
+                service.invalidate();
+                expect(
+                    await capture(service, "app", "main", consent.id),
+                ).toMatchObject({
+                    status: "error",
+                    error: expect.stringContaining(
+                        `checking ${mismatch.text ?? mismatch.selector}`,
+                    ),
+                });
+            }
+        } finally {
+            await service.close();
+        }
+    },
+    300_000,
+);
+
 const selection = {
     flow: "app",
     section: "main",

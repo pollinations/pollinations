@@ -5,6 +5,7 @@ import { getDefaultErrorMessage } from "../../shared/error.ts";
 import { adminScreens } from "./pollen-connect-admin";
 import { type DeviceEntry, getDeviceFlow } from "./pollen-connect-device";
 import type { ReviewCase } from "./review-cases";
+import { consentExpected } from "./review-consent";
 import { fundingReview, fundingSituations } from "./review-funding";
 
 const signInReady = [
@@ -12,8 +13,13 @@ const signInReady = [
     { selector: 'button:not([disabled]):has-text("Sign in with GitHub")' },
 ];
 const consentReady = [
-    { selector: "#authorize-dialog-title" },
+    ...consentExpected("device"),
     { selector: 'button[aria-busy="false"]:has-text("Allow access")' },
+];
+const connectionRecovery = [
+    { selector: "#connection-error-title" },
+    { selector: 'button:not([disabled]):text-is("Try again")' },
+    { selector: 'button:not([disabled]):text-is("Cancel")' },
 ];
 
 // The Device submenu changes only its entry URL. Consent and recovery continue
@@ -177,13 +183,17 @@ export function deviceReviewCasesForSection(
             conditions: { account: "signed-in" },
             expected: [
                 { selector: "#connection-error-title" },
-                { selector: "[role='alert']", text: "app" },
+                {
+                    selector: "[role='alert']",
+                    text: "This app key could not be verified. Authorization blocked.",
+                },
+                { selector: 'button:not([disabled]):text-is("Cancel")' },
             ],
         }),
         ...([false, true] as const).map((failed) =>
             recipe(
                 failed ? "device-submit-approve" : "device-result",
-                failed ? "consent" : "device-result",
+                failed ? "device-errors" : "device-result",
                 {
                     query: { screen: "device-consent" },
                     prepare: { device: "pending" },
@@ -206,6 +216,7 @@ export function deviceReviewCasesForSection(
                     ],
                     expected: failed
                         ? [
+                              ...connectionRecovery,
                               {
                                   selector: "[role='alert']",
                                   text: getDefaultErrorMessage(500),
@@ -286,7 +297,20 @@ export function deviceReviewCasesForSection(
                 prepare: { device: "pending" },
                 conditions: { account: "signed-in" },
                 requests: [{ path, outcome }],
-                expected: [{ selector, text }],
+                expected: [
+                    ...(id === "device-request-lookup"
+                        ? connectionRecovery
+                        : []),
+                    ...(id === "device-checking"
+                        ? [
+                              {
+                                  selector: "#authorize-dialog-title",
+                                  text: "Your device",
+                              },
+                          ]
+                        : []),
+                    { selector, text },
+                ],
             }),
         ),
         ...(
@@ -344,7 +368,27 @@ export function deviceReviewCasesForSection(
                 conditions: { account: "signed-in" },
                 requests: [{ path, method: "POST", outcome }],
                 steps: [{ selector: "button", text: button, action: "click" }],
-                expected: [{ selector, text }],
+                expected: [
+                    ...(["device-submit-key", "device-submit-deny"].includes(id)
+                        ? connectionRecovery
+                        : []),
+                    ...(id === "device-submit-session"
+                        ? [
+                              {
+                                  selector: "#sign-in-title",
+                                  text: "Session expired",
+                              },
+                              {
+                                  selector:
+                                      'button:not([disabled]):has(span:text-is("Sign in again"))',
+                              },
+                          ]
+                        : []),
+                    ...(["device-approving", "device-denying"].includes(id)
+                        ? consentExpected("device")
+                        : []),
+                    { selector, text },
+                ],
             }),
         ),
         recipe("device-declined", "device-result", {

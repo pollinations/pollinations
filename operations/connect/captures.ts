@@ -500,6 +500,25 @@ export function createCaptureService(options: {
                     .first()
                     .waitFor({ state: "visible" });
             }
+            if (
+                recipe.query.screen === "device-consent" &&
+                recipe.expected.some(
+                    ({ selector }) => selector === "#authorize-dialog-title",
+                )
+            ) {
+                stage = "checking the consent device code";
+                const code = state.device?.userCode;
+                if (
+                    !code ||
+                    new URL(page.url()).searchParams.get("user_code") !== code
+                )
+                    throw new Error(
+                        "Consent does not match the prepared device request",
+                    );
+                await page
+                    .getByText(`Code: ${code}`, { exact: true })
+                    .waitFor({ state: "visible" });
+            }
             const finalPath = new URL(page.url()).pathname;
             if (finalPath !== expectedFinalPath)
                 throw new Error("Page changed after verifying the route");

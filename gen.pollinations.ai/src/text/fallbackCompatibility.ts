@@ -104,14 +104,5 @@ export function supportsTextFallbackRequest(
     definition: ModelDefinition | undefined,
     request: Record<string, unknown>,
 ): boolean {
-    if (!definition) return true;
-    if (textCapabilityError(definition, request)) return false;
-    if (
-        definition.supportsForcedToolChoice === false &&
-        (forcesToolChoice(request.tool_choice) ||
-            forcesToolChoice(request.function_call))
-    ) {
-        return false;
-    }
-    return true;
+    return textCapabilityError(definition, request) === undefined;
 }

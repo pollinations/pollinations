@@ -197,8 +197,6 @@ export type ModelDefinition = {
     inputModalities?: ModelInputModality[];
     outputModalities?: ModelOutputModality[];
     tools?: boolean;
-    /** Internal route limitation: false when forced/named tool selection fails. */
-    supportsForcedToolChoice?: boolean;
     /** Controls honored by this model through `/v1/chat/completions`. */
     supportedParameters?: string[];
     reasoning?: boolean;

@@ -1,9 +1,23 @@
 import { getDefaultErrorMessage, getErrorCode } from "../../shared/error.ts";
+export const reviewErrorStatuses = {
+    "server-error": 500,
+    unavailable: 503,
+    unauthorized: 401,
+    forbidden: 403,
+} as const;
+
 export type ReviewRequest = {
     path: string;
     method?: string;
-    outcome: "pending" | "unavailable" | "unauthorized" | "forbidden";
+    outcome: "pending" | keyof typeof reviewErrorStatuses;
 };
+
+export function describeReviewRequest(rule: ReviewRequest): string {
+    const request = `${rule.method ?? "GET"} ${rule.path}`;
+    return rule.outcome === "pending"
+        ? `Held request: ${request}`
+        : `Injected HTTP ${reviewErrorStatuses[rule.outcome]}: ${request} (shared default response, not an endpoint-generated error)`;
+}
 
 export function parseReviewRequests(value: unknown): ReviewRequest[] {
     if (!Array.isArray(value) || value.length > 8)
@@ -20,9 +34,8 @@ export function parseReviewRequests(value: unknown): ReviewRequest[] {
             !/^\/(api|gen|auth)\/[a-zA-Z0-9_./*-]+$/.test(rule.path) ||
             (rule.method !== undefined &&
                 !["GET", "POST", "PATCH", "DELETE"].includes(rule.method)) ||
-            !["pending", "unavailable", "unauthorized", "forbidden"].includes(
-                rule.outcome,
-            )
+            (rule.outcome !== "pending" &&
+                !Object.hasOwn(reviewErrorStatuses, rule.outcome))
         )
             throw new Error("Invalid local review request");
     }
@@ -32,15 +45,20 @@ export function parseReviewRequests(value: unknown): ReviewRequest[] {
 // Only Connect's transport knows about review conditions. Enter and Gen keep
 // their real response handling, loaders, forms and recovery behavior.
 export function createReviewRequests() {
-    let rules: (ReviewRequest & { started?: number })[] = [];
-    const releases = new Set<() => void>();
+    let rules: ReviewRequest[] = [];
+    const consumed = new Map<string, ReviewRequest>();
     function configure(value: unknown) {
-        const next = parseReviewRequests(value);
-        for (const release of releases) release();
-        rules = next.map((rule) => ({ ...rule }));
+        rules = parseReviewRequests(value).map((rule) => ({ ...rule }));
     }
     return {
         configure,
+        reset() {
+            configure([]);
+            consumed.clear();
+        },
+        evidence() {
+            return { pending: rules, consumed: [...consumed.values()] };
+        },
         async intercept(request: Request): Promise<Response | undefined> {
             const path = new URL(request.url).pathname;
             const rule = rules.find((rule) => {
@@ -50,40 +68,36 @@ export function createReviewRequests() {
                     (pattern.length === 1
                         ? path === rule.path
                         : path.startsWith(pattern[0]) &&
-                          path.endsWith(pattern.at(-1) ?? "")) &&
-                    (rule.started === undefined ||
-                        Date.now() - rule.started < 1000)
+                          path.endsWith(pattern.at(-1) ?? ""))
                 );
             });
             if (!rule) return;
-            // Treat StrictMode's initial duplicate reads as one attempt. A later
-            // user retry reaches the service normally.
-            rule.started ??= Date.now();
+            consumed.set(JSON.stringify(rule), rule);
             if (rule.outcome === "pending") {
-                await new Promise<void>((resolve) => {
-                    const release = () => {
-                        clearTimeout(timer);
-                        releases.delete(release);
-                        resolve();
+                // The originating page owns this request. Changing situations
+                // unmounts that page and aborts it; changing rules must never
+                // release a held write or manufacture an HTTP error response.
+                return new Promise<never>((_, reject) => {
+                    const cancel = () => {
+                        request.signal.removeEventListener("abort", cancel);
+                        reject(
+                            new DOMException("Request aborted", "AbortError"),
+                        );
                     };
-                    const timer = setTimeout(release, 15_000);
-                    releases.add(release);
-                    request.signal.addEventListener("abort", release, {
-                        once: true,
-                    });
+                    if (request.signal.aborted) cancel();
+                    else
+                        request.signal.addEventListener("abort", cancel, {
+                            once: true,
+                        });
                 });
             }
-            // Never forward a held write after the capture has finished.
-            const status =
-                rule.outcome === "unauthorized"
-                    ? 401
-                    : rule.outcome === "forbidden"
-                      ? 403
-                      : 503;
+            // Keep the chosen fault active until another situation is prepared.
+            const status = reviewErrorStatuses[rule.outcome];
             const message = getDefaultErrorMessage(status);
             const code = getErrorCode(status);
             // Better Auth endpoints use a flat error; Enter/Gen use the shared
-            // envelope. These are transport failures, not invented product states.
+            // envelope. These are explicit default HTTP fault injections. They
+            // do not reproduce a particular endpoint's internal failure or copy.
             return Response.json(
                 path.startsWith("/api/auth/")
                     ? { code: code.toUpperCase(), message }

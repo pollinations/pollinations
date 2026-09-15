@@ -304,7 +304,11 @@ export async function startRuntime(options: { persist?: boolean } = {}) {
                     );
                 }
                 try {
-                    let establishSession = false;
+                    // Opening a view selects the existing session cookie without
+                    // changing account data, review services or injected faults.
+                    let establishSession =
+                        url.pathname === "/__connect/state" &&
+                        request.method === "GET";
                     let clearAdminSession = false;
                     const initialized = await db
                         .prepare(
@@ -321,6 +325,13 @@ export async function startRuntime(options: { persist?: boolean } = {}) {
                     }
                     if (url.pathname === "/__connect/identity")
                         return localProvider.handoff(request);
+                    if (
+                        url.pathname === "/__connect/review/requests" &&
+                        request.method === "GET"
+                    )
+                        return Response.json(reviewRequests.evidence(), {
+                            headers: { "Cache-Control": "no-store" },
+                        });
                     if (
                         url.pathname === "/__connect/review/requests" &&
                         request.method === "POST"
@@ -357,7 +368,7 @@ export async function startRuntime(options: { persist?: boolean } = {}) {
                             entries.keys.map(({ name }) => kv.delete(name)),
                         );
                         await seedFixtures(db, kv);
-                        reviewRequests.configure([]);
+                        reviewRequests.reset();
                         reviewServices.configure({});
                         establishSession = true;
                         clearAdminSession = true;

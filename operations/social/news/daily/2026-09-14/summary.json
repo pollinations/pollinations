@@ -1,0 +1,63 @@
+{
+  "date": "2026-09-14",
+  "period_start": "2026-09-14",
+  "period_end": "2026-09-14",
+  "title": "Pollinations models now plug directly into LLM",
+  "summary": "A busy garden: native LLM integration, new agent quests, richer community discovery, and sturdier image and streaming paths.\n\nThe new llm-pollinations package brings authenticated Pollinations chat models into LLM 0.35 as native pollinations/<model-id> entries, with streaming, multi-turn chat, image attachments, tool calls, and async support. Agent builders also get intact metadata across text endpoints and richer headers, multipart files, and payloads in background generation. Less glue code; more strange little agents.\n\nThe app directory added Manhwa Studio for building generated webtoons and Co-Eco-Graph for exploring EVM indexing ecosystems as illustrated interactive graphs. Fourteen existing catalog entries also gained screenshots, so browsing no longer requires quite as much faith.\n\nMarkdown in shared UI components now renders inline images, audio, and video—including generated-media URLs that do not politely end in file extensions—alongside wrapping, labelled code blocks with copy controls. Community model publishers also now have clean icons throughout endpoint and catalog views.",
+  "pr_count": 13,
+  "prs": [
+    {
+      "number": 14808,
+      "date": "2026-09-14"
+    },
+    {
+      "number": 14815,
+      "date": "2026-09-14"
+    },
+    {
+      "number": 14841,
+      "date": "2026-09-14"
+    },
+    {
+      "number": 14842,
+      "date": "2026-09-14"
+    },
+    {
+      "number": 14843,
+      "date": "2026-09-14"
+    },
+    {
+      "number": 14849,
+      "date": "2026-09-14"
+    },
+    {
+      "number": 14856,
+      "date": "2026-09-14"
+    },
+    {
+      "number": 14864,
+      "date": "2026-09-14"
+    },
+    {
+      "number": 14866,
+      "date": "2026-09-14"
+    },
+    {
+      "number": 14868,
+      "date": "2026-09-14"
+    },
+    {
+      "number": 14871,
+      "date": "2026-09-14"
+    },
+    {
+      "number": 14874,
+      "date": "2026-09-14"
+    },
+    {
+      "number": 14890,
+      "date": "2026-09-14"
+    }
+  ],
+  "generated_at": "2026-09-15T06:30:50.869953+00:00"
+}

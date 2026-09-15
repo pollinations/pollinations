@@ -195,6 +195,21 @@ Account hooks are intentionally separate from the provider: `useAccountProfile`,
 `useAccountBalance`, `useAccountKey`, and `useAccountKeyUsage` return the raw
 SDK response shapes plus `{ isLoading, error, refresh }`.
 
+On startup, the provider checks a saved key through `/account/key` before
+reporting `isLoggedIn: true`. Use `isHydrated` to distinguish that check from a
+signed-out state. A `401` clears the key so the user can connect again. Other
+HTTP errors and network failures preserve the saved key, expose `error`, and
+provide `retryConnection()` through `useAuth()` and `useAuthActions()`. Retrying
+checks the same key without starting OAuth; `retryConnection` is `null` when no
+retry is available.
+
+Storage or navigation failures during `login()` are exposed through `error`
+and allow another login attempt. `logout()` clears the connection locally;
+it does not revoke the key. If storage removal fails, the current app still
+disconnects and reports the error, but the saved key may remain until removal
+succeeds. Account hooks expose temporary request failures through `error` and
+can recover with `refresh()` without disconnecting.
+
 #### SSR / Next.js App Router / RSC
 
 `PolliProvider` is **SSR-safe** but is a **client component** (it uses `useState` / `useEffect` and reads from `window.localStorage`):

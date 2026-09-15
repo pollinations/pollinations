@@ -2,6 +2,11 @@ import {
     type CommunityEndpointRuntime,
     communityEndpointSupportedEndpoints,
 } from "@shared/community-endpoints.ts";
+import {
+    isSequenceFallbackBalanceAllowed,
+    isSequenceFallbackPricingAllowed,
+    modelSequenceModelId,
+} from "@shared/model-sequences.ts";
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
@@ -31,6 +36,10 @@ import {
 } from "./community-models.ts";
 import { linkFallbackEntries } from "./fallback.ts";
 import { mediaPromptRoute } from "./media/prompt-route.ts";
+import {
+    getModelSequenceRegistryRows,
+    type ModelSequenceRegistryRow,
+} from "./model-sequences.ts";
 import { supportsDirectResponses } from "./text/availableModels.ts";
 
 const REGISTRY_TTL_MS = 60_000;
@@ -74,6 +83,12 @@ export type GenerationModelEntry = {
     info: ModelInfo;
     communityEndpoint?: CommunityEndpointRuntime;
     agentConfig?: AgentCatalogConfig;
+    // A virtual My Model: present when this entry is an owner-private fallback
+    // sequence projected from the model_sequence table.
+    modelSequence?: { ownerUserId: string };
+    // True on fallback copies linked from a sequence: the owner curated the
+    // target list, so key permissions on the sequence cover its targets.
+    sequenceTarget?: boolean;
     visible: boolean;
     // Entries that serve this model when its own upstream fails, in declared
     // order. A fallback's own list is not followed, so routing stays depth one.
@@ -199,12 +214,130 @@ function compareModelEntries(
     return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
 }
 
+/**
+ * A sequence target is revalidated at registry load: it must be a concrete
+ * model (never another sequence), share the primary's event type and request
+ * surface, stay at or below the primary's price, and not require Paid Pollen
+ * the primary does not. Community targets must be listed and either public or
+ * owned by the sequence owner; static targets must be visible.
+ */
+function isUsableSequenceTarget(
+    sequence: GenerationModelEntry,
+    ownerUserId: string,
+    target: GenerationModelEntry,
+): boolean {
+    if (target.modelSequence) return false;
+    if (target.eventType !== sequence.eventType) return false;
+    const targetEndpoint = target.communityEndpoint;
+    if (targetEndpoint) {
+        if (targetEndpoint.hiddenAt != null) return false;
+        if (
+            targetEndpoint.visibility === "private" &&
+            targetEndpoint.ownerUserId !== ownerUserId
+        ) {
+            return false;
+        }
+    } else if (!isVisibleModelDefinition(target.definition)) {
+        return false;
+    }
+    if (
+        !sequence.supportedEndpoints.every((endpoint) =>
+            target.supportedEndpoints.includes(endpoint),
+        )
+    ) {
+        return false;
+    }
+    if (
+        !isSequenceFallbackBalanceAllowed(
+            sequence.definition,
+            target.definition,
+        )
+    ) {
+        return false;
+    }
+    return isSequenceFallbackPricingAllowed(
+        sequence.definition,
+        target.definition,
+    );
+}
+
+/**
+ * Projects a model_sequence row into a registry entry cloned from its primary
+ * model: the primary supplies the quoted price, balance class, event type,
+ * endpoints, and capabilities, while the sequence overrides identity and
+ * declares the remaining ids as fallbacks. Returns null when the primary is
+ * gone or no longer callable by the owner - the sequence is disabled, not
+ * partially served.
+ */
+function sequenceRowToGenerationEntry(
+    row: ModelSequenceRegistryRow,
+    byIdOrAlias: Map<string, GenerationModelEntry>,
+): GenerationModelEntry | null {
+    const primary = byIdOrAlias.get(row.modelIds[0]);
+    if (!primary || primary.modelSequence) return null;
+    const primaryEndpoint = primary.communityEndpoint;
+    if (primaryEndpoint) {
+        if (primaryEndpoint.hiddenAt != null) return null;
+        if (
+            primaryEndpoint.visibility === "private" &&
+            primaryEndpoint.ownerUserId !== row.ownerUserId
+        ) {
+            return null;
+        }
+    } else if (!isVisibleModelDefinition(primary.definition)) {
+        return null;
+    }
+
+    const id = modelSequenceModelId(row.ownerGithubUsername, row.name);
+    const description = row.description?.trim();
+    const definition: ModelDefinition = {
+        ...primary.definition,
+        aliases: [],
+        fallbacks: row.modelIds.slice(1),
+        hidden: false,
+        fallbackOnly: undefined,
+        title: row.title,
+        description: description || primary.definition.description,
+        addedDate: row.createdAt.getTime(),
+    };
+    const entry: GenerationModelEntry = {
+        id,
+        aliases: [],
+        eventType: primary.eventType,
+        supportedEndpoints: primary.supportedEndpoints,
+        definition,
+        info: {
+            ...modelInfoFromDefinition(id, definition),
+            supported_endpoints: primary.supportedEndpoints,
+        },
+        modelSequence: { ownerUserId: row.ownerUserId },
+        // Owner-private: added back for the owner by visibleEntries().
+        visible: false,
+    };
+
+    const targets: GenerationModelEntry[] = [];
+    for (const targetId of definition.fallbacks ?? []) {
+        const target = byIdOrAlias.get(targetId);
+        if (!target || target.id === primary.id) continue;
+        if (!isUsableSequenceTarget(entry, row.ownerUserId, target)) continue;
+        if (targets.some((linked) => linked.id === target.id)) continue;
+        targets.push({
+            ...target,
+            fallbackEntries: undefined,
+            sequenceTarget: true,
+        });
+    }
+    entry.fallbackEntries = targets.length > 0 ? targets : undefined;
+    return entry;
+}
+
 function buildRegistry(
     sourceEntries: GenerationModelEntry[],
+    sequenceRows: ModelSequenceRegistryRow[] = [],
 ): GenerationModelRegistry {
     // Link on copies: STATIC_ENTRIES is module-level and shared across registry
     // rebuilds, so resolution must never mutate the originals.
-    const entries = sourceEntries.map((entry) => {
+    const entries: GenerationModelEntry[] = sourceEntries.map((entry) => {
         const supportedEndpoints = mediaPromptRoute(entry)
             ? [
                   ...new Set([
@@ -237,6 +370,18 @@ function buildRegistry(
     }
     applyAgentMetadata(entries, byIdOrAlias);
     linkFallbackEntries(entries, byIdOrAlias);
+
+    // Sequences link after every concrete model is registered so their ids
+    // resolve against the full catalog. They join the lookup before sorting:
+    // first-wins keeps a sequence from shadowing an existing id.
+    for (const row of sequenceRows) {
+        const entry = sequenceRowToGenerationEntry(row, byIdOrAlias);
+        if (!entry) continue;
+        if (byIdOrAlias.has(entry.id)) continue;
+        byIdOrAlias.set(entry.id, entry);
+        entries.push(entry);
+    }
+
     entries.sort(compareModelEntries);
 
     return {
@@ -244,6 +389,9 @@ function buildRegistry(
         visibleEntries: (callerUserId) =>
             entries.filter((entry) => {
                 if (entry.visible) return true;
+                if (entry.modelSequence) {
+                    return entry.modelSequence.ownerUserId === callerUserId;
+                }
                 const endpoint = entry.communityEndpoint;
                 return (
                     isVisibleModelDefinition(entry.definition) &&
@@ -259,11 +407,13 @@ async function loadGenerationModelRegistry(
     env: CommunityModelEnv,
 ): Promise<{ registry: GenerationModelRegistry; degraded: boolean }> {
     let communityEntries: GenerationModelEntry[] = [];
+    let sequenceRows: ModelSequenceRegistryRow[] = [];
     let degraded = false;
     try {
         communityEntries = (await getCommunityModelRegistryEntries(env)).map(
             communityEntryToGenerationEntry,
         );
+        sequenceRows = await getModelSequenceRegistryRows(env);
     } catch (error) {
         // Community models are additive: every request that resolves a model
         // goes through this registry, so letting a D1 failure escape turns a
@@ -275,7 +425,10 @@ async function loadGenerationModelRegistry(
         console.error("Community model registry unavailable", error);
     }
     return {
-        registry: buildRegistry([...STATIC_ENTRIES, ...communityEntries]),
+        registry: buildRegistry(
+            [...STATIC_ENTRIES, ...communityEntries],
+            sequenceRows,
+        ),
         degraded,
     };
 }

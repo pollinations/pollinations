@@ -357,6 +357,38 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   ),
 ]);
 
+// A virtual "My Models" sequence: an ordered list of existing model ids.
+// The first id is the primary model (it supplies price, modality and
+// capabilities to the gateway); the rest are fallback targets tried in order
+// when the primary fails. Sequences are owner-visible only in V1.
+export const modelSequence = sqliteTable("model_sequence", {
+  id: text("id").primaryKey(),
+  ownerUserId: text("owner_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  // JSON array of model ids, first element is the primary model.
+  modelIds: text("model_ids", { mode: "json" })
+    .$type<string[]>()
+    .default(sql`'[]'`)
+    .notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+}, (table) => [
+  index("idx_model_sequence_owner_user_id").on(table.ownerUserId),
+  uniqueIndex("idx_model_sequence_owner_name").on(
+    table.ownerUserId,
+    table.name,
+  ),
+]);
+
 // Drizzle relations for query builder joins
 export const userRelations = relations(user, ({ many }) => ({
   apikeys: many(apikey),
@@ -365,6 +397,7 @@ export const userRelations = relations(user, ({ many }) => ({
   stripeAutoTopUpAttempts: many(stripeAutoTopUpAttempt),
   stripeCardFingerprintAttempts: many(stripeCardFingerprintAttempt),
   communityEndpoints: many(communityEndpoint),
+  modelSequences: many(modelSequence),
 }));
 
 export const apikeyRelations = relations(apikey, ({ one }) => ({
@@ -411,6 +444,13 @@ export const stripeCardFingerprintAttemptRelations = relations(
 export const communityEndpointRelations = relations(communityEndpoint, ({ one }) => ({
   owner: one(user, {
     fields: [communityEndpoint.ownerUserId],
+    references: [user.id],
+  }),
+}));
+
+export const modelSequenceRelations = relations(modelSequence, ({ one }) => ({
+  owner: one(user, {
+    fields: [modelSequence.ownerUserId],
     references: [user.id],
   }),
 }));

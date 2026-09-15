@@ -118,6 +118,17 @@ export async function resolveModelDefinition(
         });
     }
 
+    // A model sequence is owner-only: to everyone else it doesn't exist, with
+    // the same "invalid model" response as an unknown name.
+    if (
+        entry.modelSequence &&
+        entry.modelSequence.ownerUserId !== callerUserId
+    ) {
+        throw new HTTPException(400, {
+            message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
+        });
+    }
+
     if (entry.eventType !== eventType) {
         const actualLabel = ENDPOINT_LABEL[entry.eventType];
         throw new HTTPException(400, {
@@ -235,6 +246,7 @@ export function resolveModel(
                 (entry) =>
                     (entry.definition.fallbackOnly === true &&
                         !entry.communityEndpoint) ||
+                    entry.sequenceTarget === true ||
                     allowedModels.includes(entry.id),
             );
         }

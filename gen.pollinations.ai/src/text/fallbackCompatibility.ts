@@ -38,17 +38,28 @@ function requestedCompletionTokens(request: Record<string, unknown>): number {
 }
 
 function hasToolHistory(value: unknown): boolean {
-    if (Array.isArray(value)) return value.some(hasToolHistory);
-    if (!value || typeof value !== "object") return false;
-    const item = value as Record<string, unknown>;
+    if (!Array.isArray(value)) return false;
+    // Chat messages and Responses input items carry tool history at this level.
+    // Do not recurse into user content or function argument JSON.
+    return value.some(
+        (item) =>
+            item &&
+            typeof item === "object" &&
+            (item.role === "tool" ||
+                item.role === "function" ||
+                item.type === "function_call" ||
+                item.type === "function_call_output" ||
+                item.function_call != null ||
+                (Array.isArray(item.tool_calls) && item.tool_calls.length > 0)),
+    );
+}
+
+function requestsStructuredOutput(format: unknown): boolean {
     return (
-        item.role === "tool" ||
-        item.role === "function" ||
-        item.type === "function_call" ||
-        item.type === "function_call_output" ||
-        item.function_call != null ||
-        (Array.isArray(item.tool_calls) && item.tool_calls.length > 0) ||
-        Object.values(item).some(hasToolHistory)
+        !!format &&
+        typeof format === "object" &&
+        "type" in format &&
+        format.type !== "text"
     );
 }
 
@@ -59,21 +70,24 @@ export function supportsTextFallbackRequest(
 ): boolean {
     if (!definition) return true;
     if (
-        definition.unsupportedParameters?.some(
-            (parameter) => request[parameter] != null,
-        ) ||
-        (definition.tools === false &&
-            (hasToolHistory(request.messages) || hasToolHistory(request.input)))
-    ) {
+        definition.tools === false &&
+        ((Array.isArray(request.tools) && request.tools.length > 0) ||
+            (Array.isArray(request.functions) &&
+                request.functions.length > 0) ||
+            forcesToolChoice(request.tool_choice) ||
+            forcesToolChoice(request.function_call) ||
+            request.parallel_tool_calls === true ||
+            hasToolHistory(request.messages) ||
+            hasToolHistory(request.input))
+    )
         return false;
-    }
+    const text = request.text as { format?: unknown } | undefined;
     if (
-        definition.maxRequestBytes !== undefined &&
-        new TextEncoder().encode(JSON.stringify(request)).byteLength >
-            definition.maxRequestBytes
-    ) {
+        definition.supportsStructuredOutput === false &&
+        (requestsStructuredOutput(request.response_format) ||
+            requestsStructuredOutput(text?.format))
+    )
         return false;
-    }
     if (
         definition.supportsForcedToolChoice === false &&
         (forcesToolChoice(request.tool_choice) ||

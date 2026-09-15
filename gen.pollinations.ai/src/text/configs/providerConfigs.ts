@@ -116,7 +116,7 @@ export function createDeepInfraModelConfig(
 ): ProviderConfig {
     return createOpenAICompatibleConfig(
         "https://api.deepinfra.com/v1/openai",
-        process.env.DEEPINFRA_API_KEY,
+        textEnvironmentValue("DEEPINFRA_API_KEY"),
         overrides,
     );
 }

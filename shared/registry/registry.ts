@@ -230,10 +230,8 @@ export type ModelDefinition = {
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
     /** Internal provider-route output-token cap used for fallback compatibility. */
     maxCompletionTokens?: number;
-    /** Internal fallback route: skip requests carrying any of these controls. */
-    unsupportedParameters?: string[];
-    /** Conservative serialized request envelope for a smaller fallback context. */
-    maxRequestBytes?: number;
+    /** Internal route limitation: false when JSON/structured output is rejected. */
+    supportsStructuredOutput?: boolean;
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.

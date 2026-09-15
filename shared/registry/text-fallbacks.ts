@@ -386,6 +386,16 @@ export const TEXT_FALLBACKS = {
         },
     },
     "meta/llama-4-scout": {
+        "meta/llama-4-scout:deepinfra": {
+            provider: "deepinfra",
+            addedDate: new Date("2026-09-15").getTime(),
+            // Direct access bypasses OpenRouter's quota; same DeepInfra backend.
+            cost: {
+                promptTextTokens: perMillion(0.1),
+                promptImageTokens: perMillion(0.1),
+                completionTextTokens: perMillion(0.3),
+            },
+        },
         "meta/llama-4-scout:openrouter:novita-bf16": {
             supportedParameters: CHAT_PARAMETERS.openRouterLlamaScoutNovita,
             provider: "openrouter",
@@ -400,22 +410,8 @@ export const TEXT_FALLBACKS = {
             // Live requests reject tools and structured output despite catalog
             // tool-choice claims. Do not drop these controls to obtain a rescue.
             tools: false,
-            unsupportedParameters: [
-                "tools",
-                "tool_choice",
-                "parallel_tool_calls",
-                "functions",
-                "function_call",
-                "response_format",
-                "text",
-                "min_p",
-                "logit_bias",
-            ],
+            supportsStructuredOutput: false,
             contextLength: 131072,
-            // Conservative request envelope, not a tokenizer: leave room for
-            // image expansion and chat framing in the smaller context window.
-            maxRequestBytes: 65536,
-            maxReferenceImages: 10,
             maxCompletionTokens: 16384,
         },
     },

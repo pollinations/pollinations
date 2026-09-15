@@ -388,6 +388,12 @@ export const portkeyConfig: PortkeyConfigMap = {
         "anthropic/claude-opus-4.7",
         "google-vertex/global",
     ),
+    "llama-scout-deepinfra": () =>
+        createDeepInfraModelConfig({
+            model: "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+            directEndpoint:
+                "https://api.deepinfra.com/v1/openai/chat/completions",
+        }),
     "llama-scout-openrouter-novita": createPinnedOpenRouterConfig(
         "meta-llama/llama-4-scout",
         "novita/bf16",

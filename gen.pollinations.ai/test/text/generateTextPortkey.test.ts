@@ -1,8 +1,10 @@
+import { env } from "cloudflare:test";
 import { calculateUsageBilling } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { openaiUsageToUsage } from "@shared/registry/usage-headers.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { withModelFallback } from "../../src/fallback.ts";
+import { syncTextEnvironment } from "../../src/text/environment.ts";
 import { generateTextPortkey } from "../../src/text/generateTextPortkey.js";
 
 const azureModelConfig = {
@@ -18,35 +20,63 @@ const azureModelConfig = {
 
 afterEach(() => {
     vi.restoreAllMocks();
+    syncTextEnvironment(env);
 });
 
 describe("generateTextPortkey", () => {
     it.each([
-        429, 503,
-    ])("rescues Scout upstream %i through Novita at the original quote", async (status) => {
+        [429, false],
+        [503, false],
+        [429, true],
+    ] as const)("rescues Scout upstream %i (direct unavailable: %s) at the original quote", async (status, directUnavailable) => {
+        syncTextEnvironment({
+            ...env,
+            DEEPINFRA_API_KEY: "test-direct-deepinfra-key",
+        });
         const primary = "meta/llama-4-scout" as const;
-        const fallback = "meta/llama-4-scout:openrouter:novita-bf16" as const;
+        const fallback = directUnavailable
+            ? "meta/llama-4-scout:openrouter:novita-bf16"
+            : "meta/llama-4-scout:deepinfra";
         const routes: string[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
-                expect(String(input)).toBe(
-                    "https://openrouter.ai/api/v1/chat/completions",
-                );
                 const body = JSON.parse(String(init?.body));
-                expect(body.model).toBe("meta-llama/llama-4-scout");
-                expect(body.provider.allow_fallbacks).toBe(false);
-                const route = body.provider.only[0];
-                routes.push(route);
-                if (route === "deepinfra/fp8") {
-                    return Response.json(
-                        { error: { message: "Capacity exhausted" } },
-                        { status },
+                if (
+                    String(input) ===
+                    "https://openrouter.ai/api/v1/chat/completions"
+                ) {
+                    expect(body.model).toBe("meta-llama/llama-4-scout");
+                    expect(body.provider.allow_fallbacks).toBe(false);
+                    const route = body.provider.only[0];
+                    routes.push(route);
+                    if (route === "deepinfra/fp8") {
+                        return Response.json(
+                            { error: { message: "Capacity exhausted" } },
+                            { status },
+                        );
+                    }
+                    expect(route).toBe("novita/bf16");
+                } else {
+                    expect(String(input)).toBe(
+                        "https://api.deepinfra.com/v1/openai/chat/completions",
                     );
+                    expect(body.model).toBe(
+                        "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+                    );
+                    expect(body.provider).toBeUndefined();
+                    expect(
+                        new Headers(init?.headers).get("Authorization"),
+                    ).toBe("Bearer test-direct-deepinfra-key");
+                    routes.push("deepinfra-direct");
+                    if (directUnavailable)
+                        return Response.json(
+                            { error: { message: "Unavailable" } },
+                            { status: 503 },
+                        );
                 }
                 expect(body.max_tokens).toBe(128);
                 return Response.json({
                     model: "meta-llama/llama-4-scout",
-                    provider: "Novita",
                     choices: [
                         {
                             index: 0,
@@ -54,7 +84,7 @@ describe("generateTextPortkey", () => {
                             finish_reason: "stop",
                         },
                     ],
-                    // Fresh 1-image Novita probe; images are included in prompt_tokens.
+                    // Images are included in provider prompt_tokens.
                     usage: {
                         prompt_tokens: 167,
                         completion_tokens: 3,
@@ -74,9 +104,13 @@ describe("generateTextPortkey", () => {
                     { model: id, max_tokens: 128 },
                 ),
         );
-        expect(routes).toEqual(["deepinfra/fp8", "novita/bf16"]);
+        expect(routes).toEqual([
+            "deepinfra/fp8",
+            "deepinfra-direct",
+            ...(directUnavailable ? ["novita/bf16"] : []),
+        ]);
         expect(candidate.id).toBe(fallback);
-        expect(index).toBe(1);
+        expect(index).toBe(directUnavailable ? 2 : 1);
         expect(result.choices?.[0]?.message?.content).toBe("Red.");
         const billing = calculateUsageBilling({
             model: primary,
@@ -87,7 +121,9 @@ describe("generateTextPortkey", () => {
             quotedBy: TEXT_SERVICES[primary],
         });
         expect(billing.cost.totalCost).toBeCloseTo(
-            ((167 * 0.18 + 3 * 0.59) / 1_000_000) * 1.055,
+            directUnavailable
+                ? ((167 * 0.18 + 3 * 0.59) / 1_000_000) * 1.055
+                : (167 * 0.1 + 3 * 0.3) / 1_000_000,
             12,
         );
         // Customer charges use the ledger's eight-decimal precision.

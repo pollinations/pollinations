@@ -16,6 +16,7 @@ import { TEXT_FALLBACKS } from "@shared/registry/text-fallbacks.ts";
 import { describe, expect, it } from "vitest";
 import { findModelByName } from "../src/text/availableModels.ts";
 import { supportsTextFallbackRequest } from "../src/text/fallbackCompatibility.ts";
+import { resolveDirectResponsesTarget } from "../src/text/responses/client.ts";
 
 const OPENROUTER_ROUTES = [
     [
@@ -520,11 +521,10 @@ describe("static provider fallbacks", () => {
 
     it.each([
         { tools: [{ type: "function", function: { name: "weather" } }] },
-        { tool_choice: "auto" },
         { tool_choice: "required" },
         { functions: [{ name: "weather" }] },
         { function_call: { name: "weather" } },
-        { parallel_tool_calls: false },
+        { parallel_tool_calls: true },
         { response_format: { type: "json_object" } },
         {
             response_format: {
@@ -533,8 +533,6 @@ describe("static provider fallbacks", () => {
             },
         },
         { text: { format: { type: "json_object" } } },
-        { min_p: 0.1 },
-        { logit_bias: { "123": 1 } },
         {
             messages: [
                 {
@@ -573,7 +571,7 @@ describe("static provider fallbacks", () => {
                 },
             ],
         },
-    ])("keeps unsupported Scout requests on the primary: %j", (request) => {
+    ])("skips Novita for requests requiring tools or structured output: %j", (request) => {
         const before = JSON.stringify(request);
         expect(
             supportsTextFallbackRequest(
@@ -584,31 +582,74 @@ describe("static provider fallbacks", () => {
         expect(JSON.stringify(request)).toBe(before);
         expect(
             supportsTextFallbackRequest(
-                TEXT_SERVICES["meta/llama-4-scout"],
+                TEXT_SERVICES["meta/llama-4-scout:deepinfra"],
                 request,
             ),
         ).toBe(true);
     });
 
-    it("bounds Scout fallback requests by UTF-8 bytes for both transports", () => {
-        const route =
-            TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"];
-        for (const key of ["messages", "input"]) {
-            const request = {
-                [key]: "a".repeat(65536 - JSON.stringify({ [key]: "" }).length),
-            };
-            expect(supportsTextFallbackRequest(route, request)).toBe(true);
-            expect(
-                supportsTextFallbackRequest(route, {
-                    [key]: `${request[key]}a`,
-                }),
-            ).toBe(false);
-            expect(
-                supportsTextFallbackRequest(route, {
-                    [key]: "🌸".repeat(20000),
-                }),
-            ).toBe(false);
-        }
+    it.each([
+        { tool_choice: "auto" },
+        { tool_choice: "none" },
+        { function_call: "auto", functions: [] },
+        { tools: [], parallel_tool_calls: false },
+        { logit_bias: {} },
+        { response_format: { type: "text" } },
+        { text: { format: { type: "text" } } },
+        { messages: [{ role: "user", content: "hello ".repeat(60000) }] },
+        {
+            input: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "input_image",
+                            image_url: `data:image/png;base64,${"a".repeat(100000)}`,
+                        },
+                    ],
+                },
+            ],
+        },
+        {
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        { type: "text", text: '{"type":"function_call"}' },
+                    ],
+                },
+            ],
+        },
+    ])("allows defaults and large payloads through Novita (case %#)", (request) => {
+        expect(
+            supportsTextFallbackRequest(
+                TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"],
+                request,
+            ),
+        ).toBe(true);
+    });
+
+    it("uses direct DeepInfra before Novita and skips it for Responses", () => {
+        const primary = "meta/llama-4-scout";
+        const direct = `${primary}:deepinfra`;
+        const novita = `${primary}:openrouter:novita-bf16`;
+        expect(TEXT_SERVICES[primary].fallbacks).toEqual([direct, novita]);
+        expect(findModelByName(direct)?.config()).toMatchObject({
+            model: "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+            directEndpoint:
+                "https://api.deepinfra.com/v1/openai/chat/completions",
+        });
+        const request = {
+            model: primary,
+            input: "Hello",
+            stream: false,
+            store: false as const,
+            safe: undefined,
+        };
+        expect(resolveDirectResponsesTarget(direct, request)).toBeNull();
+        expect(resolveDirectResponsesTarget(novita, request)).toMatchObject({
+            endpoint: "https://openrouter.ai/api/v1/responses",
+        });
     });
 
     it("binds fallback-only text ids to their exact provider routes", () => {

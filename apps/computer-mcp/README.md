@@ -9,9 +9,9 @@ workspace; direct MCP use gets one for each caller and workspace. Its SQLite
 holds the filesystem. The `bash` tool lazily starts a Debian Cloudflare
 Container with Node.js, npm, apt, git, jq, native binaries and outbound network.
 Every command uses that container. It stops after five minutes without commands;
-the next command starts it again. Background processes do not survive. Only `/workspace` survives a container
-restart, so project dependencies belong there; system packages installed
-outside it are temporary.
+the next command starts it again. Background processes do not survive. Only
+`/workspace` survives a container restart, so project dependencies belong there;
+system packages installed outside it are temporary.
 
 ## Tools
 

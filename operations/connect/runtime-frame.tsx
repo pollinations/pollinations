@@ -195,13 +195,6 @@ export function RuntimeFrame({
                             event.preventDefault();
                             event.stopImmediatePropagation();
                             callbacks.current.onOpenDashboard();
-                        } else if (
-                            link.target === "_blank" &&
-                            new URL(link.href).origin === location.origin
-                        ) {
-                            event.preventDefault();
-                            event.stopImmediatePropagation();
-                            doc.defaultView?.location.assign(link.href);
                         }
                     },
                     true,

@@ -23,6 +23,7 @@ on:
 jobs:
   embed:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     concurrency:
       group: vectorize-code-embeddings
       cancel-in-progress: false

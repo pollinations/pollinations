@@ -14,6 +14,7 @@ jobs:
   test:
     name: Test llm-pollinations
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: packages/llm-pollinations

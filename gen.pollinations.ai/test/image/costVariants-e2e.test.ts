@@ -328,10 +328,10 @@ test("Grok Imagine Image 2.0 forwards and bills its quality-resolution tier", as
         modelUsed: "x-ai/grok-imagine-image-2.0",
         costVariant: "low_2k",
         tokenCountPromptImage: 1,
-        tokenPricePromptImage: 0.01,
+        tokenPricePromptImage: 0.01 * 1.055,
         tokenCountCompletionImage: 1,
-        tokenPriceCompletionImage: 0.06,
-        totalCost: expect.closeTo(0.07, 8),
-        totalPrice: 0.07,
+        tokenPriceCompletionImage: 0.06 * 1.055,
+        totalCost: expect.closeTo(0.07 * 1.055, 8),
+        totalPrice: 0.07385,
     });
 });

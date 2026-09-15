@@ -619,7 +619,7 @@ const AUDIO_BASE_SERVICES = {
         priceMultiplier: 1,
         cost: {
             // OpenRouter, verified 2026-08-19: $15 per 1M UTF-8 input bytes.
-            completionAudioTokens: 15 / 1_000_000,
+            completionAudioTokens: (15 / 1_000_000) * 1.055,
         },
         title: "Fish Audio S2.1 Pro",
         description:

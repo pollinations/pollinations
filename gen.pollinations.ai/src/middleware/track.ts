@@ -241,6 +241,7 @@ export const track = (eventType: EventType) =>
         const emitRow = async (row: {
             startTime: Date;
             endTime: Date;
+            attemptStartTime?: Date;
             balanceTracking: BalanceData;
             responseTracking: ResponseTrackingData;
             errorTracking: ErrorData;
@@ -261,6 +262,7 @@ export const track = (eventType: EventType) =>
                 requestTracking,
                 startTime: row.startTime,
                 endTime: row.endTime,
+                attemptStartTime: row.attemptStartTime,
                 balanceTracking: row.balanceTracking,
                 responseTracking: row.responseTracking,
                 cacheKey: await cacheKeyForTracking(),
@@ -303,9 +305,11 @@ export const track = (eventType: EventType) =>
                 const userId = userTracking.userId;
                 if (!userId) return;
 
+                const finalAttempt = attempts.find(
+                    (attempt) => attempt.settled,
+                );
                 const finalCandidate =
-                    attempts.find((attempt) => attempt.settled)?.candidate ??
-                    fallbackCandidates(modelInfo)[0];
+                    finalAttempt?.candidate ?? fallbackCandidates(modelInfo)[0];
 
                 // Routes attach telemetry headers (x-moderation-*, cache
                 // status) to the final response AFTER the override is
@@ -332,6 +336,7 @@ export const track = (eventType: EventType) =>
                     await emitRow({
                         startTime: attempt.startedAt,
                         endTime: attempt.endedAt,
+                        attemptStartTime: attempt.startedAt,
                         balanceTracking: balanceTracking(),
                         responseTracking: {
                             responseStatus: status,
@@ -454,6 +459,9 @@ export const track = (eventType: EventType) =>
                 const finalEvent = await emitRow({
                     startTime,
                     endTime,
+                    // Keep request timing intact; route timing starts at the
+                    // settled attempt and includes consumption of its stream.
+                    attemptStartTime: finalAttempt?.startedAt,
                     balanceTracking: committedBalanceTracking,
                     responseTracking,
                     markup,
@@ -727,7 +735,9 @@ export async function trackResponse(
         ? { ...pricingInput, ...modelUsage.pricingInput }
         : pricingInput;
     const finishError =
-        eventType === "generate.text" ? finishReasonError(output) : undefined;
+        eventType === "generate.text"
+            ? finishReasonError(output, !!modelUsage)
+            : undefined;
     if (finishError) {
         // Keep the proxy response untouched; only billing and health reflect
         // the upstream protocol's explicit terminal failure.
@@ -861,7 +871,10 @@ function streamErrorClass(code: string | undefined): string {
     return "UpstreamFinishReasonError";
 }
 
-function finishReasonError(output: unknown):
+function finishReasonError(
+    output: unknown,
+    hasUsage: boolean,
+):
     | {
           status: number;
           code?: "usage_missing" | "upstream_stream_error";
@@ -911,6 +924,11 @@ function finishReasonError(output: unknown):
                 finish_reason?: unknown;
                 error?: unknown;
             };
+            // Filtered completions with valid usage remain billable. Without
+            // usage, preserve the rejection rather than report missing usage.
+            if (!hasUsage && finish.finish_reason === "content_filter") {
+                return { status: CONTENT_POLICY_STATUS };
+            }
             if (finish.finish_reason !== "error") continue;
             return {
                 status: isContentPolicyViolation(JSON.stringify(finish.error))
@@ -1099,6 +1117,7 @@ type TrackingEventInput = {
     requestPath: string;
     startTime: Date;
     endTime: Date;
+    attemptStartTime?: Date;
     environment: string;
     eventType: EventType;
     ipSubnet?: string;
@@ -1141,6 +1160,7 @@ function createTrackingEvent({
     requestPath,
     startTime,
     endTime,
+    attemptStartTime,
     environment,
     eventType,
     ipSubnet,
@@ -1162,6 +1182,9 @@ function createTrackingEvent({
         startTime,
         endTime,
         responseTime: endTime.getTime() - startTime.getTime(),
+        attemptResponseTime: attemptStartTime
+            ? endTime.getTime() - attemptStartTime.getTime()
+            : undefined,
         responseStatus: responseTracking.responseStatus,
         environment,
         eventType,

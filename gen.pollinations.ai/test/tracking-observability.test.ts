@@ -238,6 +238,7 @@ function createSseStreamApp(
     },
     includeUsage = true,
     user: AuthUser = trackingUser,
+    primaryDelayMs = 0,
 ) {
     const app = new Hono<Env>();
 
@@ -256,7 +257,32 @@ function createSseStreamApp(
         c.set("model", model);
         await next();
     });
-    app.post("/v1/chat/completions", track("generate.text"), () => {
+    app.post("/v1/chat/completions", track("generate.text"), async (c) => {
+        const candidate = {
+            id: model.resolved,
+            definition: model.definition,
+        };
+        if (primaryDelayMs) {
+            const startedAt = new Date();
+            await new Promise((resolve) => setTimeout(resolve, primaryDelayMs));
+            c.var.track.attempts.push({
+                candidate,
+                startedAt,
+                endedAt: new Date(),
+                settled: false,
+                error: new HTTPException(503, {
+                    message: "primary unavailable",
+                }),
+            });
+        }
+        c.var.track.attempts.push({
+            candidate: primaryDelayMs
+                ? { ...candidate, id: `${model.resolved}:test-fallback` }
+                : candidate,
+            startedAt: new Date(),
+            endedAt: new Date(),
+            settled: true,
+        });
         const encoder = new TextEncoder();
         const sse = (data: object) => `data: ${JSON.stringify(data)}\n\n`;
         const chunks = [
@@ -2426,6 +2452,67 @@ describe("tracking observability", () => {
         expect(event.isBilledUsage).toBe(true);
     });
 
+    it("separates a rescued stream's attempt duration from the full request", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const ctx = createExecutionContext();
+        const response = await createSseStreamApp(
+            25,
+            undefined,
+            true,
+            trackingUser,
+            100,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai/gpt-5.4-nano",
+                    stream: true,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(2);
+        const [primary, fallback] = await Promise.all(
+            tinybirdRequests.map(
+                async (request) => request.json() as Promise<TinybirdEvent>,
+            ),
+        );
+        expect(primary.isFinal).toBe(false);
+        expect(primary.attemptResponseTime).toBe(primary.responseTime);
+        expect(primary.attemptResponseTime).toBeGreaterThanOrEqual(100);
+        expect(fallback.fallbackUsed).toBe(true);
+        expect(fallback.isFinal).toBe(true);
+        // Includes all streamed chunks, rather than stopping at headers.
+        expect(fallback.attemptResponseTime).toBeGreaterThanOrEqual(75);
+        expect(
+            Number(fallback.responseTime) -
+                Number(fallback.attemptResponseTime),
+        ).toBeGreaterThanOrEqual(100);
+        expect(fallback.tokenCountCompletionText).toBe(500);
+        expect(fallback.isBilledUsage).toBe(true);
+    });
+
     it.each([
         "valid",
         "missing",
@@ -3091,7 +3178,7 @@ describe("trackResponse modelUsed", () => {
         // served cost independently uses Alibaba's explicit-cache rate.
         expect(tracking.costVariant).toBe("context_256k");
         expect(tracking.cost?.totalCost).toBeCloseTo(0.02, 12);
-        expect(tracking.price?.totalPrice).toBeCloseTo(0.04, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(0.04 * 1.055, 12);
     });
 
     it("uses Alibaba's implicit rate unless the response confirms an explicit hit", async () => {
@@ -3114,7 +3201,7 @@ describe("trackResponse modelUsed", () => {
         );
 
         expect(tracking.cost?.totalCost).toBeCloseTo(0.04, 12);
-        expect(tracking.price?.totalPrice).toBeCloseTo(0.04, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(0.04 * 1.055, 12);
     });
 
     it("prices a streamed Alibaba explicit-cache hit from terminal usage", async () => {
@@ -3145,11 +3232,46 @@ describe("trackResponse modelUsed", () => {
 
         expect(tracking.costVariant).toBe("context_256k");
         expect(tracking.cost?.totalCost).toBeCloseTo(0.02, 12);
-        expect(tracking.price?.totalPrice).toBeCloseTo(0.04, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(0.04 * 1.055, 12);
     });
 });
 
 describe("trackResponse missing usage", () => {
+    it.each([
+        false,
+        true,
+    ])("classifies content_filter without changing usage billing (usage present: %s)", async (hasUsage) => {
+        const event = {
+            model: "openai/gpt-5.4-nano",
+            choices: [{ delta: {}, finish_reason: "content_filter" }],
+            usage: hasUsage
+                ? {
+                      prompt_tokens: 2,
+                      completion_tokens: 1,
+                      total_tokens: 3,
+                  }
+                : null,
+        };
+        const upstream = new Blob([
+            `data: ${JSON.stringify(event)}\n\ndata: [DONE]\n\n`,
+        ]).stream();
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            new Response(requireChatStreamUsage(upstream), {
+                headers: { "content-type": "text/event-stream" },
+            }),
+            candidateFixture(),
+        );
+        expect(tracking.responseStatus).toBe(hasUsage ? 200 : 422);
+        expect(tracking.isBilledUsage).toBe(hasUsage);
+        expect(tracking.errorTracking?.errorResponseCode).toBe(
+            hasUsage ? undefined : "content_policy_violation",
+        );
+        if (hasUsage) expect(tracking.cost?.totalCost).toBeGreaterThan(0);
+        else expect(tracking.cost?.totalCost).toBe(0);
+    });
+
     it("does not bill earlier usage when the stream subsequently fails validation", async () => {
         const event = {
             model: "openai/gpt-5.4-nano",

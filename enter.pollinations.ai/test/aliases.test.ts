@@ -154,6 +154,8 @@ test("GPT-5.5 is available without paid-only gating", () => {
 test("Azure models use the approved public-price multipliers", () => {
     const azureMultiplierOverrides = new Map<string, number>([
         ["openai/gpt-5.6-sol", 1 / 3],
+        ["openai/gpt-image-2.5-flare", 1],
+        ["openai/gpt-image-2.5-sunburst", 1],
     ]);
 
     for (const model of getModels()) {

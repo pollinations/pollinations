@@ -184,6 +184,7 @@ describe("Chat Completions over Responses", () => {
         ];
         const completion = await callChatViaResponses(messages, {
             model: "provider-model",
+            metadata: { model: "inner-model", custom_key: "unchanged" },
             modelConfig,
             reasoning_effort: "high",
             max_completion_tokens: 128,
@@ -221,6 +222,7 @@ describe("Chat Completions over Responses", () => {
 
         expect(body).toMatchObject({
             model: "provider-model",
+            metadata: { model: "inner-model", custom_key: "unchanged" },
             store: false,
             reasoning: { effort: "high", summary: "auto" },
             max_output_tokens: 128,

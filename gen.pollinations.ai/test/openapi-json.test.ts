@@ -2,6 +2,10 @@ import {
     createExecutionContext,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import {
+    CreateChatCompletionRequestSchema,
+    CreateResponseRequestSchema,
+} from "@shared/schemas/openai.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index.ts";
 
@@ -52,6 +56,25 @@ const ENTER_SCHEMA = {
 };
 
 describe("/openapi.json", () => {
+    it("accepts omitted, null, and string-map metadata on both text APIs", () => {
+        for (const schema of [
+            CreateChatCompletionRequestSchema,
+            CreateResponseRequestSchema,
+        ]) {
+            for (const metadata of [
+                undefined,
+                null,
+                {},
+                { model: "inner-model", custom_key: "value" },
+            ]) {
+                expect(schema.shape.metadata.parse(metadata)).toEqual(metadata);
+            }
+            expect(
+                schema.shape.metadata.safeParse({ model: 123 }).success,
+            ).toBe(false);
+        }
+    });
+
     afterEach(() => {
         vi.restoreAllMocks();
     });

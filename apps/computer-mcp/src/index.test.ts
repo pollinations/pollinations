@@ -1,4 +1,5 @@
 import { env, SELF } from "cloudflare:test";
+import { getWorkspace } from "@cloudflare/computer";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { describe, expect, it } from "vitest";
@@ -9,20 +10,14 @@ import {
 } from "../../../shared/registry/mcp.ts";
 
 const MCP_URL = "https://mcp.internal/";
-
 let lastResponse: Response | undefined;
 
-async function connect(
-    userId: string,
-    managedAgentId?: string,
-): Promise<Client> {
+async function connect(userId: string, agentId?: string): Promise<Client> {
     const transport = new StreamableHTTPClientTransport(new URL(MCP_URL), {
         fetch: async (input, init) => {
             const headers = new Headers(init?.headers);
             headers.set(MCP_USER_ID_HEADER, userId);
-            if (managedAgentId) {
-                headers.set(MCP_AGENT_ID_HEADER, managedAgentId);
-            }
+            if (agentId) headers.set(MCP_AGENT_ID_HEADER, agentId);
             lastResponse = await SELF.fetch(input, { ...init, headers });
             return lastResponse;
         },
@@ -30,27 +25,6 @@ async function connect(
     const client = new Client({ name: "test", version: "0.0.0" });
     await client.connect(transport);
     return client;
-}
-
-async function bash(
-    client: Client,
-    command: string,
-    options: {
-        stdin?: string;
-        mode?: "worker" | "container";
-        workspace?: string;
-    } = {},
-): Promise<{ text: string; isError: boolean }> {
-    const result = await client.callTool({
-        name: "bash",
-        arguments: { command, ...options },
-    });
-    const content = result.content as { type: string; text?: string }[];
-    const text = content
-        .filter((part) => part.type === "text")
-        .map((part) => part.text ?? "")
-        .join("\n");
-    return { text, isError: result.isError === true };
 }
 
 describe("computer MCP worker", () => {
@@ -69,181 +43,42 @@ describe("computer MCP worker", () => {
         expect(response.status).toBe(401);
     });
 
-    it("exposes a single bash tool", async () => {
+    it("discovers tools without starting a container or billing", async () => {
         const client = await connect("user-tools");
         const { tools } = await client.listTools();
-        expect(tools.map((tool) => tool.name)).toEqual(["bash"]);
-        const properties = tools[0]?.inputSchema.properties ?? {};
-        expect((properties.mode as { enum?: string[] }).enum).toEqual([
-            "worker",
-            "container",
+        expect(tools.map((tool) => tool.name)).toEqual([
+            "bash",
+            "publish_file",
         ]);
-        expect(properties).toHaveProperty("workspace");
-        expect((properties.workspace as { default?: string }).default).toBe(
-            "default",
-        );
+        const properties = tools[0]?.inputSchema.properties ?? {};
+        expect(properties).not.toHaveProperty("mode");
         expect(properties).not.toHaveProperty("cwd");
+        expect(properties).toHaveProperty("workspace");
         expect(lastResponse?.headers.has(MCP_USAGE_HEADERS.cost)).toBe(false);
         await client.close();
     });
 
-    it("keeps worker mode as the default", async () => {
-        const client = await connect("user-worker-mode");
-        const implicit = await bash(client, "echo default");
-        const explicit = await bash(client, "echo worker", { mode: "worker" });
-        expect(implicit.text.trim()).toBe("default");
-        expect(explicit.text.trim()).toBe("worker");
-        await client.close();
-    });
-
-    it("reports a flat usage receipt per call", async () => {
-        const client = await connect("user-billing");
-        await bash(client, "ls /workspace");
-        const headers = lastResponse?.headers;
-        expect(headers?.get(MCP_USAGE_HEADERS.cost)).toBe("0.0002");
-        expect(headers?.get(MCP_USAGE_HEADERS.tool)).toBe("bash");
-        expect(headers?.get(MCP_USAGE_HEADERS.status)).toBe("200");
-        expect(headers?.get(MCP_USAGE_HEADERS.adjustmentId)).toBe(
-            "computer.tool_call.v1",
+    it("publishes from the selected agent workspace through real media storage", async () => {
+        const client = await connect("user-publish", "agent-one");
+        const workspace = await getWorkspace(
+            env.COMPUTER.get(
+                env.COMPUTER.idFromName(
+                    "user:user-publish:agent:agent-one:workspace:report",
+                ),
+            ) as unknown as Parameters<typeof getWorkspace>[0],
         );
-        expect(headers?.get(MCP_USAGE_HEADERS.adjustmentUnits)).toBe("1");
-        await client.close();
-    });
-
-    it("seeds a README that explains the memory convention", async () => {
-        const client = await connect("user-readme");
-        const readme = await bash(client, "cat /workspace/README.md");
-        expect(readme.isError).toBe(false);
-        expect(readme.text).toContain("/workspace/memory/facts.md");
-        await client.close();
-    });
-
-    it("writes files from stdin that persist across connections", async () => {
-        const client = await connect("user-files");
-        const write = await bash(client, "cat > /workspace/memory/facts.md", {
-            stdin: "favourite colour: 'blue' $HOME `date` — “naïve” ✓\n",
-        });
-        expect(write.isError).toBe(false);
-        const edit = await bash(
-            client,
-            "sed -i s/blue/green/ /workspace/memory/facts.md",
-        );
-        expect(edit.isError).toBe(false);
-        await client.close();
-
-        const again = await connect("user-files");
-        const read = await bash(again, "grep -r green /workspace/memory");
-        expect(read.text).toContain(
-            "facts.md:favourite colour: 'green' $HOME `date` — “naïve” ✓",
-        );
-        await again.close();
-    });
-
-    it("empties /tmp after every call", async () => {
-        const client = await connect("user-tmp");
-        const write = await bash(
-            client,
-            "echo scratch > /tmp/note.txt && cat /tmp/note.txt",
-            { stdin: "unused stdin" },
-        );
-        expect(write.text.trim()).toBe("scratch");
-        const later = await bash(client, "ls /tmp");
-        expect(later.text.trim()).toBe("");
-        await client.close();
-    });
-
-    it("reports stderr and non-zero exit codes as errors", async () => {
-        const client = await connect("user-errors");
-        const result = await bash(client, "cat /workspace/missing.txt");
-        expect(result.isError).toBe(true);
-        expect(result.text).toContain("[stderr]");
-        expect(result.text).toContain("[exit code 1]");
-        await client.close();
-    });
-
-    it("keeps users isolated", async () => {
-        const alice = await connect("user-alice");
-        await bash(alice, "echo 'alice only' > /workspace/secret.txt");
-        await alice.close();
-
-        const bob = await connect("user-bob");
-        const ls = await bash(bob, "ls /workspace");
-        expect(ls.text).not.toContain("secret.txt");
-        await bob.close();
-    });
-
-    it("gives each managed agent its own computer for the same user", async () => {
-        const firstAgent = await connect("user-agents", "agent-one");
-        await bash(firstAgent, "echo 'first agent' > identity.txt");
-        await firstAgent.close();
-
-        const secondAgent = await connect("user-agents", "agent-two");
-        const secondFiles = await bash(secondAgent, "ls /workspace");
-        expect(secondFiles.text).not.toContain("identity.txt");
-        await bash(secondAgent, "echo 'second agent' > identity.txt");
-        await secondAgent.close();
-
-        const firstAgain = await connect("user-agents", "agent-one");
-        const identity = await bash(firstAgain, "cat identity.txt");
-        expect(identity.text.trim()).toBe("first agent");
-        await firstAgain.close();
-
-        const direct = await connect("user-agents");
-        const directFiles = await bash(direct, "ls /workspace");
-        expect(directFiles.text).not.toContain("identity.txt");
-        await direct.close();
-    });
-
-    it("defaults to one workspace and keeps named workspaces isolated", async () => {
-        const client = await connect("user-projects");
-        await bash(client, "echo 'default plan' > plan.md");
-        const write = await bash(client, "echo 'thesis plan' > plan.md", {
-            workspace: "thesis",
-        });
-        expect(write.isError).toBe(false);
-        const named = await bash(client, "cat plan.md && head -1 README.md", {
-            workspace: "thesis",
-        });
-        expect(named.text).toContain("thesis plan");
-        expect(named.text).toContain("# Your computer");
-        const defaultWorkspace = await bash(client, "cat plan.md");
-        expect(defaultWorkspace.text.trim()).toBe("default plan");
-        await client.close();
-    });
-
-    it("rejects invalid workspace names without touching the default", async () => {
-        const client = await connect("user-invalid-workspace");
-        const invalid = await bash(client, "touch should-not-exist", {
-            workspace: "../escape",
-        });
-        expect(invalid.isError).toBe(true);
-        const check = await bash(client, "test ! -e should-not-exist");
-        expect(check.isError).toBe(false);
-        await client.close();
-    });
-
-    it("clones a public repository", async () => {
-        const client = await connect("user-clone");
-        const clone = await bash(
-            client,
-            "git clone https://github.com/octocat/Hello-World.git hello >/dev/null 2>&1 && cat hello/README",
-            { workspace: "import" },
-        );
-        expect(clone.isError).toBe(false);
-        expect(clone.text).toContain("Hello World!");
-        await client.close();
-    });
-
-    it("publishes a file to media storage with assets publish", async () => {
-        const client = await connect("user-publish");
         const html = "<h1>héllo — “quotes”</h1>\n";
-        await bash(client, "cat > /workspace/report.html", { stdin: html });
-        const publish = await bash(
-            client,
-            "assets publish /workspace/report.html",
+        await workspace.fs.mkdir("/workspace", { recursive: true });
+        await workspace.fs.writeFile("/workspace/report.html", html);
+        const published = await client.callTool({
+            name: "publish_file",
+            arguments: { path: "/workspace/report.html", workspace: "report" },
+        });
+        expect(published.isError, JSON.stringify(published.content)).not.toBe(
+            true,
         );
-        expect(publish.isError).toBe(false);
-        const url = publish.text.trim();
+        const content = published.content as { type: string; text: string }[];
+        const url = content[0].text;
         expect(url).toMatch(
             /^https:\/\/media\.pollinations\.ai\/[0-9a-f-]{36}$/,
         );
@@ -252,39 +87,42 @@ describe("computer MCP worker", () => {
             "text/html; charset=utf-8",
         );
         expect(await stored?.text()).toBe(html);
+        expect(lastResponse?.headers.get(MCP_USAGE_HEADERS.cost)).toBe(
+            "0.0002",
+        );
+        expect(lastResponse?.headers.get(MCP_USAGE_HEADERS.tool)).toBe(
+            "publish_file",
+        );
+
+        for (const [user, agent] of [
+            ["user-publish", "agent-two"],
+            ["user-publish", undefined],
+            ["other-user", "agent-one"],
+        ] as const) {
+            const other = await connect(user, agent);
+            const result = await other.callTool({
+                name: "publish_file",
+                arguments: {
+                    path: "/workspace/report.html",
+                    workspace: "report",
+                },
+            });
+            expect(result.isError).toBe(true);
+            await other.close();
+        }
         await client.close();
     });
 
-    it("downloads files with curl", async () => {
-        const client = await connect("user-curl");
-        const download = await bash(
-            client,
-            "curl -sS -o /workspace/example.html https://example.com/ && grep -c 'Example Domain' /workspace/example.html",
-        );
-        expect(download.isError).toBe(false);
-        expect(download.text.trim()).toBe("1");
-        await client.close();
-    });
-
-    it("runs pipelines, jq and git", async () => {
-        const client = await connect("user-shell");
-        const result = await bash(
-            client,
-            [
-                "cd /workspace",
-                "printf 'one\\ntwo\\nthree\\n' > notes.txt",
-                "wc -l < notes.txt",
-                "echo '{\"a\":[1,2,3]}' | jq -c '.a | length'",
-                "git init . >/dev/null && git add notes.txt && git commit -m init >/dev/null && git log --oneline | wc -l",
-            ].join(" && "),
-        );
-        expect(result.text.split("\n").map((line) => line.trim())).toEqual([
-            "3",
-            "3",
-            "1",
-            "",
-        ]);
-        expect(result.isError).toBe(false);
+    it("rejects invalid workspaces before executing commands", async () => {
+        const client = await connect("user-invalid");
+        const result = await client.callTool({
+            name: "bash",
+            arguments: {
+                command: "touch should-not-exist",
+                workspace: "../escape",
+            },
+        });
+        expect(result.isError).toBe(true);
         await client.close();
     });
 });

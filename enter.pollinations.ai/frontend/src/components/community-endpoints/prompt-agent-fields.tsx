@@ -121,8 +121,8 @@ export function PromptAgentFields({
                 {hasComputer && (
                     <Alert intent="info" title="Persistent computer">
                         Each caller gets a private workspace for this agent.
-                        Files and memory survive between chats; the full Linux
-                        container starts only when the agent needs it.
+                        Files and memory survive between chats. Commands run in
+                        a Linux container that starts when needed.
                     </Alert>
                 )}
             </div>

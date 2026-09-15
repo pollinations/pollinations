@@ -5,7 +5,6 @@ import {
     type WorkspaceClient,
     type WorkspaceOptions,
     WorkspaceProxy,
-    WorkspaceServiceProxy,
     withWorkspace,
 } from "@cloudflare/computer";
 import type { WorkspaceLike } from "@cloudflare/computer/assets";
@@ -13,10 +12,6 @@ import {
     CloudflareContainerBackend,
     withWorkspaceContainer,
 } from "@cloudflare/computer/backends/container";
-import { WorkerShellBackend } from "@cloudflare/computer/backends/worker-shell";
-import { createGitClient } from "@cloudflare/computer/git";
-import curlModules from "@cloudflare/computer/shell/curl";
-import jqModules from "@cloudflare/computer/shell/jq";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { withMcpUsageHeaders } from "../../../shared/mcp-usage.ts";
 import {
@@ -33,10 +28,13 @@ import {
 } from "./server.ts";
 
 const TOOL_CALL_RATE = "computer.tool_call.v1";
+const IDLE_TIMEOUT_MS = 5 * 60_000;
+
+// Routes the container's workspace RPC connection back to its Durable Object.
+export { WorkspaceProxy };
 
 type Env = {
     COMPUTER: DurableObjectNamespace<Computer>;
-    LOADER: WorkerLoader;
     MEDIA: MediaService;
 };
 
@@ -57,10 +55,9 @@ unrelated project; "default" is used when no name is given.
 
 ## Shell
 
-The only tool is bash. It defaults to \`mode: "worker"\`: fast startup with
-coreutils, grep, sed, awk, jq, tar, curl and git, but no Node, Python or package
-managers. Use \`mode: "container"\` for full Debian with Node.js, npm, apt,
-native binaries and outbound network. The container starts more slowly; only
+The bash tool runs in Debian with Node.js, npm, apt, git, native binaries and
+outbound network. The container starts on the first command and stops after
+five minutes without commands. Only
 /workspace survives a container restart. Write a file by passing its content
 as stdin to \`cat > path\`. Commands start in /workspace; use \`cd\` inside a
 command when needed.
@@ -69,7 +66,7 @@ command when needed.
 
 - In: \`curl -o path <url>\` for any public URL; \`git clone <https-url>\`
   for any public repository.
-- Out: in worker mode, \`assets publish <path>\` copies one file to public
+- Out: the \`publish_file\` tool copies one file from /workspace to public
   media storage and prints an unlisted URL that stays valid 30 days; tar a
   folder first.
   For anything the user wants to keep, \`git push\` to a repository they
@@ -78,20 +75,9 @@ command when needed.
   is stored in this computer's git config, nowhere else.
 `;
 
-// Shell backends reach this Durable Object through these internal proxies.
-export { WorkspaceProxy, WorkspaceServiceProxy };
-
 class ComputerBase extends withWorkspaceContainer(
     class extends DurableObject<Env> {},
 ) {
-    readonly workerShell = new WorkerShellBackend({
-        loader: this.env.LOADER,
-        workspace: { binding: "COMPUTER", id: this.ctx.id.toString() },
-        ctx: this.ctx,
-        egress: { mode: "direct" },
-        commands: [jqModules, curlModules],
-    });
-
     readonly containerShell = new CloudflareContainerBackend({
         container: () => this,
         workspace: { binding: "COMPUTER", id: this.ctx.id.toString() },
@@ -108,20 +94,25 @@ function workspaceOptions(
     };
     return {
         storage: ctx.storage as unknown as DurableObjectStorageLike,
-        git: createGitClient(),
         // Typed as unknown: comparing Workspace to WorkspaceLike makes tsc
         // recurse through the fs overloads until it gives up.
         assets: (workspace: unknown) =>
             createMediaAssets(workspace as WorkspaceLike, env.MEDIA),
-        defaultGitIdentity: {
-            name: "Pollinations Agent",
-            email: "agent@pollinations.ai",
-        },
-        backends: [self.workerShell, self.containerShell],
+        backends: [self.containerShell],
     };
 }
 
 export class Computer extends withWorkspace(ComputerBase, workspaceOptions) {
+    private activeCommands = 0;
+
+    async alarm(): Promise<void> {
+        if (this.activeCommands > 0) {
+            await this.ctx.storage.setAlarm(Date.now() + IDLE_TIMEOUT_MS);
+            return;
+        }
+        await this.ctx.container?.destroy();
+    }
+
     override async fetch(request: Request): Promise<Response> {
         if (new URL(request.url).pathname === "/api") {
             return this.containerShell.handleFetch(request);
@@ -139,10 +130,26 @@ export class Computer extends withWorkspace(ComputerBase, workspaceOptions) {
             enableJsonResponse: true,
         });
         await server.connect(transport);
-        const response = await transport.handleRequest(request, {
-            parsedBody: payload,
-        });
-        return withMcpUsageHeaders(response, toolCallUsage(payload, response));
+        const runsCommand =
+            payload.method === "tools/call" && payload.params?.name === "bash";
+        if (runsCommand) {
+            this.activeCommands++;
+            await this.ctx.storage.setAlarm(Date.now() + IDLE_TIMEOUT_MS);
+        }
+        try {
+            const response = await transport.handleRequest(request, {
+                parsedBody: payload,
+            });
+            return withMcpUsageHeaders(
+                response,
+                toolCallUsage(payload, response),
+            );
+        } finally {
+            if (runsCommand) {
+                this.activeCommands--;
+                await this.ctx.storage.setAlarm(Date.now() + IDLE_TIMEOUT_MS);
+            }
+        }
     }
 }
 
@@ -224,7 +231,8 @@ function computerName(
 function requestedWorkspace(payload: JsonRpcPayload): string {
     const value = payload.params?.arguments?.workspace;
     return payload.method === "tools/call" &&
-        payload.params?.name === "bash" &&
+        (payload.params?.name === "bash" ||
+            payload.params?.name === "publish_file") &&
         typeof value === "string" &&
         WORKSPACE_NAME_PATTERN.test(value)
         ? value

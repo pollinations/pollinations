@@ -4,7 +4,6 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-06-17",
   "compatibility_flags": ["nodejs_compat"],
-  "worker_loaders": [{ "binding": "LOADER" }],
   "durable_objects": {
     "bindings": [{ "name": "COMPUTER", "class_name": "Computer" }]
   },

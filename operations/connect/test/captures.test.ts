@@ -58,6 +58,52 @@ it.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
     60_000,
 );
 
+for (const requiresKey of [false, true]) {
+    it.runIf(
+        process.env.CONNECT_CAPTURE_TEST === "1" &&
+            (!requiresKey ||
+                process.env.CONNECT_DEVICE_APPROVAL_ERROR_TEST === "1"),
+    )(
+        `captures Device recovery ${requiresKey ? "after key creation" : "without key creation"}`,
+        async () => {
+            const { startRuntime } = await import("../runtime");
+            const service = createCaptureService({
+                loadCases: async () => ({ reviewCasesForFlow }),
+                loadRuntime: async () => startRuntime,
+            });
+            try {
+                for (const section of ["main", "link"] as const) {
+                    for (const id of requiresKey
+                        ? ["device-submit-approve"]
+                        : [
+                              "device-request-app",
+                              "device-request-lookup",
+                              "device-submit-key",
+                              "device-submit-session",
+                          ]) {
+                        const result = await capture(
+                            service,
+                            "device",
+                            section,
+                            id,
+                            section === "main"
+                                ? { theme: "dark", size: "mobile" }
+                                : { theme: "light", size: "desktop" },
+                        );
+                        expect(
+                            result.status,
+                            result.status === "error" ? result.error : id,
+                        ).toBe("ready");
+                    }
+                }
+            } finally {
+                await service.close();
+            }
+        },
+        120_000,
+    );
+}
+
 it.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
     "verifies Account settings controls and rejects mismatched connection states",
     async () => {

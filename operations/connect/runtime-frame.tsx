@@ -1,5 +1,6 @@
 import { getLoginError } from "@shared/auth/login-errors.ts";
 import { useEffect, useRef } from "react";
+import { deviceCodeMessages } from "../../enter.pollinations.ai/frontend/src/lib/device-request";
 import { useConnectConditions } from "./conditions";
 import { dashboardScreenForLocation } from "./pollen-connect-dashboard";
 import type { JourneyEntrance } from "./pollen-connect-journey-state";
@@ -48,14 +49,46 @@ export function observeScreen(doc: Document): ObservedScreen | undefined {
         const signingIn =
             doc.querySelector("#sign-in-title") ||
             buttons.some((text) => text?.includes("Sign in with GitHub"));
-        if (doc.querySelector("#connection-error-title")) {
-            node = device
-                ? "device-errors"
-                : /could not connect/.test(doc.body.textContent ?? "")
-                  ? "app-connection-failed"
-                  : "blocked";
+        if (device && buttons.includes("Declining…")) {
+            node = "device-denying";
+        } else if (device && buttons.includes("Connecting…")) {
+            node = "device-approving";
+        } else if (doc.querySelector("#connection-error-title")) {
+            if (device) {
+                const codeError = Object.entries(deviceCodeMessages).find(
+                    ([, message]) => alert?.textContent?.trim() === message,
+                );
+                // Read Enter's rendered error and operation, not the chosen
+                // situation: a retry can move to a different recovery path.
+                const operation =
+                    [...doc.querySelectorAll("p")].find((p) =>
+                        /^(requested access|could not connect|cannot connect) to your /.test(
+                            p.textContent ?? "",
+                        ),
+                    )?.textContent ?? "";
+                node = codeError
+                    ? `device-request-${codeError[0]}`
+                    : operation.startsWith("requested access")
+                      ? "device-submit-deny"
+                      : operation.startsWith("could not connect")
+                        ? "device-submit-key"
+                        : buttons.includes("Try again")
+                          ? "device-request-lookup"
+                          : "device-request-app";
+            } else {
+                node = /could not connect/.test(doc.body.textContent ?? "")
+                    ? "app-connection-failed"
+                    : "blocked";
+            }
         } else if (signingIn) {
-            node = alert ? (device ? "sign-in-errors" : "error") : "sign-in";
+            node =
+                device && buttons.includes("Sign in again")
+                    ? "device-submit-session"
+                    : alert
+                      ? device
+                          ? "sign-in-errors"
+                          : "error"
+                      : "sign-in";
         } else if (/approved/i.test(title)) node = "device-result";
         else if (/declined/i.test(title)) node = "device-declined";
         else if (

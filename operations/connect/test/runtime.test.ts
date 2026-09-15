@@ -14,7 +14,7 @@ import { CALLBACK_URL, CLIENT_ID, USER_ID } from "../fixtures.ts";
 import githubProfile from "../github-profile.json";
 import { getFlowFocus } from "../pollen-connect-diagram";
 import type { ReviewCase } from "../review-cases.ts";
-import { reviewCasesForFlow } from "../review-inventory";
+import { reviewCasesForFlow, reviewPageForLocation } from "../review-inventory";
 import { prepareReviewCase } from "../review-prepare.ts";
 import { bundleWorkers, startRuntime } from "../runtime.ts";
 import { screenRoute } from "../screen-route";
@@ -449,6 +449,482 @@ test.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
     },
     90_000,
 );
+
+test.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
+    "Device cancellation and recovery Map edges follow real Enter navigation",
+    async () => {
+        const origin = reviewOrigin;
+        const observerUrl = `/@fs/${fileURLToPath(new URL("../runtime-frame.tsx", import.meta.url))}`;
+        const browser = await chromium.launch({ headless: true });
+        const post = (path: string, body = {}) =>
+            runtime.fetch(
+                new Request(`${origin}${path}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body),
+                }),
+            );
+        try {
+            for (const section of ["main", "link"] as const) {
+                const cases = reviewCasesForFlow("device", section);
+                const { edges } = getFlowFocus("device", section);
+                const edge = (from: string, to: string) =>
+                    expect(edges).toContainEqual(
+                        expect.objectContaining({ from, to }),
+                    );
+                for (const id of [
+                    "device-declined",
+                    "device-submit-deny",
+                    "device-request-invalid",
+                    "device-request-expired",
+                    "device-request-used",
+                    "device-request-unavailable",
+                ]) {
+                    const recipe = cases.find((item) => item.id === id);
+                    if (!recipe)
+                        throw new Error(`Missing Device situation: ${id}`);
+                    const { context, before, readState, credentialRequests } =
+                        await openReviewContext(browser, recipe);
+                    try {
+                        const page = await context.newPage();
+                        const observe = () =>
+                            page.evaluate<string>(`(async () => {
+                            const { observeScreen } = await import(${JSON.stringify(observerUrl)});
+                            return observeScreen(document)?.node;
+                        })()`);
+                        const mapNode = (node: string) =>
+                            reviewPageForLocation(
+                                { flow: "device", section },
+                                { node, flow: "device" },
+                            )?.node;
+                        const entry = screenRoute(
+                            new URLSearchParams(recipe.query),
+                            before,
+                            origin,
+                        );
+                        if (!entry)
+                            throw new Error("Missing Device entry route");
+                        await page.goto(`${origin}${entry}`);
+                        if (id.startsWith("device-request-")) {
+                            await page
+                                .locator("#connection-error-title")
+                                .waitFor();
+                            expect(await observe()).toBe(id);
+                            expect(mapNode(await observe())).toBe(
+                                recipe.family,
+                            );
+                            const unavailable =
+                                id === "device-request-unavailable";
+                            const destination = unavailable
+                                ? "device-checking"
+                                : "device-code";
+                            edge(recipe.family, destination);
+                            if (unavailable) {
+                                const cleared = await post(
+                                    "/__connect/review/requests",
+                                    [],
+                                );
+                                expect(cleared.ok).toBe(true);
+                                await cleared.body?.cancel();
+                            }
+                            await page
+                                .getByRole("button", {
+                                    name: unavailable
+                                        ? "Try again"
+                                        : "Enter another code",
+                                    exact: true,
+                                })
+                                .click();
+                            if (unavailable) {
+                                await page
+                                    .getByRole("button", {
+                                        name: "Allow access",
+                                        exact: true,
+                                    })
+                                    .waitFor();
+                                expect(await observe()).toBe("consent");
+                                edge(destination, "consent");
+                            } else {
+                                await page
+                                    .locator("#device-code-form")
+                                    .waitFor();
+                                expect(await observe()).toBe("device-code");
+                                expect(new URL(page.url()).pathname).toBe(
+                                    "/device",
+                                );
+                                expect(
+                                    new URL(page.url()).searchParams.get(
+                                        "user_code",
+                                    ),
+                                ).toBe("");
+                            }
+                            expect(await readState()).toEqual(before);
+                        } else {
+                            await page
+                                .getByRole("button", {
+                                    name: "Allow access",
+                                    exact: true,
+                                })
+                                .waitFor();
+                            expect(await observe()).toBe("consent");
+                            edge("consent", "device-denying");
+                            // Pause delivery, then let the exact request reach
+                            // Enter. No fabricated pending/error response.
+                            let continueDeny = () => {};
+                            const delivery = new Promise<void>((resolve) => {
+                                continueDeny = resolve;
+                            });
+                            await page.route(
+                                "**/api/device/deny",
+                                async (route) => {
+                                    await delivery;
+                                    await route.fallback();
+                                },
+                            );
+                            try {
+                                await page
+                                    .getByRole("button", {
+                                        name: "Cancel",
+                                        exact: true,
+                                    })
+                                    .click();
+                                await expect
+                                    .poll(observe)
+                                    .toBe("device-denying");
+                            } finally {
+                                continueDeny();
+                            }
+                            if (id === "device-submit-deny") {
+                                await page
+                                    .locator("#connection-error-title")
+                                    .waitFor();
+                                expect(
+                                    await page.getByRole("alert").textContent(),
+                                ).toContain("Couldn’t decline this connection");
+                                expect(await observe()).toBe(id);
+                                expect(mapNode(await observe())).toBe(
+                                    recipe.family,
+                                );
+                                edge("device-denying", recipe.family);
+                                edge(recipe.family, "device-checking");
+                                // A failed write must leave the request pending.
+                                expect(await readState()).toEqual(before);
+                                const cleared = await post(
+                                    "/__connect/review/requests",
+                                    [],
+                                );
+                                expect(cleared.ok).toBe(true);
+                                await cleared.body?.cancel();
+                                await page
+                                    .getByRole("button", {
+                                        name: "Try again",
+                                        exact: true,
+                                    })
+                                    .click();
+                                await page
+                                    .getByRole("button", {
+                                        name: "Allow access",
+                                        exact: true,
+                                    })
+                                    .waitFor();
+                                expect(await observe()).toBe("consent");
+                                edge("device-checking", "consent");
+                                await page
+                                    .getByRole("button", {
+                                        name: "Cancel",
+                                        exact: true,
+                                    })
+                                    .click();
+                            }
+                            await page
+                                .locator("#device-result-title")
+                                .waitFor();
+                            expect(
+                                await page
+                                    .locator("#device-result-title")
+                                    .textContent(),
+                            ).toBe("Connection declined");
+                            expect(await observe()).toBe("device-declined");
+                            edge("device-denying", "device-declined");
+                            const declined = await readState();
+                            expect(declined).toEqual({
+                                ...before,
+                                device: { ...before.device, status: "denied" },
+                            });
+                            const polled = await post("/__connect/device/poll");
+                            expect(polled.ok).toBe(true);
+                            await polled.body?.cancel();
+                            expect(await readState()).toEqual(declined);
+                            edge("device-declined", "device-stopped");
+                        }
+                        expect(credentialRequests).toEqual([]);
+                        expect((await readState()).connection.keyId).toBeNull();
+                    } finally {
+                        await context.close();
+                    }
+                }
+            }
+        } finally {
+            await browser.close();
+        }
+    },
+    90_000,
+);
+
+for (const id of [
+    "device-request-app",
+    "device-request-lookup",
+    "device-submit-key",
+    "device-submit-session",
+    "device-submit-approve",
+]) {
+    test.runIf(
+        process.env.CONNECT_CAPTURE_TEST === "1" &&
+            (id !== "device-submit-approve" ||
+                process.env.CONNECT_DEVICE_APPROVAL_ERROR_TEST === "1"),
+    )(
+        `Device lookup and approval recovery: ${id}`,
+        async () => {
+            const browser = await chromium.launch({ headless: true });
+            const observerUrl = `/@fs/${fileURLToPath(new URL("../runtime-frame.tsx", import.meta.url))}`;
+            try {
+                for (const section of ["main", "link"] as const) {
+                    const recipe = reviewCasesForFlow("device", section).find(
+                        (item) => item.id === id,
+                    );
+                    if (!recipe)
+                        throw new Error(`Missing Device situation: ${id}`);
+                    const { context, before, readState, credentialRequests } =
+                        await openReviewContext(browser, recipe);
+                    try {
+                        const { edges } = getFlowFocus("device", section);
+                        const edge = (from: string, to: string) =>
+                            expect(edges).toContainEqual(
+                                expect.objectContaining({ from, to }),
+                            );
+                        const page = await context.newPage();
+                        const approvalResponses: {
+                            path: string;
+                            status: number;
+                            ok: boolean;
+                        }[] = [];
+                        page.on("response", (response) => {
+                            const path = new URL(response.url()).pathname;
+                            if (
+                                response.request().method() === "POST" &&
+                                [
+                                    "/api/api-keys",
+                                    "/api/device/approve",
+                                ].includes(path)
+                            )
+                                approvalResponses.push({
+                                    path,
+                                    status: response.status(),
+                                    ok: response.ok(),
+                                });
+                        });
+                        const observe = () =>
+                            page.evaluate<string>(`(async () => {
+                        const { observeScreen } = await import(${JSON.stringify(observerUrl)});
+                        return observeScreen(document)?.node;
+                    })()`);
+                        const entry = screenRoute(
+                            new URLSearchParams(recipe.query),
+                            before,
+                            reviewOrigin,
+                        );
+                        if (!entry)
+                            throw new Error("Missing Device entry route");
+                        await page.goto(`${reviewOrigin}${entry}`);
+                        if (id.startsWith("device-submit-")) {
+                            const allow = page.getByRole("button", {
+                                name: "Allow access",
+                                exact: true,
+                            });
+                            await allow.waitFor();
+                            expect(await observe()).toBe("consent");
+                            edge("consent", "device-approving");
+                            // Hold the actual key request until the pending UI has
+                            // been observed. The configured fault still owns its response.
+                            let deliver = () => {};
+                            const delivery = new Promise<void>((resolve) => {
+                                deliver = resolve;
+                            });
+                            await page.route(
+                                "**/api/api-keys",
+                                async (route) => {
+                                    if (route.request().method() === "POST")
+                                        await delivery;
+                                    await route.fallback();
+                                },
+                            );
+                            try {
+                                await allow.click();
+                                await expect
+                                    .poll(observe)
+                                    .toBe("device-approving");
+                            } finally {
+                                deliver();
+                            }
+                        }
+                        const expiredSession = id === "device-submit-session";
+                        await page
+                            .locator(
+                                expiredSession
+                                    ? "#sign-in-title"
+                                    : "#connection-error-title",
+                            )
+                            .waitFor();
+                        for (const expected of recipe.expected) {
+                            await page
+                                .locator(expected.selector)
+                                .filter(
+                                    expected.text
+                                        ? { hasText: expected.text }
+                                        : {},
+                                )
+                                .waitFor();
+                        }
+                        const observed = await observe();
+                        expect(approvalResponses).toEqual(
+                            id === "device-submit-approve"
+                                ? [
+                                      expect.objectContaining({
+                                          path: "/api/api-keys",
+                                          ok: true,
+                                      }),
+                                      {
+                                          path: "/api/device/approve",
+                                          status: 500,
+                                          ok: false,
+                                      },
+                                  ]
+                                : id.startsWith("device-submit-")
+                                  ? [
+                                        {
+                                            path: "/api/api-keys",
+                                            status: expiredSession ? 401 : 500,
+                                            ok: false,
+                                        },
+                                    ]
+                                  : [],
+                        );
+                        const visible = reviewPageForLocation(
+                            { flow: "device", section },
+                            { node: observed, flow: "device" },
+                        );
+                        expect(visible?.node).toBe(recipe.family);
+                        expect(visible?.entry.id).toBe(
+                            expiredSession ? "sign-in-errors" : "device-errors",
+                        );
+                        edge(
+                            id.startsWith("device-submit-")
+                                ? "device-approving"
+                                : "device-checking",
+                            recipe.family,
+                        );
+                        expect(await readState()).toEqual(before);
+                        if (expiredSession) {
+                            // Stop at the real sign-in action: completing OAuth is
+                            // a separate, credential-creating verification batch.
+                            expect(
+                                await page
+                                    .getByRole("button", {
+                                        name: "Sign in again",
+                                        exact: true,
+                                    })
+                                    .isVisible(),
+                            ).toBe(true);
+                            expect(
+                                await page
+                                    .getByRole("button", {
+                                        name: "Cancel",
+                                        exact: true,
+                                    })
+                                    .count(),
+                            ).toBe(0);
+                            edge(recipe.family, "device-signing-in");
+                        } else {
+                            const retry = page.getByRole("button", {
+                                name: "Try again",
+                                exact: true,
+                            });
+                            if (id === "device-request-app") {
+                                expect(await retry.count()).toBe(0);
+                            } else {
+                                edge(recipe.family, "device-checking");
+                                if (id === "device-request-lookup") {
+                                    const restored = await runtime.fetch(
+                                        new Request(
+                                            `${reviewOrigin}/__connect/review/requests`,
+                                            {
+                                                method: "POST",
+                                                headers: {
+                                                    "Content-Type":
+                                                        "application/json",
+                                                },
+                                                body: "[]",
+                                            },
+                                        ),
+                                    );
+                                    expect(restored.ok).toBe(true);
+                                    await restored.body?.cancel();
+                                }
+                                const writesBeforeRetry = [
+                                    ...credentialRequests,
+                                ];
+                                await retry.click();
+                                await page
+                                    .getByRole("button", {
+                                        name: "Allow access",
+                                        exact: true,
+                                    })
+                                    .waitFor();
+                                expect(await observe()).toBe("consent");
+                                expect(credentialRequests).toEqual(
+                                    writesBeforeRetry,
+                                );
+                                edge("device-checking", "consent");
+                            }
+                            // A confirmed unknown app can only be declined. For a
+                            // retriable error, cancel after the real recheck succeeds.
+                            edge(
+                                id === "device-request-app"
+                                    ? recipe.family
+                                    : "consent",
+                                "device-denying",
+                            );
+                            await page
+                                .getByRole("button", {
+                                    name: "Cancel",
+                                    exact: true,
+                                })
+                                .click();
+                            await page
+                                .locator("#device-result-title")
+                                .waitFor();
+                            expect(await observe()).toBe("device-declined");
+                            expect((await readState()).device.status).toBe(
+                                "denied",
+                            );
+                        }
+                        expect(credentialRequests).toEqual(
+                            id.startsWith("device-submit-")
+                                ? ["/api/api-keys"]
+                                : [],
+                        );
+                        expect((await readState()).connection.keyId).toBeNull();
+                    } finally {
+                        await context.close();
+                    }
+                }
+            } finally {
+                await browser.close();
+            }
+        },
+        90_000,
+    );
+}
 
 test("real Enter session, PKCE grant and SDK→Gen→Enter share the local account", async () => {
     let cookie = "";

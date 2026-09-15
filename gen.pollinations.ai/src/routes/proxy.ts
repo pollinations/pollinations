@@ -87,6 +87,8 @@ import {
 import {
     type ModelListQueryParams,
     ModelListQueryParamsSchema,
+    type V1ModelListQueryParams,
+    V1ModelListQueryParamsSchema,
 } from "@/schemas/models.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
@@ -286,7 +288,7 @@ const modelsListHandler = (
     [
         validator("query", ModelListQueryParamsSchema),
         async (c: Context<Env>) => {
-            const { community, source, health } = c.req.valid(
+            const { community } = c.req.valid(
                 "query" as never,
             ) as ModelListQueryParams;
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
@@ -297,28 +299,9 @@ const modelsListHandler = (
                     allowedModels,
                     paidBalance,
                 ),
-                { community, source },
+                { community },
             );
-
-            const wantHealth = health === "true" || health === "1";
-            let healthMap: Map<
-                string,
-                import("@shared/registry/model-health.ts").ModelHealth
-            > | null = null;
-            if (wantHealth) {
-                healthMap = await getModelHealthMap();
-            }
-
-            return c.json(
-                entries.map((entry) => {
-                    const info = entry.info;
-                    if (wantHealth && healthMap) {
-                        const h = healthMap.get(entry.id);
-                        if (h) info.health = h;
-                    }
-                    return info;
-                }),
-            );
+            return c.json(entries.map((entry) => entry.info));
         },
     ] as const;
 
@@ -453,11 +436,11 @@ export const proxyRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(400, 500),
             },
         }),
-        validator("query", ModelListQueryParamsSchema),
+        validator("query", V1ModelListQueryParamsSchema),
         async (c) => {
             const { community, source, health } = c.req.valid(
                 "query" as never,
-            ) as ModelListQueryParams;
+            ) as V1ModelListQueryParams;
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
             const modelEntries = filterEntriesBySource(

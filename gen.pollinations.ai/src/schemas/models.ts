@@ -3,6 +3,15 @@ import { z } from "zod";
 export const ModelListQueryParamsSchema = z.object({
     community: z.enum(["true", "false", "1", "0"]).optional().meta({
         description:
+            "Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models.",
+    }),
+});
+
+export type ModelListQueryParams = z.infer<typeof ModelListQueryParamsSchema>;
+
+export const V1ModelListQueryParamsSchema = z.object({
+    community: z.enum(["true", "false", "1", "0"]).optional().meta({
+        description:
             "Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. Deprecated: use `source` instead.",
     }),
     source: z.enum(["official", "community"]).optional().meta({
@@ -15,4 +24,6 @@ export const ModelListQueryParamsSchema = z.object({
     }),
 });
 
-export type ModelListQueryParams = z.infer<typeof ModelListQueryParamsSchema>;
+export type V1ModelListQueryParams = z.infer<
+    typeof V1ModelListQueryParamsSchema
+>;

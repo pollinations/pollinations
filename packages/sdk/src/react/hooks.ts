@@ -52,7 +52,7 @@ function useRequiredAuth(): AuthContextValue {
     return ctx;
 }
 
-/** Current auth session state only. Does not fetch account data. */
+/** Auth state without fetching account data. */
 export function useAuthState(): AuthStateValue {
     const { apiKey, isLoggedIn, isHydrated, error } = useRequiredAuth();
     return useMemo(
@@ -61,7 +61,7 @@ export function useAuthState(): AuthStateValue {
     );
 }
 
-/** Stable login/logout refs and provider config. */
+/** Login/logout actions and provider settings. */
 export function useAuthActions(): AuthActionsValue {
     const { login, logout, setApiKey, enterUrl, apiBaseUrl } =
         useRequiredAuth();
@@ -71,7 +71,7 @@ export function useAuthActions(): AuthActionsValue {
     );
 }
 
-/** Combined thin auth hook. Account data is available through opt-in hooks. */
+/** Auth state and actions. Use account hooks to fetch data. */
 export function useAuth(): AuthContextValue {
     return useRequiredAuth();
 }
@@ -180,9 +180,7 @@ const EMPTY_MODELS: ModelInfo[] = [];
 const EMPTY_ALLOWED: ReadonlySet<string> = new Set();
 
 /**
- * Loads the public model catalog and, when the provider holds an API key, the
- * set of models that key may use (`allowedModelIds`). The catalog is a public
- * endpoint, so `apiKey` is optional — this works logged out.
+ * Loads the public catalog, plus allowedModelIds when logged in.
  */
 export function useModelCatalog(
     options: { baseUrl?: string; enabled?: boolean } = {},

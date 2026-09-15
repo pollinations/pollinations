@@ -31,28 +31,20 @@ export interface PolliProviderProps {
     appKey: string;
     children: ReactNode;
     /**
-     * Where to persist the user's session token. Defaults to `"localStorage"`.
-     * Accepts `"sessionStorage"` or a custom synchronous `StorageAdapter`
-     * (e.g. cookie-backed or in-memory). Async backends like IndexedDB or
-     * React Native AsyncStorage are not supported — the interface is sync
-     * because hydration runs in a `useEffect`.
+     * Saves the API key and OAuth state. Defaults to `"localStorage"`.
+     * Also accepts `"sessionStorage"` or a custom synchronous adapter.
      */
     storage?: StorageOption;
     /** OAuth scopes to request at login. Defaults to no optional account scopes. */
     permissions?: AccountPermission[];
     /**
-     * Default model slugs to request access to (BYOP). Empty / undefined means
-     * "all models". Per-call `login({ models })` overrides this.
+     * Allowed models; omit or pass [] for all models.
+     * `login({ models })` overrides this default.
      */
     models?: string[];
-    /**
-     * Default pollen budget to request for the minted key. Per-call
-     * `login({ budget })` overrides this.
-     */
+    /** Pollen budget for the key. `login({ budget })` overrides this default. */
     budget?: number;
-    /**
-     * Default key lifetime in days. Per-call `login({ expiry })` overrides this.
-     */
+    /** Key lifetime in days. `login({ expiry })` overrides this default. */
     expiry?: number;
     /** Auth host. Defaults to `https://enter.pollinations.ai`. */
     enterUrl?: string;
@@ -200,10 +192,7 @@ function warnAuthSetup(appKey: string, redirectUrl: string | null): void {
 }
 
 /**
- * Provides Pollinations auth state to descendants. Wrap your app once at the
- * root. Holds the delegated API key, handles the OAuth callback, and exposes
- * login/logout. Account data is fetched by opt-in hooks so apps only request
- * the data they render.
+ * Wrap your app to share login state. Account hooks fetch data separately.
  */
 export function PolliProvider({
     appKey,
@@ -225,8 +214,7 @@ export function PolliProvider({
     const stateStorageKey = `polli:${appKey}:oauth_state`;
     const verifierStorageKey = `polli:${appKey}:oauth_verifier`;
     const returnPathStorageKey = `polli:${appKey}:oauth_return_path`;
-    // Authorization codes are single-use; React StrictMode must not exchange
-    // the same callback twice when it replays effects in development.
+    // StrictMode replays effects; authorization codes can only be used once.
     const hydrationStarted = useRef(false);
     const loginStarted = useRef(false);
 
@@ -269,7 +257,6 @@ export function PolliProvider({
         [storage, storageKey],
     );
 
-    // Hydrate the stored key or exchange an OAuth callback code.
     useEffect(() => {
         if (typeof window === "undefined" || hydrationStarted.current) return;
         hydrationStarted.current = true;
@@ -391,7 +378,7 @@ export function PolliProvider({
                     storage.removeItem(verifierStorageKey);
                     storage.removeItem(returnPathStorageKey);
                 } catch {
-                    // Storage itself may be the failure; still expose it.
+                    // Keep the original error if cleanup also fails.
                 }
                 setError(
                     cause instanceof Error

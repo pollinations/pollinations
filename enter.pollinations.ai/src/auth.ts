@@ -31,7 +31,7 @@ import {
 import { admin, openAPI } from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { signInErrorRedirect } from "./auth-errors.ts";
+import { handleAuthErrors } from "./auth-errors.ts";
 import { discordConfigFromEnv } from "./services/discord.ts";
 
 const DELETE_ACCOUNT_FRESH_SESSION_MS = 10 * 60 * 1000;
@@ -113,7 +113,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             errorURL: "/error",
         },
         hooks: {
-            after: signInErrorRedirect,
+            after: handleAuthErrors,
             // better-auth has its own freshness check on /delete-user, but it
             // scales freshAge by 1e3 twice (update-user.mjs), so the threshold
             // lands ~1000x too high and never fires. Enforce it here instead.

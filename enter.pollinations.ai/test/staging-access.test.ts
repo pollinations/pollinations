@@ -7,7 +7,7 @@ import { parseGithubIdList } from "@shared/auth/github-id-list.ts";
 import { loginErrors } from "@shared/auth/login-errors.ts";
 import { APIError } from "better-auth/api";
 import { describe, expect, it } from "vitest";
-import { signInErrorRedirect } from "../src/auth-errors.ts";
+import { handleAuthErrors } from "../src/auth-errors.ts";
 
 describe("parseGithubIdList", () => {
     it("parses a comma-separated list of numeric IDs", () => {
@@ -167,10 +167,10 @@ describe("staging sign-in recovery", () => {
             code: loginErrors.staging.code,
             message: "staging is invite-only",
         });
-        const redirect = await signInErrorRedirect({
+        const redirect = await handleAuthErrors({
             path: "/callback/github",
             context: { returned: error },
-        } as Parameters<typeof signInErrorRedirect>[0]).catch((cause) => cause);
+        } as Parameters<typeof handleAuthErrors>[0]).catch((cause) => cause);
         expect(redirect.status).toBe("FOUND");
         expect(redirect.headers.get("location")).toBe(
             "/error?error=STAGING_ACCESS_DENIED",
@@ -181,14 +181,14 @@ describe("staging sign-in recovery", () => {
         "/sign-in/social",
     ])("preserves an API denial on %s", async (path) => {
         await expect(
-            signInErrorRedirect({
+            handleAuthErrors({
                 path,
                 context: {
                     returned: new APIError("FORBIDDEN", {
                         code: loginErrors.staging.code,
                     }),
                 },
-            } as Parameters<typeof signInErrorRedirect>[0]),
+            } as Parameters<typeof handleAuthErrors>[0]),
         ).resolves.toBeUndefined();
     });
 });

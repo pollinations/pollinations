@@ -100,6 +100,69 @@ test("preserves real Enter error responses through the product frontend", async 
         ),
         401,
     );
+    for (const path of [
+        "/api/customer/balance",
+        "/api/stripe/billing",
+        "/api/stripe/checkout-status/cs_connect_review",
+        "/api/account/integrations",
+        "/api/account/integrations/toolkits",
+    ])
+        await readFailure(await request(path), 401);
+    await readFailure(await request("/api/stripe/billing/portal", {}), 401);
+    await readFailure(
+        await request(
+            "/api/auth/account-info?accountId=missing-review-account",
+            undefined,
+            cookie,
+        ),
+        400,
+        "Account not found",
+    );
+
+    // An absent session is a valid null result; only missing provider details
+    // should become a lookup error.
+    const signedOutSession = await request("/api/auth/get-session");
+    expect(signedOutSession.status).toBe(200);
+    expect(await signedOutSession.json()).toBeNull();
+
+    // Seed inert local account metadata and vary the provider response. The
+    // actual Better Auth provider and Enter endpoint process every lookup.
+    for (const discord of ["connected", "unavailable", "connected"]) {
+        const prepared = await request("/__connect/review/prepare", {
+            discord,
+        });
+        expect(prepared.status).toBe(200);
+        await prepared.body?.cancel();
+        const accounts = await (
+            await request("/api/auth/list-accounts", undefined, cookie)
+        ).json();
+        const response = await request(
+            "/api/auth/account-info?accountId=100000000000000001",
+            undefined,
+            cookie,
+        );
+        if (discord === "unavailable") {
+            expect(await response.clone().json()).toMatchObject({
+                code: "ACCOUNT_INFO_UNAVAILABLE",
+            });
+            await readFailure(
+                response,
+                502,
+                "Could not load your connected account's details. Please try again.",
+            );
+        } else {
+            expect(response.status).toBe(200);
+            expect(await response.json()).toMatchObject({
+                user: { id: "100000000000000001" },
+                data: { username: "connect-review" },
+            });
+        }
+        expect(
+            await (
+                await request("/api/auth/list-accounts", undefined, cookie)
+            ).json(),
+        ).toEqual(accounts);
+    }
 
     // Exercise Enter's real device expiry guard. No key is minted and the
     // expired request cannot be approved or written to KV.

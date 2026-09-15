@@ -1,10 +1,16 @@
 import { randomUUID } from "node:crypto";
 import { once } from "node:events";
 import type { AddressInfo } from "node:net";
+import {
+    DYNAMIC_NEWS_COUNT,
+    HIGHLIGHTS_RAW_URL,
+    parseHighlights,
+} from "@frontend/components/news-faq/highlights";
 import { serve } from "@hono/node-server";
 import {
     type Browser,
     type BrowserContext,
+    type Response as BrowserResponse,
     chromium,
     type Page,
 } from "playwright";
@@ -181,8 +187,8 @@ export function createCaptureService(options: {
             headless: true,
             proxy: {
                 server: transportOrigin,
-                // The avatar is public media; auth and API requests stay local.
-                bypass: `<-loopback>,${new URL(githubProfile.avatar_url).hostname}`,
+                // Only the exact public resources below can bypass local services.
+                bypass: `<-loopback>,${new URL(githubProfile.avatar_url).hostname},${new URL(HIGHLIGHTS_RAW_URL).hostname}`,
             },
         });
         return session as Resources & { browser: Browser };
@@ -197,6 +203,7 @@ export function createCaptureService(options: {
         let context: BrowserContext | undefined;
         let page: Page | undefined;
         const diagnostics: string[] = [];
+        let highlightsResponse: BrowserResponse | undefined;
         try {
             const session = await getResources();
             const { runtime, browser } = session;
@@ -222,9 +229,10 @@ export function createCaptureService(options: {
             );
             if (!preparedState.ok)
                 throw new Error("Prepared state unavailable");
+            const state = (await preparedState.json()) as LocalState;
             const entryRoute = screenRoute(
                 new URLSearchParams(recipe.query),
-                (await preparedState.json()) as LocalState,
+                state,
                 origin,
             );
             context = await browser.newContext({
@@ -235,6 +243,10 @@ export function createCaptureService(options: {
             });
             activeContext = context;
             context.on("response", async (response) => {
+                if (response.url() === HIGHLIGHTS_RAW_URL) {
+                    highlightsResponse = response;
+                    diagnostics.push(`News highlights: ${response.status()}`);
+                }
                 const path = new URL(response.url()).pathname;
                 if (
                     response.request().isNavigationRequest() ||
@@ -304,7 +316,11 @@ export function createCaptureService(options: {
                     const profileImage =
                         request.resourceType() === "image" &&
                         url.href === githubProfile.avatar_url;
-                    if (url.origin !== origin && !profileImage) {
+                    const newsFeed =
+                        request.resourceType() === "fetch" &&
+                        request.method() === "GET" &&
+                        url.href === HIGHLIGHTS_RAW_URL;
+                    if (url.origin !== origin && !profileImage && !newsFeed) {
                         await route.abort("blockedbyclient");
                         return;
                     }
@@ -316,6 +332,8 @@ export function createCaptureService(options: {
             stage = "loading the real page";
             page = await context.newPage();
             page.on("requestfailed", (request) => {
+                if (request.url() === HIGHLIGHTS_RAW_URL)
+                    diagnostics.push("News highlights: request failed");
                 if (request.url() === githubProfile.avatar_url)
                     diagnostics.push(
                         `GitHub avatar: ${request.failure()?.errorText ?? "load failed"}`,
@@ -485,6 +503,29 @@ export function createCaptureService(options: {
             const finalPath = new URL(page.url()).pathname;
             if (finalPath !== expectedFinalPath)
                 throw new Error("Page changed after verifying the route");
+            if (["/news", "/sign-in"].includes(finalPath)) {
+                stage = "checking News highlights from the real feed";
+                const news = page.locator('section:has(h2:text-is("News"))');
+                // Announcements alone cannot prove that the dynamic feed loaded.
+                await news.locator("p").first().waitFor({ state: "visible" });
+                if (!highlightsResponse?.ok())
+                    throw new Error("News feed did not load successfully");
+                const highlights = parseHighlights(
+                    await highlightsResponse.text(),
+                ).slice(0, DYNAMIC_NEWS_COUNT);
+                if (
+                    !highlights.length ||
+                    (await news.locator("p").count()) !== highlights.length
+                )
+                    throw new Error("News cards do not match the feed");
+                for (const highlight of highlights) {
+                    if (!highlight.title)
+                        throw new Error("News highlight has no title");
+                    await news
+                        .getByText(highlight.title, { exact: true })
+                        .waitFor({ state: "visible" });
+                }
+            }
             if (
                 await page
                     .locator(

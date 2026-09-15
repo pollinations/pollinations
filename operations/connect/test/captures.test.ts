@@ -6,6 +6,30 @@ import githubProfile from "../github-profile.json";
 import type { ReviewCase } from "../review-cases";
 import { reviewCasesForFlow, reviewFlows } from "../review-inventory";
 
+async function capture(
+    service: ReturnType<typeof createCaptureService>,
+    flow: string,
+    section: string,
+    id: string,
+    presentation = { theme: "dark", size: "mobile" },
+) {
+    const request = new Request(
+        `http://localhost:4180/__connect/previews?${new URLSearchParams({
+            flow,
+            section,
+            cases: id,
+            ...presentation,
+        })}`,
+    );
+    for (;;) {
+        const response = await service.fetch(request);
+        expect(response?.ok).toBe(true);
+        const result = (await response?.json()) as PreviewResult;
+        if (result.status !== "loading") return result.cases[id];
+        await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+}
+
 const selection = {
     flow: "app",
     section: "main",
@@ -31,10 +55,12 @@ it.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
         let wrongRoute = false;
         let wrongError = false;
         let wrongSituation: string | undefined;
+        let walletProbe: ReviewCase | undefined;
         const service = createCaptureService({
             loadCases: async () => ({
                 reviewCasesForFlow: (flow, section) =>
                     reviewCasesForFlow(flow, section).map((item) => {
+                        if (walletProbe?.id === item.id) return walletProbe;
                         if (wrongError && item.id === "consent-failed-key")
                             return {
                                 ...item,
@@ -75,31 +101,13 @@ it.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
             }),
             loadRuntime: async () => startRuntime,
         });
-        async function capture(flow: string, section: string, id: string) {
-            const request = new Request(
-                `http://localhost:4180/__connect/previews?${new URLSearchParams(
-                    {
-                        flow,
-                        section,
-                        cases: id,
-                        theme: "dark",
-                        size: "mobile",
-                    },
-                )}`,
-            );
-            for (;;) {
-                const response = await service.fetch(request);
-                expect(response?.ok).toBe(true);
-                const result = (await response?.json()) as PreviewResult;
-                if (result.status !== "loading") return result.cases[id];
-                await new Promise((resolve) => setTimeout(resolve, 200));
-            }
-        }
+        const captureCase = (flow: string, section: string, id: string) =>
+            capture(service, flow, section, id);
         try {
             for (const id of ["consent-no-pollen", "consent-paid-required"]) {
                 // These assertions run against Enter's actual badge and model
                 // selection, not a Connect-built representation of the state.
-                const funding = await capture("app", "main", id);
+                const funding = await captureCase("app", "main", id);
                 expect(funding, id).toMatchObject({
                     status: "ready",
                     entryRoute: "/authorize",
@@ -109,7 +117,7 @@ it.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
             // Exercise the failure independently: the intercepted POST cannot
             // issue a key, and the real product renders its connection error.
             expect(
-                await capture("app", "main", "consent-failed-key"),
+                await captureCase("app", "main", "consent-failed-key"),
             ).toMatchObject({
                 status: "ready",
                 entryRoute: "/authorize",
@@ -133,7 +141,7 @@ it.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
                             (rule) => rule.outcome === "server-error",
                         ),
                 )) {
-                    const result = await capture(flow, section, item.id);
+                    const result = await captureCase(flow, section, item.id);
                     expect(
                         result.status,
                         `${item.title}: ${result.status === "error" ? result.error : ""}`,
@@ -143,14 +151,14 @@ it.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
             wrongError = true;
             service.invalidate();
             expect(
-                await capture("app", "main", "consent-failed-key"),
+                await captureCase("app", "main", "consent-failed-key"),
             ).toMatchObject({
                 status: "error",
                 error: expect.stringContaining(getDefaultErrorMessage(500)),
             });
             wrongError = false;
             service.invalidate();
-            const consent = await capture(
+            const consent = await captureCase(
                 "app",
                 "main",
                 "consent-session-expired",
@@ -173,7 +181,7 @@ it.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
                 (item) => item.prepare?.payment === "credited",
             );
             if (!credited) throw new Error("Missing credited wallet situation");
-            const wallet = await capture("account", "topup", credited.id);
+            const wallet = await captureCase("account", "topup", credited.id);
             expect(
                 wallet.status,
                 wallet.status === "error" ? wallet.error : undefined,
@@ -197,7 +205,7 @@ it.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
             // Every quest state exercises the real catalog/check/claim flow.
             // Pending and failed claims intercept the POST before any write.
             for (const item of reviewCasesForFlow("account", "quests")) {
-                const result = await capture("account", "quests", item.id);
+                const result = await captureCase("account", "quests", item.id);
                 expect(
                     result.status,
                     `${item.title}: ${result.status === "error" ? result.error : ""}`,
@@ -205,7 +213,7 @@ it.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
             }
             const models = reviewCasesForFlow("account", "catalog");
             for (const item of models) {
-                const result = await capture("account", "catalog", item.id);
+                const result = await captureCase("account", "catalog", item.id);
                 expect(
                     result.status,
                     `${item.title}: ${result.status === "error" ? result.error : ""}`,
@@ -220,13 +228,58 @@ it.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
                             "Empty",
                             "Loading",
                             "Load failed",
+                            "Session expired",
+                            "Billing session expired",
                         ].includes(item.variant ?? ""),
                 )) {
-                    const result = await capture(flow, "topup", item.id);
+                    const result = await captureCase(flow, "topup", item.id);
                     expect(
                         result.status,
                         `${item.title}: ${result.status === "error" ? result.error : ""}`,
                     ).toBe("ready");
+                }
+                // The same recovery UI must also handle balance, checkout-status
+                // and portal failures. Reuse their real entry routes and actions;
+                // only the HTTP response changes, so no extra situation buttons
+                // or endpoint-specific product logic are needed.
+                for (const [variant, path] of [
+                    ["Session expired", "/api/customer/balance"],
+                    ["Payment check failed", "/api/stripe/checkout-status/*"],
+                    ["Billing handoff failed", "/api/stripe/billing/portal"],
+                ]) {
+                    const item = reviewCasesForFlow(flow, "topup").find(
+                        (item) => item.variant === variant,
+                    );
+                    if (!item)
+                        throw new Error(`Missing wallet case: ${variant}`);
+                    walletProbe = {
+                        ...item,
+                        requests: item.requests?.map((rule) => ({
+                            ...rule,
+                            path,
+                            outcome: "unauthorized",
+                        })),
+                        expected: [
+                            {
+                                selector: '[role="alert"]',
+                                text: getDefaultErrorMessage(401),
+                            },
+                            {
+                                selector: "button:not(:disabled)",
+                                text: "Sign in again",
+                            },
+                            {
+                                selector:
+                                    'body:not(:has(button:text-is("Try again")))',
+                            },
+                        ],
+                    };
+                    const result = await captureCase(flow, "topup", item.id);
+                    expect(
+                        result.status,
+                        `${flow}: ${path}: ${result.error ?? ""}`,
+                    ).toBe("ready");
+                    walletProbe = undefined;
                 }
             }
             // The former loading check matched "All, 0 models" even after
@@ -242,7 +295,7 @@ it.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
                 ["quests", readyQuests],
             ] as const) {
                 wrongSituation = item.id;
-                const result = await capture("account", section, item.id);
+                const result = await captureCase("account", section, item.id);
                 expect(
                     result.status,
                     `${item.title} accepted the wrong state`,
@@ -252,7 +305,7 @@ it.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
             wrongRoute = true;
             service.invalidate();
             expect(
-                await capture("app", "main", "consent-session-expired"),
+                await captureCase("app", "main", "consent-session-expired"),
             ).toMatchObject({
                 status: "error",
                 error: expect.stringContaining(

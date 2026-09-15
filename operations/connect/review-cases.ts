@@ -1,9 +1,11 @@
 import { getAuthorizeRequestError } from "@shared/auth/authorize-config.ts";
 import { loginErrors } from "@shared/auth/login-errors.ts";
+import { getDefaultErrorMessage } from "../../shared/error.ts";
 import type { Conditions } from "./live-client";
 import type { CanvasScreen } from "./pollen-connect-canvas-data";
 import { galleryScreensForFlow } from "./pollen-connect-gallery-data";
 import type { ReviewStep } from "./review-driver";
+import { fundingReview, fundingSituations } from "./review-funding";
 import type { ReviewRequest } from "./review-requests";
 import type { ReviewSetup } from "./review-setup";
 import { screenRoute } from "./screen-route";
@@ -16,6 +18,7 @@ export type ReviewCase = {
     variant?: string;
     provider?: "GitHub" | "Stripe";
     query: Record<string, string>;
+    finalRoute?: string;
     conditions: Partial<Conditions>;
     requests?: ReviewRequest[];
     steps?: ReviewStep[];
@@ -30,15 +33,7 @@ export type ReviewCase = {
         | { type: "device-deny" };
 };
 
-export type UnsupportedReviewCase = {
-    id: string;
-    pageId: string;
-    title: string;
-    reason: string;
-};
-
 const inventory = galleryScreensForFlow("app", "main");
-const covered = new Set<string>();
 function page(id: string) {
     const entry = inventory.find((entry) => entry.id === id);
     if (!entry) throw new Error(`Missing App Login page: ${id}`);
@@ -64,6 +59,7 @@ function reviewCase(
         | "steps"
         | "prepare"
         | "provider"
+        | "finalRoute"
     > & {
         query?: Record<string, string>;
         title?: string;
@@ -73,11 +69,11 @@ function reviewCase(
     const variant = entry.variants?.[index];
     const screen = recipe.query?.screen ?? variant?.screen ?? entry.screen;
     if (!screen) throw new Error(`Missing App Login route: ${id}`);
-    covered.add(`${pageId}:${index}`);
     return {
         id,
         pageId,
         family,
+        variant: variant?.label ?? entry.title,
         title: recipe.title ?? caseTitle(entry, index),
         query: recipe.query ?? { screen, ...variant?.params },
         conditions: recipe.conditions,
@@ -87,6 +83,7 @@ function reviewCase(
         ...(recipe.prepare && { prepare: recipe.prepare }),
         ...(recipe.action && { action: recipe.action }),
         ...(recipe.provider && { provider: recipe.provider }),
+        ...(recipe.finalRoute && { finalRoute: recipe.finalRoute }),
     };
 }
 
@@ -143,6 +140,29 @@ export const appLoginReviewCases: ReviewCase[] = [
             { selector: "#authorize-dialog-title" },
             { selector: 'button[aria-busy="false"]:has-text("Allow access")' },
         ],
+    }),
+    ...fundingSituations.map((situation) => {
+        const funding = fundingReview(situation);
+        return reviewCase(
+            "consent",
+            page("consent").variants?.findIndex(
+                ({ params }) => params?.funding === situation.id,
+            ) ?? -1,
+            `consent-${situation.id}`,
+            "consent",
+            {
+                ...funding,
+                query: { screen: "oauth" },
+                expected: [
+                    ...funding.expected,
+                    { selector: "#authorize-dialog-title" },
+                    {
+                        selector:
+                            'button[aria-busy="false"]:has-text("Allow access")',
+                    },
+                ],
+            },
+        );
     }),
     reviewCase("sign-in", 1, "app-checking", "sign-in", {
         query: { screen: "oauth-signed-out" },
@@ -242,6 +262,7 @@ export const appLoginReviewCases: ReviewCase[] = [
                         : error.id,
             },
             ...(error.id === loginErrors.default.id && {
+                finalRoute: "/authorize",
                 action: {
                     type: "sign-in" as const,
                     outcome: "provider-error" as const,
@@ -367,7 +388,7 @@ export const appLoginReviewCases: ReviewCase[] = [
                                   path: "/api/oauth/token",
                                   method: "POST",
                                   outcome:
-                                      index === 1 ? "pending" : "unavailable",
+                                      index === 1 ? "pending" : "server-error",
                               },
                           ]
                         : index === 4 || index === 5
@@ -424,10 +445,12 @@ export const appLoginReviewCases: ReviewCase[] = [
             },
         ),
     ),
-    ...(["key", "code"] as const).map((kind, index) =>
+    ...(["key", "code"] as const).map((kind) =>
         reviewCase(
             "consent-errors",
-            index + 2,
+            (page("consent-errors").variants ?? []).findIndex(
+                (v) => v.params?.authorize_error === kind,
+            ),
             `consent-failed-${kind}`,
             "app-connection-failed",
             {
@@ -440,7 +463,7 @@ export const appLoginReviewCases: ReviewCase[] = [
                                 ? "/api/api-keys"
                                 : "/api/oauth/code",
                         method: "POST",
-                        outcome: "unavailable",
+                        outcome: "server-error",
                     },
                 ],
                 steps: [
@@ -453,40 +476,48 @@ export const appLoginReviewCases: ReviewCase[] = [
                 expected: [
                     {
                         selector: "[role='alert']",
-                        text: "We're temporarily down for maintenance. Sorry about that!",
+                        text: getDefaultErrorMessage(500),
+                    },
+                    {
+                        selector:
+                            'button:not(:disabled):text-is("Back to app")',
                     },
                 ],
             },
         ),
     ),
-    ...(["forbidden", "unauthorized"] as const).map((outcome, index) =>
-        reviewCase(
-            "consent-errors",
-            index,
-            `consent-rejected-${index}`,
-            "app-connection-failed",
-            {
-                conditions: { account: "signed-in" },
-                query: { screen: "oauth" },
-                requests: [{ path: "/api/api-keys", method: "POST", outcome }],
-                steps: [
-                    {
-                        selector: "button",
-                        text: "Allow access",
-                        action: "click",
-                    },
-                ],
-                expected: [
-                    {
-                        selector: "[role='alert']",
-                        text:
-                            outcome === "unauthorized"
-                                ? "Authentication required."
-                                : "Access denied!",
-                    },
-                ],
-            },
+    reviewCase(
+        "sign-in-errors",
+        (page("sign-in-errors").variants ?? []).findIndex(
+            (v) => v.params?.authorize_error === "session",
         ),
+        "consent-session-expired",
+        "error",
+        {
+            conditions: { account: "signed-in" },
+            query: { screen: "oauth" },
+            requests: [
+                {
+                    path: "/api/api-keys",
+                    method: "POST",
+                    outcome: "unauthorized",
+                },
+            ],
+            steps: [
+                {
+                    selector: "button",
+                    text: "Allow access",
+                    action: "click",
+                },
+            ],
+            expected: [
+                {
+                    selector: "[role='alert']",
+                    text: "Your pollinations.ai session expired. Sign in again to continue.",
+                },
+                { selector: "button", text: "Sign in again" },
+            ],
+        },
     ),
     reviewCase("github-handoff", 0, "github-handoff", "github-handoff", {
         provider: "GitHub",
@@ -496,31 +527,3 @@ export const appLoginReviewCases: ReviewCase[] = [
         expected: [{ selector: "h1, h2", text: "Continue on GitHub" }],
     }),
 ];
-
-export const unsupportedAppLoginReviewCases: UnsupportedReviewCase[] =
-    inventory.flatMap((entry) =>
-        (entry.variants ?? [{ label: entry.title }]).flatMap(
-            (variant, index) => {
-                if (covered.has(`${entry.id}:${index}`)) return [];
-                const params = variant.params ?? {};
-                const reason =
-                    entry.owner === "GitHub" || entry.owner === "Stripe"
-                        ? "Requires its external provider."
-                        : params.action === "authorize"
-                          ? "Requires a real authorization action and its recorded outcome."
-                          : params.app_callback ||
-                              params.app_account ||
-                              entry.id === "app-connected"
-                            ? "Requires a real SDK connection, browser session, or callback outcome."
-                            : "Requires a controlled request delay or failure; no capture recipe is defined yet.";
-                return [
-                    {
-                        id: `${entry.id}--${index}`,
-                        pageId: entry.id,
-                        title: caseTitle(entry, index),
-                        reason,
-                    },
-                ];
-            },
-        ),
-    );

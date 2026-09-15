@@ -1,7 +1,7 @@
 import { loginErrors } from "@shared/auth/login-errors.ts";
 import { adminScreens } from "./pollen-connect-admin";
 import { dashboardScreens } from "./pollen-connect-dashboard";
-import { defaultPreviewRequest } from "./pollen-connect-request-config";
+import { fundingVariants } from "./review-funding";
 
 export type ScreenVariant = {
     label: string;
@@ -65,8 +65,6 @@ export const authorizeRequestErrors: ScreenVariant[] = [
 ];
 
 export const authorizeFailures = [
-    { id: "revoked", label: "App authorization rejected" },
-    { id: "session", label: "Session expired before approval" },
     { id: "key", label: "Key creation failed" },
     { id: "code", label: "Authorization code creation failed" },
 ] as const;
@@ -154,6 +152,15 @@ export const canvasGroups: { title: string; screens: CanvasScreen[] }[] = [
                         error: true,
                         params: { action: "sign-in", result: "error" },
                     },
+                    {
+                        label: "Session expired before approval",
+                        error: true,
+                        params: {
+                            action: "sign-in",
+                            result: "error",
+                            authorize_error: "session",
+                        },
+                    },
                     { label: "Simple BYOP", screen: "direct-signed-out" },
                     { label: "New account", params: { persona: "new" } },
                 ],
@@ -206,6 +213,7 @@ export const canvasGroups: { title: string; screens: CanvasScreen[] }[] = [
                             authorize_error: id,
                         },
                     })),
+                    ...fundingVariants,
                 ],
             },
             {
@@ -244,24 +252,6 @@ export const canvasGroups: { title: string; screens: CanvasScreen[] }[] = [
                 owner: "GitHub",
                 illustration: "github-handoff",
             },
-            {
-                id: "github-login",
-                title: "GitHub sign-in",
-                owner: "GitHub",
-                illustration: "github-login",
-            },
-            {
-                id: "github-signup",
-                title: "GitHub signup · Provider handoff",
-                owner: "GitHub",
-                illustration: "github-signup",
-            },
-            {
-                id: "github-authorize",
-                title: "GitHub authorization",
-                owner: "GitHub",
-                illustration: "github-authorize",
-            },
         ],
     },
     {
@@ -283,18 +273,8 @@ export function canvasScreenUrl(
     const screen = variant?.screen ?? entry.screen;
     const params = new URLSearchParams({
         screen: screen ?? "oauth",
-        balance: "positive",
-        badge: "none",
-        wallet: "total",
-        ...defaultPreviewRequest,
         ...variant?.params,
         ...overrides,
     });
-    const previewScreen = params.get("screen");
-    if (
-        params.get("protocol") === "direct" &&
-        previewScreen?.startsWith("oauth")
-    )
-        params.set("screen", previewScreen.replace(/^oauth/, "direct"));
     return `/pollen-connect-screen.html?${params}`;
 }

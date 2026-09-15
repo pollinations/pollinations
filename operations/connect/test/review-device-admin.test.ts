@@ -7,7 +7,6 @@ import { galleryScreensForFlow } from "../pollen-connect-gallery-data";
 import {
     adminReviewCases,
     deviceReviewCasesForSection,
-    unsupportedDeviceReviewCases,
 } from "../review-device-admin";
 import { screenRoute } from "../screen-route";
 
@@ -53,10 +52,7 @@ describe("real Device and Admin review recipes", () => {
                 new URL(route ?? "", origin).pathname,
             );
         }
-        const accounted = new Set([
-            ...recipes.map(({ id }) => id),
-            ...unsupportedDeviceReviewCases(section).map(({ id }) => id),
-        ]);
+        const accounted = new Set(recipes.map(({ id }) => id));
         for (const entry of flow.screens.values())
             if (!entry.illustration)
                 expect(accounted.has(entry.id), entry.id).toBe(true);

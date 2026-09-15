@@ -10,8 +10,93 @@ import {
 import { getFlowFocus } from "../pollen-connect-diagram";
 import { galleryCardsForFlow } from "../pollen-connect-gallery-data";
 import { walletBillingVariants } from "../pollen-connect-wallet-preview";
+import {
+    appTopupReviewCases,
+    dashboardReviewCasesForSection,
+} from "../review-dashboard";
 
 describe("dashboard preview", () => {
+    it("does not identify unknown routes as Wallet", () => {
+        expect(dashboardScreenForLocation("/pollen")).toBe("enter-connected");
+        expect(dashboardScreenForLocation("/not-a-dashboard-page")).toBe(
+            "unknown",
+        );
+    });
+    it("requires operation-specific error text, so a bootstrap alert cannot pass a failed situation", () => {
+        const cases = [
+            ...appTopupReviewCases,
+            ...dashboardSections.flatMap(({ id }) =>
+                dashboardReviewCasesForSection(id),
+            ),
+        ];
+        // Positive alert checks require copy. A body assertion that
+        // excludes alerts proves a healthy/pending page instead.
+        for (const recipe of cases)
+            for (const assertion of recipe.expected)
+                if (/^\[role=['"]alert['"]\]/.test(assertion.selector))
+                    expect(assertion.text?.trim(), recipe.id).toBeTruthy();
+        for (const recipe of cases.filter(
+            ({ pageId, title }) =>
+                /^(key|app|model|agent)-(create|edit|delete|visibility)$/.test(
+                    pageId,
+                ) && /failed/i.test(title),
+        ))
+            expect(
+                recipe.expected.some(
+                    ({ selector, text }) =>
+                        selector === "[role='dialog']" && Boolean(text),
+                ),
+                recipe.id,
+            ).toBe(true);
+    });
+    it("distinguishes signed-in and signed-out announcements through the real account controls", () => {
+        const news = dashboardReviewCasesForSection("news");
+        expect(news).toHaveLength(2);
+        expect(news[0].conditions.account).toBe("signed-in");
+        expect(news[1].conditions.account).toBe("signed-out");
+        expect(news[0].expected).not.toEqual(news[1].expected);
+        for (const recipe of news)
+            expect(
+                recipe.expected.some(
+                    ({ selector }) =>
+                        selector.includes("Account menu for ") &&
+                        selector.includes("Sign in with GitHub"),
+                ),
+            ).toBe(true);
+    });
+    it("proves a credited wallet includes the added Pollen and claimed rewards are no longer claimable", () => {
+        const credited = [
+            ...appTopupReviewCases,
+            ...dashboardReviewCasesForSection("topup"),
+        ].filter(({ prepare }) => prepare?.payment === "credited");
+        expect(credited).toHaveLength(2);
+        for (const recipe of credited)
+            expect(
+                recipe.expected.some(
+                    ({ selector }) =>
+                        selector.includes("polli-wallet-panel-paid") &&
+                        selector.includes('"15"'),
+                ),
+                recipe.id,
+            ).toBe(true);
+        const claimed = dashboardReviewCasesForSection("quests").find(
+            ({ prepare }) => prepare?.rewards === "claimed",
+        );
+        expect(claimed?.expected).toContainEqual({
+            selector: 'body:not(:has(button:text-is("Claim")))',
+        });
+        const checkFailed = dashboardReviewCasesForSection("quests").find(
+            ({ title }) => title.endsWith("Check unavailable"),
+        );
+        expect(checkFailed?.requests).toContainEqual({
+            path: "/api/quests/check",
+            method: "POST",
+            outcome: "server-error",
+        });
+        expect(checkFailed?.expected).toContainEqual({
+            selector: 'button:text-is("Claim")',
+        });
+    });
     it.each(
         dashboardSections.map((s) => s.id),
     )("shares the %s inventory across views", (section) => {

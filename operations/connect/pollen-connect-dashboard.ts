@@ -456,7 +456,9 @@ function resourceScreens(
             : []),
     ];
 }
-export function dashboardSectionForScreen(id: string): DashboardSection {
+export function dashboardSectionForScreen(
+    id: string,
+): DashboardSection | undefined {
     if (id === "account-delete") return "account";
     if (id in pages) return id as DashboardSection;
     for (const [section, { prefix }] of Object.entries(collections))
@@ -464,7 +466,15 @@ export function dashboardSectionForScreen(id: string): DashboardSection {
             return section as DashboardSection;
     if (["enter-connected", "account-checkout", "account-billing"].includes(id))
         return "topup";
-    return "main";
+    if (
+        [
+            "enter-signed-out",
+            "dashboard-github",
+            "dashboard-auth-error",
+        ].includes(id)
+    )
+        return "main";
+    return undefined;
 }
 export function dashboardRouteForPreview(screen: string): string | undefined {
     if (screen === "dash-account-delete") return "/account";
@@ -503,7 +513,9 @@ export function dashboardScreenForLocation(path: string, dialogTitle = "") {
         ? "dashboard-auth-error"
         : path === "/sign-in"
           ? "enter-signed-out"
-          : "enter-connected";
+          : path === "/pollen"
+            ? "enter-connected"
+            : "unknown";
 }
 
 export function getDashboardFlow(section?: string) {

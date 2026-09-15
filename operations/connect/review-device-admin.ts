@@ -1,10 +1,11 @@
 import { loginErrors } from "@shared/auth/login-errors.ts";
 import { deviceCodeMessages } from "../../enter.pollinations.ai/frontend/src/lib/device-request.ts";
 import { dashboardSignInErrors } from "../../packages/ui/src/modules/auth/dashboard-sign-in-errors.ts";
+import { getDefaultErrorMessage } from "../../shared/error.ts";
 import { adminScreens } from "./pollen-connect-admin";
-import type { CanvasScreen } from "./pollen-connect-canvas-data";
 import { type DeviceEntry, getDeviceFlow } from "./pollen-connect-device";
-import type { ReviewCase, UnsupportedReviewCase } from "./review-cases";
+import type { ReviewCase } from "./review-cases";
+import { fundingReview, fundingSituations } from "./review-funding";
 
 const signInReady = [
     { selector: "#sign-in-title" },
@@ -157,6 +158,19 @@ export function deviceReviewCasesForSection(
             conditions: { account: "signed-in" },
             expected: consentReady,
         }),
+        ...fundingSituations.map((situation) => {
+            const funding = fundingReview(situation);
+            return {
+                ...recipe("consent", "consent", {
+                    ...funding,
+                    title: `Allow access · ${situation.label}`,
+                    query: { screen: "device-consent" },
+                    prepare: { device: "pending" },
+                    expected: [...consentReady, ...funding.expected],
+                }),
+                id: `consent-${situation.id}`,
+            };
+        }),
         recipe("device-request-app", "device-errors", {
             query: { screen: "device-consent" },
             prepare: { device: "missing-app" },
@@ -179,7 +193,7 @@ export function deviceReviewCasesForSection(
                             {
                                 path: "/api/device/approve",
                                 method: "POST",
-                                outcome: "unavailable" as const,
+                                outcome: "server-error" as const,
                             },
                         ],
                     }),
@@ -194,7 +208,7 @@ export function deviceReviewCasesForSection(
                         ? [
                               {
                                   selector: "[role='alert']",
-                                  text: "Failed to approve device",
+                                  text: getDefaultErrorMessage(500),
                               },
                           ]
                         : [
@@ -299,16 +313,16 @@ export function deviceReviewCasesForSection(
                     "device-submit-key",
                     "device-errors",
                     "/api/api-keys",
-                    "unavailable",
+                    "server-error",
                     "Allow access",
                     "[role='alert']",
-                    "We're temporarily down for maintenance. Sorry about that!",
+                    getDefaultErrorMessage(500),
                 ],
                 [
                     "device-submit-deny",
                     "device-errors",
                     "/api/device/deny",
-                    "unavailable",
+                    "server-error",
                     "Cancel",
                     "[role='alert']",
                     "Couldn’t decline this connection",
@@ -479,7 +493,7 @@ export const adminReviewCases: ReviewCase[] = [
                             {
                                 path: "/auth/logout",
                                 method: "POST",
-                                outcome: "unavailable",
+                                outcome: "server-error",
                             },
                         ],
                     }),
@@ -564,48 +578,3 @@ export const adminReviewCases: ReviewCase[] = [
         }),
     ),
 ];
-
-function unsupported(
-    entry: CanvasScreen,
-    reason: string,
-): UnsupportedReviewCase {
-    return { id: entry.id, pageId: entry.id, title: entry.title, reason };
-}
-
-export function unsupportedDeviceReviewCases(section: DeviceEntry) {
-    const flow = getDeviceFlow(section);
-    const covered = new Set(
-        deviceReviewCasesForSection(section).map(({ id }) => id),
-    );
-    return [...flow.screens.values()]
-        .filter((entry) => !covered.has(entry.id) && !entry.illustration)
-        .map((entry) =>
-            unsupported(
-                entry,
-                entry.id === "device-result"
-                    ? "Requires an approved device connection and its real key grant."
-                    : "Requires a controlled request delay or failure at this step.",
-            ),
-        );
-}
-
-export const unsupportedAdminReviewCases = adminScreens.flatMap((entry) =>
-    entry.owner === "GitHub"
-        ? []
-        : (entry.variants ?? []).flatMap((variant) =>
-              adminReviewCases.some(
-                  (recipe) =>
-                      recipe.pageId === entry.id &&
-                      recipe.variant === variant.label,
-              )
-                  ? []
-                  : [
-                        {
-                            id: `${entry.id}:${variant.label}`,
-                            pageId: entry.id,
-                            title: `${entry.title} · ${variant.label}`,
-                            reason: "Missing executable Admin situation.",
-                        },
-                    ],
-          ),
-);

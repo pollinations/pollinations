@@ -1,11 +1,12 @@
 import { loginErrors } from "@shared/auth/login-errors.ts";
+import { getDefaultErrorMessage } from "@shared/error.ts";
 import { accountActionScreens } from "./pollen-connect-account-actions";
 import type { CanvasScreen } from "./pollen-connect-canvas-data";
 import {
     dashboardScreens,
     dashboardSectionForScreen,
 } from "./pollen-connect-dashboard";
-import type { ReviewCase, UnsupportedReviewCase } from "./review-cases";
+import type { ReviewCase } from "./review-cases";
 
 type DashboardReviewCase = ReviewCase;
 
@@ -40,6 +41,19 @@ const headings: Record<string, string> = {
     "account-wallet": "Wallet",
 };
 const heading = (text: string) => ({ selector: "h1, h2, h3", text });
+const noPageError = { selector: 'body:not(:has([role="alert"]))' };
+const questsIdle = {
+    selector:
+        'body:not(:has(.text-intent-danger-text)):not(:has(span:text-is("Checking for new quests…")))',
+};
+const newsAccount = (signedIn: boolean) => ({
+    // The dashboard drawer is closed on mobile, but its account controls still
+    // identify the rendered session. Keep the page visible while checking them.
+    selector: signedIn
+        ? 'body:has(button[aria-label^="Account menu for "]):not(:has(button:has-text("Sign in with GitHub"))) :is(h1,h2,h3)'
+        : 'body:has(button:has-text("Sign in with GitHub")):not(:has(button[aria-label^="Account menu for "])) :is(h1,h2,h3)',
+    text: "Announcements",
+});
 const listContent: Record<string, { populated: string; empty: string }> = {
     keys: { populated: "App example", empty: "Create your first API key" },
     apps: {
@@ -49,7 +63,6 @@ const listContent: Record<string, { populated: string; empty: string }> = {
     models: { populated: "Example model", empty: "Add your first model" },
     agents: { populated: "Example agent", empty: "Create your first agent" },
 };
-const covered = new Set<string>();
 function pageRoute(page: CanvasScreen) {
     if (!page.screen) throw new Error(`Missing dashboard route: ${page.id}`);
     return page.screen;
@@ -61,7 +74,6 @@ function makeCase(
     index: number,
     recipe: Partial<DashboardReviewCase> = {},
 ): DashboardReviewCase {
-    covered.add(`${namespace}:${page.id}:${index}`);
     const variant = page.variants?.[index];
     const screen = variant?.screen ?? page.screen;
     if (!screen) throw new Error(`Missing dashboard route: ${page.id}`);
@@ -69,6 +81,7 @@ function makeCase(
         id: `${namespace}-${page.id}${index ? `--${index}` : ""}`,
         pageId: page.id,
         family: page.id,
+        variant: variant?.label ?? page.title,
         title:
             index && variant ? `${page.title} · ${variant.label}` : page.title,
         query: { screen },
@@ -128,6 +141,7 @@ function walletCases(namespace: string, page: CanvasScreen) {
                     ],
                     expected: pending
                         ? [
+                              noPageError,
                               {
                                   selector:
                                       namespace === "dashboard"
@@ -177,6 +191,9 @@ function walletCases(namespace: string, page: CanvasScreen) {
                         ],
                     }),
                     expected: [
+                        ...(!failed || namespace !== "dashboard"
+                            ? [heading("Wallet")]
+                            : []),
                         {
                             selector: failed ? "[role='alert']" : "output",
                             text: failed
@@ -185,6 +202,18 @@ function walletCases(namespace: string, page: CanvasScreen) {
                                   ? "Pollen added"
                                   : "Payment hasn’t been credited",
                         },
+                        ...(failed
+                            ? [{ selector: 'button:text-is("Try again")' }]
+                            : [
+                                  noPageError,
+                                  {
+                                      selector: `.polli-wallet-panel-paid .polli-wallet-balance-value:text-is("${credited ? "15" : "10"}")`,
+                                  },
+                                  {
+                                      selector:
+                                          '.polli-wallet-panel-tier .polli-wallet-balance-value:text-is("0")',
+                                  },
+                              ]),
                     ],
                 }),
             ];
@@ -231,7 +260,7 @@ function walletCases(namespace: string, page: CanvasScreen) {
                                       method: "POST",
                                       outcome: opening
                                           ? ("pending" as const)
-                                          : ("unavailable" as const),
+                                          : ("server-error" as const),
                                   },
                               ],
                           }
@@ -242,7 +271,7 @@ function walletCases(namespace: string, page: CanvasScreen) {
                             text: opening
                                 ? "Opening..."
                                 : failed
-                                  ? "Failed to open Stripe"
+                                  ? getDefaultErrorMessage(500)
                                   : variant.label === "Last charge failed"
                                     ? "Last charge failed"
                                     : "Payment method",
@@ -297,7 +326,7 @@ function walletCases(namespace: string, page: CanvasScreen) {
                                       method: "PATCH",
                                       outcome: saving
                                           ? ("pending" as const)
-                                          : ("unavailable" as const),
+                                          : ("server-error" as const),
                                   },
                               ],
                           }
@@ -308,7 +337,7 @@ function walletCases(namespace: string, page: CanvasScreen) {
                           ? [
                                 {
                                     selector: "p, div",
-                                    text: "Failed to save auto top-up",
+                                    text: getDefaultErrorMessage(500),
                                 },
                             ]
                           : variant.label === "Payment action required"
@@ -339,6 +368,7 @@ function walletCases(namespace: string, page: CanvasScreen) {
                 makeCase(namespace, page, index, {
                     expected: [
                         heading("Wallet"),
+                        noPageError,
                         {
                             selector: `.polli-wallet-panel-paid .polli-wallet-balance-value:text-is("${variant.label === "Paid available" ? "10" : "0"}")`,
                         },
@@ -418,6 +448,7 @@ const dashboardReviewCases = dashboardScreens.flatMap(
             return (page.variants ?? []).map((_, index) =>
                 makeCase("dashboard", page, index, {
                     conditions: { account: "signed-out" },
+                    expected: [heading("Announcements"), newsAccount(false)],
                     ...(index && {
                         action: {
                             type: "sign-in" as const,
@@ -447,6 +478,9 @@ const dashboardReviewCases = dashboardScreens.flatMap(
             /^(keys|apps|models|agents|key-|app-|model-|agent-)/.test(page.id);
         const cases = [
             makeCase("dashboard", page, 0, {
+                ...(page.id === "news" && {
+                    expected: [heading("Announcements"), newsAccount(true)],
+                }),
                 ...(resource && {
                     prepare: { dashboard: "populated" as const },
                 }),
@@ -461,12 +495,30 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                 }),
                 ...(page.id === "activity" && {
                     prepare: { activity: "available" as const },
+                    expected: [
+                        heading(headings.activity),
+                        {
+                            selector:
+                                'div:text-is("Requests") + div:text-is("3")',
+                        },
+                    ],
+                }),
+                ...(page.id === "catalog" && {
+                    expected: [
+                        heading(headings.catalog),
+                        noPageError,
+                        {
+                            selector:
+                                'button[aria-label^="All, "]:not([aria-label="All, 0 models"])',
+                        },
+                    ],
                 }),
                 ...(page.id === "quests" && {
                     prepare: { rewards: "available" as const },
                     expected: [
                         { selector: "span", text: "Connect review reward" },
                         { selector: "button", text: "Claim" },
+                        questsIdle,
                     ],
                 }),
                 ...(/-(create|edit|delete|visibility)$/.test(page.id) ||
@@ -477,6 +529,20 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                                   selector: '[role="dialog"]',
                                   text: headings[page.id],
                               },
+                              ...(/^(key|app)-edit$/.test(page.id)
+                                  ? [
+                                        {
+                                            selector: `[role="dialog"] input[value="${page.id === "key-edit" ? "App example" : "Example app registration"}"]`,
+                                        },
+                                    ]
+                                  : []),
+                              ...(/^(model|agent)-edit$/.test(page.id)
+                                  ? [
+                                        {
+                                            selector: `[role="dialog"] input[name="community-model-title"][value="${page.id === "model-edit" ? "Example model" : "Example agent"}"]`,
+                                        },
+                                    ]
+                                  : []),
                           ],
                       }
                     : {}),
@@ -502,6 +568,7 @@ const dashboardReviewCases = dashboardScreens.flatMap(
             cases.push(
                 makeCase("dashboard", page, 1, {
                     conditions: { account: "signed-out" },
+                    expected: [heading("Announcements"), newsAccount(false)],
                 }),
             );
         for (const [index, variant] of (page.variants ?? []).entries()) {
@@ -523,15 +590,24 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                             },
                         ],
                         expected: [
+                            heading(headings[page.id]),
+                            ...(pending ? [noPageError] : []),
                             {
                                 selector: pending
                                     ? page.id === "catalog"
                                         ? "button[aria-label='All, 0 models']"
                                         : "output, p, span, td, div"
                                     : "[role='alert']",
-                                ...(pending && page.id !== "catalog"
-                                    ? { text: "Loading" }
-                                    : {}),
+                                ...(!pending
+                                    ? {
+                                          text:
+                                              page.id === "catalog"
+                                                  ? "Could not load models."
+                                                  : getDefaultErrorMessage(503),
+                                      }
+                                    : page.id !== "catalog"
+                                      ? { text: "Loading" }
+                                      : {}),
                             },
                         ],
                     }),
@@ -559,7 +635,7 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                             {
                                 path,
                                 method: "POST",
-                                outcome: pending ? "pending" : "unavailable",
+                                outcome: pending ? "pending" : "server-error",
                             },
                         ],
                         steps: [
@@ -586,7 +662,13 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                         ],
                         expected: [
                             {
-                                selector: pending ? "button" : "[role='alert']",
+                                selector: "[role='dialog']",
+                                text: headings[page.id],
+                            },
+                            {
+                                selector: pending
+                                    ? "[role='dialog'] button"
+                                    : "[role='dialog'] [role='alert']",
                                 ...(pending
                                     ? {
                                           text:
@@ -596,7 +678,12 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                                                     ? "Saving"
                                                     : "Deleting",
                                       }
-                                    : {}),
+                                    : {
+                                          text:
+                                              operation === "delete"
+                                                  ? "Couldn’t delete this key. Try again."
+                                                  : getDefaultErrorMessage(500),
+                                      }),
                             },
                         ],
                     }),
@@ -698,7 +785,7 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                                     method: "POST",
                                     outcome: pending
                                         ? ("pending" as const)
-                                        : ("unavailable" as const),
+                                        : ("server-error" as const),
                                 },
                             ],
                             steps: [
@@ -796,7 +883,7 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                                     method: connected ? "DELETE" : "POST",
                                     outcome: pending
                                         ? ("pending" as const)
-                                        : ("unavailable" as const),
+                                        : ("server-error" as const),
                                 },
                             ],
                             steps: [
@@ -927,7 +1014,7 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                                         : agent && op === "edit"
                                           ? "PATCH"
                                           : "POST",
-                                outcome: pending ? "pending" : "unavailable",
+                                outcome: pending ? "pending" : "server-error",
                             },
                         ],
                         steps: [
@@ -944,11 +1031,15 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                         ],
                         expected: [
                             {
+                                selector: "[role='dialog']",
+                                text: headings[page.id],
+                            },
+                            {
                                 selector: pending
-                                    ? "button"
+                                    ? "[role='dialog'] button"
                                     : testing
                                       ? "[role='dialog'] p.text-intent-danger-text"
-                                      : "[role='alert']",
+                                      : "[role='dialog'] [role='alert']",
 
                                 ...(pending
                                     ? {
@@ -960,7 +1051,7 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                                                   ? "Deleting"
                                                   : "Saving",
                                       }
-                                    : {}),
+                                    : { text: getDefaultErrorMessage(500) }),
                             },
                         ],
                     }),
@@ -1015,6 +1106,8 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                     checkFailed = label === "Check unavailable";
                 const claiming = label === "Claiming",
                     claimFailed = label === "Claim failed";
+                const pending = loading || checking || claiming;
+                const requestFailed = failed || checkFailed || claimFailed;
                 cases.push(
                     makeCase("dashboard", page, index, {
                         prepare: {
@@ -1025,35 +1118,34 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                                       ? "claimed"
                                       : "available",
                         },
-                        requests: [
-                            {
-                                path:
-                                    loading || failed
-                                        ? "/api/quests/rewards"
-                                        : claiming || claimFailed
-                                          ? "/api/quests/rewards/*/claim"
-                                          : "/api/quests/check",
-                                method: loading || failed ? "GET" : "POST",
-                                outcome:
-                                    loading || checking || claiming
-                                        ? "pending"
-                                        : "unavailable",
-                            },
-                            ...(claiming || claimFailed
+                        requests:
+                            pending || requestFailed
                                 ? [
                                       {
-                                          path: "/api/quests/check",
-                                          method: "POST",
-                                          outcome: "unavailable" as const,
+                                          path:
+                                              loading || failed
+                                                  ? "/api/quests/rewards"
+                                                  : claiming || claimFailed
+                                                    ? "/api/quests/rewards/*/claim"
+                                                    : "/api/quests/check",
+                                          method:
+                                              loading || failed
+                                                  ? "GET"
+                                                  : "POST",
+                                          outcome: pending
+                                              ? "pending"
+                                              : failed
+                                                ? "unavailable"
+                                                : "server-error",
                                       },
                                   ]
-                                : []),
-                        ],
+                                : [],
                         ...(claiming || claimFailed
                             ? {
                                   steps: [
                                       {
-                                          selector: "button",
+                                          selector:
+                                              "button:not(.pointer-events-none button)",
                                           text: "Claim",
                                           action: "click",
                                       },
@@ -1075,13 +1167,47 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                                         : claiming
                                           ? "Claiming"
                                           : claimFailed
-                                            ? "Failed to claim reward"
+                                            ? "Failed to claim reward (500)"
                                             : checkFailed
                                               ? "Connect review reward"
                                               : label === "Reward claimed"
                                                 ? "Connect review reward"
                                                 : "Setup",
                             },
+                            ...(!pending && !failed && !claimFailed
+                                ? [questsIdle]
+                                : []),
+                            ...(pending
+                                ? [
+                                      {
+                                          selector:
+                                              "body:not(:has(.text-intent-danger-text))",
+                                      },
+                                  ]
+                                : []),
+                            ...(checkFailed
+                                ? [{ selector: 'button:text-is("Claim")' }]
+                                : []),
+                            ...(label === "Reward claimed"
+                                ? [
+                                      {
+                                          selector:
+                                              'body:not(:has(button:text-is("Claim")))',
+                                      },
+                                      {
+                                          selector:
+                                              '.polli-wallet-panel-tier span:text-is("5")',
+                                      },
+                                  ]
+                                : []),
+                            ...(label === "No earned rewards"
+                                ? [
+                                      {
+                                          selector:
+                                              'body:not(:has(span:text-is("Connect review reward"))):not(:has(button:text-is("Claim")))',
+                                      },
+                                  ]
+                                : []),
                         ],
                     }),
                 );
@@ -1169,7 +1295,7 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                                           outcome:
                                               label === "Deleting"
                                                   ? ("pending" as const)
-                                                  : ("unavailable" as const),
+                                                  : ("server-error" as const),
                                       },
                                   ],
                               }),
@@ -1179,14 +1305,18 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                                     label === "Acknowledged"
                                         ? "[role='dialog'] button:not(:disabled)"
                                         : label === "Deleting"
-                                          ? "button"
-                                          : "[role='alert']",
+                                          ? "[role='dialog'] button"
+                                          : "[role='dialog'] [data-scope='field'][data-part='error-text']",
                                 text:
                                     label === "Acknowledged"
                                         ? "Delete account"
                                         : label === "Deleting"
                                           ? "Deleting"
-                                          : undefined,
+                                          : getDefaultErrorMessage(500),
+                            },
+                            {
+                                selector: "[role='dialog']",
+                                text: headings[page.id],
                             },
                         ],
                     }),
@@ -1211,7 +1341,10 @@ export const appTopupReviewCases: DashboardReviewCase[] =
         if (page.id === "account-app")
             return (page.variants ?? []).map((_, index) =>
                 makeCase("topup", page, index, {
-                    conditions: { account: "signed-in" },
+                    conditions: {
+                        account: "signed-in",
+                        allowance: index ? "exhausted" : "available",
+                    },
                     query: { screen: "add-pollen-connect" },
                     steps: [
                         {
@@ -1294,7 +1427,7 @@ export const appTopupReviewCases: DashboardReviewCase[] =
                                     outcome:
                                         variant.label === "Saving"
                                             ? ("pending" as const)
-                                            : ("unavailable" as const),
+                                            : ("server-error" as const),
                                 },
                             ],
                         }),
@@ -1312,7 +1445,7 @@ export const appTopupReviewCases: DashboardReviewCase[] =
                                   ? [
                                         {
                                             selector: "[role='alert']",
-                                            text: "We're temporarily down for maintenance. Sorry about that!",
+                                            text: getDefaultErrorMessage(500),
                                         },
                                     ]
                                   : [
@@ -1369,38 +1502,3 @@ export const appTopupReviewCases: DashboardReviewCase[] =
             return [];
         });
     });
-
-function unsupported(
-    namespace: string,
-    inventory: CanvasScreen[],
-): UnsupportedReviewCase[] {
-    return inventory.flatMap((page) =>
-        (page.variants ?? [{ label: page.title }]).flatMap((variant, index) => {
-            if (covered.has(`${namespace}:${page.id}:${index}`)) return [];
-            return [
-                {
-                    id: `${namespace}-${page.id}--${index}`,
-                    pageId: page.id,
-                    title: `${page.title} · ${variant.label}`,
-                    reason:
-                        page.id === "account-app"
-                            ? "Requires a completed SDK connection; visual fixture keys cannot authenticate."
-                            : "Requires a real request outcome or additional database conditions; this state has no capture recipe yet.",
-                },
-            ];
-        }),
-    );
-}
-
-export const unsupportedAppTopupReviewCases = unsupported(
-    "topup",
-    accountActionScreens,
-);
-export function unsupportedDashboardReviewCasesForSection(section: string) {
-    return unsupported(
-        "dashboard",
-        dashboardScreens.filter(
-            (page) => dashboardSectionForScreen(page.id) === section,
-        ),
-    );
-}

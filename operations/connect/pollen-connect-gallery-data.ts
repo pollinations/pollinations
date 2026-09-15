@@ -261,11 +261,13 @@ export function galleryCardsForFlow(
                 ? { screen: entry.screen }
                 : {}),
             ...variant,
-            label: entry.id.startsWith("sign-in-errors")
-                ? "Starting sign-in"
-                : entry.id.startsWith("loading--")
-                  ? "Checking account"
-                  : variant.label,
+            label:
+                entry.id.startsWith("sign-in-errors") &&
+                !variant.params?.authorize_error
+                    ? "Starting sign-in"
+                    : entry.id.startsWith("loading--")
+                      ? "Checking account"
+                      : variant.label,
         }));
         if (existing) {
             if (entry.screen === "login-failed")

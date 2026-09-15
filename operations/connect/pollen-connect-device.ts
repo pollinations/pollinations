@@ -6,6 +6,7 @@ import {
 } from "./pollen-connect-canvas-data";
 import type { FlowEdge, FlowNode } from "./pollen-connect-diagram";
 import type { JourneySection } from "./pollen-connect-journey-state";
+import { fundingVariants } from "./review-funding";
 
 // Each state owns its real preview parameters. Screens groups these by layout;
 // Map and Journey reference the same entries, including recovery and busy states.
@@ -255,6 +256,7 @@ checking.entry.variants?.push({
 consent.entry.variants = [
     { label: "Ready" },
     { label: "Without registered app", params: { device_client: "none" } },
+    ...fundingVariants,
     ...modelCatalogStates
         .filter((item) => item.id !== "ready")
         .map((item) => ({

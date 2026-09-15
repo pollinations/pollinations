@@ -3,10 +3,7 @@ import { loginErrors } from "@shared/auth/login-errors.ts";
 import { describe, expect, it } from "vitest";
 import { appLoginNodes } from "../pollen-connect-app-login";
 import { galleryScreensForFlow } from "../pollen-connect-gallery-data";
-import {
-    appLoginReviewCases,
-    unsupportedAppLoginReviewCases,
-} from "../review-cases";
+import { appLoginReviewCases } from "../review-cases";
 import { screenRoute } from "../screen-route";
 
 const origin = "http://localhost:4180";
@@ -94,7 +91,7 @@ describe("App Login visual review cases", () => {
     });
 
     it("separates provider-return failure from failure to start sign-in", () => {
-        expect(appLoginReviewCases).toHaveLength(37);
+        expect(appLoginReviewCases).toHaveLength(38);
         expect(
             appLoginReviewCases.find(({ family }) => family === "login-failed")
                 ?.action,
@@ -136,12 +133,6 @@ describe("App Login visual review cases", () => {
     });
 
     it("covers every App Login state without a default-page substitute", () => {
-        expect(unsupportedAppLoginReviewCases).toEqual([]);
-        expect(
-            unsupportedAppLoginReviewCases.every(
-                ({ reason }) => reason.length > 0,
-            ),
-        ).toBe(true);
         expect(
             appLoginReviewCases.some(
                 ({ query, requests }) =>
@@ -149,15 +140,15 @@ describe("App Login visual review cases", () => {
                     requests?.[0].path === "/api/app-lookup",
             ),
         ).toBe(true);
-        expect(
-            unsupportedAppLoginReviewCases.some(
-                ({ pageId }) => pageId === "app-connected",
-            ),
-        ).toBe(false);
-        expect(
-            unsupportedAppLoginReviewCases.some(
-                ({ pageId }) => pageId === "loading",
-            ),
-        ).toBe(false);
+        for (const page of galleryScreensForFlow("app", "main"))
+            for (const variant of page.variants ?? [{ label: page.title }])
+                expect(
+                    appLoginReviewCases.some(
+                        (recipe) =>
+                            recipe.pageId === page.id &&
+                            recipe.variant === variant.label,
+                    ),
+                    `${page.id}/${variant.label}`,
+                ).toBe(true);
     });
 });

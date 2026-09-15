@@ -102,13 +102,12 @@ body { font: 14px/1.5 var(--polli-font-body); background: var(--polli-color-app-
 .canvas-inspector-desktop .canvas-interactive { height: calc(var(--phone-width) / 1.6); border-radius: 14px; }
 .canvas-inspector-desktop .canvas-interactive > .connect-screen-viewport { width: 1280px; height: 800px; transform: scale(calc(var(--phone-width) / 1280px)); }
 
-/* Screens and Journey share the fitted viewer; the gallery only lays out the row. */
-.screens-gallery { display: flex; flex: 1; min-height: 0; min-width: 0; container-type: size; }
-.screens-gallery-scroll { flex: 1; min-height: 0; position: relative; padding: 12px 24px 24px; }
-.screens-gallery-grid { --viewer-height: max(80px, calc(100cqh - 36px)); --viewer-width: min(calc(100cqw - 48px), calc(375px + 24px), calc((var(--viewer-height) - 64px) * 1206 / 2622 + 24px)); display: flex; width: max-content; height: var(--viewer-height); gap: 24px; }
-.screens-gallery-desktop { --viewer-width: min(calc(100cqw - 48px), 1304px); }
-.screens-gallery-item { flex: none; min-width: 0; width: var(--viewer-width); height: 100%; }
-.screens-gallery-item[data-selected] .journey-device { outline: 2px solid var(--polli-color-border); outline-offset: 8px; }
+/* Screens and Journey share the same fitted, centered viewer. */
+.screens-gallery { position: relative; display: flex; flex: 1; min-height: 0; min-width: 0; overflow: hidden; padding: 12px 24px 24px; }
+.screens-gallery-navigation { position: absolute; inset: 12px 20px auto; z-index: 2; display: flex; justify-content: space-between; pointer-events: none; }
+.screens-gallery-navigation > * { pointer-events: auto; }
+.screens-gallery-item { flex: 1; min-width: 0; height: 100%; }
+.screens-gallery .connect-screen-caption { padding-inline: 48px; }
 
 .canvas-inspector-title { font-size: 14px; line-height: 1.4; font-weight: 600; overflow-wrap: anywhere; }
 .canvas-inspector-desktop .canvas-inspector-title { flex: 1; }

@@ -645,9 +645,3 @@ export function getDashboardFlow(section?: string) {
     ].filter((e) => ids.has(e.from) && ids.has(e.to));
     return { screens, nodes, edges };
 }
-
-export type DashboardPreviewSelection = {
-    screen: string;
-    variant: number;
-    revision: number;
-};

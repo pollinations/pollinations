@@ -13,28 +13,24 @@ import {
 import type { JourneyLocation } from "./pollen-connect-journey-state";
 import { ScreenViewer, ScreenWindow } from "./pollen-connect-preview";
 import { useReview } from "./review";
-import { reviewCaseForNode } from "./review-inventory";
+import { type ReviewScope, reviewPageForLocation } from "./review-inventory";
 import { type ObservedScreen, RuntimeFrame } from "./runtime-frame";
 import "./pollen-connect-journey.css";
 
 export function RuntimeJourney({
     entry,
-    inventory,
     world,
     revision,
     desktop,
     onLocationChange,
     onOpenDashboard,
-    onReport,
 }: {
     entry: CanvasScreen;
-    inventory: CanvasScreen[];
     world: JourneyLocation["world"];
     revision: number;
     desktop: boolean;
     onLocationChange: (location: JourneyLocation) => void;
     onOpenDashboard: () => void;
-    onReport?: (screen: ObservedScreen) => void;
 }) {
     const {
         state,
@@ -51,12 +47,18 @@ export function RuntimeJourney({
     const sequence = useRef(0);
     const initial = useRef(entry);
     initial.current = entry;
+    const scope: ReviewScope = {
+        flow: review?.flow ?? "app",
+        section: review?.section ?? "main",
+    };
+    const origin = useRef(scope);
     const frameHost = useRef<HTMLDivElement>(null);
     // A flow selection starts the selected real route. Observing another page
     // only updates the caption and map location; it never remounts that route.
     // biome-ignore lint/correctness/useExhaustiveDependencies: revision is the explicit request to open a new route, not an observed state update.
     useEffect(() => {
         if (!ready) return;
+        origin.current = scope;
         setPage({
             id: ++sequence.current,
             src: canvasScreenUrl(initial.current, 0, { theme: mode }),
@@ -70,18 +72,22 @@ export function RuntimeJourney({
         setObserved(undefined);
         setCanGoBack(false);
     }, [conditionsRevision]);
-    const observedCase =
-        observed && reviewCaseForNode(review?.cases ?? [], observed.node);
+    const current =
+        observed && reviewPageForLocation(scope, observed, origin.current);
     const currentEntry =
-        inventory.find(
-            (item) => item.id === (observedCase?.pageId ?? observed?.node),
-        ) ?? entry;
-    const title = observedCase
-        ? currentEntry.title
-        : observed?.title || currentEntry.title;
+        current?.entry ??
+        (observed
+            ? {
+                  id: observed.node,
+                  title: observed.title || "Unrecognized page",
+                  owner: "Pollinations" as const,
+              }
+            : entry);
+    const title =
+        current?.entry.title ?? (observed?.title || currentEntry.title);
     function report(screen: ObservedScreen) {
         setObserved(screen);
-        review?.observe(world, screen);
+        review?.observe(screen, origin.current);
         const currentWindow =
             frameHost.current?.querySelector<HTMLIFrameElement>("iframe")
                 ?.contentWindow as
@@ -89,13 +95,14 @@ export function RuntimeJourney({
                 | null;
         setCanGoBack(Boolean(currentWindow?.navigation?.canGoBack));
         if (visible) {
+            const page = reviewPageForLocation(scope, screen, origin.current);
             onLocationChange({
-                world,
-                node:
-                    reviewCaseForNode(review?.cases ?? [], screen.node)
-                        ?.family ?? screen.node,
+                world:
+                    page?.flow === "app" && page.section === "topup"
+                        ? "topup"
+                        : (page?.flow ?? world),
+                node: page?.node ?? screen.node,
             });
-            onReport?.(screen);
         }
         void refresh();
     }

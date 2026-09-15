@@ -10,6 +10,13 @@
 .connect-device-status { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: 0; font-size: 12px; }
 .connect-device-status code { font-size: 20px; letter-spacing: .1em; }
 .connect-review-float { position: absolute; top: 72px; right: 16px; z-index: 5; }
-.connect-review-popover { width: min(280px, calc(100vw - 32px)); }
 .connect-conditions { display: flex; flex-direction: column; gap: 16px; max-height: calc(100dvh - 240px); overflow-y: auto; padding: 16px; }
-@media (max-width: 760px) { .connect-review-float { right: 12px; } }
+.connect-review-stack { width: min(200px, calc(100vw - 32px)); align-items: flex-end; gap: 12px; padding: 0; text-align: right; }
+.connect-review-stack fieldset > div { flex-direction: column; align-items: flex-end; gap: 8px; }
+.connect-review-stack button { align-self: flex-end; max-width: 100%; }
+.connect-review-stack .connect-device-status { align-items: flex-end; }
+@media (max-width: 760px) {
+    .connect-workspace:has(.connect-review-float) .connect-content { margin-right: min(200px, 44vw); }
+    .connect-review-float { right: 12px; }
+    .connect-review-stack { width: min(176px, calc(44vw - 24px)); }
+}

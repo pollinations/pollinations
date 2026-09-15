@@ -8,7 +8,11 @@ import { getLoginError, loginErrors } from "@shared/auth/login-errors.ts";
 import { describe, expect, it, vi } from "vitest";
 import { accountActionScreens } from "../pollen-connect-account-actions";
 import { adminScreens } from "../pollen-connect-admin";
-import { appLoginEdges, appLoginScreens } from "../pollen-connect-app-login";
+import {
+    appLoginEdges,
+    appLoginNodes,
+    appLoginScreens,
+} from "../pollen-connect-app-login";
 import {
     authorizeFailures,
     canvasGroups,
@@ -20,7 +24,7 @@ import {
     getDashboardFlow,
 } from "../pollen-connect-dashboard";
 import { getDeviceFlow } from "../pollen-connect-device";
-import { flowNodes, getFlowFocus } from "../pollen-connect-diagram";
+import { getFlowFocus } from "../pollen-connect-diagram";
 import {
     galleryCardsForFlow,
     galleryFlowScreens,
@@ -66,7 +70,10 @@ describe("Complete managed screen inventory", () => {
                 .map((entry) => entry.id),
         );
         expect(
-            flowNodes
+            [
+                ...entrances.flatMap(({ id }) => getFlowFocus(id).nodes),
+                ...getFlowFocus("app", "topup").nodes,
+            ]
                 .filter(
                     (node) =>
                         node.screen &&
@@ -404,6 +411,7 @@ it("shows the shared app sign-in UI once while keeping each visible sign-in stat
         "Sign in to Pollinations · Checking app",
         "Sign in to Pollinations · Signing in",
         "Sign in to Pollinations · Sign-in failed",
+        "Sign in to Pollinations · Session expired before approval",
     ]);
     expect(pages.some((entry) => entry.title.startsWith("Check account"))).toBe(
         true,
@@ -438,9 +446,9 @@ it("groups configuration controls without hiding loading, success, or error stat
                 if (id === "app" && section === "main") {
                     const counts: Record<string, number> = {
                         "Sign in to Pollinations": 4,
-                        "Pollinations sign-in error": 4,
-                        "App connection error": 15,
-                        "Allow access": 5,
+                        "Pollinations sign-in error": 5,
+                        "App connection error": 13,
+                        "Allow access": 7,
                         "App · Connection status": 7,
                     };
                     if (card.title in counts)
@@ -496,6 +504,8 @@ it("groups configuration controls without hiding loading, success, or error stat
         "Checking app",
         "Loading models",
         "Models unavailable",
+        "No Pollen",
+        "Paid required",
         "Connecting",
     ]);
     expect(
@@ -516,7 +526,7 @@ it("groups matching request errors while preserving identity, phase, and recover
         (entry) => entry.title === "App connection error",
     );
     expect(blocked).toHaveLength(1);
-    expect(blocked[0].variants).toHaveLength(15);
+    expect(blocked[0].variants).toHaveLength(13);
     const expectedReasons = [
         "redirect",
         "app",
@@ -543,9 +553,17 @@ it("groups matching request errors while preserving identity, phase, and recover
     expect(
         app
             .find((entry) => entry.title === "App connection error")
-            ?.variants?.filter((variant) => variant.params?.authorize_error)
+            ?.variants?.filter(
+                (variant) =>
+                    variant.params?.authorize_error && !variant.params.funding,
+            )
             .map((variant) => variant.params?.authorize_error),
     ).toEqual(authorizeFailures.map(({ id }) => id));
+    expect(
+        blocked[0].variants
+            ?.filter((variant) => variant.params?.funding)
+            .map(({ params }) => [params?.funding, params?.authorize_error]),
+    ).toEqual([]);
     const device = galleryCardsForFlow("device", "main");
     const errors = device.find((entry) => entry.id === "device-errors");
     expect(
@@ -607,7 +625,7 @@ it("shares sign-in failure UI while retaining both failure and retry paths", () 
     );
     expect(failures).toHaveLength(1);
     const card = failures[0];
-    expect(card.variants).toHaveLength(4);
+    expect(card.variants).toHaveLength(5);
     expect(card.variants?.[0].params).toEqual({
         action: "sign-in",
         result: "error",
@@ -615,6 +633,10 @@ it("shares sign-in failure UI while retaining both failure and retry paths", () 
     expect(card.variants?.[1]).toMatchObject({
         screen: "login-failed",
         params: { login_error: "unknown", login_flow: "app" },
+    });
+    expect(card.variants?.[2]).toMatchObject({
+        label: "Session expired before approval",
+        params: { authorize_error: "session" },
     });
     for (const [index, from, to] of [
         [0, "app-signing-in", "error"],
@@ -696,7 +718,7 @@ it("bookends Apps Login with the existing reusable app components", () => {
 });
 it("uses the canonical Apps graph by default", () => {
     expect(getFlowFocus("app")).toEqual(getFlowFocus("app", "main"));
-    expect(flowNodes.some((node) => node.id === "app-ready")).toBe(false);
+    expect(getFlowFocus("app").nodes).toEqual(appLoginNodes);
 });
 it("keeps stored-key and allowance states on the existing App panel", () => {
     const cards = galleryCardsForFlow("app", "main");

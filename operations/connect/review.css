@@ -9,3 +9,5 @@
 .connect-journey-host { display: flex; flex: 1; min-height: 0; }
 .connect-journey-host[hidden] { display: none; }
 .connect-journey-preparing { display: grid; place-items: center; width: 100%; height: 100%; color: var(--polli-color-text-muted); }
+
+.connect-start-over { position: absolute; top: 12px; right: 16px; z-index: 6; }

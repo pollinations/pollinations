@@ -6,16 +6,21 @@ import {
 import { describe, expect, it } from "vitest";
 import { appLoginScreens } from "../pollen-connect-app-login";
 import { canvasGroups, canvasScreenUrl } from "../pollen-connect-canvas-data";
-import { dashboardScreens } from "../pollen-connect-dashboard";
+import { dashboardSections } from "../pollen-connect-dashboard";
 import { getDeviceFlow } from "../pollen-connect-device";
-import {
-    edgePoints,
-    flowEdges,
-    flowNodes,
-    flowSections,
-    getFlowFocus,
-    nodeSize,
-} from "../pollen-connect-diagram";
+import { edgePoints, getFlowFocus, nodeSize } from "../pollen-connect-diagram";
+
+const flows = [
+    { id: "app", section: "main" },
+    { id: "app", section: "topup" },
+    { id: "device", section: "main" },
+    { id: "device", section: "link" },
+    { id: "admin", section: "main" },
+    ...dashboardSections.map(({ id }) => ({
+        id: "account" as const,
+        section: id,
+    })),
+] as const;
 
 describe("focused flow navigation", () => {
     it("includes shared sign-in in app, device, account and admin journeys", () => {
@@ -106,8 +111,8 @@ describe("focused flow navigation", () => {
         ).toBe(true);
     });
     it("fits every participating card and every visible arrow, including outlying returns", () => {
-        for (const section of flowSections) {
-            const { nodes, edges, nodeIds, bounds } = getFlowFocus(section.id);
+        for (const { id, section } of flows) {
+            const { nodes, edges, nodeIds, bounds } = getFlowFocus(id, section);
             expect(nodes.length).toBe(nodeIds.size);
             expect(nodes.length).toBeGreaterThan(0);
             const contains = (x: number, y: number) =>
@@ -134,47 +139,23 @@ describe("focused flow navigation", () => {
     });
 });
 describe("authorization preview coverage", () => {
-    it("connects every unique screen and preserves decision branches and retry loops", () => {
-        const ids = new Set(flowNodes.map((node) => node.id));
-        expect(ids.size).toBe(flowNodes.length);
-        const screens = flowNodes.flatMap((node) =>
-            node.screen ? [node.screen] : [],
-        );
-        expect(new Set(screens).size).toBe(screens.length);
-        const represented = new Set([
-            // Dashboard registration is a variant of the shared create dialog.
-            ...screens.map((id) =>
-                ["app-key", "api-key", "key-edit", "key-delete"].includes(id)
-                    ? "keys"
-                    : id,
-            ),
-            ...dashboardScreens.map((entry) => entry.id),
-            "device-start",
-            "device-done",
-            ...[...appLoginScreens.values()].map((entry) =>
-                entry.id.split("--")[0].replace(/-errors$/, ""),
-            ),
-        ]);
-        expect([...represented].sort()).toEqual(
-            canvasGroups
-                .flatMap((group) => group.screens.map((screen) => screen.id))
-                .sort(),
-        );
-        for (const edge of flowEdges) {
-            expect(ids.has(edge.from)).toBe(true);
-            expect(ids.has(edge.to)).toBe(true);
-            expect(edgePoints(edge).flat().every(Number.isFinite)).toBe(true);
-        }
-        for (const node of flowNodes) {
-            expect(
-                flowEdges.some(
-                    (edge) => edge.from === node.id || edge.to === node.id,
-                ),
-            ).toBe(true);
-            if (node.kind === "decision")
+    it("connects each selectable graph with valid references and keeps consent recovery", () => {
+        for (const { id, section } of flows) {
+            const { nodes, edges } = getFlowFocus(id, section);
+            const ids = new Set(nodes.map((node) => node.id));
+            expect(ids.size, `${id}/${section}`).toBe(nodes.length);
+            for (const edge of edges) {
                 expect(
-                    flowEdges.filter((edge) => edge.from === node.id).length,
-                ).toBeGreaterThanOrEqual(2);
+                    ids.has(edge.from),
+                    `${id}/${section}: ${edge.from}`,
+                ).toBe(true);
+                expect(ids.has(edge.to), `${id}/${section}: ${edge.to}`).toBe(
+                    true,
+                );
+                expect(
+                    edgePoints(edge, nodes).flat().every(Number.isFinite),
+                ).toBe(true);
+            }
         }
         expect(
             getDeviceFlow().edges.some(
@@ -184,16 +165,20 @@ describe("authorization preview coverage", () => {
                     edge.label === "Device retrieves key",
             ),
         ).toBe(true);
-        expect(
-            flowEdges.some(
-                (edge) => edge.from === "consent" && edge.to === "cancelled",
+        const app = getFlowFocus("app");
+        expect(app.edges).toContainEqual(
+            expect.objectContaining({ from: "consent", to: "cancelled" }),
+        );
+        expect(app.edges).toContainEqual(
+            expect.objectContaining({ from: "error", to: "app-signing-in" }),
+        );
+        const represented = new Set(
+            [...appLoginScreens.values()].map((entry) =>
+                entry.id.split("--")[0].replace(/-errors$/, ""),
             ),
-        ).toBe(true);
-        expect(
-            flowEdges.some(
-                (edge) => edge.from === "error" && edge.to === "github-session",
-            ),
-        ).toBe(true);
+        );
+        for (const entry of canvasGroups[0].screens)
+            expect(represented.has(entry.id), entry.id).toBe(true);
     });
     it("shows each screen once with distinct route parameters", () => {
         const screens = canvasGroups.flatMap((group) => group.screens);

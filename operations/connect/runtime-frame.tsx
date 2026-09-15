@@ -2,8 +2,14 @@ import { getLoginError } from "@shared/auth/login-errors.ts";
 import { useEffect, useRef } from "react";
 import { useConnectConditions } from "./conditions";
 import { dashboardScreenForLocation } from "./pollen-connect-dashboard";
+import type { JourneyEntrance } from "./pollen-connect-journey-state";
 
-export type ObservedScreen = { node: string; title: string; path: string };
+export type ObservedScreen = {
+    node: string;
+    title: string;
+    path: string;
+    flow?: JourneyEntrance;
+};
 
 export function observeScreen(doc: Document): ObservedScreen | undefined {
     const current = doc.defaultView;
@@ -18,7 +24,9 @@ export function observeScreen(doc: Document): ObservedScreen | undefined {
         .querySelector("[data-connect-state]")
         ?.getAttribute("data-connect-state");
     let node: string;
+    let flow: JourneyEntrance | undefined;
     if (path === "/connect-example.html") {
+        flow = "app";
         node =
             sdk === "signed-out"
                 ? "app-connect"
@@ -35,6 +43,7 @@ export function observeScreen(doc: Document): ObservedScreen | undefined {
         node = getLoginError(new URLSearchParams(search).get("error") ?? "").id;
     } else if (path === "/authorize") {
         const device = Boolean(new URLSearchParams(search).get("user_code"));
+        flow = device ? "device" : "app";
         const alert = doc.querySelector('[role="alert"]');
         const signingIn =
             doc.querySelector("#sign-in-title") ||
@@ -56,6 +65,7 @@ export function observeScreen(doc: Document): ObservedScreen | undefined {
             node = "consent";
         else node = device ? "device-checking" : "loading";
     } else if (path === "/device") {
+        flow = "device";
         node = doc.querySelector("#device-code-form")
             ? "device-code"
             : doc.querySelector('[role="alert"]')
@@ -63,17 +73,26 @@ export function observeScreen(doc: Document): ObservedScreen | undefined {
               : "sign-in";
     } else if (path === "/edit-key") node = "account-key";
     else if (path === "/top-up") node = "account-wallet";
-    else if (path === "/app/sign-in") node = "identity";
-    else if (path === "/connect-admin.html")
+    else if (path === "/app/sign-in") {
+        flow = "admin";
+        node = "identity";
+    } else if (path === "/connect-admin.html") {
+        flow = "admin";
         node = doc.querySelector('[data-admin-connected="true"]')
             ? "dashboard-connected"
             : "dashboard-sign-in";
-    else {
+    } else {
+        flow = "account";
         const dialogTitle =
-            doc.querySelector('[role="dialog"] h2')?.textContent ?? "";
+            [...doc.querySelectorAll('[role="dialog"] h2')].find(
+                (heading) =>
+                    !heading.closest(
+                        '[hidden], [aria-hidden="true"], [data-state="closed"]',
+                    ),
+            )?.textContent ?? "";
         node = dashboardScreenForLocation(path, dialogTitle);
     }
-    return { node, title, path };
+    return { node, title, path, flow };
 }
 
 // Observe real navigation and DOM; never infer progress from a clicked label,
@@ -114,6 +133,11 @@ export function RuntimeFrame({
         if (restarting) observer.current?.disconnect();
         return () => observer.current?.disconnect();
     }, [restarting]);
+    useEffect(() => {
+        const refresh = () => frame.current?.contentWindow?.location.reload();
+        import.meta.hot?.on("connect:source-refreshed", refresh);
+        return () => import.meta.hot?.off("connect:source-refreshed", refresh);
+    }, []);
     if (!state || restarting) return null;
     return (
         <iframe
@@ -148,6 +172,9 @@ export function RuntimeFrame({
                         "data-connect-state",
                         "data-admin-connected",
                         "aria-busy",
+                        "hidden",
+                        "aria-hidden",
+                        "data-state",
                     ],
                 });
                 report();

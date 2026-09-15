@@ -32,6 +32,4 @@
 .journey-layout { display: flex; flex: 1; min-height: 0; width: 100%; padding: 12px 24px 24px; }
 .connect-screen-viewer { display: flex; flex: 1; flex-direction: column; width: 100%; height: 100%; min-width: 0; min-height: 0; }
 .connect-screen-caption { flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 40px; text-align: center; font-size: 14px; line-height: 22px; }
-.connect-screen-caption > strong, .connect-screen-select strong { font-weight: 600; }
-.connect-screen-select, .connect-screen-select:hover { display: block; width: 100%; padding: 0; min-height: 0; border-radius: 4px; background: transparent; color: inherit; font: inherit; line-height: inherit; white-space: normal; box-shadow: none; }
-.connect-screen-select:focus-visible { outline: 2px solid var(--polli-color-border); outline-offset: 2px; }
+.connect-screen-caption > strong { font-weight: 600; }

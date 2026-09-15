@@ -1,11 +1,4 @@
-import {
-    Button,
-    ChevronIcon,
-    Dropdown,
-    IconButton,
-    RouteIcon,
-    TabButton,
-} from "@pollinations/ui";
+import { Button, IconButton, RouteIcon, TabButton } from "@pollinations/ui";
 import { loginErrors } from "@shared/auth/login-errors.ts";
 import {
     createContext,
@@ -24,16 +17,21 @@ import { galleryScreensForFlow } from "./pollen-connect-gallery-data";
 import type {
     JourneyEntrance,
     JourneySection,
-    JourneyWorld,
 } from "./pollen-connect-journey-state";
 import type { ReviewCase } from "./review-cases";
 import { clearReviewSteps } from "./review-driver";
 import {
-    reviewCaseForNode,
+    isJourneySituation,
+    journeySituation,
+    journeyStartCase,
+    type ReviewScope,
     reviewCaseForScreen,
     reviewCasesForFlow,
+    reviewPageForLocation,
+    reviewPageForNode,
     situationLabel,
 } from "./review-inventory";
+import { describeReviewRequest } from "./review-requests";
 import { clearExampleStorage } from "./review-storage";
 import type { ObservedScreen } from "./runtime-frame";
 import "./review.css";
@@ -41,6 +39,7 @@ import "./review.css";
 export function reviewScreen(
     recipe: ReviewCase,
     inventory: CanvasScreen[],
+    scope: { flow: string; section: string },
 ): CanvasScreen {
     const entry = inventory.find((entry) => entry.id === recipe.pageId);
     return {
@@ -53,7 +52,12 @@ export function reviewScreen(
         variants: [
             {
                 label: recipe.title,
-                params: { ...recipe.query, review_case: recipe.id },
+                params: {
+                    ...recipe.query,
+                    review_case: recipe.id,
+                    review_flow: scope.flow,
+                    review_section: scope.section,
+                },
             },
         ],
     };
@@ -78,9 +82,10 @@ type Review = {
     observed?: ObservedScreen;
     select: (id: string) => void;
     selectScreen: (id: string) => void;
-    observe: (world: JourneyWorld, screen: ObservedScreen) => void;
+    observe: (screen: ObservedScreen, origin?: ReviewScope) => void;
     resolve: (entry: CanvasScreen) => ReviewCase | undefined;
     run: (recipe: ReviewCase) => Promise<boolean>;
+    startOver: () => Promise<boolean>;
 };
 const ReviewContext = createContext<Review | null>(null);
 export const useReview = () => useContext(ReviewContext);
@@ -90,20 +95,30 @@ type Selection = { pageId: string; choices: Record<string, string> };
 export function ReviewProvider({
     flow,
     section,
-    enabled,
+    view,
     theme,
     desktop,
     onRun,
+    onNavigate,
+    start,
+    onStartOver,
     children,
 }: PropsWithChildren<{
     flow: JourneyEntrance;
     section: JourneySection;
-    enabled: boolean;
+    view: string;
     theme: string;
     desktop: boolean;
     onRun: (recipe: ReviewCase) => void;
+    onNavigate: (scope: ReviewScope) => void;
+    start: ReviewScope;
+    onStartOver: () => void;
 }>) {
-    const { restart } = useConnectConditions();
+    const { restart, state } = useConnectConditions();
+    const applied = useRef<
+        { start: ReviewScope; recipe: ReviewCase } | undefined
+    >(undefined);
+    const enabled = view !== "journey";
     const cases = useMemo(
         () => reviewCasesForFlow(flow, section),
         [flow, section],
@@ -115,17 +130,23 @@ export function ReviewProvider({
     const scope = `${flow}/${section}`;
     const [selections, setSelections] = useState<Record<string, Selection>>({});
     const selection = selections[scope];
-    const screen =
+    const selectedScreen =
         screens.find((entry) => entry.id === selection?.pageId) ?? screens[0];
     const choices = selection?.choices ?? {};
-    const selected = screen
-        ? reviewCaseForScreen(cases, screen, choices)
-        : undefined;
     const [pendingScope, setPendingScope] = useState<string>();
     const [observed, setObserved] = useState<{
         scope: string;
         screen: ObservedScreen;
     }>();
+    const screen =
+        view === "journey" &&
+        observed?.scope === scope &&
+        !reviewPageForNode(cases, screens, observed.screen.node)
+            ? undefined
+            : selectedScreen;
+    const selected = screen
+        ? reviewCaseForScreen(cases, screen, choices)
+        : undefined;
     const [preview, setPreview] = useState<{
         query: string;
         result: PreviewResult;
@@ -133,14 +154,29 @@ export function ReviewProvider({
     const [runError, setRunError] = useState("");
     const [running, setRunning] = useState(false);
     const runLock = useRef(false);
+    const mapCases = new Map<string, ReviewCase>();
+    for (const recipe of cases)
+        if (
+            !mapCases.has(recipe.family) ||
+            choices[recipe.pageId] === recipe.id
+        )
+            mapCases.set(recipe.family, recipe);
+    const requested = (
+        view === "map" ? [...mapCases.values()] : selected ? [selected] : []
+    ).filter((recipe) => !recipe.provider);
+    const requestedIds = requested
+        .map((recipe) => recipe.id)
+        .sort()
+        .join(",");
     const query = new URLSearchParams({
         flow,
         section,
         theme,
         size: desktop ? "desktop" : "mobile",
+        cases: requestedIds,
     }).toString();
     useEffect(() => {
-        if (!enabled || !cases.length) return;
+        if (!enabled || !requestedIds) return;
         const controller = new AbortController();
         let timer: ReturnType<typeof setTimeout>;
         setPreview(undefined);
@@ -178,7 +214,7 @@ export function ReviewProvider({
             controller.abort();
             clearTimeout(timer);
         };
-    }, [enabled, query, cases.length]);
+    }, [enabled, query, requestedIds]);
     function selectScreen(pageId: string, recipe?: ReviewCase) {
         if (!screens.some((entry) => entry.id === pageId)) return;
         if (pageId === screen?.id && (!recipe || recipe.id === selected?.id))
@@ -195,6 +231,31 @@ export function ReviewProvider({
                 },
             },
         }));
+    }
+    async function prepare(recipe: ReviewCase, open: () => void) {
+        if (runLock.current) return false;
+        runLock.current = true;
+        setRunning(true);
+        setRunError("");
+        try {
+            clearExampleStorage();
+            clearReviewSteps();
+            if (!(await restart(recipe))) return false;
+            setPendingScope(undefined);
+            setObserved(undefined);
+            open();
+            return true;
+        } catch (reason) {
+            setRunError(
+                reason instanceof Error
+                    ? reason.message
+                    : "Couldn’t start this screen. Please try again.",
+            );
+            return false;
+        } finally {
+            runLock.current = false;
+            setRunning(false);
+        }
     }
     const value: Review = {
         flow,
@@ -214,51 +275,50 @@ export function ReviewProvider({
             const recipe = cases.find((item) => item.id === id);
             if (recipe) selectScreen(recipe.pageId, recipe);
         },
-        observe: (world, next) => {
-            if (
-                enabled ||
-                (world !== flow &&
-                    !(
-                        world === "topup" &&
-                        flow === "app" &&
-                        section === "topup"
-                    ))
-            )
-                return;
+        observe: (next, origin) => {
+            if (enabled) return;
+            const page = reviewPageForLocation({ flow, section }, next, origin);
+            const nextScope = page ? `${page.flow}/${page.section}` : scope;
             setObserved((old) =>
-                old?.scope === scope &&
+                old?.scope === nextScope &&
                 old.screen.node === next.node &&
                 old.screen.title === next.title &&
                 old.screen.path === next.path
                     ? old
-                    : { scope, screen: next },
+                    : { scope: nextScope, screen: next },
             );
             // Native navigation updates the current page. A requested situation
-            // remains pending until Restart; observation never applies fixtures.
+            // remains pending until run; observation never applies fixtures.
             if (pendingScope === scope || runLock.current) return;
-            const recipe = reviewCaseForNode(cases, next.node);
-            if (!recipe) return;
+            if (!page) return;
+            const pageCases = reviewCasesForFlow(page.flow, page.section);
+            const recipe = page.recipe;
             setSelections((all) => {
-                const previous = all[scope];
-                const chosen = cases.find(
-                    (item) => item.id === previous?.choices[recipe.pageId],
+                const previous = all[nextScope];
+                const chosen = pageCases.find(
+                    (item) => item.id === previous?.choices[page.entry.id],
                 );
                 if (
-                    previous?.pageId === recipe.pageId &&
-                    chosen?.family === recipe.family
+                    previous?.pageId === page.entry.id &&
+                    chosen?.family === recipe?.family
                 )
                     return all;
                 return {
                     ...all,
-                    [scope]: {
-                        pageId: recipe.pageId,
+                    [nextScope]: {
+                        pageId: page.entry.id,
                         choices: {
                             ...previous?.choices,
-                            [recipe.pageId]: recipe.id,
+                            ...(recipe &&
+                                (!chosen ||
+                                    chosen.family !== recipe.family) && {
+                                    [page.entry.id]: recipe.id,
+                                }),
                         },
                     },
                 };
             });
+            if (nextScope !== scope) onNavigate(page);
         },
         resolve: (entry) => {
             const family =
@@ -274,30 +334,36 @@ export function ReviewProvider({
                 screens.includes(entry) ? undefined : family,
             );
         },
-        run: async (recipe) => {
-            if (runLock.current) return false;
-            runLock.current = true;
-            setRunning(true);
-            setRunError("");
-            try {
-                clearExampleStorage();
-                clearReviewSteps();
-                if (!(await restart(recipe))) return false;
+        run: async (selected) => {
+            const recipe = journeySituation(cases, selected);
+            if (!recipe) return false;
+            return prepare(recipe, () => {
+                applied.current = { start, recipe };
+                selectScreen(recipe.pageId, recipe);
                 setPendingScope(undefined);
-                setObserved(undefined);
                 onRun(recipe);
-                return true;
-            } catch (reason) {
-                setRunError(
-                    reason instanceof Error
-                        ? reason.message
-                        : "Couldn’t start this screen. Please try again.",
-                );
-                return false;
-            } finally {
-                runLock.current = false;
-                setRunning(false);
-            }
+            });
+        },
+        startOver: () => {
+            const selected =
+                applied.current?.start === start
+                    ? applied.current.recipe
+                    : undefined;
+            const recipe = journeyStartCase(start, selected);
+            if (!selected && state) recipe.conditions = { ...state.conditions };
+            return prepare(recipe, () => {
+                setSelections((all) => ({
+                    ...all,
+                    [`${start.flow}/${start.section}`]: {
+                        pageId: galleryScreensForFlow(
+                            start.flow,
+                            start.section,
+                        )[0].id,
+                        choices: {},
+                    },
+                }));
+                onStartOver();
+            });
         },
     };
     return (
@@ -364,99 +430,111 @@ export function ReviewPanel({ journey }: { journey: boolean }) {
     if (!review) return null;
     const { screen, selected: recipe } = review;
     const situations = review.cases.filter(
-        (item) => item.pageId === screen?.id,
+        (item) =>
+            item.pageId === screen?.id &&
+            (!journey || isJourneySituation(item)),
     );
     const hasChoices = Boolean(screen && situations.length > 1);
     const hasDevice =
         journey && review.flow === "device" && Boolean(state?.device);
     const messages = [review.error, error].filter(Boolean);
-    if (!hasChoices && !(journey && recipe) && !hasDevice && !messages.length)
+    if (
+        !hasChoices &&
+        !hasDevice &&
+        !messages.length &&
+        !recipe?.provider &&
+        !(recipe && isErrorRouteCase(recipe))
+    )
         return null;
     return (
         <div className="connect-review-float">
-            <Dropdown
-                key={screen?.id}
-                align="end"
-                portalled={false}
-                className="connect-review-popover"
-                trigger={(open) => (
-                    <Button size="sm" data-theme="neutral">
-                        {messages.length
-                            ? "Review issue"
-                            : journey
-                              ? "Journey controls"
-                              : "Situations"}
-                        <ChevronIcon
-                            expanded={open}
-                            className="polli:h-3 polli:w-3"
-                        />
-                    </Button>
-                )}
+            <aside
+                className="connect-conditions connect-review-stack"
+                aria-label={journey ? "Journey controls" : "Screen review"}
             >
-                <aside
-                    className="connect-conditions"
-                    aria-label="Screen review"
-                >
-                    {screen && situations.length > 1 && (
-                        <fieldset disabled={review.running}>
-                            <legend>
-                                {journey ? "Restart with" : "Situation"}
-                            </legend>
-                            <div>
-                                {situations.map((item) => (
+                {screen && hasChoices && (
+                    <fieldset
+                        aria-label="Situations"
+                        disabled={
+                            review.running || (journey && (busy || !state))
+                        }
+                    >
+                        <div>
+                            {situations.map((item) => (
+                                <span
+                                    key={item.id}
+                                    style={{ maxWidth: "100%" }}
+                                    title={
+                                        [
+                                            ...(item.requests ?? []),
+                                            ...(item.steps ?? []).flatMap(
+                                                (step) => step.requests ?? [],
+                                            ),
+                                        ]
+                                            .map(describeReviewRequest)
+                                            .join("\n") || undefined
+                                    }
+                                >
                                     <TabButton
-                                        key={item.id}
                                         size="sm"
-                                        active={recipe?.id === item.id}
-                                        onClick={() => review.select(item.id)}
+                                        // Journey buttons restart a scenario. Native
+                                        // actions can change it, so a remembered choice
+                                        // must not claim to describe the live account.
+                                        active={
+                                            !journey && recipe?.id === item.id
+                                        }
+                                        onClick={() => {
+                                            review.select(item.id);
+                                            if (journey) void review.run(item);
+                                        }}
                                     >
                                         {situationLabel(item, screen)}
                                     </TabButton>
-                                ))}
-                            </div>
-                        </fieldset>
-                    )}
-                    {recipe?.provider ? (
-                        <p className="connect-review-note">
-                            {recipe.provider} is an external reference. Journey
-                            uses a local provider.
-                        </p>
-                    ) : recipe && isErrorRouteCase(recipe) ? (
-                        <p className="connect-review-note">
-                            Opens the real error route for copy and layout
-                            review.
-                        </p>
-                    ) : null}
-                    {journey && recipe && (
-                        <div className="connect-conditions-actions">
-                            <Button
-                                size="sm"
-                                disabled={busy || !state || review.running}
-                                onClick={() => void review.run(recipe)}
-                            >
-                                {review.running ? "Starting…" : "Restart"}
-                            </Button>
+                                </span>
+                            ))}
                         </div>
-                    )}
-                    {journey && (
-                        <output className="connect-review-note">
-                            {review.pending
-                                ? "Selected situation is not applied. Restart to apply it."
-                                : "Use the page to continue. Restart prepares the selected situation."}
-                        </output>
-                    )}
-                    {hasDevice && <DeviceConnectionStatus />}
-                    {messages.map((message) => (
-                        <p
-                            key={message}
-                            className="connect-conditions-error"
-                            role="alert"
-                        >
-                            {message}
-                        </p>
-                    ))}
-                </aside>
-            </Dropdown>
+                    </fieldset>
+                )}
+                {recipe?.provider ? (
+                    <p className="connect-review-note">
+                        {recipe.provider} is an external reference. Journey uses
+                        a local provider.
+                    </p>
+                ) : recipe && isErrorRouteCase(recipe) ? (
+                    <p className="connect-review-note">
+                        Opens the real error route for copy and layout review.
+                    </p>
+                ) : null}
+                {hasDevice && <DeviceConnectionStatus />}
+                {messages.map((message) => (
+                    <p
+                        key={message}
+                        className="connect-conditions-error"
+                        role="alert"
+                    >
+                        {message}
+                    </p>
+                ))}
+            </aside>
+        </div>
+    );
+}
+
+export function ReviewStartOver() {
+    const review = useReview();
+    const { state, busy } = useConnectConditions();
+    if (!review?.journey) return null;
+    return (
+        <div className="connect-start-over">
+            <Button
+                size="sm"
+                data-theme="neutral"
+                disabled={!state || busy || review.running}
+                title="Return to the journey’s beginning with the selected account conditions"
+                onClick={() => void review.startOver()}
+            >
+                Start over
+            </Button>
         </div>
     );
 }
@@ -552,8 +630,8 @@ export function CapturedScreen({
                         {capture?.status === "error" ||
                         review?.result?.status === "error"
                             ? "Preview unavailable"
-                            : capture?.image
-                              ? "Updating preview…"
+                            : review?.result?.queue?.position
+                              ? `Queued · ${review.result.queue.position} of ${review.result.queue.total}`
                               : "Capturing real screen…"}
                     </strong>
                     {(capture?.error || review?.result?.error) && (

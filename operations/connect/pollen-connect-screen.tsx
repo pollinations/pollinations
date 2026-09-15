@@ -56,13 +56,20 @@ try {
     }
     const reviewId = query.get("review_case");
     if (reviewId) {
-        const { reviewFlows } = await import("./review-inventory");
-        const recipe = reviewFlows
-            .flatMap(({ cases }) => cases)
-            .find(
-                (recipe) =>
-                    recipe.id === reviewId &&
-                    recipe.query.screen === query.get("screen"),
+        const { reviewCasesForFlow } = await import("./review-inventory");
+        const recipe = reviewCasesForFlow(
+            query.get("review_flow") ?? "",
+            query.get("review_section") ?? "",
+        ).find(
+            (recipe) =>
+                recipe.id === reviewId &&
+                Object.entries(recipe.query).every(
+                    ([key, value]) => query.get(key) === value,
+                ),
+        );
+        if (!recipe)
+            throw new Error(
+                "The selected review situation does not match this flow.",
             );
         if (recipe?.steps) {
             const { runReviewSteps } = await import("./review-driver");

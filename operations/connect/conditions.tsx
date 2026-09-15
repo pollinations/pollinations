@@ -7,7 +7,7 @@ import {
     useRef,
     useState,
 } from "react";
-import { type Conditions, type LocalState, readState } from "./live-client";
+import { type LocalState, readState } from "./live-client";
 import type { ReviewCase } from "./review-cases";
 import { prepareReviewCase } from "./review-prepare";
 import "./conditions.css";
@@ -32,61 +32,53 @@ export function ConnectConditionsProvider({ children }: PropsWithChildren) {
     const [error, setError] = useState("");
     const writing = useRef(false);
     const request = useRef(0);
-    const load = useCallback(
-        async (changes?: Partial<Conditions>, recipe?: ReviewCase) => {
-            if (writing.current) return false;
-            const id = ++request.current;
-            const write = changes !== undefined || recipe !== undefined;
-            if (write) {
-                writing.current = true;
-                setBusy(true);
-                setRestarting(Boolean(recipe));
-            }
-            setError("");
-            try {
-                if (recipe)
-                    await prepareReviewCase(recipe, (path, body) =>
-                        fetch(path, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            ...(body !== undefined && {
-                                body: JSON.stringify(body),
-                            }),
+    const load = useCallback(async (recipe?: ReviewCase) => {
+        if (writing.current) return false;
+        const id = ++request.current;
+        const write = recipe !== undefined;
+        if (write) {
+            writing.current = true;
+            setBusy(true);
+            setRestarting(Boolean(recipe));
+        }
+        setError("");
+        try {
+            if (recipe)
+                await prepareReviewCase(recipe, (path, body) =>
+                    fetch(path, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        ...(body !== undefined && {
+                            body: JSON.stringify(body),
                         }),
-                    );
-                const next = await readState(changes);
-                if (id !== request.current) return false;
-                setState(next);
-                if (recipe) setRevision((value) => value + 1);
-                return true;
-            } catch (reason) {
-                if (id === request.current)
-                    setError(
-                        reason instanceof Error
-                            ? reason.message
-                            : "Unable to read the local account.",
-                    );
-                return false;
-            } finally {
-                if (write) writing.current = false;
-                if (id === request.current) {
-                    setBusy(false);
-                    setRestarting(false);
-                }
+                    }),
+                );
+            const next = await readState();
+            if (id !== request.current) return false;
+            setState(next);
+            if (recipe) setRevision((value) => value + 1);
+            return true;
+        } catch (reason) {
+            if (id === request.current)
+                setError(
+                    reason instanceof Error
+                        ? reason.message
+                        : "Unable to read the local account.",
+                );
+            return false;
+        } finally {
+            if (write) writing.current = false;
+            if (id === request.current) {
+                setBusy(false);
+                setRestarting(false);
             }
-        },
-        [],
-    );
-    const restart = useCallback(
-        (recipe: ReviewCase) => load(undefined, recipe),
-        [load],
-    );
+        }
+    }, []);
     const refresh = useCallback(async () => {
         await load();
     }, [load]);
     useEffect(() => {
-        // Re-establish the browser cookie for the existing shared account.
-        void load({});
+        void load();
     }, [load]);
     return (
         <ConditionsContext.Provider
@@ -96,7 +88,7 @@ export function ConnectConditionsProvider({ children }: PropsWithChildren) {
                 busy,
                 restarting,
                 error,
-                restart,
+                restart: load,
                 refresh,
             }}
         >

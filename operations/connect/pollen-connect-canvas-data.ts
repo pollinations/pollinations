@@ -69,30 +69,6 @@ export const authorizeFailures = [
     { id: "code", label: "Authorization code creation failed" },
 ] as const;
 
-export function appVariantSupportsProtocol(
-    variant: ScreenVariant,
-    protocol?: string,
-) {
-    return (
-        protocol !== "direct" ||
-        (![
-            "missing-client",
-            "missing-challenge",
-            "challenge-method",
-            "invalid-challenge",
-        ].includes(variant.params?.request_error ?? "") &&
-            variant.params?.authorize_error !== "code")
-    );
-}
-
-export function screenVariantIndices(entry: CanvasScreen, protocol?: string) {
-    return entry.variants?.length
-        ? entry.variants.flatMap((variant, index) =>
-              appVariantSupportsProtocol(variant, protocol) ? [index] : [],
-          )
-        : [0];
-}
-
 export const modelCatalogStates = [
     { id: "ready", label: "Models available" },
     { id: "loading", label: "Loading models" },

@@ -22,26 +22,13 @@ import logoUrl from "@pollinations/ui/brand/mark.svg";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { ConnectConditionsProvider } from "./conditions";
-import { AccountJourney } from "./pollen-connect-account-journey";
 import { appLoginScreens } from "./pollen-connect-app-login";
-import {
-    appVariantSupportsProtocol,
-    type CanvasScreen,
-    canvasGroups,
-} from "./pollen-connect-canvas-data";
-import {
-    type DashboardPreviewSelection,
-    type DashboardSection,
-    dashboardSections,
-} from "./pollen-connect-dashboard";
+import { type CanvasScreen, canvasGroups } from "./pollen-connect-canvas-data";
+import { dashboardSections } from "./pollen-connect-dashboard";
 import { getDeviceFlow } from "./pollen-connect-device";
 import {
     edgeLabelPosition,
     edgePoints,
-    type FlowId,
-    flowEdges,
-    flowNodes,
-    flowSections,
     getFlowFocus,
     nodeSize,
     paper,
@@ -58,15 +45,12 @@ import {
 } from "./pollen-connect-journey-state";
 import { ScreenContent, ScreenOwnership } from "./pollen-connect-preview";
 import {
-    type AppPreviewProps,
-    defaultAppPreview,
-} from "./pollen-connect-request-config";
-import {
     ReviewHeader,
     ReviewJourney,
     ReviewJourneyTab,
     ReviewPanel,
     ReviewProvider,
+    ReviewStartOver,
     useReview,
 } from "./review";
 import type { ReviewCase } from "./review-cases";
@@ -94,21 +78,16 @@ if (requestedMode === "light" || requestedMode === "dark")
     setColorMode(requestedMode);
 
 function Canvas({
-    appPreview,
     entrance,
     location: journeyLocation,
-    dashboardSelection,
-    onDashboardSelect,
     gallery = false,
     desktop,
 }: {
     entrance: JourneySelection;
     location: JourneyLocation;
-    dashboardSelection?: DashboardPreviewSelection;
-    onDashboardSelect?: (screen: string, variant: number) => void;
     gallery?: boolean;
     desktop: boolean;
-} & AppPreviewProps) {
+}) {
     const { mode } = useColorMode();
     const review = useReview();
     const [selected, setSelected] = useState<CanvasScreen | null>(null);
@@ -127,43 +106,14 @@ function Canvas({
             if (previous?.isConnected) previous.focus();
         };
     }, [inspectorOpen]);
-    const [selectedVariant, setVariant] = useState(0);
     useEffect(() => {
         const screen = review?.screen;
         if (screen) setSelected((current) => (current ? screen : null));
     }, [review?.screen]);
-    const variant =
-        selected?.variants?.[selectedVariant] &&
-        appVariantSupportsProtocol(
-            selected.variants[selectedVariant],
-            entrance.world === "app" ? appPreview.protocol : undefined,
-        )
-            ? selectedVariant
-            : 0;
     const isAppLogin = entrance.world === "app" && entrance.section === "main";
-    const routeJourney =
-        ["account", "admin"].includes(entrance.world) ||
-        (entrance.world === "app" && entrance.section === "topup");
     const showOwnership =
         isAppLogin || ["device", "admin"].includes(entrance.world);
-    const previewOptions = {
-        screen:
-            selected?.variants?.[variant]?.screen ??
-            selected?.screen ??
-            "oauth",
-        ...selected?.variants?.[variant]?.params,
-        ...(isAppLogin ? appPreview : {}),
-        ...(selected?.variants?.[variant]?.params?.action === "authorize"
-            ? {
-                  screen:
-                      selected.variants[variant].screen ??
-                      selected.screen ??
-                      "oauth",
-              }
-            : {}),
-    };
     const navigationOrder = useRef(screens);
-    const visitedVariants = useRef(new Map<string, number>());
     const handlePreviewKey = useCallback(
         (event: KeyboardEvent) => {
             if (
@@ -197,23 +147,11 @@ function Canvas({
                 ];
             event.preventDefault();
             if (!next) return;
-            visitedVariants.current.set(selected.id, variant);
             setSelected(next);
             const recipe = review?.resolve(next);
             if (recipe) review?.select(recipe.id);
-            const nextVariant = visitedVariants.current.get(next.id) ?? 0;
-            setVariant(nextVariant);
-            if (routeJourney) onDashboardSelect?.(next.id, nextVariant);
         },
-        [
-            selected,
-            variant,
-            routeJourney,
-            onDashboardSelect,
-            review?.resolve,
-            review?.select,
-            review?.selected?.family,
-        ],
+        [selected, review?.resolve, review?.select, review?.selected?.family],
     );
     useEffect(() => {
         if (!selected) return;
@@ -222,17 +160,12 @@ function Canvas({
     }, [selected, handlePreviewKey]);
     const [view, setView] = useState({ x: 30, y: 20, scale: 0.32 });
     const [highlight, setHighlight] = useState<string | null>(null);
-    const [focusedFlow, setFocusedFlow] = useState<FlowId | null>(
-        entrance.world,
-    );
     const canvas = useRef<HTMLDivElement>(null);
     const focus = useMemo(
-        () =>
-            focusedFlow ? getFlowFocus(focusedFlow, entrance.section) : null,
-        [focusedFlow, entrance.section],
+        () => getFlowFocus(entrance.world, entrance.section),
+        [entrance.world, entrance.section],
     );
     const fitAll = () => {
-        setFocusedFlow(entrance.world);
         setHighlight(null);
         focusArea(getFlowFocus(entrance.world, entrance.section).bounds);
     };
@@ -256,7 +189,7 @@ function Canvas({
         });
     }, []);
     const focusArea = useCallback(
-        (area = { x: 0, y: 0, width: paper.width, height: paper.height }) => {
+        (area: { x: number; y: number; width: number; height: number }) => {
             const el = canvas.current;
             if (!el) return;
             const scale = Math.min(
@@ -280,7 +213,6 @@ function Canvas({
                       journeyLocation.node,
                   )
                 : journeyLocation.node;
-        setFocusedFlow(entrance.world);
         setHighlight(
             selectedFocus.nodeIds.has(currentNode) ? currentNode : null,
         );
@@ -297,31 +229,29 @@ function Canvas({
             : entrance.world === "device"
               ? [...getDeviceFlow(entrance.section).map.screens.values()]
               : galleryScreensForFlow(entrance.world, entrance.section);
-    const mapScreens = (focus?.nodes ?? flowNodes).flatMap((node) => {
+    const mapScreens = focus.nodes.flatMap((node) => {
         const entry =
             selectedScreens.find((entry) => entry.id === node.screen) ??
             screens.find((entry) => entry.id === node.screen);
         return entry ? [entry] : [];
     });
-    const mapSections = focus
-        ? [
-              {
-                  title:
-                      entrance.world === "admin"
-                          ? "Admin"
-                          : entrance.world === "device"
-                            ? `Devices · ${entrance.section === "link" ? "Open Device Link" : "Enter Code"}`
-                            : entrance.world === "account"
-                              ? `Dashboard · ${dashboardSections.find(({ id }) => id === entrance.section)?.label ?? "Login"}`
-                              : `Apps · ${entrance.section === "topup" ? "Top up" : "Login"}`,
-                  note: "Shared screen states · external provider and app handoffs",
-                  x: focus.bounds.x - 30,
-                  y: focus.bounds.y - 80,
-                  width: focus.bounds.width + 60,
-                  height: focus.bounds.height + 110,
-              },
-          ]
-        : flowSections;
+    const mapSections = [
+        {
+            title:
+                entrance.world === "admin"
+                    ? "Admin"
+                    : entrance.world === "device"
+                      ? `Devices · ${entrance.section === "link" ? "Open Device Link" : "Enter Code"}`
+                      : entrance.world === "account"
+                        ? `Dashboard · ${dashboardSections.find(({ id }) => id === entrance.section)?.label ?? "Login"}`
+                        : `Apps · ${entrance.section === "topup" ? "Top up" : "Login"}`,
+            note: "Shared screen states · external provider and app handoffs",
+            x: focus.bounds.x - 30,
+            y: focus.bounds.y - 80,
+            width: focus.bounds.width + 60,
+            height: focus.bounds.height + 110,
+        },
+    ];
     const zoom = (factor: number) => {
         const el = canvas.current;
         if (el)
@@ -375,10 +305,8 @@ function Canvas({
             {gallery ? (
                 <ScreenGallery
                     key={`${entrance.world}-${entrance.section}`}
-                    overrides={isAppLogin ? appPreview : {}}
                     entrance={entrance}
                     desktop={desktop}
-                    selection={routeJourney ? dashboardSelection : undefined}
                 />
             ) : (
                 <>
@@ -488,7 +416,6 @@ function Canvas({
                                     key={section.title}
                                     className="flow-section"
                                     data-dimmed={
-                                        focus &&
                                         !focus.nodes.some(
                                             (node) =>
                                                 node.x >= section.x &&
@@ -535,14 +462,14 @@ function Canvas({
                                         />
                                     </marker>
                                 </defs>
-                                {(focus?.edges ?? flowEdges).map((edge) => {
+                                {focus.edges.map((edge) => {
                                     const points = edgePoints(
                                         edge,
-                                        focus?.nodes ?? flowNodes,
+                                        focus.nodes,
                                     );
                                     const [x, y] = edgeLabelPosition(
                                         edge,
-                                        focus?.nodes ?? flowNodes,
+                                        focus.nodes,
                                     );
                                     const active =
                                         !highlight ||
@@ -587,7 +514,7 @@ function Canvas({
                                     );
                                 })}
                             </svg>
-                            {(focus?.nodes ?? flowNodes).map((node) => {
+                            {focus.nodes.map((node) => {
                                 const entry = mapScreens.find(
                                     (entry) => entry.id === node.screen,
                                 );
@@ -608,7 +535,7 @@ function Canvas({
                                         data-screen-id={node.screen}
                                         data-node-id={node.id}
                                         data-dimmed={
-                                            focus && !focus.nodeIds.has(node.id)
+                                            !focus.nodeIds.has(node.id)
                                                 ? "true"
                                                 : undefined
                                         }
@@ -624,23 +551,12 @@ function Canvas({
                                                 onClick={() => {
                                                     navigationOrder.current =
                                                         mapScreens;
-                                                    const variant =
-                                                        dashboardSelection?.screen ===
-                                                        entry.id
-                                                            ? dashboardSelection.variant
-                                                            : 0;
-                                                    setVariant(variant);
                                                     setSelected(entry);
                                                     const recipe =
                                                         review?.resolve(entry);
                                                     if (recipe)
                                                         review?.select(
                                                             recipe.id,
-                                                        );
-                                                    if (routeJourney)
-                                                        onDashboardSelect?.(
-                                                            entry.id,
-                                                            variant,
                                                         );
                                                 }}
                                                 onFocus={() =>
@@ -667,19 +583,7 @@ function Canvas({
                                                 </span>
                                                 <span className="canvas-phone">
                                                     <ScreenContent
-                                                        overrides={
-                                                            isAppLogin
-                                                                ? appPreview
-                                                                : {}
-                                                        }
                                                         entry={entry}
-                                                        variant={
-                                                            routeJourney &&
-                                                            dashboardSelection?.screen ===
-                                                                entry.id
-                                                                ? dashboardSelection.variant
-                                                                : 0
-                                                        }
                                                     />
                                                 </span>
                                             </Button>
@@ -730,11 +634,9 @@ function Canvas({
                                 </div>
                                 <div className="canvas-phone canvas-interactive">
                                     <ScreenContent
-                                        key={`${selected.id}-${variant}-${JSON.stringify(previewOptions)}`}
+                                        key={selected.id}
                                         entry={selected}
-                                        variant={variant}
                                         focused
-                                        overrides={previewOptions}
                                         onClose={close}
                                         onKeyDown={handlePreviewKey}
                                     />
@@ -749,12 +651,6 @@ function Canvas({
 }
 function ConnectLab() {
     const { mode } = useColorMode();
-    const [appPreview, setAppPreview] = useState(defaultAppPreview);
-    const onAppPreviewChange = useCallback(
-        (patch: Record<string, string>) =>
-            setAppPreview((current) => ({ ...current, ...patch })),
-        [],
-    );
     const [desktop, setDesktop] = useState(false);
     const [journeyCase, setJourneyCase] = useState<ReviewCase>();
     const [view, setView] = useState(
@@ -796,6 +692,10 @@ function ConnectLab() {
                   )?.id ?? subsections[world]);
         return { world, section, revision: 0 };
     });
+    const [journeyStart, setJourneyStart] = useState(() => ({
+        flow: entrance.world,
+        section: entrance.section,
+    }));
     useEffect(() => {
         const url = new URL(location.href);
         url.searchParams.set("flow", entrance.world);
@@ -821,6 +721,7 @@ function ConnectLab() {
     ) => {
         setJourneyVisited(view === "journey");
         setJourneyCase(undefined);
+        setJourneyStart({ flow: world, section });
         setEntrance((old) => ({
             world,
             section,
@@ -830,56 +731,17 @@ function ConnectLab() {
     const openDashboard = () => {
         setJourneyVisited(view === "journey");
         setJourneyCase(undefined);
+        setJourneyStart({ flow: "account", section: "topup" });
         setEntrance((old) => ({
             world: "account",
             section: "topup",
             revision: old.revision + 1,
         }));
     };
-    const onDashboardNavigate = useCallback(
-        (section: DashboardSection) => {
-            if (
-                view !== "journey" ||
-                entrance.world !== "account" ||
-                entrance.section === section
-            )
-                return;
-            setJourneyCase(undefined);
-            setEntrance((old) => ({ ...old, section }));
-        },
-        [view, entrance.world, entrance.section],
-    );
     const [journeyLocation, setJourneyLocation] = useState<JourneyLocation>({
         world: "app",
         node: "app-connect",
     });
-    const [previewSelections, setPreviewSelections] = useState<
-        Partial<Record<JourneyEntrance, DashboardPreviewSelection>>
-    >({});
-    const dashboardSelection = previewSelections[entrance.world];
-    const setDashboardSelection = useCallback(
-        (
-            update: (
-                old: DashboardPreviewSelection | undefined,
-            ) => DashboardPreviewSelection,
-        ) => {
-            setPreviewSelections((all) => ({
-                ...all,
-                [entrance.world]: update(all[entrance.world]),
-            }));
-        },
-        [entrance.world],
-    );
-    const selectDashboardPreview = useCallback(
-        (screen: string, variant: number) => {
-            setDashboardSelection((old) => ({
-                screen,
-                variant,
-                revision: (old?.revision ?? 0) + 1,
-            }));
-        },
-        [setDashboardSelection],
-    );
     const changeView = (next: string) => {
         if (next === "journey") setJourneyVisited(true);
         const url = new URL(location.href);
@@ -891,9 +753,22 @@ function ConnectLab() {
         <ReviewProvider
             flow={entrance.world}
             section={entrance.section}
-            enabled={view !== "journey"}
+            view={view}
             theme={mode}
             desktop={view === "map" ? false : desktop}
+            start={journeyStart}
+            onStartOver={() => {
+                setJourneyCase(undefined);
+                setJourneyVisited(true);
+                setEntrance((old) => ({
+                    world: journeyStart.flow,
+                    section: journeyStart.section,
+                    revision: old.revision + 1,
+                }));
+            }}
+            onNavigate={({ flow, section }) => {
+                setEntrance((old) => ({ ...old, world: flow, section }));
+            }}
             onRun={(recipe) => {
                 setJourneyCase(recipe);
                 setEntrance((old) => ({
@@ -1118,6 +993,7 @@ function ConnectLab() {
                     </ScrollArea>
                 </ReviewHeader>
                 <div className="connect-workspace">
+                    <ReviewStartOver />
                     <div className="connect-content">
                         {journeyVisited && (
                             <div
@@ -1126,47 +1002,15 @@ function ConnectLab() {
                             >
                                 <ReviewJourney>
                                     <ScrollArea className="connect-journey-view">
-                                        {(entrance.world === "app" &&
-                                            entrance.section === "topup") ||
-                                        ["account", "admin"].includes(
-                                            entrance.world,
-                                        ) ? (
-                                            <AccountJourney
-                                                reviewCase={journeyCase}
-                                                admin={
-                                                    entrance.world === "admin"
-                                                }
-                                                key={entrance.world}
-                                                dashboard={
-                                                    entrance.world === "account"
-                                                        ? (entrance.section as DashboardSection)
-                                                        : undefined
-                                                }
-                                                revision={entrance.revision}
-                                                onDashboardNavigate={
-                                                    onDashboardNavigate
-                                                }
-                                                desktop={desktop}
-                                                onLocationChange={
-                                                    setJourneyLocation
-                                                }
-                                                onOpenDashboard={openDashboard}
-                                            />
-                                        ) : (
-                                            <Journey
-                                                reviewCase={journeyCase}
-                                                appPreview={appPreview}
-                                                onAppPreviewChange={
-                                                    onAppPreviewChange
-                                                }
-                                                desktop={desktop}
-                                                entrance={entrance}
-                                                onLocationChange={
-                                                    setJourneyLocation
-                                                }
-                                                onOpenDashboard={openDashboard}
-                                            />
-                                        )}
+                                        <Journey
+                                            reviewCase={journeyCase}
+                                            desktop={desktop}
+                                            entrance={entrance}
+                                            onLocationChange={
+                                                setJourneyLocation
+                                            }
+                                            onOpenDashboard={openDashboard}
+                                        />
                                     </ScrollArea>
                                 </ReviewJourney>
                             </div>
@@ -1174,14 +1018,10 @@ function ConnectLab() {
                         {(view === "map" || view === "screens") && (
                             <div className="connect-map-view">
                                 <Canvas
-                                    appPreview={appPreview}
-                                    onAppPreviewChange={onAppPreviewChange}
                                     desktop={desktop}
                                     key={view}
                                     entrance={entrance}
                                     location={journeyLocation}
-                                    dashboardSelection={dashboardSelection}
-                                    onDashboardSelect={selectDashboardPreview}
                                     gallery={view === "screens"}
                                 />
                             </div>

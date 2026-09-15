@@ -5,8 +5,7 @@ import {
     type CanvasScreen,
     canvasScreenUrl,
 } from "./pollen-connect-canvas-data";
-import { illustrations } from "./pollen-connect-illustrations";
-import { ProviderScreen } from "./pollen-connect-provider";
+import { ProviderReference } from "./pollen-connect-provider";
 import { CapturedScreen, useReview } from "./review";
 import { type ObservedScreen, RuntimeFrame } from "./runtime-frame";
 import "./pollen-connect-window.css";
@@ -62,32 +61,17 @@ export function ScreenViewer({
     entry,
     title = entry.title,
     desktop,
-    selected,
-    onSelect,
     children,
 }: {
     entry: CanvasScreen;
     title?: string;
     desktop: boolean;
-    selected?: boolean;
-    onSelect?: () => void;
     children: ReactNode;
 }) {
     return (
         <section className="connect-screen-viewer" aria-label={title}>
             <div className="connect-screen-caption">
-                {onSelect ? (
-                    <Button
-                        className="connect-screen-select"
-                        aria-label={`Select ${title}`}
-                        aria-pressed={selected}
-                        onClick={onSelect}
-                    >
-                        <strong>{title}</strong>
-                    </Button>
-                ) : (
-                    <strong>{title}</strong>
-                )}
+                <strong>{title}</strong>
                 <ScreenOwnership entry={entry} />
             </div>
             <PreviewViewport desktop={desktop}>{children}</PreviewViewport>
@@ -146,133 +130,59 @@ export function ScreenWindow({
     );
 }
 
-export function Illustration({
+export function DeviceTerminal({
     name,
-    onAction,
+    onOpen,
+    busy = false,
+    error,
 }: {
     name: string;
-    onAction?: (label: string) => void;
+    onOpen?: () => void | Promise<void>;
+    busy?: boolean;
+    error?: string;
 }) {
     const { state } = useConnectConditions();
-    if (["device", "device-link", "device-done"].includes(name)) {
-        const linked = name === "device-link";
-        const device = state?.device;
-        const url =
-            (linked
-                ? device?.verificationUriComplete
-                : device?.verificationUri) ?? `${location.origin}/device`;
-        return (
-            <div className="connect-terminal-output">
-                <pre>
-                    {name !== "device-done"
-                        ? "$ my-app connect\n\nOpen this URL in your browser:\n"
-                        : device?.status === "completed"
-                          ? "$ my-app connect\n\nConnected.\nYou can return to your app."
-                          : "$ my-app connect\n\nWaiting for a completed connection."}
-                </pre>
-                {name !== "device-done" && (
-                    <>
-                        {onAction ? (
-                            <Button
-                                className="connect-terminal-link"
-                                onClick={() =>
-                                    onAction?.(
-                                        linked
-                                            ? "Open link with code"
-                                            : "Open verification URL",
-                                    )
-                                }
-                            >
-                                {url}
-                            </Button>
-                        ) : (
-                            <span className="connect-terminal-link">{url}</span>
-                        )}
+    const device = state?.device;
+    const linked = name === "device-link";
+    const done = name === "device-done";
+    const url =
+        (linked ? device?.verificationUriComplete : device?.verificationUri) ??
+        `${location.origin}/device`;
+    return (
+        <div className="connect-terminal-output">
+            <pre>
+                {!done
+                    ? "$ my-app connect\n\nOpen this URL in your browser:\n"
+                    : device?.status === "completed"
+                      ? "$ my-app connect\n\nConnected.\nYou can return to your app."
+                      : "$ my-app connect\n\nWaiting for a completed connection."}
+            </pre>
+            {!done && (
+                <>
+                    {onOpen ? (
+                        <Button
+                            className="connect-terminal-link"
+                            disabled={busy || !state}
+                            onClick={() => void onOpen()}
+                        >
+                            {linked
+                                ? "Open device link"
+                                : "Open verification URL"}
+                        </Button>
+                    ) : (
+                        <span className="connect-terminal-link">{url}</span>
+                    )}
+                    {(device || !onOpen) && (
                         <pre>
                             {device
                                 ? `\nDevice code: ${device.userCode}\n\n${device.status}`
                                 : "\nStart a connection in Journey to get a device code."}
                         </pre>
-                    </>
-                )}
-            </div>
-        );
-    }
-    // Static, repository-owned illustrations; never populated with user or API content.
-    const provider =
-        name.startsWith("github-") && name !== "github-signup"
-            ? "github"
-            : undefined;
-    const html = provider
-        ? illustrations[name].replace(/<div class="symbol">[^<]+<\/div>/, "")
-        : illustrations[name];
-    const wrap = (content: ReactNode) =>
-        provider ? (
-            <ProviderScreen provider={provider}>{content}</ProviderScreen>
-        ) : (
-            content
-        );
-    const action = html.match(/<div class="external-button">([^<]+)<\/div>/);
-    if (onAction && (action || name === "device")) {
-        const [before, after = ""] = action ? html.split(action[0]) : [html];
-        return wrap(
-            <div className="canvas-illustration">
-                <div
-                    className="illustration-fragment"
-                    dangerouslySetInnerHTML={{ __html: before }}
-                />
-                <Button
-                    className="external-button"
-                    onClick={() =>
-                        onAction(action?.[1] ?? "Open verification URL")
-                    }
-                >
-                    {action?.[1] ?? "Open verification URL"}
-                </Button>
-                <div
-                    className="illustration-fragment"
-                    dangerouslySetInnerHTML={{
-                        __html: after.replace(
-                            "<p>New to GitHub? Create an account.</p>",
-                            "",
-                        ),
-                    }}
-                />
-                {name === "github-login" && (
-                    <Button
-                        size="sm"
-                        className="journey-quiet"
-                        onClick={() => onAction("Create an account")}
-                    >
-                        Create an account
-                    </Button>
-                )}
-                {name === "github-signup" && (
-                    <Button
-                        size="sm"
-                        className="journey-quiet"
-                        onClick={() => onAction("Cancel")}
-                    >
-                        Cancel
-                    </Button>
-                )}
-                {name === "github-authorize" && (
-                    <Button
-                        size="sm"
-                        className="journey-quiet"
-                        onClick={() => onAction("Cancel")}
-                    >
-                        Cancel
-                    </Button>
-                )}
-            </div>,
-        );
-    }
-    return wrap(
-        <div
-            className="canvas-illustration"
-            dangerouslySetInnerHTML={{ __html: html }}
-        />,
+                    )}
+                </>
+            )}
+            {error && <p role="alert">{error}</p>}
+        </div>
     );
 }
 
@@ -299,6 +209,24 @@ export function ScreenContent({
 }) {
     const review = useReview();
     const recipe = review?.resolve(entry);
+    if (
+        recipe?.provider ||
+        entry.owner === "GitHub" ||
+        entry.owner === "Stripe"
+    )
+        return (
+            <ScreenWindow entry={entry}>
+                <ProviderReference
+                    github={
+                        recipe?.provider === "GitHub" ||
+                        entry.owner === "GitHub"
+                    }
+                    billing={(recipe?.query.screen ?? entry.screen)?.includes(
+                        "billing",
+                    )}
+                />
+            </ScreenWindow>
+        );
     if (recipe)
         return (
             <ScreenWindow entry={entry}>
@@ -311,10 +239,10 @@ export function ScreenContent({
                 />
             </ScreenWindow>
         );
-    if (entry.illustration || entry.owner === "GitHub")
+    if (entry.illustration)
         return (
             <ScreenWindow entry={entry}>
-                <Illustration name={entry.illustration ?? "github-handoff"} />
+                <DeviceTerminal name={entry.illustration} />
             </ScreenWindow>
         );
     if (!focused)

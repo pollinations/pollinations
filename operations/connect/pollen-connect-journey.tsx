@@ -1,4 +1,3 @@
-import { Button } from "@pollinations/ui";
 import { useState } from "react";
 import { useConnectConditions } from "./conditions";
 import { galleryScreensForFlow } from "./pollen-connect-gallery-data";
@@ -6,8 +5,11 @@ import type {
     JourneyLocation,
     JourneySelection,
 } from "./pollen-connect-journey-state";
-import { ScreenViewer, ScreenWindow } from "./pollen-connect-preview";
-import type { AppPreviewProps } from "./pollen-connect-request-config";
+import {
+    DeviceTerminal,
+    ScreenViewer,
+    ScreenWindow,
+} from "./pollen-connect-preview";
 import { reviewScreen } from "./review";
 import type { ReviewCase } from "./review-cases";
 import { RuntimeJourney } from "./runtime-journey";
@@ -24,7 +26,7 @@ export function Journey({
     onLocationChange: (location: JourneyLocation) => void;
     onOpenDashboard: () => void;
     reviewCase?: ReviewCase;
-} & AppPreviewProps) {
+}) {
     const { state, refresh } = useConnectConditions();
     const [opened, setOpened] = useState<number | null>(null);
     const [busy, setBusy] = useState(false);
@@ -73,26 +75,16 @@ export function Journey({
                     <main className="journey-layout">
                         <ScreenViewer entry={first} desktop={desktop}>
                             <ScreenWindow entry={first}>
-                                <div className="connect-terminal-output">
-                                    <pre>
-                                        {
-                                            "$ my-app connect\n\nOpen this URL in your browser:\n"
-                                        }
-                                    </pre>
-                                    <Button
-                                        className="connect-terminal-link"
-                                        disabled={busy || !state}
-                                        onClick={() => void openDevice()}
-                                    >
-                                        {entrance.section === "link"
-                                            ? "Open device link"
-                                            : "Open verification URL"}
-                                    </Button>
-                                    {state?.device && (
-                                        <pre>{`\nDevice code: ${state.device.userCode}\n\n${state.device.status}`}</pre>
-                                    )}
-                                    {error && <p role="alert">{error}</p>}
-                                </div>
+                                <DeviceTerminal
+                                    name={
+                                        entrance.section === "link"
+                                            ? "device-link"
+                                            : "device"
+                                    }
+                                    onOpen={openDevice}
+                                    busy={busy}
+                                    error={error}
+                                />
                             </ScreenWindow>
                         </ScreenViewer>
                     </main>
@@ -100,7 +92,10 @@ export function Journey({
             </div>
         );
     const entry = reviewCase
-        ? reviewScreen(reviewCase, inventory)
+        ? reviewScreen(reviewCase, inventory, {
+              flow: entrance.world,
+              section: entrance.section,
+          })
         : entrance.world === "device"
           ? {
                 ...(inventory.find((item) => item.id === "device-code") ??
@@ -114,10 +109,12 @@ export function Journey({
           : first;
     return (
         <RuntimeJourney
-            key={`${entrance.world}:${entrance.section}`}
             entry={entry}
-            inventory={inventory}
-            world={entrance.world}
+            world={
+                entrance.world === "app" && entrance.section === "topup"
+                    ? "topup"
+                    : entrance.world
+            }
             revision={entrance.revision}
             desktop={desktop}
             onLocationChange={onLocationChange}

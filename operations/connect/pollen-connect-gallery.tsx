@@ -1,8 +1,5 @@
-import { ScrollArea, useColorMode } from "@pollinations/ui";
-import { useEffect, useRef } from "react";
-import type { CanvasScreen } from "./pollen-connect-canvas-data";
-import type { DashboardPreviewSelection } from "./pollen-connect-dashboard";
-import { galleryCardsForFlow } from "./pollen-connect-gallery-data";
+import { ArrowRightIcon, IconButton, useColorMode } from "@pollinations/ui";
+import { useCallback, useEffect, useRef } from "react";
 import type { JourneySelection } from "./pollen-connect-journey-state";
 import { ScreenContent, ScreenViewer } from "./pollen-connect-preview";
 import { useReview } from "./review";
@@ -10,108 +7,101 @@ import { useReview } from "./review";
 export function ScreenGallery({
     entrance,
     desktop,
-    selection,
-    overrides = {},
 }: {
     entrance: JourneySelection;
     desktop: boolean;
-    selection?: DashboardPreviewSelection;
-    overrides?: Record<string, string>;
 }) {
     const { mode } = useColorMode();
     const review = useReview();
-    const root = useRef<HTMLDivElement>(null);
-    const selectedScreen = review?.screen?.id;
-    const pages = review
-        ? review.screens
-        : galleryCardsForFlow(entrance.world, entrance.section);
-    useEffect(() => {
-        const card = root.current?.querySelector<HTMLElement>(
-            `[data-screen-id="${selectedScreen}"]`,
-        );
-        card?.scrollIntoView({ block: "nearest", inline: "center" });
-    }, [selectedScreen]);
+    const root = useRef<HTMLElement>(null);
+    const entry = review?.screen;
+    const pages = review?.screens ?? [];
+    const index = pages.findIndex((page) => page.id === entry?.id);
+    const previous = pages[index - 1];
+    const next = pages[index + 1];
+    const selectScreen = review?.selectScreen;
+    const moveScreen = useCallback(
+        (event: KeyboardEvent) => {
+            if (
+                event.defaultPrevented ||
+                event.altKey ||
+                event.ctrlKey ||
+                event.metaKey ||
+                event.shiftKey ||
+                !["ArrowLeft", "ArrowRight"].includes(event.key)
+            )
+                return;
+            const target = event.target as HTMLElement | null;
+            if (
+                target?.closest?.(
+                    'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="slider"], [role="spinbutton"], [role="combobox"], [role="listbox"], [role="menu"], [role="tablist"]',
+                )
+            )
+                return;
+            event.preventDefault();
+            const destination = event.key === "ArrowRight" ? next : previous;
+            if (!destination) return;
+            // Keep keyboard focus in the viewer when replacing a focused iframe.
+            root.current?.focus({ preventScroll: true });
+            selectScreen?.(destination.id);
+        },
+        [next, previous, selectScreen],
+    );
 
-    function moveScreen(event: KeyboardEvent, from = selectedScreen) {
-        if (
-            event.defaultPrevented ||
-            event.altKey ||
-            event.ctrlKey ||
-            event.metaKey ||
-            event.shiftKey ||
-            !["ArrowLeft", "ArrowRight"].includes(event.key)
-        )
-            return;
-        const target = event.target as HTMLElement | null;
-        if (
-            target?.closest(
-                'input, textarea, select, [contenteditable="true"], [role="slider"]',
-            )
-        )
-            return;
-        const index = pages.findIndex((entry) => entry.id === from);
-        if (index < 0) return;
-        const next = pages[index + (event.key === "ArrowRight" ? 1 : -1)];
-        event.preventDefault();
-        if (!next) return;
-        review?.selectScreen(next.id);
-        root.current
-            ?.querySelector<HTMLButtonElement>(
-                `[data-screen-id="${next.id}"] .connect-screen-select`,
-            )
-            ?.focus({ preventScroll: true });
-    }
+    useEffect(() => {
+        window.addEventListener("keydown", moveScreen);
+        return () => window.removeEventListener("keydown", moveScreen);
+    }, [moveScreen]);
+
+    if (!entry) return null;
 
     return (
-        <div className="screens-gallery">
-            <ScrollArea
-                ref={root}
-                axis="both"
-                className="screens-gallery-scroll"
-                onKeyDown={(event) => moveScreen(event.nativeEvent)}
+        <section
+            ref={root}
+            className="screens-gallery"
+            aria-label={`${entrance.world} screens`}
+            tabIndex={-1}
+        >
+            <nav
+                className="screens-gallery-navigation"
+                aria-label="Screen navigation"
+                data-theme="neutral"
             >
-                <section
-                    className={`screens-gallery-grid ${desktop ? "screens-gallery-desktop" : ""}`}
-                    aria-label={`${entrance.world} screens`}
+                <IconButton
+                    size="md"
+                    title="Previous screen"
+                    tooltip={
+                        previous
+                            ? `Previous screen: ${previous.title} (←)`
+                            : "First screen"
+                    }
+                    disabled={!previous}
+                    onClick={() => previous && selectScreen?.(previous.id)}
                 >
-                    {pages.map((entry: CanvasScreen) => {
-                        const variant =
-                            selection?.screen === entry.id
-                                ? selection.variant
-                                : 0;
-                        const select = () => review?.selectScreen(entry.id);
-                        return (
-                            <article
-                                key={entry.id}
-                                className="screens-gallery-item"
-                                data-screen-id={entry.id}
-                                data-selected={
-                                    selectedScreen === entry.id || undefined
-                                }
-                            >
-                                <ScreenViewer
-                                    entry={entry}
-                                    desktop={desktop}
-                                    selected={selectedScreen === entry.id}
-                                    onSelect={select}
-                                >
-                                    <ScreenContent
-                                        key={`${entry.id}-${mode}-${variant}`}
-                                        overrides={overrides}
-                                        entry={entry}
-                                        variant={variant}
-                                        scrollable
-                                        onOpen={select}
-                                        onKeyDown={(event) =>
-                                            moveScreen(event, entry.id)
-                                        }
-                                    />
-                                </ScreenViewer>
-                            </article>
-                        );
-                    })}
-                </section>
-            </ScrollArea>
-        </div>
+                    <ArrowRightIcon className="polli:h-4 polli:w-4 polli:rotate-180" />
+                </IconButton>
+                <IconButton
+                    size="md"
+                    title="Next screen"
+                    tooltip={
+                        next ? `Next screen: ${next.title} (→)` : "Last screen"
+                    }
+                    disabled={!next}
+                    onClick={() => next && selectScreen?.(next.id)}
+                >
+                    <ArrowRightIcon className="polli:h-4 polli:w-4" />
+                </IconButton>
+            </nav>
+            <article className="screens-gallery-item" data-screen-id={entry.id}>
+                <ScreenViewer entry={entry} desktop={desktop}>
+                    <ScreenContent
+                        key={`${entry.id}-${mode}`}
+                        entry={entry}
+                        scrollable
+                        onKeyDown={moveScreen}
+                    />
+                </ScreenViewer>
+            </article>
+        </section>
     );
 }

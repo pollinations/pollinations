@@ -13,6 +13,7 @@ concurrency:
 jobs:
   organize:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       issues: write
       pull-requests: write

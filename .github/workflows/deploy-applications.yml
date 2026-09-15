@@ -26,6 +26,7 @@ permissions:
 jobs:
   detect:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     outputs:
       apps: ${{ steps.detect.outputs.apps }}
       skip: ${{ steps.detect.outputs.skip }}
@@ -84,6 +85,7 @@ jobs:
     needs: detect
     if: needs.detect.outputs.skip != 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:

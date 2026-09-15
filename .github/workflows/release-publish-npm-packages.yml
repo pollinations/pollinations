@@ -12,6 +12,7 @@ on:
 jobs:
   detect-changes:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
     outputs:
@@ -42,6 +43,7 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.sdk == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       id-token: write
@@ -86,6 +88,7 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.ui == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
@@ -131,6 +134,7 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.cli == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       id-token: write

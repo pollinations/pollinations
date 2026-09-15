@@ -8,6 +8,7 @@ on:
 jobs:
   close-discarded:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Generate Pollinations AI Token
         id: pollinations-ai

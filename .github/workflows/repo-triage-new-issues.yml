@@ -16,6 +16,7 @@ jobs:
       !contains(github.event.issue.user.login, 'dependabot') &&
       !contains(github.event.issue.user.login, 'renovate')
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       issues: write
     steps:

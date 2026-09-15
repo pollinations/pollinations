@@ -12,6 +12,7 @@ jobs:
   lint:
     name: Lint and build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -105,6 +106,7 @@ jobs:
   enter:
     name: Test enter.pollinations.ai
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -178,6 +180,7 @@ jobs:
   gen:
     name: Test gen.pollinations.ai
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -224,6 +227,7 @@ jobs:
   gate:
     name: Check formatting and linting
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: [lint, enter, gen]
     if: always()
 

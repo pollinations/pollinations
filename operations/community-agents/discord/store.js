@@ -2,15 +2,14 @@ import { chmod, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
 export class TokenStore {
-    constructor(path = process.env.TOKEN_STORE_PATH || "./data/tokens.json") {
+    constructor(path) {
         this.path = path;
         this.writeQueue = Promise.resolve();
     }
 
     async readAll() {
         try {
-            const raw = await readFile(this.path, "utf8");
-            const parsed = JSON.parse(raw);
+            const parsed = JSON.parse(await readFile(this.path, "utf8"));
             return parsed && typeof parsed === "object" ? parsed : {};
         } catch (error) {
             if (error?.code === "ENOENT") return {};
@@ -25,7 +24,6 @@ export class TokenStore {
     async set(discordUserId, value) {
         return this.mutate((all) => {
             all[discordUserId] = value;
-            return true;
         });
     }
 
@@ -50,12 +48,12 @@ export class TokenStore {
 
     async writeAll(all) {
         await mkdir(dirname(this.path), { recursive: true, mode: 0o700 });
-        const tmp = `${this.path}.${process.pid}.tmp`;
-        await writeFile(tmp, `${JSON.stringify(all, null, 2)}\n`, {
+        const temporaryPath = `${this.path}.${process.pid}.tmp`;
+        await writeFile(temporaryPath, `${JSON.stringify(all, null, 2)}\n`, {
             mode: 0o600,
         });
-        await chmod(tmp, 0o600);
-        await rename(tmp, this.path);
+        await chmod(temporaryPath, 0o600);
+        await rename(temporaryPath, this.path);
         await chmod(this.path, 0o600);
     }
 }

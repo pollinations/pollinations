@@ -17,6 +17,10 @@ export const MCP_USAGE_HEADERS = {
 // Private MCP Workers use it to select the caller's connected accounts.
 export const MCP_USER_ID_HEADER = "x-pollinations-user-id";
 
+// Gen overwrites this from the signed agent-run token. Computer uses it to
+// keep one caller's agents in separate durable workspaces.
+export const MCP_AGENT_ID_HEADER = "x-pollinations-agent-id";
+
 type McpServerDefinitionBase = {
     id: string;
     name: string;
@@ -188,7 +192,7 @@ export const MCP_SERVERS = [
         id: "computer",
         name: "Computer",
         description:
-            "A private persistent computer: files and a bash shell that survive between runs.",
+            "A private persistent computer for each agent: files and a bash shell that survive between runs.",
         binding: "COMPUTER_MCP",
         billing: "usage_receipt",
         provider: "cloudflare",

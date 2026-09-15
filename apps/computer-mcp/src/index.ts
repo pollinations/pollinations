@@ -3,37 +3,47 @@ import {
     type DurableObjectStorageLike,
     getWorkspace,
     type WorkspaceClient,
-    WorkspaceServiceProxy,
+    type WorkspaceOptions,
+    WorkspaceProxy,
     withWorkspace,
 } from "@cloudflare/computer";
 import type { WorkspaceLike } from "@cloudflare/computer/assets";
-import { WorkerShellBackend } from "@cloudflare/computer/backends/worker-shell";
-import { createGitClient } from "@cloudflare/computer/git";
-import curlModules from "@cloudflare/computer/shell/curl";
-import jqModules from "@cloudflare/computer/shell/jq";
+import {
+    CloudflareContainerBackend,
+    withWorkspaceContainer,
+} from "@cloudflare/computer/backends/container";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { withMcpUsageHeaders } from "../../../shared/mcp-usage.ts";
 import {
     COMPUTER_TOOL_CALL_PRICE,
+    MCP_AGENT_ID_HEADER,
     MCP_USER_ID_HEADER,
 } from "../../../shared/registry/mcp.ts";
 import { createMediaAssets, type MediaService } from "./assets.ts";
-import { createComputerMcpServer, HOME } from "./server.ts";
+import {
+    createComputerMcpServer,
+    DEFAULT_WORKSPACE,
+    HOME,
+    WORKSPACE_NAME_PATTERN,
+} from "./server.ts";
 
 const TOOL_CALL_RATE = "computer.tool_call.v1";
+const IDLE_TIMEOUT_MS = 5 * 60_000;
+
+// Routes the container's workspace RPC connection back to its Durable Object.
+export { WorkspaceProxy };
 
 type Env = {
     COMPUTER: DurableObjectNamespace<Computer>;
-    LOADER: WorkerLoader;
     MEDIA: MediaService;
 };
 
 const README_PATH = `${HOME}/README.md`;
 const README = `# Your computer
 
-This is your private, persistent computer. Everything you write survives
-between runs. /workspace is your home folder: keep one folder per project
-in it (for example /workspace/thesis) and pass that folder as cwd.
+This is one of your private, persistent workspaces. Everything under
+/workspace survives between runs. Use a separate workspace name for an
+unrelated project; "default" is used when no name is given.
 
 ## Memory convention
 
@@ -45,57 +55,68 @@ in it (for example /workspace/thesis) and pass that folder as cwd.
 
 ## Shell
 
-The only tool is bash (no Node, no Python; coreutils, grep, sed, awk,
-jq, tar, curl and git are available). Write a file by passing its
-content as stdin to \`cat > path\`.
+The bash tool runs in Debian with Node.js, npm, apt, git, native binaries and
+outbound network. The container starts on the first command and stops after
+five minutes without commands. Only
+/workspace survives a container restart. Write a file by passing its content
+as stdin to \`cat > path\`. Commands start in /workspace; use \`cd\` inside a
+command when needed.
 
 ## Importing and sharing
 
 - In: \`curl -o path <url>\` for any public URL; \`git clone <https-url>\`
   for any public repository.
-- Out: \`assets publish <path>\` copies one file to public media storage
-  and prints an unlisted URL that stays valid 30 days; tar a folder first.
+- Out: the \`publish_file\` tool copies one file from /workspace to public
+  media storage and prints an unlisted URL that stays valid 30 days; tar a
+  folder first.
   For anything the user wants to keep, \`git push\` to a repository they
   own: they give you a token scoped to that one repository and you put it
   in the remote URL (https://x:TOKEN@github.com/user/repo.git). The token
   is stored in this computer's git config, nowhere else.
 `;
 
-// The Dynamic Worker running bash reaches this filesystem through the
-// service proxy, so the loader loopback needs the class exported here.
-export { WorkspaceServiceProxy };
-
-export class Computer extends withWorkspace(
+class ComputerBase extends withWorkspaceContainer(
     class extends DurableObject<Env> {},
-    (self) => {
-        const { ctx, env } = self as unknown as {
-            ctx: DurableObjectState;
-            env: Env;
-        };
-        return {
-            storage: ctx.storage as unknown as DurableObjectStorageLike,
-            git: createGitClient(),
-            // Typed as unknown: comparing Workspace to WorkspaceLike makes tsc
-            // recurse through the fs overloads until it gives up.
-            assets: (workspace: unknown) =>
-                createMediaAssets(workspace as WorkspaceLike, env.MEDIA),
-            defaultGitIdentity: {
-                name: "Pollinations Agent",
-                email: "agent@pollinations.ai",
-            },
-            backends: [
-                new WorkerShellBackend({
-                    loader: env.LOADER,
-                    workspace: { binding: "COMPUTER", id: ctx.id.toString() },
-                    ctx,
-                    egress: { mode: "direct" },
-                    commands: [jqModules, curlModules],
-                }),
-            ],
-        };
-    },
 ) {
+    readonly containerShell = new CloudflareContainerBackend({
+        container: () => this,
+        workspace: { binding: "COMPUTER", id: this.ctx.id.toString() },
+        egress: { mode: "direct" },
+    });
+}
+
+function workspaceOptions(
+    self: InstanceType<typeof ComputerBase>,
+): WorkspaceOptions {
+    const { ctx, env } = self as unknown as {
+        ctx: DurableObjectState;
+        env: Env;
+    };
+    return {
+        storage: ctx.storage as unknown as DurableObjectStorageLike,
+        // Typed as unknown: comparing Workspace to WorkspaceLike makes tsc
+        // recurse through the fs overloads until it gives up.
+        assets: (workspace: unknown) =>
+            createMediaAssets(workspace as WorkspaceLike, env.MEDIA),
+        backends: [self.containerShell],
+    };
+}
+
+export class Computer extends withWorkspace(ComputerBase, workspaceOptions) {
+    private activeCommands = 0;
+
+    async alarm(): Promise<void> {
+        if (this.activeCommands > 0) {
+            await this.ctx.storage.setAlarm(Date.now() + IDLE_TIMEOUT_MS);
+            return;
+        }
+        await this.ctx.container?.destroy();
+    }
+
     override async fetch(request: Request): Promise<Response> {
+        if (new URL(request.url).pathname === "/api") {
+            return this.containerShell.handleFetch(request);
+        }
         if (request.method !== "POST") {
             return new Response("Method Not Allowed", { status: 405 });
         }
@@ -109,17 +130,36 @@ export class Computer extends withWorkspace(
             enableJsonResponse: true,
         });
         await server.connect(transport);
-        const response = await transport.handleRequest(request, {
-            parsedBody: payload,
-        });
-        return withMcpUsageHeaders(response, toolCallUsage(payload, response));
+        const runsCommand =
+            payload.method === "tools/call" && payload.params?.name === "bash";
+        if (runsCommand) {
+            this.activeCommands++;
+            await this.ctx.storage.setAlarm(Date.now() + IDLE_TIMEOUT_MS);
+        }
+        try {
+            const response = await transport.handleRequest(request, {
+                parsedBody: payload,
+            });
+            return withMcpUsageHeaders(
+                response,
+                toolCallUsage(payload, response),
+            );
+        } finally {
+            if (runsCommand) {
+                this.activeCommands--;
+                await this.ctx.storage.setAlarm(Date.now() + IDLE_TIMEOUT_MS);
+            }
+        }
     }
 }
 
 type JsonRpcPayload = {
     id?: string | number | null;
     method?: string;
-    params?: { name?: string };
+    params?: {
+        name?: string;
+        arguments?: { workspace?: unknown };
+    };
 };
 
 async function readJsonRpc(request: Request): Promise<JsonRpcPayload> {
@@ -164,10 +204,37 @@ export default {
                 { status: 401 },
             );
         }
-        // One Durable Object per user; its SQLite holds the whole filesystem.
+        const managedAgentId = request.headers.get(MCP_AGENT_ID_HEADER);
+        const workspaceName = requestedWorkspace(await readJsonRpc(request));
+        // Managed agents get one computer installation per caller and agent.
+        // Direct MCP use remains one computer per caller and workspace.
         const stub = env.COMPUTER.get(
-            env.COMPUTER.idFromName(`user:${userId}`),
+            env.COMPUTER.idFromName(
+                computerName(userId, managedAgentId, workspaceName),
+            ),
         );
         return stub.fetch(request);
     },
 } satisfies ExportedHandler<Env>;
+
+function computerName(
+    userId: string,
+    managedAgentId: string | null,
+    workspaceName: string,
+): string {
+    const owner = managedAgentId
+        ? `user:${userId}:agent:${managedAgentId}`
+        : `user:${userId}`;
+    return `${owner}:workspace:${workspaceName}`;
+}
+
+function requestedWorkspace(payload: JsonRpcPayload): string {
+    const value = payload.params?.arguments?.workspace;
+    return payload.method === "tools/call" &&
+        (payload.params?.name === "bash" ||
+            payload.params?.name === "publish_file") &&
+        typeof value === "string" &&
+        WORKSPACE_NAME_PATTERN.test(value)
+        ? value
+        : DEFAULT_WORKSPACE;
+}

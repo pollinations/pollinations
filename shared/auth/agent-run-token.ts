@@ -15,6 +15,8 @@ export type AgentRunClaims = {
     // it in the signature: the agent holds the token, so a header carrying the
     // same id would be a value the agent gets to choose.
     parentRequestId: string;
+    // The listing that delegated this run. Besides selecting a managed
+    // runtime, this scopes user-owned tools such as Computer to that agent.
     managedAgentId?: string;
     issuedAt: number;
     expiresAt: number;

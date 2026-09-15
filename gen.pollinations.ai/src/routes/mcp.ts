@@ -9,6 +9,7 @@ import { getPublicOrigin } from "@shared/public-origin.ts";
 import {
     getMcpPricingInfo,
     getMcpServerDefinition,
+    MCP_AGENT_ID_HEADER,
     MCP_SERVERS,
     MCP_USAGE_HEADERS,
     MCP_USER_ID_HEADER,
@@ -32,6 +33,7 @@ function requestForMcp(
     request: Request,
     server: McpServerDefinition,
     userId: string,
+    managedAgentId?: string,
 ): Request {
     const headers = new Headers(request.headers);
     if (server.billing === "usage_receipt") {
@@ -39,7 +41,11 @@ function requestForMcp(
     }
     headers.delete("cookie");
     headers.delete(MCP_USER_ID_HEADER);
+    headers.delete(MCP_AGENT_ID_HEADER);
     if (server.userScoped) headers.set(MCP_USER_ID_HEADER, userId);
+    if (server.id === "computer" && managedAgentId) {
+        headers.set(MCP_AGENT_ID_HEADER, managedAgentId);
+    }
     for (const header of Object.values(MCP_USAGE_HEADERS)) {
         headers.delete(header);
     }
@@ -185,7 +191,12 @@ export const mcpRoutes = new Hono<Env>()
 
         const startedAt = new Date();
         const response = await binding.fetch(
-            requestForMcp(c.req.raw, server, user.id),
+            requestForMcp(
+                c.req.raw,
+                server,
+                user.id,
+                c.var.auth.agentRun?.managedAgentId,
+            ),
         );
         if (server.billing === "usage_receipt") {
             const usage = parseMcpUsageHeaders(response.headers);

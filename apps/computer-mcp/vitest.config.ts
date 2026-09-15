@@ -3,7 +3,7 @@ import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
 import { buildSync } from "esbuild";
 import { defineConfig } from "vitest/config";
 
-// The real media RPC service with local R2 storage, so `assets publish`
+// The real media RPC service with local R2 storage, so publish_file
 // is exercised end to end.
 const mediaScript = buildSync({
     entryPoints: [

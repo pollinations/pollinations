@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "test": "vitest run",
+    "test:container": "node scripts/test-container.mjs",
     "typecheck": "tsc --noEmit",
     "check": "wrangler deploy --dry-run",
     "deploy": "wrangler deploy",
@@ -14,8 +15,6 @@
   "dependencies": {
     "@cloudflare/computer": "0.3.0",
     "@modelcontextprotocol/sdk": "1.30.0",
-    "@platformatic/vfs": "^0.4.0",
-    "ai": "^7.0.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

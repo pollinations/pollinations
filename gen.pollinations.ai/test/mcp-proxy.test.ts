@@ -1,6 +1,10 @@
 import { env, SELF } from "cloudflare:test";
+import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
-import { MCP_USAGE_HEADERS } from "@shared/registry/mcp.ts";
+import {
+    MCP_AGENT_ID_HEADER,
+    MCP_USAGE_HEADERS,
+} from "@shared/registry/mcp.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
@@ -107,7 +111,7 @@ test("lists the MCP servers exposed through Gen", async () => {
                 id: "computer",
                 name: "Computer",
                 description:
-                    "A private persistent computer: files and a bash shell that survive between runs.",
+                    "A private persistent computer for each agent: files and a bash shell that survive between runs.",
                 url: "https://gen.pollinations.ai/mcp/computer",
                 pricing: {
                     description: "Preview price",
@@ -246,6 +250,7 @@ test("routes Composio with the authenticated user", async () => {
                 Authorization: `Bearer ${key}`,
                 Cookie: "session=private",
                 "x-pollinations-user-id": "spoofed-user",
+                [MCP_AGENT_ID_HEADER]: "spoofed-agent",
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(MCP_REQUEST),
@@ -272,6 +277,7 @@ test("routes Computer with the authenticated user and bills the flat call rate",
                 Authorization: `Bearer ${key}`,
                 Cookie: "session=private",
                 "x-pollinations-user-id": "spoofed-user",
+                [MCP_AGENT_ID_HEADER]: "spoofed-agent",
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(MCP_REQUEST),
@@ -282,7 +288,9 @@ test("routes Computer with the authenticated user and bills the flat call rate",
     expect(await response.json()).toEqual({
         jsonrpc: "2.0",
         id: 1,
-        result: { content: [{ type: "text", text: `computer:${userId}` }] },
+        result: {
+            content: [{ type: "text", text: `computer:${userId}:direct` }],
+        },
     });
     for (const header of Object.values(MCP_USAGE_HEADERS)) {
         expect(response.headers.has(header)).toBe(false);
@@ -290,6 +298,42 @@ test("routes Computer with the authenticated user and bills the flat call rate",
     expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
         tierBalance: 0.9998,
         packBalance: 0,
+    });
+});
+
+test("scopes Computer to the agent in a signed delegated run", async () => {
+    const parent = await createTestApiKey({ user: { tierBalance: 1 } });
+    const token = await signAgentRunToken({
+        secret: env.BETTER_AUTH_SECRET,
+        parentApiKeyId: parent.id,
+        parentRequestId: crypto.randomUUID(),
+        managedAgentId: "managed-agent-id",
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/computer",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                [MCP_AGENT_ID_HEADER]: "spoofed-agent",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+            content: [
+                {
+                    type: "text",
+                    text: `computer:${parent.userId}:managed-agent-id`,
+                },
+            ],
+        },
     });
 });
 

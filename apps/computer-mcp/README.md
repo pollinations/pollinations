@@ -1,35 +1,37 @@
 # Computer MCP
 
 A private, persistent computer for every Pollinations account: a filesystem
-plus a bash shell, exposed as a Streamable HTTP MCP server. Nothing runs while
-idle.
+plus a Linux shell, exposed as a Streamable HTTP MCP server.
 
 Built on [`@cloudflare/computer`](https://github.com/cloudflare/computer)
-(preview). Each user gets one Durable Object whose SQLite holds the
-whole filesystem. The single `bash` tool runs [just-bash](https://github.com/vercel-labs/just-bash)
-in a throwaway Dynamic Worker that talks back to the Durable Object for file
-access. No container, no Linux. The shell has coreutils, grep, sed, awk, jq,
-tar, curl and git; no Node or Python. `curl` uses the Dynamic Worker's own
-`fetch`, so the shell can reach any public URL (egress `direct`); there is no
-host allowlist.
+(preview). Managed agents get one Durable Object for each caller, agent and
+workspace; direct MCP use gets one for each caller and workspace. Its SQLite
+holds the filesystem. The `bash` tool lazily starts a Debian Cloudflare
+Container with Node.js, npm, apt, git, jq, native binaries and outbound network.
+Every command uses that container. It stops after five minutes without commands;
+the next command starts it again. Background processes do not survive. Only
+`/workspace` survives a container restart, so project dependencies belong there;
+system packages installed outside it are temporary.
 
-## The tool
+## Tools
 
-One tool, `bash`, with `command`, optional `stdin` (file content for
-`cat > path`, passed as-is, no quoting) and optional `cwd`, created if
-missing and defaulting to `/workspace`. The whole tree persists except
-`/tmp`, which is emptied after every call (stdin is fed to the command
-from a file there); `/workspace` is only the home folder, and projects are
-folders in it. Nothing is shared between users. Files come in with `curl -o` (any public URL) or `git clone`
-(any public repository) and go out with `assets publish <path>`, which copies
+`bash` accepts `command`, optional `stdin` (file content for
+`cat > path`, passed as-is, no quoting), and optional `workspace`
+(`default` when omitted). Each stable
+lowercase workspace name selects a separate filesystem. Commands begin in
+`/workspace`; use `cd` inside a command when needed. Nothing is shared between
+users. Files come in with `curl -o`
+(any public URL) or `git clone` (any public repository) and go out with
+`publish_file` with an absolute `path` and the same optional `workspace`. It copies
 one file to the Pollinations media service (`MEDIA` service binding, the same
 one ffmpeg-mcp uses) and prints its unlisted `https://media.pollinations.ai/…`
-URL (a snapshot with media's 30-day retention, refreshed on reads; the
-command's expiry argument is ignored), or with `git push` to a repository the
-user owns, using a token they provide in the remote URL. The service mints no
-credentials of its own. Every successful call is billed at one flat rate (`computer.tool_call.v1`, reported to gen as a
-usage receipt); discovery requests and storage are free. Memory is a convention,
-not a tool: a `/workspace/README.md` seeded on first use tells the agent to keep
+URL (a snapshot with media's 30-day retention, refreshed on reads).
+Commands can also use
+`git push` to a repository the user owns, using a token they provide in the
+remote URL. The service mints no credentials of its own. Every successful call
+is billed at one flat rate (`computer.tool_call.v1`, reported to gen as a usage
+receipt); discovery requests and storage are free. Memory is a convention, not
+a tool: a `/workspace/README.md` seeded on first use tells the agent to keep
 current facts in `memory/facts.md` and a dated append-only journal in
 `memory/log/`.
 
@@ -38,32 +40,46 @@ current facts in `memory/facts.md` and a dated append-only journal in
 The Worker is private (`workers_dev: false`, no routes). Gen's
 `/mcp/computer` route authenticates the caller, then calls this Worker through
 the `COMPUTER_MCP` service binding with the `x-pollinations-user-id` header
-set. That header selects the Durable Object (`user:<userId>`), so a missing header
-is a 401 here.
+set. For delegated agent runs, Gen also derives an agent header from the signed
+`ag_` credential. Those headers and the tool's workspace name select the
+Durable Object. Its name is `user:<userId>:agent:<agentId>:workspace:<name>`
+for an agent, or `user:<userId>:workspace:<name>` for direct MCP use. Caller
+supplied identity headers are discarded by Gen. A missing user header is a 401
+here.
 The registry entry lives in `shared/registry/mcp.ts`.
 
 ## Local
 
 ```bash
 npm install
-npm test          # workers pool, includes a real bash exec
+npm test          # Workers pool: routing, discovery, isolation and publishing
 npm run typecheck
-npm run dev       # http://localhost:8787
+npm run dev -- --port 8790
+npm run test:container # in another terminal, exercises real Linux commands
 ```
+
+`npm run dev` requires Docker because Wrangler builds the configured container
+image. The Workers pool tests run without Docker. `test:container` exercises
+Node, npm installs, stdin, errors, workspace isolation and file publishing
+against a running Worker (override its URL with `COMPUTER_MCP_URL`).
+Add `-- --idle` to also wait five minutes and verify container restart with
+files and installed packages restored. `COMPUTER_TEST_USER` reuses a test caller.
 
 Call it directly with the user header (the gen proxy sets it in production):
 
 ```bash
-curl -s http://localhost:8787/ \
+curl -s http://localhost:8790/ \
   -H 'content-type: application/json' \
   -H 'accept: application/json, text/event-stream' \
   -H 'x-pollinations-user-id: local-test' \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"bash","arguments":{"command":"ls /workspace"}}}'
 ```
 
+All commands, including `node --version`, run in Debian.
+
 ## Deploy
 
 Staging: `npm run deploy:staging` (Worker `pollinations-computer-mcp-staging`).
 Production deploys only through the `Deploy / Cloudflare production` workflow,
 which handles `apps/*-mcp` before gen so the binding target exists. Requires a
-paid Workers plan for `worker_loaders`.
+paid Workers plan with Containers.

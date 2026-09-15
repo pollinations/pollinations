@@ -57,12 +57,9 @@ async function mintDelegatedToken({
         secret,
         parentApiKeyId,
         parentRequestId,
-        // The managed runtime uses the listing id (also its upstream model) to
-        // select the prompt config. An external agent only needs spend scope.
-        managedAgentId:
-            endpoint.type === "prompt_agent" || endpoint.type === "code_agent"
-                ? endpoint.id
-                : undefined,
+        // This selects managed runtimes and gives every kind of agent its own
+        // caller-scoped state in user-owned tools such as Computer.
+        managedAgentId: endpoint.id,
     });
 }
 

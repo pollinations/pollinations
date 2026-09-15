@@ -1,4 +1,4 @@
-import { execFileSync, spawnSync } from "node:child_process";
+import { execSync, spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -57,9 +57,10 @@ export function detectInstallKind(
 
 function npmGlobalRoot(): string | null {
     try {
-        return execFileSync("npm", ["root", "-g"], {
+        return execSync("npm root -g", {
             encoding: "utf-8",
             stdio: ["ignore", "pipe", "ignore"],
+            timeout: 5000,
         }).trim();
     } catch {
         return null;
@@ -77,7 +78,7 @@ async function fetchLatestVersion(): Promise<string> {
 }
 
 const NON_GLOBAL_ADVICE: Record<Exclude<InstallKind, "global">, string> = {
-    npx: "Running via npx already fetches the latest published version on every run — nothing to update.",
+    npx: `Run the latest version with: npx ${PACKAGE_NAME}@latest <command>`,
     local: `Not a global npm install. Update the dependency where it's declared, or install globally with: npm install -g ${PACKAGE_NAME}`,
 };
 
@@ -87,7 +88,6 @@ export const updateCommand = new Command("update")
     )
     .action(async () => {
         try {
-            const latest = await fetchLatestVersion();
             const kind = detectInstallKind(packageDir, npmGlobalRoot());
 
             if (kind !== "global") {
@@ -95,7 +95,6 @@ export const updateCommand = new Command("update")
                 printInfo(message);
                 printResult({
                     current: currentVersion,
-                    latest,
                     updated: false,
                     installType: kind,
                     message,
@@ -103,6 +102,7 @@ export const updateCommand = new Command("update")
                 return;
             }
 
+            const latest = await fetchLatestVersion();
             if (currentVersion === latest) {
                 printSuccess(`Already up to date (v${currentVersion}).`);
                 printResult({
@@ -121,8 +121,12 @@ export const updateCommand = new Command("update")
 
             const install = spawnSync(
                 "npm",
-                ["install", "-g", `${PACKAGE_NAME}@${latest}`],
-                { stdio: isJson ? "pipe" : "inherit", encoding: "utf-8" },
+                ["install", "-g", `${PACKAGE_NAME}@latest`],
+                {
+                    stdio: isJson ? "pipe" : "inherit",
+                    encoding: "utf-8",
+                    shell: process.platform === "win32",
+                },
             );
 
             if (install.error || install.status !== 0) {
@@ -136,10 +140,13 @@ export const updateCommand = new Command("update")
                 );
             }
 
-            printSuccess(`Updated to v${latest}.`);
+            const installed = JSON.parse(
+                readFileSync(join(packageDir, "package.json"), "utf-8"),
+            ).version as string;
+            printSuccess(`Updated to v${installed}.`);
             printResult({
                 current: currentVersion,
-                latest,
+                latest: installed,
                 updated: true,
                 installType: kind,
             });

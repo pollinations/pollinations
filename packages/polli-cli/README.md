@@ -43,6 +43,8 @@ polli update    # npm install -g @pollinations/cli@latest, if installed globally
 
 For npx or a local/project install, `update` prints instructions instead of creating a second global install.
 
+Interactive commands show an occasional update notice without waiting for the network. Set `NO_UPDATE_NOTIFIER=1` to disable it. Notices are skipped for scripts, pipes, and `--json`; updates are never installed automatically. Updating leaves credentials and harness settings untouched.
+
 ## Generate
 
 ```bash

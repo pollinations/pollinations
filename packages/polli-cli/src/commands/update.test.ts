@@ -30,6 +30,16 @@ describe("detectInstallKind", () => {
         expect(detectInstallKind(dir, null)).toBe("local");
     });
 
+    it("does not mistake nested dependencies for the global CLI", () => {
+        const root = resolve("/usr/local/lib/node_modules");
+        expect(
+            detectInstallKind(
+                join(root, "other/node_modules/@pollinations/cli"),
+                root,
+            ),
+        ).toBe("local");
+    });
+
     it("is unaffected by trailing separators", () => {
         const globalRoot = resolve("/usr/local/lib/node_modules");
         const dir = `${join(globalRoot, "@pollinations", "cli")}${sep}`;

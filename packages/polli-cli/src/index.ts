@@ -19,10 +19,11 @@ import { usageCommand } from "./commands/usage.js";
 import { setKeyOverride } from "./lib/config.js";
 import { setOutputMode } from "./lib/output.js";
 import { flavor } from "./lib/quotes.js";
+import { notifyUpdate } from "./lib/update-notice.js";
 
 const pkg = JSON.parse(
     readFileSync(new URL("../package.json", import.meta.url), "utf-8"),
-) as { version: string };
+) as { name: string; version: string };
 
 const program = new Command();
 
@@ -60,6 +61,9 @@ program
         if (opts.key) {
             setKeyOverride(opts.key);
         }
+    })
+    .hook("postAction", (_command, action) => {
+        if (action.name() !== "update") return notifyUpdate(pkg);
     });
 
 // Auth & account

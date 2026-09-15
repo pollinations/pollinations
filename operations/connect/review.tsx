@@ -545,16 +545,29 @@ export function ReviewStartOver() {
     const { state, busy } = useConnectConditions();
     if (!review?.journey) return null;
     return (
-        <div className="connect-start-over">
-            <Button
-                size="sm"
-                data-theme="neutral"
+        <div className="connect-start-over" data-theme="neutral">
+            <IconButton
+                size="md"
                 disabled={!state || busy || review.running}
-                title="Return to the journey’s beginning with the selected account conditions"
+                title="Start over"
+                tooltip="Return to the journey’s beginning with the selected account conditions"
                 onClick={() => void review.startOver()}
             >
-                Start over
-            </Button>
+                <svg
+                    aria-hidden="true"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                >
+                    <path d="M20 4v7h-7" />
+                    <path d="M20 11a8 8 0 1 0-2.34 6.66" />
+                </svg>
+            </IconButton>
         </div>
     );
 }

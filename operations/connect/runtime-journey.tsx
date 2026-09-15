@@ -1,9 +1,4 @@
-import {
-    ArrowRightIcon,
-    Button,
-    Tooltip,
-    useColorMode,
-} from "@pollinations/ui";
+import { ArrowRightIcon, IconButton, useColorMode } from "@pollinations/ui";
 import { useEffect, useRef, useState } from "react";
 import { useConnectConditions } from "./conditions";
 import {
@@ -142,25 +137,19 @@ export function RuntimeJourney({
                     </ScreenViewer>
                 </main>
             </div>
-            <div className="journey-back-tools">
-                <Tooltip content="Previous step" triggerAs="span">
-                    <Button
-                        data-theme="neutral"
-                        aria-label="Previous step"
-                        disabled={!canGoBack}
-                        className="polli:gap-2"
-                        onClick={() => {
-                            frameHost.current
-                                ?.querySelector("iframe")
-                                ?.contentWindow?.history.back();
-                        }}
-                    >
-                        <ArrowRightIcon className="polli:h-4 polli:w-4 polli:rotate-180" />
-                        <span className="journey-back-label">
-                            Previous step
-                        </span>
-                    </Button>
-                </Tooltip>
+            <div className="journey-back-tools" data-theme="neutral">
+                <IconButton
+                    size="md"
+                    title="Previous step"
+                    disabled={!canGoBack}
+                    onClick={() => {
+                        frameHost.current
+                            ?.querySelector("iframe")
+                            ?.contentWindow?.history.back();
+                    }}
+                >
+                    <ArrowRightIcon className="polli:h-4 polli:w-4 polli:rotate-180" />
+                </IconButton>
             </div>
         </div>
     );

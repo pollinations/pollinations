@@ -6,6 +6,8 @@ type PublishableKeySettingsProps = {
     onRedirectUrisChange: (uris: string[]) => void;
     earningsEnabled?: boolean;
     onEarningsEnabledChange?: (enabled: boolean) => void;
+    markupPct?: number;
+    onMarkupPctChange?: (pct: number) => void;
     disabled?: boolean;
 };
 
@@ -21,6 +23,8 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
     onRedirectUrisChange,
     earningsEnabled = false,
     onEarningsEnabledChange,
+    markupPct = 0.25,
+    onMarkupPctChange,
     disabled = false,
 }) => {
     function update(index: number, value: string) {
@@ -87,8 +91,8 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                             App earnings
                         </div>
                         <p className="mt-0.5 text-xs text-theme-text-soft">
-                            Users pay 25% over base rates. Markup credits to
-                            your balance.
+                            Users pay over base rates. Markup credits to your
+                            balance.
                         </p>
                     </div>
                     <Switch
@@ -102,6 +106,33 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         }
                     />
                 </div>
+            )}
+            {earningsEnabled && onMarkupPctChange && (
+                <Field.Root className="flex flex-col gap-2">
+                    <Field.Label className="text-sm font-semibold">
+                        Earnings markup
+                    </Field.Label>
+                    <p className="text-xs text-theme-text-soft">
+                        Percentage added on top of base rates (10%–50%).
+                    </p>
+                    <div className="flex items-center gap-3">
+                        <input
+                            type="range"
+                            min={10}
+                            max={50}
+                            step={1}
+                            value={Math.round(markupPct * 100)}
+                            onChange={(e) =>
+                                onMarkupPctChange(Number(e.target.value) / 100)
+                            }
+                            disabled={disabled}
+                            className="flex-1"
+                        />
+                        <span className="w-12 text-right text-sm font-medium">
+                            {Math.round(markupPct * 100)}%
+                        </span>
+                    </div>
+                </Field.Root>
             )}
         </div>
     );

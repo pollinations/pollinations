@@ -65,6 +65,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         simplified ? [DEFAULT_LOCALHOST_REDIRECT] : [],
     );
     const [earningsEnabled, setEarningsEnabled] = useState(true);
+    const [markupPct, setMarkupPct] = useState(0.25);
     const keyPermissions = useKeyPermissions(
         simplified
             ? {
@@ -100,6 +101,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             .filter(Boolean),
                     }),
                 ...(isPublishable && { earningsEnabled }),
+                ...(isPublishable && earningsEnabled && { markupPct }),
             });
             setCreatedKey(newKey);
         } catch (err) {
@@ -299,6 +301,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             onRedirectUrisChange={setRedirectUris}
                             earningsEnabled={earningsEnabled}
                             onEarningsEnabledChange={setEarningsEnabled}
+                            markupPct={markupPct}
+                            onMarkupPctChange={setMarkupPct}
                             disabled={isSubmitting}
                         />
                     )}

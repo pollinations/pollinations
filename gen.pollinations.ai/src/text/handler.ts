@@ -30,7 +30,10 @@ import {
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { syncTextEnvironment } from "./environment.js";
 import { throwTextError } from "./errors.js";
-import { supportsTextFallbackRequest } from "./fallbackCompatibility.js";
+import {
+    supportsTextFallbackRequest,
+    textCapabilityError,
+} from "./fallbackCompatibility.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import {
     getChatRequestData,
@@ -338,6 +341,12 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
+        const capabilityError = textCapabilityError(
+            c.var.model?.definition,
+            requestData,
+        );
+        if (capabilityError)
+            throw new UpstreamError(400, { message: capabilityError });
         const portkey = c.env.PORTKEY;
         const candidates = fallbackCandidates(c.var.model)
             .map((candidate, originalIndex) => ({

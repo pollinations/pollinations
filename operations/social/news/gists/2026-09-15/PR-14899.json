@@ -1,0 +1,34 @@
+{
+  "pr_number": 14899,
+  "title": "fix: allow bodyless agent sync in API docs validation",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14899",
+  "merged_at": "2026-09-15T00:15:29Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fixes API docs validation rejecting the intentionally bodyless `POST /account/agents/{id}/sync` example, which blocked all nine docs runs since September 11 ([failure logs](https://github.com/pollinations/pollinations/actions/runs/34911094425/job/104198526024)).\n- Limits the exception to that POST route on `gen.pollinations.ai`; other write examples still require a body.\n- Verified the original validator fails on freshly generated live-schema docs and the fix passes; nine targeted cases and Biome pass.\n- Keeps generated `APIDOCS.md` out of this change; the docs workflow will regenerate it after merge.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The empty POST may pass",
+    "blurb": "One deliberately bodyless agent-sync request was being mistaken for a missing lunch. The docs validator now recognizes `POST /account/agents/{id}/sync` while keeping every other write example properly fed.",
+    "summary": "Fixed `gen.pollinations.ai` API-doc validation so the intentionally bodyless `POST /account/agents/{id}/sync` example passes, while all other write-route examples continue to require request bodies.",
+    "impact": "Agent-sync documentation can now regenerate successfully after nine blocked runs, with validation still catching bodyless examples on other POST, PUT, PATCH, and write routes.",
+    "keywords": [
+      "api-docs",
+      "validation",
+      "agents",
+      "sync",
+      "gen.pollinations.ai",
+      "documentation"
+    ],
+    "visual_concept": "A cozy API documentation garden where Polli, wearing tiny librarian glasses, presents a clearly labeled empty parcel to a retro terminal showing the `/account/agents/{id}/sync` route with a green approval check. Nearby, other write-route envelopes remain visibly filled, showing that only this one special delivery is allowed to travel empty; code-plants and small flowers frame the scene.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, approving one intentionally empty envelope labeled `POST /agents/sync` at a glowing retro terminal while other envelopes are filled with request-body papers. Soft lime green (#ecf874) and pastel garden background with code-plants and flowers, dark purple (#110518) pixel outlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; pixel text: `VALID`."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-15/PR-14899.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, approving one intentionally empty envelope labeled `POST /agents/sync` at a glowing retro terminal while other envelopes are filled with request-body papers. Soft lime green (#ecf874) and pastel garden background with code-plants and flowers, dark purple (#110518) pixel outlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; pixel text: `VALID`."
+  },
+  "generated_at": "2026-09-15T00:16:58.986448+00:00"
+}

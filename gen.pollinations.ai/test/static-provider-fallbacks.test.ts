@@ -15,7 +15,11 @@ import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { TEXT_FALLBACKS } from "@shared/registry/text-fallbacks.ts";
 import { describe, expect, it } from "vitest";
 import { findModelByName } from "../src/text/availableModels.ts";
-import { supportsTextFallbackRequest } from "../src/text/fallbackCompatibility.ts";
+import {
+    supportsTextFallbackRequest,
+    textCapabilityError,
+} from "../src/text/fallbackCompatibility.ts";
+import { resolveDirectResponsesTarget } from "../src/text/responses/client.ts";
 
 const OPENROUTER_ROUTES = [
     [
@@ -49,9 +53,9 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
-        "meta/llama-4-scout:openrouter:vertex-us-east5",
+        "meta/llama-4-scout:openrouter:novita-bf16",
         "meta-llama/llama-4-scout",
-        "google-vertex/us-east5",
+        "novita/bf16",
     ],
     ["x-ai/grok-4.20:openrouter:xai-zdr", "x-ai/grok-4.20", "xai/zdr"],
     ["x-ai/grok-4.3:openrouter:xai-zdr", "x-ai/grok-4.3", "xai/zdr"],
@@ -437,11 +441,11 @@ describe("static provider fallbacks", () => {
             completionTextTokens: (0.6 / 1_000_000) * 1.055,
         });
         expect(
-            TEXT_SERVICES["meta/llama-4-scout:openrouter:vertex-us-east5"].cost,
+            TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"].cost,
         ).toMatchObject({
-            promptTextTokens: (0.25 / 1_000_000) * 1.055,
-            promptImageTokens: (0.25 / 1_000_000) * 1.055,
-            completionTextTokens: (0.7 / 1_000_000) * 1.055,
+            promptTextTokens: (0.18 / 1_000_000) * 1.055,
+            promptImageTokens: (0.18 / 1_000_000) * 1.055,
+            completionTextTokens: (0.59 / 1_000_000) * 1.055,
         });
         expect(
             IMAGE_SERVICES["qwen/qwen-image-3:replicate"].cost,
@@ -473,44 +477,36 @@ describe("static provider fallbacks", () => {
         });
     });
 
-    it("keeps Llama Vertex inside its verified request limits", () => {
+    it("shares Scout capabilities and pricing across its two routes", () => {
+        const primary = TEXT_SERVICES["meta/llama-4-scout"];
         const route =
-            TEXT_SERVICES["meta/llama-4-scout:openrouter:vertex-us-east5"];
-        expect(supportsTextFallbackRequest(route, {})).toBe(true);
-        expect(
-            supportsTextFallbackRequest(route, { tool_choice: "none" }),
-        ).toBe(true);
-        expect(
-            supportsTextFallbackRequest(route, { tool_choice: "auto" }),
-        ).toBe(true);
-        expect(
-            supportsTextFallbackRequest(route, {
-                tool_choice: { type: "allowed_tools", mode: "auto" },
-            }),
-        ).toBe(true);
-        expect(
-            supportsTextFallbackRequest(route, { tool_choice: "required" }),
-        ).toBe(false);
+            TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"];
+        expect(primary).toMatchObject({
+            tools: false,
+            contextLength: 131072,
+            paidOnly: true,
+            priceMultiplier: 1,
+        });
+        expect(primary.cost.promptTextTokens).toBe(0.1 / 1_000_000);
         expect(
             supportsTextFallbackRequest(route, {
-                tool_choice: {
-                    type: "function",
-                    function: { name: "weather" },
-                },
+                messages: [{ role: "user", content: "Hello" }],
+                stream: true,
+                max_tokens: 128,
             }),
-        ).toBe(false);
-        expect(
-            supportsTextFallbackRequest(route, {
-                function_call: { name: "weather" },
-            }),
-        ).toBe(false);
-        expect(supportsTextFallbackRequest(route, { max_tokens: 8192 })).toBe(
+        ).toBe(true);
+        expect(supportsTextFallbackRequest(route, { max_tokens: 16384 })).toBe(
             true,
         );
-        expect(supportsTextFallbackRequest(route, { max_tokens: 8193 })).toBe(
-            false,
-        );
-
+        for (const field of [
+            "max_tokens",
+            "max_completion_tokens",
+            "max_output_tokens",
+        ]) {
+            expect(supportsTextFallbackRequest(route, { [field]: 16385 })).toBe(
+                false,
+            );
+        }
         const images = (count: number) => ({
             messages: [
                 {
@@ -522,8 +518,152 @@ describe("static provider fallbacks", () => {
                 },
             ],
         });
-        expect(supportsTextFallbackRequest(route, images(5))).toBe(true);
-        expect(supportsTextFallbackRequest(route, images(6))).toBe(false);
+        expect(supportsTextFallbackRequest(route, images(10))).toBe(true);
+        expect(supportsTextFallbackRequest(route, images(11))).toBe(false);
+    });
+
+    it.each([
+        { tools: [{ type: "function", function: { name: "weather" } }] },
+        { tool_choice: "required" },
+        { functions: [{ name: "weather" }] },
+        { function_call: { name: "weather" } },
+        { response_format: { type: "json_object" } },
+        {
+            response_format: {
+                type: "json_schema",
+                json_schema: { name: "answer" },
+            },
+        },
+        { text: { format: { type: "json_object" } } },
+        {
+            messages: [
+                {
+                    role: "assistant",
+                    tool_calls: [
+                        {
+                            type: "function",
+                            function: { name: "weather", arguments: "{}" },
+                        },
+                    ],
+                },
+            ],
+        },
+        {
+            messages: [
+                { role: "tool", content: "sunny", tool_call_id: "call_1" },
+            ],
+        },
+        { messages: [{ role: "function", name: "weather", content: "sunny" }] },
+        {
+            input: [
+                {
+                    type: "function_call",
+                    name: "weather",
+                    arguments: "{}",
+                    call_id: "call_1",
+                },
+            ],
+        },
+        {
+            input: [
+                {
+                    type: "function_call_output",
+                    call_id: "call_1",
+                    output: "sunny",
+                },
+            ],
+        },
+    ])("rejects unsupported Scout capabilities on both routes: %j", (request) => {
+        const before = JSON.stringify(request);
+        expect(
+            textCapabilityError(TEXT_SERVICES["meta/llama-4-scout"], request),
+        ).toMatch(/does not support/);
+        expect(
+            supportsTextFallbackRequest(
+                TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"],
+                request,
+            ),
+        ).toBe(false);
+        expect(JSON.stringify(request)).toBe(before);
+        expect(
+            supportsTextFallbackRequest(
+                TEXT_SERVICES["meta/llama-4-scout"],
+                request,
+            ),
+        ).toBe(false);
+    });
+
+    it.each([
+        { tool_choice: "auto" },
+        { tool_choice: "none" },
+        { function_call: "auto", functions: [] },
+        { tools: [], parallel_tool_calls: false },
+        { tools: [], parallel_tool_calls: true },
+        { parallel_tool_calls: true },
+        { logit_bias: {} },
+        { response_format: { type: "text" } },
+        { text: { format: { type: "text" } } },
+        { messages: [{ role: "user", content: "hello ".repeat(60000) }] },
+        {
+            input: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "input_image",
+                            image_url: `data:image/png;base64,${"a".repeat(100000)}`,
+                        },
+                    ],
+                },
+            ],
+        },
+        {
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        { type: "text", text: '{"type":"function_call"}' },
+                    ],
+                },
+            ],
+        },
+    ])("allows defaults and large payloads through Novita (case %#)", (request) => {
+        expect(
+            supportsTextFallbackRequest(
+                TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"],
+                request,
+            ),
+        ).toBe(true);
+    });
+
+    it("uses the same primary and single fallback for both API formats", () => {
+        const primary = "meta/llama-4-scout";
+        const novita = `${primary}:openrouter:novita-bf16`;
+        expect(TEXT_SERVICES[primary].fallbacks).toEqual([novita]);
+        expect(findModelByName(primary)?.config()).toMatchObject({
+            model: "meta/llama-4-scout",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["deepinfra"] } },
+            },
+        });
+        const request = {
+            model: primary,
+            input: "Hello",
+            stream: false,
+            store: false as const,
+            safe: undefined,
+        };
+        expect(resolveDirectResponsesTarget(primary, request)).toMatchObject({
+            endpoint: "https://ai-gateway.vercel.sh/v1/responses",
+            defaults: { providerOptions: { gateway: { only: ["deepinfra"] } } },
+        });
+        expect(resolveDirectResponsesTarget(novita, request)).toMatchObject({
+            endpoint: "https://openrouter.ai/api/v1/responses",
+            defaults: {
+                provider: { only: ["novita/bf16"], allow_fallbacks: false },
+            },
+        });
     });
 
     it("binds fallback-only text ids to their exact provider routes", () => {

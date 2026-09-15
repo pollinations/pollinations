@@ -1,5 +1,6 @@
 import { createPollinationsAuth } from "@pollinations/auth/server";
 import { Hono } from "hono";
+import { deleteCookie, getCookie } from "hono/cookie";
 
 export type Bindings = {
     ASSETS: { fetch: typeof fetch };
@@ -54,6 +55,12 @@ export function createObservabilityApp(
         c.res = await forward(new Request(c.req.raw, { headers }));
         // Keep the upgrade response intact; normal HTTP/session polling renews cookies.
         if (c.res.status === 101) return c.res;
+        // Old Grafana logins leave browser-readable expiry metadata behind.
+        // It triggers token rotation and reloads even with Auth Proxy sessions.
+        if (getCookie(c, "grafana_session_expiry") !== undefined) {
+            deleteCookie(c, "grafana_session_expiry", { path: "/" });
+            deleteCookie(c, "grafana_session_expiry", { path: "/grafana/" });
+        }
         if (renewedSession)
             c.header("Set-Cookie", renewedSession, { append: true });
         c.header("Cache-Control", "private, no-store");

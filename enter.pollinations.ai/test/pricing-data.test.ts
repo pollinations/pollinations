@@ -596,10 +596,10 @@ test("Qwen Image 3 uses Fal's output tier and reference-image rates", () => {
     ).toBeCloseTo(0.084, 8);
 });
 
-test("updated provider prices are reflected for xAI media and OpenRouter text", () => {
+test("updated provider prices are reflected for xAI media and text routes", () => {
     expect(
         getCostDefinition("meta/llama-4-scout").promptTextTokens,
-    ).toBeCloseTo(0.0000001 * 1.055, 12);
+    ).toBeCloseTo(0.0000001, 12);
     expect(
         getCostDefinition("stepfun/step-3.5-flash").promptTextTokens,
     ).toBeCloseTo(0.0000001 * 1.055, 12);

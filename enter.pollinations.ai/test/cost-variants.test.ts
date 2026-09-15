@@ -213,10 +213,10 @@ describe("long-context cost variants", () => {
         expect(billing.servedPrice).toBeCloseTo(0.00003, 12);
     });
 
-    it("keeps the Llama Scout quote and records the absorbed Vertex loss", () => {
+    it("keeps the Llama Scout quote and records the fee-inclusive Novita cost", () => {
         const billing = fallbackBill(
             "meta/llama-4-scout",
-            "meta/llama-4-scout:openrouter:vertex-us-east5",
+            "meta/llama-4-scout:openrouter:novita-bf16",
             {
                 promptTextTokens: 1_000_000,
                 promptImageTokens: 1_000_000,
@@ -224,11 +224,11 @@ describe("long-context cost variants", () => {
             },
         );
 
-        expect(billing.cost.totalCost).toBeCloseTo(1.2 * 1.055, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(0.5 * 1.055, 12);
-        expect(billing.servedPrice).toBeCloseTo(1.2 * 1.055, 12);
+        expect(billing.cost.totalCost).toBeCloseTo(0.95 * 1.055, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.5, 12);
+        expect(billing.servedPrice).toBeCloseTo(0.95 * 1.055, 12);
         expect(billing.cost.totalCost - billing.price.totalPrice).toBeCloseTo(
-            0.7 * 1.055,
+            0.95 * 1.055 - 0.5,
             12,
         );
     });

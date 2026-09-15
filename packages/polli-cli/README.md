@@ -37,6 +37,21 @@ printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token
 
 Credentials land at `~/.pollinations/credentials.json`. For one-off runs pass `--key sk_...` or set `POLLINATIONS_API_KEY`. Get keys at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
 
+## Updates
+
+`polli` checks for newer versions on startup (non-blocking, TTY only). When an update is available you'll see a one-line notice with the upgrade command.
+
+```bash
+polli update                  # check version and show update instructions
+polli update check            # machine-readable JSON output
+```
+
+Updating preserves credentials and configuration:
+
+```bash
+npm install -g @pollinations/cli@latest
+```
+
 ## Generate
 
 ```bash

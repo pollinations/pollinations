@@ -44,6 +44,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
 | Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|opencode\|openclaw\|pi\|prime> on` (available adapters: `polli harness --help`) |
+| Check for CLI updates | `polli update` |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -52,6 +53,13 @@ One-time: `polli auth login` (device-flow; creates a key with `profile`, `usage`
 `printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token`. Verify
 with `polli auth status`.
 Override the stored key for a single command with `--key <key>`.
+
+### Check for updates
+```bash
+polli update                # version check + upgrade instructions
+polli update check          # JSON: { currentVersion, latestVersion, updateAvailable }
+```
+`polli` checks the npm registry on startup when stdout is a TTY. Cached for 24 hours at `~/.pollinations/update-cache.json`. Update with `npm install -g @pollinations/cli@latest`.
 
 ## Recipes
 

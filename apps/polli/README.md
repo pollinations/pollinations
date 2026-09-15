@@ -55,6 +55,8 @@ curl http://127.0.0.1:55288/v1/chat/completions \
   }'
 ```
 
+`metadata: {"model": "model-id"}` selects Polli’s inner model on both Chat Completions and Responses. It takes precedence over `model`; other metadata keys are ignored by Polli.
+
 `model: "polli"` is an alias for the service's configured default upstream model and may use its configured fallback. A non-empty explicit upstream model name is forwarded as requested and does not use that fallback. `/v1/models` advertises only the stable `polli` alias; an explicit upstream model therefore need not appear in that list.
 
 The embedded API is not a universal pass into Polli. It uses non-admin context, removes mutation and subscription operations, excludes custom GitHub requests and visual rendering, blocks Discord member/role lookup, and restricts Discord results to public HTTP scope.

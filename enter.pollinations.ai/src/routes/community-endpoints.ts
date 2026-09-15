@@ -14,6 +14,7 @@ import {
     pendingCommunityEndpointChangeIsReady,
     resolveEffectiveProxyListing,
 } from "@shared/community-endpoints.ts";
+import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { resolveModelName } from "@shared/registry/registry.ts";
@@ -282,8 +283,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 .orderBy(desc(schema.communityEndpoint.createdAt));
             const owner = await db.query.user.findFirst({
                 columns: {
+                    id: true,
                     communityProviderName: true,
                     communityProviderUrl: true,
+                    communityProviderIconUrl: true,
                 },
                 where: eq(schema.user.id, user.id),
             });
@@ -298,6 +301,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     provider: {
                         name: owner?.communityProviderName ?? null,
                         url: owner?.communityProviderUrl ?? null,
+                        iconUrl: isCommunityProviderIconUrl(
+                            owner?.communityProviderIconUrl,
+                        )
+                            ? owner.communityProviderIconUrl
+                            : null,
                     },
                 }),
             );
@@ -309,7 +317,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Update Community Provider Profile",
             description:
-                "Set the public provider name and HTTPS service link shared by all community models owned by the authenticated account. Send both fields empty to clear the profile. Publishing approval and `account:keys` are required.",
+                "Set the public provider name, HTTPS service link, and optional media.pollinations.ai icon URL shared by all community models owned by the authenticated account. Publishing approval and `account:keys` are required.",
             responses: {
                 200: {
                     description: "Updated community provider profile",
@@ -349,14 +357,28 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     communityProviderUrl: url
                         ? normalizeInputProviderUrl(url)
                         : null,
+                    ...(input.iconUrl === undefined
+                        ? {}
+                        : {
+                              communityProviderIconUrl: input.iconUrl,
+                          }),
                     updatedAt: new Date(),
                 })
                 .where(eq(schema.user.id, user.id))
                 .returning({
                     name: schema.user.communityProviderName,
                     url: schema.user.communityProviderUrl,
+                    iconUrl: schema.user.communityProviderIconUrl,
                 });
-            return c.json(profile);
+            return c.json(
+                CommunityProviderProfileResponseSchema.parse({
+                    name: profile.name,
+                    url: profile.url,
+                    iconUrl: isCommunityProviderIconUrl(profile.iconUrl)
+                        ? profile.iconUrl
+                        : null,
+                }),
+            );
         },
     )
     .get(
@@ -488,6 +510,8 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const payload: EndpointAgentListingPayload = {
                 perUserRpm: input.perUserRpm,
                 api: input.api,
+                inputModalities: input.inputModalities,
+                outputModalities: input.outputModalities,
             };
             const [row] = await db
                 .insert(schema.communityEndpoint)
@@ -888,15 +912,18 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 if (input.upstreamModel !== undefined) {
                     update.upstreamModel = input.upstreamModel;
                 }
-                if (input.perUserRpm !== undefined || input.api !== undefined) {
-                    update.payload = JSON.stringify({
-                        perUserRpm:
-                            input.perUserRpm === undefined
-                                ? current.perUserRpm
-                                : input.perUserRpm,
-                        api: input.api ?? current.api,
-                    });
-                }
+                update.payload = JSON.stringify({
+                    ...current,
+                    perUserRpm:
+                        input.perUserRpm === undefined
+                            ? current.perUserRpm
+                            : input.perUserRpm,
+                    api: input.api ?? current.api,
+                    inputModalities:
+                        input.inputModalities ?? current.inputModalities,
+                    outputModalities:
+                        input.outputModalities ?? current.outputModalities,
+                });
             } else {
                 const current = parseListingPayload("proxy", endpoint.payload);
                 if (!current) {

@@ -5,7 +5,7 @@ const GEN = "https://gen.pollinations.ai";
 const TINYBIRD = "https://api.europe-west2.gcp.tinybird.co";
 const WINDOW_DAYS = 7;
 const MIN_ELIGIBLE_REQUESTS = 20;
-const MIN_SUCCESS_RATE = 0.7;
+const MIN_SUCCESS_RATE = 0.75;
 const MIN_CURRENT_SUCCESS_RATE = 0.8;
 const OUTPUT_PATH =
     process.env.SEVEN_DAY_HEALTH_PATH ??
@@ -115,11 +115,7 @@ const catalog = Array.isArray(catalogPayload)
     : (catalogPayload.data ?? []);
 const activeCommunityModels = new Map(
     catalog
-        .filter(
-            (model) =>
-                model.community &&
-                (model.category === "text" || model.category === "image"),
-        )
+        .filter((model) => model.community)
         .map((model) => [model.name.replace(/^community\//, ""), model]),
 );
 

@@ -147,8 +147,7 @@ type ResponseTrackingData = {
     // merged, multiplier applied). The tracking event records this sheet so
     // recorded rates always reproduce the billed totals.
     priceDefinition?: PriceDefinition;
-    // Applied cost variant name (financial identity; modelUsed stays
-    // observational).
+    // Applied rate sheet; the public model ID stays the same across variants.
     costVariant?: string;
     contentFilterResults?: GenerationEventContentFilterParams;
     // A failure the response status cannot show. Replaces the status-derived
@@ -242,6 +241,7 @@ export const track = (eventType: EventType) =>
         const emitRow = async (row: {
             startTime: Date;
             endTime: Date;
+            attemptStartTime?: Date;
             balanceTracking: BalanceData;
             responseTracking: ResponseTrackingData;
             errorTracking: ErrorData;
@@ -262,6 +262,7 @@ export const track = (eventType: EventType) =>
                 requestTracking,
                 startTime: row.startTime,
                 endTime: row.endTime,
+                attemptStartTime: row.attemptStartTime,
                 balanceTracking: row.balanceTracking,
                 responseTracking: row.responseTracking,
                 cacheKey: await cacheKeyForTracking(),
@@ -304,9 +305,11 @@ export const track = (eventType: EventType) =>
                 const userId = userTracking.userId;
                 if (!userId) return;
 
+                const finalAttempt = attempts.find(
+                    (attempt) => attempt.settled,
+                );
                 const finalCandidate =
-                    attempts.find((attempt) => attempt.settled)?.candidate ??
-                    fallbackCandidates(modelInfo)[0];
+                    finalAttempt?.candidate ?? fallbackCandidates(modelInfo)[0];
 
                 // Routes attach telemetry headers (x-moderation-*, cache
                 // status) to the final response AFTER the override is
@@ -333,6 +336,7 @@ export const track = (eventType: EventType) =>
                     await emitRow({
                         startTime: attempt.startedAt,
                         endTime: attempt.endedAt,
+                        attemptStartTime: attempt.startedAt,
                         balanceTracking: balanceTracking(),
                         responseTracking: {
                             responseStatus: status,
@@ -455,6 +459,9 @@ export const track = (eventType: EventType) =>
                 const finalEvent = await emitRow({
                     startTime,
                     endTime,
+                    // Keep request timing intact; route timing starts at the
+                    // settled attempt and includes consumption of its stream.
+                    attemptStartTime: finalAttempt?.startedAt,
                     balanceTracking: committedBalanceTracking,
                     responseTracking,
                     markup,
@@ -483,11 +490,9 @@ export const track = (eventType: EventType) =>
                             duration_ms:
                                 endTime.getTime() - startTime.getTime(),
                             error_code: errorTracking?.errorResponseCode,
-                            error_class:
-                                errorTracking?.errorResponseCode ===
-                                "usage_missing"
-                                    ? "UpstreamUsageError"
-                                    : "UpstreamFinishReasonError",
+                            error_class: streamErrorClass(
+                                errorTracking?.errorResponseCode,
+                            ),
                             message: errorTracking?.errorMessage,
                             upstream_status: response.status,
                             upstream_body: stringifyErrorOutput(
@@ -670,12 +675,12 @@ export async function trackResponse(
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
-    const modelCalled = candidate.id || resolvedModelRequested;
+    const modelUsed = candidate.id || resolvedModelRequested;
     const modelProviderUsed =
         candidate.definition?.provider ?? requestTracking.modelProvider;
     const cacheHit = response.headers.get("x-cache") === "HIT";
     const fallbackUsed =
-        modelCalled !== resolvedModelRequested || parseFallbackUsed(response);
+        modelUsed !== resolvedModelRequested || parseFallbackUsed(response);
     const notBilled = (
         extra?: Partial<ResponseTrackingData>,
     ): ResponseTrackingData => ({
@@ -687,21 +692,14 @@ export async function trackResponse(
         ...extra,
     });
 
-    // A cache hit called no model, so it must not claim one. A failure did
-    // call a model, and recording which one is the only way an error row can
-    // say what failed — otherwise model_used falls back to the datasource
-    // DEFAULT 'undefined' and per-model upstream health is unqueryable.
-    //
-    // Which model that was: the one the request resolved to, unless the
-    // fallback loop moved on and stopped on a different one. Only the loop
-    // knows that, so it reports the id it stopped on and modelCalled prefers
-    // it.
+    // Record the exact attempted registry ID, not the provider's model name.
+    // Cache hits made no upstream attempt and must not claim one.
     if (cacheHit) {
         return notBilled();
     }
     if (!response.ok) {
         return notBilled({
-            modelUsed: modelCalled,
+            modelUsed,
         });
     }
 
@@ -724,7 +722,7 @@ export async function trackResponse(
                 kind: contentTypeGuard.kind,
             },
         );
-        return notBilled({ modelUsed: modelCalled });
+        return notBilled({ modelUsed });
     }
 
     const { modelUsage, output, contentFilterResults } =
@@ -737,7 +735,9 @@ export async function trackResponse(
         ? { ...pricingInput, ...modelUsage.pricingInput }
         : pricingInput;
     const finishError =
-        eventType === "generate.text" ? finishReasonError(output) : undefined;
+        eventType === "generate.text"
+            ? finishReasonError(output, !!modelUsage)
+            : undefined;
     if (finishError) {
         // Keep the proxy response untouched; only billing and health reflect
         // the upstream protocol's explicit terminal failure.
@@ -756,7 +756,7 @@ export async function trackResponse(
                 output,
                 input: billingInput,
             }),
-            modelUsed: modelUsage?.model ?? modelCalled,
+            modelUsed,
             modelProviderUsed,
             usage,
             contentFilterResults,
@@ -767,11 +767,12 @@ export async function trackResponse(
                         ? CONTENT_POLICY_ERROR_CODE
                         : "upstream_finish_reason_error"),
                 errorMessage:
-                    finishError.code === "usage_missing"
+                    finishError.message ??
+                    (finishError.code === "usage_missing"
                         ? "Upstream stream failed usage validation"
                         : finishError.status === CONTENT_POLICY_STATUS
                           ? "Upstream rejected generation for content policy"
-                          : "Upstream ended generation with finish_reason=error",
+                          : "Upstream ended generation with finish_reason=error"),
             },
             errorOutput: output,
         };
@@ -799,7 +800,7 @@ export async function trackResponse(
                 ...notBilled(),
                 ...adjustmentOnlyBilling,
                 responseStatus: 502,
-                modelUsed: modelCalled,
+                modelUsed,
                 usage: {},
                 contentFilterResults,
                 errorTracking: {
@@ -818,14 +819,15 @@ export async function trackResponse(
                 isBilledUsage: hasBillablePrice,
                 fallbackUsed,
                 ...adjustmentOnlyBilling,
-                modelUsed: modelCalled,
+                modelUsed,
+                modelProviderUsed,
                 usage: {},
                 contentFilterResults,
             };
         }
         return notBilled({
             contentFilterResults,
-            modelUsed: modelCalled,
+            modelUsed,
         });
     }
     // Cost follows the model that ran; price follows the one the caller asked
@@ -856,22 +858,47 @@ export async function trackResponse(
         adjustments,
         priceDefinition,
         costVariant,
-        modelUsed: modelUsage.model,
+        modelUsed,
         modelProviderUsed,
         usage: modelUsage.usage,
         contentFilterResults,
     };
 }
 
+function streamErrorClass(code: string | undefined): string {
+    if (code === "usage_missing") return "UpstreamUsageError";
+    if (code === "upstream_stream_error") return "UpstreamStreamError";
+    return "UpstreamFinishReasonError";
+}
+
 function finishReasonError(
     output: unknown,
-): { status: number; code?: "usage_missing" } | undefined {
+    hasUsage: boolean,
+):
+    | {
+          status: number;
+          code?: "usage_missing" | "upstream_stream_error";
+          message?: string;
+      }
+    | undefined {
     if (!output || typeof output !== "object") return undefined;
     const streamEvents = (output as { streamEvents?: unknown }).streamEvents;
     const events = Array.isArray(streamEvents) ? streamEvents : [output];
     for (const event of events) {
         if (!event || typeof event !== "object") continue;
         const eventError = (event as { error?: unknown }).error;
+        if (
+            eventError &&
+            typeof eventError === "object" &&
+            (eventError as { code?: unknown }).code === "upstream_stream_error"
+        ) {
+            const { message } = eventError as { message?: unknown };
+            return {
+                status: 502,
+                code: "upstream_stream_error",
+                message: typeof message === "string" ? message : undefined,
+            };
+        }
         if (
             (eventError &&
                 typeof eventError === "object" &&
@@ -897,6 +924,11 @@ function finishReasonError(
                 finish_reason?: unknown;
                 error?: unknown;
             };
+            // Filtered completions with valid usage remain billable. Without
+            // usage, preserve the rejection rather than report missing usage.
+            if (!hasUsage && finish.finish_reason === "content_filter") {
+                return { status: CONTENT_POLICY_STATUS };
+            }
             if (finish.finish_reason !== "error") continue;
             return {
                 status: isContentPolicyViolation(JSON.stringify(finish.error))
@@ -1085,6 +1117,7 @@ type TrackingEventInput = {
     requestPath: string;
     startTime: Date;
     endTime: Date;
+    attemptStartTime?: Date;
     environment: string;
     eventType: EventType;
     ipSubnet?: string;
@@ -1127,6 +1160,7 @@ function createTrackingEvent({
     requestPath,
     startTime,
     endTime,
+    attemptStartTime,
     environment,
     eventType,
     ipSubnet,
@@ -1148,6 +1182,9 @@ function createTrackingEvent({
         startTime,
         endTime,
         responseTime: endTime.getTime() - startTime.getTime(),
+        attemptResponseTime: attemptStartTime
+            ? endTime.getTime() - attemptStartTime.getTime()
+            : undefined,
         responseStatus: responseTracking.responseStatus,
         environment,
         eventType,

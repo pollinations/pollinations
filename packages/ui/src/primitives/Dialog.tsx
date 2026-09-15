@@ -1,6 +1,6 @@
 import { Dialog as ArkDialog } from "@ark-ui/react/dialog";
 import { Portal } from "@ark-ui/react/portal";
-import type { FC, ReactNode } from "react";
+import type { ComponentPropsWithoutRef, FC, ReactNode } from "react";
 import { useRef } from "react";
 import { cn } from "../lib/cn.ts";
 
@@ -22,6 +22,7 @@ export type DialogProps = {
     labelledBy?: string;
     size?: keyof typeof sizeClasses;
     showBackdrop?: boolean;
+    backdropBlur?: boolean;
     positionerClassName?: string;
     contentClassName?: string;
     children: ReactNode;
@@ -38,6 +39,7 @@ export const Dialog: FC<DialogProps> = ({
     labelledBy,
     size = "md",
     showBackdrop = true,
+    backdropBlur = true,
     positionerClassName,
     contentClassName,
     children,
@@ -64,7 +66,10 @@ export const Dialog: FC<DialogProps> = ({
                         // Scrim must DARKEN in both modes — ink-950 inverts
                         // (near-white in dark) and would brighten the page.
                         // Fixed black + a soft blur dims and de-focuses.
-                        className="polli:fixed polli:inset-0 polli:z-[100] polli:bg-black/50 polli:backdrop-blur-sm"
+                        className={cn(
+                            "polli:fixed polli:inset-0 polli:z-[100] polli:bg-[#000]/50",
+                            backdropBlur && "polli:backdrop-blur-sm",
+                        )}
                     />
                 )}
                 <ArkDialog.Positioner
@@ -97,3 +102,73 @@ export const Dialog: FC<DialogProps> = ({
 };
 
 export const DialogTitle = ArkDialog.Title;
+export const DialogDescription = ArkDialog.Description;
+
+export type DialogHeaderProps = Omit<
+    ComponentPropsWithoutRef<"div">,
+    "title"
+> & {
+    title?: ReactNode;
+    description?: ReactNode;
+    titleClassName?: string;
+    descriptionClassName?: string;
+};
+
+export const DialogHeader: FC<DialogHeaderProps> = ({
+    title,
+    description,
+    children,
+    className,
+    titleClassName,
+    descriptionClassName,
+    ...props
+}) => {
+    return (
+        <div
+            className={cn("polli:shrink-0 polli:p-6 polli:pb-4", className)}
+            {...props}
+        >
+            {title && (
+                <DialogTitle
+                    className={cn(
+                        "polli:font-subheading polli:text-lg polli:font-semibold polli:text-theme-text-strong",
+                        titleClassName,
+                    )}
+                >
+                    {title}
+                </DialogTitle>
+            )}
+            {description && (
+                <DialogDescription
+                    className={cn(
+                        "polli:mt-1 polli:text-sm polli:text-theme-text-muted",
+                        descriptionClassName,
+                    )}
+                >
+                    {description}
+                </DialogDescription>
+            )}
+            {children}
+        </div>
+    );
+};
+
+export type DialogFooterProps = ComponentPropsWithoutRef<"div">;
+
+export const DialogFooter: FC<DialogFooterProps> = ({
+    children,
+    className,
+    ...props
+}) => {
+    return (
+        <div
+            className={cn(
+                "polli:flex polli:shrink-0 polli:items-center polli:justify-end polli:gap-2 polli:p-6 polli:pt-4",
+                className,
+            )}
+            {...props}
+        >
+            {children}
+        </div>
+    );
+};

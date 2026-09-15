@@ -12,6 +12,8 @@ import type { ImageParams } from "../../src/image/params.ts";
 const AZURE_KEY_ENV = {
     AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY: "img-2-sweden-key",
     AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY: "img-2-eastus2-key",
+    AZURE_MYCELI_PROD_IMG_25_FLARE_SWEDEN_API_KEY: "flare-sweden-key",
+    AZURE_MYCELI_PROD_IMG_25_SUNBURST_SWEDEN_API_KEY: "sunburst-sweden-key",
     OPENAI_API_KEY: "openai-key",
 } as const;
 
@@ -107,8 +109,8 @@ describe("GPT Image OpenAI fallback routing", () => {
         ["openai/gpt-image-1-mini:openai", "gpt-image-1-mini"],
         ["openai/gpt-image-1.5:openai", "gpt-image-1.5"],
         ["openai/gpt-image-2:openai", "gpt-image-2"],
-        ["openai/gpt-image-2.5-flare", "gpt-image-2.5-flare"],
-        ["openai/gpt-image-2.5-sunburst", "gpt-image-2.5-sunburst"],
+        ["openai/gpt-image-2.5-flare:openai", "gpt-image-2.5-flare"],
+        ["openai/gpt-image-2.5-sunburst:openai", "gpt-image-2.5-sunburst"],
     ] as const;
 
     for (const [route, upstreamModel] of routes) {
@@ -163,6 +165,22 @@ describe("GPT Image 2.5", () => {
         "openai/gpt-image-2.5-flare",
         "openai/gpt-image-2.5-sunburst",
     ] as const) {
+        it(`${model} routes to its dedicated Sweden Central resource`, async () => {
+            const fetchMock = vi
+                .spyOn(globalThis, "fetch")
+                .mockResolvedValue(successResponse());
+            await callGPTImage("test", { ...params, model }, userInfo, model);
+            const [url, init] = fetchMock.mock.calls[0];
+            const slug = model.slice("openai/".length);
+            const variant = slug.slice("gpt-image-2.5-".length);
+            expect(String(url)).toContain(
+                `https://myceli-prod-img-25-${variant}-sweden.cognitiveservices.azure.com/openai/deployments/${slug}/images/generations`,
+            );
+            expect(new Headers(init?.headers).get("authorization")).toBe(
+                `Bearer ${variant}-sweden-key`,
+            );
+        });
+
         it(`${model} preserves custom dimensions and transparency`, async () => {
             const fetchMock = vi
                 .spyOn(globalThis, "fetch")

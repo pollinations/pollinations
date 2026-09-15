@@ -377,7 +377,7 @@ describe("gen worker routing", () => {
             input_modalities: ["text", "image"],
             output_modalities: ["image"],
             pricing: {
-                completionImageTokens: "0.08",
+                completionImageTokens: "0.0844",
                 currency: "pollen",
             },
         });

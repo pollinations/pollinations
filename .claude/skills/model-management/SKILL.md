@@ -202,6 +202,14 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
 - Retire all legacy aliases through explicit migrations.
 - Keep model names and aliases in `shared/registry/`; use the live model
   catalog for public listings rather than maintaining a duplicate Markdown list.
+- OpenRouter registry costs include the 5.5% credit-purchase fee: write each
+  non-zero base rate and cost-variant rate as `baseRate * 1.055` (for example,
+  `perMillion(0.75) * 1.055`). Include search, cache-storage, and other billable
+  adjustments, including provider-reported charges. Keep `priceMultiplier`
+  unchanged; prices derive from the fee-inclusive cost. Declare this in the
+  registry entries, not a provider-wide transformation. Apply the fee exactly
+  once: same-provider fallbacks may inherit fee-inclusive rates; cross-provider
+  fallbacks need explicit costs when inheritance would add or omit the fee.
 - Keep one PR per model or tightly coupled model-family change.
 - Never edit generated `APIDOCS.md`; update the source schema or route.
 

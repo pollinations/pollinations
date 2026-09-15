@@ -14,11 +14,13 @@ import {
 import { useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
+import { SignInAgain } from "../components/auth/sign-in-again.tsx";
 import type { ApiKey } from "../components/keys";
 import { DashboardShell } from "../components/layout/dashboard-shell.tsx";
 import { SIGNED_OUT_NAV_ITEMS } from "../components/layout/dashboard-theme.ts";
 import { SidebarWallet } from "../components/pollen";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
+import { apiResponseError } from "../lib/api-error.ts";
 
 const DASHBOARD_DATA_STALE_TIME = 30_000;
 let dashboardSessionPromise: ReturnType<typeof authClient.getSession> | null =
@@ -43,7 +45,9 @@ export const Route = createFileRoute("/_dashboard")({
         if (result.error) {
             dashboardSessionPromise = null;
             dashboardSessionExpiresAt = 0;
-            throw new Error("Authentication failed.");
+            throw new Error(result.error.message ?? "Authentication failed.", {
+                cause: result.error.status,
+            });
         }
         return { user: result.data?.user ?? null };
     },
@@ -69,12 +73,20 @@ export const Route = createFileRoute("/_dashboard")({
             .catch(() => null);
         const [apiKeysResult, d1BalanceResult, profileResult] =
             await Promise.all([
-                apiClient["api-keys"].$get().then((r) => {
-                    if (!r.ok) throw new Error("Couldn’t load your API keys.");
+                apiClient["api-keys"].$get().then(async (r) => {
+                    if (!r.ok)
+                        throw await apiResponseError(
+                            r,
+                            "Couldn’t load your API keys.",
+                        );
                     return r.json();
                 }),
-                apiClient.customer.balance.$get().then((r) => {
-                    if (!r.ok) throw new Error("Couldn’t load your balance.");
+                apiClient.customer.balance.$get().then(async (r) => {
+                    if (!r.ok)
+                        throw await apiResponseError(
+                            r,
+                            "Couldn’t load your balance.",
+                        );
                     return r.json();
                 }),
                 apiClient.account.profile
@@ -106,21 +118,27 @@ export const Route = createFileRoute("/_dashboard")({
             message="Loading your account…"
         />
     ),
-    errorComponent: () => {
+    errorComponent: ({ error }) => {
         const router = useRouter();
+        const expired = error.cause === 401;
+        const title = expired ? "Session expired" : "Account unavailable";
         return (
             <AuthFlowLayout
-                dialog={{ label: "Account unavailable" }}
+                dialog={{ label: title }}
                 actions={
-                    <Button onClick={() => void router.invalidate()}>
-                        Try again
-                    </Button>
+                    expired ? (
+                        <SignInAgain />
+                    ) : (
+                        <Button onClick={() => void router.invalidate()}>
+                            Try again
+                        </Button>
+                    )
                 }
             >
                 <Heading as="h1" size="section">
-                    Account unavailable
+                    {title}
                 </Heading>
-                <ErrorBanner>Please try again.</ErrorBanner>
+                <ErrorBanner>{error.message}</ErrorBanner>
             </AuthFlowLayout>
         );
     },

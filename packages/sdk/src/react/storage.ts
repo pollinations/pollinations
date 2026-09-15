@@ -22,7 +22,12 @@ export function resolveStorage(
     option: StorageOption | undefined,
 ): StorageAdapter {
     if (typeof window === "undefined") return NOOP_STORAGE;
-    if (!option || option === "localStorage") return window.localStorage;
-    if (option === "sessionStorage") return window.sessionStorage;
-    return option;
+    if (option && typeof option !== "string") return option;
+    const name = option ?? "localStorage";
+    // Access can throw in restricted browsers; defer it to the auth handlers.
+    return {
+        getItem: (key) => window[name].getItem(key),
+        setItem: (key, value) => window[name].setItem(key, value),
+        removeItem: (key) => window[name].removeItem(key),
+    };
 }

@@ -128,7 +128,20 @@ export function ReviewProvider({
         [flow, section],
     );
     const scope = `${flow}/${section}`;
-    const [selections, setSelections] = useState<Record<string, Selection>>({});
+    const [selections, setSelections] = useState<Record<string, Selection>>(
+        () => {
+            const id = new URLSearchParams(location.search).get("situation");
+            const recipe = cases.find((item) => item.id === id);
+            return recipe
+                ? {
+                      [scope]: {
+                          pageId: recipe.pageId,
+                          choices: { [recipe.pageId]: recipe.id },
+                      },
+                  }
+                : {};
+        },
+    );
     const selection = selections[scope];
     const selectedScreen =
         screens.find((entry) => entry.id === selection?.pageId) ?? screens[0];
@@ -147,6 +160,13 @@ export function ReviewProvider({
     const selected = screen
         ? reviewCaseForScreen(cases, screen, choices)
         : undefined;
+    const selectedId = selected?.id;
+    useEffect(() => {
+        const url = new URL(location.href);
+        if (selectedId) url.searchParams.set("situation", selectedId);
+        else url.searchParams.delete("situation");
+        history.replaceState(history.state, "", url);
+    }, [selectedId]);
     const [preview, setPreview] = useState<{
         query: string;
         result: PreviewResult;

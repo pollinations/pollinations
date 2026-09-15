@@ -12,12 +12,14 @@ import { keysCommand } from "./commands/keys.js";
 import { modelsCommand } from "./commands/models.js";
 import { myModelsCommand } from "./commands/my-models.js";
 import { questsCommand } from "./commands/quests.js";
+import { updateCommand } from "./commands/update.js";
 import { uploadCommand } from "./commands/upload.js";
 import { usageCommand } from "./commands/usage.js";
 
 import { setKeyOverride } from "./lib/config.js";
 import { setOutputMode } from "./lib/output.js";
 import { flavor } from "./lib/quotes.js";
+import { checkForUpdate, getUpdateMessage } from "./lib/update-checker.js";
 
 const pkg = JSON.parse(
     readFileSync(new URL("../package.json", import.meta.url), "utf-8"),
@@ -81,10 +83,23 @@ program.addCommand(uploadCommand);
 program.addCommand(modelsCommand);
 program.addCommand(docsCommand);
 
+// Updates
+program.addCommand(updateCommand);
+
 // Show help when run with no args
 if (process.argv.length <= 2) {
     program.help();
 }
+
+// Background update check (non-blocking)
+checkForUpdate(pkg.version)
+    .then((info) => {
+        const message = getUpdateMessage(info);
+        if (message && process.stdout.isTTY) {
+            process.stderr.write(`${chalk.yellow(`💡 ${message}`)}\n`);
+        }
+    })
+    .catch(() => {});
 
 program.parseAsync(process.argv).catch((err) => {
     process.stderr.write(`${err instanceof Error ? err.message : err}\n`);

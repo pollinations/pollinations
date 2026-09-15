@@ -1,3 +1,4 @@
+import { localIdentity } from "./fixtures";
 import type { ReviewSetup } from "./review-setup";
 
 // Local external-service fixtures. Enter still authenticates, reads its database,
@@ -11,7 +12,6 @@ export function createReviewServices() {
         async outbound(request: Request): Promise<Response | undefined> {
             const url = new URL(request.url);
             if (
-                setup.rewards &&
                 url.origin === "https://api.github.com" &&
                 url.pathname === "/graphql" &&
                 request.method === "POST"
@@ -22,8 +22,10 @@ export function createReviewServices() {
                 };
                 if (
                     body.query?.trimStart().startsWith("query(") &&
-                    body.variables?.query ===
-                        "repo:pollinations/pollinations label:POLLEN-QUEST is:issue"
+                    [
+                        "repo:pollinations/pollinations label:POLLEN-QUEST is:issue",
+                        `repo:pollinations/pollinations is:pr is:merged author:${localIdentity.login}`,
+                    ].includes(body.variables?.query ?? "")
                 )
                     return Response.json({ data: { search: { nodes: [] } } });
                 return;
@@ -70,6 +72,24 @@ export function createReviewServices() {
                     : Response.json(response);
             }
             if (request.method !== "GET") return;
+            // Baseline external data is available during ordinary navigation,
+            // independently of the selected reward or wallet situation. Enter
+            // derives the catalog, rewards and balances from these responses.
+            if (
+                url.origin === "https://api.github.com" &&
+                url.pathname === `/users/${localIdentity.login}/repos`
+            )
+                return Response.json([]);
+            if (
+                url.origin === "http://localhost:7181" &&
+                [
+                    "/v0/pipes/developer_earnings_today.json",
+                    "/v0/pipes/quest_model_modalities.json",
+                    "/v0/pipes/quest_app_usage.json",
+                    "/v0/pipes/app_directory_public.json",
+                ].includes(url.pathname)
+            )
+                return Response.json({ data: [], rows: 0 });
             if (
                 url.origin === "https://discord.com" &&
                 ["/api/users/@me", "/api/users/%40me"].includes(url.pathname) &&
@@ -111,7 +131,10 @@ export function createReviewServices() {
                     rows: 0,
                 });
 
-            if (url.origin === "https://api.stripe.com" && setup.billing) {
+            // These records belong to the local provider, just as the customer
+            // reference belongs to D1. Restarting the host must not erase them.
+            // Enter's stored billing preferences determine which ones it reads.
+            if (url.origin === "https://api.stripe.com") {
                 if (url.pathname === "/v1/customers/cus_connect_review")
                     return Response.json({
                         id: "cus_connect_review",

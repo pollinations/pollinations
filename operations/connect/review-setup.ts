@@ -41,6 +41,16 @@ export async function prepareReviewData(db: D1Database, setup: ReviewSetup) {
     await db.batch([
         db
             .prepare(
+                "UPDATE user SET pack_balance = MAX(0, pack_balance - COALESCE((SELECT pollen_credited FROM stripe_checkout_credits WHERE session_id = 'cs_connect_review' AND user_id = ?), 0)), tier_balance = MAX(0, tier_balance - COALESCE((SELECT pollen_amount FROM rewards WHERE id = 'connect-review-reward' AND user_id = ? AND claimed_at IS NOT NULL), 0)) WHERE id = ?",
+            )
+            .bind(USER_ID, USER_ID, USER_ID),
+        db
+            .prepare(
+                "DELETE FROM rewards WHERE id = 'connect-review-reward' AND user_id = ?",
+            )
+            .bind(USER_ID),
+        db
+            .prepare(
                 "UPDATE user SET github_id = ? WHERE id = ? AND github_id = ?",
             )
             .bind(
@@ -123,12 +133,18 @@ export async function prepareReviewData(db: D1Database, setup: ReviewSetup) {
             )
             .run();
     if (setup.payment === "credited")
-        await db
-            .prepare(
-                "INSERT OR REPLACE INTO stripe_checkout_credits (session_id, event_id, event_type, user_id, pollen_credited, created_at) VALUES ('cs_connect_review', 'evt_connect_review', 'checkout.session.completed', ?, 5, ?)",
-            )
-            .bind(USER_ID, now)
-            .run();
+        await db.batch([
+            db
+                .prepare(
+                    "INSERT INTO stripe_checkout_credits (session_id, event_id, event_type, user_id, pollen_credited, created_at) VALUES ('cs_connect_review', 'evt_connect_review', 'checkout.session.completed', ?, 5, ?)",
+                )
+                .bind(USER_ID, Date.now()),
+            db
+                .prepare(
+                    "UPDATE user SET pack_balance = pack_balance + 5 WHERE id = ?",
+                )
+                .bind(USER_ID),
+        ]);
     if (setup.payment === "failed")
         await db
             .prepare(
@@ -142,11 +158,25 @@ export async function prepareReviewData(db: D1Database, setup: ReviewSetup) {
             .bind(USER_ID)
             .run();
         if (setup.rewards !== "empty")
-            await db
-                .prepare(
-                    "INSERT INTO rewards (id, idempotency_key, user_id, title, pollen_amount, balance_bucket, earned_at, claimed_at) VALUES ('connect-review-reward', 'connect-review-reward', ?, 'Connect review reward', 5, 'tier', ?, ?)",
-                )
-                .bind(USER_ID, now, setup.rewards === "claimed" ? now : null)
-                .run();
+            await db.batch([
+                db
+                    .prepare(
+                        "INSERT INTO rewards (id, idempotency_key, user_id, title, pollen_amount, balance_bucket, earned_at, claimed_at) VALUES ('connect-review-reward', 'connect-review-reward', ?, 'Connect review reward', 5, 'tier', ?, ?)",
+                    )
+                    .bind(
+                        USER_ID,
+                        now,
+                        setup.rewards === "claimed" ? now : null,
+                    ),
+                ...(setup.rewards === "claimed"
+                    ? [
+                          db
+                              .prepare(
+                                  "UPDATE user SET tier_balance = tier_balance + 5 WHERE id = ?",
+                              )
+                              .bind(USER_ID),
+                      ]
+                    : []),
+            ]);
     }
 }

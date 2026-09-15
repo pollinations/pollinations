@@ -462,7 +462,7 @@ export function getDefaultErrorMessage(status: number): string {
         429: "You're making requests too quickly. Please slow down a bit.",
         500: "Oh snap, something went wrong on our end. We're on it!",
         502: "We couldn't reach our backend services. Please try again shortly.",
-        503: "We're temporarily down for maintenance. Sorry about that!",
+        503: "Service temporarily unavailable. Please try again shortly.",
         504: "The upstream service did not respond in time.",
     };
     return messages[status] || "UNKNOWN_ERROR";

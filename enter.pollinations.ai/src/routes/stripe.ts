@@ -13,6 +13,7 @@ import { HTTPException } from "hono/http-exception";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { getCohortFromCountry } from "../utils/currency-router.ts";
+import { capturePostHog } from "../utils/posthog.ts";
 import { createStripeClient } from "../utils/stripe.ts";
 import {
     createBillingPortalSession,
@@ -184,6 +185,11 @@ export const stripeRoutes = new Hono<Env>()
 
             // Redirect to Stripe Checkout (will use checkout.pollinations.ai custom domain)
             if (checkoutSession.url) {
+                c.executionCtx.waitUntil(
+                    capturePostHog(c.env, "checkout_started", session.user.id, {
+                        pack_key: pack.packKey,
+                    }),
+                );
                 return c.redirect(checkoutSession.url);
             }
 

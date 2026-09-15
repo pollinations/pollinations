@@ -31,6 +31,7 @@ import { admin, openAPI } from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { discordConfigFromEnv } from "./services/discord.ts";
+import { capturePostHog } from "./utils/posthog.ts";
 
 const DELETE_ACCOUNT_FRESH_SESSION_MS = 10 * 60 * 1000;
 const ADMIN_USER_IDS = ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"];
@@ -158,6 +159,15 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             provider: "sqlite",
         }),
         databaseHooks: {
+            user: {
+                create: {
+                    after: async (user) => {
+                        ctx?.waitUntil(
+                            capturePostHog(env, "signup_completed", user.id),
+                        );
+                    },
+                },
+            },
             account: {
                 create: {
                     before: async (account) => {

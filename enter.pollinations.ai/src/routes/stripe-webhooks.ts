@@ -6,6 +6,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import type Stripe from "stripe";
 import type { Env } from "../env.ts";
+import { capturePostHog } from "../utils/posthog.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 import {
     creditAutoTopUpInvoice,
@@ -364,6 +365,20 @@ function emitCheckoutSessionAnalytics(
     failureLabel: string,
 ): void {
     if (result.success && session.metadata) {
+        c.executionCtx.waitUntil(
+            capturePostHog(
+                c.env,
+                "payment_completed",
+                session.metadata.userId,
+                {
+                    payment_source: "checkout",
+                    pack_key: session.metadata.packKey,
+                    amount_total_minor: session.amount_total,
+                    currency: session.currency,
+                    livemode: event.livemode,
+                },
+            ),
+        );
         c.executionCtx.waitUntil(
             sendStripeEventToTinybird(
                 c.env,

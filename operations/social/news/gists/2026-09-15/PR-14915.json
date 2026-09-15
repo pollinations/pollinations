@@ -1,0 +1,34 @@
+{
+  "pr_number": 14915,
+  "title": "fix: stop Grafana reloading with stale session cookies",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14915",
+  "merged_at": "2026-09-15T10:00:29Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fixes Grafana repeatedly reloading after Pollinations sign-in when an old `grafana_session_expiry` cookie remains. Grafana otherwise attempts its own token renewal, receives 401, and reloads.\n- Clears only that obsolete metadata on authenticated Grafana responses, for both `/` and `/grafana/`. Pollinations sessions and the trusted identity proxy stay intact.\n- Adds four direct gateway regression tests and runs them before the existing deployment checks.\n- Verified locally against the real Grafana 11.4.0 image: before the fix, 19 dashboard loads and 18 renewal attempts; afterward, one load and zero renewals with the same stale-cookie fixture. Overview and charts render with existing read-only Tinybird credentials; local alerting disabled. Clean-session and refresh checks also pass.\n- Validation: regression tests, Biome, frontend/Worker build, Docker image, and deployment dry run pass. Nothing merged or deployed.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Grafana Stops Chasing Its Tail",
+    "blurb": "A stale Grafana cookie was making dashboards repeatedly knock on the auth door. The gateway now quietly clears that one obsolete breadcrumb, and the charts get on with their day.",
+    "summary": "Authenticated Grafana responses for both `/` and `/grafana/` now clear the obsolete `grafana_session_expiry` cookie, preventing Grafana 11.4.0 from triggering its own failed token-renewal loop after Pollinations sign-in.",
+    "impact": "Dashboards with an old Grafana expiry cookie now load once with zero renewal attempts instead of repeatedly reloading, while Pollinations sessions and the trusted identity proxy remain intact.",
+    "keywords": [
+      "grafana",
+      "observability",
+      "authentication",
+      "cookies",
+      "gateway",
+      "dashboard"
+    ],
+    "visual_concept": "Depict Polli as a tiny observability mechanic in a tool belt gently removing one dusty, expired cookie label from a cozy CRT dashboard terminal. The monitor robot happily watches stable charts bloom like code-plants, with a small looped-arrow vine visibly untangled; this represents preserving the existing trusted session while stopping the redundant Grafana refresh cycle.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blush, a small happy smile, and rounded light blue translucent wings, wearing a tiny mechanic tool belt as she removes a dusty expired-cookie tag from a retro CRT Grafana dashboard. A cute monitor robot watches calm charts and code-plants bloom beside a prominently lime green (#ecf874) terminal, with soft lavender, mint, peach, and warm cream gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, pixel text: \"ONE LOAD\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-15/PR-14915.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blush, a small happy smile, and rounded light blue translucent wings, wearing a tiny mechanic tool belt as she removes a dusty expired-cookie tag from a retro CRT Grafana dashboard. A cute monitor robot watches calm charts and code-plants bloom beside a prominently lime green (#ecf874) terminal, with soft lavender, mint, peach, and warm cream gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, pixel text: \"ONE LOAD\"."
+  },
+  "generated_at": "2026-09-15T10:01:34.963008+00:00"
+}

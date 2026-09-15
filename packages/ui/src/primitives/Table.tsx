@@ -41,12 +41,24 @@ export const TableHead: FC<TableHeadProps> = ({ className, ...rest }) => (
     />
 );
 
-export type TableBodyProps = ComponentPropsWithoutRef<"tbody">;
+export type TableBodyProps = ComponentPropsWithoutRef<"tbody"> & {
+    divider?: "themed" | "neutral";
+};
 
-export const TableBody: FC<TableBodyProps> = ({ className, ...rest }) => (
+export const TableBody: FC<TableBodyProps> = ({
+    className,
+    divider = "themed",
+    ...rest
+}) => (
     <tbody
         {...rest}
-        className={cn("polli:divide-y polli:divide-theme-border/65", className)}
+        className={cn(
+            "polli:divide-y",
+            divider === "neutral"
+                ? "polli:divide-divider"
+                : "polli:divide-theme-border/65",
+            className,
+        )}
     />
 );
 

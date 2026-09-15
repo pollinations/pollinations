@@ -1,6 +1,6 @@
 # Publish a Model
 
-Publishing a model lets you connect an endpoint to Pollinations and call it through `gen.pollinations.ai` under an `owner/model` id. Pollinations handles authentication, Pollen billing, model discovery, and routing; the model continues to run on infrastructure you control.
+Publishing a model lets you connect an endpoint to Pollinations and call it through `gen.pollinations.ai` under an `community/owner/model` id. Pollinations handles authentication, Pollen billing, model discovery, and routing; the model continues to run on infrastructure you control.
 
 Model publishing and [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md) solve different problems. Model publishing supplies a model to the Pollinations catalog. The wallet flow lets users authorize an app to spend their own Pollen. An app can use either or both.
 
@@ -19,7 +19,7 @@ Model publishing and [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md) solve
 
 Image providers must return `b64_json`. During testing, Pollinations checks whether an image provider supports edits and whether it reports OpenAI image-token usage.
 
-Video generation is synchronous. Pollinations calls the exact URL entered at registration with a required numeric `duration`:
+Video generation is synchronous. Pollinations calls the exact URL entered at registration. `duration` is optional; when omitted, your endpoint chooses its default:
 
 ```json
 {
@@ -34,7 +34,7 @@ Video generation is synchronous. Pollinations calls the exact URL entered at reg
 
 Only supplied fields are included. In `image`, the first URL is the start frame and the second is the end frame. The `reference_*` arrays are general guidance rather than frame controls. Publishers select the accepted image, video, and audio input types when registering the model; unsupported combinations should return an error.
 
-Return one completed MP4 within 300 seconds as `b64_json` or a public `url`:
+Return one completed MP4 within 300 seconds as `b64_json` or a public `url`, with the generated duration in seconds in `usage.duration`:
 
 ```json
 {
@@ -42,11 +42,12 @@ Return one completed MP4 within 300 seconds as `b64_json` or a public `url`:
     {
       "url": "https://video-provider.example/output/clip.mp4"
     }
-  ]
+  ],
+  "usage": { "duration": 4 }
 }
 ```
 
-Pollinations sends no upstream model id and bills the accepted request duration. Inline and downloaded responses are limited to 20 MB. Do not return an async job id; polling must finish inside the publisher endpoint before it responds.
+Pollinations sends no upstream model id. Billing uses `usage.duration` when reported, otherwise the requested duration. Report a positive number of generated seconds to support requests without a duration. Invalid reported usage, or no duration from either source, fails the request. Inline and downloaded responses are limited to 20 MB. Do not return an async job id; polling must finish inside the publisher endpoint before it responds.
 
 Text-to-speech is synchronous and OpenAI-shaped. Pollinations calls your `/v1/audio/speech` with `{ model, input, voice, response_format }` and streams the returned binary audio back to the caller with its content type preserved. Registration sends a short sample and accepts any non-empty `audio/*` response. Billing charges the input text by character against your per-1M completion-audio price. Voice cloning, speech-to-speech, and timestamps are out of scope.
 
@@ -62,7 +63,7 @@ Public models appear in the model catalog and can be called by other Pollination
 
 - Text models use the token categories reported by the upstream endpoint.
 - Image models use per-token pricing when the registration test finds valid OpenAI image usage; otherwise they use a fixed price per generated image.
-- Video models are priced from the requested duration in seconds.
+- Video models are priced from reported generated seconds, falling back to the requested duration when usage is missing.
 - Transcription models are priced from reported audio duration.
 - Embedding models use the prompt-token count reported by the upstream endpoint.
 - A zero price makes the public model free.
@@ -75,7 +76,7 @@ Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen ea
 2. Choose **Add model**.
 3. For text, choose **Chat Completions** or **Responses** and enter that API's exact endpoint URL, model id, and bearer token. Other model families use a base URL; video uses an exact generation URL.
 4. Run the endpoint test before publishing. Model discovery is optional; Responses endpoints do not need `/models` or a Chat Completions endpoint.
-5. Save the model as private, then call its `owner/model` id through the normal Pollinations endpoint.
+5. Save the model as private, then call its `community/owner/model` id through the normal Pollinations endpoint.
 6. If your account has publisher access, change visibility to public and set prices when it is ready for other users.
 
 ### Model names
@@ -129,7 +130,7 @@ Token prices cannot exceed 50 Pollen per 1M tokens. Fixed image prices cannot ex
 
 ## Call Your Model
 
-Use the generated `owner/model` id anywhere the corresponding Pollinations endpoint accepts a model:
+Use the generated `community/owner/model` id anywhere the corresponding Pollinations endpoint accepts a model:
 
 ```bash
 curl https://gen.pollinations.ai/v1/chat/completions \

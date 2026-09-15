@@ -50,10 +50,13 @@ Secrets (per environment in `secrets/secrets.vars.json`):
 
 Production uses Chat Completions; staging uses Responses with
 `ENABLE_RESPONSES_API_STATEFUL=false`. Staging connects only to staging Gen
-and staging Enter, and has no external MCP tool server. Its `MODEL_IDS`
-allowlist initially contains `openai` and `gemini`; add test agents there when
-needed. Managed agents' own configured MCP tools are independent of Open
+and staging Enter, and has no external MCP tool server. Both discover the full
+model catalog (`MODEL_IDS=[]`). Managed agents' own configured MCP tools are independent of Open
 WebUI's external tool servers.
+
+Titles, tags and follow-up suggestions use `openai/gpt-5-nano`, not the selected
+chat model. For existing databases, set `task.model.external` to that ID; this
+global setting applies to existing users too.
 
 On an existing staging database, also update `openai.api_base_urls`,
 `openai.api_configs` (`api_type` and `model_ids`), and

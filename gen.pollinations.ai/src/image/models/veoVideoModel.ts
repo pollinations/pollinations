@@ -6,7 +6,11 @@ import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
 import { sleep } from "../util.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
-import { downloadUserImage } from "../utils/imageDownload.ts";
+import { downloadUserImage, toDataUri } from "../utils/imageDownload.ts";
+import {
+    runReplicatePrediction,
+    toReplicateUpstreamError,
+} from "../utils/replicateClient.ts";
 import { calculateVideoResolution } from "../utils/videoResolution.ts";
 
 // Logger
@@ -237,6 +241,54 @@ export const callVeoAPI = (
         prompt,
         safeParams,
     );
+
+/** Same Veo family through Replicate, using its shared prediction client. */
+export async function callVeoReplicateAPI(
+    prompt: string,
+    params: ImageParams,
+): Promise<VideoGenerationResult> {
+    const generateAudio = params.audio === true;
+    try {
+        const { output, videoOutputDurationSeconds } =
+            await runReplicatePrediction<Record<string, unknown>, string>({
+                model: "google/veo-3.1-fast",
+                input: {
+                    prompt,
+                    duration: params.duration ?? 4,
+                    resolution: params.resolution ?? "720p",
+                    aspect_ratio: calculateVideoResolution(params).aspectRatio,
+                    generate_audio: generateAudio,
+                    ...(params.image[0]
+                        ? { image: await toDataUri(params.image[0]) }
+                        : {}),
+                    ...(params.image[1]
+                        ? { last_frame: await toDataUri(params.image[1]) }
+                        : {}),
+                },
+            });
+        const response = await fetchUpstream(output, {
+            errorLabel: "Failed to download Veo video",
+        });
+        const durationSeconds =
+            videoOutputDurationSeconds ?? params.duration ?? 4;
+        return {
+            buffer: Buffer.from(await response.arrayBuffer()),
+            mimeType: "video/mp4",
+            durationSeconds,
+            trackingData: {
+                actualModel: params.model,
+                usage: {
+                    completionVideoSeconds: durationSeconds,
+                    ...(generateAudio
+                        ? { completionAudioSeconds: durationSeconds }
+                        : {}),
+                },
+            },
+        };
+    } catch (error) {
+        throw toReplicateUpstreamError(error, "Veo generation failed");
+    }
+}
 
 /**
  * Poll Veo operation until completion using fetchPredictOperation

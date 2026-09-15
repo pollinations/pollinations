@@ -5,7 +5,7 @@ import {
     ErrorBanner,
     GitHubSignInButton,
 } from "@pollinations/ui/auth";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
@@ -18,6 +18,7 @@ import {
     AccountReturn,
     parseAccountReturn,
 } from "../lib/account-action-return.tsx";
+import { preferredReturnUrl } from "../lib/return-to-app.tsx";
 import { updateApiKey } from "../lib/update-api-key.ts";
 
 export const Route = createFileRoute("/edit-key")({
@@ -30,6 +31,15 @@ export const Route = createFileRoute("/edit-key")({
 
 function EditKeyPage() {
     const { id, redirect } = Route.useSearch();
+    const navigate = useNavigate({ from: "/edit-key" });
+    useEffect(() => {
+        const from = preferredReturnUrl(redirect);
+        if (from)
+            void navigate({
+                search: (prev) => ({ ...prev, redirect: from }),
+                replace: true,
+            });
+    }, [navigate, redirect]);
     const { data: session, isPending } = authClient.useSession();
     const { isSigningIn, error: signInError, signIn } = useGitHubSignIn();
     const [attempt, setAttempt] = useState(0);

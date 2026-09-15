@@ -14,6 +14,7 @@ import {
     Request as WorkerRequest,
     type Response as WorkerResponse,
 } from "miniflare";
+import { buildCodeAgentModules } from "../../enter.pollinations.ai/scripts/code-agent-sdk.mjs";
 import { parseConditions } from "./conditions-data";
 import {
     ADMIN_CLIENT_ID,
@@ -70,6 +71,30 @@ async function bundleWorker(service: string) {
         alias: { "piexif-ts": "piexif-ts/dist/piexif.js" },
         logLevel: "silent",
         plugins: [
+            {
+                name: "code-agent-sdk",
+                setup(builder) {
+                    builder.onResolve(
+                        { filter: /^virtual:code-agent-sdk$/ },
+                        (args) => ({
+                            path: args.path,
+                            namespace: "code-agent-sdk",
+                        }),
+                    );
+                    builder.onLoad(
+                        { filter: /.*/, namespace: "code-agent-sdk" },
+                        async () => {
+                            const { runtimeModule, sdkModules } =
+                                await buildCodeAgentModules();
+                            return {
+                                contents: `export const runtimeModule = ${JSON.stringify(runtimeModule)};
+export const sdkModules = ${JSON.stringify(sdkModules)};`,
+                                loader: "js",
+                            };
+                        },
+                    );
+                },
+            },
             {
                 name: "worker-markdown",
                 setup(builder) {

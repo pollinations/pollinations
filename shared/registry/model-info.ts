@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isCommunityProviderIconUrl } from "../community-provider-icon.ts";
 import { SAFETY_FEATURES } from "../schemas/safety.ts";
 import { publicPriceInfo, toFixedPoint } from "./public-pricing";
 import {
@@ -43,6 +44,13 @@ export const ModelInfoSchema = z.object({
         .string()
         .describe("Human-readable model publisher, not the inference provider"),
     brand_url: z.string().url().optional(),
+    brand_icon_url: z
+        .string()
+        .refine(
+            isCommunityProviderIconUrl,
+            "Invalid community provider icon URL",
+        )
+        .optional(),
     community: z.boolean(),
     agent: z.boolean().optional(),
     base_model: z.string().optional(),
@@ -101,7 +109,27 @@ export const ModelInfoSchema = z.object({
     max_reference_images: z.number().int().positive().optional(),
     max_reference_videos: z.number().int().positive().optional(),
     capabilities: z.array(ModelCapabilitySchema),
+    supported_parameters: z
+        .array(z.string())
+        .optional()
+        .describe(
+            "Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`.",
+        ),
     tools: z.boolean().optional(),
+    supports_structured_output: z
+        .boolean()
+        .optional()
+        .describe(
+            "Whether JSON and JSON-schema output are supported; omitted when unverified.",
+        ),
+    max_completion_tokens: z
+        .number()
+        .int()
+        .positive()
+        .optional()
+        .describe(
+            "Maximum requested output tokens, including max_tokens, max_completion_tokens and max_output_tokens.",
+        ),
     reasoning: z.boolean().optional(),
     context_length: z.number().optional(),
     voices: z.array(z.string()).optional(),
@@ -169,6 +197,7 @@ export function modelInfoFromDefinition(
         category: service.category,
         publisher: service.publisher,
         brand_url: service.brandUrl,
+        brand_icon_url: service.brandIconUrl,
         community: options.community ?? false,
         agent: options.agent || undefined,
         per_user_rpm: service.perUserRpm,
@@ -218,7 +247,10 @@ export function modelInfoFromDefinition(
         max_reference_images: service.maxReferenceImages,
         max_reference_videos: service.maxReferenceVideos,
         capabilities: getCapabilities(service),
+        supported_parameters: service.supportedParameters,
         tools: service.tools,
+        supports_structured_output: service.supportsStructuredOutput,
+        max_completion_tokens: service.maxCompletionTokens,
         reasoning: service.reasoning,
         context_length: service.contextLength,
         voices: service.voices,

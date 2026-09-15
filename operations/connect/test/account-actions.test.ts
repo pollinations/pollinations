@@ -78,6 +78,7 @@ describe("independent account actions", () => {
 describe("checkout destination", () => {
     it.each([
         undefined,
+        "/top-up",
         "//evil.example/top-up",
         "https://evil.example/top-up",
         "/authorize",
@@ -92,8 +93,9 @@ describe("checkout destination", () => {
         const url = new URL(
             stripeCheckoutReturn(
                 "https://enter.example",
-                "/top-up?redirect=https%3A%2F%2Fapp.example%2F&pack=p10",
+                "top-up",
                 "p5",
+                "https://app.example/",
             ),
         );
         expect(url.origin + url.pathname).toBe("https://enter.example/top-up");

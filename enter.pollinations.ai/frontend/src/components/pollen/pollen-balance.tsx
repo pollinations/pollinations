@@ -2,14 +2,12 @@ import {
     CardIcon,
     ClockIcon,
     CopyButton,
-    ExternalLinkButton,
     GlobeIcon,
     InfoTip,
     InlineLink,
     MailIcon,
     SproutIcon,
     Surface,
-    Tooltip,
     WalletIcon,
 } from "@pollinations/ui";
 import {
@@ -17,23 +15,19 @@ import {
     WalletBalanceCard,
     WalletBalanceRow,
 } from "@pollinations/ui/wallet";
-import {
-    calculateServiceFeeCents,
-    formatUsdCentsCompact,
-    POLLEN_PACKS,
-} from "@shared/pollen-packs.ts";
 import { Link } from "@tanstack/react-router";
 import type { FC, ReactNode } from "react";
 import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
-import { PollenPackSlider } from "./pollen-pack-controls.tsx";
+import { PollenPackPurchase } from "./pollen-pack-purchase.tsx";
 
 type PollenBalanceProps = {
-    compact?: boolean;
     tierBalance: number;
     packBalance: number;
     paidWeek?: number;
     tierWeek?: number;
+    /** Only the two balance cards: no total row, no "how it works" footer. */
+    compact?: boolean;
 };
 
 const BALANCE_DISPLAY_EPSILON = 0.0001;
@@ -74,11 +68,11 @@ const TooltipList: FC<{
 );
 
 export const PollenBalance: FC<PollenBalanceProps> = ({
-    compact = false,
     tierBalance,
     packBalance,
     paidWeek = 0,
     tierWeek = 0,
+    compact = false,
 }) => {
     const displayTierBalance = normalizeDisplayBalance(tierBalance);
     const displayPaidBalance = normalizeDisplayBalance(packBalance);
@@ -257,78 +251,30 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
 
 type BuyPollenPanelProps = {
     initialBillingState: BillingState | null;
-    checkoutReturnPath?: string;
     selectedPackAmount: number;
     onSelectedPackAmountChange: (amount: number) => void;
+    /** Standalone /top-up: Stripe returns there, carrying the app link. */
+    returnToTopUp?: { redirect?: string };
 };
 
 export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     initialBillingState,
-    checkoutReturnPath,
     selectedPackAmount,
     onSelectedPackAmountChange,
+    returnToTopUp,
 }) => {
-    const selectedPackIndex = Math.max(
-        0,
-        POLLEN_PACKS.findIndex((pack) => pack.amountUsd === selectedPackAmount),
-    );
-    const selectedPack = POLLEN_PACKS[selectedPackIndex] ?? POLLEN_PACKS[0];
-    const serviceFeeCents = selectedPack
-        ? calculateServiceFeeCents(selectedPack.amountUsd * 100)
-        : 0;
-    const subtotalBeforeTaxCents =
-        (selectedPack?.amountUsd ?? 0) * 100 + serviceFeeCents;
-    const chargeLabel = selectedPack
-        ? formatUsdCentsCompact(subtotalBeforeTaxCents)
-        : "$0";
-
     return (
         <>
+            <PollenPackPurchase
+                selectedPackAmount={selectedPackAmount}
+                onSelectedPackAmountChange={onSelectedPackAmountChange}
+                returnToTopUp={returnToTopUp}
+            />
             <Surface>
-                {selectedPack && (
-                    <div className="flex w-full flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-4 sm:pb-20">
-                        <div className="w-full min-w-0 flex-1 pb-20 sm:pb-0">
-                            <PollenPackSlider
-                                value={selectedPack.amountUsd}
-                                onChange={onSelectedPackAmountChange}
-                                selectedBadgeLabel={chargeLabel}
-                                selectedBadgeDetail={`incl. ${formatUsdCentsCompact(serviceFeeCents)} fee`}
-                            />
-                        </div>
-                        <Tooltip
-                            content={
-                                <span className="block">
-                                    Buy{" "}
-                                    <span className="font-semibold text-theme-text-strong">
-                                        {selectedPack.amountUsd} pollen
-                                    </span>{" "}
-                                    for{" "}
-                                    <span className="font-semibold text-theme-text-strong">
-                                        {chargeLabel}
-                                    </span>
-                                    <span className="mt-1 block text-theme-text-muted">
-                                        Tax calculated at checkout
-                                    </span>
-                                </span>
-                            }
-                            displayContents
-                        >
-                            <ExternalLinkButton
-                                href={`/api/stripe/checkout/${selectedPack.packKey}${checkoutReturnPath ? `?return=${encodeURIComponent(checkoutReturnPath)}` : ""}`}
-                                target="_self"
-                                className="w-28 min-w-0 gap-1.5 self-start text-center shadow-none sm:shrink-0 sm:self-center"
-                            >
-                                <span className="inline-flex items-center gap-1.5">
-                                    <WalletIcon className="h-4 w-4 shrink-0" />
-                                    Buy
-                                </span>
-                            </ExternalLinkButton>
-                        </Tooltip>
-                    </div>
-                )}
-            </Surface>
-            <Surface>
-                <AutoTopUpPanel initialBillingState={initialBillingState} />
+                <AutoTopUpPanel
+                    initialBillingState={initialBillingState}
+                    returnToTopUp={returnToTopUp}
+                />
             </Surface>
             <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                 <PaymentTrustBadge className="mt-0 pt-0" />

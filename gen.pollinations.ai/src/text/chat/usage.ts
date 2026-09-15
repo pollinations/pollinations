@@ -18,6 +18,12 @@ export class ChatUsageError extends Error {
     override readonly name = "ChatUsageError";
 }
 
+// Tracking reads this off the emitted error event: the validator drops the
+// provider's [DONE] when usage is missing there, so the message is the only
+// record that the sentinel arrived.
+export const CHAT_USAGE_MISSING_AT_DONE_MESSAGE =
+    "Chat Completions provider returned invalid or omitted terminal usage";
+
 export function createChatStreamUsageValidator() {
     const decoder = new TextDecoder();
     let lastUsage: unknown;
@@ -33,7 +39,7 @@ export function createChatStreamUsageValidator() {
                     !CompletionUsageSchema.safeParse(lastUsage).success
                 ) {
                     throw new ChatUsageError(
-                        "Chat Completions provider returned invalid or omitted terminal usage",
+                        CHAT_USAGE_MISSING_AT_DONE_MESSAGE,
                     );
                 }
                 doneSeen = true;
@@ -52,6 +58,18 @@ export function createChatStreamUsageValidator() {
                 error?: unknown;
             };
             if (error && typeof error === "object") errorSeen = true;
+            // Some providers append cost/cache metadata after their token totals.
+            // It is not a new token count; billing also uses the last complete usage.
+            if (
+                usage &&
+                typeof usage === "object" &&
+                !Array.isArray(usage) &&
+                !["prompt_tokens", "completion_tokens", "total_tokens"].some(
+                    (key) => key in usage,
+                )
+            ) {
+                return;
+            }
             // Providers may send provisional counts; only the last update is final.
             if (usage !== null && usage !== undefined) lastUsage = usage;
         },

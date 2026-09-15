@@ -20,7 +20,7 @@ const headings: Record<string, string> = {
     "enter-connected": "Wallet",
     news: "Announcements",
     catalog: "Models",
-    activity: "Events over time",
+    activity: "Usage",
     quests: "Quests",
     account: "Profile",
     "account-delete": "Delete Pollinations account?",
@@ -604,9 +604,10 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                         prepare: { activity: "available" as const },
                         expected: [
                             heading(headings.activity),
+                            heading("Earnings"),
                             {
                                 selector:
-                                    'div:text-is("Requests") + div:text-is("3")',
+                                    'table[aria-label="Usage by model"] tbody tr:has-text("openai") [aria-label="0.02 Paid Pollen"]',
                             },
                         ],
                     }),

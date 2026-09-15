@@ -8,10 +8,10 @@ import {
 import {
     getPollenPackByAmount,
     getPollenPackByKey,
-    isPollenPackKey,
 } from "@shared/pollen-packs.ts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import { AuthAccountIdentity } from "../components/auth/auth-account-identity.tsx";
 import { SignInAgain } from "../components/auth/sign-in-again.tsx";
@@ -20,34 +20,21 @@ import { BuyPollenPanel, PollenBalance } from "../components/pollen";
 import type { BillingState } from "../components/pollen/auto-top-up-panel.tsx";
 import { WalletPaymentStatus } from "../components/pollen/wallet-payment-status.tsx";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
-import {
-    AccountReturn,
-    parseAccountReturn,
-} from "../lib/account-action-return.tsx";
+import { AccountReturn } from "../lib/account-action-return.tsx";
 import { loadWallet } from "../lib/load-wallet.ts";
+import { preferredReturnUrl } from "../lib/return-to-app.tsx";
+import { validateTopUpSearch } from "../lib/top-up-search.ts";
 
 export const Route = createFileRoute("/top-up")({
-    validateSearch: (search: Record<string, unknown>) => ({
-        pack:
-            typeof search.pack === "string" && isPollenPackKey(search.pack)
-                ? search.pack
-                : ("p5" as const),
-        redirect: parseAccountReturn(search.redirect),
-        session_id:
-            typeof search.session_id === "string"
-                ? search.session_id
-                : undefined,
-        stripe_canceled:
-            search.stripe_canceled === true ||
-            search.stripe_canceled === "true" ||
-            undefined,
-    }),
+    validateSearch: validateTopUpSearch,
     component: WalletPage,
 });
 
 type WalletData = {
     tierBalance: number;
     packBalance: number;
+    paidWeek?: number;
+    tierWeek?: number;
     billing: BillingState | null;
     payment?: "pending" | "credited";
 };
@@ -60,6 +47,29 @@ function WalletPage() {
     const [data, setData] = useState<WalletData | null>(null);
     const [error, setError] = useState<Error | null>(null);
     const userId = session?.user.id;
+    useEffect(() => {
+        if (
+            search.stripe_success ||
+            search.stripe_canceled ||
+            search.stripe_billing_return ||
+            search.session_id
+        )
+            return;
+        const from = preferredReturnUrl(search.redirect);
+        if (from)
+            void navigate({
+                search: (prev) => ({ ...prev, redirect: from }),
+                replace: true,
+            });
+    }, [
+        navigate,
+        search.redirect,
+        search.stripe_success,
+        search.stripe_canceled,
+        search.stripe_billing_return,
+        search.session_id,
+    ]);
+
     // biome-ignore lint/correctness/useExhaustiveDependencies: attempt explicitly retries the failed request.
     useEffect(() => {
         if (!userId) return;
@@ -68,7 +78,19 @@ function WalletPage() {
         setError(null);
         loadWallet(search.session_id)
             .then((wallet) => {
-                if (active) setData(wallet);
+                if (!active) return;
+                setData(wallet);
+                // Earnings are supplementary; unavailable history must not hide the wallet.
+                void apiClient.customer.balance.today
+                    .$get()
+                    .then((response) => (response.ok ? response.json() : null))
+                    .then((earnings) => {
+                        if (active && earnings)
+                            setData((current) =>
+                                current ? { ...current, ...earnings } : current,
+                            );
+                    })
+                    .catch(() => {});
             })
             .catch((error) => {
                 if (active)
@@ -104,7 +126,6 @@ function WalletPage() {
             />
         );
     if (!data && !error) return <AuthModalLoading title="Loading wallet" />;
-    const returnPath = `/top-up${search.redirect ? `?redirect=${encodeURIComponent(search.redirect)}` : ""}`;
     return (
         <AuthFlowLayout
             account={
@@ -149,6 +170,8 @@ function WalletPage() {
                     <PollenBalance
                         tierBalance={data.tierBalance}
                         packBalance={data.packBalance}
+                        paidWeek={data.paidWeek}
+                        tierWeek={data.tierWeek}
                         compact
                     />
                     {data.payment !== "pending" && (
@@ -156,7 +179,7 @@ function WalletPage() {
                             <BuyPollenPanel
                                 initialBillingState={data.billing}
                                 selectedPackAmount={
-                                    getPollenPackByKey(search.pack)
+                                    getPollenPackByKey(search.pack ?? "p5")
                                         ?.amountUsd ?? 5
                                 }
                                 onSelectedPackAmountChange={(amount) => {
@@ -169,7 +192,7 @@ function WalletPage() {
                                             }),
                                         });
                                 }}
-                                checkoutReturnPath={returnPath}
+                                returnToTopUp={{ redirect: search.redirect }}
                             />
                         </Section>
                     )}

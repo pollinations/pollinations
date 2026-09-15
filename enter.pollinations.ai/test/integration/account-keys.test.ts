@@ -1,4 +1,4 @@
-import { SELF } from "cloudflare:test";
+import { env, SELF } from "cloudflare:test";
 import { describe, expect } from "vitest";
 import { createApiKeyViaApi, test } from "../fixtures.ts";
 
@@ -346,15 +346,26 @@ describe("Account Key Management API", () => {
                     },
                     body: JSON.stringify({
                         name: "account-key-with-retired-model",
-                        allowedModels: [
-                            "black-forest-labs/flux.1-schnell",
-                            "retired-model",
-                        ],
+                        allowedModels: ["black-forest-labs/flux.1-schnell"],
                     }),
                 },
             );
             expect(createResponse.status).toBe(200);
             const created = await createResponse.json();
+
+            await env.DB.prepare(
+                "UPDATE apikey SET permissions = ? WHERE id = ?",
+            )
+                .bind(
+                    JSON.stringify({
+                        models: [
+                            "black-forest-labs/flux.1-schnell",
+                            "retired-model",
+                        ],
+                    }),
+                    created.id,
+                )
+                .run();
 
             const response = await SELF.fetch(
                 "http://localhost:3000/api/account/keys",

@@ -3,12 +3,14 @@ import { Pollinations } from "./client.js";
 import {
     chat,
     configure,
+    embeddings,
     generateAudio,
     generateImage,
     generateText,
     generateVideo,
     resetClient,
 } from "./helpers.js";
+import type { EmbeddingInput } from "./index.js";
 import { PollinationsError } from "./types.js";
 
 // Build a minimal Response-like object good enough for the client paths.
@@ -440,6 +442,124 @@ describe("Pollinations seed handling", () => {
         expect(body.reasoning_effort).toBe("medium");
         expect("thinking" in body).toBe(false);
         expect("thinking_budget" in body).toBe(false);
+    });
+});
+
+const EMBEDDINGS_RESPONSE = {
+    object: "list",
+    data: [{ object: "embedding", embedding: [0.1, -0.2, 0.3], index: 0 }],
+    model: "gemini-2",
+    usage: { prompt_tokens: 2, total_tokens: 2 },
+};
+
+describe("Pollinations.embeddings", () => {
+    it("posts an OpenAI-compatible request to /v1/embeddings", async () => {
+        const response = {
+            ...EMBEDDINGS_RESPONSE,
+            data: [
+                {
+                    object: "embedding",
+                    embedding: "zczMPc3MTL6amZk+",
+                    index: 0,
+                },
+            ],
+        };
+        fetchMock.mockResolvedValue(makeResponse(response));
+
+        const result = await newClient().embeddings("Hello world", {
+            model: "gemini-2",
+            dimensions: 768,
+            encodingFormat: "base64",
+            taskType: "RETRIEVAL_QUERY",
+            inputType: "query",
+        });
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+        expect(url).toBe("https://example.test/v1/embeddings");
+        expect(init.method).toBe("POST");
+        expect((init.headers as Record<string, string>).Authorization).toBe(
+            "Bearer sk_test",
+        );
+        expect((init.headers as Record<string, string>)["Content-Type"]).toBe(
+            "application/json",
+        );
+        expect(bodyOf(fetchMock.mock.calls[0])).toEqual({
+            model: "gemini-2",
+            input: "Hello world",
+            dimensions: 768,
+            encoding_format: "base64",
+            task_type: "RETRIEVAL_QUERY",
+            input_type: "query",
+        });
+        expect(result).toEqual(response);
+        expect(result.usage.total_tokens).toBe(2);
+    });
+
+    it("accepts a batch of strings and omits unset options", async () => {
+        fetchMock.mockResolvedValue(makeResponse(EMBEDDINGS_RESPONSE));
+
+        await newClient().embeddings(["first document", "second document"]);
+
+        expect(bodyOf(fetchMock.mock.calls[0])).toEqual({
+            input: ["first document", "second document"],
+        });
+    });
+
+    it("passes multimodal content parts and audio formats through unchanged", async () => {
+        fetchMock.mockResolvedValue(makeResponse(EMBEDDINGS_RESPONSE));
+
+        const input: EmbeddingInput = [
+            { type: "text" as const, text: "a photo of a cat" },
+            {
+                type: "image_url" as const,
+                image_url: { url: "https://example.com/cat.jpg" },
+            },
+            {
+                type: "input_audio",
+                input_audio: { data: "YXVkaW8=", format: "ogg" },
+            },
+        ];
+        await newClient().embeddings(input);
+
+        expect(bodyOf(fetchMock.mock.calls[0]).input).toEqual(input);
+    });
+
+    it.each([
+        "",
+        [],
+    ])("rejects empty input %j without a request", async (input) => {
+        await expect(newClient().embeddings(input)).rejects.toMatchObject({
+            code: "INVALID_INPUT",
+            status: 400,
+        });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("surfaces API errors", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                { error: { message: "Insufficient balance" } },
+                { ok: false, status: 402 },
+            ),
+        );
+
+        await expect(
+            newClient().embeddings("Hello world"),
+        ).rejects.toBeInstanceOf(PollinationsError);
+    });
+});
+
+describe("embeddings helper", () => {
+    it("uses the configured client", async () => {
+        configure({ apiKey: "sk_test", baseUrl: "https://example.test" });
+        fetchMock.mockResolvedValue(makeResponse(EMBEDDINGS_RESPONSE));
+
+        const result = await embeddings("Hello world");
+
+        const [url] = fetchMock.mock.calls[0] as [string];
+        expect(url).toBe("https://example.test/v1/embeddings");
+        expect(result.model).toBe("gemini-2");
     });
 });
 

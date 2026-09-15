@@ -41,7 +41,7 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
     }),
     temperature: z.coerce.number().optional().meta({
         description:
-            "Controls randomness. Lower values (e.g. 0.2) produce more focused output, higher values (e.g. 1.5) produce more creative output. Range: 0.0 to 2.0.",
+            "Controls randomness. Lower values (e.g. 0.2) produce more focused output, higher values (e.g. 1.5) produce more creative output. Range: 0.0 to 2.0. Sampling controls are ignored for model families that do not consistently support them, regardless of reasoning mode.",
     }),
     top_p: FloatQueryParamSchema,
     presence_penalty: FloatQueryParamSchema,

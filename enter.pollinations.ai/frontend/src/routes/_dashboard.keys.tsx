@@ -2,6 +2,7 @@ import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { authClient } from "../auth.ts";
 import {
     ApiKeyList,
+    type ApiKeyUpdateParams,
     type CreateApiKey,
     type CreateApiKeyResponse,
 } from "../components/keys";
@@ -74,13 +75,7 @@ export function KeyManagement({ kind }: { kind: "keys" | "apps" }) {
 
     async function handleUpdateApiKey(
         id: string,
-        updates: {
-            name?: string;
-            allowedModels?: string[] | null;
-            pollenBudget?: number | null;
-            accountPermissions?: string[] | null;
-            expiresAt?: Date | null;
-        },
+        updates: ApiKeyUpdateParams,
     ): Promise<void> {
         await updateApiKey(id, updates);
         await router.invalidate();

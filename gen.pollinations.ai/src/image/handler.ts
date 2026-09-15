@@ -75,6 +75,8 @@ const IMAGE_ENV_KEYS = [
     "AZURE_MYCELI_PROD_IMG_15_WESTUS3_API_KEY",
     "AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY",
     "AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_25_FLARE_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_25_SUNBURST_SWEDEN_API_KEY",
     "AZURE_MYCELI_PROD_IMG_MINI_SWEDEN_API_KEY",
     "AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
@@ -117,14 +119,6 @@ async function readJsonBody(c: ImageContext): Promise<Record<string, unknown>> {
         return (await c.req.json()) as Record<string, unknown>;
     } catch {
         return {};
-    }
-}
-
-function decodePrompt(rawPrompt: string): string {
-    try {
-        return decodeURIComponent(rawPrompt);
-    } catch {
-        return rawPrompt;
     }
 }
 
@@ -403,7 +397,7 @@ export async function generateImageOrVideoResponse(
     body: Record<string, unknown> = {},
 ): Promise<Response> {
     syncImageEnvironment(c.env);
-    const originalPrompt = decodePrompt(prompt || "random_prompt");
+    const originalPrompt = prompt || "random_prompt";
     const parsedParams = parseImageParams(c, body);
     const definition = c.var.model.definition;
     const safeParams =

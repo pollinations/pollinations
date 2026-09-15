@@ -5,6 +5,8 @@ import {
     useAuthState,
 } from "@pollinations/sdk/react";
 import { useEffect } from "react";
+import { LogInIcon } from "../../primitives/icons/index.tsx";
+import { ProviderSignInButton } from "../auth/ProviderSignInButton.tsx";
 import { LoginButton } from "../auth/sdk.ts";
 import {
     type AppUserMenuLabels,
@@ -26,12 +28,21 @@ export type AppUserMenuState =
 
 export type AppUserMenuProps = {
     labels?: Partial<AppUserMenuLabels>;
+    dashboardHref?: string;
+    onTopUpKey?: () => void;
+    triggerVariant?: "pill" | "action";
     onStateChange?: (state: AppUserMenuState) => void;
 };
 
 /** SDK adapter; rendering is shared with apps that supply their own data. */
-export function AppUserMenu({ labels, onStateChange }: AppUserMenuProps) {
-    const { logout, enterUrl, retryConnection } = useAuthActions();
+export function AppUserMenu({
+    labels,
+    onStateChange,
+    dashboardHref,
+    onTopUpKey,
+    triggerVariant,
+}: AppUserMenuProps) {
+    const { login, logout, enterUrl, retryConnection } = useAuthActions();
     const { isLoggedIn, isHydrated, error } = useAuthState();
     const profile = useAccountProfile({ enabled: isLoggedIn });
     const key = useAccountKey({ enabled: isLoggedIn });
@@ -73,11 +84,30 @@ export function AppUserMenu({ labels, onStateChange }: AppUserMenuProps) {
             }}
             error={!!error}
             labels={labels}
-            pending={!isHydrated}
+            pending={!isHydrated && triggerVariant !== "action"}
             onRetry={retryConnection}
         >
             {!isLoggedIn ? (
-                <LoginButton>{labels?.authorize}</LoginButton>
+                triggerVariant === "action" ? (
+                    <ProviderSignInButton
+                        icon={
+                            <LogInIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
+                        }
+                        appearance="raised"
+                        disabled={!isHydrated}
+                        onClick={() => login()}
+                        className="polli:min-h-14 polli:rounded-xl polli:border-r-4 polli:border-b-4 polli:border-solid polli:border-theme-text-strong/20 polli:px-4 polli:py-2 polli:hover:border-theme-text-strong/45"
+                    >
+                        {!isHydrated
+                            ? (labels?.checkingConnection ??
+                              "Checking connection…")
+                            : (labels?.authorize ?? "Connect Pollen")}
+                    </ProviderSignInButton>
+                ) : (
+                    <LoginButton appearance={triggerVariant}>
+                        {labels?.authorize}
+                    </LoginButton>
+                )
             ) : (
                 <AppUserMenuView
                     name={
@@ -91,7 +121,15 @@ export function AppUserMenu({ labels, onStateChange }: AppUserMenuProps) {
                         key.data?.permissions?.models?.length !== 0
                     }
                     onDisconnect={logout}
-                    dashboardHref={new URL("/pollen", enterUrl).href}
+                    dashboardHref={
+                        dashboardHref ?? new URL("/pollen", enterUrl).href
+                    }
+                    onTopUpKey={onTopUpKey}
+                    questsHref={
+                        !dashboardHref && !onTopUpKey
+                            ? new URL("/quests", enterUrl).href
+                            : undefined
+                    }
                     editKeyHref={
                         key.data?.id
                             ? new URL(
@@ -101,10 +139,13 @@ export function AppUserMenu({ labels, onStateChange }: AppUserMenuProps) {
                             : undefined
                     }
                     walletHref={
-                        new URL(
-                            `/top-up?${new URLSearchParams(redirect)}`,
-                            enterUrl,
-                        ).href
+                        onTopUpKey
+                            ? undefined
+                            : (dashboardHref ??
+                              new URL(
+                                  `/top-up?${new URLSearchParams(redirect)}`,
+                                  enterUrl,
+                              ).href)
                     }
                     labels={labels}
                 />

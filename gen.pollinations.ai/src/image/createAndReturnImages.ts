@@ -310,6 +310,9 @@ const AZURE_API_VERSION = "2025-04-01-preview";
 // Every endpoint is a resource dedicated to a single model: Azure abuse blocks
 // are per-resource, so sharing one resource across models turns a block into a
 // multi-model outage (issue #12446). Keep it one model per resource.
+// gpt-image-2.5 quota is a single subscription-wide Global Standard pool
+// (12 RPM per model, not per region), so each 2.5 model has exactly one
+// dedicated resource; extra regions would add no capacity.
 const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
     "openai/gpt-image-1-mini": [
         {
@@ -392,6 +395,44 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
             region: "direct",
         },
     ],
+    "openai/gpt-image-2.5-flare": [
+        {
+            provider: "azure",
+            baseUrl:
+                "https://myceli-prod-img-25-flare-sweden.cognitiveservices.azure.com/openai/deployments/gpt-image-2.5-flare",
+            modelName: "gpt-image-2.5-flare",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_25_FLARE_SWEDEN_API_KEY",
+            region: "swedencentral",
+        },
+    ],
+    "openai/gpt-image-2.5-flare:openai": [
+        {
+            provider: "openai",
+            baseUrl: "https://api.openai.com/v1",
+            modelName: "gpt-image-2.5-flare",
+            apiKeyEnv: "OPENAI_API_KEY",
+            region: "direct",
+        },
+    ],
+    "openai/gpt-image-2.5-sunburst": [
+        {
+            provider: "azure",
+            baseUrl:
+                "https://myceli-prod-img-25-sunburst-sweden.cognitiveservices.azure.com/openai/deployments/gpt-image-2.5-sunburst",
+            modelName: "gpt-image-2.5-sunburst",
+            apiKeyEnv: "AZURE_MYCELI_PROD_IMG_25_SUNBURST_SWEDEN_API_KEY",
+            region: "swedencentral",
+        },
+    ],
+    "openai/gpt-image-2.5-sunburst:openai": [
+        {
+            provider: "openai",
+            baseUrl: "https://api.openai.com/v1",
+            modelName: "gpt-image-2.5-sunburst",
+            apiKeyEnv: "OPENAI_API_KEY",
+            region: "direct",
+        },
+    ],
 };
 
 const gptImageEndpointIndexes = new Map<string, number>();
@@ -434,7 +475,7 @@ const callGPTImageWithEndpoint = async (
     // gpt-image-2 supports arbitrary resolutions with constraints.
     // Older gpt-image-1 models (via Azure) only support 3 fixed sizes; snap via closest ratio.
     let size: string;
-    if (config.modelName === "gpt-image-2") {
+    if (config.modelName.startsWith("gpt-image-2")) {
         // gpt-image-2 constraints:
         //   Both edges multiples of 16px, long edge ≤ 3840px (4K)
         //   Aspect ratio ≤ 3:1, pixel count 655,360–8,294,400
@@ -543,8 +584,11 @@ const callGPTImageWithEndpoint = async (
                     // Resize large input images to reduce token costs
                     // GPT Image 1.5 calculates input tokens as: (width × height) / 750
                     // gpt-image-2 supports larger inputs up to 3840px
-                    const inputMaxDimension =
-                        config.modelName === "gpt-image-2" ? 3840 : 1536;
+                    const inputMaxDimension = config.modelName.startsWith(
+                        "gpt-image-2",
+                    )
+                        ? 3840
+                        : 1536;
                     const buffer = await resizeInputImageForGptImage(
                         originalBuffer,
                         inputMaxDimension,
@@ -595,6 +639,8 @@ const callGPTImageWithEndpoint = async (
         if (config.provider === "openai") {
             formData.append("model", config.modelName);
         }
+        formData.append("size", size);
+        formData.append("output_format", outputFormat);
         formData.append("quality", quality);
         formData.append("n", "1");
 
@@ -713,9 +759,13 @@ const generateImage = async (
         case "openai/gpt-image-1-mini":
         case "openai/gpt-image-1.5":
         case "openai/gpt-image-2":
+        case "openai/gpt-image-2.5-flare":
+        case "openai/gpt-image-2.5-sunburst":
         case "openai/gpt-image-1-mini:openai":
         case "openai/gpt-image-1.5:openai":
-        case "openai/gpt-image-2:openai": {
+        case "openai/gpt-image-2:openai":
+        case "openai/gpt-image-2.5-flare:openai":
+        case "openai/gpt-image-2.5-sunburst:openai": {
             const [gptConfig] = GPTIMAGE_CONFIGS[safeParams.model];
             logError(
                 `GPT Image (${gptConfig.modelName}) authentication check:`,
@@ -993,9 +1043,11 @@ export async function createAndReturnImageCached(
         const { buffer: _buffer, ...maturity } = result;
         const metadataObj = prepareMetadata(prompt, originalPrompt, safeParams);
 
-        // SVG must stay vector; raster formats retain the existing JPEG + EXIF path.
+        // Preserve vector output and PNG alpha; JPEG conversion flattens transparency.
         const processedBuffer =
-            result.mimeType === "image/svg+xml"
+            result.mimeType === "image/svg+xml" ||
+            (safeParams.transparent &&
+                detectMimeType(result.buffer) === "image/png")
                 ? result.buffer
                 : await processImageBuffer(
                       result.buffer,

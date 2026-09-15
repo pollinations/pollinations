@@ -26,6 +26,7 @@ export type DialogProps = {
     /** Full-height form/review surface, shared with authentication flows. */
     layout?: "dialog" | "flow";
     showBackdrop?: boolean;
+    backdropBlur?: boolean;
     positionerClassName?: string;
     contentClassName?: string;
     children: ReactNode;
@@ -45,6 +46,7 @@ export const Dialog: FC<DialogProps> = ({
     size = "md",
     layout = "dialog",
     showBackdrop = true,
+    backdropBlur = true,
     positionerClassName,
     contentClassName,
     children,
@@ -72,7 +74,10 @@ export const Dialog: FC<DialogProps> = ({
                         // Scrim must DARKEN in both modes — ink-950 inverts
                         // (near-white in dark) and would brighten the page.
                         // Fixed black + a soft blur dims and de-focuses.
-                        className="polli:fixed polli:inset-0 polli:z-[100] polli:bg-black/50 polli:backdrop-blur-sm"
+                        className={cn(
+                            "polli:fixed polli:inset-0 polli:z-[100] polli:bg-[#000]/50",
+                            backdropBlur && "polli:backdrop-blur-sm",
+                        )}
                     />
                 )}
                 <ArkDialog.Positioner

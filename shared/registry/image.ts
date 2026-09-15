@@ -154,10 +154,10 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         cost: {
             // Gemini 2.5 Flash Image via Vertex AI
-            promptTextTokens: perMillion(0.3), // per 1M tokens
-            promptImageTokens: perMillion(0.3), // per 1M tokens
-            completionTextTokens: perMillion(2.5), // text output tokens
-            completionImageTokens: perMillion(30), // per 1M tokens, 1290 tokens/image
+            promptTextTokens: perMillion(0.3) * 1.055, // per 1M tokens
+            promptImageTokens: perMillion(0.3) * 1.055, // per 1M tokens
+            completionTextTokens: perMillion(2.5) * 1.055, // text output tokens
+            completionImageTokens: perMillion(30) * 1.055, // per 1M tokens, 1290 tokens/image
         },
         title: "Nano Banana",
         description:
@@ -176,10 +176,10 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         cost: {
             // Gemini 3.1 Flash Image via Vertex AI
-            promptTextTokens: perMillion(0.5), // per 1M tokens
-            promptImageTokens: perMillion(0.5), // per 1M tokens
-            completionTextTokens: perMillion(3), // text/reasoning output tokens
-            completionImageTokens: perMillion(60), // per 1M tokens, 2520 tokens/image
+            promptTextTokens: perMillion(0.5) * 1.055, // per 1M tokens
+            promptImageTokens: perMillion(0.5) * 1.055, // per 1M tokens
+            completionTextTokens: perMillion(3) * 1.055, // text/reasoning output tokens
+            completionImageTokens: perMillion(60) * 1.055, // per 1M tokens, 2520 tokens/image
         },
         title: "Nano Banana 2",
         description:
@@ -198,10 +198,10 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         cost: {
             // Gemini 3.1 Flash-Lite Image (GA) via Vertex AI — half of nanobanana-2
-            promptTextTokens: perMillion(0.25), // per 1M tokens
-            promptImageTokens: perMillion(0.25), // per 1M tokens
-            completionTextTokens: perMillion(1.5), // text/reasoning output tokens
-            completionImageTokens: perMillion(30), // per 1M tokens, 1120 tokens/1K image = $0.0336
+            promptTextTokens: perMillion(0.25) * 1.055, // per 1M tokens
+            promptImageTokens: perMillion(0.25) * 1.055, // per 1M tokens
+            completionTextTokens: perMillion(1.5) * 1.055, // text/reasoning output tokens
+            completionImageTokens: perMillion(30) * 1.055, // per 1M tokens, 1120 tokens/1K image = $0.0336
         },
         title: "Nano Banana 2 Lite",
         description:
@@ -222,10 +222,10 @@ const IMAGE_BASE_SERVICES = {
             // Gemini 3 Pro Image via Vertex AI
             // 1K/2K image: 1120 tokens = $0.134/image ($120/M tokens)
             // 4K image: 2000 tokens = $0.24/image
-            promptTextTokens: perMillion(2), // per 1M tokens
-            promptImageTokens: perMillion(2), // per 1M tokens
-            completionTextTokens: perMillion(12), // text/reasoning output tokens
-            completionImageTokens: perMillion(120), // per 1M tokens, 1120 tokens per 1K image
+            promptTextTokens: perMillion(2) * 1.055, // per 1M tokens
+            promptImageTokens: perMillion(2) * 1.055, // per 1M tokens
+            completionTextTokens: perMillion(12) * 1.055, // text/reasoning output tokens
+            completionImageTokens: perMillion(120) * 1.055, // per 1M tokens, 1120 tokens per 1K image
         },
         title: "Nano Banana Pro",
         description:
@@ -296,7 +296,7 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            completionImageTokens: 0.04, // per image
+            completionImageTokens: 0.04 * 1.055, // per image
         },
         title: "Seedream 4.5",
         description: "Premium photorealism for lifelike scenes and portraits",
@@ -421,6 +421,52 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
+    },
+    "openai/gpt-image-2.5-flare": {
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "image",
+        addedDate: new Date("2026-09-08").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        perUserRpm: 12,
+        cost: {
+            // https://developers.openai.com/api/docs/models/gpt-image-2.5-flare
+            promptTextTokens: perMillion(5),
+            promptCachedTokens: perMillion(1.25),
+            promptImageTokens: perMillion(8),
+            completionImageTokens: perMillion(30),
+        },
+        title: "GPT Image 2.5 Flare",
+        description:
+            "Fast image generation and precise editing with reference images",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 16,
+    },
+    "openai/gpt-image-2.5-sunburst": {
+        aliases: [],
+        provider: "azure",
+        publisher: "OpenAI",
+        category: "image",
+        addedDate: new Date("2026-09-08").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        perUserRpm: 12,
+        cost: {
+            // https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst
+            promptTextTokens: perMillion(5),
+            promptCachedTokens: perMillion(1.25),
+            promptImageTokens: perMillion(8),
+            completionImageTokens: perMillion(30),
+        },
+        title: "GPT Image 2.5 Sunburst",
+        description:
+            "Detailed image generation with precise control over reference-image edits",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 16,
     },
     "black-forest-labs/flux.1-schnell": {
         aliases: ["flux"],
@@ -1014,8 +1060,8 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            promptImageTokens: 0.01, // per input image on edits
-            completionImageTokens: 0.05, // per 1K image
+            promptImageTokens: 0.01 * 1.055, // per input image on edits
+            completionImageTokens: 0.05 * 1.055, // per 1K image
         },
         title: "Grok Imagine Pro",
         description:
@@ -1034,22 +1080,22 @@ const IMAGE_BASE_SERVICES = {
         paidOnly: true,
         // OpenRouter x-ai/grok-imagine-image-2.0 pricing, verified 2026-08-14.
         cost: {
-            promptImageTokens: 0.01,
-            completionImageTokens: 0.06, // medium, 1K
+            promptImageTokens: 0.01 * 1.055,
+            completionImageTokens: 0.06 * 1.055, // medium, 1K
         },
         ...defineCostVariants(
             {
                 low_1k: {
-                    promptImageTokens: 0.01,
-                    completionImageTokens: 0.04,
+                    promptImageTokens: 0.01 * 1.055,
+                    completionImageTokens: 0.04 * 1.055,
                 },
                 low_2k: {
-                    promptImageTokens: 0.01,
-                    completionImageTokens: 0.06,
+                    promptImageTokens: 0.01 * 1.055,
+                    completionImageTokens: 0.06 * 1.055,
                 },
                 medium_2k: {
-                    promptImageTokens: 0.01,
-                    completionImageTokens: 0.08,
+                    promptImageTokens: 0.01 * 1.055,
+                    completionImageTokens: 0.08 * 1.055,
                 },
             },
             ({ input }) => {
@@ -1096,7 +1142,7 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            completionImageTokens: 0.08, // fixed per output SVG
+            completionImageTokens: 0.08 * 1.055, // fixed per output SVG
         },
         title: "Recraft V4.1 Vector",
         description:
@@ -1107,7 +1153,7 @@ const IMAGE_BASE_SERVICES = {
     },
     "x-ai/grok-imagine-video": {
         aliases: ["grok-imagine-video", "grok-video-pro"],
-        provider: "openrouter",
+        provider: "fal",
         publisher: "xAI",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
@@ -1136,16 +1182,16 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            promptImageTokens: 0.01, // per start-frame image
-            completionVideoSeconds: 0.14, // per sec at 720p
+            promptImageTokens: 0.01 * 1.055, // per start-frame image
+            completionVideoSeconds: 0.14 * 1.055, // per sec at 720p
         },
         ...defineCostVariants(
             {
                 "480p": {
-                    completionVideoSeconds: 0.08,
+                    completionVideoSeconds: 0.08 * 1.055,
                 },
                 "1080p": {
-                    completionVideoSeconds: 0.25,
+                    completionVideoSeconds: 0.25 * 1.055,
                 },
             },
             matchResolution("480p", "1080p"),
@@ -1253,7 +1299,7 @@ const IMAGE_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            completionVideoSeconds: 0.0988, // per sec at 720p
+            completionVideoSeconds: 0.0988 * 1.055, // per sec at 720p
         },
         title: "HappyHorse 1.1",
         description: "Text and first-frame video generation at 720p",
@@ -1315,28 +1361,34 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-09-04").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // fal launch pricing through 2026-09-07; restore list rates on 2026-09-08.
+        // fal launch pricing through 2026-09-14; restore list rates on 2026-09-15.
         cost: {
             completionVideoSeconds: 0.00625, // 480p per output second.
         },
         ...defineCostVariants(
             {
                 "768p": { completionVideoSeconds: 0.01 },
+                "1080p": { completionVideoSeconds: 0.02 },
             },
-            matchResolution("768p"),
+            matchResolution("768p", "1080p"),
             {
                 "768p": {
                     label: "768p",
                     description:
                         "Applies when the requested video resolution is 768p.",
                 },
+                "1080p": {
+                    label: "1080p",
+                    description:
+                        "Applies when the requested video resolution is 1080p.",
+                },
             },
             "480p",
         ),
-        resolutions: ["480p", "768p"],
+        resolutions: ["480p", "768p", "1080p"],
         title: "MiniMax H3 Max Turbo",
         description:
-            "Fast 5–15 second video with synchronized audio and first/last-frame control at 480p or 768p",
+            "Fast 5–15 second video with synchronized audio and first/last-frame control at 480p, 768p, or 1080p",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "end_frame", "audio_output"],

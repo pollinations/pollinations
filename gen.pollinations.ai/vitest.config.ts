@@ -4,8 +4,10 @@ import {
     defineWorkersConfig,
     readD1Migrations,
 } from "@cloudflare/vitest-pool-workers/config";
+import { buildSync } from "esbuild";
 import { loadEnv } from "vite";
 import { configDefaults, defineConfig } from "vitest/config";
+import { codeAgentSdk } from "../enter.pollinations.ai/scripts/code-agent-sdk.mjs";
 
 const genSrc = fileURLToPath(new URL("./src/", import.meta.url));
 const sharedSrc = fileURLToPath(new URL("../shared/", import.meta.url));
@@ -54,6 +56,7 @@ const genAliases = [
 ];
 
 const baseConfig = defineWorkersConfig({
+    plugins: [codeAgentSdk()],
     resolve: {
         dedupe: ["hono", "hono-openapi"],
         alias: [
@@ -95,6 +98,24 @@ export default defineConfig(async ({ mode }) => {
     );
     const migrations = await readD1Migrations(migrationsPath);
     const env = loadEnv(mode, process.cwd(), "");
+    // Exercise the real media RPC service, with isolated local R2 storage.
+    const mediaScript = buildSync({
+        entryPoints: [
+            path.join(
+                __dirname,
+                "../media.pollinations.ai/src/media-upload.ts",
+            ),
+        ],
+        bundle: true,
+        write: false,
+        format: "esm",
+        external: ["cloudflare:workers"],
+        tsconfig: path.join(
+            __dirname,
+            "../media.pollinations.ai/tsconfig.json",
+        ),
+        footer: { js: "export default {};" },
+    }).outputFiles[0].text;
 
     return {
         ...baseConfig,
@@ -122,12 +143,26 @@ export default defineConfig(async ({ mode }) => {
                         environment: env.TEST_ENV || "test",
                     },
                     miniflare: {
+                        workers: [
+                            {
+                                name: "media-test",
+                                modules: true,
+                                script: mediaScript,
+                                compatibilityDate: "2025-11-12",
+                                r2Buckets: ["MEDIA_BUCKET"],
+                                bindings: { MAX_FILE_SIZE: "104857600" },
+                            },
+                        ],
                         bindings: {
                             TEST_MIGRATIONS: migrations,
                             TEST_VCR_MODE:
                                 env.TEST_VCR_MODE || "replay-or-record",
                         },
                         serviceBindings: {
+                            MEDIA: {
+                                name: "media-test",
+                                entrypoint: "MediaUpload",
+                            },
                             ENTER: async (request: Request) => {
                                 const url = new URL(request.url);
                                 if (
@@ -317,6 +352,63 @@ export default defineConfig(async ({ mode }) => {
                                         ],
                                     },
                                 });
+                            },
+                            COMPUTER_MCP: async (request: Request) => {
+                                if (
+                                    request.headers.has("authorization") ||
+                                    request.headers.has("cookie") ||
+                                    !request.headers.has(
+                                        "x-pollinations-user-id",
+                                    )
+                                ) {
+                                    return new Response(
+                                        "Caller identity was not forwarded safely",
+                                        { status: 500 },
+                                    );
+                                }
+                                const payload = (await request.json()) as {
+                                    jsonrpc: string;
+                                    id?: string | number;
+                                    method?: string;
+                                };
+                                const headers = new Headers();
+                                if (payload.method === "tools/call") {
+                                    headers.set(
+                                        "x-pollinations-mcp-cost",
+                                        "0.0002",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-tool",
+                                        "bash",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-status",
+                                        "200",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-adjustment-id",
+                                        "computer.tool_call.v1",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-adjustment-units",
+                                        "1",
+                                    );
+                                }
+                                return Response.json(
+                                    {
+                                        jsonrpc: payload.jsonrpc,
+                                        id: payload.id,
+                                        result: {
+                                            content: [
+                                                {
+                                                    type: "text",
+                                                    text: `computer:${request.headers.get("x-pollinations-user-id")}`,
+                                                },
+                                            ],
+                                        },
+                                    },
+                                    { headers },
+                                );
                             },
                         },
                     },

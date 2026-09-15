@@ -35,6 +35,7 @@
     "vite": "^7.0.0",
     "vitest": "^3.2.4",
     "wrangler": "^4.111.0",
-    "@cloudflare/vite-plugin": "^1.15.2"
+    "@cloudflare/vite-plugin": "^1.15.2",
+    "tsx": "^4.21.0"
   }
 }

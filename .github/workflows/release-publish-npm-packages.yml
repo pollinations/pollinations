@@ -19,7 +19,7 @@ jobs:
       ui: ${{ steps.changes.outputs.ui }}
       cli: ${{ steps.changes.outputs.cli }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -32,7 +32,7 @@ jobs:
           else
             changed=$(git diff --name-only "$before" "$GITHUB_SHA")
           fi
-          echo "sdk=$(echo "$changed" | grep -q '^packages/sdk/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "sdk=$(echo "$changed" | grep -Eq '^packages/sdk/|^\.github/workflows/release-publish-npm-packages\.yml$' && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "ui=$(echo "$changed" | grep -q '^packages/ui/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "cli=$(echo "$changed" | grep -Eq '^packages/polli-cli/|^\.github/workflows/release-publish-npm-packages\.yml$' && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "Changed files:"
@@ -44,12 +44,13 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 24
           registry-url: https://registry.npmjs.org/
 
       - name: Install dependencies & build
@@ -80,8 +81,6 @@ jobs:
           case "$v" in *-*) tag="${v#*-}"; tag="${tag%%.*}";; esac
           echo "Publishing $v under dist-tag: $tag"
           npm publish --access public --tag "$tag"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-ui:
     needs: detect-changes
@@ -90,11 +89,11 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 24
           registry-url: https://registry.npmjs.org/
 
       - name: Install dependencies & build
@@ -136,9 +135,9 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org/

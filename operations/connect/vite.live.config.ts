@@ -65,6 +65,9 @@ export default defineConfig(({ command }) => ({
                     import.meta.url,
                 ),
             ),
+            "@pollinations/ui/markdown": fileURLToPath(
+                new URL("../../packages/ui/src/markdown.ts", import.meta.url),
+            ),
             "@pollinations/ui/app.css": fileURLToPath(
                 new URL(
                     "../../packages/ui/src/styles/app.css",

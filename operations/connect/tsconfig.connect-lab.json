@@ -13,6 +13,7 @@
         "server.ts",
         "../../enter.pollinations.ai/worker-runtime.d.ts",
         "../../enter.pollinations.ai/worker-bindings.d.ts",
+        "../../enter.pollinations.ai/src/code-agent-sdk.d.ts",
         "../../enter.pollinations.ai/frontend/src/**/*.ts",
         "../../enter.pollinations.ai/frontend/src/**/*.tsx"
     ],
@@ -24,6 +25,7 @@
             "@pollinations/sdk": ["../../packages/sdk/src/index.ts"],
             "@pollinations/sdk/react": ["../../packages/sdk/src/react/index.ts"],
             "@pollinations/ui": ["../../packages/ui/src/index.ts"],
+            "@pollinations/ui/markdown": ["../../packages/ui/src/markdown.ts"],
             "@pollinations/ui/auth": ["../../packages/ui/src/modules/auth/index.ts"],
             "@pollinations/ui/auth/sdk": ["../../packages/ui/src/modules/auth/sdk.ts"],
             "@pollinations/ui/app-user-menu/sdk": ["../../packages/ui/src/modules/app-user-menu/sdk.ts"],

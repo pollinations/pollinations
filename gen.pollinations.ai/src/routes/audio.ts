@@ -17,7 +17,10 @@ import {
 import { readResponseBytes } from "@shared/response-bytes.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { validateUserMediaUrl } from "@shared/user-media-url.ts";
-import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
+import {
+    errorResponseDescriptions,
+    mediaResponseHeaders,
+} from "@shared/utils/api-docs.ts";
 import { type Context, Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { describeRoute } from "hono-openapi";
@@ -2869,16 +2872,7 @@ async function generateAudioFromSpeechRequest(
 export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     const log = c.get("log").getChild("generate");
 
-    const rawText = c.req.param("text");
-    let text: string;
-    try {
-        text = decodeURIComponent(rawText);
-    } catch {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message:
-                "Invalid percent-encoding in URL path. Make sure the text is properly URL-encoded (e.g. with encodeURIComponent), and that any literal '%' characters are written as '%25'.",
-        });
-    }
+    const text = c.req.param("text");
 
     const query = c.req.valid("query" as never) as SimpleAudioQuery;
     return await generateAudioFromSpeechRequest(
@@ -3239,6 +3233,7 @@ export const audioRoutes = new Hono<Env>()
             responses: {
                 200: {
                     description: "Success - Returns transformed speech",
+                    headers: mediaResponseHeaders,
                     content: {
                         "audio/mpeg": {
                             schema: { type: "string", format: "binary" },
@@ -3306,6 +3301,7 @@ export const audioRoutes = new Hono<Env>()
                 200: {
                     description:
                         "Success - Returns isolated speech as MP3 audio",
+                    headers: mediaResponseHeaders,
                     content: {
                         "audio/mpeg": {
                             schema: { type: "string", format: "binary" },
@@ -3437,6 +3433,7 @@ export const audioRoutes = new Hono<Env>()
             responses: {
                 200: {
                     description: "Success - Returns audio data",
+                    headers: mediaResponseHeaders,
                     content: {
                         "audio/mpeg": {
                             schema: { type: "string", format: "binary" },

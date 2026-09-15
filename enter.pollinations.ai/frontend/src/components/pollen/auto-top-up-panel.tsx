@@ -71,6 +71,7 @@ export type BillingState = {
 
 type AutoTopUpPanelProps = {
     initialBillingState: BillingState | null;
+    returnToTopUp?: { redirect?: string };
 };
 
 const DEFAULT_PACK_AMOUNT_USD = 10;
@@ -125,6 +126,7 @@ type ToggleStatus = "off" | "draft" | "on";
 
 export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     initialBillingState,
+    returnToTopUp,
 }) => {
     const [billingState, setBillingState] = useState(initialBillingState);
     const [packAmountUsd, setPackAmountUsd] = useState(
@@ -192,7 +194,9 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                 clearAutoTopUpDraft();
             }
             const response = await apiClient.stripe.billing.portal.$post({
-                json: {},
+                json: returnToTopUp
+                    ? { return: "top-up", redirect: returnToTopUp.redirect }
+                    : {},
             });
             if (!response.ok)
                 throw await apiResponseError(response, "Failed to open Stripe");

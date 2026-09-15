@@ -8,13 +8,7 @@ Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and option
 
 `APP-SUBMISSION` is the persistent type label. `APP-NEEDS-INFO`, `APP-REVIEW`, and `APP-APPROVED` describe review state. Quest rewards are detected separately from the merged catalog and are not announced by the submission workflows.
 
-After manual catalog edits, run `node operations/app-management/app.js validate`.
-
-Catalog fields: `emoji`, `name`, `url`, `description`, `language` (ISO code), `category`, `platform`, `githubUsername` (without `@`), `githubUserId` (string), `repositoryUrl`, `repositoryStars` (number or null), `discordUsername`, `other`, `submittedDate`, `issueUrl`, `approvedDate`, `byop` (boolean), `requests24h` (number).
-
-Platforms (auto-detected; comma-separated for multi): `web` (default w/ URL), `android`, `ios` (App Store or routinehub.co), `windows`, `macos`, `desktop` (cross-platform), `cli`, `discord`, `telegram`, `whatsapp`, `library` (npm/PyPI/SDK), `browser-ext`, `roblox`, `wordpress`, `api` (default w/o URL).
-
-Categories: `image`, `video_audio`, `writing`, `chat`, `games`, `learn`, `bots`, `build`, `business`.
+Catalog fields are defined in `operations/app-management/app.js`; categories and platform detection in `operations/app-management/ingestion/submission.js`. After manual catalog edits, run `node operations/app-management/app.js validate`.
 
 ## Discord
 
@@ -33,13 +27,14 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 - `operations/app-management/` — Community app catalog and automation
 - `operations/` — Internal dashboards, monitoring, economics, and infrastructure
 - `operations/social/` — Discord/Reddit/GitHub automation
+- `operations/community-monitor/` — Community model monitor agent; runs with the Discord bots on the `monitoring-agents` EC2 box (see `operations/infrastructure/gpu/GPU_INSTANCES.md`)
 
 ## API Gateway
 
 Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for auth/billing.
 
 - Auth: `pk_` (frontend), `sk_` (backend). Keys: https://enter.pollinations.ai/keys
-- Billing: Pollen credits ($1 ≈ 1 Pollen).
+- Billing: Pollen credits ($1 ≈ 1 Pollen). API reference: `APIDOCS.md`; service operations: `.claude/skills/enter-services/SKILL.md`.
 - Pack checkout: Stripe. Polar is retired from runtime; do not add Polar SDKs,
   Worker bindings, webhooks, or automated writes. Historical Polar handling
   (pre-Stripe pack revenue, Nov 2025–Jan 2026) lives in the Economics provider
@@ -55,21 +50,14 @@ Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for
 
 Run `npm run dev` per service: enter on `3000` (API at `/api/*`), gen on `8788` (including image API tests).
 
+Staging databases are disposable. Migrate, clear, or recreate staging data as needed for the task without repeated confirmation; verify the target is staging first. Production data and secret changes retain their separate approval rules.
+
 Local API test:
 
 ```bash
 curl "http://localhost:8788/image/test?model=flux" -H "Authorization: Bearer $TOKEN"
 curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKEN" ...
 ```
-
-## API Quick Reference
-
-- Image: `GET gen.pollinations.ai/image/{prompt}` (bearer token)
-- Text (OpenAI): `POST gen.pollinations.ai/v1/chat/completions` with `{model, messages}` (bearer token)
-- Simple text: `GET gen.pollinations.ai/text/{prompt}?key=...`
-- Audio: `GET gen.pollinations.ai/audio/{text}?voice=nova&key=...`
-- Models: `/image/models`, `/v1/models`
-- See `./APIDOCS.md`, `.claude/skills/enter-services/SKILL.md`
 
 ## Durable Media Requests
 
@@ -79,12 +67,16 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Prove identical-request disconnect/rejoin, one upstream execution, completed
   R2 cache retrieval, one wallet debit, and one billed Tinybird event.
 
-## YAGNI — You Aren't Gonna Need It (CRITICAL)
+## Coding Principles — Simplicity & Radical YAGNI (CRITICAL)
 
-- Only implement what's needed now. Remove unused functions.
-- No speculative abstractions, "just in case" helpers, preemptive test utils/wrappers.
-- No backward-compat fallbacks. When changing tokens/headers/APIs, update all consumers at once.
-- When user says "keep it simple" — one function, one price, one config. Simplest thing that works.
+- Code is debt: implement only what's needed now. Prefer deleting or reusing code over adding it; avoid speculative abstractions, configuration, and helpers.
+- Use plain data and small functions. No classes or inheritance; compose functions and keep side effects at the edges where practical.
+- Prefer declarative tables, configuration, and data transformations when they make behavior clearer. Keep control flow easy to follow; fewer lines do not justify clever or dense code.
+- Keep data flow unidirectional and state ownership explicit. Derive values from their source instead of maintaining synchronized copies.
+- Keep modules loosely coupled with focused responsibilities and explicit inputs/outputs. Keep gateways thin; transform requests only where the actual protocol or provider contract requires it.
+- Reuse existing patterns and one source of truth. Share genuinely common logic without forcing unrelated cases into a generic framework.
+- No legacy compatibility fallbacks or extra runtime guards solely for a brief deployment cutover. Prefer a one-time migration and coordinated consumer updates, then remove obsolete paths.
+- Simplification must preserve required behavior. Check real consumers before deleting code; preserve auth, billing, and meaningful model semantics. Judge success by reduced complexity and correctness, not deleted-line counts alone.
 - Registry-declared fallback pairs are maintainer-owned; do not add runtime price, compatibility, target availability/privacy, or parameter-normalization guards unless a concrete declared pair requires one.
 
 ## Secret Mutation Safety
@@ -125,9 +117,9 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Deploy staging: `tb --cloud --host "$TB_HOST" deployment create --wait --no-allow-destructive-operations`
 - Verify staging: `tb --staging --cloud --host "$TB_HOST" endpoint ls` and `tb --cloud --host "$TB_HOST" deployment ls`
 - Never `tb push` (deprecated). Avoid `tb deploy`; use explicit `deployment create` commands so promotion is never accidental.
-- Never use `--allow-destructive-operations`, `--auto`, or `deployment promote` without explicit permission.
+- Intentional staging migrations/resets within the task may use `--allow-destructive-operations` without further confirmation. Production destructive operations, `--auto`, and `deployment promote` require explicit permission.
 - Verify all consumers within a workspace before modifying a pipe (pipes are NOT cross-workspace; each workspace has its own copy)
-- If validation reports datasource or pipe deletion, stop. Restore the missing definition or ask before deleting; do not override with destructive flags.
+- Investigate datasource or pipe deletions reported by validation. Restore accidentally missing definitions; intentional staging deletions follow the disposable-data rule above. Ask before deleting production resources.
 - Forward materialized views cannot use `UNION`; split sources into separate materialized pipes writing to the same datasource.
 - Timeouts: use `uniq()` not `uniqExact()`; avoid CTE+JOIN; single-pass queries; for large time ranges use `start_date` parameter week-by-week
 - Full procedure: `.claude/skills/tinybird-deploy/SKILL.md`
@@ -152,7 +144,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 - Modern JS/TS, ES modules (all `.js` are ESM). Follow existing formatting. Comment complex logic.
 - Run `npx biome check --write <file>` after edits and before commits.
-- Before implementing or resuming work: read related code, verify API assumptions on the web, check related PRs/issues, and identify next steps.
+- Before implementing or resuming work: read the latest accepted decision and current code, verify API assumptions on the web, and check related PRs/issues. Before reviving old work, check its discussion, close reason, and remaining user-visible gap; an absent feature alone is not evidence that it is needed.
 - Reuse existing logic: search `shared/` for auth, queue, registry, SSE parsing, and retry utilities before writing new ones.
 - Use environment variables for credentials; validate input.
 - When adding a React browser/IIFE bundle, grep bundled dependencies'
@@ -172,7 +164,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 ## Testing
 
-Run `npm run test` with the working directory set to `enter.pollinations.ai` or `gen.pollinations.ai` (Vitest + CF Workers pool). Never use `pytest`. Before enter tests, run `npm run decrypt-vars`.
+For Enter and Gen, run `npm run test` from the service directory (Vitest + CF Workers pool). Before Enter tests, run `npm run decrypt-vars`. For other apps/packages, use their declared test runner and scoped instructions.
 
 Run individually — full suite is slow:
 
@@ -181,8 +173,9 @@ npx vitest run --testNamePattern="name"
 npx vitest run test/file.test.ts
 ```
 
-- Test real code, not mocks — use direct imports. Don't create mock infrastructure.
+- Test real code, not mocks — use direct imports. Don't create mock infrastructure or preemptive test helpers.
 - Read existing tests before adding; prefer extending existing files; follow existing conventions.
+- Test meaningful behavior and concrete regressions. Avoid tests that merely mirror the implementation or hardcode mutable catalog data; keep intentional contract and pricing snapshots.
 - Don't modify test files to make tests pass — fix the code.
 - Snapshots (enter): VCR-style, replayed by default. `TEST_VCR_MODE=record` to record; default `replay-or-record`.
 - Test keys: `enter.pollinations.ai/.testingtokens` contains `ENTER_API_TOKEN_LOCAL`, `ENTER_API_TOKEN_REMOTE`, `ENTER_TOKEN`, `GITHUB_TOKEN`.
@@ -202,10 +195,10 @@ npx vitest run test/file.test.ts
 
 ## Workflow Orchestration
 
-- Plan mode for any non-trivial task (3+ steps or architectural). If things go sideways, STOP and re-plan. Write specs upfront.
-- Delegate to a subagent only for large, genuinely independent tracks of work (e.g. a wide multi-file investigation). Don't delegate what you can finish in a handful of tool calls, and don't use subagents to verify your own work.
+- Plan non-trivial work and re-plan when assumptions change.
+- Delegate only large, independent work; handle small tasks and self-verification locally.
 - For competing community quest implementations, read and follow `.claude/skills/quest-solution-review/SKILL.md`.
-- After user correction: propose an AGENTS.md update capturing the pattern; iterate until mistake rate drops.
+- After a correction, check whether existing guidance already covers it. Propose a narrow update for a repeated pattern or material safety failure; keep one-off product decisions in the relevant issue/PR. Replace superseded guidance instead of adding another rule.
 - Fix reported bugs and failing CI; use logs, errors, or failing tests as evidence.
 
 ## Compact Instructions
@@ -230,6 +223,7 @@ Preserve during compaction: modified files/lines, code/diffs/implementation deta
 
 Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 
+- Explain what changes for the user and why in plain language; use a small before/after table when it makes a comparison easier.
 - PRs: "- Adds X", "- Fix Y"; 3-5 bullets; titles "fix:"/"feat:"/"Add"; no marketing.
 - Issue comments: bullets only; facts not opinions; link code; be direct (no "I think"/"maybe").
 - Code reviews: focus on what needs improving; link specific lines; don't praise fine code or repeat obvious things.
@@ -242,19 +236,10 @@ Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 
 ## GitHub Labels
 
-Only use established labels (check with `mcp1_list_issues`). Don't create new labels ad-hoc; keep names consistent.
+Query current repository labels when needed; use established names rather than creating new labels ad hoc.
 
 ## Contributor Attribution
 
-Commit format:
-
-```
-feat: add feature
-
-Co-authored-by: username <user_id+username@users.noreply.github.com>
-Fixes #issue
-```
-
-- Use "Fixes #issue" or "Addresses #issue" in PRs.
-- Email: `{username} <{user_id}+{username}@users.noreply.github.com>` (user_id from issue API).
+- Link the relevant issue with `Fixes #issue` or `Addresses #issue` in PRs.
+- Credit contributors with `Co-authored-by: {username} <{user_id}+{username}@users.noreply.github.com>` (numeric user ID from the issue API).
 - For publisher-allowlist PRs prompted by an access-request issue, add the requester as a `Co-authored-by` contributor using their numeric GitHub ID.

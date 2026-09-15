@@ -14,7 +14,7 @@ const TINYBIRD_CACHE_TTL = 1800; // 30 minutes
 // Part of the cache key, not the request. A pipe that gains a column keeps
 // serving the old shape for TINYBIRD_CACHE_TTL because a Worker redeploy does
 // not clear the cache — bump this in the same commit as the pipe change.
-const TINYBIRD_CACHE_VERSION = "5";
+const TINYBIRD_CACHE_VERSION = "6";
 
 async function fetchTinybird(
     env: Env["Bindings"],
@@ -152,6 +152,23 @@ kpiRoutes.get("/registrations", async (c) => {
     return c.json({ data: result.data });
 });
 
+kpiRoutes.get("/registrations/daily", async (c) => {
+    const result = await fetchTinybird(c.env, "kpi_registrations", {
+        granularity: "day",
+        min_created_at: (Math.floor(Date.now() / 86400000) - 14) * 86400,
+    });
+    if (result.error) return c.json({ error: result.error, data: [] }, 500);
+    // An older pipe ignores granularity and returns weekly rows. Never render
+    // that as a week of zero signups while the Tinybird update is pending.
+    if (result.data.some((row) => !row || !("date" in Object(row)))) {
+        return c.json(
+            { error: "Daily registrations are unavailable", data: [] },
+            503,
+        );
+    }
+    return c.json({ data: result.data });
+});
+
 // D7 Activations: users who made their first API request within 7 days of registration
 // Fully computed in Tinybird by joining d1_user with generation_event_v2
 kpiRoutes.get("/activations", async (c) => {
@@ -189,6 +206,20 @@ kpiRoutes.get("/usage", async (c) => {
         "weekly_usage_stats",
         parseWeeksBack(c),
     );
+    return c.json({ data: result.data });
+});
+
+// Tinybird: Agent/MCP usage — separate from existing model KPIs.
+kpiRoutes.get("/agent-mcp-usage", async (c) => {
+    const result = await fetchTinybirdByWeek(
+        c.env,
+        "weekly_agent_mcp_usage",
+        parseWeeksBack(c),
+    );
+    // A missing pipe or failed week is unavailable, not zero activity.
+    if (result.errors.length) {
+        return c.json({ error: "Agent/MCP usage unavailable", data: [] }, 503);
+    }
     return c.json({ data: result.data });
 });
 
@@ -270,6 +301,15 @@ kpiRoutes.get("/revenue", async (c) => {
     );
 
     return c.json({ data: result });
+});
+
+// Tinybird: Daily Stripe revenue for this week versus the same days last week.
+kpiRoutes.get("/revenue/daily", async (c) => {
+    const result = await fetchTinybird(c.env, "daily_stripe_revenue", {
+        days_back: 14,
+    });
+    if (result.error) return c.json({ error: result.error, data: [] }, 500);
+    return c.json({ data: result.data });
 });
 
 // Tinybird: B2B/B2C User Segments — fetched week-by-week to avoid 10s timeout

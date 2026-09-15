@@ -86,6 +86,7 @@ export function createReviewServices() {
                     "/v0/pipes/developer_earnings_today.json",
                     "/v0/pipes/quest_model_modalities.json",
                     "/v0/pipes/quest_app_usage.json",
+                    "/v0/pipes/quest_agent_usage.json",
                     "/v0/pipes/app_directory_public.json",
                 ].includes(url.pathname)
             )

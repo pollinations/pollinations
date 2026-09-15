@@ -6,6 +6,7 @@ import {
     ExternalLinkIcon,
     KeyIcon,
     SignOutIcon,
+    SproutIcon,
     WalletIcon,
 } from "../../primitives/icons/index.tsx";
 import { Surface } from "../../primitives/Surface.tsx";
@@ -22,6 +23,8 @@ export type AppUserMenuLabels = {
     checkingConnection: string;
     connectionCheckError: string;
     retryConnection: string;
+    getFreePollen: string;
+    topUpAccount: string;
 };
 const defaultLabels: AppUserMenuLabels = {
     authorize: "Connect with Pollinations",
@@ -33,6 +36,8 @@ const defaultLabels: AppUserMenuLabels = {
     checkingConnection: "Checking connection…",
     connectionCheckError: "Couldn’t check your connection.",
     retryConnection: "Try again",
+    getFreePollen: "Get free Pollen",
+    topUpAccount: "Buy Pollen",
 };
 
 export type AppAccountState = "loading" | "account-error";
@@ -127,6 +132,8 @@ export type AppUserMenuViewProps = {
     editKeyHref?: string;
     walletHref?: string;
     dashboardHref?: string;
+    questsHref?: string;
+    onTopUpKey?: () => void;
     labels?: Partial<AppUserMenuLabels>;
 };
 
@@ -140,6 +147,8 @@ export function AppUserMenuView({
     editKeyHref,
     walletHref,
     dashboardHref,
+    questsHref,
+    onTopUpKey,
     labels: overrides,
 }: AppUserMenuViewProps) {
     const labels = { ...defaultLabels, ...overrides };
@@ -168,6 +177,30 @@ export function AppUserMenuView({
         >
             {(close) => (
                 <>
+                    {onTopUpKey && (
+                        <DropdownItem
+                            onClick={() => {
+                                close();
+                                onTopUpKey();
+                            }}
+                        >
+                            <KeyIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
+                            Add Pollen
+                        </DropdownItem>
+                    )}
+                    {questsHref && (
+                        <DropdownItem
+                            as="a"
+                            href={questsHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={close}
+                        >
+                            <SproutIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
+                            {labels.getFreePollen}
+                            <ExternalLinkIcon className="polli:ml-auto polli:h-3.5 polli:w-3.5" />
+                        </DropdownItem>
+                    )}
                     {editKeyHref && (
                         <DropdownItem
                             as="a"
@@ -199,7 +232,7 @@ export function AppUserMenuView({
                                 aria-hidden="true"
                                 className="polli:h-4 polli:w-4 polli:shrink-0"
                             />
-                            {labels.wallet}
+                            {overrides?.topUpAccount ?? labels.wallet}
                             <ExternalLinkIcon
                                 aria-hidden="true"
                                 className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"

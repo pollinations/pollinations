@@ -37,6 +37,7 @@ export function ModelListingFields({
     canPublish,
     isAgent,
     allowPerUserRpm,
+    hideIdentity = false,
     required = true,
     onChange,
     onInputModalitiesChange,
@@ -47,6 +48,7 @@ export function ModelListingFields({
     canPublish: boolean;
     isAgent: boolean;
     allowPerUserRpm: boolean;
+    hideIdentity?: boolean;
     required?: boolean;
     onChange: (key: ListingTextField, value: string) => void;
     onInputModalitiesChange?: (value: ModelInputModality[]) => void;
@@ -112,86 +114,99 @@ export function ModelListingFields({
                 </FieldStack>
             )}
 
-            <div className="grid gap-4 sm:grid-cols-2">
-                <FieldStack
-                    label={isAgent ? "ID" : "Model ID"}
-                    helper={
-                        isAgent ? (
-                            "Public ID: {username}/{id}."
-                        ) : (
-                            <>
-                                Public ID: {"{username}"}/{"{model-id}"}.{" "}
-                                <InlineLink
-                                    href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_MODEL.md#model-names"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                >
-                                    Naming tips
-                                </InlineLink>
-                                .
-                            </>
-                        )
-                    }
-                    alignLabelRow
-                >
-                    <Field.Input asChild>
-                        <Input
-                            name="community-model-name"
-                            value={form.name}
-                            placeholder={isAgent ? "my-agent" : "my-model"}
-                            autoComplete="off"
-                            autoCapitalize="none"
-                            spellCheck={false}
-                            required={required}
-                            onChange={(event) =>
-                                onChange("name", event.target.value)
+            {!hideIdentity && (
+                <>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <FieldStack
+                            label={isAgent ? "ID" : "Model ID"}
+                            helper={
+                                isAgent ? (
+                                    "Public ID: {username}/{id}."
+                                ) : (
+                                    <>
+                                        Public ID: {"{username}"}/{"{model-id}"}
+                                        .{" "}
+                                        <InlineLink
+                                            href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_MODEL.md#model-names"
+                                            target="_blank"
+                                            rel="noreferrer"
+                                        >
+                                            Naming tips
+                                        </InlineLink>
+                                        .
+                                    </>
+                                )
                             }
-                        />
-                    </Field.Input>
-                </FieldStack>
-                <FieldStack label="Title" alignLabelRow>
-                    <Field.Input asChild>
-                        <Input
-                            name="community-model-title"
-                            value={form.title}
-                            placeholder={isAgent ? "My Agent" : "My Model"}
-                            autoComplete="off"
-                            maxLength={COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH}
-                            required={required}
-                            onChange={(event) =>
-                                onChange("title", event.target.value)
-                            }
-                        />
-                    </Field.Input>
-                </FieldStack>
-            </div>
+                            alignLabelRow
+                        >
+                            <Field.Input asChild>
+                                <Input
+                                    name="community-model-name"
+                                    value={form.name}
+                                    placeholder={
+                                        isAgent ? "my-agent" : "my-model"
+                                    }
+                                    autoComplete="off"
+                                    autoCapitalize="none"
+                                    spellCheck={false}
+                                    required={required}
+                                    onChange={(event) =>
+                                        onChange("name", event.target.value)
+                                    }
+                                />
+                            </Field.Input>
+                        </FieldStack>
+                        <FieldStack label="Title" alignLabelRow>
+                            <Field.Input asChild>
+                                <Input
+                                    name="community-model-title"
+                                    value={form.title}
+                                    placeholder={
+                                        isAgent ? "My Agent" : "My Model"
+                                    }
+                                    autoComplete="off"
+                                    maxLength={
+                                        COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH
+                                    }
+                                    required={required}
+                                    onChange={(event) =>
+                                        onChange("title", event.target.value)
+                                    }
+                                />
+                            </Field.Input>
+                        </FieldStack>
+                    </div>
 
-            <FieldStack
-                label="Description"
-                helper={
-                    isAgent
-                        ? "Optional. What the agent does."
-                        : "Optional. What the model does."
-                }
-                alignLabelRow
-            >
-                <Field.Input asChild>
-                    <Input
-                        name="community-model-description"
-                        value={form.description}
-                        placeholder={
+                    <FieldStack
+                        label="Description"
+                        helper={
                             isAgent
-                                ? "Research assistant with web tools"
-                                : "Fast coding model, long context"
+                                ? "Optional. What the agent does."
+                                : "Optional. What the model does."
                         }
-                        autoComplete="off"
-                        maxLength={COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH}
-                        onChange={(event) =>
-                            onChange("description", event.target.value)
-                        }
-                    />
-                </Field.Input>
-            </FieldStack>
+                        alignLabelRow
+                    >
+                        <Field.Input asChild>
+                            <Input
+                                name="community-model-description"
+                                value={form.description}
+                                placeholder={
+                                    isAgent
+                                        ? "Research assistant with web tools"
+                                        : "Fast coding model, long context"
+                                }
+                                autoComplete="off"
+                                maxLength={
+                                    COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH
+                                }
+                                onChange={(event) =>
+                                    onChange("description", event.target.value)
+                                }
+                            />
+                        </Field.Input>
+                    </FieldStack>
+                </>
+            )}
 
             <FieldStack
                 label="Visibility"

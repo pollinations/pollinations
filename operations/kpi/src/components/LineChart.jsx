@@ -103,7 +103,13 @@ function niceScale(values) {
  * Only the dual-axis chart needs this; it trades some fit for that alignment.
  */
 function alignedScale(values) {
-    if (values.length === 0) return { lo: 0, hi: 1, ticks: [0, 1] };
+    if (values.length === 0)
+        return {
+            lo: 0,
+            hi: TICKS,
+            step: 1,
+            ticks: Array.from({ length: TICKS + 1 }, (_, i) => i),
+        };
     const { min, max } = dataWindow(values);
     let step = niceStep((max - min) / TICKS);
     const floorAt = (size) => {
@@ -120,10 +126,10 @@ function alignedScale(values) {
 }
 
 /**
- * Weekly line chart.
+ * Line chart with optional shared axes for multiple series.
  *
- * `dualAxis` gives the two series their own y-scale — first series on the left
- * axis, second on the right. Read each line against its own axis: the two
+ * `dualAxis` groups series by `axis` (0 = left, 1 = right).
+ * Read each line against its own axis: the two
  * scales are independent, so where the lines cross carries no meaning.
  */
 export function LineChart({
@@ -133,11 +139,17 @@ export function LineChart({
     format = "number",
     dualAxis = false,
     action,
+    xLabel = (row) => weekLabel(row.week),
+    xAxisUnit = "week",
+    axisLabels,
 }) {
     const [ref, width] = useElementWidth();
     const [hover, setHover] = useState(null);
 
-    const dual = dualAxis && series.length === 2;
+    const dual = dualAxis;
+    const axisOf = (item) => (dual ? (item.axis ?? 0) : 0);
+    const colorOf = (item, index) =>
+        item.color ?? SERIES_COLORS[index % SERIES_COLORS.length];
     const pad = dual ? DUAL_PAD : PAD;
     const points = data.filter((row) => row.week);
     const plotWidth = Math.max(width - pad.left - pad.right, 10);
@@ -150,9 +162,18 @@ export function LineChart({
     // One scale per axis. Both end up with TICKS intervals, so the right-hand
     // labels land on the same gridlines as the left-hand ones.
     const scales = dual
-        ? series.map((item) => alignedScale(valuesOf(item)))
+        ? [0, 1].map((axis) =>
+              alignedScale(
+                  series
+                      .filter((item) => axisOf(item) === axis)
+                      .flatMap(valuesOf),
+              ),
+          )
         : [niceScale(series.flatMap(valuesOf))];
-    const scaleOf = (index) => scales[dual ? index : 0];
+    const scaleOf = (index) => scales[axisOf(series[index])];
+    const axisSeries = [0, 1].map((axis) =>
+        series.find((item) => axisOf(item) === axis),
+    );
 
     const xAt = (index) =>
         pad.left +
@@ -206,9 +227,9 @@ export function LineChart({
     // Axis ticks wear the format of the series they belong to. Percentages get
     // as many decimals as the step needs — availability sits between 99% and
     // 100%, and whole-number ticks there would all read the same.
-    const axisLabel = (tick, seriesIndex) => {
-        const scale = scaleOf(seriesIndex);
-        const tickFormat = dual ? formatOf(series[seriesIndex]) : format;
+    const axisLabel = (tick, axisIndex) => {
+        const scale = scales[axisIndex];
+        const tickFormat = dual ? formatOf(axisSeries[axisIndex]) : format;
         if (
             tickFormat === "percent" ||
             tickFormat === "percentPrecise" ||
@@ -224,7 +245,7 @@ export function LineChart({
         );
     };
 
-    const xLabelStep = Math.ceil(points.length / 6);
+    const xLabelStep = Math.ceil(points.length / 7);
 
     return (
         <Surface className="flex flex-col gap-3">
@@ -244,12 +265,20 @@ export function LineChart({
                         >
                             <span
                                 aria-hidden="true"
-                                className="h-2 w-2 rounded-[2px]"
-                                style={{ background: SERIES_COLORS[index] }}
+                                className="w-5 border-t-2"
+                                style={{
+                                    borderColor: colorOf(item, index),
+                                    borderStyle: item.dashed
+                                        ? "dashed"
+                                        : "solid",
+                                }}
                             />
                             <Text as="span" size="xs" tone="muted">
                                 {item.label}
-                                {dual && (index === 0 ? " (left)" : " (right)")}
+                                {dual &&
+                                    (axisOf(item) === 0
+                                        ? " (left)"
+                                        : " (right)")}
                             </Text>
                         </span>
                     ))}
@@ -262,7 +291,7 @@ export function LineChart({
                         width={width}
                         height={HEIGHT}
                         role="img"
-                        aria-label={`${title}: ${series.map((item) => item.label).join(", ")} by week`}
+                        aria-label={`${title}: ${series.map((item) => item.label).join(", ")} by ${xAxisUnit}`}
                         onPointerLeave={() => setHover(null)}
                         onPointerMove={(event) => {
                             const bounds =
@@ -321,7 +350,7 @@ export function LineChart({
                                     textAnchor="middle"
                                     className="fill-theme-text-muted text-[10px] tabular-nums"
                                 >
-                                    {weekLabel(row.week)}
+                                    {xLabel(row)}
                                 </text>
                             ) : null,
                         )}
@@ -343,7 +372,10 @@ export function LineChart({
                                 key={item.key}
                                 d={pathFor(item, index)}
                                 fill="none"
-                                stroke={SERIES_COLORS[index]}
+                                stroke={colorOf(item, index)}
+                                strokeDasharray={
+                                    item.dashed ? "6 4" : undefined
+                                }
                                 strokeWidth={2}
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -359,7 +391,7 @@ export function LineChart({
                                         cx={xAt(pointIndex)}
                                         cy={yAt(value, index)}
                                         r={hover === pointIndex ? 4 : 2.5}
-                                        fill={SERIES_COLORS[index]}
+                                        fill={colorOf(item, index)}
                                         className="stroke-surface-opaque"
                                         strokeWidth={
                                             hover === pointIndex ? 2 : 0
@@ -384,16 +416,16 @@ export function LineChart({
 
                 {hover != null && points[hover] && (
                     <div
-                        className="pointer-events-none absolute top-2 z-10 rounded-lg bg-theme-bg-pale px-2 py-1.5 shadow-well"
+                        className="pointer-events-none absolute top-2 z-10 w-64 max-w-full rounded-lg bg-theme-bg-pale px-2 py-1.5 shadow-well"
                         style={{
                             left: Math.min(
-                                Math.max(xAt(hover) - 60, 0),
-                                Math.max(width - 140, 0),
+                                Math.max(xAt(hover) - 128, 0),
+                                Math.max(width - 256, 0),
                             ),
                         }}
                     >
                         <Text as="div" size="micro" tone="muted" weight="bold">
-                            {weekLabel(points[hover].week)}
+                            {xLabel(points[hover])}
                         </Text>
                         {series.map((item, index) => (
                             <div
@@ -403,7 +435,7 @@ export function LineChart({
                                 <span
                                     aria-hidden="true"
                                     className="h-2 w-2 shrink-0 rounded-[2px]"
-                                    style={{ background: SERIES_COLORS[index] }}
+                                    style={{ background: colorOf(item, index) }}
                                 />
                                 <Text as="span" size="xs" tone="muted">
                                     {item.label}
@@ -428,9 +460,10 @@ export function LineChart({
 
             {dual ? (
                 <Text as="p" size="micro" tone="muted">
-                    Two scales: {series[0].label} on the left axis,{" "}
-                    {series[1].label} on the right. Read each line against its
-                    own axis — where they cross means nothing.
+                    Two scales: {axisLabels?.[0] ?? axisSeries[0].label} on the
+                    left axis, {axisLabels?.[1] ?? axisSeries[1].label} on the
+                    right. Read each line against its own axis — where they
+                    cross means nothing.
                 </Text>
             ) : (
                 scales[0].lo > 0 && (

@@ -91,6 +91,69 @@ describe("runInferenceport", () => {
         expect(jobInit.body).toBeUndefined();
     });
 
+    it("retries a 524 status check for the same job without resubmitting", async () => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(submitResponse())
+            .mockResolvedValueOnce(new Response("Timed out", { status: 524 }))
+            .mockResolvedValueOnce(
+                jobResponse("completed", {
+                    data: [{ model_ply_b64_bytes: "Zm9v" }],
+                }),
+            );
+
+        const result = await runInferenceport({
+            model: "asset-harvester",
+            imageUrls: ["https://example.com/a.jpg"],
+        });
+
+        expect(result.plyBase64).toBe("Zm9v");
+        expect(
+            fetchSpy.mock.calls.map(([url, init]) => [url, init?.method]),
+        ).toEqual([
+            [SUBMIT_URL, "POST"],
+            [JOB_URL, "GET"],
+            [JOB_URL, "GET"],
+        ]);
+    }, 10_000);
+
+    it.each([
+        ["submission", 524, 1],
+        ["poll", 401, 2],
+    ] as const)("does not retry a %s HTTP %i error", async (_stage, status, calls) => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        if (calls === 2) fetchSpy.mockResolvedValueOnce(submitResponse());
+        fetchSpy.mockResolvedValue(new Response("Failed", { status }));
+
+        await expect(
+            runInferenceport({
+                model: "asset-harvester",
+                imageUrls: ["https://example.com/a.jpg"],
+            }),
+        ).rejects.toBeInstanceOf(InferenceportError);
+        expect(fetchSpy).toHaveBeenCalledTimes(calls);
+    });
+
+    it("does not extend the deadline after a polling error", async () => {
+        let now = 0;
+        vi.spyOn(Date, "now").mockImplementation(() => now);
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(submitResponse())
+            .mockImplementationOnce(async () => {
+                now = 300_000;
+                return new Response("Timed out", { status: 524 });
+            });
+
+        await expect(
+            runInferenceport({
+                model: "asset-harvester",
+                imageUrls: ["https://example.com/a.jpg"],
+            }),
+        ).rejects.toMatchObject({ status: 504 });
+        expect(fetchSpy).toHaveBeenCalledTimes(2);
+    });
+
     it("throws when submission has no job ID", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             Response.json({ status: "pending" }, { status: 202 }),

@@ -1,5 +1,9 @@
 import { env, SELF } from "cloudflare:test";
 import { INVALID_AUTHORIZATION_CLIENT_MESSAGE } from "@shared/auth/authorize-config.ts";
+import {
+    communityModelId,
+    legacyCommunityModelId,
+} from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -993,46 +997,47 @@ describe("API Key Management", () => {
             expect(response.headers.get("pragma")).toBe("no-cache");
         });
 
-        test("should canonicalize model aliases while preserving unknown permissions", async ({
+        test("rejects aliases and unknown IDs on key create and update without changing permissions", async ({
             sessionToken,
         }) => {
+            const canonical = "black-forest-labs/flux.1-schnell";
             const created = await createApiKeyViaApi(sessionToken, {
-                name: "key-with-alias-and-unknown-model",
-                allowedModels: [
-                    "flux",
-                    "nanobanana2",
-                    "gpt-realtime-2",
-                    "retired-model",
-                ],
+                name: "canonical-only-permissions",
+                allowedModels: [canonical],
             });
-
-            const response = await SELF.fetch(
-                "http://localhost:3000/api/api-keys",
-                {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
-            );
-
-            expect(response.status).toBe(200);
-            const body = (await response.json()) as ApiKeyListResponse;
-            const listed = body.data.find((key) => key.id === created.id);
-            expect(listed?.permissions?.models).toEqual([
-                "black-forest-labs/flux.1-schnell",
-                "google/gemini-3.1-flash-image",
-                "openai/gpt-realtime-2.1",
-            ]);
-
+            const headers = {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            };
+            for (const model of ["flux", "nanobanana2", "retired-model"]) {
+                for (const path of [
+                    "/api/api-keys",
+                    `/api/api-keys/${created.id}/update`,
+                ]) {
+                    const response = await SELF.fetch(
+                        `http://localhost:3000${path}`,
+                        {
+                            method: "POST",
+                            headers,
+                            body: JSON.stringify({
+                                name: "invalid-model",
+                                type: "secret",
+                                allowedModels: [model],
+                            }),
+                        },
+                    );
+                    expect(response.status).toBe(400);
+                    expect(JSON.stringify(await response.json())).toContain(
+                        "not a canonical model ID",
+                    );
+                }
+            }
             const db = drizzle(env.DB, { schema });
             const stored = await db.query.apikey.findFirst({
                 where: (apikey, { eq }) => eq(apikey.id, created.id),
             });
             expect(JSON.parse(stored?.permissions ?? "{}").models).toEqual([
-                "black-forest-labs/flux.1-schnell",
-                "google/gemini-3.1-flash-image",
-                "openai/gpt-realtime-2.1",
-                "retired-model",
+                canonical,
             ]);
         });
 
@@ -1041,10 +1046,6 @@ describe("API Key Management", () => {
         }) => {
             const created = await createApiKeyViaApi(sessionToken, {
                 name: "key-with-private-community-models",
-                allowedModels: [
-                    "model-owner/private-model",
-                    "other-owner/private-model",
-                ],
             });
             const db = drizzle(env.DB, { schema });
             const key = await db.query.apikey.findFirst({
@@ -1109,6 +1110,41 @@ describe("API Key Management", () => {
                 },
             ]);
 
+            const headers = {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            };
+            const update = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${created.id}/update`,
+                {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify({
+                        allowedModels: [
+                            communityModelId("model-owner", "private-model"),
+                            communityModelId("other-owner", "private-model"),
+                        ],
+                    }),
+                },
+            );
+            expect(update.status).toBe(200);
+            const aliasUpdate = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${created.id}/update`,
+                {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify({
+                        allowedModels: [
+                            legacyCommunityModelId(
+                                "model-owner",
+                                "private-model",
+                            ),
+                        ],
+                    }),
+                },
+            );
+            expect(aliasUpdate.status).toBe(400);
+
             const response = await SELF.fetch(
                 "http://localhost:3000/api/api-keys",
                 {
@@ -1122,7 +1158,7 @@ describe("API Key Management", () => {
             const body = (await response.json()) as ApiKeyListResponse;
             const listed = body.data.find((item) => item.id === created.id);
             expect(listed?.permissions?.models).toEqual([
-                "model-owner/private-model",
+                "community/model-owner/private-model",
             ]);
         });
 
@@ -1204,7 +1240,11 @@ describe("API Key Management", () => {
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
                     body: JSON.stringify({
-                        allowedModels: ["flux", "nanobanana2", "nanobanana-2"],
+                        allowedModels: [
+                            "black-forest-labs/flux.1-schnell",
+                            "google/gemini-3.1-flash-image",
+                            "google/gemini-3.1-flash-image",
+                        ],
                         accountPermissions: ["profile", "usage"],
                     }),
                 },
@@ -1250,7 +1290,7 @@ describe("API Key Management", () => {
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
                     body: JSON.stringify({
-                        allowedModels: ["flux"],
+                        allowedModels: ["black-forest-labs/flux.1-schnell"],
                     }),
                 },
             );
@@ -1389,9 +1429,16 @@ describe("API Key Management", () => {
             // Create a new key
             const createdKey = await createApiKeyViaApi(sessionToken, {
                 name: "budget-test",
-                allowedModels: ["flux", "retired-model"],
             });
             const keyId = createdKey.id;
+            await drizzle(env.DB)
+                .update(schema.apikey)
+                .set({
+                    permissions: JSON.stringify({
+                        models: ["flux", "retired-model"],
+                    }),
+                })
+                .where(eq(schema.apikey.id, keyId));
 
             // Set budget to 50
             const updateResponse = await SELF.fetch(
@@ -1494,7 +1541,7 @@ describe("API Key Management", () => {
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
                     body: JSON.stringify({
-                        allowedModels: ["flux"],
+                        allowedModels: ["black-forest-labs/flux.1-schnell"],
                         accountPermissions: ["usage"],
                     }),
                 },
@@ -1614,7 +1661,7 @@ describe("API Key Management", () => {
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
                     body: JSON.stringify({
-                        allowedModels: ["openai"],
+                        allowedModels: ["openai/gpt-5.4-nano"],
                     }),
                 },
             );

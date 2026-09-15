@@ -1,9 +1,13 @@
 import {
     Button,
+    ButtonGroup,
+    CheckIcon,
     Dialog,
     DialogTitle,
+    FieldStack,
     Heading,
     ScrollArea,
+    TabButton,
     Text,
 } from "@pollinations/ui";
 import {
@@ -13,50 +17,36 @@ import {
 } from "@pollinations/ui/auth";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
+import { CodeAgentFields } from "./code-agent-fields.tsx";
 import { ModelListingFields } from "./model-listing-fields.tsx";
 import { PromptAgentFields } from "./prompt-agent-fields.tsx";
 import { SafetyFeatureSelector } from "./safety-feature-selector.tsx";
 import {
     type AgentFormState,
-    type AgentListingDetailsPayload,
-    type AgentPayload,
-    agentListingToForm,
-    emptyAgentForm,
+    agentToForm,
     type ManagedAgent,
-    type ModelListingFormState,
-    type PromptAgentCommunityEndpoint,
-    toAgentListingPayload,
-    toAgentPayload,
 } from "./types.ts";
-
-type AgentDialogFormState = AgentFormState & ModelListingFormState;
 
 type AgentDialogProps = {
     agent?: ManagedAgent;
-    endpoint?: PromptAgentCommunityEndpoint;
     canPublish: boolean;
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onSubmit: (
-        agent: AgentPayload,
-        listing: AgentListingDetailsPayload,
-    ) => Promise<void>;
+    onSubmit: (form: AgentFormState) => Promise<void>;
+    onSync?: () => Promise<void>;
     trigger?: ReactNode;
 };
 
 export function AgentDialog({
     agent,
-    endpoint,
     canPublish,
     open,
     onOpenChange,
     onSubmit,
+    onSync,
     trigger,
 }: AgentDialogProps) {
-    const [form, setForm] = useState<AgentDialogFormState>(() => ({
-        ...agentListingToForm(),
-        ...emptyAgentForm,
-    }));
+    const [form, setForm] = useState(() => agentToForm(agent));
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const errorRef = useRef<HTMLDivElement>(null);
@@ -64,22 +54,16 @@ export function AgentDialog({
     useEffect(() => {
         if (error) errorRef.current?.scrollIntoView({ block: "nearest" });
     }, [error]);
+    const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "synced">(
+        "idle",
+    );
 
     useEffect(() => {
-        setForm({
-            ...agentListingToForm(open ? endpoint : undefined),
-            ...(open && agent
-                ? {
-                      systemPrompt: agent.systemPrompt,
-                      baseModel: agent.baseModel,
-                      requiredSafetyFeatures: agent.requiredSafetyFeatures,
-                      mcpServers: agent.mcpServers,
-                  }
-                : emptyAgentForm),
-        });
+        setForm(agentToForm(open ? agent : undefined));
         setError(null);
         setIsSubmitting(false);
-    }, [open, agent, endpoint]);
+        setSyncStatus("idle");
+    }, [open, agent]);
 
     function updateAgentForm(
         key: keyof AgentFormState,
@@ -93,7 +77,7 @@ export function AgentDialog({
         setIsSubmitting(true);
         setError(null);
         try {
-            await onSubmit(toAgentPayload(form), toAgentListingPayload(form));
+            await onSubmit(form);
             onOpenChange(false);
         } catch (thrown) {
             setError(
@@ -104,13 +88,32 @@ export function AgentDialog({
         }
     }
 
+    async function handleSync(): Promise<void> {
+        if (!onSync) return;
+        setSyncStatus("syncing");
+        setError(null);
+        try {
+            await onSync();
+            setSyncStatus("synced");
+        } catch (thrown) {
+            setSyncStatus("idle");
+            setError(
+                thrown instanceof Error ? thrown.message : "Agent sync failed",
+            );
+        }
+    }
+
+    const hasRuntimeConfiguration =
+        form.type === "code_agent"
+            ? form.repository.trim() !== ""
+            : form.systemPrompt.trim() !== "" && form.baseModel.trim() !== "";
     const canSubmit =
         !isSubmitting &&
-        form.name.trim() !== "" &&
-        form.title.trim() !== "" &&
-        form.systemPrompt.trim() !== "" &&
-        form.baseModel.trim() !== "";
-    const submitLabel = endpoint
+        syncStatus !== "syncing" &&
+        (form.type === "code_agent" ||
+            (form.name.trim() !== "" && form.title.trim() !== "")) &&
+        hasRuntimeConfiguration;
+    const submitLabel = agent
         ? "Save Agent"
         : form.visibility === "public"
           ? "Publish Agent"
@@ -120,7 +123,8 @@ export function AgentDialog({
         <Dialog
             open={open}
             onOpenChange={(nextOpen) => {
-                if (nextOpen || !isSubmitting) onOpenChange(nextOpen);
+                if (nextOpen || (!isSubmitting && syncStatus !== "syncing"))
+                    onOpenChange(nextOpen);
             }}
             size="md"
             trigger={trigger}
@@ -137,7 +141,7 @@ export function AgentDialog({
                     weight="semibold"
                     className="polli:mt-1 polli:tracking-wide"
                 >
-                    Choose its instructions, model, and tools.
+                    Choose a prompt and model, or deploy code from GitHub.
                 </Text>
             </div>
             <form
@@ -145,16 +149,64 @@ export function AgentDialog({
                 className="flex min-h-0 flex-1 flex-col"
                 autoComplete="off"
             >
-                <ScrollArea className="min-h-0 flex-1 overscroll-contain px-6 pb-2 touch-pan-y [-webkit-overflow-scrolling:touch]">
+                <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2">
+                    {error && (
+                        <div ref={errorRef}>
+                            <ErrorBanner>{error}</ErrorBanner>
+                        </div>
+                    )}
+
                     <fieldset
-                        disabled={isSubmitting}
-                        className="min-w-0 space-y-3"
+                        disabled={isSubmitting || syncStatus === "syncing"}
+                        className="min-w-0 space-y-4"
                     >
-                        {error && (
-                            <div ref={errorRef}>
-                                <ErrorBanner>{error}</ErrorBanner>
-                            </div>
+                        {!agent && (
+                            <FieldStack
+                                label="Agent type"
+                                helper={
+                                    "Use a prompt and model, or deploy code from GitHub."
+                                }
+                                alignLabelRow
+                            >
+                                <ButtonGroup aria-label="Agent type">
+                                    <TabButton
+                                        active={form.type === "prompt_agent"}
+                                        disabled={isSubmitting}
+                                        onClick={() =>
+                                            setForm((current) => ({
+                                                ...current,
+                                                type: "prompt_agent",
+                                            }))
+                                        }
+                                        size="sm"
+                                        className="min-w-28 gap-1.5"
+                                    >
+                                        {form.type === "prompt_agent" && (
+                                            <CheckIcon className="h-3.5 w-3.5" />
+                                        )}
+                                        Prompt agent
+                                    </TabButton>
+                                    <TabButton
+                                        active={form.type === "code_agent"}
+                                        disabled={isSubmitting}
+                                        onClick={() =>
+                                            setForm((current) => ({
+                                                ...current,
+                                                type: "code_agent",
+                                            }))
+                                        }
+                                        size="sm"
+                                        className="min-w-28 gap-1.5"
+                                    >
+                                        {form.type === "code_agent" && (
+                                            <CheckIcon className="h-3.5 w-3.5" />
+                                        )}
+                                        Code agent
+                                    </TabButton>
+                                </ButtonGroup>
+                            </FieldStack>
                         )}
+
                         <AuthInfoCard title={null}>
                             <ModelListingFields
                                 form={form}
@@ -162,6 +214,7 @@ export function AgentDialog({
                                 canPublish={canPublish}
                                 isAgent
                                 allowPerUserRpm={false}
+                                hideIdentity={form.type === "code_agent"}
                                 required
                                 onChange={(key, value) =>
                                     setForm((current) => ({
@@ -171,11 +224,57 @@ export function AgentDialog({
                                 }
                             />
                         </AuthInfoCard>
-                        <PromptAgentFields
-                            form={form}
-                            disabled={isSubmitting}
-                            onChange={updateAgentForm}
-                        />
+
+                        {form.type === "code_agent" && (
+                            <p className="text-sm text-theme-text-muted">
+                                The repository name becomes the model ID and
+                                title. Its description becomes the catalog
+                                description.
+                            </p>
+                        )}
+
+                        <div className="space-y-3">
+                            {form.type === "code_agent" ? (
+                                <CodeAgentFields
+                                    form={form}
+                                    disabled={isSubmitting || !!agent}
+                                    onChange={(field, value) =>
+                                        setForm((current) => ({
+                                            ...current,
+                                            [field]: value,
+                                        }))
+                                    }
+                                />
+                            ) : (
+                                <PromptAgentFields
+                                    form={form}
+                                    disabled={isSubmitting}
+                                    onChange={updateAgentForm}
+                                />
+                            )}
+                            {agent?.type === "code_agent" && onSync && (
+                                <div className="flex items-center gap-3">
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        disabled={
+                                            isSubmitting ||
+                                            syncStatus === "syncing"
+                                        }
+                                        onClick={() => void handleSync()}
+                                    >
+                                        {syncStatus === "syncing"
+                                            ? "Syncing…"
+                                            : "Sync from GitHub"}
+                                    </Button>
+                                    {syncStatus === "synced" && (
+                                        <output className="text-sm text-theme-text-muted">
+                                            Synced from GitHub.
+                                        </output>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                         <AuthInfoCard title={null}>
                             <SafetyFeatureSelector
                                 value={form.requiredSafetyFeatures}
@@ -196,7 +295,9 @@ export function AgentDialog({
                             <Button
                                 type="button"
                                 data-theme="neutral"
-                                disabled={isSubmitting}
+                                disabled={
+                                    isSubmitting || syncStatus === "syncing"
+                                }
                                 onClick={() => onOpenChange(false)}
                             >
                                 Cancel

@@ -2,6 +2,7 @@ import { env, SELF } from "cloudflare:test";
 import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    effectiveCommunityEndpointVisibility,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { getVisibleModelIdsForUser } from "@shared/registry/visible-model-ids.ts";
@@ -293,6 +294,86 @@ describe("community endpoint 3-hour price-change delay", () => {
             visibility: "public",
             pending: null,
         });
+    });
+
+    test("only explicit private agent updates cancel queued publication", async ({
+        sessionToken,
+    }) => {
+        await approveCommunityModels();
+        const agentsUrl = "http://localhost:3000/api/account/agents";
+        const headers = {
+            "Content-Type": "application/json",
+            Cookie: `better-auth.session_token=${sessionToken}`,
+        };
+        const config = {
+            systemPrompt: "Answer briefly.",
+            baseModel: "openai",
+        };
+        const createdResponse = await SELF.fetch(agentsUrl, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+                ...config,
+                name: "cancel-prompt-publication",
+                title: "Prompt agent",
+            }),
+        });
+        expect(createdResponse.status).toBe(200);
+        const { id } = await createdResponse.json<{ id: string }>();
+        const queued = await postModel(sessionToken, `/${id}/update`, {
+            visibility: "public",
+        });
+        expect(queued).toMatchObject({
+            visibility: "private",
+            pending: { visibility: "public" },
+        });
+        const db = drizzle(env.DB, { schema });
+        const before = await db.query.communityEndpoint.findFirst({
+            where: eq(schema.communityEndpoint.id, id),
+        });
+
+        const editedResponse = await SELF.fetch(`${agentsUrl}/${id}`, {
+            method: "PATCH",
+            headers,
+            body: JSON.stringify({ ...config, title: "Renamed prompt agent" }),
+        });
+        expect(editedResponse.status).toBe(200);
+        await editedResponse.text();
+        const edited = await db.query.communityEndpoint.findFirst({
+            where: eq(schema.communityEndpoint.id, id),
+        });
+        expect(edited?.pendingVisibility).toBe("public");
+        expect(edited?.pendingAt).toEqual(before?.pendingAt);
+
+        const privateResponse = await SELF.fetch(`${agentsUrl}/${id}`, {
+            method: "PATCH",
+            headers,
+            body: JSON.stringify({ ...config, visibility: "private" }),
+        });
+        expect(privateResponse.status).toBe(200);
+        expect(await privateResponse.json()).toMatchObject({
+            visibility: "private",
+        });
+        const cancelled = await db.query.communityEndpoint.findFirst({
+            where: eq(schema.communityEndpoint.id, id),
+        });
+        if (!cancelled) throw new Error("Agent not found");
+        expect(cancelled).toMatchObject({
+            visibility: "private",
+            pendingVisibility: null,
+            pendingAt: null,
+        });
+        expect(
+            effectiveCommunityEndpointVisibility(
+                cancelled.visibility,
+                cancelled.pendingVisibility,
+                cancelled.pendingAt,
+                Date.now() + COMMUNITY_ENDPOINT_CHANGE_DELAY_MS + 1000,
+            ),
+        ).toBe("private");
+        expect(
+            await getVisibleModelIdsForUser(env.DB, "another-user"),
+        ).not.toContain(queued.modelId);
     });
 
     test("public-to-private is immediate and clears any pending price change", async ({

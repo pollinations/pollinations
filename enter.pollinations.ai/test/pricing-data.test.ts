@@ -207,7 +207,7 @@ test("catalog distinguishes flat image rates from image-token rates", () => {
     expect(nanoPrice?.prices).toContainEqual({
         direction: "output",
         kind: "image",
-        price: "120.0",
+        price: "126.6",
         unit: "token",
     });
 });
@@ -299,6 +299,12 @@ test("Trellis 2 prices selectable resolution tiers", () => {
             resolution: "high",
         }).totalCost,
     ).toBe(0.35);
+});
+
+test("NVIDIA Asset Harvester flat rate pricing", () => {
+    const usage = { completionImageTokens: 1 };
+
+    expect(calculateCost("nvidia/asset-harvester", usage).totalCost).toBe(0.07);
 });
 
 test("catalog models resolve brand logo SVG assets", () => {
@@ -590,19 +596,19 @@ test("Qwen Image 3 uses Fal's output tier and reference-image rates", () => {
     ).toBeCloseTo(0.084, 8);
 });
 
-test("updated provider prices are reflected for xAI media and OpenRouter text", () => {
+test("updated provider prices are reflected for xAI media and text routes", () => {
     expect(
         getCostDefinition("meta/llama-4-scout").promptTextTokens,
     ).toBeCloseTo(0.0000001, 12);
     expect(
         getCostDefinition("stepfun/step-3.5-flash").promptTextTokens,
-    ).toBeCloseTo(0.0000001, 12);
+    ).toBeCloseTo(0.0000001 * 1.055, 12);
     expect(
         getCostDefinition("mistralai/mistral-small-4").promptCachedTokens,
-    ).toBeCloseTo(0.000000015, 12);
+    ).toBeCloseTo(0.000000015 * 1.055, 12);
     expect(
         getCostDefinition("qwen/qwen3-coder-next").promptCachedTokens,
-    ).toBeCloseTo(0.00000007, 12);
+    ).toBeCloseTo(0.00000007 * 1.055, 12);
     expect(
         getCostDefinition("mistralai/mistral-small-3.2").promptCachedTokens,
     ).toBeUndefined();
@@ -621,7 +627,7 @@ test("updated provider prices are reflected for xAI media and OpenRouter text", 
             promptImageTokens: 1,
             completionImageTokens: 1,
         }).totalCost,
-    ).toBeCloseTo(0.06, 8);
+    ).toBeCloseTo(0.06 * 1.055, 8);
     for (const [quality, resolution, expected] of [
         ["low", "1k", 0.05],
         ["low", "2k", 0.07],
@@ -635,7 +641,7 @@ test("updated provider prices are reflected for xAI media and OpenRouter text", 
                 undefined,
                 { quality, resolution },
             ).totalPrice,
-        ).toBeCloseTo(expected, 8);
+        ).toBeCloseTo(expected * 1.055, 8);
     }
     expect(
         calculateCost("x-ai/grok-imagine-video", {
@@ -648,7 +654,7 @@ test("updated provider prices are reflected for xAI media and OpenRouter text", 
             promptImageTokens: 1,
             completionVideoSeconds: 5,
         }).totalCost,
-    ).toBeCloseTo(0.71, 8);
+    ).toBeCloseTo(0.71 * 1.055, 8);
 });
 
 test("Gemini search cost follows each route's provider metadata", () => {
@@ -706,10 +712,13 @@ test("Gemini search cost follows each route's provider metadata", () => {
     expect(geminiSearchPrice.totalPrice).toBeCloseTo(0.535, 8);
 
     // OpenRouter search-capable routes bill per reported web search request.
-    expect(gemini3FlashCost.totalCost).toBeCloseTo(3.528, 8);
-    expect(geminiSearchFastCost.totalCost).toBeCloseTo(2.828, 8);
-    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(4.528, 8);
-    expect(ungroundedGeminiSearchFastCost.totalCost).toBeCloseTo(2.8, 8);
+    expect(gemini3FlashCost.totalCost).toBeCloseTo(3.528 * 1.055, 8);
+    expect(geminiSearchFastCost.totalCost).toBeCloseTo(2.828 * 1.055, 8);
+    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(4.528 * 1.055, 8);
+    expect(ungroundedGeminiSearchFastCost.totalCost).toBeCloseTo(
+        2.8 * 1.055,
+        8,
+    );
 });
 
 test("public model catalog exposes Gemini billing prices without internals", () => {
@@ -728,7 +737,7 @@ test("public model catalog exposes Gemini billing prices without internals", () 
         expect.arrayContaining([
             expect.objectContaining({
                 label: "Search",
-                price: "14",
+                price: "14.77",
                 currency: "pollen",
                 quantity: 1_000,
                 unit: "search requests",
@@ -744,9 +753,15 @@ test("Perplexity request search fees are added by declarative billing rules", ()
     };
     const cases = [
         ["perplexity/sonar", 2.005, undefined],
+        ["perplexity/sonar", 2.008, { searchContextSize: "medium" as const }],
         ["perplexity/sonar", 2.012, { searchContextSize: "high" as const }],
-        ["perplexity/sonar-pro", 18.014, undefined],
-        ["perplexity/sonar-reasoning-pro", 10.014, undefined],
+        ["perplexity/sonar-pro", 18.006, undefined],
+        [
+            "perplexity/sonar-pro",
+            18.014,
+            { searchContextSize: "high" as const },
+        ],
+        ["perplexity/sonar-reasoning-pro", 10.006, undefined],
     ] as const;
 
     for (const [model, total, input] of cases) {
@@ -877,57 +892,46 @@ test("dedicated Vertex Gemini Search detects streamed grounding", () => {
 // display-safe price metadata asserted below.
 test("Perplexity billing keeps executable rules private", () => {
     const perplexityFees = [
-        [
-            "perplexity/sonar-pro",
-            "perplexity.sonar_pro_high.search_request.v1",
-            14 / 1000,
-        ],
-        [
-            "perplexity/sonar-reasoning-pro",
-            "perplexity.sonar_reasoning_high.search_request.v1",
-            14 / 1000,
-        ],
+        ["perplexity/sonar", "sonar", [5, 8, 12]],
+        ["perplexity/sonar-pro", "sonar_pro", [6, 10, 14]],
+        ["perplexity/sonar-reasoning-pro", "sonar_reasoning", [6, 10, 14]],
     ] as const;
-
-    expect(
-        getRegistryModelDefinition("perplexity/sonar").billing?.adjustments,
-    ).toMatchObject([
-        {
-            id: "perplexity.sonar_low.search_request.v1",
-            unitCost: 5 / 1000,
-        },
-        {
-            id: "perplexity.sonar_high.search_request.v1",
-            unitCost: 12 / 1000,
-        },
-    ]);
-    const sonarRules =
-        getRegistryModelDefinition("perplexity/sonar").billing?.adjustments;
-    expect(sonarRules?.[0]?.countUnits({}, { searchContextSize: "low" })).toBe(
-        1,
-    );
-    expect(sonarRules?.[1]?.countUnits({}, { searchContextSize: "low" })).toBe(
-        0,
-    );
-    expect(sonarRules?.[0]?.countUnits({}, { searchContextSize: "high" })).toBe(
-        0,
-    );
-    expect(sonarRules?.[1]?.countUnits({}, { searchContextSize: "high" })).toBe(
-        1,
-    );
-
-    for (const [model, ruleId, unitCost] of perplexityFees) {
-        const adjustment = getRegistryModelDefinition(model as ModelName)
-            .billing?.adjustments?.[0];
-        expect(adjustment).toMatchObject({
-            id: ruleId,
-            kind: "search_request",
-            unit: "request",
-            unitCost,
-        });
-        // Request fee applies to every request, independent of output content.
-        expect(adjustment?.countUnits({})).toBe(1);
+    for (const [model, family, fees] of perplexityFees) {
+        expect(
+            getRegistryModelDefinition(model as ModelName).billing?.adjustments,
+        ).toMatchObject(
+            ["low", "medium", "high"].map((size, index) => ({
+                id: `perplexity.${family}_${size}.search_request.v1`,
+                kind: "search_request",
+                unit: "request",
+                unitCost: fees[index] / 1000,
+            })),
+        );
     }
+
+    // Exactly one tier bills per request: the one the response reports, else
+    // the one the caller asked for, else Perplexity's default (low).
+    const [low, medium, high] =
+        getRegistryModelDefinition("perplexity/sonar").billing?.adjustments ??
+        [];
+    const units = (output: unknown, input?: { searchContextSize: "high" }) =>
+        [low, medium, high].map((rule) => rule?.countUnits(output, input));
+    expect(units({})).toEqual([1, 0, 0]);
+    expect(units({}, { searchContextSize: "high" })).toEqual([0, 0, 1]);
+    expect(units({ usage: { search_context_size: "medium" } })).toEqual([
+        0, 1, 0,
+    ]);
+    expect(
+        units(
+            { usage: { search_context_size: "low" } },
+            { searchContextSize: "high" },
+        ),
+    ).toEqual([1, 0, 0]);
+    expect(
+        units({
+            streamEvents: [{ usage: { search_context_size: "high" } }, {}],
+        }),
+    ).toEqual([0, 0, 1]);
 
     // Public catalog exposes display-safe pricing, never executable billing.
     for (const model of getTextModelsInfo()) {
@@ -1068,9 +1072,9 @@ test("MiniMax M2.7 uses the pinned DeepInfra OpenRouter rates", () => {
     expect(definition.paidOnly).toBe(true);
     expect(definition.priceMultiplier).toBe(1);
     expect(definition.cost).toMatchObject({
-        promptTextTokens: 0.25 / 1e6,
-        promptCachedTokens: 0.05 / 1e6,
-        completionTextTokens: 1 / 1e6,
+        promptTextTokens: (0.25 / 1e6) * 1.055,
+        promptCachedTokens: (0.05 / 1e6) * 1.055,
+        completionTextTokens: (1 / 1e6) * 1.055,
     });
 });
 
@@ -1137,9 +1141,9 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
         unit: "token_hour",
         units: 1_000_000,
     });
-    expect(cacheWrite[0].unitCost).toBeCloseTo(1 / 12_000_000, 15);
-    expect(cacheWrite[0].cost).toBeCloseTo(1 / 12, 15);
-    expect(cacheWrite[0].price).toBeCloseTo(1 / 12, 15);
+    expect(cacheWrite[0].unitCost).toBeCloseTo((1 / 12_000_000) * 1.055, 15);
+    expect(cacheWrite[0].cost).toBeCloseTo((1 / 12) * 1.055, 15);
+    expect(cacheWrite[0].price).toBeCloseTo((1 / 12) * 1.055, 15);
 
     const proCacheWrite = calculateBillingAdjustments(
         getRegistryModelDefinition("google/gemini-3.1-pro-preview"),
@@ -1151,8 +1155,11 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
         "google/gemini-3.1-pro-preview",
     );
     expect(proCacheWrite).toHaveLength(1);
-    expect(proCacheWrite[0].unitCost).toBeCloseTo(4.5 / 12_000_000, 15);
-    expect(proCacheWrite[0].cost).toBeCloseTo(0.375, 15);
+    expect(proCacheWrite[0].unitCost).toBeCloseTo(
+        (4.5 / 12_000_000) * 1.055,
+        15,
+    );
+    expect(proCacheWrite[0].cost).toBeCloseTo(0.375 * 1.055, 15);
 
     const geminiCacheWrite = calculateBillingAdjustments(
         getRegistryModelDefinition("google/gemini-3.7-flash"),
@@ -1164,8 +1171,11 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
         "google/gemini-3.7-flash",
     );
     expect(geminiCacheWrite).toHaveLength(1);
-    expect(geminiCacheWrite[0].unitCost).toBeCloseTo(0.5 / 12_000_000, 15);
-    expect(geminiCacheWrite[0].cost).toBeCloseTo(0.5 / 12, 15);
+    expect(geminiCacheWrite[0].unitCost).toBeCloseTo(
+        (0.5 / 12_000_000) * 1.055,
+        15,
+    );
+    expect(geminiCacheWrite[0].cost).toBeCloseTo((0.5 / 12) * 1.055, 15);
 
     for (const model of [
         "google/gemini-3-flash-preview",
@@ -1191,9 +1201,9 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
             kind: "search_request",
             unit: "request",
             units: 1,
-            unitCost: 0.014,
-            cost: 0.014,
-            price: 0.014,
+            unitCost: 0.014 * 1.055,
+            cost: 0.014 * 1.055,
+            price: 0.014 * 1.055,
         });
         expect(
             calculateBillingAdjustments(
@@ -1220,9 +1230,9 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
         kind: "search_request",
         unit: "request",
         units: 1,
-        unitCost: 0.014,
-        cost: 0.014,
-        price: 0.014,
+        unitCost: 0.014 * 1.055,
+        cost: 0.014 * 1.055,
+        price: 0.014 * 1.055,
     });
 
     const streamedSearch = calculateBillingAdjustments(
@@ -1245,9 +1255,9 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
             kind: "search_request",
             unit: "request",
             units: 2,
-            unitCost: 0.014,
-            cost: 0.028,
-            price: 0.028,
+            unitCost: 0.014 * 1.055,
+            cost: 0.028 * 1.055,
+            price: 0.028 * 1.055,
         },
     ]);
 
@@ -1332,9 +1342,9 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
             kind: "search_request",
             unit: "request",
             units: 3,
-            unitCost: 0.014,
-            cost: 0.042,
-            price: 0.042,
+            unitCost: 0.014 * 1.055,
+            cost: 0.042 * 1.055,
+            price: 0.042 * 1.055,
         },
     ]);
 

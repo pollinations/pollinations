@@ -1852,7 +1852,7 @@
         }
       ],
       "modelLabels": {
-        "asset-harvester": null,
+        "asset-harvester": "nvidia/asset-harvester",
         "lightning-image-turbo": null,
         "minimax-h3-512p-lora-finetune": null,
         "trellis2": [

@@ -123,6 +123,7 @@ it("resolves shared UI and SDK to source with only CSS compiled separately", asy
             "@pollinations/sdk": "sdk/src/index.ts",
             "@pollinations/sdk/react": "sdk/src/react/index.ts",
             "@pollinations/ui": "ui/src/index.ts",
+            "@pollinations/ui/markdown": "ui/src/markdown.ts",
             "@pollinations/ui/auth": "ui/src/modules/auth/index.ts",
             "@pollinations/ui/auth/sdk": "ui/src/modules/auth/sdk.ts",
             "@pollinations/ui/app-user-menu/sdk":

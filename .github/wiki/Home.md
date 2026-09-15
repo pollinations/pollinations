@@ -14,3 +14,7 @@ This wiki serves as an architectural index and reference guide for developers bu
 2. [[Quick Integration|Quick-Integration]] - Minimal primitives for HTTP and SDK integrations.
 3. [[Tiers & Ecosystem Extensions|Tiers-and-Community-Models]] - Dev points, tiers, BYOM, and BYOP.
 4. [[Troubleshooting & FAQs|Troubleshooting]] - Rate limits, fallback handling, and support triage.
+
+### Contributing to this Wiki
+Pages are synced automatically from `.github/wiki/` in the main repository. To propose changes, open a pull request against `.github/wiki/`. Keep additions focused on architectural overviews, service maps, and ecosystem workflows. Detailed API parameter tables belong in `APIDOCS.md`.
+

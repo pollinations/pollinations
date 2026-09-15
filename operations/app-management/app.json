@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🖼️",
+    "name": "PollenBatch Multi-Image Generation + Character Generation Engine",
+    "url": "https://donwrightdesigns.github.io/pollenbatch",
+    "description": "Generate multiple variations of the same prompt in low res, select the version that you like the most, and then regenerate at high resolution! Also, create consistent characters with the same top-down",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "donwrightdesigns",
+    "githubUserId": "8707299",
+    "repositoryUrl": "https://github.com/donwrightdesigns/pollenbatch",
+    "repositoryStars": null,
+    "discordUsername": "mrwrightphoto",
+    "other": null,
+    "submittedDate": "2026-08-30",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14137",
+    "approvedDate": "2026-09-15",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🖼️",
     "name": "manhwa studio",
     "url": "https://manhwa-studio-320488177521.asia-southeast1.run.app",
     "description": "Create webtoon comics with character profiles, scene planning, Pollinations-generated panels, dialogue bubbles and a vertical comic canvas.",

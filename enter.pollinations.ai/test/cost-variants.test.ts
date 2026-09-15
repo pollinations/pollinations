@@ -183,7 +183,7 @@ describe("long-context cost variants", () => {
                     billing.priceDefinition[
                         usageType as keyof typeof billing.priceDefinition
                     ],
-                ).toBeCloseTo(perMillionTokens / 1e6, 15);
+                ).toBeCloseTo((perMillionTokens / 1e6) * 1.055, 15);
             }
         }
     });
@@ -209,7 +209,7 @@ describe("long-context cost variants", () => {
         );
 
         expect(billing.cost.totalCost).toBeCloseTo(0.00003, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(0.00006, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.00006 * 1.055, 12);
         expect(billing.servedPrice).toBeCloseTo(0.00003, 12);
     });
 
@@ -224,11 +224,11 @@ describe("long-context cost variants", () => {
             },
         );
 
-        expect(billing.cost.totalCost).toBeCloseTo(1.2, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(0.5, 12);
-        expect(billing.servedPrice).toBeCloseTo(1.2, 12);
+        expect(billing.cost.totalCost).toBeCloseTo(1.2 * 1.055, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.5 * 1.055, 12);
+        expect(billing.servedPrice).toBeCloseTo(1.2 * 1.055, 12);
         expect(billing.cost.totalCost - billing.price.totalPrice).toBeCloseTo(
-            0.7,
+            0.7 * 1.055,
             12,
         );
     });
@@ -316,13 +316,13 @@ describe("long-context cost variants", () => {
 
         expect(billing.costVariant).toBe("long_context");
         expect(billing.priceDefinition).toMatchObject({
-            promptTextTokens: 4 / 1e6,
-            promptCachedTokens: 0.4 / 1e6,
-            promptCacheWriteTokens: 4 / 1e6,
-            promptAudioTokens: 4 / 1e6,
-            promptImageTokens: 2 / 1e6,
-            promptVideoTokens: 4 / 1e6,
-            completionTextTokens: 18 / 1e6,
+            promptTextTokens: (4 / 1e6) * 1.055,
+            promptCachedTokens: (0.4 / 1e6) * 1.055,
+            promptCacheWriteTokens: (4 / 1e6) * 1.055,
+            promptAudioTokens: (4 / 1e6) * 1.055,
+            promptImageTokens: (2 / 1e6) * 1.055,
+            promptVideoTokens: (4 / 1e6) * 1.055,
+            completionTextTokens: (18 / 1e6) * 1.055,
         });
     });
 
@@ -341,9 +341,9 @@ describe("long-context cost variants", () => {
             output: baseOutput,
         });
         expect(base.costVariant).toBeUndefined();
-        expect(base.cost.totalCost).toBeCloseTo(0.2375, 12);
+        expect(base.cost.totalCost).toBeCloseTo(0.2375 * 1.055, 12);
         expect(base.adjustments).toHaveLength(1);
-        expect(base.adjustments[0].cost).toBeCloseTo(0.0375, 12);
+        expect(base.adjustments[0].cost).toBeCloseTo(0.0375 * 1.055, 12);
 
         const long = calculateUsageBilling({
             model: "google/gemini-3.1-pro-preview",
@@ -360,9 +360,9 @@ describe("long-context cost variants", () => {
             },
         });
         expect(long.costVariant).toBe("long_context");
-        expect(long.cost.totalCost).toBeCloseTo(4.375, 12);
+        expect(long.cost.totalCost).toBeCloseTo(4.375 * 1.055, 12);
         expect(long.adjustments).toHaveLength(1);
-        expect(long.adjustments[0].cost).toBeCloseTo(0.375, 12);
+        expect(long.adjustments[0].cost).toBeCloseTo(0.375 * 1.055, 12);
     });
 
     it("Qwen applies its advertised long-context sheet", () => {
@@ -371,10 +371,10 @@ describe("long-context cost variants", () => {
                 promptTextTokens: 256_000,
             }).priceDefinition,
         ).toMatchObject({
-            promptTextTokens: 0.96 / 1e6,
-            promptCachedTokens: 0.192 / 1e6,
-            promptCacheWriteTokens: 1.2 / 1e6,
-            completionTextTokens: 3.84 / 1e6,
+            promptTextTokens: (0.96 / 1e6) * 1.055,
+            promptCachedTokens: (0.192 / 1e6) * 1.055,
+            promptCacheWriteTokens: (1.2 / 1e6) * 1.055,
+            completionTextTokens: (3.84 / 1e6) * 1.055,
         });
     });
 

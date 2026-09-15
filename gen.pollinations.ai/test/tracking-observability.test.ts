@@ -3178,7 +3178,7 @@ describe("trackResponse modelUsed", () => {
         // served cost independently uses Alibaba's explicit-cache rate.
         expect(tracking.costVariant).toBe("context_256k");
         expect(tracking.cost?.totalCost).toBeCloseTo(0.02, 12);
-        expect(tracking.price?.totalPrice).toBeCloseTo(0.04, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(0.04 * 1.055, 12);
     });
 
     it("uses Alibaba's implicit rate unless the response confirms an explicit hit", async () => {
@@ -3201,7 +3201,7 @@ describe("trackResponse modelUsed", () => {
         );
 
         expect(tracking.cost?.totalCost).toBeCloseTo(0.04, 12);
-        expect(tracking.price?.totalPrice).toBeCloseTo(0.04, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(0.04 * 1.055, 12);
     });
 
     it("prices a streamed Alibaba explicit-cache hit from terminal usage", async () => {
@@ -3232,7 +3232,7 @@ describe("trackResponse modelUsed", () => {
 
         expect(tracking.costVariant).toBe("context_256k");
         expect(tracking.cost?.totalCost).toBeCloseTo(0.02, 12);
-        expect(tracking.price?.totalPrice).toBeCloseTo(0.04, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(0.04 * 1.055, 12);
     });
 });
 

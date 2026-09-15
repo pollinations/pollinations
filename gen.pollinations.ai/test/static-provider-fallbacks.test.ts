@@ -168,6 +168,35 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
+    it("includes the registry credit fee once in Gemini long-context and search costs", () => {
+        const primary = TEXT_SERVICES["google/gemini-3.1-pro-preview"];
+        const fallback =
+            TEXT_SERVICES["google/gemini-3.1-pro-preview:openrouter:ai-studio"];
+        for (const definition of [primary, fallback]) {
+            expect(definition.priceMultiplier).toBe(1);
+            const billed = calculateUsageBilling({
+                model: "google/gemini-3.1-pro-preview",
+                usage: {
+                    promptTextTokens: 200_000,
+                    completionTextTokens: 1_000,
+                },
+                servedBy: definition,
+                output: {
+                    usage: {
+                        server_tool_use_details: { web_search_requests: 1 },
+                    },
+                },
+            });
+            // Long-context input/output plus one search, including credit fees.
+            const expected = (0.2 * 4 + 0.001 * 18 + 0.014) * 1.055;
+            expect(billed.cost.totalCost).toBeCloseTo(expected, 12);
+            expect(billed.price.totalPrice).toBeCloseTo(expected, 8);
+            expect(billed.priceDefinition.promptTextTokens).toBe(
+                (4 / 1_000_000) * 1.055,
+            );
+        }
+    });
+
     it.each([
         "sonar",
         "sonar-pro",
@@ -214,13 +243,13 @@ describe("static provider fallbacks", () => {
                 output,
                 input: { searchContextSize },
             });
-            expect(billed.cost.totalCost).toBeCloseTo(expected, 12);
+            expect(billed.cost.totalCost).toBeCloseTo(expected * 1.055, 12);
             expect(billed.price.totalPrice).toBeCloseTo(expected, 12);
             expect(billed.adjustments).toHaveLength(1);
             expect(billed.adjustments[0]).toMatchObject({
                 kind: "search_request",
                 units: 1,
-                cost: searchFee,
+                cost: searchFee * 1.055,
             });
         }
     });
@@ -289,7 +318,10 @@ describe("static provider fallbacks", () => {
             cost: { promptImageTokens: 0.002, completionVideoSeconds: 0.07 },
         });
         expect(fallback.provider).toBe("openrouter");
-        expect(fallback.cost).toEqual(primary.cost);
+        expect(fallback.cost).toEqual({
+            promptImageTokens: 0.002 * 1.055,
+            completionVideoSeconds: 0.07 * 1.055,
+        });
         expect(IMAGE_SERVICES).not.toHaveProperty(
             "x-ai/grok-imagine-video:fal",
         );
@@ -400,16 +432,16 @@ describe("static provider fallbacks", () => {
                 "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8"
             ].cost,
         ).toMatchObject({
-            promptTextTokens: 0.2 / 1_000_000,
-            promptCachedTokens: 0.006 / 1_000_000,
-            completionTextTokens: 0.6 / 1_000_000,
+            promptTextTokens: (0.2 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.006 / 1_000_000) * 1.055,
+            completionTextTokens: (0.6 / 1_000_000) * 1.055,
         });
         expect(
             TEXT_SERVICES["meta/llama-4-scout:openrouter:vertex-us-east5"].cost,
         ).toMatchObject({
-            promptTextTokens: 0.25 / 1_000_000,
-            promptImageTokens: 0.25 / 1_000_000,
-            completionTextTokens: 0.7 / 1_000_000,
+            promptTextTokens: (0.25 / 1_000_000) * 1.055,
+            promptImageTokens: (0.25 / 1_000_000) * 1.055,
+            completionTextTokens: (0.7 / 1_000_000) * 1.055,
         });
         expect(
             IMAGE_SERVICES["qwen/qwen-image-3:replicate"].cost,
@@ -422,14 +454,14 @@ describe("static provider fallbacks", () => {
                 "google/gemini-3.7-flash:openrouter:ai-studio-priority"
             ].cost,
         ).toMatchObject({
-            promptCacheWriteTokens: 1.35 / 1_000_000,
+            promptCacheWriteTokens: (1.35 / 1_000_000) * 1.055,
         });
         expect(
             TEXT_SERVICES[
                 "google/gemini-3.5-flash-lite:openrouter:ai-studio-flex"
             ].cost,
         ).toMatchObject({
-            promptCacheWriteTokens: 0.15 / 1_000_000,
+            promptCacheWriteTokens: (0.15 / 1_000_000) * 1.055,
         });
         expect(
             TEXT_SERVICES["moonshotai/kimi-k2.7-code:deepinfra"].cost,
@@ -529,9 +561,15 @@ describe("static provider fallbacks", () => {
             model: "qwen3.8-flash",
             defaultOptions: { max_tokens: 64000 },
         });
-        expect(TEXT_SERVICES["qwen/qwen3.8-flash:alibaba"].cost).toEqual(
-            TEXT_SERVICES["qwen/qwen3.8-flash"].cost,
-        );
+        for (const [unit, cost] of Object.entries(
+            TEXT_SERVICES["qwen/qwen3.8-flash:alibaba"].cost,
+        )) {
+            expect(
+                TEXT_SERVICES["qwen/qwen3.8-flash"].cost[
+                    unit as keyof (typeof TEXT_SERVICES)["qwen/qwen3.8-flash"]["cost"]
+                ],
+            ).toBeCloseTo(cost * 1.055, 15);
+        }
         expect(
             findModelByName("mistralai/mistral-small-3.2:deepinfra")?.config(),
         ).toMatchObject({

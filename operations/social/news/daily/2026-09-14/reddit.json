@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-14",
+  "period_start": "2026-09-14",
+  "period_end": "2026-09-14",
+  "generated_at": "2026-09-15T06:30:50.869953+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-14/images/reddit.jpg"
+    }
+  ],
+  "title": "13 merges: agents, sharing, and image routing",
+  "text": "13 PRs merged today. The useful parts are mostly at the seams, where infrastructure tends to become strangely philosophical.\n\nPollinations can now plug directly into LLM workflows through a new provider ([#14808](https://github.com/pollinations/pollinations/pull/14808)). Agent configuration now travels through metadata, rather than being reconstructed downstream ([#14815](https://github.com/pollinations/pollinations/pull/14815)). There are also new usage quests for agents ([#14841](https://github.com/pollinations/pollinations/pull/14841)).\n\nCommunity apps got publisher icons, rendering fixes, and screenshot backfills, which makes browsing them less like opening unlabelled drawers ([#14842](https://github.com/pollinations/pollinations/pull/14842), [#14856](https://github.com/pollinations/pollinations/pull/14856)). Shared interfaces can now render inline media and offer copyable code blocks ([#14843](https://github.com/pollinations/pollinations/pull/14843)).\n\nOn generation reliability: background image requests now retain the original request intact, filtered streams without usage are classified as content rejections, and `gpt-image-2.5` now routes through Azure with an OpenAI fallback ([#14866](https://github.com/pollinations/pollinations/pull/14866), [#14868](https://github.com/pollinations/pollinations/pull/14868), [#14890](https://github.com/pollinations/pollinations/pull/14890)).\n\nThe README was also updated ([#14849](https://github.com/pollinations/pollinations/pull/14849)). Source and the rest of the queue: https://github.com/pollinations/pollinations"
+}

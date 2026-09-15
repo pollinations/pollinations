@@ -33,6 +33,108 @@ async function capture(
 }
 
 it.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
+    "verifies Account settings controls and rejects mismatched connection states",
+    async () => {
+        const { startRuntime } = await import("../runtime");
+        const recipes = reviewCasesForFlow("account", "account").filter(
+            ({ pageId }) => pageId === "account",
+        );
+        let probe: ReviewCase | undefined;
+        const service = createCaptureService({
+            loadCases: async () => ({
+                reviewCasesForFlow: (flow, section) =>
+                    reviewCasesForFlow(flow, section).map((item) =>
+                        probe?.id === item.id ? probe : item,
+                    ),
+            }),
+            loadRuntime: async () => startRuntime,
+        });
+        try {
+            for (const recipe of recipes) {
+                // Every connect/disconnect request is held or fails before the
+                // provider. These checks do not create or revoke credentials.
+                for (const rule of recipe.requests ?? [])
+                    if (rule.method && rule.method !== "GET")
+                        expect(["pending", "server-error"]).toContain(
+                            rule.outcome,
+                        );
+                const result = await capture(
+                    service,
+                    "account",
+                    "account",
+                    recipe.id,
+                );
+                expect(
+                    result.status,
+                    result.status === "error"
+                        ? `${recipe.variant}: ${result.error}`
+                        : recipe.id,
+                ).toBe("ready");
+            }
+            const recipe = (variant: string) => {
+                const result = recipes.find((item) => item.variant === variant);
+                if (!result)
+                    throw new Error(
+                        `Missing Account settings situation: ${variant}`,
+                    );
+                return result;
+            };
+            const ready = recipe("Account settings");
+            for (const mismatch of [
+                ...[
+                    "/api/account/integrations",
+                    "/api/account/integrations/toolkits",
+                ].map((path) => ({
+                    ...ready,
+                    requests: [{ path, outcome: "unavailable" as const }],
+                })),
+                { ...ready, prepare: { connections: "connected" as const } },
+                { ...recipe("App connected"), prepare: {} },
+                {
+                    ...recipe("Discord connected"),
+                    prepare: { discord: "unavailable" as const },
+                },
+                {
+                    ...recipe("App catalog unavailable"),
+                    requests: [
+                        {
+                            path: "/api/account/integrations",
+                            outcome: "unavailable" as const,
+                        },
+                        {
+                            path: "/api/account/integrations/toolkits",
+                            outcome: "unavailable" as const,
+                        },
+                    ],
+                },
+                {
+                    ...recipe("Connecting app"),
+                    requests: [
+                        {
+                            path: "/api/account/integrations",
+                            method: "POST",
+                            outcome: "server-error" as const,
+                        },
+                    ],
+                },
+            ]) {
+                probe = mismatch;
+                service.invalidate();
+                expect(
+                    await capture(service, "account", "account", probe.id),
+                ).toMatchObject({
+                    status: "error",
+                    error: expect.stringContaining("checking "),
+                });
+            }
+        } finally {
+            await service.close();
+        }
+    },
+    300_000,
+);
+
+it.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
     "captures real News content and rejects missing or failed feeds",
     async () => {
         const { startRuntime } = await import("../runtime");

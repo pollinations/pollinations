@@ -17,6 +17,19 @@
         "../../enter.pollinations.ai/frontend/src/**/*.tsx"
     ],
     "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@frontend/*": ["../../enter.pollinations.ai/frontend/src/*"],
+            "@shared/*": ["../../shared/*"],
+            "@pollinations/sdk": ["../../packages/sdk/src/index.ts"],
+            "@pollinations/sdk/react": ["../../packages/sdk/src/react/index.ts"],
+            "@pollinations/ui": ["../../packages/ui/src/index.ts"],
+            "@pollinations/ui/auth": ["../../packages/ui/src/modules/auth/index.ts"],
+            "@pollinations/ui/auth/sdk": ["../../packages/ui/src/modules/auth/sdk.ts"],
+            "@pollinations/ui/app-user-menu/sdk": ["../../packages/ui/src/modules/app-user-menu/sdk.ts"],
+            "@pollinations/ui/gen": ["../../packages/ui/src/modules/gen/index.ts"],
+            "@pollinations/ui/wallet": ["../../packages/ui/src/modules/wallet/index.ts"]
+        },
         "noUnusedLocals": true,
         "noUnusedParameters": true
     }

@@ -2,31 +2,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createServer } from "vite";
 import type { ReviewCaseModule } from "./captures";
-import type { startRuntime } from "./runtime";
 import { startServer } from "./server";
 
-const vite = await createServer({
-    configFile: fileURLToPath(
-        new URL("./vite.live.config.ts", import.meta.url),
-    ),
-});
 const here = fileURLToPath(new URL(".", import.meta.url));
 const repository = path.resolve(here, "../..");
-let runtime: Awaited<ReturnType<typeof startServer>>;
-try {
-    runtime = await startServer({
-        loadCaptureRuntime: async () =>
-            (await vite.ssrLoadModule(`${here}runtime.ts`))
-                .startRuntime as typeof startRuntime,
-        loadReviewCases: async () =>
-            (await vite.ssrLoadModule(
-                `${here}review-inventory.ts`,
-            )) as ReviewCaseModule,
-    });
-} catch (error) {
-    await vite.close();
-    throw error;
-}
 const sources = [
     "enter.pollinations.ai/src",
     "enter.pollinations.ai/drizzle",
@@ -38,20 +17,69 @@ const sources = [
     "shared",
     "operations/connect",
 ].map((relative) => path.join(repository, relative));
-vite.watcher.add(sources);
-let invalidateTimer: ReturnType<typeof setTimeout> | undefined;
-vite.watcher.on("all", (event, filename) => {
-    if (!["add", "change", "unlink"].includes(event)) return;
-    const absolute = path.resolve(filename);
-    if (!sources.some((source) => absolute.startsWith(`${source}/`))) return;
-    if (
-        /(?:^|\/)(?:node_modules|\.local|dist|dist-live)(?:\/|$)/.test(absolute)
-    )
-        return;
-    if (!/\.(?:[cm]?[jt]sx?|css|html|svg|png|json|sql)$/.test(absolute)) return;
-    clearTimeout(invalidateTimer);
-    invalidateTimer = setTimeout(() => runtime.invalidatePreviews(), 200);
+let runtime: Awaited<ReturnType<typeof startServer>>;
+const vite = await createServer({
+    configFile: fileURLToPath(
+        new URL("./vite.live.config.ts", import.meta.url),
+    ),
+    plugins: [
+        {
+            name: "connect-source-refresh",
+            hotUpdate: {
+                order: "post",
+                async handler({ file, server }) {
+                    if (
+                        file.startsWith(
+                            path.join(repository, "packages/ui/dist/"),
+                        )
+                    ) {
+                        await runtime.waitUntilReady();
+                        return;
+                    }
+                    if (
+                        !sources.some((source) => file.startsWith(`${source}/`))
+                    )
+                        return;
+                    if (
+                        /(?:^|\/)(?:node_modules|\.local|dist|dist-live|test)(?:\/|$)/.test(
+                            file,
+                        )
+                    )
+                        return;
+                    if (
+                        !/\.(?:[cm]?[jt]sx?|css|html|svg|png|webp|woff2|md|json|sql)$/.test(
+                            file,
+                        )
+                    )
+                        return;
+                    if (this.environment.name === "client") {
+                        await runtime.reload();
+                        server.environments.ssr.moduleGraph.invalidateAll();
+                        server.ws.send({
+                            type: "custom",
+                            event: "connect:source-refreshed",
+                        });
+                    }
+                    // Let Vite update UI modules after the Workers and CSS are
+                    // ready. React retains the review's screen/situation selection.
+                    return undefined;
+                },
+            },
+        },
+    ],
 });
+try {
+    runtime = await startServer({
+        loadReviewCases: async () =>
+            (await vite.ssrLoadModule(
+                `${here}review-inventory.ts`,
+            )) as ReviewCaseModule,
+    });
+} catch (error) {
+    await vite.close();
+    throw error;
+}
+vite.watcher.add(sources);
 try {
     await vite.listen();
     console.log("Connect: http://localhost:4180/connect");
@@ -67,7 +95,6 @@ try {
     throw error;
 }
 async function stop() {
-    clearTimeout(invalidateTimer);
     try {
         await runtime.close();
     } finally {

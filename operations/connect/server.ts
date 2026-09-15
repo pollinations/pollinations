@@ -1,26 +1,36 @@
 import { once } from "node:events";
-import { pathToFileURL } from "node:url";
 import { serve } from "@hono/node-server";
 import { createCaptureService, type ReviewCaseModule } from "./captures";
-import { startRuntime } from "./runtime.ts";
+import { bundleWorkers, startRuntime } from "./runtime.ts";
+import { buildSourceStyles } from "./source-styles";
 
 export async function startServer(
-    options: {
-        loadReviewCases?: () => Promise<ReviewCaseModule>;
-        loadCaptureRuntime?: () => Promise<typeof startRuntime>;
-    } = {},
+    options: { loadReviewCases?: () => Promise<ReviewCaseModule> } = {},
 ) {
-    const runtime = await startRuntime();
+    let scripts = await bundleWorkers();
+    const runtime = await startRuntime({ scripts });
+    let ready = Promise.resolve();
     const captures = options.loadReviewCases
         ? createCaptureService({
               loadCases: options.loadReviewCases,
-              loadRuntime:
-                  options.loadCaptureRuntime ?? (async () => startRuntime),
+              loadRuntime: async () => (options) =>
+                  startRuntime({ ...options, scripts }),
           })
         : undefined;
     const server = serve({
-        fetch: async (request) =>
-            (await captures?.fetch(request)) ?? runtime.fetch(request),
+        fetch: async (request) => {
+            try {
+                await ready;
+            } catch {
+                return Response.json(
+                    {
+                        error: "Connect source rebuild failed. Check the dev server.",
+                    },
+                    { status: 503 },
+                );
+            }
+            return (await captures?.fetch(request)) ?? runtime.fetch(request);
+        },
         hostname: "127.0.0.1",
         port: 4181,
     });
@@ -36,8 +46,20 @@ export async function startServer(
     }
     console.log("Connect local Workers ready at http://localhost:4181");
     return {
-        invalidatePreviews() {
+        waitUntilReady: () => ready,
+        reload() {
             captures?.invalidate();
+            ready = ready
+                .catch(() => {})
+                .then(async () => {
+                    const [next] = await Promise.all([
+                        bundleWorkers(),
+                        buildSourceStyles(),
+                    ]);
+                    await runtime.reload(next);
+                    scripts = next;
+                });
+            return ready;
         },
         async close() {
             try {
@@ -49,21 +71,9 @@ export async function startServer(
                     await captures?.close();
                 }
             } finally {
+                await ready.catch(() => {});
                 await runtime.dispose();
             }
         },
     };
-}
-
-if (
-    process.argv[1] &&
-    import.meta.url === pathToFileURL(process.argv[1]).href
-) {
-    const server = await startServer();
-    const stop = async () => {
-        await server.close();
-        process.exit(0);
-    };
-    process.once("SIGINT", stop);
-    process.once("SIGTERM", stop);
 }

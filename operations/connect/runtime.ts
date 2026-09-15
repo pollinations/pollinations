@@ -10,6 +10,7 @@ import {
     Log,
     LogLevel,
     Miniflare,
+    type MiniflareOptions,
     Request as WorkerRequest,
     type Response as WorkerResponse,
 } from "miniflare";
@@ -138,7 +139,19 @@ async function migrate(db: D1Database) {
         .run();
 }
 
-export async function startRuntime(options: { persist?: boolean } = {}) {
+export async function bundleWorkers() {
+    const [enter, gen] = await Promise.all([
+        bundleWorker("enter.pollinations.ai"),
+        bundleWorker("gen.pollinations.ai"),
+    ]);
+    return { enter, gen };
+}
+
+type WorkerScripts = Awaited<ReturnType<typeof bundleWorkers>>;
+
+export async function startRuntime(
+    options: { persist?: boolean; scripts?: WorkerScripts } = {},
+) {
     const pendingBodies = new Set<(reason?: unknown) => Promise<void>>();
     function webResponse(response: WorkerResponse) {
         const reader = response.body?.getReader();
@@ -180,11 +193,7 @@ export async function startRuntime(options: { persist?: boolean } = {}) {
     const localProvider = createLocalProvider();
     const reviewRequests = createReviewRequests();
     const reviewServices = createReviewServices();
-    console.log("Connect: bundling Enter and Gen");
-    const [enterScript, genScript] = await Promise.all([
-        bundleWorker("enter.pollinations.ai"),
-        bundleWorker("gen.pollinations.ai"),
-    ]);
+    const scripts = options.scripts ?? (await bundleWorkers());
     // No Wrangler environment files or service deployment config are loaded.
     // These are the checked-in Workers test placeholders, not provider access.
     const bindings = {
@@ -215,13 +224,13 @@ export async function startRuntime(options: { persist?: boolean } = {}) {
         bindings,
         d1Databases: { DB: "connect-local-isolated-db" },
         kvNamespaces: { KV: "connect-local-isolated-kv" },
-        // Enter owns auth; only its external GitHub provider is local.
-        // All other external dependencies remain explicitly unavailable.
+        // Enter owns auth and product logic. Named external-service fixtures
+        // stay local; requests outside their scope remain unavailable.
         outboundService: async (request: Request) =>
             (await reviewServices.outbound(request)) ??
             localProvider.outbound(request),
     };
-    const mf = new Miniflare({
+    const workerOptions = (scripts: WorkerScripts): MiniflareOptions => ({
         host: "127.0.0.1",
         port: 0,
         log: new Log(LogLevel.ERROR),
@@ -240,7 +249,7 @@ export async function startRuntime(options: { persist?: boolean } = {}) {
                     {
                         type: "ESModule",
                         path: "enter.mjs",
-                        contents: enterScript,
+                        contents: scripts.enter,
                     },
                 ],
             },
@@ -248,7 +257,11 @@ export async function startRuntime(options: { persist?: boolean } = {}) {
                 ...common,
                 name: "connect-gen",
                 modules: [
-                    { type: "ESModule", path: "gen.mjs", contents: genScript },
+                    {
+                        type: "ESModule",
+                        path: "gen.mjs",
+                        contents: scripts.gen,
+                    },
                 ],
                 serviceBindings: { ENTER: "connect-enter" },
                 r2Buckets: ["IMAGE_BUCKET", "TEXT_BUCKET"],
@@ -263,17 +276,16 @@ export async function startRuntime(options: { persist?: boolean } = {}) {
             },
         ],
     });
+    const mf = new Miniflare(workerOptions(scripts));
     try {
         console.log("Connect: starting isolated Workers");
-        const db = (await mf.getD1Database(
-            "DB",
-            "connect-enter",
-        )) as D1Database;
+        let db = (await mf.getD1Database("DB", "connect-enter")) as D1Database;
         console.log("Connect: applying local database migrations");
         await migrate(db);
         await syncLocalIdentity(db);
-        const enter = await mf.getWorker("connect-enter");
-        const gen = await mf.getWorker("connect-gen");
+        let enter = await mf.getWorker("connect-enter");
+        let gen = await mf.getWorker("connect-gen");
+        let ready = Promise.resolve();
         const adminAuth = createPollinationsAuth({
             clientId: ADMIN_CLIENT_ID,
             sessionSecret: TEST_DASHBOARD_SECRET,
@@ -655,7 +667,30 @@ export async function startRuntime(options: { persist?: boolean } = {}) {
             return Response.json({ error: "Not found" }, { status: 404 });
         }
         return {
-            fetch,
+            async fetch(request: Request) {
+                await ready;
+                return fetch(request);
+            },
+            reload(scripts: WorkerScripts) {
+                ready = ready
+                    .catch(() => {})
+                    .then(async () => {
+                        await Promise.allSettled(
+                            [...pendingBodies].map((cancel) => cancel()),
+                        );
+                        await mf.setOptions(workerOptions(scripts));
+                        // Miniflare invalidates binding stubs on reload. The data,
+                        // service fixtures and pending fault rules stay in place.
+                        db = (await mf.getD1Database(
+                            "DB",
+                            "connect-enter",
+                        )) as D1Database;
+                        await migrate(db);
+                        enter = await mf.getWorker("connect-enter");
+                        gen = await mf.getWorker("connect-gen");
+                    });
+                return ready;
+            },
             dispose: async () => {
                 reviewRequests.configure([]);
                 // A review may stop while a streamed response is still unread.

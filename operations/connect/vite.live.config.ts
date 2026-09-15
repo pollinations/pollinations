@@ -5,6 +5,7 @@ import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
+import { buildSourceStyles } from "./source-styles";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
 const frontend = fileURLToPath(
@@ -25,16 +26,90 @@ export default defineConfig(({ command }) => ({
         alias: {
             "@frontend": `${frontend}src`,
             "@shared": fileURLToPath(new URL("../../shared", import.meta.url)),
+            "@pollinations/sdk/react": fileURLToPath(
+                new URL(
+                    "../../packages/sdk/src/react/index.ts",
+                    import.meta.url,
+                ),
+            ),
+            "@pollinations/sdk": fileURLToPath(
+                new URL("../../packages/sdk/src/index.ts", import.meta.url),
+            ),
+            "@pollinations/ui/auth/sdk": fileURLToPath(
+                new URL(
+                    "../../packages/ui/src/modules/auth/sdk.ts",
+                    import.meta.url,
+                ),
+            ),
+            "@pollinations/ui/auth": fileURLToPath(
+                new URL(
+                    "../../packages/ui/src/modules/auth/index.ts",
+                    import.meta.url,
+                ),
+            ),
+            "@pollinations/ui/app-user-menu/sdk": fileURLToPath(
+                new URL(
+                    "../../packages/ui/src/modules/app-user-menu/sdk.ts",
+                    import.meta.url,
+                ),
+            ),
+            "@pollinations/ui/gen": fileURLToPath(
+                new URL(
+                    "../../packages/ui/src/modules/gen/index.ts",
+                    import.meta.url,
+                ),
+            ),
+            "@pollinations/ui/wallet": fileURLToPath(
+                new URL(
+                    "../../packages/ui/src/modules/wallet/index.ts",
+                    import.meta.url,
+                ),
+            ),
+            "@pollinations/ui/app.css": fileURLToPath(
+                new URL(
+                    "../../packages/ui/src/styles/app.css",
+                    import.meta.url,
+                ),
+            ),
+            "@pollinations/ui/styles.css": fileURLToPath(
+                new URL("../../packages/ui/dist/styles.css", import.meta.url),
+            ),
             "@pollinations/ui/brand": fileURLToPath(
                 new URL("../../packages/ui/src/brand", import.meta.url),
             ),
+            "@pollinations/ui/fonts": fileURLToPath(
+                new URL("../../packages/ui/src/fonts", import.meta.url),
+            ),
+            // fonts.css uses paths relative to the published stylesheet.
+            "./fonts": fileURLToPath(
+                new URL("../../packages/ui/src/fonts", import.meta.url),
+            ),
+            "@pollinations/ui": fileURLToPath(
+                new URL("../../packages/ui/src/index.ts", import.meta.url),
+            ),
         },
         dedupe: ["react", "react-dom", "zod"],
+    },
+    optimizeDeps: {
+        exclude: ["@pollinations/ui", "@pollinations/sdk"],
     },
     server: {
         host: "localhost",
         port: 4180,
         strictPort: true,
+        fs: {
+            allow: [fileURLToPath(new URL("../../", import.meta.url))],
+            deny: [
+                "**/.env*",
+                "**/*.{crt,pem}",
+                "**/.git/**",
+                "**/.dev.vars",
+                "**/.dev.vars.*",
+                "**/secrets/**",
+                "**/.testingtokens",
+                "**/.local/**",
+            ],
+        },
         proxy: {
             "^/(?:__connect|api|gen|auth)/": {
                 target: "http://localhost:4181",
@@ -54,27 +129,10 @@ export default defineConfig(({ command }) => ({
         tsconfigPaths({ projects: [`${here}tsconfig.connect-lab.json`] }),
         {
             name: "connect-live-entries",
+            buildStart: buildSourceStyles,
             configureServer(server) {
                 server.middlewares.use(async (request, response, next) => {
                     const path = request.url?.split("?")[0];
-                    if (path === "/pollen-connect-preview/agent.svg") {
-                        try {
-                            response.setHeader("Content-Type", "image/svg+xml");
-                            response.end(
-                                await readFile(
-                                    fileURLToPath(
-                                        new URL(
-                                            "../../packages/ui/src/brand/mark.svg",
-                                            import.meta.url,
-                                        ),
-                                    ),
-                                ),
-                            );
-                        } catch (error) {
-                            next(error);
-                        }
-                        return;
-                    }
                     if (path === "/pollen-connect-preview/moss.png") {
                         try {
                             response.setHeader("Content-Type", "image/png");

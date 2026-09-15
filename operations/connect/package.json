@@ -3,11 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build:ui": "npm run build --prefix ../../packages/sdk && npm run build --prefix ../../packages/ui",
-    "predev": "npm run build:ui && playwright install chromium",
-    "dev": "tsx dev.ts",
+    "predev": "playwright install chromium",
+    "dev": "tsx --tsconfig tsconfig.connect-lab.json dev.ts",
     "reset": "tsx reset.ts",
-    "prebuild": "npm run build:ui",
     "build": "npm run typecheck && vite build --config vite.live.config.ts",
     "typecheck": "tsc --noEmit --project tsconfig.connect-lab.json",
     "test": "vitest run"

@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { HIGHLIGHTS_RAW_URL } from "@frontend/components/news-faq/highlights";
+import { chromium } from "playwright";
+import { describe, expect, it, vi } from "vitest";
 import { getDefaultErrorMessage } from "../../../shared/error";
 import type { PreviewResult } from "../capture-types";
 import { captureIdentity, createCaptureService } from "../captures";
@@ -29,6 +31,120 @@ async function capture(
         await new Promise((resolve) => setTimeout(resolve, 200));
     }
 }
+
+it.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
+    "captures real News content and rejects missing or failed feeds",
+    async () => {
+        const { startRuntime } = await import("../runtime");
+        let fault: "blocked" | "empty" | "http-error" | undefined;
+        let feedBody = "";
+        // Exercise the real page with transport failures, without adding fault
+        // hooks to Enter or creating replacement News markup in Connect.
+        const launch = chromium.launch.bind(chromium);
+        const launchSpy = vi
+            .spyOn(chromium, "launch")
+            .mockImplementation(async (options) => {
+                const browser = await launch(options);
+                const newContext = browser.newContext.bind(browser);
+                vi.spyOn(browser, "newContext").mockImplementation(
+                    async (options) => {
+                        const context = await newContext(options);
+                        const newPage = context.newPage.bind(context);
+                        vi.spyOn(context, "newPage").mockImplementation(
+                            async () => {
+                                const page = await newPage();
+                                page.on("response", async (response) => {
+                                    if (
+                                        !fault &&
+                                        response.url() === HIGHLIGHTS_RAW_URL &&
+                                        response.ok()
+                                    )
+                                        feedBody = await response.text();
+                                });
+                                if (fault)
+                                    await page.route(
+                                        HIGHLIGHTS_RAW_URL,
+                                        (route) =>
+                                            fault === "blocked"
+                                                ? route.abort("blockedbyclient")
+                                                : route.fulfill({
+                                                      status:
+                                                          fault === "http-error"
+                                                              ? 503
+                                                              : 200,
+                                                      contentType: "text/plain",
+                                                      headers: {
+                                                          "access-control-allow-origin":
+                                                              "*",
+                                                      },
+                                                      body:
+                                                          fault === "http-error"
+                                                              ? feedBody
+                                                              : "",
+                                                  }),
+                                    );
+                                return page;
+                            },
+                        );
+                        return context;
+                    },
+                );
+                return browser;
+            });
+        const service = createCaptureService({
+            loadCases: async () => ({ reviewCasesForFlow }),
+            loadRuntime: async () => startRuntime,
+        });
+        try {
+            for (const section of ["news", "main"]) {
+                const cases = reviewCasesForFlow("account", section).filter(
+                    ({ pageId }) =>
+                        ["news", "enter-signed-out"].includes(pageId),
+                );
+                for (const recipe of cases) {
+                    const result = await capture(
+                        service,
+                        "account",
+                        section,
+                        recipe.id,
+                    );
+                    expect(
+                        result.status,
+                        result.status === "error" ? result.error : recipe.id,
+                    ).toBe("ready");
+                    const path = section === "news" ? "/news" : "/sign-in";
+                    expect(result).toMatchObject({
+                        entryRoute: path,
+                        finalRoute: path,
+                    });
+                }
+            }
+            expect(feedBody).not.toBe("");
+            for (const failure of ["blocked", "empty", "http-error"] as const) {
+                fault = failure;
+                service.invalidate();
+                // In each failure the product still renders Announcements. A
+                // passing page-heading assertion must not hide the missing feed.
+                const result = await capture(
+                    service,
+                    "account",
+                    "news",
+                    "dashboard-news",
+                );
+                expect(result).toMatchObject({
+                    status: "error",
+                    error: expect.stringContaining(
+                        "checking News highlights from the real feed",
+                    ),
+                });
+            }
+        } finally {
+            await service.close();
+            launchSpy.mockRestore();
+        }
+    },
+    240_000,
+);
 
 const selection = {
     flow: "app",

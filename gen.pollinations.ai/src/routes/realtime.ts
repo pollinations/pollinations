@@ -129,7 +129,7 @@ function requireAllowedModel(c: Context<Env>, model: string): void {
     const allowedModels = c.var.auth.apiKey?.permissions?.models;
     if (allowedModels && !allowedModels.includes(model)) {
         throw new HTTPException(403, {
-            message: `Model '${model}' is not allowed for this API key`,
+            message: `Model '${model}' is not allowed for this API key. Manage key permissions at https://enter.pollinations.ai/keys`,
         });
     }
 }

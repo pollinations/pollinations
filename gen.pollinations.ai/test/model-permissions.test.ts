@@ -119,7 +119,11 @@ test("restored auth snapshots normalize aliases once without expanding model or 
             account: ["profile"],
         });
     }
-    expect((await app.request("/other%2Fcustom")).status).toBe(403);
+    const forbidden = await app.request("/other%2Fcustom");
+    expect(forbidden.status).toBe(403);
+    expect(await forbidden.text()).toBe(
+        "Model 'other/custom' is not allowed for this API key. Manage key permissions at https://enter.pollinations.ai/keys",
+    );
     expect((await app.request("/anthropic%2Fclaude-haiku-4.5")).status).toBe(
         403,
     );
@@ -219,9 +223,11 @@ test("restored auth allows old and future names without expanding account or com
         });
     }
     for (const model of ["other/custom", "flux"]) {
-        expect(
-            (await app.request(`/${encodeURIComponent(model)}`)).status,
-        ).toBe(403);
+        const res = await app.request(`/${encodeURIComponent(model)}`);
+        expect(res.status).toBe(403);
+        expect(await res.text()).toBe(
+            `Model '${model}' is not allowed for this API key. Manage key permissions at https://enter.pollinations.ai/keys`,
+        );
     }
     expect(snapshot.apiKey.permissions.models).toEqual([
         "openai-fast",

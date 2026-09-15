@@ -1,0 +1,99 @@
+name: Reddit news Devvit preparation
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Validation defaults to no external writes"
+        required: true
+        default: validate-only
+        type: choice
+        options: [validate-only, publish]
+      scope:
+        description: "Artifact scope"
+        required: true
+        type: choice
+        options: [daily, weekly]
+      target_date:
+        description: "Artifact date (YYYY-MM-DD)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    if: github.event.inputs.mode == 'validate-only'
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: operations/social/reddit-devvit/package-lock.json
+      - run: npm ci --prefix operations/social/reddit-devvit
+      - name: Overlay news branch data
+        run: git fetch origin news && git checkout origin/news -- operations/social/news/
+      - name: Validate dated Reddit artifact
+        env:
+          SCOPE: ${{ github.event.inputs.scope }}
+          TARGET_DATE: ${{ github.event.inputs.target_date }}
+        run: node operations/social/reddit-devvit/runner.mjs "operations/social/news/$SCOPE/$TARGET_DATE/reddit.json" "$SCOPE" "$TARGET_DATE"
+      - run: npm run build --prefix operations/social/reddit-devvit
+
+  publish:
+    if: github.event.inputs.mode == 'publish' && vars.ENABLE_REDDIT_DEVVIT_PUBLISH == 'true'
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    concurrency:
+      group: reddit-news-devvit-app
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: operations/social/reddit-devvit/package-lock.json
+      - run: npm ci --prefix operations/social/reddit-devvit
+      - name: Overlay news branch data
+        run: git fetch origin news && git checkout origin/news -- operations/social/news/
+      - name: Validate and configure app payload
+        env:
+          SCOPE: ${{ github.event.inputs.scope }}
+          TARGET_DATE: ${{ github.event.inputs.target_date }}
+        run: |
+          node operations/social/reddit-devvit/runner.mjs "operations/social/news/$SCOPE/$TARGET_DATE/reddit.json" "$SCOPE" "$TARGET_DATE" > /tmp/reddit-post.json
+          cp /tmp/reddit-post.json operations/social/reddit-devvit/src/post.json
+      - name: Upload and install trigger version
+        working-directory: operations/social/reddit-devvit
+        env:
+          DEVVIT_AUTH_TOKEN: ${{ secrets.DEVVIT_AUTH_TOKEN }}
+        run: |
+          test -n "$DEVVIT_AUTH_TOKEN"
+          ./node_modules/.bin/devvit-cli upload --bump patch
+          ./node_modules/.bin/devvit-cli install pollinations_ai polli-ai
+      - name: Verify correlated receipt
+        working-directory: operations/social/reddit-devvit
+        env:
+          DEVVIT_AUTH_TOKEN: ${{ secrets.DEVVIT_AUTH_TOKEN }}
+          EXPECTED_SCOPE: ${{ github.event.inputs.scope }}
+          EXPECTED_DATE: ${{ github.event.inputs.target_date }}
+        run: |
+          test -n "$DEVVIT_AUTH_TOKEN"
+          status=0
+          timeout 120s ./node_modules/.bin/devvit-cli logs --json --since 2m --connect=false pollinations_ai polli-ai > /tmp/devvit-logs.jsonl || status=$?
+          if [ "$status" -ne 0 ] && [ "$status" -ne 124 ]; then exit "$status"; fi
+          node --input-type=module - <<'NODE'
+          import { readFile } from "node:fs/promises";
+          import { findReceipt } from "./runner.mjs";
+          const lines = (await readFile("/tmp/devvit-logs.jsonl", "utf8")).split("\n");
+          const postId = findReceipt(lines, { scope: process.env.EXPECTED_SCOPE, date: process.env.EXPECTED_DATE });
+          if (!postId) throw new Error("No correlated Reddit post receipt; status remains pending");
+          console.log(`Confirmed Reddit post ${postId}`);
+          NODE

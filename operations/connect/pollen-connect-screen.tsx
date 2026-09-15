@@ -70,6 +70,7 @@ try {
         }
     }
 } catch (error) {
+    document.documentElement.dataset.connectBootstrapError = "true";
     const root = document.getElementById("root");
     if (root) {
         root.setAttribute("role", "alert");

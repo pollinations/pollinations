@@ -46,7 +46,10 @@ if (!element) throw new Error("Missing example root");
 const root = createRoot(element);
 readState().then(
     (state) => root.render(<Example appKey={state.connection.clientId} />),
-    (error: Error) => root.render(<p role="alert">{error.message}</p>),
+    (error: Error) => {
+        document.documentElement.dataset.connectBootstrapError = "true";
+        root.render(<p role="alert">{error.message}</p>);
+    },
 );
 
 // Resume Connect review actions after real route/callback navigation.

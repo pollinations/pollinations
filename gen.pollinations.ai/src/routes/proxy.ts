@@ -228,7 +228,7 @@ const responsesHandlers = factory.createHandlers(
 );
 
 // Helper to filter models by API key permissions and paid balance.
-function filterEntriesByPermissions(
+export function filterEntriesByPermissions(
     entries: GenerationModelEntry[],
     allowedModels: string[] | undefined,
     hasPaidBalance?: boolean,
@@ -251,10 +251,20 @@ function hasPaidBalance(c: any): boolean | undefined {
 }
 
 // Optionally filter entries by the validated `?community` query parameter.
-function filterEntriesByCommunityParam(
+export function filterEntriesByCommunityParam(
     entries: GenerationModelEntry[],
     communityParam: string | undefined,
+    sourceParam: "official" | "community" | "all" | undefined,
 ): GenerationModelEntry[] {
+    // `source` wins over the legacy `community` when both are supplied, for
+    // a single intuitive interface. `all` / omitted -> no filtering.
+    if (sourceParam === "all") return entries;
+    if (sourceParam === "official") {
+        return entries.filter((e) => e.communityEndpoint === undefined);
+    }
+    if (sourceParam === "community") {
+        return entries.filter((e) => e.communityEndpoint !== undefined);
+    }
     if (communityParam === undefined) return entries;
     const wantCommunity = communityParam === "true" || communityParam === "1";
     return entries.filter(
@@ -273,7 +283,7 @@ const modelsListHandler = (
     [
         validator("query", ModelListQueryParamsSchema),
         async (c: Context<Env>) => {
-            const { community } = c.req.valid(
+            const { community, source } = c.req.valid(
                 "query" as never,
             ) as ModelListQueryParams;
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
@@ -286,6 +296,7 @@ const modelsListHandler = (
                         paidBalance,
                     ),
                     community,
+                    source,
                 ).map((entry) => entry.info),
             );
         },
@@ -420,7 +431,7 @@ export const proxyRoutes = new Hono<Env>()
         }),
         validator("query", ModelListQueryParamsSchema),
         async (c) => {
-            const { community } = c.req.valid(
+            const { community, source } = c.req.valid(
                 "query" as never,
             ) as ModelListQueryParams;
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
@@ -432,6 +443,7 @@ export const proxyRoutes = new Hono<Env>()
                     paidBalance,
                 ),
                 community,
+                source,
             );
             return c.json({
                 object: "list" as const,

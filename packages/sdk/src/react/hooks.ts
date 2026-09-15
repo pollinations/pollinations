@@ -66,13 +66,7 @@ export function useAuthActions(): AuthActionsValue {
     const { login, logout, setApiKey, enterUrl, apiBaseUrl } =
         useRequiredAuth();
     return useMemo(
-        () => ({
-            login,
-            logout,
-            setApiKey,
-            enterUrl,
-            apiBaseUrl,
-        }),
+        () => ({ login, logout, setApiKey, enterUrl, apiBaseUrl }),
         [login, logout, setApiKey, enterUrl, apiBaseUrl],
     );
 }

@@ -265,7 +265,6 @@ export function PolliProvider({
             }
             setApiKey(nextApiKey);
             setError(storageError);
-            setIsHydrated(true);
         },
         [storage, storageKey],
     );
@@ -317,17 +316,18 @@ export function PolliProvider({
             storage.removeItem(returnPathStorageKey);
             if (!verifier || !redirectUrl) {
                 setError(new Error("Missing PKCE verifier"));
-                setIsHydrated(true);
                 return;
             }
 
-            await exchangeAuthorizationCode({
-                enterUrl,
-                appKey,
-                redirectUrl,
-                code: result.code,
-                verifier,
-            }).then(updateApiKey);
+            updateApiKey(
+                await exchangeAuthorizationCode({
+                    enterUrl,
+                    appKey,
+                    redirectUrl,
+                    code: result.code,
+                    verifier,
+                }),
+            );
         })()
             .catch((cause) => {
                 setError(

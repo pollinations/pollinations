@@ -231,6 +231,7 @@ describe("PolliProvider", () => {
             );
         });
         expect(auth?.error?.message).toBe("Storage unavailable");
+        expect(auth?.isHydrated).toBe(true);
         await act(async () => {
             login?.();
         });
@@ -240,10 +241,6 @@ describe("PolliProvider", () => {
     it("disconnects in memory even when browser storage cannot be cleared", async () => {
         stubWindow("https://app.example/");
         const storage = memoryStorage({ "polli:pk_test:token": "sk_stored" });
-        vi.stubGlobal(
-            "fetch",
-            vi.fn().mockResolvedValue(Response.json({ valid: true })),
-        );
         const auth: { current: ReturnType<typeof useAuth> | null } = {
             current: null,
         };

@@ -33,6 +33,32 @@ async function capture(
 }
 
 it.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
+    "captures App access declined through the real cancellation controls",
+    async () => {
+        const { startRuntime } = await import("../runtime");
+        const service = createCaptureService({
+            loadCases: async () => ({ reviewCasesForFlow }),
+            loadRuntime: async () => startRuntime,
+        });
+        try {
+            const result = await capture(
+                service,
+                "app",
+                "main",
+                "app-access-declined",
+            );
+            expect(
+                result.status,
+                result.status === "error" ? result.error : "",
+            ).toBe("ready");
+        } finally {
+            await service.close();
+        }
+    },
+    60_000,
+);
+
+it.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
     "verifies Account settings controls and rejects mismatched connection states",
     async () => {
         const { startRuntime } = await import("../runtime");

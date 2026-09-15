@@ -1,7 +1,9 @@
 import { createHash } from "node:crypto";
 import { once } from "node:events";
 import type { AddressInfo } from "node:net";
+import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
+import { type Browser, chromium } from "playwright";
 import { afterAll, beforeAll, expect, test } from "vitest";
 import {
     apiErrorMessage,
@@ -10,9 +12,12 @@ import {
 import { Pollinations } from "../../../packages/sdk/src/client.ts";
 import { CALLBACK_URL, CLIENT_ID, USER_ID } from "../fixtures.ts";
 import githubProfile from "../github-profile.json";
+import { getFlowFocus } from "../pollen-connect-diagram";
 import type { ReviewCase } from "../review-cases.ts";
+import { reviewCasesForFlow } from "../review-inventory";
 import { prepareReviewCase } from "../review-prepare.ts";
 import { bundleWorkers, startRuntime } from "../runtime.ts";
+import { screenRoute } from "../screen-route";
 
 let runtime: Awaited<ReturnType<typeof startRuntime>>;
 let server: ReturnType<typeof serve>;
@@ -233,6 +238,217 @@ test("preserves real Enter error responses through the product frontend", async 
         ),
     ).toMatchObject({ message: "Sign-in required", cause: 401 });
 });
+
+const reviewOrigin = "http://localhost:4180";
+
+// These navigation checks share disposable Workers, never the running lab's data.
+async function openReviewContext(browser: Browser, recipe: ReviewCase) {
+    const origin = reviewOrigin;
+    const prepared = await prepareReviewCase(recipe, (path, body) =>
+        runtime.fetch(
+            new Request(`${origin}${path}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+            }),
+        ),
+    );
+    const readState = async () =>
+        (await runtime.fetch(new Request(`${origin}/__connect/state`))).json();
+    const before = await readState();
+    const context = await browser.newContext();
+    try {
+        const cookie = prepared.headers.get("set-cookie")?.split(";")[0];
+        if (recipe.conditions.account === "signed-in" && cookie) {
+            const separator = cookie.indexOf("=");
+            await context.addCookies([
+                {
+                    name: cookie.slice(0, separator),
+                    value: cookie.slice(separator + 1),
+                    url: origin,
+                    httpOnly: true,
+                    sameSite: "Lax",
+                },
+            ]);
+        }
+        const credentialRequests: string[] = [];
+        // Product requests go to disposable real Workers; Vite only
+        // supplies source files. No response replaces Enter or Gen.
+        await context.route("**/*", async (route) => {
+            const request = route.request();
+            const url = new URL(request.url());
+            if (url.origin !== origin) {
+                if (url.href === githubProfile.avatar_url)
+                    await route.continue();
+                else await route.abort("blockedbyclient");
+                return;
+            }
+            if (
+                !/^\/(?:api|gen|__connect|auth|\.well-known)(?:\/|$)/.test(
+                    url.pathname,
+                )
+            ) {
+                await route.continue();
+                return;
+            }
+            if (
+                request.method() === "POST" &&
+                [
+                    "/api/api-keys",
+                    "/api/oauth/code",
+                    "/api/oauth/token",
+                ].includes(url.pathname)
+            )
+                credentialRequests.push(url.pathname);
+            const response = await runtime.fetch(
+                new Request(request.url(), {
+                    method: request.method(),
+                    headers: request.headers(),
+                    body: request.postDataBuffer(),
+                }),
+            );
+            await route.fulfill({
+                status: response.status,
+                headers: Object.fromEntries(response.headers),
+                body: Buffer.from(await response.arrayBuffer()),
+            });
+        });
+        return { context, before, readState, credentialRequests };
+    } catch (error) {
+        await context.close();
+        throw error;
+    }
+}
+
+test.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
+    "App cancellation Map edges follow real Enter and SDK navigation",
+    async () => {
+        const origin = "http://localhost:4180";
+        const recipe = reviewCasesForFlow("app", "main").find(
+            ({ id }) => id === "app-access-declined",
+        );
+        if (!recipe) throw new Error("Missing App cancellation situation");
+        const { edges } = getFlowFocus("app", "main");
+        const observerUrl = `/@fs/${fileURLToPath(new URL("../runtime-frame.tsx", import.meta.url))}`;
+        const browser = await chromium.launch({ headless: true });
+        try {
+            for (const account of ["signed-in", "signed-out"] as const) {
+                const { context, before, readState, credentialRequests } =
+                    await openReviewContext(browser, {
+                        ...recipe,
+                        conditions: { ...recipe.conditions, account },
+                    });
+                try {
+                    const page = await context.newPage();
+                    let state: string | null = null;
+                    const callbacks: {
+                        error: string | null;
+                        stateMatches: boolean;
+                        hasCredential: boolean;
+                    }[] = [];
+                    page.on("request", (request) => {
+                        if (!request.isNavigationRequest()) return;
+                        const url = new URL(request.url());
+                        if (url.pathname === "/authorize")
+                            state = url.searchParams.get("state");
+                        if (
+                            url.pathname === "/connect-example.html" &&
+                            url.searchParams.has("error")
+                        )
+                            callbacks.push({
+                                error: url.searchParams.get("error"),
+                                stateMatches:
+                                    Boolean(state) &&
+                                    url.searchParams.get("state") === state,
+                                hasCredential: ["code", "key", "api_key"].some(
+                                    (key) => url.searchParams.has(key),
+                                ),
+                            });
+                    });
+                    // Keep this import native to the browser rather than
+                    // having Vitest rewrite it into a server-side import.
+                    const observe = () =>
+                        page.evaluate<string>(`(async () => {
+                            const { observeScreen } = await import(${JSON.stringify(observerUrl)});
+                            return observeScreen(document)?.node;
+                        })()`);
+                    const entry = screenRoute(
+                        new URLSearchParams(recipe.query),
+                        before,
+                        origin,
+                    );
+                    if (!entry) throw new Error("Missing App entry route");
+                    await page.goto(`${origin}${entry}`);
+                    const connect = page.getByRole("button", {
+                        name: "Connect with Pollinations",
+                        exact: true,
+                    });
+                    await connect.waitFor();
+                    expect(await observe()).toBe("app-connect");
+                    await connect.click();
+                    const heading =
+                        account === "signed-in"
+                            ? "#authorize-dialog-title"
+                            : "#sign-in-title";
+                    await page.locator(heading).waitFor();
+                    const from = await observe();
+                    expect(from).toBe(
+                        account === "signed-in" ? "consent" : "sign-in",
+                    );
+                    await page
+                        .getByRole("button", {
+                            name: "Back to app",
+                            exact: true,
+                        })
+                        .click();
+                    await page
+                        .locator('[data-connect-state="connection-error"]')
+                        .waitFor();
+                    const to = await observe();
+                    expect(to).toBe(recipe.family);
+                    expect(edges).toContainEqual(
+                        expect.objectContaining({
+                            from,
+                            to: "cancelled",
+                            label: "Back to app",
+                        }),
+                    );
+                    expect(edges).toContainEqual(
+                        expect.objectContaining({ from: "cancelled", to }),
+                    );
+                    expect(callbacks).toEqual([
+                        {
+                            error: "access_denied",
+                            stateMatches: true,
+                            hasCredential: false,
+                        },
+                    ]);
+                    expect(new URL(page.url()).search).toBe("");
+                    for (const expected of recipe.expected) {
+                        const target = page.locator(expected.selector);
+                        expect(
+                            await (expected.text
+                                ? target.filter({ hasText: expected.text })
+                                : target
+                            ).isVisible(),
+                        ).toBe(true);
+                    }
+                    // The recovery control starts a fresh real authorization.
+                    await connect.click();
+                    await page.locator(heading).waitFor();
+                    expect(await observe()).toBe(from);
+                    expect(credentialRequests).toEqual([]);
+                    expect(await readState()).toEqual(before);
+                } finally {
+                    await context.close();
+                }
+            }
+        } finally {
+            await browser.close();
+        }
+    },
+    90_000,
+);
 
 test("real Enter session, PKCE grant and SDK→Gen→Enter share the local account", async () => {
     let cookie = "";

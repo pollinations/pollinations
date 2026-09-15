@@ -85,7 +85,7 @@ function installAuth(
 
         if (!apiKey.permissions.models.includes(model.resolved)) {
             throw new HTTPException(403, {
-                message: `Model '${model.requested}' is not allowed for this API key`,
+                message: `Model '${model.requested}' is not allowed for this API key. Manage key permissions at https://enter.pollinations.ai/keys`,
             });
         }
     }

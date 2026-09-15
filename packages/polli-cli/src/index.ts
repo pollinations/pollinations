@@ -14,6 +14,7 @@ import { myModelsCommand } from "./commands/my-models.js";
 import { questsCommand } from "./commands/quests.js";
 import { uploadCommand } from "./commands/upload.js";
 import { usageCommand } from "./commands/usage.js";
+import { updateCommand, maybeShowUpdateNotice } from "./commands/update.js";
 
 import { setKeyOverride } from "./lib/config.js";
 import { setOutputMode } from "./lib/output.js";
@@ -80,13 +81,19 @@ program.addCommand(uploadCommand);
 // Discovery
 program.addCommand(modelsCommand);
 program.addCommand(docsCommand);
+program.addCommand(updateCommand);
 
 // Show help when run with no args
 if (process.argv.length <= 2) {
     program.help();
 }
 
-program.parseAsync(process.argv).catch((err) => {
+const main = async () => {
+    await program.parseAsync(process.argv);
+    await maybeShowUpdateNotice();
+};
+main().catch((err) => {
     process.stderr.write(`${err instanceof Error ? err.message : err}\n`);
     process.exit(1);
 });
+

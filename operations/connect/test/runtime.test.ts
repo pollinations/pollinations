@@ -10,6 +10,7 @@ import {
     apiResponseError,
 } from "../../../enter.pollinations.ai/frontend/src/lib/api-error.ts";
 import { Pollinations } from "../../../packages/sdk/src/client.ts";
+import { getDefaultErrorMessage } from "../../../shared/error.ts";
 import { CALLBACK_URL, CLIENT_ID, USER_ID } from "../fixtures.ts";
 import githubProfile from "../github-profile.json";
 import { getFlowFocus } from "../pollen-connect-diagram";
@@ -925,6 +926,108 @@ for (const id of [
         90_000,
     );
 }
+
+test
+    .runIf(process.env.CONNECT_AUTHORIZATION_CLEANUP_TEST === "1")
+    .each(["device-network", "device-cleanup-error", "app-http"])(
+    "authorization key cleanup: %s",
+    async (mode) => {
+        const app = mode === "app-http";
+        const failedCleanup = mode === "device-cleanup-error";
+        const network = mode === "device-network";
+        const recipe = reviewCasesForFlow(app ? "app" : "device", "main").find(
+            ({ id }) =>
+                id === (app ? "consent-failed-code" : "device-submit-approve"),
+        );
+        if (!recipe) throw new Error("Missing authorization failure situation");
+        const browser = await chromium.launch({ headless: true });
+        try {
+            const { context, before, readState } = await openReviewContext(
+                browser,
+                {
+                    ...recipe,
+                    requests: [
+                        ...(network ? [] : (recipe.requests ?? [])),
+                        ...(failedCleanup
+                            ? ([
+                                  {
+                                      path: "/api/auth/api-key/delete",
+                                      method: "POST",
+                                      outcome: "forbidden",
+                                  },
+                              ] as const)
+                            : []),
+                    ],
+                },
+            );
+            try {
+                const page = await context.newPage();
+                if (network)
+                    await page.route("**/api/device/approve", (route) =>
+                        route.abort("failed"),
+                    );
+                const deletions: number[] = [];
+                page.on("response", (response) => {
+                    if (
+                        new URL(response.url()).pathname ===
+                        "/api/auth/api-key/delete"
+                    )
+                        deletions.push(response.status());
+                });
+                const entry = screenRoute(
+                    new URLSearchParams(recipe.query),
+                    before,
+                    reviewOrigin,
+                );
+                if (!entry) throw new Error("Missing authorization route");
+                await page.goto(`${reviewOrigin}${entry}`);
+                const createdResponse = page.waitForResponse(
+                    (response) =>
+                        new URL(response.url()).pathname === "/api/api-keys" &&
+                        response.request().method() === "POST",
+                );
+                await page
+                    .getByRole("button", { name: "Allow access", exact: true })
+                    .click();
+                const created = await createdResponse;
+                expect(created.ok()).toBe(true);
+                // Use the approved disposable credential only inside this test;
+                // neither its value nor API response bodies are logged.
+                const { key } = await created.json();
+                await page.locator("#connection-error-title").waitFor();
+                const alert = await page.getByRole("alert").textContent();
+                expect(alert).toContain(
+                    network ? "Failed to fetch" : getDefaultErrorMessage(500),
+                );
+                expect(deletions).toEqual([failedCleanup ? 403 : 200]);
+                if (failedCleanup) {
+                    expect(alert).toContain(
+                        `Key cleanup failed: ${getDefaultErrorMessage(403)}`,
+                    );
+                    expect(alert).toContain(
+                        "Delete the unused key from API keys.",
+                    );
+                    expect((await readState()).connection.enabled).toBe(true);
+                } else {
+                    expect(alert).not.toContain("Key cleanup failed");
+                    expect(await readState()).toEqual(before);
+                }
+                const keyCheck = await runtime.fetch(
+                    new Request(`${reviewOrigin}/gen/account/key`, {
+                        headers: { authorization: `Bearer ${key}` },
+                    }),
+                );
+                expect(keyCheck.status).toBe(failedCleanup ? 200 : 401);
+                await keyCheck.body?.cancel();
+            } finally {
+                await context.close();
+            }
+        } finally {
+            await browser.close();
+        }
+    },
+    60_000,
+);
 
 test("real Enter session, PKCE grant and SDK→Gen→Enter share the local account", async () => {
     let cookie = "";

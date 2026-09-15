@@ -14,6 +14,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
 import { AuthAccountIdentity } from "../components/auth/auth-account-identity.tsx";
+import { SignInAgain } from "../components/auth/sign-in-again.tsx";
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import { BuyPollenPanel, PollenBalance } from "../components/pollen";
 import type { BillingState } from "../components/pollen/auto-top-up-panel.tsx";
@@ -57,7 +58,7 @@ function WalletPage() {
     const { isSigningIn, error: signInError, signIn } = useGitHubSignIn();
     const [attempt, setAttempt] = useState(0);
     const [data, setData] = useState<WalletData | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<Error | null>(null);
     const userId = session?.user.id;
     // biome-ignore lint/correctness/useExhaustiveDependencies: attempt explicitly retries the failed request.
     useEffect(() => {
@@ -73,8 +74,10 @@ function WalletPage() {
                 if (active)
                     setError(
                         error instanceof Error
-                            ? error.message
-                            : "Couldn’t load your wallet. Try again.",
+                            ? error
+                            : new Error(
+                                  "Couldn’t load your wallet. Try again.",
+                              ),
                     );
             });
         return () => {
@@ -118,7 +121,9 @@ function WalletPage() {
                 />
             }
             actions={
-                error || data?.payment === "pending" ? (
+                error?.cause === 401 ? (
+                    <SignInAgain />
+                ) : error || data?.payment === "pending" ? (
                     <Button onClick={() => setAttempt((n) => n + 1)}>
                         {error ? "Try again" : "Check payment"}
                     </Button>
@@ -134,7 +139,7 @@ function WalletPage() {
                     Add Pollen to your account.
                 </p>
             </div>
-            {error && <ErrorBanner>{error}</ErrorBanner>}
+            {error && <ErrorBanner>{error.message}</ErrorBanner>}
             <WalletPaymentStatus
                 payment={data?.payment}
                 canceled={search.stripe_canceled}

@@ -1,4 +1,5 @@
 import { apiClient } from "../api.ts";
+import { apiResponseError } from "./api-error.ts";
 
 /** Confirm credit before reading balances so a success message never precedes its funds. */
 export async function loadWallet(sessionId?: string) {
@@ -8,13 +9,20 @@ export async function loadWallet(sessionId?: string) {
           })
         : null;
     if (payment && !payment.ok)
-        throw new Error("Couldn’t check your payment. Try again.");
+        throw await apiResponseError(
+            payment,
+            "Couldn’t check your payment. Try again.",
+        );
     const [balance, billing] = await Promise.all([
         apiClient.customer.balance.$get(),
         apiClient.stripe.billing.$get(),
     ]);
-    if (!balance.ok || !billing.ok)
-        throw new Error("Couldn’t load your wallet. Try again.");
+    const failed = [balance, billing].find((response) => !response.ok);
+    if (failed)
+        throw await apiResponseError(
+            failed,
+            "Couldn’t load your wallet. Try again.",
+        );
     const [wallet, billingData, status] = await Promise.all([
         balance.json(),
         billing.json(),

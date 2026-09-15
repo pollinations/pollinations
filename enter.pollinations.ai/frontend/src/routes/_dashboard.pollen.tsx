@@ -14,6 +14,7 @@ import {
     useNavigate,
     useRouter,
 } from "@tanstack/react-router";
+import { SignInAgain } from "../components/auth/sign-in-again.tsx";
 import { BuyPollenPanel, PollenBalance } from "../components/pollen";
 import { WalletPaymentStatus } from "../components/pollen/wallet-payment-status.tsx";
 import { loadWallet } from "../lib/load-wallet.ts";
@@ -56,9 +57,13 @@ export const Route = createFileRoute("/_dashboard/pollen")({
         return (
             <div className="space-y-3">
                 <ErrorBanner>{error.message}</ErrorBanner>
-                <Button onClick={() => void router.invalidate()}>
-                    Try again
-                </Button>
+                {error.cause === 401 ? (
+                    <SignInAgain />
+                ) : (
+                    <Button onClick={() => void router.invalidate()}>
+                        Try again
+                    </Button>
+                )}
             </div>
         );
     },

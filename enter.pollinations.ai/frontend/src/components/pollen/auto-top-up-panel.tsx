@@ -1,5 +1,5 @@
 import { apiClient } from "@frontend/api.ts";
-import { apiErrorMessage } from "@frontend/lib/api-error.ts";
+import { apiResponseError } from "@frontend/lib/api-error.ts";
 import {
     Button,
     CardIcon,
@@ -28,6 +28,7 @@ import {
     useEffect,
     useState,
 } from "react";
+import { SignInAgain } from "../auth/sign-in-again.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
 
 export type AutoTopUpIssue =
@@ -132,7 +133,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     const [enableDraft, setEnableDraft] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isOpeningPortal, setIsOpeningPortal] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<Error | null>(null);
 
     const paymentMethodReady = billingState?.paymentMethod.hasDefault ?? false;
     const billingDetailsReady = billingState?.billingDetailsComplete ?? false;
@@ -193,21 +194,18 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
             const response = await apiClient.stripe.billing.portal.$post({
                 json: {},
             });
+            if (!response.ok)
+                throw await apiResponseError(response, "Failed to open Stripe");
             const payload = (await response.json().catch(() => ({}))) as {
                 url?: unknown;
-                error?: unknown;
             };
             const portalUrl =
                 typeof payload.url === "string" ? payload.url : null;
-            if (!response.ok || !portalUrl) {
-                throw new Error(
-                    apiErrorMessage(payload, "Failed to open Stripe"),
-                );
-            }
+            if (!portalUrl) throw new Error("Failed to open Stripe");
             window.location.href = portalUrl;
         } catch (err) {
             setError(
-                err instanceof Error ? err.message : "Failed to open Stripe",
+                err instanceof Error ? err : new Error("Failed to open Stripe"),
             );
             setIsOpeningPortal(false);
         }
@@ -221,13 +219,14 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                 const response = await apiClient.stripe["auto-top-up"].$patch({
                     json: { enabled, packAmountUsd },
                 });
-                const payload = await response.json().catch(() => ({}));
                 if (!response.ok) {
-                    throw new Error(
-                        apiErrorMessage(payload, "Failed to save auto top-up"),
+                    throw await apiResponseError(
+                        response,
+                        "Failed to save auto top-up",
                     );
                 }
-                const nextBillingState = payload as BillingState;
+                const nextBillingState =
+                    (await response.json()) as BillingState;
                 setBillingState(nextBillingState);
                 setPackAmountUsd(
                     normalizePackAmount(
@@ -238,8 +237,8 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
             } catch (err) {
                 setError(
                     err instanceof Error
-                        ? err.message
-                        : "Failed to save auto top-up",
+                        ? err
+                        : new Error("Failed to save auto top-up"),
                 );
                 return false;
             } finally {
@@ -369,7 +368,8 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                 </div>
             )}
 
-            {error && <ErrorNotice>{error}</ErrorNotice>}
+            {error && <ErrorNotice>{error.message}</ErrorNotice>}
+            {error?.cause === 401 && <SignInAgain />}
         </div>
     );
 };

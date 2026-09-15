@@ -44,7 +44,6 @@ function authValue(
         apiKey: "sk_test",
         isLoggedIn: true,
         isHydrated: true,
-        retryConnection: null,
         error: null,
         login: vi.fn(),
         logout: vi.fn(),

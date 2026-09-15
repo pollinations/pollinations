@@ -63,18 +63,17 @@ export function useAuthState(): AuthStateValue {
 
 /** Stable login/logout refs and provider config. */
 export function useAuthActions(): AuthActionsValue {
-    const { login, retryConnection, logout, setApiKey, enterUrl, apiBaseUrl } =
+    const { login, logout, setApiKey, enterUrl, apiBaseUrl } =
         useRequiredAuth();
     return useMemo(
         () => ({
             login,
-            retryConnection,
             logout,
             setApiKey,
             enterUrl,
             apiBaseUrl,
         }),
-        [login, retryConnection, logout, setApiKey, enterUrl, apiBaseUrl],
+        [login, logout, setApiKey, enterUrl, apiBaseUrl],
     );
 }
 
@@ -94,7 +93,7 @@ function accountUrl(
     return `${apiBaseUrl.slice(0, end)}${path}${qs ? `?${qs}` : ""}`;
 }
 
-export async function fetchAccountJson<T>(
+async function fetchAccountJson<T>(
     apiBaseUrl: string,
     apiKey: string,
     path: string,

@@ -195,20 +195,10 @@ Account hooks are intentionally separate from the provider: `useAccountProfile`,
 `useAccountBalance`, `useAccountKey`, and `useAccountKeyUsage` return the raw
 SDK response shapes plus `{ isLoading, error, refresh }`.
 
-On startup, the provider checks a saved key through `/account/key` before
-reporting `isLoggedIn: true`. Use `isHydrated` to distinguish that check from a
-signed-out state. A `401` clears the key so the user can connect again. Other
-HTTP errors and network failures preserve the saved key, expose `error`, and
-provide `retryConnection()` through `useAuth()` and `useAuthActions()`. Retrying
-checks the same key without starting OAuth; `retryConnection` is `null` when no
-retry is available.
-
-The check adds an account request to startup, so a saved key is not reported as
-connected while Enter is unavailable. A subsequent `useAccountKey()` hook makes
-its own request. A `403` also retains the key and exposes Enter's error; retry
-is manual and will not resolve an access restriction until that restriction
-changes. `isHydrated` becomes false during each retry and true when it finishes;
-conditionally mounted children will therefore remount if gated on this value.
+On startup, the provider restores a saved key without a network request.
+`isHydrated` indicates that startup has finished; `isLoggedIn` means a key is
+present, not that it has been validated. Account hooks clear the connection on
+`401`; other request failures leave the key in place and expose `error`.
 
 Storage or navigation failures during `login()` are exposed through `error`
 and allow another login attempt. If saving a successfully exchanged key fails,

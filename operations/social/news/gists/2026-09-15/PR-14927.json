@@ -1,0 +1,35 @@
+{
+  "pr_number": 14927,
+  "title": "fix: restore Scout with Vercel primary and Novita fallback",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14927",
+  "merged_at": "2026-09-15T19:11:07Z",
+  "labels": [],
+  "pr_body_excerpt": "- Routes `meta/llama-4-scout` through **Vercel → DeepInfra**, then **OpenRouter → Novita BF16**. Exact upstream IDs: `meta/llama-4-scout` on `ai-gateway.vercel.sh/v1`; `meta-llama/llama-4-scout` on `openrouter.ai/api/v1`, pinned `novita/bf16`, provider fallback disabled. Removes the extra route.\n- Preserves aliases `llama-4-scout`, `llama-scout-17b`, `llama-4-scout-17b-16e-instruct`, `llama-scout`; paid-only, multiplier **1**, no Pollinations GPU. Customer price: **$0.10/$0.30 per million tokens**. Novita logged costs: **$0.18/$0.59 × 1.055**; Pollinations absorbs the difference. Sources: [Vercel](https://vercel.com/ai-gateway/models/llama-4-scout), [OpenRouter](https://openrouter.ai/api/v1/models/meta-llama/llama-4-scout/endpoints).\n- **Approved breaking change:** the primary supports tools/structured output; Scout disables both to share Novita’s capabilities. Affected clients must choose another model. Keeps text/vision, 10 images, streaming, existing endpoints, 16,384 output tokens. Live primary rejects 150k input and reports **131,072 context**.\n- **Catalog-wide validation:** existing image limits and `tools: false` now produce upfront 400s. Catalog exposes `supports_structured_output` and `max_completion_tokens`; Responses errors use `invalid_request_error`. Allows inert parallel-tools defaults.\n- Verified: prior **310 tests**, **98 follow-up tests**, **109 Enter billing tests**, **105 Gen error/capability tests**, TypeScript/Biome, live primary/forced-fallback usage, vision, streaming, long prompts, bursts, wallet/cache/billing. Novita sample: **$0.0000092207 cost / $0.0000048 charge**. Small bursts do not establish production capacity. Removed the unused Vertex flag; no deployment/secrets changed.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Scout finds the trail",
+    "blurb": "Llama 4 Scout is back in the garden, taking the Vercel path first and a carefully pinned Novita path when needed. The signposts are clearer too: unsupported image or tool requests now get an answer before they wander into the woods.",
+    "summary": "Restored `meta/llama-4-scout` with Vercel AI Gateway → DeepInfra as primary and an OpenRouter route pinned to Novita BF16 as fallback, while catalog validation now exposes structured-output support and completion limits with upfront capability errors.",
+    "impact": "Scout again supports text, vision, streaming, up to 10 images, and 16,384 output tokens at $0.10/$0.30 per million tokens; clients also get immediate 400 errors for unsupported image, tools, or structured-output requests and can select another model when those capabilities are required.",
+    "keywords": [
+      "llama-4-scout",
+      "vercel-ai-gateway",
+      "novita",
+      "fallbacks",
+      "model-catalog",
+      "validation",
+      "text-api"
+    ],
+    "visual_concept": "A restored Scout route is a cozy forked garden trail: a Vercel/DeepInfra signpost is the bright primary path, while a smaller OpenRouter-to-Novita signpost provides a dependable backup trail. Polli, wearing a tiny ranger hat and holding a map, guides a CRT monitor robot past clear capability placards for text, vision, streaming, and tools disabled; code-plants and flowers make the routing system feel maintained rather than mysterious.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny ranger hat and holding a map beside a forked code-garden trail: a large lime green (#ecf874) sign points to “VERCEL → DEEPINFRA” and a smaller warm backup sign points to “OPENROUTER → NOVITA.” A cute chunky CRT-monitor robot eagerly reads little pixel placards for “TEXT,” “VISION,” and “STREAM,” surrounded by flowers and sprouting code-plants; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and subtle CRT glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-15/PR-14927.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wearing a tiny ranger hat and holding a map beside a forked code-garden trail: a large lime green (#ecf874) sign points to “VERCEL → DEEPINFRA” and a smaller warm backup sign points to “OPENROUTER → NOVITA.” A cute chunky CRT-monitor robot eagerly reads little pixel placards for “TEXT,” “VISION,” and “STREAM,” surrounded by flowers and sprouting code-plants; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and subtle CRT glow."
+  },
+  "generated_at": "2026-09-15T19:13:33.732782+00:00"
+}

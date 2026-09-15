@@ -418,9 +418,9 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.25),
-            promptCachedTokens: perMillion(0.025),
-            completionTextTokens: perMillion(0.75),
+            promptTextTokens: perMillion(0.25) * 1.055,
+            promptCachedTokens: perMillion(0.025) * 1.055,
+            completionTextTokens: perMillion(0.75) * 1.055,
         },
         title: "Mercury 2",
         description:
@@ -442,9 +442,9 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         // OpenRouter's exact Inception route rates (2026-09-01).
         cost: {
-            promptTextTokens: perMillion(0.04),
-            promptCachedTokens: perMillion(0.004),
-            completionTextTokens: perMillion(0.15),
+            promptTextTokens: perMillion(0.04) * 1.055,
+            promptCachedTokens: perMillion(0.004) * 1.055,
+            completionTextTokens: perMillion(0.15) * 1.055,
         },
         title: "Mercury 2.5 Preview",
         description:
@@ -520,8 +520,8 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.075),
-            completionTextTokens: perMillion(0.2),
+            promptTextTokens: perMillion(0.075) * 1.055,
+            completionTextTokens: perMillion(0.2) * 1.055,
         },
         title: "Mistral Small 3.2",
         description:
@@ -550,10 +550,10 @@ const TEXT_BASE_SERVICES = {
         perUserRpm: 60,
         cost: {
             // OpenRouter Mistral endpoint, verified 2026-08-22.
-            promptTextTokens: perMillion(0.15),
-            promptCachedTokens: perMillion(0.015),
-            promptImageTokens: perMillion(0.15),
-            completionTextTokens: perMillion(0.6),
+            promptTextTokens: perMillion(0.15) * 1.055,
+            promptCachedTokens: perMillion(0.015) * 1.055,
+            promptImageTokens: perMillion(0.15) * 1.055,
+            completionTextTokens: perMillion(0.6) * 1.055,
         },
         title: "Mistral Small 4",
         description:
@@ -637,17 +637,17 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            promptTextTokens: perMillion(0.5),
-            promptCachedTokens: perMillion(0.05),
-            promptCacheWriteTokens: perMillion(0.5),
-            promptAudioTokens: perMillion(1.0),
-            promptImageTokens: perMillion(0.5),
-            promptVideoTokens: perMillion(0.5),
-            completionTextTokens: perMillion(3.0),
+            promptTextTokens: perMillion(0.5) * 1.055,
+            promptCachedTokens: perMillion(0.05) * 1.055,
+            promptCacheWriteTokens: perMillion(0.5) * 1.055,
+            promptAudioTokens: perMillion(1.0) * 1.055,
+            promptImageTokens: perMillion(0.5) * 1.055,
+            promptVideoTokens: perMillion(0.5) * 1.055,
+            completionTextTokens: perMillion(3.0) * 1.055,
         },
         billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 14,
-            storageCostPerMillionTokenHours: 1.0,
+            searchCostPerThousandRequests: 14 * 1.055,
+            storageCostPerMillionTokenHours: 1.0 * 1.055,
         }),
         title: "Gemini 3 Flash Preview",
         description:
@@ -675,17 +675,17 @@ const TEXT_BASE_SERVICES = {
         // Google's promotional pricing through 2026-12-31; list rates double
         // on 2027-01-01 and need another update then.
         cost: {
-            promptTextTokens: perMillion(0.75),
-            promptCachedTokens: perMillion(0.075),
-            promptCacheWriteTokens: perMillion(0.75),
-            promptAudioTokens: perMillion(0.75),
-            promptImageTokens: perMillion(0.75),
-            promptVideoTokens: perMillion(0.75),
-            completionTextTokens: perMillion(3.75),
+            promptTextTokens: perMillion(0.75) * 1.055,
+            promptCachedTokens: perMillion(0.075) * 1.055,
+            promptCacheWriteTokens: perMillion(0.75) * 1.055,
+            promptAudioTokens: perMillion(0.75) * 1.055,
+            promptImageTokens: perMillion(0.75) * 1.055,
+            promptVideoTokens: perMillion(0.75) * 1.055,
+            completionTextTokens: perMillion(3.75) * 1.055,
         },
         billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 14,
-            storageCostPerMillionTokenHours: 0.5,
+            searchCostPerThousandRequests: 14 * 1.055,
+            storageCostPerMillionTokenHours: 0.5 * 1.055,
         }),
         title: "Gemini 3.7 Flash",
         description:
@@ -711,17 +711,17 @@ const TEXT_BASE_SERVICES = {
         // Standard OpenRouter rates for the pinned google-vertex/global route.
         // Google's introductory pricing ends 2026-12-31.
         cost: {
-            promptTextTokens: perMillion(0.75),
-            promptCachedTokens: perMillion(0.075),
-            promptCacheWriteTokens: perMillion(0.75),
-            promptAudioTokens: perMillion(0.75),
-            promptImageTokens: perMillion(0.75),
-            promptVideoTokens: perMillion(0.75),
-            completionTextTokens: perMillion(3.75),
+            promptTextTokens: perMillion(0.75) * 1.055,
+            promptCachedTokens: perMillion(0.075) * 1.055,
+            promptCacheWriteTokens: perMillion(0.75) * 1.055,
+            promptAudioTokens: perMillion(0.75) * 1.055,
+            promptImageTokens: perMillion(0.75) * 1.055,
+            promptVideoTokens: perMillion(0.75) * 1.055,
+            completionTextTokens: perMillion(3.75) * 1.055,
         },
         billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 14,
-            storageCostPerMillionTokenHours: 0.5,
+            searchCostPerThousandRequests: 14 * 1.055,
+            storageCostPerMillionTokenHours: 0.5 * 1.055,
         }),
         title: "Gemini 3.8 Flash",
         description:
@@ -752,17 +752,17 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            promptTextTokens: perMillion(0.3),
-            promptCachedTokens: perMillion(0.03),
-            promptCacheWriteTokens: perMillion(0.3),
-            promptAudioTokens: perMillion(0.3),
-            promptImageTokens: perMillion(0.3),
-            promptVideoTokens: perMillion(0.3),
-            completionTextTokens: perMillion(2.5),
+            promptTextTokens: perMillion(0.3) * 1.055,
+            promptCachedTokens: perMillion(0.03) * 1.055,
+            promptCacheWriteTokens: perMillion(0.3) * 1.055,
+            promptAudioTokens: perMillion(0.3) * 1.055,
+            promptImageTokens: perMillion(0.3) * 1.055,
+            promptVideoTokens: perMillion(0.3) * 1.055,
+            completionTextTokens: perMillion(2.5) * 1.055,
         },
         billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 14,
-            storageCostPerMillionTokenHours: 1.0,
+            searchCostPerThousandRequests: 14 * 1.055,
+            storageCostPerMillionTokenHours: 1.0 * 1.055,
         }),
         title: "Gemini 3.5 Flash Lite",
         description:
@@ -786,17 +786,17 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            promptTextTokens: perMillion(0.1), // per 1M tokens
-            promptCachedTokens: perMillion(0.01), // per 1M tokens
-            promptCacheWriteTokens: perMillion(0.1), // per 1M tokens
-            promptAudioTokens: perMillion(0.3), // per 1M tokens
-            promptImageTokens: perMillion(0.1), // per 1M tokens
-            promptVideoTokens: perMillion(0.1), // per 1M tokens
-            completionTextTokens: perMillion(0.4), // per 1M tokens
+            promptTextTokens: perMillion(0.1) * 1.055, // per 1M tokens
+            promptCachedTokens: perMillion(0.01) * 1.055, // per 1M tokens
+            promptCacheWriteTokens: perMillion(0.1) * 1.055, // per 1M tokens
+            promptAudioTokens: perMillion(0.3) * 1.055, // per 1M tokens
+            promptImageTokens: perMillion(0.1) * 1.055, // per 1M tokens
+            promptVideoTokens: perMillion(0.1) * 1.055, // per 1M tokens
+            completionTextTokens: perMillion(0.4) * 1.055, // per 1M tokens
         },
         billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 14,
-            storageCostPerMillionTokenHours: 1.0,
+            searchCostPerThousandRequests: 14 * 1.055,
+            storageCostPerMillionTokenHours: 1.0 * 1.055,
         }),
         title: "Gemini 2.5 Flash Lite",
         description:
@@ -908,9 +908,9 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         cost: {
             // OpenRouter Novita BF16 preserves remote image URLs; verified 2026-08-22.
-            promptTextTokens: perMillion(0.13),
-            promptImageTokens: perMillion(0.13),
-            completionTextTokens: perMillion(0.4),
+            promptTextTokens: perMillion(0.13) * 1.055,
+            promptImageTokens: perMillion(0.13) * 1.055,
+            completionTextTokens: perMillion(0.4) * 1.055,
         },
         title: "Gemma 4 26B A4B",
         description:
@@ -933,9 +933,9 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         cost: {
             // OpenRouter Novita BF16 endpoint, verified 2026-08-22.
-            promptTextTokens: perMillion(0.14),
-            promptImageTokens: perMillion(0.14),
-            completionTextTokens: perMillion(0.4),
+            promptTextTokens: perMillion(0.14) * 1.055,
+            promptImageTokens: perMillion(0.14) * 1.055,
+            completionTextTokens: perMillion(0.4) * 1.055,
         },
         title: "Gemma 4 31B",
         description: "Dense multimodal reasoning with configurable thinking",
@@ -1557,9 +1557,9 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         cost: {
             // OpenRouter Poolside route rates (2026-08-22).
-            promptTextTokens: perMillion(0.09),
-            promptCachedTokens: perMillion(0.009),
-            completionTextTokens: perMillion(0.18),
+            promptTextTokens: perMillion(0.09) * 1.055,
+            promptCachedTokens: perMillion(0.009) * 1.055,
+            completionTextTokens: perMillion(0.18) * 1.055,
         },
         title: "Laguna S 2.1",
         description:
@@ -1582,9 +1582,9 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         cost: {
             // OpenRouter AtlasCloud FP8 route rates (2026-07-23).
-            promptTextTokens: perMillion(0.3),
-            promptCachedTokens: perMillion(0.006),
-            completionTextTokens: perMillion(1.2),
+            promptTextTokens: perMillion(0.3) * 1.055,
+            promptCachedTokens: perMillion(0.006) * 1.055,
+            completionTextTokens: perMillion(1.2) * 1.055,
         },
         title: "LongCat 2.0",
         description:
@@ -1609,9 +1609,9 @@ const TEXT_BASE_SERVICES = {
             // OpenRouter Together route rates (2026-08-01). Image and audio
             // inputs are tokenized into promptTextTokens; no separate usage is
             // reported or billed for either modality.
-            promptTextTokens: perMillion(0.5),
-            promptCachedTokens: perMillion(0.1),
-            completionTextTokens: perMillion(1.2),
+            promptTextTokens: perMillion(0.5) * 1.055,
+            promptCachedTokens: perMillion(0.1) * 1.055,
+            completionTextTokens: perMillion(1.2) * 1.055,
         },
         title: "Inkling Small",
         description:
@@ -1717,9 +1717,9 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.14),
-            promptCachedTokens: perMillion(0.0028),
-            completionTextTokens: perMillion(0.28),
+            promptTextTokens: perMillion(0.14) * 1.055,
+            promptCachedTokens: perMillion(0.0028) * 1.055,
+            completionTextTokens: perMillion(0.28) * 1.055,
         },
         title: "MiMo V2.5",
         description: "Efficient multimodal reasoning for agents and coding",
@@ -1742,9 +1742,9 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         cost: {
             // OpenRouter Xiaomi FP8 endpoint, verified 2026-08-22.
-            promptTextTokens: perMillion(0.435),
-            promptCachedTokens: perMillion(0.0036),
-            completionTextTokens: perMillion(0.87),
+            promptTextTokens: perMillion(0.435) * 1.055,
+            promptCachedTokens: perMillion(0.0036) * 1.055,
+            completionTextTokens: perMillion(0.87) * 1.055,
         },
         title: "MiMo V2.5 Pro",
         description: "Long-context reasoning and coding with higher capability",
@@ -1765,15 +1765,15 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
-            promptTextTokens: perMillion(2.0),
-            promptCachedTokens: perMillion(0.2),
+            promptTextTokens: perMillion(2.0) * 1.055,
+            promptCachedTokens: perMillion(0.2) * 1.055,
             // OpenRouter bills Gemini cache writes as normal input plus the
             // five-minute storage charge applied by the billing rule below.
-            promptCacheWriteTokens: perMillion(2.0),
-            promptAudioTokens: perMillion(2.0),
-            promptImageTokens: perMillion(2.0),
-            promptVideoTokens: perMillion(2.0),
-            completionTextTokens: perMillion(12.0),
+            promptCacheWriteTokens: perMillion(2.0) * 1.055,
+            promptAudioTokens: perMillion(2.0) * 1.055,
+            promptImageTokens: perMillion(2.0) * 1.055,
+            promptVideoTokens: perMillion(2.0) * 1.055,
+            completionTextTokens: perMillion(12.0) * 1.055,
         },
         // The pinned OpenRouter Google Vertex route reprices the whole request
         // from 200K prompt tokens. Image tokens retain their separately
@@ -1782,12 +1782,12 @@ const TEXT_BASE_SERVICES = {
         ...defineCostVariants(
             {
                 long_context: {
-                    promptTextTokens: perMillion(4.0),
-                    promptCachedTokens: perMillion(0.4),
-                    promptCacheWriteTokens: perMillion(4.0),
-                    promptAudioTokens: perMillion(4.0),
-                    promptVideoTokens: perMillion(4.0),
-                    completionTextTokens: perMillion(18.0),
+                    promptTextTokens: perMillion(4.0) * 1.055,
+                    promptCachedTokens: perMillion(0.4) * 1.055,
+                    promptCacheWriteTokens: perMillion(4.0) * 1.055,
+                    promptAudioTokens: perMillion(4.0) * 1.055,
+                    promptVideoTokens: perMillion(4.0) * 1.055,
+                    completionTextTokens: perMillion(18.0) * 1.055,
                 },
             },
             longContextAtLeast(200_000),
@@ -1801,8 +1801,8 @@ const TEXT_BASE_SERVICES = {
             "<200K context",
         ),
         billing: openRouterGeminiBilling({
-            searchCostPerThousandRequests: 14,
-            storageCostPerMillionTokenHours: 4.5,
+            searchCostPerThousandRequests: 14 * 1.055,
+            storageCostPerMillionTokenHours: 4.5 * 1.055,
         }),
         title: "Gemini 3.1 Pro Preview",
         description:
@@ -2015,9 +2015,9 @@ const TEXT_BASE_SERVICES = {
         perUserRpm: 60,
         cost: {
             // OpenRouter DeepInfra FP8 endpoint, verified 2026-08-22.
-            promptTextTokens: perMillion(0.1),
-            promptImageTokens: perMillion(0.1),
-            completionTextTokens: perMillion(0.3),
+            promptTextTokens: perMillion(0.1) * 1.055,
+            promptImageTokens: perMillion(0.1) * 1.055,
+            completionTextTokens: perMillion(0.3) * 1.055,
         },
         title: "Meta Llama 4 Scout",
         description:
@@ -2044,9 +2044,9 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.25),
-            promptCachedTokens: perMillion(0.05),
-            completionTextTokens: perMillion(1),
+            promptTextTokens: perMillion(0.25) * 1.055,
+            promptCachedTokens: perMillion(0.05) * 1.055,
+            completionTextTokens: perMillion(1) * 1.055,
         },
         title: "MiniMax M2.7",
         description: "Multilingual coding and agent tasks at a friendly price",
@@ -2174,9 +2174,9 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         // OpenRouter Parasail BF16 endpoint, verified 2026-08-22.
         cost: {
-            promptTextTokens: perMillion(0.12), // per 1M tokens
-            promptCachedTokens: perMillion(0.07), // per 1M cached input tokens
-            completionTextTokens: perMillion(0.8), // per 1M tokens
+            promptTextTokens: perMillion(0.12) * 1.055, // per 1M tokens
+            promptCachedTokens: perMillion(0.07) * 1.055, // per 1M cached input tokens
+            completionTextTokens: perMillion(0.8) * 1.055, // per 1M tokens
         },
         title: "Qwen3 Coder Next",
         description:
@@ -2206,18 +2206,18 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         // OpenRouter triples all token rates from 256K prompt tokens.
         cost: {
-            promptTextTokens: perMillion(0.32),
-            promptCachedTokens: perMillion(0.064),
-            promptCacheWriteTokens: perMillion(0.4),
-            completionTextTokens: perMillion(1.28),
+            promptTextTokens: perMillion(0.32) * 1.055,
+            promptCachedTokens: perMillion(0.064) * 1.055,
+            promptCacheWriteTokens: perMillion(0.4) * 1.055,
+            completionTextTokens: perMillion(1.28) * 1.055,
         },
         ...defineCostVariants(
             {
                 long_context: {
-                    promptTextTokens: perMillion(0.96),
-                    promptCachedTokens: perMillion(0.192),
-                    promptCacheWriteTokens: perMillion(1.2),
-                    completionTextTokens: perMillion(3.84),
+                    promptTextTokens: perMillion(0.96) * 1.055,
+                    promptCachedTokens: perMillion(0.192) * 1.055,
+                    promptCacheWriteTokens: perMillion(1.2) * 1.055,
+                    completionTextTokens: perMillion(3.84) * 1.055,
                 },
             },
             longContextAtLeast(256_000),
@@ -2251,10 +2251,10 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(1.475),
-            promptCachedTokens: perMillion(0.295),
-            promptCacheWriteTokens: perMillion(1.84375),
-            completionTextTokens: perMillion(4.425),
+            promptTextTokens: perMillion(1.475) * 1.055,
+            promptCachedTokens: perMillion(0.295) * 1.055,
+            promptCacheWriteTokens: perMillion(1.84375) * 1.055,
+            completionTextTokens: perMillion(4.425) * 1.055,
         },
         title: "Qwen3.7 Max",
         description:
@@ -2303,11 +2303,11 @@ const TEXT_BASE_SERVICES = {
         cost: {
             // OpenRouter Chutes FP8 route rates (2026-09-03). OpenRouter
             // publishes one prompt rate and no separate image/video rates.
-            promptTextTokens: perMillion(0.32),
-            promptCachedTokens: perMillion(0.032),
-            promptImageTokens: perMillion(0.32),
-            promptVideoTokens: perMillion(0.32),
-            completionTextTokens: perMillion(2.5),
+            promptTextTokens: perMillion(0.32) * 1.055,
+            promptCachedTokens: perMillion(0.032) * 1.055,
+            promptImageTokens: perMillion(0.32) * 1.055,
+            promptVideoTokens: perMillion(0.32) * 1.055,
+            completionTextTokens: perMillion(2.5) * 1.055,
         },
         title: "Qwen3.8 27B",
         description:
@@ -2331,12 +2331,12 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(2),
-            promptCachedTokens: perMillion(0.25),
-            promptCacheWriteTokens: perMillion(2.5),
-            promptImageTokens: perMillion(2),
-            promptVideoTokens: perMillion(2),
-            completionTextTokens: perMillion(6),
+            promptTextTokens: perMillion(2) * 1.055,
+            promptCachedTokens: perMillion(0.25) * 1.055,
+            promptCacheWriteTokens: perMillion(2.5) * 1.055,
+            promptImageTokens: perMillion(2) * 1.055,
+            promptVideoTokens: perMillion(2) * 1.055,
+            completionTextTokens: perMillion(6) * 1.055,
         },
         title: "Qwen3.8 Max",
         description:
@@ -2394,12 +2394,12 @@ const TEXT_BASE_SERVICES = {
         // price with a single 0-1M context tier (2026-09-05). OpenRouter
         // publishes one prompt rate and no separate image/video rates.
         cost: {
-            promptTextTokens: perMillion(0.15),
-            promptCachedTokens: perMillion(0.016),
-            promptCacheWriteTokens: perMillion(0.2),
-            promptImageTokens: perMillion(0.15),
-            promptVideoTokens: perMillion(0.15),
-            completionTextTokens: perMillion(0.47),
+            promptTextTokens: perMillion(0.15) * 1.055,
+            promptCachedTokens: perMillion(0.016) * 1.055,
+            promptCacheWriteTokens: perMillion(0.2) * 1.055,
+            promptImageTokens: perMillion(0.15) * 1.055,
+            promptVideoTokens: perMillion(0.15) * 1.055,
+            completionTextTokens: perMillion(0.47) * 1.055,
         },
         title: "Qwen3.8 Flash",
         description:
@@ -2425,30 +2425,30 @@ const TEXT_BASE_SERVICES = {
         // OpenRouter's min_prompt_tokens overrides apply from 32K and 256K
         // total prompt tokens.
         cost: {
-            promptTextTokens: perMillion(0.03),
-            promptCachedTokens: perMillion(0.006),
-            promptCacheWriteTokens: perMillion(0.038),
-            promptImageTokens: perMillion(0.03),
-            promptVideoTokens: perMillion(0.03),
-            completionTextTokens: perMillion(0.13),
+            promptTextTokens: perMillion(0.03) * 1.055,
+            promptCachedTokens: perMillion(0.006) * 1.055,
+            promptCacheWriteTokens: perMillion(0.038) * 1.055,
+            promptImageTokens: perMillion(0.03) * 1.055,
+            promptVideoTokens: perMillion(0.03) * 1.055,
+            completionTextTokens: perMillion(0.13) * 1.055,
         },
         ...defineCostVariants(
             {
                 context_32k: {
-                    promptTextTokens: perMillion(0.1),
-                    promptCachedTokens: perMillion(0.02),
-                    promptCacheWriteTokens: perMillion(0.125),
-                    promptImageTokens: perMillion(0.1),
-                    promptVideoTokens: perMillion(0.1),
-                    completionTextTokens: perMillion(0.4),
+                    promptTextTokens: perMillion(0.1) * 1.055,
+                    promptCachedTokens: perMillion(0.02) * 1.055,
+                    promptCacheWriteTokens: perMillion(0.125) * 1.055,
+                    promptImageTokens: perMillion(0.1) * 1.055,
+                    promptVideoTokens: perMillion(0.1) * 1.055,
+                    completionTextTokens: perMillion(0.4) * 1.055,
                 },
                 context_256k: {
-                    promptTextTokens: perMillion(0.2),
-                    promptCachedTokens: perMillion(0.04),
-                    promptCacheWriteTokens: perMillion(0.25),
-                    promptImageTokens: perMillion(0.2),
-                    promptVideoTokens: perMillion(0.2),
-                    completionTextTokens: perMillion(0.8),
+                    promptTextTokens: perMillion(0.2) * 1.055,
+                    promptCachedTokens: perMillion(0.04) * 1.055,
+                    promptCacheWriteTokens: perMillion(0.25) * 1.055,
+                    promptImageTokens: perMillion(0.2) * 1.055,
+                    promptVideoTokens: perMillion(0.2) * 1.055,
+                    completionTextTokens: perMillion(0.8) * 1.055,
                 },
             },
             ({ usage }) => {
@@ -2500,8 +2500,8 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.13),
-            completionTextTokens: perMillion(0.52),
+            promptTextTokens: perMillion(0.13) * 1.055,
+            completionTextTokens: perMillion(0.52) * 1.055,
         },
         title: "Qwen3 VL 30B A3B Instruct",
         description:
@@ -2590,8 +2590,8 @@ const TEXT_BASE_SERVICES = {
         cost: {
             // OpenRouter stepfun/step-3.5-flash posted rates (2026-07-10):
             // prompt $0.10/M, completion $0.30/M
-            promptTextTokens: perMillion(0.1),
-            completionTextTokens: perMillion(0.3),
+            promptTextTokens: perMillion(0.1) * 1.055,
+            completionTextTokens: perMillion(0.3) * 1.055,
         },
         title: "StepFun Step 3.5 Flash",
         description: "Fast, low-cost text reasoning for everyday tasks",

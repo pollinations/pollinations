@@ -28,6 +28,8 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [📚 AI Flashcards](https://chibbit-99.github.io/flashcardgen) | Create AI flashcards. Helps turn content into study cards for review. | [@Chibbit-99](https://github.com/Chibbit-99) |
+| [🖼️ PollenBatch Multi-Image Generation + Character Generation Engine](https://donwrightdesigns.github.io/pollenbatch) | Generate multiple variations of the same prompt in low res, select the version that you like the most, and then regenerate at high resolution! Also, create consistent characters with the same top-down | [@donwrightdesigns](https://github.com/donwrightdesigns) |
 | [🖼️ manhwa studio](https://manhwa-studio-320488177521.asia-southeast1.run.app) | Create webtoon comics with character profiles, scene planning, Pollinations-generated panels, dialogue bubbles and a vertical comic canvas. | [@rudigunselawe-oss](https://github.com/rudigunselawe-oss) |
 | [🖼️ Co-Eco-Graph — Enchanted Contract Explorer](https://ceg-wine.vercel.app) | Paste any EVM contract address and explore its subgraph ecosystem as an interactive graph — subgraphs, entities, event handlers from The Graph, plus AI fairy-tale + fantasy illustration. Pollinations | [@alekcangp](https://github.com/alekcangp) |
 | [🖼️ Pollination_chatbot](https://pollinations-chatbot.vercel.app) | Ek simple aur friendly AI chatbot jo Pollinations ke text generation API (openai, mistral, gemini models) se power hota hai. Users apni Pollinations account se secure "Login with Pollinations" (BYOP a | [@zeroxmanhwa053-rgb](https://github.com/zeroxmanhwa053-rgb) |
@@ -36,8 +38,6 @@
 | [💬 NewEra Ai Agent](https://newera.namansoni.in) | # NewEra AI Agent NewEra is a free online AI agent that plans, codes, builds and deploys real applications. Created by Naman Soni. URL: https://newera.namansoni.in/ NewEra turns a plain-English descri | [@NamanSoni78](https://github.com/NamanSoni78) |
 | [✍️ YouTube Transcription AI by MrPaloma](https://www.mrpaloma.com/trascrivere-video-youtube-pollinations) | A lightweight, free web app that turns any YouTube video transcript into structured summaries, English translations, and AI-generated concept covers powered by Pollinations.ai. The YouTube Transcript | [@rapidbuildlabai](https://github.com/rapidbuildlabai) |
 | [🖼️ Men's Fashion Pins](https://fashionpins4u.blogspot.com/p/mens-fashion-pins.html) | Create attractive images of men's fashion for pinterest using pollinations. this app is using gpt-image-2 model. | [@hindi-status](https://github.com/hindi-status) |
-| [✍️ StoryCraft AI](https://khushalkks.github.io/pollinations) | StoryCraft AI is an interactive digital storybook and scene illustrator powered directly by Pollinations.ai Text and Image Generation APIs. It uses text.pollinations.ai to generate multi-chapter narra | [@khushalkks](https://github.com/khushalkks) |
-| [🖼️ PolliArena](https://polli-arena.cloudbr.eu.org) | Community-driven model benchmark and blind comparison arena for Pollinations image models with native BYOP (Connect User Wallets). Features: - ⚔️ Blind Battle Arena: Pit two secretly randomized models | [@samucastudent](https://github.com/samucastudent) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

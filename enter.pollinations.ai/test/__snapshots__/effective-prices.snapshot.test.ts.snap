@@ -1288,26 +1288,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "meta/llama-4-scout": {
     "cost": {
-      "completionTextTokens": 0.0000003165,
-      "promptImageTokens": 0.0000001055,
-      "promptTextTokens": 0.0000001055,
+      "completionTextTokens": 0.0000003,
+      "promptImageTokens": 0.0000001,
+      "promptTextTokens": 0.0000001,
     },
     "price": {
-      "completionTextTokens": 0.0000003165,
-      "promptImageTokens": 0.0000001055,
-      "promptTextTokens": 0.0000001055,
+      "completionTextTokens": 0.0000003,
+      "promptImageTokens": 0.0000001,
+      "promptTextTokens": 0.0000001,
     },
   },
-  "meta/llama-4-scout:openrouter:vertex-us-east5": {
+  "meta/llama-4-scout:openrouter:novita-bf16": {
     "cost": {
-      "completionTextTokens": 0.0000007385,
-      "promptImageTokens": 0.00000026375,
-      "promptTextTokens": 0.00000026375,
+      "completionTextTokens": 0.00000062245,
+      "promptImageTokens": 0.0000001899,
+      "promptTextTokens": 0.0000001899,
     },
     "price": {
-      "completionTextTokens": 0.0000007385,
-      "promptImageTokens": 0.00000026375,
-      "promptTextTokens": 0.00000026375,
+      "completionTextTokens": 0.00000062245,
+      "promptImageTokens": 0.0000001899,
+      "promptTextTokens": 0.0000001899,
     },
   },
   "meta/muse-glimmer-30b": {

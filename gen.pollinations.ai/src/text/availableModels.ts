@@ -710,13 +710,13 @@ const models: ModelDefinition[] = [
     },
     {
         name: "meta/llama-4-scout",
-        config: portkeyConfig["Llama-4-Scout-17B-16E-Instruct"],
+        config: portkeyConfig["meta/llama-4-scout"],
         // No reasoning mode.
         transform: stripReasoning,
     },
     {
-        name: "meta/llama-4-scout:openrouter:vertex-us-east5",
-        config: portkeyConfig["llama-scout-openrouter-vertex"],
+        name: "meta/llama-4-scout:openrouter:novita-bf16",
+        config: portkeyConfig["llama-scout-openrouter-novita"],
         transform: stripReasoning,
     },
     {

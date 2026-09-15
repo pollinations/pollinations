@@ -2,8 +2,13 @@ import { getAuthorizeRequestError } from "@shared/auth/authorize-config.ts";
 import { loginErrors } from "@shared/auth/login-errors.ts";
 import { getDefaultErrorMessage } from "../../shared/error.ts";
 import type { Conditions } from "./live-client";
-import type { CanvasScreen } from "./pollen-connect-canvas-data";
+import {
+    type CanvasScreen,
+    type ScreenVariant,
+    screenVariant,
+} from "./pollen-connect-canvas-data";
 import { galleryScreensForFlow } from "./pollen-connect-gallery-data";
+import { consentExpected } from "./review-consent";
 import type { ReviewStep } from "./review-driver";
 import { fundingReview, fundingSituations } from "./review-funding";
 import type { ReviewRequest } from "./review-requests";
@@ -39,15 +44,15 @@ function page(id: string) {
     if (!entry) throw new Error(`Missing App Login page: ${id}`);
     return entry;
 }
-function caseTitle(entry: CanvasScreen, index: number) {
-    const label = entry.variants?.[index]?.label;
+function caseTitle(entry: CanvasScreen, variant?: ScreenVariant) {
+    const label = variant?.label;
     return !label || ["Ready", "Default", entry.title].includes(label)
         ? entry.title
         : `${entry.title} · ${label}`;
 }
 function reviewCase(
     pageId: string,
-    index: number,
+    selection: Pick<ScreenVariant, "screen" | "params">,
     id: string,
     family: string,
     recipe: Pick<
@@ -66,7 +71,7 @@ function reviewCase(
     },
 ): ReviewCase {
     const entry = page(pageId);
-    const variant = entry.variants?.[index];
+    const variant = screenVariant(entry, selection);
     const screen = recipe.query?.screen ?? variant?.screen ?? entry.screen;
     if (!screen) throw new Error(`Missing App Login route: ${id}`);
     return {
@@ -74,7 +79,7 @@ function reviewCase(
         pageId,
         family,
         variant: variant?.label ?? entry.title,
-        title: recipe.title ?? caseTitle(entry, index),
+        title: recipe.title ?? caseTitle(entry, variant),
         query: recipe.query ?? { screen, ...variant?.params },
         conditions: recipe.conditions,
         expected: recipe.expected,
@@ -120,11 +125,11 @@ function requestErrorText(query: Record<string, string>) {
 // Every case starts with fresh browser storage and an isolated account baseline.
 // Only the recipe's explicit conditions differ from the selected shared baseline.
 export const appLoginReviewCases: ReviewCase[] = [
-    reviewCase("app-connect", 0, "app-connect", "app-connect", {
+    reviewCase("app-connect", {}, "app-connect", "app-connect", {
         conditions: { account: "signed-out" },
         expected: [{ selector: '[data-connect-state="signed-out"] button' }],
     }),
-    reviewCase("sign-in", 0, "sign-in", "sign-in", {
+    reviewCase("sign-in", {}, "sign-in", "sign-in", {
         conditions: { account: "signed-out" },
         expected: [
             { selector: "#sign-in-title" },
@@ -134,10 +139,10 @@ export const appLoginReviewCases: ReviewCase[] = [
             },
         ],
     }),
-    reviewCase("consent", 0, "consent", "consent", {
+    reviewCase("consent", {}, "consent", "consent", {
         conditions: { account: "signed-in" },
         expected: [
-            { selector: "#authorize-dialog-title" },
+            ...consentExpected("app"),
             { selector: 'button[aria-busy="false"]:has-text("Allow access")' },
         ],
     }),
@@ -145,9 +150,7 @@ export const appLoginReviewCases: ReviewCase[] = [
         const funding = fundingReview(situation);
         return reviewCase(
             "consent",
-            page("consent").variants?.findIndex(
-                ({ params }) => params?.funding === situation.id,
-            ) ?? -1,
+            { params: { funding: situation.id } },
             `consent-${situation.id}`,
             "consent",
             {
@@ -155,7 +158,7 @@ export const appLoginReviewCases: ReviewCase[] = [
                 query: { screen: "oauth" },
                 expected: [
                     ...funding.expected,
-                    { selector: "#authorize-dialog-title" },
+                    ...consentExpected("app"),
                     {
                         selector:
                             'button[aria-busy="false"]:has-text("Allow access")',
@@ -164,27 +167,40 @@ export const appLoginReviewCases: ReviewCase[] = [
             },
         );
     }),
-    reviewCase("sign-in", 1, "app-checking", "sign-in", {
-        query: { screen: "oauth-signed-out" },
-        conditions: { account: "signed-out" },
-        requests: [{ path: "/api/app-lookup", outcome: "pending" }],
-        expected: [
-            { selector: "button[aria-busy='true']", text: "Checking app" },
-        ],
-    }),
-    reviewCase("loading", 0, "loading", "loading", {
-        query: { screen: "oauth" },
-        conditions: { account: "signed-in" },
-        requests: [{ path: "/api/auth/get-session", outcome: "pending" }],
-        expected: [
-            { selector: "button[aria-busy='true']", text: "Checking account" },
-        ],
-    }),
+    reviewCase(
+        "sign-in",
+        { params: { app_loading: "1" } },
+        "app-checking",
+        "sign-in",
+        {
+            query: { screen: "oauth-signed-out" },
+            conditions: { account: "signed-out" },
+            requests: [{ path: "/api/app-lookup", outcome: "pending" }],
+            expected: [
+                { selector: "button[aria-busy='true']", text: "Checking app" },
+            ],
+        },
+    ),
+    reviewCase(
+        "loading",
+        { params: { session: "loading" } },
+        "loading",
+        "loading",
+        {
+            query: { screen: "oauth" },
+            conditions: { account: "signed-in" },
+            requests: [{ path: "/api/auth/get-session", outcome: "pending" }],
+            expected: [
+                {
+                    selector: "button[aria-busy='true']",
+                    text: "Checking account",
+                },
+            ],
+        },
+    ),
     reviewCase(
         "connection-link-errors",
-        (page("connection-link-errors").variants ?? []).findIndex(
-            (v) => v.params?.request_error === "lookup",
-        ),
+        { params: { request_error: "lookup" } },
         "blocked-lookup",
         "blocked",
         {
@@ -206,7 +222,7 @@ export const appLoginReviewCases: ReviewCase[] = [
     ...(
         [
             [
-                1,
+                { app_loading: "1" },
                 "consent-checking",
                 "/api/app-lookup",
                 "pending",
@@ -214,7 +230,7 @@ export const appLoginReviewCases: ReviewCase[] = [
                 "Checking app",
             ],
             [
-                2,
+                { model_catalog: "loading" },
                 "consent-models-loading",
                 "/gen/models",
                 "pending",
@@ -222,7 +238,7 @@ export const appLoginReviewCases: ReviewCase[] = [
                 "Loading models",
             ],
             [
-                3,
+                { model_catalog: "error" },
                 "consent-models-error",
                 "/gen/models",
                 "unavailable",
@@ -230,173 +246,222 @@ export const appLoginReviewCases: ReviewCase[] = [
                 "Couldn’t load models",
             ],
         ] as const
-    ).map(([index, id, path, outcome, selector, text]) =>
-        reviewCase("consent", index, id, "consent", {
+    ).map(([params, id, path, outcome, selector, text]) =>
+        reviewCase("consent", { params }, id, "consent", {
             query: { screen: "oauth" },
             conditions: { account: "signed-in" },
             requests: [{ path, outcome }],
             expected: [
-                { selector: "#authorize-dialog-title" },
+                ...consentExpected("app", id === "consent-checking"),
                 { selector, text },
             ],
         }),
     ),
-    reviewCase("consent", 4, "consent-connecting", "app-connecting", {
-        query: { screen: "oauth" },
-        conditions: { account: "signed-in" },
-        requests: [
-            { path: "/api/api-keys", method: "POST", outcome: "pending" },
-        ],
-        steps: [{ selector: "button", text: "Allow access", action: "click" }],
-        expected: [
-            { selector: "button[aria-busy='true']", text: "Connecting" },
-        ],
-    }),
-    ...Object.values(loginErrors).map((error) =>
-        reviewCase(error.id, 0, error.id, error.id, {
-            title: error.title,
-            query: {
-                screen:
-                    error.id === loginErrors.default.id
-                        ? "oauth-signed-out"
-                        : error.id,
-            },
-            ...(error.id === loginErrors.default.id && {
-                finalRoute: "/authorize",
-                action: {
-                    type: "sign-in" as const,
-                    outcome: "provider-error" as const,
-                },
-            }),
-            conditions: {
-                account:
-                    error.code === loginErrors.banned.code
-                        ? "banned"
-                        : "signed-out",
-            },
-            expected: [
-                { selector: "#sign-in-title", text: error.title },
-                { selector: '[role="alert"]', text: error.message },
+    reviewCase(
+        "consent",
+        { params: { action: "authorize", result: "waiting" } },
+        "consent-connecting",
+        "app-connecting",
+        {
+            query: { screen: "oauth" },
+            conditions: { account: "signed-in" },
+            requests: [
+                { path: "/api/api-keys", method: "POST", outcome: "pending" },
             ],
-        }),
-    ),
-    ...(page("connection-link-errors").variants ?? []).flatMap(
-        (variant, index) => {
-            const reason = variant.params?.request_error;
-            if (!reason || reason === "lookup") return [];
-            const query = {
-                screen: "oauth-request-signed-out",
-                request_error: reason,
-            };
-            const validation = requestErrorText(query);
-            // Lookup copy currently lives inside the production controller. Match
-            // a distinguishing fragment without creating another copy catalog.
-            const text =
-                validation ??
-                (reason === "redirect"
-                    ? "not registered for this app"
-                    : reason === "app"
-                      ? "app key could not be verified"
-                      : null);
-            if (!text) throw new Error(`Unsupported request recipe: ${reason}`);
-            return [
-                reviewCase(
-                    "connection-link-errors",
-                    index,
-                    `blocked-${reason}`,
-                    "blocked",
-                    {
-                        query,
-                        conditions: { account: "signed-out" },
-                        expected: [
-                            { selector: "#connection-error-title" },
-                            { selector: '[role="alert"]', text },
-                        ],
-                    },
-                ),
-            ];
+            steps: [
+                { selector: "button", text: "Allow access", action: "click" },
+            ],
+            expected: [
+                ...consentExpected("app"),
+                { selector: "button[aria-busy='true']", text: "Connecting" },
+            ],
         },
     ),
+    ...Object.values(loginErrors).map((error) =>
+        reviewCase(
+            error.id,
+            {
+                params: {
+                    login_error: error.code,
+                    ...(error.id === "login-failed" && { login_flow: "app" }),
+                },
+            },
+            error.id,
+            error.id,
+            {
+                title: error.title,
+                query: {
+                    screen:
+                        error.id === loginErrors.default.id
+                            ? "oauth-signed-out"
+                            : error.id,
+                },
+                ...(error.id === loginErrors.default.id && {
+                    finalRoute: "/authorize",
+                    action: {
+                        type: "sign-in" as const,
+                        outcome: "provider-error" as const,
+                    },
+                }),
+                conditions: {
+                    account:
+                        error.code === loginErrors.banned.code
+                            ? "banned"
+                            : "signed-out",
+                },
+                expected: [
+                    { selector: "#sign-in-title", text: error.title },
+                    { selector: '[role="alert"]', text: error.message },
+                ],
+            },
+        ),
+    ),
+    ...(page("connection-link-errors").variants ?? []).flatMap((variant) => {
+        const reason = variant.params?.request_error;
+        if (!reason || reason === "lookup") return [];
+        const query = {
+            screen: "oauth-request-signed-out",
+            request_error: reason,
+        };
+        const validation = requestErrorText(query);
+        // Lookup copy currently lives inside the production controller. Match
+        // a distinguishing fragment without creating another copy catalog.
+        const text =
+            validation ??
+            (reason === "redirect"
+                ? "not registered for this app"
+                : reason === "app"
+                  ? "app key could not be verified"
+                  : null);
+        if (!text) throw new Error(`Unsupported request recipe: ${reason}`);
+        return [
+            reviewCase(
+                "connection-link-errors",
+                variant,
+                `blocked-${reason}`,
+                "blocked",
+                {
+                    query,
+                    conditions: { account: "signed-out" },
+                    expected: [
+                        { selector: "#connection-error-title" },
+                        { selector: '[role="alert"]', text },
+                    ],
+                },
+            ),
+        ];
+    }),
     ...(["pending", "error"] as const).map((outcome) => {
         const pageId = outcome === "pending" ? "sign-in" : "sign-in-errors";
-        const index = page(pageId).variants?.findIndex(
-            (variant) =>
-                variant.params?.action === "sign-in" &&
-                variant.params.result ===
-                    (outcome === "pending" ? "waiting" : "error"),
-        );
-        if (index === undefined || index < 0)
-            throw new Error(`Missing sign-in ${outcome} state`);
         const id = outcome === "pending" ? "app-signing-in" : "error";
-        return reviewCase(pageId, index, id, id, {
-            query: { screen: "oauth-signed-out" },
-            conditions: { account: "signed-out" },
-            action: { type: "sign-in", outcome },
-            expected:
-                outcome === "pending"
-                    ? [
-                          { selector: "#sign-in-title" },
-                          {
-                              selector: 'button[aria-busy="true"]',
-                              text: "Signing in",
-                          },
-                      ]
-                    : [
-                          {
-                              selector: "#sign-in-title",
-                              text: loginErrors.default.title,
-                          },
-                          {
-                              selector: '[role="alert"]',
-                              text: loginErrors.default.message,
-                          },
-                      ],
-        });
+        return reviewCase(
+            pageId,
+            {
+                params: {
+                    action: "sign-in",
+                    result: outcome === "pending" ? "waiting" : "error",
+                },
+            },
+            id,
+            id,
+            {
+                query: { screen: "oauth-signed-out" },
+                conditions: { account: "signed-out" },
+                action: { type: "sign-in", outcome },
+                expected:
+                    outcome === "pending"
+                        ? [
+                              { selector: "#sign-in-title" },
+                              {
+                                  selector: 'button[aria-busy="true"]',
+                                  text: "Signing in",
+                              },
+                          ]
+                        : [
+                              {
+                                  selector: "#sign-in-title",
+                                  text: loginErrors.default.title,
+                              },
+                              {
+                                  selector: '[role="alert"]',
+                                  text: loginErrors.default.message,
+                              },
+                          ],
+            },
+        );
     }),
     ...(
         [
-            "connected",
-            "checking-connection",
-            "connection-error",
-            "connection-check-error",
-            "loading-account",
-            "account-error",
-            "connected",
+            ["connected", {}],
+            [
+                "checking-connection",
+                {
+                    screen: "add-pollen-connect",
+                    params: { app_callback: "waiting" },
+                },
+            ],
+            [
+                "connection-error",
+                {
+                    screen: "add-pollen-connect",
+                    params: { app_callback: "error" },
+                },
+            ],
+            [
+                "connection-check-error",
+                {
+                    screen: "add-pollen-connect",
+                    params: { app_callback: "check-error" },
+                },
+            ],
+            ["loading-account", { params: { app_account: "loading" } }],
+            ["account-error", { params: { app_account: "account-error" } }],
+            ["limit-reached", { params: { sim_budget: "0" } }],
         ] as const
-    ).map((state, index) =>
+    ).map(([situation, selection]) =>
         reviewCase(
             "app-connected",
-            index,
-            `app-connected-${index}`,
-            index === 1
+            selection,
+            `app-${situation}`,
+            situation === "checking-connection"
                 ? "app-callback"
-                : index === 2 || index === 3
+                : situation === "connection-error" ||
+                    situation === "connection-check-error"
                   ? "app-callback-error"
-                  : index === 5
+                  : situation === "account-error"
                     ? "app-account-error"
                     : "app-connected",
             {
                 conditions: {
                     account: "signed-in",
-                    allowance: index === 6 ? "exhausted" : "available",
+                    allowance:
+                        situation === "limit-reached"
+                            ? "exhausted"
+                            : "available",
                 },
                 query: { screen: "add-pollen-connect" },
                 requests:
-                    index === 1 || index === 2
+                    situation === "checking-connection" ||
+                    situation === "connection-error"
                         ? [
                               {
                                   path: "/api/oauth/token",
                                   method: "POST",
                                   outcome:
-                                      index === 1 ? "pending" : "server-error",
+                                      situation === "checking-connection"
+                                          ? "pending"
+                                          : "server-error",
                               },
                           ]
-                        : index === 4 || index === 5
+                        : situation === "loading-account" ||
+                            situation === "account-error"
                           ? [
                                 {
                                     path: "/gen/account/profile",
                                     outcome:
-                                        index === 4 ? "pending" : "unavailable",
+                                        situation === "loading-account"
+                                            ? "pending"
+                                            : "unavailable",
                                 },
                             ]
                           : [],
@@ -406,7 +471,7 @@ export const appLoginReviewCases: ReviewCase[] = [
                         text: "Connect with Pollinations",
                         action: "click",
                     },
-                    ...(index === 6
+                    ...(situation === "limit-reached"
                         ? [
                               {
                                   selector: "input[type='number']",
@@ -420,7 +485,7 @@ export const appLoginReviewCases: ReviewCase[] = [
                         text: "Allow access",
                         action: "click",
                     },
-                    ...(index === 3
+                    ...(situation === "connection-check-error"
                         ? [
                               {
                                   selector: "[data-connect-state='connected']",
@@ -437,20 +502,62 @@ export const appLoginReviewCases: ReviewCase[] = [
                         : []),
                 ],
                 expected: [
-                    { selector: `[data-connect-state='${state}']` },
-                    ...(index === 6
+                    {
+                        selector: `[data-connect-state='${situation === "limit-reached" ? "connected" : situation}']`,
+                    },
+                    ...(situation === "limit-reached"
                         ? [{ selector: "button, span", text: "Limit reached" }]
                         : []),
                 ],
             },
         ),
     ),
+    reviewCase(
+        "app-connected",
+        {
+            screen: "add-pollen-connect",
+            params: { app_callback: "denied" },
+        },
+        "app-access-declined",
+        "app-callback-error",
+        {
+            conditions: { account: "signed-in" },
+            query: { screen: "add-pollen-connect" },
+            steps: [
+                {
+                    selector: "button",
+                    text: "Connect with Pollinations",
+                    action: "click",
+                },
+                {
+                    selector: "button",
+                    text: "Back to app",
+                    action: "click",
+                },
+            ],
+            expected: [
+                { selector: '[data-connect-state="connection-error"]' },
+                {
+                    selector: '[role="alert"]',
+                    text: "Connection was not completed. Please try again.",
+                },
+                {
+                    selector:
+                        'button:enabled:has(span:text-is("Connect with Pollinations"))',
+                },
+            ],
+        },
+    ),
     ...(["key", "code"] as const).map((kind) =>
         reviewCase(
             "consent-errors",
-            (page("consent-errors").variants ?? []).findIndex(
-                (v) => v.params?.authorize_error === kind,
-            ),
+            {
+                params: {
+                    action: "authorize",
+                    result: "error",
+                    authorize_error: kind,
+                },
+            },
             `consent-failed-${kind}`,
             "app-connection-failed",
             {
@@ -488,9 +595,13 @@ export const appLoginReviewCases: ReviewCase[] = [
     ),
     reviewCase(
         "sign-in-errors",
-        (page("sign-in-errors").variants ?? []).findIndex(
-            (v) => v.params?.authorize_error === "session",
-        ),
+        {
+            params: {
+                action: "sign-in",
+                result: "error",
+                authorize_error: "session",
+            },
+        },
         "consent-session-expired",
         "error",
         {
@@ -519,7 +630,7 @@ export const appLoginReviewCases: ReviewCase[] = [
             ],
         },
     ),
-    reviewCase("github-handoff", 0, "github-handoff", "github-handoff", {
+    reviewCase("github-handoff", {}, "github-handoff", "github-handoff", {
         provider: "GitHub",
         query: { screen: "github" },
         title: "Continue on GitHub · external reference",

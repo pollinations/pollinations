@@ -1,7 +1,10 @@
 import { loginErrors } from "@shared/auth/login-errors.ts";
 import type { CanvasScreen } from "./pollen-connect-canvas-data";
 import type { FlowEdge, FlowNode } from "./pollen-connect-diagram";
-import { walletBillingVariants } from "./pollen-connect-wallet-preview";
+import {
+    walletBillingVariants,
+    walletSessionVariant,
+} from "./pollen-connect-wallet-preview";
 
 const operationStates = (action: string, pending: string) => [
     { label: pending, params: { action, result: "waiting" } },
@@ -67,6 +70,7 @@ export const dashboardScreens: CanvasScreen[] = [
             },
             { label: "Payment credited", params: { account_case: "credited" } },
             ...walletBillingVariants,
+            walletSessionVariant,
         ],
     },
     {
@@ -163,8 +167,24 @@ export const dashboardScreens: CanvasScreen[] = [
                 params: { settings_case: "error" },
             },
             {
+                label: "Loading app catalog",
+                params: { settings_case: "toolkits-loading" },
+            },
+            {
+                label: "App catalog unavailable",
+                params: { settings_case: "toolkits-error" },
+            },
+            {
                 label: "Discord connected",
                 params: { settings_case: "discord-connected" },
+            },
+            {
+                label: "Discord check failed",
+                params: { settings_case: "discord-check-error" },
+            },
+            {
+                label: "Discord lookup failed",
+                params: { settings_case: "discord-lookup-error" },
             },
             {
                 label: "Discord identity unavailable",

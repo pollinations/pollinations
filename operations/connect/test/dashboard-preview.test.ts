@@ -215,6 +215,29 @@ describe("dashboard preview", () => {
     });
 });
 describe("wallet preview", () => {
+    it("exposes shared session recovery for wallet reads and billing writes", () => {
+        for (const cases of [
+            appTopupReviewCases,
+            dashboardReviewCasesForSection("topup"),
+        ]) {
+            for (const variant of [
+                "Session expired",
+                "Billing session expired",
+            ]) {
+                const item = cases.find((item) => item.variant === variant);
+                expect(
+                    item?.requests?.some(
+                        (request) => request.outcome === "unauthorized",
+                    ),
+                    variant,
+                ).toBe(true);
+                expect(item?.expected).toContainEqual({
+                    selector: "button:not(:disabled)",
+                    text: "Sign in again",
+                });
+            }
+        }
+    });
     it("shares billing states between app top-up and dashboard wallet", () => {
         for (const entry of [
             accountActionScreens.find(

@@ -61,7 +61,7 @@ export function RuntimeJourney({
         origin.current = scope;
         setPage({
             id: ++sequence.current,
-            src: canvasScreenUrl(initial.current, 0, { theme: mode }),
+            src: canvasScreenUrl(initial.current, undefined, { theme: mode }),
         });
         setObserved(undefined);
         setCanGoBack(false);

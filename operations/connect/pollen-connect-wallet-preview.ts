@@ -1,5 +1,10 @@
 import type { ScreenVariant } from "./pollen-connect-canvas-data";
 
+export const walletSessionVariant: ScreenVariant = {
+    label: "Session expired",
+    params: { account_case: "session-expired" },
+};
+
 // Both wallet routes expose the same real billing controls and preview states.
 export const walletBillingVariants: ScreenVariant[] = [
     {
@@ -43,6 +48,14 @@ export const walletBillingVariants: ScreenVariant[] = [
             billing_case: "enabled",
             action: "billing-portal",
             result: "error",
+        },
+    },
+    {
+        label: "Billing session expired",
+        params: {
+            billing_case: "ready",
+            action: "billing-save",
+            result: "session-expired",
         },
     },
 ];

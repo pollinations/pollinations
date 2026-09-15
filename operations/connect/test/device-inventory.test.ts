@@ -26,7 +26,7 @@ describe("one device inventory", () => {
             .filter((entry) => !entry.illustration)
             .flatMap((entry) =>
                 (entry.variants ?? [{}]).map((_, i) =>
-                    canvasScreenUrl(entry, i),
+                    canvasScreenUrl(entry, entry.variants?.[i]),
                 ),
             )
             .sort();
@@ -35,7 +35,7 @@ describe("one device inventory", () => {
             .filter((entry) => !entry.illustration)
             .flatMap((entry) =>
                 (entry.variants ?? [{}]).map((_, i) =>
-                    canvasScreenUrl(entry, i),
+                    canvasScreenUrl(entry, entry.variants?.[i]),
                 ),
             )
             .sort();

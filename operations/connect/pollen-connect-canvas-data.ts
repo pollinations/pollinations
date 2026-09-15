@@ -19,6 +19,35 @@ export type CanvasScreen = {
     illustration?: string;
     variants?: ScreenVariant[];
 };
+
+// A situation's identity is its route and parameters, never its array position
+// or display copy. Normalize an explicit copy of the page's default route.
+export function screenVariantId(
+    entry: CanvasScreen,
+    variant: Pick<ScreenVariant, "screen" | "params">,
+) {
+    const params = new URLSearchParams(variant.params);
+    if (variant.screen && variant.screen !== entry.screen)
+        params.set("screen", variant.screen);
+    params.sort();
+    return params.toString() || "default";
+}
+
+export function screenVariant(
+    entry: CanvasScreen,
+    selection: Pick<ScreenVariant, "screen" | "params"> = {},
+) {
+    const id = screenVariantId(entry, selection);
+    if (!entry.variants && id === "default") return undefined;
+    const matches = (entry.variants ?? []).filter(
+        (variant) => screenVariantId(entry, variant) === id,
+    );
+    if (matches.length !== 1)
+        throw new Error(
+            `Expected one situation ${entry.id}/${id}, found ${matches.length}`,
+        );
+    return matches[0];
+}
 export const enterLoginErrorScreens: CanvasScreen[] = Object.entries(
     loginErrors,
 ).map(([, error]) => ({
@@ -86,6 +115,11 @@ export const appReturnVariants: ScreenVariant[] = [
         label: "Connection not completed",
         screen: "add-pollen-connect",
         params: { app_callback: "error" },
+    },
+    {
+        label: "Access declined",
+        screen: "add-pollen-connect",
+        params: { app_callback: "denied" },
     },
     {
         label: "Connection check unavailable",
@@ -242,10 +276,9 @@ export const canvasGroups: { title: string; screens: CanvasScreen[] }[] = [
 
 export function canvasScreenUrl(
     entry: CanvasScreen,
-    variantIndex = 0,
+    variant = entry.variants?.[0],
     overrides: Record<string, string> = {},
 ) {
-    const variant = entry.variants?.[variantIndex];
     const screen = variant?.screen ?? entry.screen;
     const params = new URLSearchParams({
         screen: screen ?? "oauth",

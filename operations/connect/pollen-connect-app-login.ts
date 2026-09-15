@@ -11,7 +11,7 @@ import {
 const cards = galleryCardsForFlow("app", "main");
 const sources = canvasGroups.flatMap((group) => group.screens);
 const bindings: [string, (entry: CanvasScreen) => boolean, number, number][] = [
-    ["sign-in", (e) => e.id === "sign-in--0", 3, 0],
+    ["sign-in", (e) => e.id === "sign-in--default", 3, 0],
     [
         "app-signing-in",
         (e) =>
@@ -114,7 +114,7 @@ for (const [id] of external) {
 // These are outcomes inside the same optional host-app panel, not additional pages.
 const panelStates: [string, string[], number, number][] = [
     ["app-callback", ["waiting"], 8, 0],
-    ["app-callback-error", ["error", "check-error"], 9, 1],
+    ["app-callback-error", ["error", "denied", "check-error"], 9, 1],
     ["app-account-error", ["account-error"], 10, 1],
 ];
 const panel = appLoginScreens.get("app-connected");

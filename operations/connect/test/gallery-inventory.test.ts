@@ -17,6 +17,8 @@ import {
     authorizeFailures,
     canvasGroups,
     canvasScreenUrl,
+    screenVariant,
+    screenVariantId,
 } from "../pollen-connect-canvas-data";
 import {
     dashboardScreens,
@@ -32,6 +34,84 @@ import {
     galleryScreensForFlow,
 } from "../pollen-connect-gallery-data";
 import { entrances } from "../pollen-connect-journey-state";
+import { reviewFlows } from "../review-inventory";
+
+describe("stable situation bindings", () => {
+    it("keeps each real route and identity when variants are reordered or relabelled", () => {
+        for (const { flow, section } of reviewFlows) {
+            for (const entry of galleryScreensForFlow(flow, section)) {
+                if (!entry.variants) continue;
+                const reordered = {
+                    ...entry,
+                    variants: entry.variants
+                        .map((variant) => ({
+                            ...variant,
+                            label: `Updated copy: ${variant.label}`,
+                            params:
+                                variant.params &&
+                                Object.fromEntries(
+                                    Object.entries(variant.params).reverse(),
+                                ),
+                        }))
+                        .reverse(),
+                };
+                for (const variant of entry.variants) {
+                    const selected = screenVariant(reordered, variant);
+                    expect(
+                        selected,
+                        `${flow}/${section}/${entry.id}`,
+                    ).toBeDefined();
+                    if (!selected)
+                        throw new Error("Missing selected situation");
+                    expect(screenVariantId(reordered, selected)).toBe(
+                        screenVariantId(entry, variant),
+                    );
+                    const before = new URL(
+                        canvasScreenUrl(entry, variant),
+                        "http://preview.test",
+                    );
+                    const after = new URL(
+                        canvasScreenUrl(reordered, selected),
+                        "http://preview.test",
+                    );
+                    before.searchParams.sort();
+                    after.searchParams.sort();
+                    expect(after.href).toBe(before.href);
+                }
+            }
+        }
+    });
+
+    it("rejects missing or ambiguous situations instead of using the page default", () => {
+        const consent = galleryScreensForFlow("app", "main").find(
+            ({ id }) => id === "consent",
+        );
+        if (!consent?.variants) throw new Error("Missing consent inventory");
+        const selection = { params: { funding: "paid-required" } };
+        const selected = screenVariant(consent, selection);
+        if (!selected) throw new Error("Missing paid-only situation");
+        expect(() =>
+            screenVariant(
+                {
+                    ...consent,
+                    variants: consent.variants.filter(
+                        (variant) => variant !== selected,
+                    ),
+                },
+                selection,
+            ),
+        ).toThrow("found 0");
+        expect(() =>
+            screenVariant(
+                { ...consent, variants: [...consent.variants, selected] },
+                selection,
+            ),
+        ).toThrow("found 2");
+        expect(() => screenVariant({ ...consent, variants: [] }, {})).toThrow(
+            "found 0",
+        );
+    });
+});
 
 const { galleryScreens: deviceGalleryScreens, screens: deviceScreens } =
     getDeviceFlow();
@@ -374,7 +454,7 @@ it("shows every configured state as its own page with the original render parame
             const expectedUrls = source.flatMap((entry) =>
                 entry.variants?.length
                     ? entry.variants.map((_, index) =>
-                          canvasScreenUrl(entry, index),
+                          canvasScreenUrl(entry, entry.variants?.[index]),
                       )
                     : [canvasScreenUrl(entry)],
             );
@@ -391,8 +471,11 @@ it("shows every configured state as its own page with the original render parame
         }
     }
     const account = galleryPagesForFlow("account", "topup");
-    // Billing failures use the wallet load-error state.
-    expect(account).toHaveLength(20);
+    // Wallet loading and inline billing each expose their session recovery.
+    expect(account).toHaveLength(22);
+    expect(account.map((entry) => entry.variants?.[0].label)).toEqual(
+        expect.arrayContaining(["Session expired", "Billing session expired"]),
+    );
     expect(
         account.map((entry) => entry.variants?.[0].params?.account_case),
     ).toContain("pending");
@@ -435,7 +518,7 @@ it("groups configuration controls without hiding loading, success, or error stat
             const cardUrls = cards.flatMap((entry) =>
                 entry.variants?.length
                     ? entry.variants.map((_, index) =>
-                          canvasScreenUrl(entry, index),
+                          canvasScreenUrl(entry, entry.variants?.[index]),
                       )
                     : [canvasScreenUrl(entry)],
             );
@@ -449,7 +532,7 @@ it("groups configuration controls without hiding loading, success, or error stat
                         "Pollinations sign-in error": 5,
                         "App connection error": 13,
                         "Allow access": 7,
-                        "App · Connection status": 7,
+                        "App · Connection status": 8,
                     };
                     if (card.title in counts)
                         expect(card.variants).toHaveLength(counts[card.title]);
@@ -592,7 +675,8 @@ it("uses exactly the same Apps Login cards and variant URLs in Map, Screens and 
             ...new Set(
                 entries.flatMap((entry) =>
                     (entry.variants?.length ? entry.variants : [undefined]).map(
-                        (_, index) => canvasScreenUrl(entry, index),
+                        (_, index) =>
+                            canvasScreenUrl(entry, entry.variants?.[index]),
                     ),
                 ),
             ),
@@ -607,9 +691,9 @@ it("uses exactly the same Apps Login cards and variant URLs in Map, Screens and 
             card.id,
         );
         card.variants?.forEach((_variant, index) => {
-            expect(canvasScreenUrl(binding[1], index)).toBe(
-                canvasScreenUrl(card, index),
-            );
+            expect(
+                canvasScreenUrl(binding[1], binding[1].variants?.[index]),
+            ).toBe(canvasScreenUrl(card, card.variants?.[index]));
         });
     }
     for (const edge of appLoginEdges) {
@@ -644,7 +728,9 @@ it("shares sign-in failure UI while retaining both failure and retry paths", () 
     ] as const) {
         const entry = appLoginScreens.get(to);
         if (!entry) throw new Error(`Missing failure binding: ${to}`);
-        expect(canvasScreenUrl(entry)).toBe(canvasScreenUrl(card, index));
+        expect(canvasScreenUrl(entry)).toBe(
+            canvasScreenUrl(card, card.variants?.[index]),
+        );
         expect(
             appLoginEdges.some((edge) => edge.from === from && edge.to === to),
         ).toBe(true);
@@ -695,7 +781,7 @@ it("bookends Apps Login with the existing reusable app components", () => {
         maintained: true,
     });
     expect(cards[0].variants).toBeUndefined();
-    expect(cards.at(-1)?.variants).toHaveLength(7);
+    expect(cards.at(-1)?.variants).toHaveLength(8);
     for (const id of ["app-connect", "app-connected"]) {
         const card = cards.find((card) => card.id === id);
         expect(appLoginScreens.get(id)).toEqual(card);
@@ -728,14 +814,14 @@ it("keeps stored-key and allowance states on the existing App panel", () => {
     ).toMatchObject({ params: { sim_budget: "0" } });
     expect(
         panel?.variants
-            ?.slice(0, 4)
+            ?.slice(0, 5)
             .map((variant) => variant.params?.app_callback),
-    ).toEqual([undefined, "waiting", "error", "check-error"]);
+    ).toEqual([undefined, "waiting", "error", "denied", "check-error"]);
     expect(cards.some((card) => card.id.startsWith("app-callback"))).toBe(
         false,
     );
     const states = appLoginScreens.get("app-callback-error");
-    expect(states?.variants).toEqual(panel?.variants?.slice(2, 4));
+    expect(states?.variants).toEqual(panel?.variants?.slice(2, 5));
 });
 it("keeps account-detail failures on the return panel", () => {
     const cards = galleryCardsForFlow("app", "main");
@@ -757,7 +843,7 @@ it("keeps account-detail failures on the return panel", () => {
 it("keeps app lookup reviewable inside its screen and explicit as a map check", () => {
     const cards = galleryCardsForFlow("app", "main");
     for (const [cardId, checkId] of [
-        ["sign-in--0", "app-sign-in-checking"],
+        ["sign-in--default", "app-sign-in-checking"],
         ["consent", "app-checking"],
     ]) {
         const card = cards.find((entry) => entry.id === cardId);
@@ -768,7 +854,9 @@ it("keeps app lookup reviewable inside its screen and explicit as a map check", 
             (variant) => variant.params?.app_loading === "1",
         );
         expect(index).toBeGreaterThan(0);
-        expect(canvasScreenUrl(card, index)).toBe(canvasScreenUrl(state));
+        expect(canvasScreenUrl(card, card.variants?.[index])).toBe(
+            canvasScreenUrl(state),
+        );
         const check = getFlowFocus("app", "main").nodes.find(
             (node) => node.id === checkId,
         );

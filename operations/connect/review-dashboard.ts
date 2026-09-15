@@ -1,7 +1,12 @@
 import { loginErrors } from "@shared/auth/login-errors.ts";
 import { getDefaultErrorMessage } from "@shared/error.ts";
 import { accountActionScreens } from "./pollen-connect-account-actions";
-import type { CanvasScreen } from "./pollen-connect-canvas-data";
+import {
+    type CanvasScreen,
+    type ScreenVariant,
+    screenVariant,
+    screenVariantId,
+} from "./pollen-connect-canvas-data";
 import {
     dashboardScreens,
     dashboardSectionForScreen,
@@ -41,7 +46,48 @@ const headings: Record<string, string> = {
     "account-wallet": "Wallet",
 };
 const heading = (text: string) => ({ selector: "h1, h2, h3", text });
+const newsContent = [
+    heading("Announcements"),
+    { selector: "#canonical-model-slugs" },
+    heading("News"),
+    heading("FAQ"),
+];
 const noPageError = { selector: 'body:not(:has([role="alert"]))' };
+const appsSection = 'section:has(h2:text-is("Connect apps"))';
+const discordSection = 'section:has(h2:text-is("Connected accounts"))';
+const appsLoaded = { selector: `${appsSection}:not(:has([role="status"]))` };
+const availableApps = [
+    { selector: `${appsSection} p:text-is("GitHub")` },
+    { selector: `${appsSection} button[aria-label="Connect GitHub"]` },
+    {
+        selector: `${appsSection}:not(:has(button[aria-label="Disconnect GitHub"]))`,
+    },
+];
+const connectedApps = [
+    { selector: `${appsSection} p:text-is("GitHub")` },
+    { selector: `${appsSection} p:text-is("Connect review")` },
+    { selector: `${appsSection} p:text-is("Ready to use")` },
+    { selector: `${appsSection} button[aria-label="Disconnect GitHub"]` },
+    {
+        selector: `${appsSection} p`,
+        text: "No more apps to show. Search for another app to connect.",
+    },
+];
+// An expected failure may not conceal an unrelated failure in the same section.
+const appsAlert = (text?: string) => ({
+    selector: text
+        ? `${appsSection}:has([role="alert"]:has-text(${JSON.stringify(text)})):not(:has([role="alert"]:not(:has-text(${JSON.stringify(text)})))):not(:has([role="alert"] ~ [role="alert"]))`
+        : `${appsSection}:not(:has([role="alert"]))`,
+});
+const discordDisconnected = {
+    selector: `${discordSection}:not(:has([role="alert"])) button:text-is("Connect Discord"):enabled`,
+};
+const appsReady = [
+    appsLoaded,
+    appsAlert(),
+    ...availableApps,
+    { selector: `${appsSection} button[aria-label="Connect GitHub"]:enabled` },
+];
 const questsIdle = {
     selector:
         'body:not(:has(.text-intent-danger-text)):not(:has(span:text-is("Checking for new quests…")))',
@@ -71,19 +117,22 @@ function pageRoute(page: CanvasScreen) {
 function makeCase(
     namespace: string,
     page: CanvasScreen,
-    index: number,
+    selection: Pick<ScreenVariant, "screen" | "params">,
     recipe: Partial<DashboardReviewCase> = {},
 ): DashboardReviewCase {
-    const variant = page.variants?.[index];
+    const variant = screenVariant(page, selection);
+    const id = screenVariantId(page, selection);
     const screen = variant?.screen ?? page.screen;
     if (!screen) throw new Error(`Missing dashboard route: ${page.id}`);
     return {
-        id: `${namespace}-${page.id}${index ? `--${index}` : ""}`,
+        id: `${namespace}-${page.id}${id === "default" ? "" : `--${id}`}`,
         pageId: page.id,
         family: page.id,
         variant: variant?.label ?? page.title,
         title:
-            index && variant ? `${page.title} · ${variant.label}` : page.title,
+            id !== "default" && variant
+                ? `${page.title} · ${variant.label}`
+                : page.title,
         query: { screen },
         conditions: { account: "signed-in" },
         expected: [heading(headings[page.id] ?? page.title)],
@@ -92,8 +141,13 @@ function makeCase(
 }
 
 function errorCases(namespace: string, page: CanvasScreen) {
-    return Object.values(loginErrors).map((error, index) =>
-        makeCase(namespace, page, index, {
+    return Object.values(loginErrors).map((error) => {
+        const variant = page.variants?.find(
+            (variant) => variant.params?.login_error === error.code,
+        );
+        if (!variant)
+            throw new Error(`Missing login error ${page.id}/${error.code}`);
+        return makeCase(namespace, page, variant, {
             title: error.title,
             query: { screen: error.id },
             conditions: {
@@ -106,37 +160,51 @@ function errorCases(namespace: string, page: CanvasScreen) {
                 { selector: "#sign-in-title", text: error.title },
                 { selector: '[role="alert"]', text: error.message },
             ],
-        }),
-    );
-}
-
-function providerCase(namespace: string, page: CanvasScreen) {
-    return makeCase(namespace, page, 0, {
-        title: `${page.title} · external reference`,
-        provider: page.owner === "GitHub" ? "GitHub" : "Stripe",
-        conditions: {},
-        expected: [
-            heading(
-                page.owner === "GitHub"
-                    ? "Continue on GitHub"
-                    : page.title === "Manage billing"
-                      ? "Manage billing"
-                      : "Review purchase",
-            ),
-        ],
+        });
     });
 }
 
+function providerCase(namespace: string, page: CanvasScreen) {
+    return makeCase(
+        namespace,
+        page,
+        {},
+        {
+            title: `${page.title} · external reference`,
+            provider: page.owner === "GitHub" ? "GitHub" : "Stripe",
+            conditions: {},
+            expected: [
+                heading(
+                    page.owner === "GitHub"
+                        ? "Continue on GitHub"
+                        : page.title === "Manage billing"
+                          ? "Manage billing"
+                          : "Review purchase",
+                ),
+            ],
+        },
+    );
+}
+
 function walletCases(namespace: string, page: CanvasScreen) {
-    return (page.variants ?? []).flatMap((variant, index) => {
-        if (["Loading", "Load failed"].includes(variant.label)) {
+    return (page.variants ?? []).flatMap((variant) => {
+        if (
+            ["Loading", "Load failed", "Session expired"].includes(
+                variant.label,
+            )
+        ) {
             const pending = variant.label === "Loading";
+            const expired = variant.label === "Session expired";
             return [
-                makeCase(namespace, page, index, {
+                makeCase(namespace, page, variant, {
                     requests: [
                         {
                             path: "/api/stripe/billing",
-                            outcome: pending ? "pending" : "unavailable",
+                            outcome: pending
+                                ? "pending"
+                                : expired
+                                  ? "unauthorized"
+                                  : "unavailable",
                         },
                     ],
                     expected: pending
@@ -156,8 +224,22 @@ function walletCases(namespace: string, page: CanvasScreen) {
                         : [
                               {
                                   selector: "[role='alert']",
-                                  text: "Couldn’t load your wallet",
+                                  text: getDefaultErrorMessage(
+                                      expired ? 401 : 503,
+                                  ),
                               },
+                              {
+                                  selector: "button:not(:disabled)",
+                                  text: expired ? "Sign in again" : "Try again",
+                              },
+                              ...(expired
+                                  ? [
+                                        {
+                                            selector:
+                                                'body:not(:has(button:text-is("Try again")))',
+                                        },
+                                    ]
+                                  : []),
                           ],
                 }),
             ];
@@ -172,7 +254,7 @@ function walletCases(namespace: string, page: CanvasScreen) {
             const failed = variant.label === "Payment check failed";
             const credited = variant.label === "Payment credited";
             return [
-                makeCase(namespace, page, index, {
+                makeCase(namespace, page, variant, {
                     query: {
                         screen: pageRoute(page),
                         account_case: credited
@@ -197,7 +279,7 @@ function walletCases(namespace: string, page: CanvasScreen) {
                         {
                             selector: failed ? "[role='alert']" : "output",
                             text: failed
-                                ? "Couldn’t check your payment"
+                                ? getDefaultErrorMessage(503)
                                 : credited
                                   ? "Pollen added"
                                   : "Payment hasn’t been credited",
@@ -229,7 +311,7 @@ function walletCases(namespace: string, page: CanvasScreen) {
             const opening = variant.label === "Opening billing";
             const failed = variant.label === "Billing handoff failed";
             return [
-                makeCase(namespace, page, index, {
+                makeCase(namespace, page, variant, {
                     ...(variant.label === "Last charge failed" && {
                         prepare: { payment: "failed", billing: "enabled" },
                     }),
@@ -286,6 +368,7 @@ function walletCases(namespace: string, page: CanvasScreen) {
                 "Auto top-up enabled",
                 "Saving auto top-up",
                 "Auto top-up save failed",
+                "Billing session expired",
                 "Payment action required",
             ].includes(variant.label)
         ) {
@@ -294,8 +377,9 @@ function walletCases(namespace: string, page: CanvasScreen) {
                 variant.label === "Payment action required";
             const saving = variant.label === "Saving auto top-up",
                 failed = variant.label === "Auto top-up save failed";
+            const expired = variant.label === "Billing session expired";
             return [
-                makeCase(namespace, page, index, {
+                makeCase(namespace, page, variant, {
                     prepare: {
                         billing:
                             variant.label === "Payment action required"
@@ -307,7 +391,7 @@ function walletCases(namespace: string, page: CanvasScreen) {
                     ...(!enabled && {
                         steps: [
                             { selector: "[role='switch']", action: "click" },
-                            ...(saving || failed
+                            ...(saving || failed || expired
                                 ? [
                                       {
                                           selector: "button",
@@ -318,7 +402,7 @@ function walletCases(namespace: string, page: CanvasScreen) {
                                 : []),
                         ],
                     }),
-                    ...(saving || failed
+                    ...(saving || failed || expired
                         ? {
                               requests: [
                                   {
@@ -326,19 +410,31 @@ function walletCases(namespace: string, page: CanvasScreen) {
                                       method: "PATCH",
                                       outcome: saving
                                           ? ("pending" as const)
-                                          : ("server-error" as const),
+                                          : expired
+                                            ? ("unauthorized" as const)
+                                            : ("server-error" as const),
                                   },
                               ],
                           }
                         : {}),
                     expected: saving
                         ? [{ selector: "button:disabled", text: "Save" }]
-                        : failed
+                        : failed || expired
                           ? [
                                 {
-                                    selector: "p, div",
-                                    text: getDefaultErrorMessage(500),
+                                    selector: '[role="alert"]',
+                                    text: getDefaultErrorMessage(
+                                        expired ? 401 : 500,
+                                    ),
                                 },
+                                ...(expired
+                                    ? [
+                                          {
+                                              selector: "button:not(:disabled)",
+                                              text: "Sign in again",
+                                          },
+                                      ]
+                                    : []),
                             ]
                           : variant.label === "Payment action required"
                             ? [
@@ -365,7 +461,7 @@ function walletCases(namespace: string, page: CanvasScreen) {
         }
         if (["Paid available", "Quest only", "Empty"].includes(variant.label)) {
             return [
-                makeCase(namespace, page, index, {
+                makeCase(namespace, page, variant, {
                     expected: [
                         heading("Wallet"),
                         noPageError,
@@ -390,7 +486,7 @@ function walletCases(namespace: string, page: CanvasScreen) {
         }
         if (variant.label === "Checkout canceled") {
             return [
-                makeCase(namespace, page, index, {
+                makeCase(namespace, page, variant, {
                     query: {
                         screen: pageRoute(page),
                         account_case: "canceled",
@@ -407,7 +503,7 @@ function walletCases(namespace: string, page: CanvasScreen) {
         }
         if (variant.label === "Sign in") {
             return [
-                makeCase(namespace, page, index, {
+                makeCase(namespace, page, variant, {
                     conditions: { account: "signed-out" },
                     expected: [
                         {
@@ -420,7 +516,7 @@ function walletCases(namespace: string, page: CanvasScreen) {
         }
         if (variant.label === "Starting sign-in failed") {
             return [
-                makeCase(namespace, page, index, {
+                makeCase(namespace, page, variant, {
                     conditions: { account: "signed-out" },
                     action: { type: "sign-in", outcome: "error" },
                     expected: [
@@ -445,20 +541,20 @@ const dashboardReviewCases = dashboardScreens.flatMap(
         if (page.id === "enter-connected")
             return walletCases("dashboard", page);
         if (page.id === "enter-signed-out")
-            return (page.variants ?? []).map((_, index) =>
-                makeCase("dashboard", page, index, {
+            return (page.variants ?? []).map((variant) =>
+                makeCase("dashboard", page, variant, {
                     conditions: { account: "signed-out" },
-                    expected: [heading("Announcements"), newsAccount(false)],
-                    ...(index && {
+                    expected: [...newsContent, newsAccount(false)],
+                    ...(variant.params?.action === "sign-in" && {
                         action: {
                             type: "sign-in" as const,
                             outcome:
-                                index === 1
+                                variant.params?.result === "waiting"
                                     ? ("pending" as const)
                                     : ("error" as const),
                         },
                         expected:
-                            index === 1
+                            variant.params?.result === "waiting"
                                 ? [
                                       {
                                           selector: "button[aria-busy='true']",
@@ -477,85 +573,96 @@ const dashboardReviewCases = dashboardScreens.flatMap(
         const resource =
             /^(keys|apps|models|agents|key-|app-|model-|agent-)/.test(page.id);
         const cases = [
-            makeCase("dashboard", page, 0, {
-                ...(page.id === "news" && {
-                    expected: [heading("Announcements"), newsAccount(true)],
-                }),
-                ...(resource && {
-                    prepare: { dashboard: "populated" as const },
-                }),
-                ...(listContent[page.id] && {
-                    expected: [
-                        heading(headings[page.id]),
-                        {
-                            selector: "h3, h4, p, span",
-                            text: listContent[page.id].populated,
-                        },
-                    ],
-                }),
-                ...(page.id === "activity" && {
-                    prepare: { activity: "available" as const },
-                    expected: [
-                        heading(headings.activity),
-                        {
-                            selector:
-                                'div:text-is("Requests") + div:text-is("3")',
-                        },
-                    ],
-                }),
-                ...(page.id === "catalog" && {
-                    expected: [
-                        heading(headings.catalog),
-                        noPageError,
-                        {
-                            selector:
-                                'button[aria-label^="All, "]:not([aria-label="All, 0 models"])',
-                        },
-                    ],
-                }),
-                ...(page.id === "quests" && {
-                    prepare: { rewards: "available" as const },
-                    expected: [
-                        { selector: "span", text: "Connect review reward" },
-                        { selector: "button", text: "Claim" },
-                        questsIdle,
-                    ],
-                }),
-                ...(/-(create|edit|delete|visibility)$/.test(page.id) ||
-                page.id === "account-delete"
-                    ? {
-                          expected: [
-                              {
-                                  selector: '[role="dialog"]',
-                                  text: headings[page.id],
-                              },
-                              ...(/^(key|app)-edit$/.test(page.id)
-                                  ? [
-                                        {
-                                            selector: `[role="dialog"] input[value="${page.id === "key-edit" ? "App example" : "Example app registration"}"]`,
-                                        },
-                                    ]
-                                  : []),
-                              ...(/^(model|agent)-edit$/.test(page.id)
-                                  ? [
-                                        {
-                                            selector: `[role="dialog"] input[name="community-model-title"][value="${page.id === "model-edit" ? "Example model" : "Example agent"}"]`,
-                                        },
-                                    ]
-                                  : []),
-                          ],
-                      }
-                    : {}),
-            }),
+            makeCase(
+                "dashboard",
+                page,
+                {},
+                {
+                    ...(page.id === "news" && {
+                        expected: [...newsContent, newsAccount(true)],
+                    }),
+                    ...(page.id === "account" && {
+                        expected: [
+                            heading("Profile"),
+                            discordDisconnected,
+                            ...appsReady,
+                        ],
+                    }),
+                    ...(resource && {
+                        prepare: { dashboard: "populated" as const },
+                    }),
+                    ...(listContent[page.id] && {
+                        expected: [
+                            heading(headings[page.id]),
+                            {
+                                selector: "h3, h4, p, span",
+                                text: listContent[page.id].populated,
+                            },
+                        ],
+                    }),
+                    ...(page.id === "activity" && {
+                        prepare: { activity: "available" as const },
+                        expected: [
+                            heading(headings.activity),
+                            {
+                                selector:
+                                    'div:text-is("Requests") + div:text-is("3")',
+                            },
+                        ],
+                    }),
+                    ...(page.id === "catalog" && {
+                        expected: [
+                            heading(headings.catalog),
+                            noPageError,
+                            {
+                                selector:
+                                    'button[aria-label^="All, "]:not([aria-label="All, 0 models"])',
+                            },
+                        ],
+                    }),
+                    ...(page.id === "quests" && {
+                        prepare: { rewards: "available" as const },
+                        expected: [
+                            { selector: "span", text: "Connect review reward" },
+                            { selector: "button", text: "Claim" },
+                            questsIdle,
+                        ],
+                    }),
+                    ...(/-(create|edit|delete|visibility)$/.test(page.id) ||
+                    page.id === "account-delete"
+                        ? {
+                              expected: [
+                                  {
+                                      selector: '[role="dialog"]',
+                                      text: headings[page.id],
+                                  },
+                                  ...(/^(key|app)-edit$/.test(page.id)
+                                      ? [
+                                            {
+                                                selector: `[role="dialog"] input[value="${page.id === "key-edit" ? "App example" : "Example app registration"}"]`,
+                                            },
+                                        ]
+                                      : []),
+                                  ...(/^(model|agent)-edit$/.test(page.id)
+                                      ? [
+                                            {
+                                                selector: `[role="dialog"] input[name="community-model-title"][value="${page.id === "model-edit" ? "Example model" : "Example agent"}"]`,
+                                            },
+                                        ]
+                                      : []),
+                              ],
+                          }
+                        : {}),
+                },
+            ),
         ];
         if (["keys", "apps", "models", "agents"].includes(page.id)) {
-            const index = page.variants?.findIndex(
-                (variant) => variant.label === "Empty",
-            );
-            if (index === undefined || index < 0)
-                throw new Error(`Missing empty list: ${page.id}`);
+            const variant = screenVariant(page, {
+                params: { collection_case: "empty" },
+            });
+            if (!variant) throw new Error(`Missing empty list: ${page.id}`);
             cases.push(
-                makeCase("dashboard", page, index, {
+                makeCase("dashboard", page, variant, {
                     prepare: { dashboard: "empty" },
                     expected: [
                         heading(headings[page.id]),
@@ -566,19 +673,24 @@ const dashboardReviewCases = dashboardScreens.flatMap(
         }
         if (page.id === "news")
             cases.push(
-                makeCase("dashboard", page, 1, {
-                    conditions: { account: "signed-out" },
-                    expected: [heading("Announcements"), newsAccount(false)],
-                }),
+                makeCase(
+                    "dashboard",
+                    page,
+                    { screen: "dash-news-signed-out" },
+                    {
+                        conditions: { account: "signed-out" },
+                        expected: [...newsContent, newsAccount(false)],
+                    },
+                ),
             );
-        for (const [index, variant] of (page.variants ?? []).entries()) {
+        for (const variant of page.variants ?? []) {
             if (
                 ["models", "agents", "catalog"].includes(page.id) &&
                 ["Loading", "Load failed"].includes(variant.label)
             ) {
                 const pending = variant.label === "Loading";
                 cases.push(
-                    makeCase("dashboard", page, index, {
+                    makeCase("dashboard", page, variant, {
                         prepare: { dashboard: "populated" },
                         requests: [
                             {
@@ -629,7 +741,7 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                           ? "/api/api-keys/*/update"
                           : "/api/auth/api-key/delete";
                 cases.push(
-                    makeCase("dashboard", page, index, {
+                    makeCase("dashboard", page, variant, {
                         prepare: { dashboard: "populated" },
                         requests: [
                             {
@@ -690,14 +802,14 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                 );
             }
         }
-        for (const [index, variant] of (page.variants ?? []).entries()) {
+        for (const variant of page.variants ?? []) {
             const label = variant.label;
             if (
                 label === "Created · copy key" &&
                 /^(key|app)-create$/.test(page.id)
             )
                 cases.push(
-                    makeCase("dashboard", page, index, {
+                    makeCase("dashboard", page, variant, {
                         prepare: { dashboard: "populated" },
                         steps: [
                             {
@@ -726,7 +838,7 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                 );
             if (page.id === "model-edit" && label === "Test succeeded")
                 cases.push(
-                    makeCase("dashboard", page, index, {
+                    makeCase("dashboard", page, variant, {
                         prepare: {
                             dashboard: "populated",
                             endpoint: "success",
@@ -753,6 +865,52 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                     }),
                 );
             if (page.id === "account" && label.includes("Discord")) {
+                if (
+                    ["discord-check-error", "discord-lookup-error"].includes(
+                        variant.params?.settings_case ?? "",
+                    )
+                ) {
+                    const lookup =
+                        variant.params?.settings_case ===
+                        "discord-lookup-error";
+                    cases.push(
+                        makeCase("dashboard", page, variant, {
+                            ...(lookup && {
+                                prepare: { discord: "connected" as const },
+                            }),
+                            requests: [
+                                {
+                                    path: lookup
+                                        ? "/api/auth/account-info"
+                                        : "/api/auth/list-accounts",
+                                    outcome: "server-error",
+                                },
+                            ],
+                            expected: [
+                                ...appsReady,
+                                {
+                                    selector: `${discordSection} [role="alert"]`,
+                                    text: getDefaultErrorMessage(500),
+                                },
+                                {
+                                    selector: `${discordSection} button:text-is("${lookup ? "Disconnect Discord" : "Connect Discord"}"):enabled`,
+                                },
+                                ...(lookup
+                                    ? [
+                                          {
+                                              selector: `${discordSection} p`,
+                                              text: "Discord ID: 100000000000000001",
+                                          },
+                                          {
+                                              selector: `${discordSection}:not(:has(p:has-text("@connect-review")))`,
+                                          },
+                                      ]
+                                    : []),
+                            ],
+                        }),
+                    );
+                    continue;
+                }
                 const connect = [
                     "Connecting Discord",
                     "Discord connection failed",
@@ -766,7 +924,7 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                     "Disconnecting Discord",
                 ].includes(label);
                 cases.push(
-                    makeCase("dashboard", page, index, {
+                    makeCase("dashboard", page, variant, {
                         prepare: {
                             connections: "available",
                             ...(!connect && {
@@ -799,26 +957,58 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                             ],
                         }),
                         expected: [
+                            ...appsReady,
                             {
-                                selector: "button, p",
-                                text:
-                                    label === "Discord connected"
-                                        ? "@connect-review"
-                                        : idle
-                                          ? "Disconnect Discord"
-                                          : pending
-                                            ? "Working..."
-                                            : connect
-                                              ? "Could not connect Discord"
-                                              : "Could not disconnect Discord",
+                                selector: `${discordSection} button${pending ? ":disabled" : ":enabled"}:text-is("${pending ? "Working..." : connect ? "Connect Discord" : "Disconnect Discord"}")`,
                             },
+                            ...(!connect
+                                ? [
+                                      {
+                                          selector: `${discordSection} p`,
+                                          text: "Discord ID: 100000000000000001",
+                                      },
+                                  ]
+                                : []),
+                            ...(label === "Discord identity unavailable"
+                                ? [
+                                      {
+                                          selector: `${discordSection} [role="alert"]`,
+                                          text: "Could not load your connected account's details. Please try again.",
+                                      },
+                                  ]
+                                : idle || pending
+                                  ? [
+                                        {
+                                            selector: `${discordSection}:not(:has([role="alert"]))`,
+                                        },
+                                    ]
+                                  : [
+                                        {
+                                            selector: `${discordSection} [role="alert"]`,
+                                            text: getDefaultErrorMessage(500),
+                                        },
+                                    ]),
+                            ...(label === "Discord identity unavailable"
+                                ? [
+                                      {
+                                          selector: `${discordSection}:not(:has(p:has-text("@connect-review")))`,
+                                      },
+                                  ]
+                                : !connect
+                                  ? [
+                                        {
+                                            selector: `${discordSection} p`,
+                                            text: "@connect-review",
+                                        },
+                                    ]
+                                  : []),
                         ],
                     }),
                 );
             }
             if (label === "Public publishing")
                 cases.push(
-                    makeCase("dashboard", page, index, {
+                    makeCase("dashboard", page, variant, {
                         prepare: { dashboard: "populated", listing: "public" },
                         ...(/-(create|edit)$/.test(page.id) && {
                             steps: [
@@ -843,7 +1033,7 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                 );
             if (page.id === "activity" && label === "No activity")
                 cases.push(
-                    makeCase("dashboard", page, index, {
+                    makeCase("dashboard", page, variant, {
                         prepare: { activity: "empty" },
                         expected: [
                             {
@@ -870,7 +1060,7 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                 const pending =
                     label === "Connecting app" || label === "Disconnecting app";
                 cases.push(
-                    makeCase("dashboard", page, index, {
+                    makeCase("dashboard", page, variant, {
                         prepare: {
                             connections: connected ? "connected" : "available",
                         },
@@ -888,28 +1078,29 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                             ],
                             steps: [
                                 {
-                                    selector: "button",
-                                    text: connected ? "Disconnect" : "Connect",
+                                    selector: `#connectors button[aria-label="${connected ? "Disconnect" : "Connect"} GitHub"]`,
                                     action: "click",
                                 },
                             ],
                         }),
                         expected: [
+                            discordDisconnected,
+                            appsLoaded,
+                            ...(connected ? connectedApps : availableApps),
+                            appsAlert(
+                                label === "App connected" || pending
+                                    ? undefined
+                                    : getDefaultErrorMessage(500),
+                            ),
                             {
-                                selector:
-                                    label === "App connected" || pending
-                                        ? "button"
-                                        : "[role='alert']",
-                                text:
-                                    label === "App connected"
-                                        ? "Disconnect"
-                                        : pending
-                                          ? connected
-                                              ? "Disconnecting..."
-                                              : "Connecting..."
-                                          : connected
-                                            ? "Could not disconnect this app"
-                                            : "Could not connect this app",
+                                selector: `${appsSection} button[aria-label="${connected ? "Disconnect" : "Connect"} GitHub"]${pending ? ":disabled" : ":enabled"}`,
+                                text: pending
+                                    ? connected
+                                        ? "Disconnecting..."
+                                        : "Connecting..."
+                                    : connected
+                                      ? "Disconnect"
+                                      : "Connect",
                             },
                         ],
                     }),
@@ -1003,7 +1194,7 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                             ]
                           : [];
                 cases.push(
-                    makeCase("dashboard", page, index, {
+                    makeCase("dashboard", page, variant, {
                         prepare: { dashboard: "populated" },
                         requests: [
                             {
@@ -1063,7 +1254,7 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                 (form && label === "Relist")
             ) {
                 cases.push(
-                    makeCase("dashboard", page, index, {
+                    makeCase("dashboard", page, variant, {
                         prepare: { dashboard: "populated", listing: "hidden" },
                         query: { screen: pageRoute(page), listing: "hidden" },
                         expected: [
@@ -1077,7 +1268,7 @@ const dashboardReviewCases = dashboardScreens.flatMap(
             }
             if (page.id === "model-edit" && label === "Changes queued")
                 cases.push(
-                    makeCase("dashboard", page, index, {
+                    makeCase("dashboard", page, variant, {
                         prepare: { dashboard: "populated", listing: "queued" },
                         expected: [
                             { selector: "[role='dialog']", text: "queued" },
@@ -1086,7 +1277,7 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                 );
             if (page.id === "agent-edit" && label === "Endpoint agent")
                 cases.push(
-                    makeCase("dashboard", page, index, {
+                    makeCase("dashboard", page, variant, {
                         prepare: {
                             dashboard: "populated",
                             listing: "endpoint-agent",
@@ -1099,7 +1290,10 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                         ],
                     }),
                 );
-            if (page.id === "quests" && index > 0) {
+            if (
+                page.id === "quests" &&
+                screenVariantId(page, variant) !== "default"
+            ) {
                 const loading = label === "Loading",
                     failed = label === "Load failed",
                     checking = label === "Checking quests",
@@ -1109,7 +1303,7 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                 const pending = loading || checking || claiming;
                 const requestFailed = failed || checkFailed || claimFailed;
                 cases.push(
-                    makeCase("dashboard", page, index, {
+                    makeCase("dashboard", page, variant, {
                         prepare: {
                             rewards:
                                 label === "No earned rewards"
@@ -1217,7 +1411,7 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                 ["Loading", "Load failed"].includes(label)
             )
                 cases.push(
-                    makeCase("dashboard", page, index, {
+                    makeCase("dashboard", page, variant, {
                         requests: [
                             {
                                 path: "/api/account/usage/daily",
@@ -1240,35 +1434,59 @@ const dashboardReviewCases = dashboardScreens.flatMap(
                 );
             if (
                 page.id === "account" &&
-                ["Loading connections", "Connections unavailable"].includes(
-                    label,
-                )
-            )
+                [
+                    "loading",
+                    "error",
+                    "toolkits-loading",
+                    "toolkits-error",
+                ].includes(variant.params?.settings_case ?? "")
+            ) {
+                const toolkits =
+                    variant.params?.settings_case?.startsWith("toolkits-");
+                const pending =
+                    variant.params?.settings_case?.endsWith("loading");
+                const status = toolkits
+                    ? "Loading apps…"
+                    : "Loading connected apps…";
+                const error = getDefaultErrorMessage(503);
                 cases.push(
-                    makeCase("dashboard", page, index, {
+                    makeCase("dashboard", page, variant, {
                         requests: [
                             {
-                                path: "/api/account/integrations",
-                                outcome:
-                                    label === "Loading connections"
-                                        ? "pending"
-                                        : "unavailable",
+                                path: toolkits
+                                    ? "/api/account/integrations/toolkits"
+                                    : "/api/account/integrations",
+                                outcome: pending ? "pending" : "unavailable",
                             },
                         ],
                         expected: [
+                            discordDisconnected,
+                            appsAlert(pending ? undefined : error),
+                            ...(toolkits
+                                ? [
+                                      {
+                                          selector: `${appsSection}:not(:has(button[aria-label="Connect GitHub"])):not(:has(button[aria-label="Disconnect GitHub"])) input[aria-label="Search available apps"]`,
+                                      },
+                                  ]
+                                : availableApps),
+                            pending
+                                ? {
+                                      selector: `${appsSection} [role="status"]:text-is("${status}")`,
+                                  }
+                                : appsLoaded,
                             {
-                                selector: "p, div",
-                                text:
-                                    label === "Loading connections"
-                                        ? "Loading connected apps"
-                                        : "Could not load connected apps",
+                                selector: `${appsSection}:not(:has([role="status"]:not(:text-is("${status}"))))`,
                             },
                         ],
                     }),
                 );
-            if (page.id === "account-delete" && index > 0)
+            }
+            if (
+                page.id === "account-delete" &&
+                screenVariantId(page, variant) !== "default"
+            )
                 cases.push(
-                    makeCase("dashboard", page, index, {
+                    makeCase("dashboard", page, variant, {
                         steps: [
                             {
                                 selector: "[role='dialog'] input",
@@ -1339,11 +1557,17 @@ export const appTopupReviewCases: DashboardReviewCase[] =
         if (page.id === "account-auth-error") return errorCases("topup", page);
         if (page.id === "account-wallet") return walletCases("topup", page);
         if (page.id === "account-app")
-            return (page.variants ?? []).map((_, index) =>
-                makeCase("topup", page, index, {
+            return (page.variants ?? []).map((variant) =>
+                makeCase("topup", page, variant, {
+                    ...(variant.params?.sim_budget !== "0" && {
+                        title: page.title,
+                    }),
                     conditions: {
                         account: "signed-in",
-                        allowance: index ? "exhausted" : "available",
+                        allowance:
+                            variant.params?.sim_budget === "0"
+                                ? "exhausted"
+                                : "available",
                     },
                     query: { screen: "add-pollen-connect" },
                     steps: [
@@ -1352,7 +1576,7 @@ export const appTopupReviewCases: DashboardReviewCase[] =
                             text: "Connect with Pollinations",
                             action: "click",
                         },
-                        ...(index
+                        ...(variant.params?.sim_budget === "0"
                             ? [
                                   {
                                       selector: "input[type='number']",
@@ -1369,7 +1593,7 @@ export const appTopupReviewCases: DashboardReviewCase[] =
                     ],
                     expected: [
                         { selector: "[data-connect-state='connected']" },
-                        ...(index
+                        ...(variant.params?.sim_budget === "0"
                             ? [
                                   {
                                       selector: "button, span",
@@ -1382,11 +1606,11 @@ export const appTopupReviewCases: DashboardReviewCase[] =
             );
         if (page.id !== "account-key")
             throw new Error(`Missing top-up recipe: ${page.id}`);
-        return (page.variants ?? []).flatMap((variant, index) => {
+        return (page.variants ?? []).flatMap((variant) => {
             if (["Loading", "Load failed"].includes(variant.label)) {
                 const pending = variant.label === "Loading";
                 return [
-                    makeCase("topup", page, index, {
+                    makeCase("topup", page, variant, {
                         prepare: { dashboard: "populated" },
                         requests: [
                             {
@@ -1415,7 +1639,7 @@ export const appTopupReviewCases: DashboardReviewCase[] =
             ) {
                 const cancel = variant.label === "Closed without changes";
                 return [
-                    makeCase("topup", page, index, {
+                    makeCase("topup", page, variant, {
                         prepare: { dashboard: "populated" },
                         ...(["Saving", "Save failed"].includes(
                             variant.label,
@@ -1458,15 +1682,15 @@ export const appTopupReviewCases: DashboardReviewCase[] =
                     }),
                 ];
             }
-            if (index === 0)
+            if (screenVariantId(page, variant) === "default")
                 return [
-                    makeCase("topup", page, index, {
+                    makeCase("topup", page, variant, {
                         prepare: { dashboard: "populated" },
                     }),
                 ];
             if (variant.label === "Sign in")
                 return [
-                    makeCase("topup", page, index, {
+                    makeCase("topup", page, variant, {
                         conditions: { account: "signed-out" },
                         expected: [
                             {
@@ -1478,7 +1702,7 @@ export const appTopupReviewCases: DashboardReviewCase[] =
                 ];
             if (variant.label === "Starting sign-in failed")
                 return [
-                    makeCase("topup", page, index, {
+                    makeCase("topup", page, variant, {
                         conditions: { account: "signed-out" },
                         action: { type: "sign-in", outcome: "error" },
                         expected: [
@@ -1491,7 +1715,7 @@ export const appTopupReviewCases: DashboardReviewCase[] =
                 ];
             if (variant.label === "Key unavailable")
                 return [
-                    makeCase("topup", page, index, {
+                    makeCase("topup", page, variant, {
                         query: {
                             screen: pageRoute(page),
                             account_case: "missing",

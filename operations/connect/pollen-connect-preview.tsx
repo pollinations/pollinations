@@ -188,7 +188,6 @@ export function DeviceTerminal({
 
 export function ScreenContent({
     entry,
-    variant = 0,
     focused = false,
     scrollable = false,
     onOpen,
@@ -198,7 +197,6 @@ export function ScreenContent({
     onReport,
 }: {
     entry: CanvasScreen;
-    variant?: number;
     focused?: boolean;
     scrollable?: boolean;
     onOpen?: () => void;
@@ -258,7 +256,7 @@ export function ScreenContent({
     return (
         <ScreenWindow entry={entry}>
             <RuntimeFrame
-                src={canvasScreenUrl(entry, variant, overrides)}
+                src={canvasScreenUrl(entry, undefined, overrides)}
                 title={`${entry.title} · screen preview`}
                 interactive={false}
                 onClose={onClose}

@@ -6,6 +6,8 @@ import {
     canvasGroups,
     enterLoginErrorScreens,
     type ScreenVariant,
+    screenVariant,
+    screenVariantId,
 } from "./pollen-connect-canvas-data";
 import { getDashboardFlow } from "./pollen-connect-dashboard";
 import { getDeviceFlow } from "./pollen-connect-device";
@@ -128,15 +130,18 @@ export function galleryPagesForFlow(
 ): CanvasScreen[] {
     return galleryScreensForFlow(flow, section).flatMap((entry) => {
         if (!entry.variants?.length) return [entry];
-        return entry.variants.map((variant, index) => ({
-            ...entry,
-            id: `${entry.id}--${index}`,
-            title:
-                variant.label === entry.title || variant.label === "Default"
-                    ? entry.title
-                    : `${entry.title.replace(/ errors$/, "")} · ${variant.label}`,
-            variants: [variant],
-        }));
+        return entry.variants.map((variant) => {
+            screenVariant(entry, variant);
+            return {
+                ...entry,
+                id: `${entry.id}--${screenVariantId(entry, variant)}`,
+                title:
+                    variant.label === entry.title || variant.label === "Default"
+                        ? entry.title
+                        : `${entry.title.replace(/ errors$/, "")} · ${variant.label}`,
+                variants: [variant],
+            };
+        });
     });
 }
 
@@ -192,7 +197,7 @@ export function galleryCardsForFlow(
         const inlineVariants = entry.variants.filter((variant) =>
             isInlineVariant(entry, variant),
         );
-        const first = entry.variants.findIndex((variant) =>
+        const first = entry.variants.find((variant) =>
             isInlineVariant(entry, variant),
         );
         const errorGroups = new Map<string, ScreenVariant[]>();
@@ -204,7 +209,7 @@ export function galleryCardsForFlow(
                     variant,
                 ]);
         }
-        return entry.variants.flatMap((variant, index) => {
+        return entry.variants.flatMap((variant) => {
             const title = errorGroup(entry, variant);
             if (title) {
                 const variants = errorGroups.get(title) ?? [];
@@ -212,7 +217,7 @@ export function galleryCardsForFlow(
                     ? [
                           {
                               ...entry,
-                              id: `${entry.id}--${index}`,
+                              id: `${entry.id}--${encodeURIComponent(title)}`,
                               title,
                               variants,
                           },
@@ -223,19 +228,21 @@ export function galleryCardsForFlow(
                 (inlineVariants.length > 1 || entry.id === "consent") &&
                 isInlineVariant(entry, variant)
             )
-                return index === first
+                return variant === first
                     ? [
                           {
                               ...entry,
                               id:
                                   entry.id === "sign-in"
-                                      ? `${entry.id}--${first}`
+                                      ? `${entry.id}--default`
                                       : entry.id,
                               variants: inlineVariants,
                           },
                       ]
                     : [];
-            const page = pages.get(`${entry.id}--${index}`);
+            const page = pages.get(
+                `${entry.id}--${screenVariantId(entry, variant)}`,
+            );
             return page ? [page] : [];
         });
     });

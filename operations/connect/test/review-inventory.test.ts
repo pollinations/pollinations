@@ -152,6 +152,7 @@ describe("shared review inventory", () => {
             "Connection check unavailable",
             "Account details unavailable",
             "Limit reached",
+            "Access declined",
         ]);
         expect(connection.map((recipe) => recipe.variant)).toContain(
             "Checking connection",
@@ -176,7 +177,7 @@ describe("shared review inventory", () => {
         for (const [from, to] of [
             ["app-signing-in", "sign-in"],
             ["app-checking", "sign-in"],
-            ["app-connected-1", "app-connected-0"],
+            ["app-checking-connection", "app-connected"],
             ["loading", "app-connect"],
             ["consent-no-pollen", "consent-no-pollen"],
             ["consent-models-error", "consent-models-error"],

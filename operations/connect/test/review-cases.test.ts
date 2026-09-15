@@ -91,7 +91,7 @@ describe("App Login visual review cases", () => {
     });
 
     it("separates provider-return failure from failure to start sign-in", () => {
-        expect(appLoginReviewCases).toHaveLength(38);
+        expect(appLoginReviewCases).toHaveLength(39);
         expect(
             appLoginReviewCases.find(({ family }) => family === "login-failed")
                 ?.action,

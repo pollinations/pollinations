@@ -1,7 +1,10 @@
 import { loginErrors } from "@shared/auth/login-errors.ts";
 import type { CanvasScreen } from "./pollen-connect-canvas-data";
 import type { FlowEdge, FlowNode } from "./pollen-connect-diagram";
-import { walletBillingVariants } from "./pollen-connect-wallet-preview";
+import {
+    walletBillingVariants,
+    walletSessionVariant,
+} from "./pollen-connect-wallet-preview";
 
 // One inventory for Screens, Map and Journey. Pollinations entries render the
 // actual routes; only the developer app and external providers are fixtures.
@@ -86,6 +89,7 @@ export const accountActionScreens: CanvasScreen[] = [
             },
             { label: "Payment credited", params: { account_case: "credited" } },
             ...walletBillingVariants,
+            walletSessionVariant,
         ],
     },
     {

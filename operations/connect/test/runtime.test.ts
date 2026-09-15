@@ -3,11 +3,16 @@ import { once } from "node:events";
 import type { AddressInfo } from "node:net";
 import { serve } from "@hono/node-server";
 import { afterAll, beforeAll, expect, test } from "vitest";
+import {
+    apiErrorMessage,
+    apiResponseError,
+} from "../../../enter.pollinations.ai/frontend/src/lib/api-error.ts";
 import { Pollinations } from "../../../packages/sdk/src/client.ts";
 import { CALLBACK_URL, CLIENT_ID, USER_ID } from "../fixtures.ts";
+import githubProfile from "../github-profile.json";
 import type { ReviewCase } from "../review-cases.ts";
 import { prepareReviewCase } from "../review-prepare.ts";
-import { startRuntime } from "../runtime.ts";
+import { bundleWorkers, startRuntime } from "../runtime.ts";
 
 let runtime: Awaited<ReturnType<typeof startRuntime>>;
 let server: ReturnType<typeof serve>;
@@ -28,6 +33,142 @@ afterAll(async () => {
         await runtime?.dispose();
         console.log("Connect disposable runtime disposed");
     }
+});
+
+test("preserves real Enter error responses through the product frontend", async () => {
+    const request = (
+        path: string,
+        body?: unknown,
+        cookie = "",
+        method = body === undefined ? "GET" : "POST",
+    ) =>
+        runtime.fetch(
+            new Request(`http://localhost:4180${path}`, {
+                method,
+                headers: { cookie, "Content-Type": "application/json" },
+                ...(body !== undefined && { body: JSON.stringify(body) }),
+            }),
+        );
+    const reset = await request("/__connect/reset", {});
+    expect(reset.status).toBe(200);
+    const cookie = reset.headers.get("set-cookie")?.split(";")[0] ?? "";
+    await reset.body?.cancel();
+
+    async function readFailure(
+        response: Response,
+        status: number,
+        expectedMessage?: string,
+    ) {
+        expect(response.status).toBe(status);
+        const payload = await response.clone().json();
+        const error = await apiResponseError(response, "Request failed");
+        const endpointMessage =
+            typeof payload.error === "string"
+                ? payload.error
+                : (payload.error?.message ?? payload.message);
+        expect(typeof endpointMessage).toBe("string");
+        expect(error.message).toBe(endpointMessage);
+        expect(error.cause).toBe(status);
+        expect(apiErrorMessage(payload, "Request failed")).toBe(
+            endpointMessage,
+        );
+        if (expectedMessage) expect(error.message).toBe(expectedMessage);
+        return error;
+    }
+
+    // The actual code endpoint rejects the missing session before issuing a
+    // code or using the inert key field. Its HTTP status must reach recovery.
+    await readFailure(
+        await request("/api/oauth/code", {
+            apiKey: "invalid-error-probe",
+            clientId: CLIENT_ID,
+            redirectUri: CALLBACK_URL,
+            codeChallenge: "A".repeat(43),
+            codeChallengeMethod: "S256",
+        }),
+        401,
+    );
+    await readFailure(
+        await request(
+            "/api/stripe/auto-top-up",
+            {
+                enabled: true,
+                packAmountUsd: 5,
+            },
+            "",
+            "PATCH",
+        ),
+        401,
+    );
+
+    // Exercise Enter's real device expiry guard. No key is minted and the
+    // expired request cannot be approved or written to KV.
+    expect(
+        (await request("/__connect/review/prepare", { device: "expired" }))
+            .status,
+    ).toBe(200);
+    const before = await (await request("/__connect/state")).json();
+    await readFailure(
+        await request(
+            "/api/device/approve",
+            {
+                userCode: before.device.userCode,
+                apiKey: "invalid-error-probe",
+                apiKeyId: "invalid-error-probe",
+            },
+            cookie,
+        ),
+        400,
+        "Device code expired",
+    );
+
+    // Stripe validation uses a string error, while an upstream failure goes
+    // through Enter's shared nested envelope. Local outbound traffic is blocked;
+    // these calls create no Stripe customer, portal session or charge.
+    await readFailure(
+        await request(
+            "/api/stripe/auto-top-up",
+            {
+                enabled: true,
+                packAmountUsd: -1,
+            },
+            cookie,
+            "PATCH",
+        ),
+        400,
+        "Invalid auto top-up pack amount.",
+    );
+    await readFailure(
+        await request(
+            "/api/stripe/auto-top-up",
+            {
+                enabled: true,
+                packAmountUsd: 5,
+            },
+            cookie,
+            "PATCH",
+        ),
+        500,
+    );
+    await readFailure(
+        await request("/api/stripe/billing/portal", {}, cookie),
+        500,
+    );
+    const after = await (await request("/__connect/state")).json();
+    expect(after).toEqual(before);
+    expect(
+        (await (await request("/api/api-keys", undefined, cookie)).json()).data,
+    ).toEqual([]);
+    const faults = await (await request("/__connect/review/requests")).json();
+    expect(faults).toEqual({ pending: [], consumed: [] });
+
+    // Even a broken/empty error body must not discard 401 and strand sign-in.
+    expect(
+        await apiResponseError(
+            new Response(null, { status: 401 }),
+            "Sign-in required",
+        ),
+    ).toMatchObject({ message: "Sign-in required", cause: 401 });
 });
 
 test("real Enter session, PKCE grant and SDK→Gen→Enter share the local account", async () => {
@@ -109,7 +250,7 @@ test("real Enter session, PKCE grant and SDK→Gen→Enter share the local accou
         baseUrl: sdkBaseUrl,
     });
     expect((await sdk.accountProfile()).githubUsername).toBe(
-        "pollinations-agent",
+        "pollinationsagent",
     );
     const keyWithEnterCookie = await runtime.fetch(
         new Request("http://localhost:4180/gen/account/key", {
@@ -375,6 +516,139 @@ test("prepares the same isolated account after earlier review data", async () =>
     expect(JSON.stringify(repeated.keys)).toContain("connect-review-key");
 });
 
+test("opening review state preserves prepared data and faults and reuses the existing session", async () => {
+    const request = (path: string, body?: unknown, cookie = "") =>
+        runtime.fetch(
+            new Request(`http://localhost:4180${path}`, {
+                method: body === undefined ? "GET" : "POST",
+                headers: { cookie, "Content-Type": "application/json" },
+                ...(body !== undefined && { body: JSON.stringify(body) }),
+            }),
+        );
+    await (await request("/__connect/reset", {})).body?.cancel();
+    await (
+        await request("/__connect/review/prepare", {
+            rewards: "claimed",
+            payment: "credited",
+            billing: "enabled",
+            connections: "available",
+        })
+    ).body?.cancel();
+    const faults = [{ path: "/api/app-lookup", outcome: "unavailable" }];
+    await (await request("/__connect/review/requests", faults)).body?.cancel();
+    await (
+        await request("/__connect/outcome", { signIn: "fail-next" })
+    ).body?.cancel();
+
+    let cookie = "";
+    const scripts = await bundleWorkers();
+    for (let tab = 0; tab < 2; tab++) {
+        if (tab === 1) await runtime.reload(scripts);
+        // A newly opened tab supplies no cookie. Reading must select the
+        // existing session without preparing the account again.
+        const response = await request("/__connect/state");
+        expect(response.status).toBe(200);
+        cookie = response.headers.get("set-cookie")?.split(";")[0] ?? "";
+        expect(cookie.startsWith("better-auth.session_token=")).toBe(true);
+        const state = await response.json();
+        expect(state.wallet).toEqual({
+            questPollen: 5,
+            paidPollen: 15,
+            total: 20,
+        });
+        expect(state.conditions.account).toBe("signed-in");
+        expect(state.connection.keyId).toBeNull();
+        const session = await (
+            await request("/api/auth/get-session", undefined, cookie)
+        ).json();
+        expect(session.session.id).toBe("connect-local-session");
+        expect(
+            (await request("/api/account/integrations", undefined, cookie))
+                .status,
+        ).toBe(200);
+        expect(await (await request("/__connect/outcome")).json()).toEqual({
+            signIn: "fail-next",
+        });
+        expect(
+            (await (await request("/__connect/review/requests")).json())
+                .pending,
+        ).toEqual(faults);
+    }
+    expect((await request("/api/auth/sign-out", {}, cookie)).status).toBe(200);
+    await runtime.reload(scripts);
+    const signedOut = await request("/__connect/state");
+    expect(signedOut.headers.get("set-cookie")).toContain("Max-Age=0");
+    expect((await signedOut.json()).conditions.account).toBe("signed-out");
+});
+
+test("serves healthy quests and earnings through Enter without scenario-specific service switches", async () => {
+    let cookie = "";
+    async function request(path: string, body?: unknown) {
+        const response = await runtime.fetch(
+            new Request(`http://localhost:4180${path}`, {
+                method: body === undefined ? "GET" : "POST",
+                headers: { cookie, "Content-Type": "application/json" },
+                ...(body !== undefined && { body: JSON.stringify(body) }),
+            }),
+        );
+        const nextCookie = response.headers.get("set-cookie");
+        if (nextCookie) cookie = nextCookie.split(";")[0];
+        return response;
+    }
+    for (const rewards of [
+        undefined,
+        "empty",
+        "available",
+        "claimed",
+    ] as const) {
+        await (await request("/__connect/reset", {})).body?.cancel();
+        if (rewards)
+            await (
+                await request("/__connect/review/prepare", { rewards })
+            ).body?.cancel();
+        const catalog = await request("/api/quests/catalog");
+        expect(catalog.status).toBe(200);
+        expect((await catalog.json()).quests).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    id: "first_api_key",
+                    category: "setup",
+                }),
+            ]),
+        );
+        const earnings = await request("/api/customer/balance/today");
+        expect(earnings.status).toBe(200);
+        expect(await earnings.json()).toEqual({ paidWeek: 0, tierWeek: 0 });
+        const checked = await request("/api/quests/check", {});
+        expect(checked.status).toBe(200);
+        expect(await checked.json()).toMatchObject({
+            success: true,
+            recorded: 0,
+            rewardIds: [],
+        });
+        const list = await (await request("/api/quests/rewards")).json();
+        expect(list.rewards).toHaveLength(
+            rewards === undefined ? 2 : rewards === "empty" ? 0 : 1,
+        );
+        if (rewards === "available" || rewards === "claimed") {
+            expect(list.rewards[0].pollenAmount).toBe(5);
+            expect(list.rewards[0].claimedAt === null).toBe(
+                rewards === "available",
+            );
+        }
+    }
+    // Faults still exercise the real error path; clearing them restores the
+    // same services without replacing Enter's catalog or balance handler.
+    await (
+        await request("/__connect/review/requests", [
+            { path: "/api/quests/catalog", outcome: "unavailable" },
+        ])
+    ).body?.cancel();
+    expect((await request("/api/quests/catalog")).status).toBe(503);
+    await (await request("/__connect/review/requests", [])).body?.cancel();
+    expect((await request("/api/quests/catalog")).status).toBe(200);
+});
+
 test("applies review failures before the real Admin handler and restores it", async () => {
     const request = (path: string, body?: unknown) =>
         runtime.fetch(
@@ -399,3 +673,44 @@ test("applies review failures before the real Admin handler and restores it", as
     expect(restored.status).toBe(401);
     expect((await restored.json()).user).toBeNull();
 });
+
+test("public GitHub identity survives local conditions and repeated resets", async () => {
+    for (let repeat = 0; repeat < 2; repeat++) {
+        const reset = await runtime.fetch(
+            new Request("http://localhost:4180/__connect/reset", {
+                method: "POST",
+            }),
+        );
+        expect(reset.status).toBe(200);
+        const cookie = reset.headers.get("set-cookie")?.split(";")[0] ?? "";
+        const profile = async () => {
+            const response = await runtime.fetch(
+                new Request("http://localhost:4180/api/auth/get-session", {
+                    headers: { cookie },
+                }),
+            );
+            expect(response.ok).toBe(true);
+            expect((await response.json()).user).toMatchObject({
+                id: USER_ID,
+                name: githubProfile.name,
+                githubUsername: githubProfile.login,
+                githubId: githubProfile.id,
+                image: githubProfile.avatar_url,
+            });
+        };
+        await profile();
+        const changed = await runtime.fetch(
+            new Request("http://localhost:4180/__connect/conditions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ pollen: "empty", role: "admin" }),
+            }),
+        );
+        expect(changed.ok).toBe(true);
+        expect(await changed.json()).toMatchObject({
+            wallet: { paidPollen: 0, questPollen: 0 },
+            user: { role: "admin" },
+        });
+        await profile();
+    }
+}, 30_000);

@@ -27,7 +27,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
 import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
-import { apiResponseError } from "../../lib/api-error.ts";
+import { apiErrorMessage, apiResponseError } from "../../lib/api-error.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
 import {
     deviceCodeMessages,
@@ -438,6 +438,7 @@ export function Authorize() {
         if (isDeviceMode) setRecovery("retry");
         setError(null);
 
+        let createdKeyId: string | undefined;
         try {
             const { pollenBudget, accountPermissions } =
                 keyPermissions.permissions;
@@ -473,6 +474,7 @@ export function Authorize() {
                     accountPermissions: grantedAccountPermissions,
                 },
             });
+            createdKeyId = id;
 
             if (isDeviceMode) {
                 const res = await apiClient.device.approve.$post({
@@ -527,9 +529,6 @@ export function Authorize() {
                         })
                         .catch(() => null);
                     if (!res || !res.ok) {
-                        // The key was minted but can't be delivered — don't
-                        // leave an active orphan in the account.
-                        authClient.apiKey.delete({ keyId: id }).catch(() => {});
                         throw res
                             ? await apiResponseError(
                                   res,
@@ -551,13 +550,26 @@ export function Authorize() {
         } catch (e) {
             const sessionExpired = e instanceof Error && e.cause === 401;
             if (sessionExpired) setRecovery("sign-in");
-            setError(
-                sessionExpired
-                    ? "Your pollinations.ai session expired. Sign in again to continue."
-                    : e instanceof Error
-                      ? e.message
-                      : "Authorization failed",
-            );
+            let message = sessionExpired
+                ? "Your pollinations.ai session expired. Sign in again to continue."
+                : e instanceof Error
+                  ? e.message
+                  : "Authorization failed";
+            // App and Device failures both leave a key that was never delivered.
+            // Wait for its deletion, and retain both errors if cleanup also fails.
+            if (createdKeyId) {
+                const result = await authClient.apiKey
+                    .delete({ keyId: createdKeyId })
+                    .catch((error) => ({ error }));
+                if (result.error) {
+                    const cleanupError = apiErrorMessage(
+                        result.error,
+                        "Couldn’t delete the unused API key.",
+                    );
+                    message += `\n\nKey cleanup failed: ${cleanupError}\nDelete the unused key from API keys.`;
+                }
+            }
+            setError(message);
             setPendingAction(null);
         }
     }

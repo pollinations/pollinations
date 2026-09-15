@@ -1,0 +1,36 @@
+{
+  "pr_number": 14919,
+  "title": "Add PollenBatch Multi-Image Generation + Character Generation Engine to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14919",
+  "merged_at": "2026-09-15T11:37:46Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [PollenBatch Multi-Image Generation + Character Generation Engine](https://donwrightdesigns.github.io/pollenbatch) to image\n- Generate multiple variations of the same prompt in low res, select the version that you like the most, and then regenerate at high resolution! Also, create consistent characters with the same top-down\n\nFixes #14137",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Pick the best bloom",
+    "blurb": "PollenBatch joins the image garden: make a small field of prompt variations, choose the one with the good vibes, then grow it at full resolution. It also brings a character engine for keeping your cast recognizably themselves.",
+    "summary": "Added PollenBatch to the image app catalog, providing low-resolution multi-image prompt batches for variation selection followed by high-resolution regeneration, plus a consistent-character generation engine.",
+    "impact": "Creators can compare several quick visual directions before spending a full-resolution generation, while giving recurring characters a more consistent look across images.",
+    "keywords": [
+      "PollenBatch",
+      "image generation",
+      "multi-image",
+      "character consistency",
+      "community app",
+      "high resolution"
+    ],
+    "visual_concept": "Depict PollenBatch as a cozy image-growing workstation: several small thumbnail flowers or framed pixel portraits bloom from one prompt card, and Polli selects her favorite with a tiny gardener's magnifying glass before it grows into one large finished portrait. Include a subtle character-consistency motif through a row of matching little adventurer portraits, plus code-plants and a retro monitor to make the image-generation workflow legible.",
+    "image_prompt": "A cozy pixel art garden-studio where the cute bee mascot Polli, with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny gardener glasses and uses a magnifying glass to choose one favorite from several small framed pixel-art character variations; the chosen portrait grows into a large crisp portrait beside a lime green (#ecf874) glowing CRT monitor, with matching character portraits, flower pots, and code-plants nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"PICK & GROW\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-15/PR-14919.jpg",
+    "prompt": "A cozy pixel art garden-studio where the cute bee mascot Polli, with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny gardener glasses and uses a magnifying glass to choose one favorite from several small framed pixel-art character variations; the chosen portrait grows into a large crisp portrait beside a lime green (#ecf874) glowing CRT monitor, with matching character portraits, flower pots, and code-plants nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"PICK & GROW\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-15T11:39:08.838009+00:00",
+  "app_name": "PollenBatch Multi-Image Generation + Character Generation Engine",
+  "app_url": "https://donwrightdesigns.github.io/pollenbatch"
+}

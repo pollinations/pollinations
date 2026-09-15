@@ -122,6 +122,16 @@ export const printError = (msg: string) => {
     process.stderr.write(`${chalk.red.bold("error:")} ${chalk.red(msg)}\n`);
 };
 
+/** Print a fatal command error and terminate with the CLI's standard exit code. */
+export const fail = (message: string, error?: unknown): never => {
+    const detail =
+        error === undefined
+            ? ""
+            : `: ${error instanceof Error ? error.message : "unknown"}`;
+    printError(`${message}${detail}`);
+    process.exit(1);
+};
+
 /** Warning message — always shown, always stderr */
 export const printWarn = (msg: string) => {
     process.stderr.write(

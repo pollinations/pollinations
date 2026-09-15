@@ -1,0 +1,453 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+import { buildDailyComparison } from "../src/lib/dailyComparison";
+import { formatValue } from "../src/lib/format";
+import {
+    KPI_VIEWS,
+    KPIS,
+    kpiValue,
+    kpiView,
+    kpiViewById,
+    kpiViewId,
+} from "../src/lib/kpis";
+import { DEFAULT_WEEKS, WEEK_RANGES, weeksFromSearch } from "../src/lib/range";
+
+const community = KPIS.find((row) => row.key === "communityModels");
+
+describe("agent and MCP KPI rows", () => {
+    it("labels the agent volume as observed runs and explains historical coverage", () => {
+        const row = KPIS.find((item) => item.key === "agentUsage");
+        expect(kpiView(row, 0).name).toBe("Agents · observed runs");
+        for (const view of row.views) {
+            expect(view.tooltip).toContain("recorded internal model/tool call");
+            expect(view.tooltip).toContain("Aug 24, 2026");
+        }
+    });
+
+    it.each([
+        ["agentUsage", "agentRequests", "agentUsers"],
+        ["mcpUsage", "mcpCalls", "mcpUsers"],
+    ])("keeps %s in one switchable row", (key, volume, users) => {
+        const row = KPIS.find((item) => item.key === key);
+        expect(row.views).toHaveLength(2);
+        const week = { [volume]: 410, [users]: 12 };
+        expect(kpiValue(kpiView(row, 0), week)).toBe(410);
+        expect(kpiValue(kpiView(row, 1), week)).toBe(12);
+        expect(kpiValue(kpiView(row, 2), week)).toBe(410);
+        for (const index of [0, 1]) {
+            const view = kpiView(row, index);
+            expect(formatValue(kpiValue(view, {}), view.format)).toBe("—");
+            expect(
+                formatValue(kpiValue(view, { [view.key]: null }), view.format),
+            ).toBe("—");
+            expect(
+                formatValue(kpiValue(view, { [view.key]: 0 }), view.format),
+            ).toBe("0");
+        }
+    });
+});
+
+describe("dashboard time range", () => {
+    it("defaults to 12 weeks and accepts the supported 20-week view", () => {
+        expect(DEFAULT_WEEKS).toBe(12);
+        expect(WEEK_RANGES).toEqual([12, 20]);
+        expect(weeksFromSearch("")).toBe(12);
+        expect(weeksFromSearch("?weeks=20")).toBe(20);
+    });
+
+    it("ignores unsupported or malformed URL values", () => {
+        expect(weeksFromSearch("?weeks=52")).toBe(12);
+        expect(weeksFromSearch("?weeks=nope")).toBe(12);
+    });
+});
+
+describe("daily week comparison", () => {
+    it("shows the full previous week and leaves future days blank for both metrics", () => {
+        const rows = [
+            { date: "2026-08-31", revenue: 289.15 },
+            { date: "2026-09-01", revenue: 364.94 },
+            { date: "2026-09-02", revenue: 215.24 },
+            { date: "2026-09-06", revenue: 514.88 },
+            { date: "2026-09-07", revenue: 342.63 },
+            { date: "2026-09-08", revenue: 356.27 },
+        ];
+
+        expect(
+            buildDailyComparison(
+                rows,
+                [
+                    {
+                        date: "2026-09-06",
+                        registrations: 91,
+                        snapshot_at: "2026-09-09T03:00:00Z",
+                    },
+                    {
+                        date: "2026-09-08",
+                        registrations: 102,
+                        snapshot_at: "2026-09-09T03:00:00Z",
+                    },
+                ],
+                new Date("2026-09-09T12:00:00Z"),
+            ),
+        ).toEqual([
+            {
+                week: "2026-09-07",
+                day: "Mon",
+                currentRevenue: 342.63,
+                previousRevenue: 289.15,
+                currentSignups: 0,
+                previousSignups: 0,
+            },
+            {
+                week: "2026-09-08",
+                day: "Tue",
+                currentRevenue: 356.27,
+                previousRevenue: 364.94,
+                currentSignups: 102,
+                previousSignups: 0,
+            },
+            {
+                week: "2026-09-09",
+                day: "Wed",
+                currentRevenue: 0,
+                previousRevenue: 215.24,
+                currentSignups: 0,
+                previousSignups: 0,
+            },
+            {
+                week: "2026-09-10",
+                day: "Thu",
+                currentRevenue: null,
+                previousRevenue: 0,
+                currentSignups: null,
+                previousSignups: 0,
+            },
+            {
+                week: "2026-09-11",
+                day: "Fri",
+                currentRevenue: null,
+                previousRevenue: 0,
+                currentSignups: null,
+                previousSignups: 0,
+            },
+            {
+                week: "2026-09-12",
+                day: "Sat",
+                currentRevenue: null,
+                previousRevenue: 0,
+                currentSignups: null,
+                previousSignups: 0,
+            },
+            {
+                week: "2026-09-13",
+                day: "Sun",
+                currentRevenue: null,
+                previousRevenue: 514.88,
+                currentSignups: null,
+                previousSignups: 91,
+            },
+        ]);
+    });
+
+    it("does not turn unavailable or stale data into zeroes", () => {
+        const days = buildDailyComparison(
+            null,
+            [
+                {
+                    date: "2026-09-07",
+                    registrations: 80,
+                    snapshot_at: "2026-09-08T03:00:00Z",
+                },
+            ],
+            new Date("2026-09-09T12:00:00Z"),
+        );
+        expect(
+            days.every(
+                (day) =>
+                    day.currentRevenue === null && day.previousRevenue === null,
+            ),
+        ).toBe(true);
+        expect(days[0].currentSignups).toBe(80);
+        expect(days[2].currentSignups).toBeNull();
+        expect(buildDailyComparison([], null)[0].previousSignups).toBeNull();
+    });
+
+    it("resets on Monday in UTC and completes all seven days on Sunday", () => {
+        const monday = buildDailyComparison(
+            [],
+            null,
+            new Date("2026-01-05T00:01:00Z"),
+        );
+        expect(monday[0].week).toBe("2026-01-05");
+        expect(monday.map((day) => day.currentRevenue)).toEqual([
+            0,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+        ]);
+        const sunday = buildDailyComparison(
+            [],
+            null,
+            new Date("2026-01-04T23:59:00Z"),
+        );
+        expect(sunday[0].week).toBe("2025-12-29");
+        expect(sunday.every((day) => day.currentRevenue === 0)).toBe(true);
+    });
+});
+
+// One week as the dashboard sees it, after useKpiData maps the usage pipe.
+const week = {
+    week: "2026-08-10",
+    communityUserPct: 12.4,
+    communityRequestPct: 3.6,
+    communityAvailability: 98.75,
+};
+
+describe("community models row", () => {
+    it("cycles through all three views and back", () => {
+        const names = [0, 1, 2, 3].map((i) => kpiView(community, i).name);
+        expect(names).toEqual([
+            "Community models · users",
+            "Community models · requests",
+            "Community models · availability",
+            "Community models · users",
+        ]);
+    });
+
+    it("reads a different field in each view", () => {
+        const values = [0, 1, 2].map((i) =>
+            kpiValue(kpiView(community, i), week),
+        );
+        expect(values).toEqual([12.4, 3.6, 98.75]);
+    });
+
+    it("formats every view as a percentage", () => {
+        const shown = [0, 1, 2].map((i) => {
+            const view = kpiView(community, i);
+            return formatValue(kpiValue(view, week), view.format);
+        });
+        expect(shown).toEqual(["12%", "4%", "98.75%"]);
+    });
+
+    it("gives each view its own tooltip naming the 4xx treatment", () => {
+        const tooltips = community.views.map((view) => view.tooltip);
+        expect(new Set(tooltips).size).toBe(3);
+        for (const tooltip of tooltips) expect(tooltip).toMatch(/4xx/);
+    });
+
+    it("reads as missing, not zero, before the pipe ships the fields", () => {
+        const before = { week: "2026-05-04" };
+        for (const index of [0, 1, 2]) {
+            const view = kpiView(community, index);
+            expect(kpiValue(view, before)).toBeUndefined();
+            expect(formatValue(kpiValue(view, before), view.format)).toBe("—");
+        }
+    });
+});
+
+const availability = KPIS.find((row) => row.key === "availability");
+const healthWeek = {
+    availability: 99.12,
+    serverErrors5xx: 36691,
+};
+
+describe("service availability row", () => {
+    it("leads with normalized failures and keeps precise availability", () => {
+        expect([0, 1, 2].map((i) => kpiView(availability, i).name)).toEqual([
+            "Server errors / 1K",
+            "Service availability",
+            "5xx errors",
+        ]);
+        expect(kpiView(availability, 0).lowerIsBetter).toBe(true);
+        expect(kpiView(availability, 1).lowerIsBetter).toBeUndefined();
+        expect(kpiView(availability, 2).lowerIsBetter).toBe(true);
+        expect(
+            [0, 1, 2].map((i) => {
+                const view = kpiView(availability, i);
+                return formatValue(kpiValue(view, healthWeek), view.format);
+            }),
+        ).toEqual(["8.8 / 1K", "99.12%", "36,691"]);
+    });
+
+    it("keeps community traffic out of the service-health population", () => {
+        const regularPipe = readFileSync(
+            new URL(
+                "../../../enter.pollinations.ai/observability/endpoints/weekly_health_stats.pipe",
+                import.meta.url,
+            ),
+            "utf8",
+        );
+        const communityPipe = readFileSync(
+            new URL(
+                "../../../enter.pollinations.ai/observability/endpoints/weekly_usage_stats.pipe",
+                import.meta.url,
+            ),
+            "utf8",
+        );
+
+        expect(regularPipe).toContain("AND model_provider_used != 'community'");
+        expect(communityPipe).toContain("model_provider_used = 'community'");
+    });
+
+    it("does not invent a failure rate when health data is missing", () => {
+        const view = kpiView(availability, 0);
+        expect(kpiValue(view, {})).toBeNull();
+        expect(formatValue(kpiValue(view, {}), view.format)).toBe("—");
+    });
+});
+
+describe("explorer view list", () => {
+    it("offers every view of every row, not one per row", () => {
+        const expected = KPIS.reduce(
+            (total, row) => total + (row.views?.length ?? 1),
+            0,
+        );
+        expect(KPI_VIEWS).toHaveLength(expected);
+        expect(KPI_VIEWS.length).toBeGreaterThan(KPIS.length);
+    });
+
+    it("gives each view a unique id that resolves back to it", () => {
+        const ids = KPI_VIEWS.map((view) => view.id);
+        expect(new Set(ids).size).toBe(ids.length);
+        for (const view of KPI_VIEWS)
+            expect(kpiViewById(view.id).name).toBe(view.name);
+    });
+
+    it("lists all three community variants separately", () => {
+        const names = KPI_VIEWS.filter((view) =>
+            view.id.startsWith("communityModels:"),
+        ).map((view) => view.name);
+        expect(names).toEqual([
+            "Community models · users",
+            "Community models · requests",
+            "Community models · availability",
+        ]);
+    });
+
+    it("sends a cycled table row to the variant it is showing", () => {
+        // The table's graph button passes kpiViewId(row, index); index 2 on the
+        // community row must land on availability, not back on users.
+        expect(kpiViewById(kpiViewId(community, 2)).name).toBe(
+            "Community models · availability",
+        );
+        expect(kpiViewById(kpiViewId(community, 4)).name).toBe(
+            "Community models · requests",
+        );
+    });
+
+    it("falls back to the first view for an unknown id", () => {
+        expect(kpiViewById("nope:9").id).toBe(KPI_VIEWS[0].id);
+    });
+});
+
+const margin = KPIS.find((row) => row.key === "grossMargin");
+const coverage = KPIS.find((row) => row.key === "cashCoverage");
+const revenue = KPIS.find((row) => row.key === "revenue");
+const paidPollenShare = KPIS.find((row) => row.key === "paidPollenPct");
+
+// A real week from prod (2026-08-10), trimmed to the fields these rows read.
+const marginWeek = {
+    week: "2026-08-10",
+    pollenRevenue: 3469,
+    costUsd: 3740,
+    revenue: 2278,
+};
+
+describe("revenue row", () => {
+    it("cycles between Pollen bought, Pollen spent, and ARPA", () => {
+        expect([0, 1, 2].map((i) => kpiView(revenue, i).name)).toEqual([
+            "Revenue",
+            "Pollen spent",
+            "ARPA",
+        ]);
+        expect(
+            [0, 1, 2].map((i) =>
+                kpiValue(kpiView(revenue, i), {
+                    revenue: 2278,
+                    pollenRevenue: 3469,
+                    wau: 3352,
+                }),
+            ),
+        ).toEqual([2278, 3469, 2278 / 3352]);
+    });
+});
+
+describe("Paid Pollen share", () => {
+    it("is a precise percent KPI available to the history graph", () => {
+        expect(
+            formatValue(
+                kpiValue(paidPollenShare, { paidPollenPct: 33.9 }),
+                paidPollenShare.format,
+            ),
+        ).toBe("33.90%");
+        expect(kpiViewById("paidPollenPct:0")).toMatchObject({
+            name: "Paid Pollen share",
+            category: "Revenue",
+        });
+    });
+});
+
+describe("gross margin row", () => {
+    it("measures Pollen revenue against cost, not Stripe cash", () => {
+        // Stripe cash that week was 2278 — using it would read −64%.
+        expect(kpiValue(margin, marginWeek)).toBeCloseTo(-7.81, 1);
+    });
+
+    it("blanks a week with no Pollen spent rather than reading zero", () => {
+        expect(kpiValue(margin, { pollenRevenue: 0, costUsd: 10 })).toBeNull();
+    });
+});
+
+describe("cash coverage row", () => {
+    it("compares Stripe cash against the week's compute cost", () => {
+        expect(kpiValue(coverage, marginWeek)).toBeCloseTo(60.91, 1);
+    });
+
+    it("blanks a week with no cost rather than dividing by zero", () => {
+        expect(kpiValue(coverage, { revenue: 100, costUsd: 0 })).toBeNull();
+    });
+});
+
+const wau = KPIS.find((row) => row.key === "wau");
+const turnedAway = KPIS.find((row) => row.key === "turnedAway");
+const byop = KPIS.find((row) => row.key === "byopUserPct");
+
+// Week of 2026-08-10 as the pipes now report it.
+const rejectionWeek = {
+    week: "2026-08-10",
+    wau: 3352,
+    wauAll: 6859,
+    byopUserPct: 11.1,
+    byopUserPctAll: 15.0,
+};
+
+describe("402 rejections", () => {
+    it("defaults WAU to served users, not everyone who knocked", () => {
+        expect(kpiValue(kpiView(wau, 0), rejectionWeek)).toBe(3352);
+    });
+
+    it("cycles to the raw figure the dashboard used to show", () => {
+        const view = kpiView(wau, 1);
+        expect(view.name).toBe("WAU · incl. rejected");
+        expect(kpiValue(view, rejectionWeek)).toBe(6859);
+    });
+
+    it("reports the gap as its own row", () => {
+        expect(kpiValue(turnedAway, rejectionWeek)).toBe(3507);
+    });
+
+    it("cycles BYOP share between served and raw", () => {
+        expect(kpiValue(kpiView(byop, 0), rejectionWeek)).toBe(11.1);
+        expect(kpiValue(kpiView(byop, 1), rejectionWeek)).toBe(15.0);
+    });
+
+    it("offers both WAU variants in the explorer", () => {
+        const names = KPI_VIEWS.filter((v) => v.id.startsWith("wau:")).map(
+            (v) => v.name,
+        );
+        expect(names).toEqual(["WAU", "WAU · incl. rejected"]);
+    });
+});

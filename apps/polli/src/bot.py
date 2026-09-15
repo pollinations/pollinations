@@ -7,17 +7,13 @@ import logging
 import random
 
 import aiohttp
-import discord
 from discord.ext import commands, tasks
 
-from .utils.regex import re
-from .core.config import config
+import discord
+
+from .ai.client import pollinations_client
 from .context import ConversationSession, session_manager
-from .integrations.github.client import github_manager
-from .integrations.github.handlers import TOOL_HANDLERS
-from .integrations.github.auth import github_app_auth, init_github_app
-from .integrations.github.graphql import github_graphql
-from .integrations.github.pull_requests import github_pr_manager
+from .core.config import config
 from .discord.media import (
     BLOCK_LATEX_PATTERN,
     PIL_AVAILABLE,
@@ -29,9 +25,14 @@ from .discord.media import (
     send_code_block,
     truncate_long_decimals,
 )
-from .ai.client import pollinations_client
+from .integrations.github.auth import github_app_auth, init_github_app
+from .integrations.github.client import github_manager
+from .integrations.github.graphql import github_graphql
+from .integrations.github.handlers import TOOL_HANDLERS
+from .integrations.github.pull_requests import github_pr_manager
 from .integrations.subscriptions import init_notifier
 from .integrations.webhook_server import start_webhook_server, stop_webhook_server
+from .utils.regex import re
 
 logger = logging.getLogger(__name__)
 
@@ -250,7 +251,11 @@ def is_image_url(url: str) -> bool:
     return False
 
 
-def decode_base64_images(content_blocks: list[dict], max_images: int = 10) -> list[discord.File]:
+def decode_base64_images(
+    content_blocks: list[dict],
+    max_images: int = 10,
+    max_bytes: int = 20 * 1024 * 1024,
+) -> list[discord.File]:
     """
     Decode base64 images from content_blocks to discord.File objects.
 
@@ -288,8 +293,17 @@ def decode_base64_images(content_blocks: list[dict], max_images: int = 10) -> li
             if ext == "jpeg":
                 ext = "jpg"
 
-            # Decode base64
-            image_bytes = base64.b64decode(b64_data)
+            if mime_type != "image/png":
+                logger.warning("Rejected unsupported base64 image type: %s", mime_type)
+                continue
+
+            image_bytes = base64.b64decode(b64_data, validate=True)
+            if not image_bytes.startswith(b"\x89PNG\r\n\x1a\n"):
+                logger.warning("Rejected malformed PNG attachment")
+                continue
+            if len(image_bytes) > max_bytes:
+                logger.warning("Rejected oversized PNG attachment: %s bytes", len(image_bytes))
+                continue
 
             # Create discord.File
             file_buffer = io.BytesIO(image_bytes)
@@ -304,28 +318,6 @@ def decode_base64_images(content_blocks: list[dict], max_images: int = 10) -> li
             continue
 
     return files
-
-
-def suppress_url_embeds(text: str) -> str:
-    """Wrap bare URLs in angle brackets to suppress Discord embed previews.
-
-    Skips URLs inside code blocks (```) and inline code (`).
-    Does NOT wrap URLs inside markdown links [text](url).
-    """
-    # Split text into code and non-code segments
-    # Match fenced code blocks (```...```) and inline code (`...`)
-    code_pattern = re.compile(r"(```[\s\S]*?```|`[^`\n]+`)")
-    segments = code_pattern.split(text)
-
-    for i, segment in enumerate(segments):
-        # Skip code segments (odd indices from split)
-        if code_pattern.match(segment):
-            continue
-        # Wrap bare URLs not already in angle brackets or markdown links
-        segment = re.sub(r"(?<![<\(\]])\b(https?://[^\s<>\)]+)(?![>\)])", r"<\1>", segment)
-        segments[i] = segment
-
-    return "".join(segments)
 
 
 def extract_media_urls(
@@ -395,19 +387,6 @@ def extract_media_urls(
             image_urls.append(embed.thumbnail.url)
 
     return image_urls, video_urls, file_urls
-
-
-def extract_attachment_urls(message: discord.Message) -> list[str]:
-    """
-    Extract ALL attachment URLs from Discord message (legacy, returns combined list).
-    Use extract_media_urls() for separated image/video/file lists.
-    """
-    image_urls, video_urls, file_urls = extract_media_urls(message)
-    return image_urls + video_urls + file_urls
-
-
-# Keep old name for backward compatibility
-extract_image_urls = extract_attachment_urls
 
 
 async def fetch_thread_history(thread: discord.Thread, limit: int = THREAD_HISTORY_LIMIT) -> list[dict]:
@@ -491,12 +470,14 @@ class PolliBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
         intents.message_content = True
+        intents.members = True
         super().__init__(command_prefix="!", intents=intents)
         self.issue_notifier = None
         self.webhook_server = None
         self._api_server = None
         self._status_bag: list[str] = []
         self._current_status: str | None = None
+        self._code_sync_task: asyncio.Task | None = None
 
     async def setup_hook(self):
         """Called when the bot is starting up."""
@@ -541,12 +522,10 @@ class PolliBot(commands.Bot):
         logger.info("Registered web_scrape tool handler (Crawl4AI)")
 
         # Register render_visual handler (always available).
-        # Old tool name aliased for back-compat with cached AI sessions.
-        from .integrations.charts import data_visualization, render_visual
+        from .integrations.charts import render_visual
 
         pollinations_client.register_tool_handler("render_visual", render_visual)
-        pollinations_client.register_tool_handler("data_visualization", data_visualization)
-        logger.info("Registered render_visual tool handler (data_visualization alias)")
+        logger.info("Registered render_visual tool handler")
 
         # Register discord_search handler (full guild search capabilities)
         from .discord.search import tool_discord_search
@@ -572,10 +551,10 @@ class PolliBot(commands.Bot):
 
             from .api.server import create_api_app
 
-            api_app = create_api_app(pollinations_client, config)
+            api_app = create_api_app(pollinations_client, config, self)
             self._api_server = GranianServer(
                 target=api_app,
-                address="127.0.0.1",
+                address=config.api.bind,
                 port=config.api.port,
                 interface="asgi",
             )
@@ -587,7 +566,7 @@ class PolliBot(commands.Bot):
                     else None
                 )
             )
-            logger.info(f"Polli API started on port {config.api.port}")
+            logger.info(f"Polli API started on {config.api.bind}:{config.api.port}")
 
         # Pre-warm aiohttp connection pool (eliminates TLS cold-start on first request)
         try:
@@ -614,7 +593,16 @@ class PolliBot(commands.Bot):
             await self.issue_notifier.stop()
         if self.webhook_server:
             await stop_webhook_server()
+        if self._code_sync_task and not self._code_sync_task.done():
+            self._code_sync_task.cancel()
+            try:
+                await self._code_sync_task
+            except asyncio.CancelledError:
+                pass
         await pollinations_client.close()
+        from .discord.search import discord_search_client
+
+        await discord_search_client.close()
         await github_manager.close()
         await github_graphql.close()
         await github_pr_manager.close()
@@ -625,6 +613,9 @@ class PolliBot(commands.Bot):
             from .search.code_search import close as close_embeddings
 
             await close_embeddings()
+        from .integrations.web_scraper import close_web_scraper
+
+        await close_web_scraper()
         await super().close()
 
     @tasks.loop(minutes=1)
@@ -734,8 +725,8 @@ async def on_ready():
     except Exception as e:
         logger.error(f"Failed to sync commands: {e}")
 
-    # Code search queries Cloudflare Vectorize directly — nothing to initialize
-    # (the index is populated by CI in pollinations/pollinations, not by Polli).
+    if config.code_search.local_repo_enabled and (bot._code_sync_task is None or bot._code_sync_task.done()):
+        bot._code_sync_task = asyncio.create_task(_sync_local_repo())
 
 
 async def _check_reply_to_bot(
@@ -856,13 +847,15 @@ async def on_message(message: discord.Message):
                 _, ref_msg = await _check_reply_to_bot(message)
             text = await handle_reply_context(message, text, ref_msg)
 
-        image_urls = extract_image_urls(message)
+        image_urls, video_urls, file_urls = extract_media_urls(message)
+        attachment_urls = image_urls + video_urls + file_urls
 
-        # If no text but replying or has images, let AI handle it
-        if not text and not image_urls:
-            text = "[User mentioned bot - respond to the conversation context]"
-        if not text and image_urls:
-            text = "[User attached screenshot(s)]"
+        if not text:
+            text = (
+                "[User attached media/files]"
+                if attachment_urls
+                else "[User mentioned bot - respond to the conversation context]"
+            )
 
         # Create session if needed (handles bot restart scenario)
         if not session:
@@ -874,10 +867,16 @@ async def on_message(message: discord.Message):
                 user_name=format_discord_identity(message.author),
                 initial_message=text,
                 topic_summary=topic,
-                image_urls=image_urls,
+                image_urls=attachment_urls,
             )
 
-        await handle_thread_message(message, session)
+        await handle_thread_message(
+            message,
+            session,
+            image_urls,
+            video_urls,
+            file_urls,
+        )
         return
 
     # Extract message text
@@ -919,6 +918,19 @@ async def handle_dm_message(message: discord.Message):
     text = message.content.strip().lower()
     user_id = message.author.id
 
+    if text in {"privacy", "privacy policy", "delete data", "delete my data"}:
+        await message.reply(
+            "**Privacy and data requests**\n"
+            "Privacy policy: https://pollinations.ai/privacy\n"
+            "For deletion or correction of your data, email hello@pollinations.ai "
+            "with your Discord user ID and the relevant message or issue links. "
+            "Do not send passwords or API keys.\n"
+            "To remove all issue-notification subscriptions now, DM `unsubscribe all`. "
+            "That command removes subscriptions only; it does not erase Discord messages, "
+            "GitHub content, operational logs or provider-held data."
+        )
+        return
+
     async with message.channel.typing():
         # Subscribe command
         subscribe_match = re.search(r"subscribe\s+(?:to\s+)?#?(\d+)", text)
@@ -959,7 +971,8 @@ async def handle_dm_message(message: discord.Message):
             "• `subscribe #123` - Subscribe to issue updates\n"
             "• `unsubscribe #123` - Unsubscribe from an issue\n"
             "• `unsubscribe all` - Unsubscribe from all issues\n"
-            "• `list subscriptions` - See your subscriptions\n\n"
+            "• `list subscriptions` - See your subscriptions\n"
+            "• `privacy` - Privacy policy and deletion/correction contact\n\n"
             "For other requests, please @mention me in a server channel!"
         )
         await message.reply(help_text)
@@ -1084,7 +1097,9 @@ async def handle_inline_polli_mention(message: discord.Message):
             if msg.author.bot:
                 channel_history.append({"role": "assistant", "content": content})
             else:
-                channel_history.append({"role": "user", "content": f"[{format_discord_identity(msg.author)}]: {content}"})
+                channel_history.append(
+                    {"role": "user", "content": f"[{format_discord_identity(msg.author)}]: {content}"}
+                )
 
         # Reverse to chronological order (oldest to newest)
         channel_history.reverse()
@@ -1157,7 +1172,6 @@ async def handle_inline_polli_mention(message: discord.Message):
                 response_text = response_text.strip()
 
             # Suppress URL embeds to prevent chat bloat
-            response_text = suppress_url_embeds(response_text)
 
             if response_text or image_files:
                 # Reply to the message WITHOUT ping (mention_author=False)
@@ -1173,7 +1187,13 @@ async def handle_inline_polli_mention(message: discord.Message):
             await message.reply("Sorry, I encountered an error processing your request.", mention_author=False)
 
 
-async def handle_thread_message(message: discord.Message, session: ConversationSession):
+async def handle_thread_message(
+    message: discord.Message,
+    session: ConversationSession,
+    image_urls: list[str],
+    video_urls: list[str],
+    file_urls: list[str],
+):
     """Handle a message in an existing thread."""
     # Type guard: this function is only called for thread messages
     if not isinstance(message.channel, discord.Thread):
@@ -1181,8 +1201,6 @@ async def handle_thread_message(message: discord.Message, session: ConversationS
         return
 
     channel = message.channel  # Now typed as discord.Thread
-    image_urls, video_urls, file_urls = extract_media_urls(message)
-
     # Add to session
     session_manager.add_to_session(
         session=session,
@@ -1211,7 +1229,45 @@ async def handle_thread_message(message: discord.Message, session: ConversationS
         )
 
 
+_active_conversations: set[int] = set()
+
+
 async def process_message(
+    channel: discord.Thread | discord.TextChannel,
+    user: discord.User | discord.Member,
+    text: str,
+    image_urls: list[str],
+    session: ConversationSession,
+    thread_history: list[dict] | None = None,
+    reply_to: discord.Message | None = None,
+    source_message: discord.Message | None = None,
+    video_urls: list[str] | None = None,
+    file_urls: list[str] | None = None,
+):
+    if channel.id in _active_conversations:
+        await channel.send(
+            "I'm still working on the previous request here. Please wait for that reply before retrying."
+        )
+        return
+    _active_conversations.add(channel.id)
+    try:
+        await _process_message(
+            channel,
+            user,
+            text,
+            image_urls,
+            session,
+            thread_history,
+            reply_to,
+            source_message,
+            video_urls,
+            file_urls,
+        )
+    finally:
+        _active_conversations.discard(channel.id)
+
+
+async def _process_message(
     channel: discord.Thread | discord.TextChannel,
     user: discord.User | discord.Member,
     text: str,
@@ -1244,12 +1300,15 @@ async def process_message(
     # Build tool context - this is passed to ALL tool handlers for permission checks
     # This is thread-safe because it's created per-request, not globally registered
     # Determine channel/thread IDs based on channel type
-    if isinstance(channel, discord.Thread) and channel.parent_id:
-        context_channel_id = channel.parent_id
+    if isinstance(channel, discord.Thread):
+        context_channel_id = channel.id
         context_thread_id: int | None = channel.id
+        parent_channel_id: int | None = channel.parent_id
     else:
         context_channel_id = channel.id
         context_thread_id = None
+        parent_channel_id = None
+    source_channel_id = source_message.channel.id if source_message else session.channel_id
 
     tool_context = {
         "is_admin": user_is_admin,
@@ -1259,6 +1318,8 @@ async def process_message(
         "reporter": session.original_author_name,
         "channel_id": context_channel_id,
         "thread_id": context_thread_id,
+        "source_channel_id": source_channel_id,
+        "parent_channel_id": parent_channel_id,
         "guild_id": (channel.guild.id if channel.guild else None),
         "user_role_ids": ([r.id for r in user.roles] if isinstance(user, discord.Member) else []),
         # For github_issue create - link back to Discord message
@@ -1299,7 +1360,6 @@ async def process_message(
             response_text = response_text.strip()
 
         # Suppress URL embeds to prevent chat bloat
-        response_text = suppress_url_embeds(response_text)
 
         # Log tool usage for debugging
         if tool_calls:
@@ -1350,6 +1410,8 @@ async def process_message(
                 tools=None,  # No tools, just respond
             )
             response_text = retry_result.get("content", "") if retry_result else ""
+            if not response_text and not image_files:
+                response_text = "I couldn't generate a response for this request. Please try again shortly."
 
         if response_text or image_files:
             await send_long_message(
@@ -1503,7 +1565,13 @@ async def send_long_message(
             else:
                 if output_lines:
                     first_message_sent = await _send_chunk(
-                        channel, "\n".join(output_lines), max_length, first_message_sent, reply_to, attachments, mention_author
+                        channel,
+                        "\n".join(output_lines),
+                        max_length,
+                        first_message_sent,
+                        reply_to,
+                        attachments,
+                        mention_author,
                     )
                     output_lines = []
                 if len(code_block_text) > max_length:
@@ -1582,22 +1650,27 @@ async def _send_chunk(
 
         if not first_sent and reply_to:
             if chunk:
-                await reply_to.reply(chunk, files=files_to_send, mention_author=mention_author)
+                await reply_to.reply(
+                    chunk,
+                    files=files_to_send,
+                    mention_author=mention_author,
+                    suppress_embeds=True,
+                )
             elif files_to_send:
                 await reply_to.reply(files=files_to_send, mention_author=mention_author)
             first_sent = True
         elif not first_sent:
             if chunk:
-                await channel.send(chunk, files=files_to_send)
+                await channel.send(chunk, files=files_to_send, suppress_embeds=True)
             elif files_to_send:
                 await channel.send(files=files_to_send)
             first_sent = True
         else:
             if chunk:
-                await channel.send(chunk, files=files_to_send)
+                await channel.send(chunk, files=files_to_send, suppress_embeds=True)
             elif files_to_send:
                 await channel.send(files=files_to_send)
-    
+
     while attachments:
         files_to_send = attachments[:10]
         attachments[:] = attachments[10:]

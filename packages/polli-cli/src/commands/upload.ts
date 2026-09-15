@@ -3,7 +3,7 @@ import { basename, extname } from "node:path";
 import { Command } from "commander";
 import { requireKey } from "../lib/api.js";
 import { MEDIA_URL } from "../lib/config.js";
-import { getOutputMode, printError, printMeta } from "../lib/output.js";
+import { fail, getOutputMode, printMeta } from "../lib/output.js";
 
 const MIME_BY_EXT: Record<string, string> = {
     ".jpg": "image/jpeg",
@@ -41,8 +41,7 @@ export const uploadCommand = new Command("upload")
         const isHuman = getOutputMode() === "human";
 
         if (!existsSync(file)) {
-            printError(`File not found: ${file}`);
-            process.exit(1);
+            fail(`File not found: ${file}`);
         }
 
         const mime =
@@ -63,8 +62,7 @@ export const uploadCommand = new Command("upload")
 
         if (!res.ok) {
             const text = await res.text().catch(() => "");
-            printError(`${res.status} ${res.statusText}: ${text}`);
-            process.exit(1);
+            fail(`${res.status} ${res.statusText}: ${text}`);
         }
 
         const data = (await res.json()) as UploadResponse;

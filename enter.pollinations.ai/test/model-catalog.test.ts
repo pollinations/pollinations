@@ -1,0 +1,197 @@
+import {
+    getModelPricesFromCatalog,
+    mergeModelCatalogs,
+    parseModelCatalogResponse,
+} from "@frontend/components/models/model-catalog.ts";
+import { describe, expect, it } from "vitest";
+
+it("keeps search aliases but never transfers historical statistics to a new ID", () => {
+    const catalog = [
+        {
+            name: "anthropic/claude-opus-5",
+            category: "text" as const,
+            aliases: ["claude-large", "claude-opus-4.8"],
+        },
+    ];
+    const oldStats = { avgCost: 4, requestCount: 10, userCount: 3 };
+    const [waiting] = getModelPricesFromCatalog(catalog, {
+        "claude-large": oldStats,
+    });
+    expect(waiting.name).toBe(catalog[0].name);
+    expect(waiting.aliases).toEqual(catalog[0].aliases);
+    expect(waiting.realAvgCost).toBeUndefined();
+    expect(waiting.users7d).toBeUndefined();
+
+    const [current] = getModelPricesFromCatalog(catalog, {
+        "claude-large": oldStats,
+        "anthropic/claude-opus-5": {
+            avgCost: 2,
+            requestCount: 5,
+            userCount: 2,
+        },
+    });
+    expect(current.realAvgCost).toBe(2);
+    expect(current.users7d).toBe(2);
+});
+
+it("maps only canonical media URLs to community model brand icons", () => {
+    const iconUrl =
+        "https://media.pollinations.ai/123e4567-e89b-12d3-a456-426614174000";
+    const [model] = getModelPricesFromCatalog([
+        {
+            name: "owner/community-model",
+            category: "text",
+            community: true,
+            brand_icon_url: iconUrl,
+        },
+    ]);
+    const [unsafeModel] = getModelPricesFromCatalog([
+        {
+            name: "owner/unsafe-model",
+            category: "text",
+            community: true,
+            brand_icon_url: "https://tracker.test/icon.svg",
+        },
+    ]);
+
+    expect(model.brandIconUrl).toBe(iconUrl);
+    expect(unsafeModel.brandIconUrl).toBeUndefined();
+});
+
+describe("parseModelCatalogResponse", () => {
+    it("returns the array when entries have identifiable models", () => {
+        const data = [
+            { name: "openai/gpt-5.4-nano" },
+            { id: "black-forest-labs/flux.1-schnell" },
+        ];
+
+        expect(parseModelCatalogResponse(data)).toEqual(data);
+    });
+
+    it("throws on a non-array response", () => {
+        expect(() => parseModelCatalogResponse({ models: [] })).toThrow();
+        expect(() => parseModelCatalogResponse(null)).toThrow();
+    });
+
+    it("throws on an empty array", () => {
+        expect(() => parseModelCatalogResponse([])).toThrow();
+    });
+
+    it("throws when every entry lacks a name and id", () => {
+        expect(() =>
+            parseModelCatalogResponse([{ title: "Mystery" }, {}]),
+        ).toThrow();
+    });
+});
+
+describe("mergeModelCatalogs", () => {
+    it("adds community models while preserving the first catalog entry", () => {
+        const localModel = { name: "local-model", title: "Local" };
+        const localCommunityModel = {
+            name: "owner/community-model",
+            title: "Local community model",
+            community: true,
+        };
+
+        expect(
+            mergeModelCatalogs([
+                [localModel, localCommunityModel],
+                [
+                    {
+                        ...localCommunityModel,
+                        title: "Production community model",
+                    },
+                    {
+                        name: "another/community-model",
+                        community: true,
+                    },
+                ],
+            ]),
+        ).toEqual([
+            localModel,
+            localCommunityModel,
+            { name: "another/community-model", community: true },
+        ]);
+    });
+});
+
+it("carries arbitrary public pricing variants and adjustments into the UI", () => {
+    const [model] = getModelPricesFromCatalog([
+        {
+            name: "any-model",
+            category: "text",
+            pricing: {
+                currency: "pollen",
+                promptTextTokens: "0.000001",
+            },
+            pricing_variants: [
+                {
+                    name: "alternate",
+                    label: "Alternate",
+                    description: "Provider-selected alternate pricing",
+                    pricing: {
+                        currency: "pollen",
+                        promptTextTokens: "0.000002",
+                    },
+                },
+            ],
+            pricing_default_label: "Standard context",
+            pricing_adjustments: [
+                {
+                    name: "provider.adjustment.v1",
+                    label: "Search",
+                    kind: "search_request",
+                    price: "12",
+                    currency: "pollen",
+                    quantity: 1_000,
+                    unit: "requests",
+                    option: {
+                        group: "search_context",
+                        value: "high",
+                        label: "High search context",
+                    },
+                },
+            ],
+        },
+    ]);
+
+    expect(model).toMatchObject({
+        name: "any-model",
+        priceDefaultLabel: "Standard context",
+        priceVariants: [
+            {
+                name: "alternate",
+                label: "Alternate",
+                prices: [{ direction: "input", price: "2.0", unit: "token" }],
+            },
+        ],
+        priceAdjustments: [
+            {
+                name: "provider.adjustment.v1",
+                label: "Search",
+                price: "12",
+                quantity: 1_000,
+                unit: "requests",
+            },
+        ],
+    });
+});
+
+it("adds rolling user counts from public model stats", () => {
+    const [model] = getModelPricesFromCatalog(
+        [{ name: "popular-model", category: "text" }],
+        {
+            "popular-model": {
+                avgCost: 0,
+                requestCount: 100,
+                userCount: 12,
+            },
+        },
+    );
+
+    expect(model).toMatchObject({
+        name: "popular-model",
+        users7d: 12,
+    });
+    expect(model.realAvgCost).toBeUndefined();
+});

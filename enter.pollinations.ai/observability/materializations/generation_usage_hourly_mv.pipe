@@ -25,7 +25,7 @@ SQL >
         api_key_client_id NOT IN ('', 'undefined') AS is_byop,
         model_provider_used = 'community' AS is_community,
         multiIf(is_byop, 'byop', is_community, 'community_direct', 'core') AS business_stream,
-        sumState(toUInt64(1)) AS all_calls,
+        sumState(toUInt64(is_final)) AS all_calls,  -- attempts are not requests
         sumState(toUInt64(response_status >= 200 AND response_status < 300)) AS successful_calls,
         sumState(
             toUInt64(response_status >= 200 AND response_status < 300 AND is_billed_usage)

@@ -3,28 +3,50 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import type { AgentRunClaims } from "@shared/auth/agent-run-token.ts";
 import type { AuthUser } from "@shared/auth/api-key.ts";
+import { getUserBalance } from "@shared/billing/balance.ts";
+import { selectCommunityModelReward } from "@shared/billing/track-helpers.ts";
 import {
     COMMUNITY_MODEL_REWARD_RATE,
     type CommunityEndpointRuntime,
     communityEndpointPrices,
     communityModelDefinition,
+    communityModelId,
+    type ProxyCommunityEndpointRuntime,
 } from "@shared/community-endpoints.ts";
-import { user as userTable } from "@shared/db/better-auth.ts";
+import {
+    communityEndpoint as communityEndpointTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
+import { handleError } from "@shared/error.ts";
+import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
 import {
     type BillingAdjustment,
+    calculateUsageBilling,
     getPriceDefinitionForModel,
     getRegistryModelDefinition,
     type ModelName,
 } from "@shared/registry/registry.ts";
 import type { TinybirdEvent } from "@shared/schemas/generation-event.ts";
+import { encryptSecret } from "@shared/secret-encryption.ts";
+import {
+    createTestApiKey,
+    createTestUser,
+} from "@shared/test/fixtures/index.ts";
 import { removeUnset } from "@shared/util.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { requestId } from "hono/request-id";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
+import type { FallbackAttempt, FallbackCandidate } from "@/fallback.ts";
+import type {
+    GenerationCacheAdapter,
+    GenerationCacheVariables,
+} from "@/middleware/generation-cache.ts";
 import { logger } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import {
@@ -32,8 +54,17 @@ import {
     track,
     trackResponse,
 } from "@/middleware/track.ts";
+import worker from "../src/index.ts";
+import {
+    type GenerationModelEntry,
+    resetGenerationModelRegistryCache,
+} from "../src/model-registry.ts";
+import { requireChatStreamUsage } from "../src/text/chat/usage.ts";
+import { summarizeStreamForLog } from "../src/text/streamSummary.ts";
+import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 afterEach(() => {
+    resetGenerationModelRegistryCache();
     vi.restoreAllMocks();
 });
 
@@ -43,10 +74,14 @@ function createTestApp(
     consumePollen: (amount: number) => Promise<void>,
     user: AuthUser | undefined = trackingUser,
     model: ModelVariables["model"] = {
-        requested: "openai",
-        resolved: "openai",
-        definition: getRegistryModelDefinition("openai"),
+        requested: "openai/gpt-5.4-nano",
+        resolved: "openai/gpt-5.4-nano",
+        definition: getRegistryModelDefinition("openai/gpt-5.4-nano"),
     },
+    finalEntry?: GenerationModelEntry,
+    responseHeaders: Record<string, string> = {},
+    generationCache?: GenerationCacheVariables["generationCache"],
+    agentRun?: AgentRunClaims,
 ) {
     const app = new Hono<Env>();
 
@@ -55,12 +90,12 @@ function createTestApp(
     app.use("*", async (c, next) => {
         c.set("auth", {
             user,
-            requireAuthorization: async () => {},
             requireUser: () => {
                 if (user) return user;
                 throw new Error("user should not be required in this test");
             },
             requireModelAccess: () => {},
+            ...(agentRun && { agentRun }),
         });
         c.set("balance", {
             getBalance: async () => ({
@@ -70,72 +105,96 @@ function createTestApp(
         });
         c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", model);
+        if (generationCache) c.set("generationCache", generationCache);
         await next();
     });
-    app.post(
-        "/v1/chat/completions",
-        track("generate.text"),
-        () =>
-            new Response(
-                JSON.stringify({
-                    id: "chatcmpl_test",
-                    object: "chat.completion",
-                    choices: [
-                        {
-                            index: 0,
-                            message: { role: "assistant", content: "ok" },
-                            finish_reason: "stop",
-                        },
-                    ],
-                }),
-                {
-                    headers: {
-                        "content-type": "application/json",
-                        "x-model-used": "gpt-5-nano-2025-08-07",
-                        "x-usage-prompt-text-tokens": "1000",
-                        "x-usage-completion-text-tokens": "500",
+    app.post("/v1/chat/completions", track("generate.text"), (c) => {
+        recordSettledEntry(c.var.track.attempts, finalEntry);
+        return new Response(
+            JSON.stringify({
+                id: "chatcmpl_test",
+                object: "chat.completion",
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "ok" },
+                        finish_reason: "stop",
                     },
+                ],
+            }),
+            {
+                headers: {
+                    "content-type": "application/json",
+                    "x-model-used": "gpt-5-nano-2025-08-07",
+                    "x-usage-prompt-text-tokens": "1000",
+                    "x-usage-completion-text-tokens": "500",
+                    ...responseHeaders,
                 },
-            ),
-    );
+            },
+        );
+    });
 
     return app;
 }
 
 function createCommunityEndpoint(
     ownerUserId: string,
-): CommunityEndpointRuntime {
+    overrides: Partial<ProxyCommunityEndpointRuntime> = {},
+): ProxyCommunityEndpointRuntime {
     return {
         id: "community-endpoint-test",
         ownerUserId,
         modelId: "test-owner/test-model",
+        api: "chat_completions",
         name: "test-model",
         title: "Test Model",
         description: null,
-        delegatesGeneration: false,
+        type: "proxy",
+
         modality: "text",
         imagePricing: "request",
-        supportsImageEdits: false,
-        baseUrl: "https://community.example.test/openai",
+        inputModalities: null,
+        baseUrl: "https://community.example.test/openai/chat/completions",
         upstreamModel: "upstream-test-model",
         bearerTokenCiphertext: "encrypted",
         visibility: "public",
-        disabledAt: null,
-        disabledReason: null,
+        paidOnly: false,
+        perUserRpm: null,
+        fallbacks: [],
+        hiddenAt: null,
+        hiddenReason: null,
         ...communityEndpointPrices({
             promptTextPrice: 0.0001,
             completionTextPrice: 0.0002,
         }),
+        ...overrides,
     };
 }
 
-// App that returns a wrong content-type for the given event type, exercising
-// the not-billed content-type guards in trackResponse.
-function createWrongContentTypeApp(
+function createCommunityEntry(
+    endpoint: CommunityEndpointRuntime,
+): GenerationModelEntry {
+    const definition = communityModelDefinition(endpoint);
+    return {
+        id: endpoint.modelId,
+        aliases: definition.aliases,
+        eventType: "generate.text",
+        supportedEndpoints: ["/v1/chat/completions"],
+        definition,
+        info: modelInfoFromDefinition(endpoint.modelId, definition, {
+            community: true,
+        }),
+        communityEndpoint: endpoint,
+        visible: true,
+    };
+}
+
+// Minimal tracked app for exercising response parsing and billing directly.
+function createTrackedResponseApp(
     consumePollen: (amount: number) => Promise<void>,
     eventType: "generate.image" | "generate.text" | "generate.audio",
-    response: Response,
-    model: ModelName = "openai",
+    result: Response | Error,
+    model: ModelName = "openai/gpt-5.4-nano",
 ) {
     const app = new Hono<Env>();
 
@@ -144,7 +203,6 @@ function createWrongContentTypeApp(
     app.use("*", async (c, next) => {
         c.set("auth", {
             user: trackingUser,
-            requireAuthorization: async () => {},
             requireUser: () => trackingUser,
             requireModelAccess: () => {},
         });
@@ -159,7 +217,11 @@ function createWrongContentTypeApp(
         });
         await next();
     });
-    app.all("/upstream", track(eventType), () => response.clone());
+    app.all("/upstream", track(eventType), () => {
+        if (result instanceof Error) throw result;
+        return result.clone();
+    });
+    app.onError(handleError);
 
     return app;
 }
@@ -167,30 +229,60 @@ function createWrongContentTypeApp(
 // App that streams an SSE completion whose chunks arrive with real delays,
 // used to assert that endTime/responseTime cover the whole stream duration
 // rather than just time-to-first-byte.
-function createSseStreamApp(chunkDelayMs: number) {
+function createSseStreamApp(
+    chunkDelayMs: number,
+    model: ModelVariables["model"] = {
+        requested: "openai/gpt-5.4-nano",
+        resolved: "openai/gpt-5.4-nano",
+        definition: getRegistryModelDefinition("openai/gpt-5.4-nano"),
+    },
+    includeUsage = true,
+    user: AuthUser = trackingUser,
+    primaryDelayMs = 0,
+) {
     const app = new Hono<Env>();
 
     app.use("*", requestId());
     app.use("*", logger);
     app.use("*", async (c, next) => {
         c.set("auth", {
-            user: trackingUser,
-            requireAuthorization: async () => {},
-            requireUser: () => trackingUser,
+            user,
+            requireUser: () => user,
             requireModelAccess: () => {},
         });
         c.set("balance", {
             getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
         });
         c.set("frontendKeyRateLimit", { consumePollen: async () => {} });
-        c.set("model", {
-            requested: "openai",
-            resolved: "openai",
-            definition: getRegistryModelDefinition("openai"),
-        });
+        c.set("model", model);
         await next();
     });
-    app.post("/v1/chat/completions", track("generate.text"), () => {
+    app.post("/v1/chat/completions", track("generate.text"), async (c) => {
+        const candidate = {
+            id: model.resolved,
+            definition: model.definition,
+        };
+        if (primaryDelayMs) {
+            const startedAt = new Date();
+            await new Promise((resolve) => setTimeout(resolve, primaryDelayMs));
+            c.var.track.attempts.push({
+                candidate,
+                startedAt,
+                endedAt: new Date(),
+                settled: false,
+                error: new HTTPException(503, {
+                    message: "primary unavailable",
+                }),
+            });
+        }
+        c.var.track.attempts.push({
+            candidate: primaryDelayMs
+                ? { ...candidate, id: `${model.resolved}:test-fallback` }
+                : candidate,
+            startedAt: new Date(),
+            endedAt: new Date(),
+            settled: true,
+        });
         const encoder = new TextEncoder();
         const sse = (data: object) => `data: ${JSON.stringify(data)}\n\n`;
         const chunks = [
@@ -202,15 +294,19 @@ function createSseStreamApp(chunkDelayMs: number) {
                 model: "gpt-5-nano-2025-08-07",
                 choices: [{ delta: { content: "lo" } }],
             }),
-            sse({
-                model: "gpt-5-nano-2025-08-07",
-                choices: [],
-                usage: {
-                    prompt_tokens: 1000,
-                    completion_tokens: 500,
-                    total_tokens: 1500,
-                },
-            }),
+            ...(includeUsage
+                ? [
+                      sse({
+                          model: "gpt-5-nano-2025-08-07",
+                          choices: [],
+                          usage: {
+                              prompt_tokens: 1000,
+                              completion_tokens: 500,
+                              total_tokens: 1500,
+                          },
+                      }),
+                  ]
+                : []),
             "data: [DONE]\n\n",
         ];
         const body = new ReadableStream<Uint8Array>({
@@ -239,6 +335,8 @@ function createHeaderApp(
     user: AuthUser | null = trackingUser,
     status = 200,
     consumePollen: (amount: number) => Promise<void> = async () => {},
+    model: ModelName = "openai/gpt-5.4-nano",
+    finalEntry?: GenerationModelEntry,
 ) {
     const app = new Hono<Env>();
 
@@ -247,7 +345,6 @@ function createHeaderApp(
     app.use("*", async (c, next) => {
         c.set("auth", {
             user: user ?? undefined,
-            requireAuthorization: async () => {},
             requireUser: () => {
                 if (user) return user;
                 throw new Error("user should not be required in this test");
@@ -259,29 +356,59 @@ function createHeaderApp(
         });
         c.set("frontendKeyRateLimit", { consumePollen });
         c.set("model", {
-            requested: "openai",
-            resolved: "openai",
-            definition: getRegistryModelDefinition("openai"),
+            requested: model,
+            resolved: model,
+            definition: getRegistryModelDefinition(model),
         });
         await next();
     });
-    app.post(
-        "/v1/chat/completions",
-        track("generate.text"),
-        () =>
-            new Response(JSON.stringify({ choices: [{ message: {} }] }), {
-                status,
-                headers: {
-                    "content-type": "application/json",
-                    "x-model-used": "gpt-5-nano-2025-08-07",
-                    "x-usage-prompt-text-tokens": "10",
-                    "x-usage-completion-text-tokens": "5",
-                    ...extraHeaders,
-                },
-            }),
-    );
+    app.post("/v1/chat/completions", track("generate.text"), (c) => {
+        recordSettledEntry(c.var.track.attempts, finalEntry);
+        return new Response(JSON.stringify({ choices: [{ message: {} }] }), {
+            status,
+            headers: {
+                "content-type": "application/json",
+                "x-model-used": "gpt-5-nano-2025-08-07",
+                "x-usage-prompt-text-tokens": "10",
+                "x-usage-completion-text-tokens": "5",
+                ...extraHeaders,
+            },
+        });
+    });
 
     return app;
+}
+
+function createStaticEntry(model: ModelName): GenerationModelEntry {
+    const definition = getRegistryModelDefinition(model);
+    return {
+        id: model,
+        aliases: definition.aliases,
+        eventType: "generate.text",
+        supportedEndpoints: ["/v1/chat/completions"],
+        definition,
+        info: modelInfoFromDefinition(model, definition),
+        visible: true,
+    };
+}
+
+function recordSettledEntry(
+    attempts: FallbackAttempt[],
+    entry?: GenerationModelEntry,
+): void {
+    if (!entry) return;
+    const now = new Date();
+    attempts.push({
+        candidate: {
+            id: entry.id,
+            definition: entry.definition,
+            communityEndpoint: entry.communityEndpoint,
+            entry,
+        },
+        startedAt: now,
+        endedAt: now,
+        settled: true,
+    });
 }
 
 async function captureFallbackEvent(extraHeaders: Record<string, string>) {
@@ -297,7 +424,7 @@ async function captureFallbackEvent(extraHeaders: Record<string, string>) {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
-                model: "openai",
+                model: "openai/gpt-5.4-nano",
                 stream: false,
                 messages: [{ role: "user", content: "test" }],
             }),
@@ -319,6 +446,20 @@ async function captureFallbackEvent(extraHeaders: Record<string, string>) {
     expect(tinybirdRequests).toHaveLength(1);
     return (await tinybirdRequests[0].json()) as { fallbackUsed?: boolean };
 }
+
+describe("selectCommunityModelReward", () => {
+    it("preserves an undefined served price for an eligible public endpoint", () => {
+        const endpoint = createCommunityEndpoint("community-owner");
+
+        expect(
+            selectCommunityModelReward(undefined, endpoint, undefined),
+        ).toStrictEqual({
+            userId: endpoint.ownerUserId,
+            rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+            basePrice: undefined,
+        });
+    });
+});
 
 describe("tracking observability", () => {
     beforeEach(async () => {
@@ -364,7 +505,7 @@ describe("tracking observability", () => {
                     referer: "https://example.com/app",
                 },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -392,15 +533,19 @@ describe("tracking observability", () => {
         expect(tinybirdRequests[0].headers.get("authorization")).toBe(
             "Bearer test_tinybird_token",
         );
+        // Internal accounting canonicalization does not rewrite the provider response.
+        expect(response.headers.get("x-model-used")).toBe(
+            "gpt-5-nano-2025-08-07",
+        );
         const event = await tinybirdRequests[0].json();
         expect(event).toMatchObject({
             requestPath: "/v1/chat/completions",
             environment: "test",
             eventType: "generate.text",
             responseStatus: 200,
-            modelRequested: "openai",
-            resolvedModelRequested: "openai",
-            modelUsed: "gpt-5-nano-2025-08-07",
+            modelRequested: "openai/gpt-5.4-nano",
+            resolvedModelRequested: "openai/gpt-5.4-nano",
+            modelUsed: "openai/gpt-5.4-nano",
             modelProviderUsed: expect.any(String),
             userId: trackingUser.id,
             isBilledUsage: true,
@@ -414,6 +559,977 @@ describe("tracking observability", () => {
         expect(event).not.toHaveProperty("cacheKey");
         expect(consumePollen).toHaveBeenCalledWith(expect.any(Number));
         expect(consumePollen.mock.calls[0]?.[0]).toBeGreaterThan(0);
+    });
+
+    it("tracks provider work but not coalesced cache hits", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const providerConsume = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const joinerConsume = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const generationCache = {
+            adapter: { storage: "text" } as GenerationCacheAdapter,
+            key: "same-request",
+        };
+        const bindings = {
+            DB: env.DB,
+            ENVIRONMENT: "test",
+            LOG_LEVEL: "debug",
+            LOG_FORMAT: "text",
+            BETTER_AUTH_SECRET: "test_secret",
+            TINYBIRD_INGEST_URL:
+                "https://tinybird.test/v0/events?name=generation_event_v2",
+            TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+        } as CloudflareBindings;
+        const request = () =>
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai/gpt-5.4-nano",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            });
+
+        const providerCtx = createExecutionContext();
+        await createTestApp(
+            providerConsume,
+            trackingUser,
+            undefined,
+            undefined,
+            { "x-cache": "MISS" },
+            generationCache,
+        ).fetch(request(), bindings, providerCtx);
+        await waitOnExecutionContext(providerCtx);
+
+        const joinerCtx = createExecutionContext();
+        await createTestApp(
+            joinerConsume,
+            trackingUser,
+            undefined,
+            undefined,
+            { "x-cache": "HIT" },
+            generationCache,
+        ).fetch(request(), bindings, joinerCtx);
+        await waitOnExecutionContext(joinerCtx);
+
+        expect(tinybirdRequests).toHaveLength(1);
+        const providerEvent =
+            (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(providerEvent).toMatchObject({
+            cacheHit: false,
+            cacheType: "MISS",
+            isBilledUsage: true,
+        });
+        expect(providerEvent.cacheKey).toMatch(/^[a-f0-9]{64}$/);
+        expect(providerEvent.cacheKey).not.toContain("same-request");
+        expect(providerConsume.mock.calls[0]?.[0]).toBeGreaterThan(0);
+        expect(joinerConsume).toHaveBeenCalledWith(0);
+    });
+
+    it("tags a run token's generation with the parent request id", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const bindings = {
+            DB: env.DB,
+            ENVIRONMENT: "test",
+            LOG_LEVEL: "debug",
+            LOG_FORMAT: "text",
+            BETTER_AUTH_SECRET: "test_secret",
+            TINYBIRD_INGEST_URL:
+                "https://tinybird.test/v0/events?name=generation_event_v2",
+            TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+        } as CloudflareBindings;
+
+        const ctx = createExecutionContext();
+        await createTestApp(
+            async () => {},
+            trackingUser,
+            undefined,
+            undefined,
+            {},
+            undefined,
+            {
+                parentApiKeyId: "parent-key-id",
+                parentRequestId: "req-parent",
+                issuedAt: 0,
+                expiresAt: 0,
+            },
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai/gpt-5.4-nano",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            bindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        // The grouping key the model stats pipe joins on. Without it a run's
+        // steps ingest as '' and the run reads as free.
+        expect(event.parentRequestId).toBe("req-parent");
+        expect(event.requestId).not.toBe("req-parent");
+    });
+
+    it.each([
+        "proxy",
+        "endpoint_agent",
+        "code_agent",
+        "prompt_agent",
+    ] as const)("records the resolved listing type (%s) for KPI attribution", async (type) => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const endpoint: CommunityEndpointRuntime = {
+            ...createCommunityEndpoint(trackingUser.id),
+            type,
+        };
+        const entry = createCommunityEntry(endpoint);
+        const ctx = createExecutionContext();
+        const response = await createTestApp(
+            async () => {},
+            trackingUser,
+            {
+                requested: endpoint.modelId,
+                resolved: endpoint.modelId,
+                definition: entry.definition,
+                communityEndpoint: endpoint,
+            },
+            entry,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        expect(await tinybirdRequests[0].json()).toMatchObject({
+            communityEndpointType: type,
+            resolvedModelRequested: endpoint.modelId,
+            isFinal: true,
+        });
+    });
+
+    it("leaves the parent request id unset for an ordinary call", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const bindings = {
+            DB: env.DB,
+            ENVIRONMENT: "test",
+            LOG_LEVEL: "debug",
+            LOG_FORMAT: "text",
+            BETTER_AUTH_SECRET: "test_secret",
+            TINYBIRD_INGEST_URL:
+                "https://tinybird.test/v0/events?name=generation_event_v2",
+            TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+        } as CloudflareBindings;
+
+        const ctx = createExecutionContext();
+        await createTestApp(async () => {}).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai/gpt-5.4-nano",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            bindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(tinybirdRequests).toHaveLength(1);
+        // removeUnset drops it, so ClickHouse's DEFAULT '' fills the column and
+        // agent_run_steps excludes the row.
+        expect(
+            Object.hasOwn(
+                (await tinybirdRequests[0].json()) as object,
+                "parentRequestId",
+            ),
+        ).toBe(false);
+    });
+
+    it("records missing text usage as an unbilled 502 and logs its body", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createHeaderApp(
+            { "x-usage-missing": "true" },
+            trackingUser,
+            200,
+            consumePollen,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai/gpt-5.4-nano",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(2);
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(event).toMatchObject({
+            responseStatus: 502,
+            isBilledUsage: false,
+            totalCost: 0,
+            totalPrice: 0,
+            modelUsed: "openai/gpt-5.4-nano",
+            errorResponseCode: "usage_missing",
+        });
+        expect(await tinybirdRequests[1].json()).toMatchObject({
+            status: 502,
+            upstream_status: 200,
+            error_code: "usage_missing",
+            error_class: "UpstreamUsageError",
+            upstream_body: expect.any(String),
+        });
+        expect(event.modelUsed).toBe("openai/gpt-5.4-nano");
+        expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
+    it("records a stream ending with finish_reason error as failed", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const upstreamBody = [
+            'data: {"model":"gpt-5-nano","choices":[{"index":0,"delta":{"content":"partial output"},"finish_reason":null}]}',
+            "",
+            'data: {"model":"gpt-5-nano","choices":[{"index":0,"delta":{},"finish_reason":"error","native_finish_reason":"UPSTREAM_ERROR"}]}',
+            "",
+            'data: {"model":"gpt-5-nano","choices":[{"index":0,"delta":{},"finish_reason":"error","native_finish_reason":"UPSTREAM_ERROR"}],"usage":{"prompt_tokens":0,"completion_tokens":0,"total_tokens":0}}',
+            "",
+            "data: [DONE]",
+            "",
+        ].join("\n");
+        const upstream = new Response(upstreamBody, {
+            headers: { "content-type": "text/event-stream" },
+        });
+
+        const ctx = createExecutionContext();
+        const response = await createTrackedResponseApp(
+            consumePollen,
+            "generate.text",
+            upstream,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai/gpt-5.4-nano",
+                    stream: true,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        await expect(response.text()).resolves.toBe(upstreamBody);
+        await waitOnExecutionContext(ctx);
+
+        const generationRequest = tinybirdRequests.find(
+            (request) =>
+                new URL(request.url).searchParams.get("name") ===
+                "generation_event_v2",
+        );
+        const errorRequest = tinybirdRequests.find(
+            (request) =>
+                new URL(request.url).searchParams.get("name") === "error_event",
+        );
+        expect(tinybirdRequests).toHaveLength(2);
+        await expect(generationRequest?.json()).resolves.toMatchObject({
+            responseStatus: 502,
+            isBilledUsage: false,
+            modelUsed: "openai/gpt-5.4-nano",
+            errorResponseCode: "upstream_finish_reason_error",
+            errorMessage: "Upstream ended generation with finish_reason=error",
+        });
+        const errorEvent = (await errorRequest?.json()) as Record<
+            string,
+            unknown
+        >;
+        expect(errorEvent).toMatchObject({
+            kind: "server_error",
+            status: 502,
+            upstream_status: 200,
+            error_code: "upstream_finish_reason_error",
+            error_class: "UpstreamFinishReasonError",
+            message: "Upstream ended generation with finish_reason=error",
+            model_requested: "openai/gpt-5.4-nano",
+            resolved_model_requested: "openai/gpt-5.4-nano",
+            request_inputs: expect.any(String),
+            upstream_body: expect.any(String),
+        });
+        expect(JSON.parse(errorEvent.request_inputs as string)).toMatchObject({
+            body: {
+                model: "openai/gpt-5.4-nano",
+                stream: true,
+                messages: [{ role: "user", content: "test" }],
+            },
+        });
+        const loggedOutput = JSON.parse(errorEvent.upstream_body as string) as {
+            streamEvents: unknown[];
+        };
+        expect(loggedOutput).toMatchObject({ chunks: 3, doneSeen: true });
+        expect(loggedOutput.streamEvents).toHaveLength(3);
+        expect(loggedOutput.streamEvents[1]).toMatchObject({
+            choices: [
+                {
+                    finish_reason: "error",
+                    native_finish_reason: "UPSTREAM_ERROR",
+                },
+            ],
+        });
+        expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
+    it("logs the head and tail of a long stream that ends without usage", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const chunks = Array.from({ length: 50 }, (_, index) =>
+            JSON.stringify({
+                id: `chunk-${index}`,
+                model: "gpt-5-nano",
+                choices: [
+                    {
+                        index: 0,
+                        delta: { content: "x", reasoning_content: "yy" },
+                        finish_reason: null,
+                    },
+                ],
+            }),
+        );
+        const upstreamBody = [...chunks, "[DONE]"]
+            .map((data) => `data: ${data}\n\n`)
+            .join("");
+        const upstream = new Response(upstreamBody, {
+            headers: { "content-type": "text/event-stream" },
+        });
+
+        const ctx = createExecutionContext();
+        const response = await createTrackedResponseApp(
+            async () => {},
+            "generate.text",
+            upstream,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai/gpt-5.4-nano",
+                    stream: true,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        await expect(response.text()).resolves.toBe(upstreamBody);
+        await waitOnExecutionContext(ctx);
+
+        const generationRequest = tinybirdRequests.find(
+            (request) =>
+                new URL(request.url).searchParams.get("name") ===
+                "generation_event_v2",
+        );
+        await expect(generationRequest?.json()).resolves.toMatchObject({
+            responseStatus: 502,
+            isBilledUsage: false,
+            errorResponseCode: "usage_missing",
+        });
+        const errorRequest = tinybirdRequests.find(
+            (request) =>
+                new URL(request.url).searchParams.get("name") === "error_event",
+        );
+        const errorEvent = (await errorRequest?.json()) as Record<
+            string,
+            unknown
+        >;
+        const loggedOutput = JSON.parse(errorEvent.upstream_body as string) as {
+            streamEvents: { id: string }[];
+        };
+        expect(loggedOutput).toMatchObject({ chunks: 50, doneSeen: true });
+        expect(loggedOutput.streamEvents.map((event) => event.id)).toEqual([
+            "chunk-0",
+            "chunk-1",
+            ...Array.from({ length: 30 }, (_, index) => `chunk-${index + 20}`),
+        ]);
+    });
+
+    it.each([
+        false,
+        true,
+    ])("tracks a streamed policy rejection as unbilled 4xx (choice error %s)", async (nested) => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn(async (_amount: number) => {});
+        const error = {
+            code: 400,
+            message: "Gemini blocked the request: PROHIBITED_CONTENT",
+            metadata: { error_type: "invalid_request" },
+        };
+        const event = nested
+            ? { choices: [{ finish_reason: "error", error }] }
+            : { choices: [], error };
+        const upstreamBody = `data: ${JSON.stringify(event)}\n\ndata: [DONE]\n\n`;
+        const ctx = createExecutionContext();
+        const response = await createTrackedResponseApp(
+            consumePollen,
+            "generate.text",
+            new Response(upstreamBody, {
+                headers: { "content-type": "text/event-stream" },
+            }),
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai/gpt-5.4-nano",
+                    stream: true,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        // Already-started streams keep their status and complete provider error.
+        expect(response.status).toBe(200);
+        await expect(response.text()).resolves.toBe(upstreamBody);
+        await waitOnExecutionContext(ctx);
+        expect(tinybirdRequests).toHaveLength(1);
+        expect(new URL(tinybirdRequests[0].url).searchParams.get("name")).toBe(
+            "generation_event_v2",
+        );
+        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+            responseStatus: 422,
+            isBilledUsage: false,
+            errorResponseCode: "content_policy_violation",
+        });
+        expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
+    it("tracks infrastructure exceptions through the shared error handler", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn(async (_amount: number) => {});
+        const ctx = createExecutionContext();
+        const response = await createTrackedResponseApp(
+            consumePollen,
+            "generate.text",
+            new HTTPException(503, {
+                message: "Generation coordination is unavailable",
+            }),
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai/gpt-5.4-nano",
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(503);
+        await expect(response.json()).resolves.toMatchObject({
+            success: false,
+            status: 503,
+            error: {
+                code: "SERVICE_UNAVAILABLE",
+                message: "Generation coordination is unavailable",
+            },
+        });
+        await waitOnExecutionContext(ctx);
+
+        const events = await Promise.all(
+            tinybirdRequests.map(async (request) => ({
+                name: new URL(request.url).searchParams.get("name"),
+                body: (await request.json()) as Record<string, unknown>,
+            })),
+        );
+        expect(events).toHaveLength(2);
+        expect(
+            events.find(({ name }) => name === "generation_event_v2")?.body,
+        ).toMatchObject({
+            responseStatus: 503,
+            isBilledUsage: false,
+            errorResponseCode: "SERVICE_UNAVAILABLE",
+            errorMessage: "Generation coordination is unavailable",
+        });
+        expect(
+            events.find(({ name }) => name === "error_event")?.body,
+        ).toMatchObject({
+            kind: "server_error",
+            status: 503,
+            error_code: "SERVICE_UNAVAILABLE",
+            message: "Generation coordination is unavailable",
+        });
+        expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
+    it("tracks usage after a malformed SSE event", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const upstream = new Response(
+            [
+                'data: {"model":"gpt-5-nano","choices":[{"delta":{"content":"hi"}}]}',
+                "",
+                "data: {invalid json",
+                "",
+                'data: {"model":"gpt-5-nano","choices":[],"usage":{"prompt_tokens":10,"completion_tokens":5,"total_tokens":15}}',
+                "",
+                "data: [DONE]",
+                "",
+            ].join("\n"),
+            { headers: { "content-type": "text/event-stream" } },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createTrackedResponseApp(
+            consumePollen,
+            "generate.text",
+            upstream,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai/gpt-5.4-nano",
+                    stream: true,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+            eventType: "generate.text",
+            responseStatus: 200,
+            isBilledUsage: true,
+            tokenCountPromptText: 10,
+            tokenCountCompletionText: 5,
+        });
+        expect(consumePollen).toHaveBeenCalledWith(expect.any(Number));
+    });
+    it("records a flat provider fee but does not bill text with missing usage", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createHeaderApp(
+            { "x-usage-missing": "true" },
+            trackingUser,
+            200,
+            consumePollen,
+            "perplexity/sonar",
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "perplexity/sonar",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(2);
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(event).toMatchObject({
+            responseStatus: 502,
+            isBilledUsage: false,
+            modelUsed: "perplexity/sonar",
+            totalCost: 0.005,
+            totalPrice: 0,
+            errorResponseCode: "usage_missing",
+            adjustmentCosts: {
+                "perplexity.sonar_low.search_request.v1": 0.005,
+            },
+            adjustmentUnits: {
+                "perplexity.sonar_low.search_request.v1": 1,
+            },
+        });
+        expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
+    it("does not bill the quoted flat fee when a fallback omitted usage", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+
+        const ctx = createExecutionContext();
+        await createHeaderApp(
+            {
+                "x-usage-missing": "true",
+                "x-model-used": "openai/gpt-5.4-nano",
+                "x-fallback-target": "config.targets[1]",
+            },
+            trackingUser,
+            200,
+            consumePollen,
+            "perplexity/sonar",
+            createStaticEntry("openai/gpt-5.4-nano"),
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "perplexity/sonar",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(event).toMatchObject({
+            isBilledUsage: false,
+            responseStatus: 502,
+            errorResponseCode: "usage_missing",
+            fallbackUsed: true,
+            modelUsed: "openai/gpt-5.4-nano",
+            totalCost: 0,
+            totalPrice: 0,
+            devPrice: 0.005,
+        });
+        expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
+    it("records a served flat cost without marking a zero-price fallback as billed", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+
+        const ctx = createExecutionContext();
+        await createHeaderApp(
+            {
+                "x-usage-missing": "true",
+                "x-model-used": "perplexity/sonar",
+                "x-fallback-target": "config.targets[1]",
+            },
+            trackingUser,
+            200,
+            consumePollen,
+            "openai/gpt-5.4-nano",
+            createStaticEntry("perplexity/sonar"),
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai/gpt-5.4-nano",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(event).toMatchObject({
+            isBilledUsage: false,
+            fallbackUsed: true,
+            modelUsed: "perplexity/sonar",
+            totalCost: 0.005,
+            totalPrice: 0,
+            devPrice: 0,
+        });
+        expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
+    it("records and deducts the effective long-context price sheet", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const model: ModelVariables["model"] = {
+            requested: "openai/gpt-5.4",
+            resolved: "openai/gpt-5.4",
+            definition: getRegistryModelDefinition("openai/gpt-5.4"),
+        };
+
+        const ctx = createExecutionContext();
+        const response = await createTestApp(
+            consumePollen,
+            trackingUser,
+            model,
+            undefined,
+            {
+                "x-model-used": "openai/gpt-5.4",
+                "x-usage-prompt-text-tokens": "272001",
+                "x-usage-completion-text-tokens": "1000",
+            },
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai/gpt-5.4",
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        const expectedCost = 272_001 * (5 / 1e6) + 1_000 * (22.5 / 1e6);
+        const expectedPrice = expectedCost * 0.75;
+        expect(event).toMatchObject({
+            modelRequested: "openai/gpt-5.4",
+            resolvedModelRequested: "openai/gpt-5.4",
+            costVariant: "long_context",
+            tokenPricePromptText: (5 / 1e6) * 0.75,
+            tokenPriceCompletionText: (22.5 / 1e6) * 0.75,
+            tokenCountPromptText: 272_001,
+            tokenCountCompletionText: 1_000,
+            totalCost: expectedCost,
+            totalPrice: expectedPrice,
+            devPrice: expectedPrice,
+        });
+        expect(consumePollen).toHaveBeenCalledWith(expectedPrice);
     });
 
     it("does not emit Tinybird generation events for cache hits", async () => {
@@ -433,7 +1549,7 @@ describe("tracking observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -480,7 +1596,7 @@ describe("tracking observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -507,8 +1623,8 @@ describe("tracking observability", () => {
         // falling back to the datasource DEFAULT 'undefined'.
         await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
             responseStatus: 502,
-            resolvedModelRequested: "openai",
-            modelUsed: "openai",
+            resolvedModelRequested: "openai/gpt-5.4-nano",
+            modelUsed: "openai/gpt-5.4-nano",
             isBilledUsage: false,
         });
     });
@@ -524,7 +1640,7 @@ describe("tracking observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -586,7 +1702,7 @@ describe("tracking observability", () => {
                     "cf-connecting-ip": "203.0.113.42",
                 },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     stream: false,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -713,6 +1829,229 @@ describe("tracking observability", () => {
         expect(owner?.tierBalance).toBeCloseTo(0.15, 10);
     });
 
+    it("charges the price the caller asked for and rewards the rescuer on their own", async () => {
+        const db = drizzle(env.DB);
+        const payerId = `track-fallback-payer-${crypto.randomUUID()}`;
+        const primaryOwnerId = `track-fallback-primary-${crypto.randomUUID()}`;
+        const fallbackOwnerId = `track-fallback-owner-${crypto.randomUUID()}`;
+        await db.insert(userTable).values(
+            [payerId, primaryOwnerId, fallbackOwnerId].map((id) => ({
+                id,
+                email: `${id}@test.local`,
+                name: id,
+                tierBalance: id === payerId ? 1 : 0,
+                packBalance: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            })),
+        );
+        const [payer] = await db
+            .select()
+            .from(userTable)
+            .where(eq(userTable.id, payerId))
+            .limit(1);
+        if (!payer) throw new Error("Expected inserted payer");
+
+        const primaryEndpoint = createCommunityEndpoint(primaryOwnerId);
+        // Half the primary's rates, so the price the caller is charged and the
+        // one the reward is paid on are distinguishable.
+        const fallbackEndpoint = createCommunityEndpoint(fallbackOwnerId, {
+            id: "community-endpoint-fallback",
+            modelId: "other-owner/cheap-model",
+            name: "cheap-model",
+            ...communityEndpointPrices({
+                promptTextPrice: 0.00005,
+                completionTextPrice: 0.0001,
+            }),
+        });
+        const fallbackEntry = createCommunityEntry(fallbackEndpoint);
+        const model: ModelVariables["model"] = {
+            requested: primaryEndpoint.modelId,
+            resolved: primaryEndpoint.modelId,
+            definition: communityModelDefinition(primaryEndpoint),
+            communityEndpoint: primaryEndpoint,
+            fallbackEntries: [fallbackEntry],
+        };
+
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createTestApp(
+            async () => {},
+            payer,
+            model,
+            fallbackEntry,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: primaryEndpoint.modelId,
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                ...env,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        expect(event).toMatchObject({
+            // The requested model id is still what the caller asked for.
+            modelRequested: primaryEndpoint.modelId,
+            resolvedModelRequested: primaryEndpoint.modelId,
+            modelUsed: fallbackEndpoint.modelId,
+            // 1000 × 0.0001 + 500 × 0.0002 — the PRIMARY's rates. The caller
+            // bought that listing, so the invoice does not move because a
+            // cheaper endpoint happened to be the one that was up.
+            devPrice: 0.2,
+            totalPrice: 0.2,
+            communityModelRewardUserId: fallbackOwnerId,
+            communityModelRewardRate: COMMUNITY_MODEL_REWARD_RATE,
+            // 0.75 × 0.1 — the rescuer is paid on their OWN listing, not on
+            // what the caller paid, so the spread stays with Pollinations.
+            communityModelRewardAmount: 0.075,
+        });
+
+        const balances = await db
+            .select({ id: userTable.id, tierBalance: userTable.tierBalance })
+            .from(userTable)
+            .where(eq(userTable.id, fallbackOwnerId))
+            .limit(1);
+        expect(balances[0]?.tierBalance).toBeCloseTo(0.075, 10);
+        const [primaryOwner] = await db
+            .select({ tierBalance: userTable.tierBalance })
+            .from(userTable)
+            .where(eq(userTable.id, primaryOwnerId))
+            .limit(1);
+        expect(primaryOwner?.tierBalance).toBe(0);
+    });
+
+    it("rewards a public model owner when their private fallback serves", async () => {
+        const db = drizzle(env.DB);
+        const payerId = `track-private-fallback-payer-${crypto.randomUUID()}`;
+        const ownerId = `track-private-fallback-owner-${crypto.randomUUID()}`;
+        await db.insert(userTable).values(
+            [payerId, ownerId].map((id) => ({
+                id,
+                email: `${id}@test.local`,
+                name: id,
+                tierBalance: id === payerId ? 1 : 0,
+                packBalance: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            })),
+        );
+        const [payer] = await db
+            .select()
+            .from(userTable)
+            .where(eq(userTable.id, payerId))
+            .limit(1);
+        if (!payer) throw new Error("Expected inserted payer");
+
+        const primaryEndpoint = createCommunityEndpoint(ownerId);
+        const fallbackEndpoint = createCommunityEndpoint(ownerId, {
+            id: "community-endpoint-private-fallback",
+            modelId: "test-owner/private-fallback",
+            name: "private-fallback",
+            visibility: "private",
+            ...communityEndpointPrices({
+                promptTextPrice: 0.00005,
+                completionTextPrice: 0.0001,
+            }),
+        });
+        const fallbackEntry = createCommunityEntry(fallbackEndpoint);
+        const model: ModelVariables["model"] = {
+            requested: primaryEndpoint.modelId,
+            resolved: primaryEndpoint.modelId,
+            definition: communityModelDefinition(primaryEndpoint),
+            communityEndpoint: primaryEndpoint,
+            fallbackEntries: [fallbackEntry],
+        };
+
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createTestApp(
+            async () => {},
+            payer,
+            model,
+            fallbackEntry,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: primaryEndpoint.modelId,
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                ...env,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as Record<
+            string,
+            unknown
+        >;
+        expect(event).toMatchObject({
+            resolvedModelRequested: primaryEndpoint.modelId,
+            totalPrice: 0.2,
+            communityModelRewardUserId: ownerId,
+            communityModelRewardRate: COMMUNITY_MODEL_REWARD_RATE,
+            communityModelRewardAmount: 0.075,
+        });
+
+        const [owner] = await db
+            .select({ tierBalance: userTable.tierBalance })
+            .from(userTable)
+            .where(eq(userTable.id, ownerId))
+            .limit(1);
+        expect(owner?.tierBalance).toBeCloseTo(0.075, 10);
+    });
+
     it("does not bill image generation that returns a JSON (non-image) content-type", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -731,7 +2070,7 @@ describe("tracking observability", () => {
         });
 
         const ctx = createExecutionContext();
-        const response = await createWrongContentTypeApp(
+        const response = await createTrackedResponseApp(
             consumePollen,
             "generate.image",
             upstream,
@@ -760,7 +2099,7 @@ describe("tracking observability", () => {
             eventType: "generate.image",
             responseStatus: 200,
             isBilledUsage: false,
-            modelUsed: "openai",
+            modelUsed: "openai/gpt-5.4-nano",
         });
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
@@ -783,7 +2122,7 @@ describe("tracking observability", () => {
             },
             {
                 headers: {
-                    "x-model-used": "elevenlabs",
+                    "x-model-used": "elevenlabs/eleven-v3",
                     "x-usage-completion-audio-tokens": "2",
                     "x-pollinations-response-format": "audio-with-timestamps",
                 },
@@ -791,11 +2130,11 @@ describe("tracking observability", () => {
         );
 
         const ctx = createExecutionContext();
-        const response = await createWrongContentTypeApp(
+        const response = await createTrackedResponseApp(
             consumePollen,
             "generate.audio",
             upstream,
-            "elevenlabs",
+            "elevenlabs/eleven-v3",
         ).fetch(
             new Request("https://gen.pollinations.ai/upstream", {
                 method: "POST",
@@ -844,17 +2183,17 @@ describe("tracking observability", () => {
         const upstream = new Response("hello world", {
             headers: {
                 "content-type": "text/plain; charset=utf-8",
-                "x-model-used": "universal-3.5-pro",
+                "x-model-used": "assemblyai/universal-3.5-pro",
                 "x-usage-prompt-audio-seconds": "6",
             },
         });
 
         const ctx = createExecutionContext();
-        const response = await createWrongContentTypeApp(
+        const response = await createTrackedResponseApp(
             consumePollen,
             "generate.audio",
             upstream,
-            "universal-3.5-pro",
+            "assemblyai/universal-3.5-pro",
         ).fetch(
             new Request("https://gen.pollinations.ai/upstream", {
                 method: "POST",
@@ -901,18 +2240,18 @@ describe("tracking observability", () => {
             { error: "unexpected provider response" },
             {
                 headers: {
-                    "x-model-used": "elevenlabs",
+                    "x-model-used": "elevenlabs/eleven-v3",
                     "x-usage-completion-audio-tokens": "2",
                 },
             },
         );
 
         const ctx = createExecutionContext();
-        await createWrongContentTypeApp(
+        await createTrackedResponseApp(
             consumePollen,
             "generate.audio",
             upstream,
-            "elevenlabs",
+            "elevenlabs/eleven-v3",
         ).fetch(
             new Request("https://gen.pollinations.ai/upstream", {
                 method: "POST",
@@ -963,7 +2302,7 @@ describe("tracking observability", () => {
         });
 
         const ctx = createExecutionContext();
-        const response = await createWrongContentTypeApp(
+        const response = await createTrackedResponseApp(
             consumePollen,
             "generate.image",
             upstream,
@@ -1018,7 +2357,7 @@ describe("tracking observability", () => {
         });
 
         const ctx = createExecutionContext();
-        const response = await createWrongContentTypeApp(
+        const response = await createTrackedResponseApp(
             consumePollen,
             "generate.text",
             upstream,
@@ -1027,7 +2366,7 @@ describe("tracking observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     stream: true,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -1073,7 +2412,7 @@ describe("tracking observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai",
+                    model: "openai/gpt-5.4-nano",
                     stream: true,
                     messages: [{ role: "user", content: "test" }],
                 }),
@@ -1109,18 +2448,524 @@ describe("tracking observability", () => {
                 new Date(event.startTime).getTime(),
         ).toBeGreaterThanOrEqual(100);
         expect(event.tokenCountCompletionText).toBe(500);
-        expect(event.modelUsed).toBe("gpt-5-nano-2025-08-07");
+        expect(event.modelUsed).toBe("openai/gpt-5.4-nano");
         expect(event.isBilledUsage).toBe(true);
     });
 
-    it("records fallbackUsed=true when Portkey served a non-primary target", async () => {
+    it("separates a rescued stream's attempt duration from the full request", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const ctx = createExecutionContext();
+        const response = await createSseStreamApp(
+            25,
+            undefined,
+            true,
+            trackingUser,
+            100,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai/gpt-5.4-nano",
+                    stream: true,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(2);
+        const [primary, fallback] = await Promise.all(
+            tinybirdRequests.map(
+                async (request) => request.json() as Promise<TinybirdEvent>,
+            ),
+        );
+        expect(primary.isFinal).toBe(false);
+        expect(primary.attemptResponseTime).toBe(primary.responseTime);
+        expect(primary.attemptResponseTime).toBeGreaterThanOrEqual(100);
+        expect(fallback.fallbackUsed).toBe(true);
+        expect(fallback.isFinal).toBe(true);
+        // Includes all streamed chunks, rather than stopping at headers.
+        expect(fallback.attemptResponseTime).toBeGreaterThanOrEqual(75);
+        expect(
+            Number(fallback.responseTime) -
+                Number(fallback.attemptResponseTime),
+        ).toBeGreaterThanOrEqual(100);
+        expect(fallback.tokenCountCompletionText).toBe(500);
+        expect(fallback.isBilledUsage).toBe(true);
+    });
+
+    it.each([
+        "valid",
+        "missing",
+        "malformed",
+        "recovered",
+    ])("settles community Chat with %s usage/delivery and no model metadata", async (usageKind) => {
+        const caller = await createTestApiKey({
+            user: { tierBalance: 0, packBalance: 10 },
+        });
+        const db = drizzle(env.DB);
+        const before = await getUserBalance(db, caller.userId);
+        const publisher = `usage-${crypto.randomUUID().slice(0, 8)}`;
+        const endpoint = createCommunityEndpoint(
+            await createTestUser({ githubUsername: publisher }),
+            {
+                id: crypto.randomUUID(),
+                modelId: `${publisher}/test-model`,
+                bearerTokenCiphertext: await encryptSecret(
+                    "test-upstream-key",
+                    env.BETTER_AUTH_SECRET,
+                ),
+            },
+        );
+        await db.insert(communityEndpointTable).values({
+            id: endpoint.id,
+            ownerUserId: endpoint.ownerUserId,
+            name: endpoint.name,
+            title: endpoint.title,
+            type: "proxy",
+            baseUrl: endpoint.baseUrl,
+            upstreamModel: endpoint.upstreamModel,
+            visibility: "public",
+            payload: JSON.stringify({
+                api: "chat_completions",
+                modality: "text",
+                imagePricing: "request",
+                inputModalities: ["text"],
+                perUserRpm: null,
+                fallbacks: [],
+                bearerTokenCiphertext: endpoint.bearerTokenCiphertext,
+                prices: communityEndpointPrices(endpoint),
+            }),
+        });
+        const model = endpoint.modelId;
+        const events: Record<string, unknown>[] = [];
+        let upstreamCalls = 0;
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                const url = new URL(request.url);
+                if (request.url === endpoint.baseUrl) {
+                    upstreamCalls++;
+                    expect(init?.redirect).toBe("manual");
+                    expect(request.headers.get("authorization")).toBe(
+                        "Bearer test-upstream-key",
+                    );
+                    const terminal =
+                        usageKind === "missing"
+                            ? {}
+                            : {
+                                  usage: {
+                                      prompt_tokens:
+                                          usageKind === "malformed" ? -1 : 10,
+                                      completion_tokens: 5,
+                                      total_tokens: 15,
+                                  },
+                              };
+                    if (usageKind === "recovered") {
+                        return Response.json({
+                            choices: [
+                                {
+                                    index: 0,
+                                    message: {
+                                        role: "assistant",
+                                        content: "saved result",
+                                    },
+                                    finish_reason: "stop",
+                                },
+                            ],
+                            ...terminal,
+                        });
+                    }
+                    return new Response(
+                        'data: {"choices":[{"index":0,"delta":{"content":"streamed"},"finish_reason":null}]}\n\n' +
+                            `data: ${JSON.stringify(terminal)}\n\ndata: [DONE]\n\n`,
+                        { headers: { "Content-Type": "text/event-stream" } },
+                    );
+                }
+                if (url.pathname === "/v0/events") {
+                    events.push(
+                        ...(await request.text())
+                            .split("\n")
+                            .filter(Boolean)
+                            .map((line) => JSON.parse(line)),
+                    );
+                }
+                return Response.json({ data: [] });
+            },
+        );
+        const bindings = withInlineGenerationCoordinator(env);
+        const getByName = bindings.GENERATION_COORDINATOR.getByName.bind(
+            bindings.GENERATION_COORDINATOR,
+        );
+        const startAndWait = vi.fn(async (job) => {
+            await getByName("recovery-test").startAndWait(job);
+            throw new Error(
+                "RPC connection lost after cache write and settlement",
+            );
+        });
+        if (usageKind === "recovered") {
+            bindings.GENERATION_COORDINATOR = {
+                getByName: () => ({ startAndWait }),
+            } as unknown as CloudflareBindings["GENERATION_COORDINATOR"];
+        }
+        const ctx = createExecutionContext();
+        const request = (): Parameters<typeof worker.fetch>[0] =>
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${caller.key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model,
+                    stream: usageKind !== "recovered",
+                    messages: [{ role: "user", content: "stream usage check" }],
+                }),
+            });
+        const response = await worker.fetch(request(), bindings, ctx);
+        const body = await response.text();
+        await waitOnExecutionContext(ctx);
+        expect(response.status, body).toBe(200);
+        if (usageKind === "recovered") {
+            expect(
+                await env.TEXT_BUCKET.head(
+                    startAndWait.mock.calls[0][0].cache.key,
+                ),
+            ).not.toBeNull();
+            const rejoinCtx = createExecutionContext();
+            const rejoined = await worker.fetch(request(), bindings, rejoinCtx);
+            expect(rejoined.headers.get("x-cache")).toBe("HIT");
+            expect(await rejoined.text()).toBe(body);
+            await waitOnExecutionContext(rejoinCtx);
+        }
+        expect(upstreamCalls).toBe(1);
+        const after = await getUserBalance(db, caller.userId);
+        const rows = events.filter((event) => event.modelRequested === model);
+        expect(rows).toHaveLength(1);
+        if (usageKind === "valid" || usageKind === "recovered") {
+            const expectedPrice = calculateUsageBilling({
+                model,
+                usage: { promptTextTokens: 10, completionTextTokens: 5 },
+                servedBy: communityModelDefinition(endpoint),
+            }).price.totalPrice;
+            expect(expectedPrice).toBeGreaterThan(0);
+            expect(body).not.toContain('"error"');
+            expect(rows[0]).toMatchObject({
+                isBilledUsage: true,
+                // A legacy request alias still attributes billing to the canonical ID.
+                modelUsed: communityModelId(publisher, endpoint.name),
+                tokenCountPromptText: 10,
+                tokenCountCompletionText: 5,
+                totalPrice: expectedPrice,
+            });
+            expect(before.packBalance - after.packBalance).toBeCloseTo(
+                expectedPrice,
+                9,
+            );
+            if (usageKind === "recovered") {
+                expect(startAndWait).toHaveBeenCalledTimes(1);
+                expect(response.headers.get("x-cache")).toBe("HIT");
+                expect(body).toContain("saved result");
+                expect(
+                    events.filter((event) => event.kind === "server_error"),
+                ).toHaveLength(0);
+            }
+        } else {
+            expect(body).toContain('"error"');
+            expect(rows[0]).toMatchObject({
+                isBilledUsage: false,
+                totalPrice: 0,
+            });
+            expect(after.packBalance).toBe(before.packBalance);
+        }
+    });
+
+    it("bills cache-write tokens reported by a Chat stream", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn(async (_amount: number) => {});
+        const model = "anthropic/claude-haiku-4.5";
+        const usage = {
+            prompt_tokens: 1_000,
+            prompt_tokens_details: {
+                cached_tokens: 200,
+                cache_write_tokens: 100,
+            },
+            completion_tokens: 500,
+            total_tokens: 1_500,
+        };
+        const upstream = new Response(
+            `data: ${JSON.stringify({
+                model,
+                choices: [],
+                usage,
+            })}\n\ndata: [DONE]\n\n`,
+            {
+                headers: {
+                    "content-type": "text/event-stream",
+                    "x-model-used": model,
+                },
+            },
+        );
+        const ctx = createExecutionContext();
+        const response = await createTrackedResponseApp(
+            consumePollen,
+            "generate.text",
+            upstream,
+            model,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model,
+                    messages: [{ role: "user", content: "test" }],
+                    stream: true,
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        const prices = getPriceDefinitionForModel(
+            getRegistryModelDefinition(model),
+        );
+        const expectedPrice =
+            700 * (prices.promptTextTokens ?? 0) +
+            200 * (prices.promptCachedTokens ?? 0) +
+            100 * (prices.promptCacheWriteTokens ?? 0) +
+            500 * (prices.completionTextTokens ?? 0);
+        expect(event).toMatchObject({
+            tokenCountPromptText: 700,
+            tokenCountPromptCached: 200,
+            tokenCountPromptCacheWrite: 100,
+            tokenCountCompletionText: 500,
+            totalPrice: expectedPrice,
+            isBilledUsage: true,
+        });
+        expect(consumePollen).toHaveBeenCalledWith(expectedPrice);
+    });
+
+    it("bills direct Responses stream terminal usage exactly once", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn(async (_amount: number) => {});
+        const upstreamResponse = {
+            object: "response",
+            model: "upstream-model",
+            status: "completed",
+            usage: {
+                input_tokens: 1000,
+                input_tokens_details: { cached_tokens: 200 },
+                output_tokens: 500,
+                output_tokens_details: { reasoning_tokens: 100 },
+                total_tokens: 1500,
+            },
+        };
+        const upstream = new Response(
+            `event: response.completed\ndata: ${JSON.stringify({
+                type: "response.completed",
+                response: upstreamResponse,
+            })}\n\n`,
+            {
+                headers: {
+                    "content-type": "text/event-stream",
+                    "x-model-used": "openai/gpt-5.4-nano",
+                },
+            },
+        );
+        const ctx = createExecutionContext();
+        const response = await createTrackedResponseApp(
+            consumePollen,
+            "generate.text",
+            upstream,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai/gpt-5.4-nano",
+                    input: "test",
+                    stream: true,
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+            eventType: "generate.text",
+            modelUsed: "openai/gpt-5.4-nano",
+            tokenCountPromptText: 800,
+            tokenCountPromptCached: 200,
+            tokenCountCompletionText: 400,
+            tokenCountCompletionReasoning: 100,
+            isBilledUsage: true,
+        });
+        expect(consumePollen).toHaveBeenCalledTimes(1);
+        expect(consumePollen.mock.calls[0][0]).toBeGreaterThan(0);
+    });
+
+    it("marks a community endpoint stream that ended without usage", async () => {
+        const db = drizzle(env.DB);
+        const payerId = `track-community-payer-${crypto.randomUUID()}`;
+        const ownerId = `track-community-owner-${crypto.randomUUID()}`;
+        await db.insert(userTable).values([
+            {
+                id: payerId,
+                email: `${payerId}@test.local`,
+                name: "Track Community Payer",
+                tierBalance: 1,
+                packBalance: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+            {
+                id: ownerId,
+                email: `${ownerId}@test.local`,
+                name: "Track Community Owner",
+                tierBalance: 0,
+                packBalance: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        ]);
+        const [payer] = await db
+            .select()
+            .from(userTable)
+            .where(eq(userTable.id, payerId))
+            .limit(1);
+        if (!payer) throw new Error("Expected inserted payer");
+
+        const endpoint = createCommunityEndpoint(ownerId);
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+
+        const ctx = createExecutionContext();
+        const response = await createSseStreamApp(
+            0,
+            {
+                requested: endpoint.modelId,
+                resolved: endpoint.modelId,
+                definition: communityModelDefinition(endpoint),
+                communityEndpoint: endpoint,
+            },
+            false,
+            payer,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: endpoint.modelId,
+                    stream: true,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                ...env,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(2);
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(event).toMatchObject({
+            responseStatus: 502,
+            isBilledUsage: false,
+            totalPrice: 0,
+            errorResponseCode: "usage_missing",
+        });
+        const error = (await tinybirdRequests[1].json()) as {
+            upstream_body: string;
+        };
+        expect(JSON.parse(error.upstream_body)).toHaveProperty("streamEvents");
+
+        const [after] = await db
+            .select({ tierBalance: userTable.tierBalance })
+            .from(userTable)
+            .where(eq(userTable.id, payerId))
+            .limit(1);
+        expect(after?.tierBalance).toBe(1);
+    });
+
+    it("records fallbackUsed=true for a non-primary target", async () => {
         const event = await captureFallbackEvent({
             "x-fallback-target": "config.targets[1]",
         });
         expect(event.fallbackUsed).toBe(true);
     });
 
-    it("records fallbackUsed=false when Portkey served the primary target", async () => {
+    it("records fallbackUsed=false for the primary target", async () => {
         const event = await captureFallbackEvent({
             "x-fallback-target": "config.targets[0]",
         });
@@ -1135,7 +2980,7 @@ describe("tracking observability", () => {
 
 function requestTrackingFixture(
     streamRequested = false,
-    model: ModelName = "openai",
+    model: ModelName = "openai/gpt-5.4-nano",
 ) {
     const definition = getRegistryModelDefinition(model);
     const modelCostDefinition = definition.cost;
@@ -1155,32 +3000,43 @@ function requestTrackingFixture(
     };
 }
 
+function candidateFixture(
+    model: ModelName = "openai/gpt-5.4-nano",
+): FallbackCandidate {
+    return {
+        id: model,
+        definition: getRegistryModelDefinition(model),
+    };
+}
+
 describe("trackResponse modelUsed", () => {
     it("attributes a failed generation to the resolved model", async () => {
         const tracking = await trackResponse(
             "generate.text",
             requestTrackingFixture(),
             new Response("upstream exploded", { status: 502 }),
+            candidateFixture(),
         );
         expect(tracking).toMatchObject({
             responseStatus: 502,
             cacheHit: false,
             isBilledUsage: false,
-            modelUsed: "openai",
+            modelUsed: "openai/gpt-5.4-nano",
         });
     });
 
-    it("attributes a 200 with an unexpected content-type to the resolved model", async () => {
+    it("attributes an unexpected content-type to the attempted route", async () => {
         const tracking = await trackResponse(
             "generate.image",
             requestTrackingFixture(),
             // A JSON error body served with HTTP 200 instead of an image.
             Response.json({ error: "boom" }),
+            { ...candidateFixture(), id: "internal-fallback" },
         );
         expect(tracking).toMatchObject({
             responseStatus: 200,
             isBilledUsage: false,
-            modelUsed: "openai",
+            modelUsed: "internal-fallback",
         });
     });
 
@@ -1194,12 +3050,98 @@ describe("trackResponse modelUsed", () => {
                 'data: {"model":"gpt-5-nano","choices":[{"delta":{"content":"hi"}}]}\n\ndata: [DONE]\n\n',
                 { headers: { "content-type": "text/event-stream" } },
             ),
+            candidateFixture(),
         );
         expect(tracking).toMatchObject({
-            responseStatus: 200,
+            responseStatus: 502,
             isBilledUsage: false,
-            modelUsed: "openai",
+            modelUsed: "openai/gpt-5.4-nano",
+            errorTracking: { errorResponseCode: "usage_missing" },
         });
+    });
+
+    it("preserves stream-read errors without billing earlier valid usage", async () => {
+        const error = {
+            message: "upstream connection reset",
+            type: "upstream_error",
+            code: "upstream_stream_error",
+        };
+        const events = [
+            {
+                choices: [],
+                usage: {
+                    prompt_tokens: 10,
+                    completion_tokens: 20,
+                    total_tokens: 30,
+                },
+            },
+            { error },
+        ];
+        const body = `${events
+            .map((event) => `data: ${JSON.stringify(event)}\n\n`)
+            .join("")}data: [DONE]\n\n`;
+        const stream = new Response(body).body;
+        if (!stream) throw new Error("Missing test stream");
+        const validated = requireChatStreamUsage(stream);
+        const [client, billing] = validated.tee();
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            new Response(billing, {
+                headers: { "content-type": "text/event-stream" },
+            }),
+            candidateFixture(),
+        );
+        expect(await new Response(client).text()).toBe(body);
+        expect(tracking).toMatchObject({
+            responseStatus: 502,
+            isBilledUsage: false,
+            errorTracking: {
+                errorResponseCode: "upstream_stream_error",
+                errorMessage: error.message,
+            },
+            errorOutput: { streamEvents: events },
+        });
+    });
+
+    it("keeps terminal diagnostics within the log budget despite oversized earlier chunks", () => {
+        const error = {
+            error: { code: "upstream_stream_error", message: "socket closed" },
+        };
+        const streamEvents = [
+            { content: "x".repeat(20_000) },
+            ...Array.from({ length: 40 }, () => ({
+                content: "y".repeat(1_000),
+            })),
+            error,
+        ];
+        const original = JSON.stringify(streamEvents);
+        const summary = summarizeStreamForLog({
+            streamEvents,
+            doneSeen: false,
+        });
+        const logged = JSON.stringify(summary);
+        expect(logged.length).toBeLessThanOrEqual(16_000);
+        expect(JSON.parse(logged).streamEvents.at(-1)).toEqual(error);
+        expect(JSON.parse(logged)).toMatchObject({
+            chunks: 42,
+            doneSeen: false,
+        });
+        expect(JSON.stringify(streamEvents)).toBe(original);
+    });
+
+    it("retains the ending of a single oversized terminal chunk as valid JSON", () => {
+        const summary = summarizeStreamForLog({
+            streamEvents: [
+                { error: { message: `${'\\"'.repeat(20_000)}socket closed` } },
+            ],
+        });
+        const logged = JSON.stringify(summary);
+        expect(logged.length).toBeLessThanOrEqual(16_000);
+        expect(JSON.parse(logged).streamEvents[0]).toMatchObject({
+            truncated: true,
+        });
+        expect(logged).toContain("socket closed");
     });
 
     it("does not attribute a model to a cache hit", async () => {
@@ -1207,10 +3149,234 @@ describe("trackResponse modelUsed", () => {
             "generate.text",
             requestTrackingFixture(),
             Response.json({ choices: [] }, { headers: { "x-cache": "HIT" } }),
+            candidateFixture(),
         );
         expect(tracking.cacheHit).toBe(true);
         expect(tracking.isBilledUsage).toBe(false);
+        expect(tracking.responseStatus).toBe(200);
         expect(tracking.modelUsed).toBeUndefined();
+    });
+
+    it("prices an Alibaba explicit-cache hit from response metadata", async () => {
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(false, "qwen/qwen3.7-flash"),
+            Response.json(
+                { choices: [] },
+                {
+                    headers: {
+                        "x-model-used": "qwen/qwen3.7-flash:alibaba",
+                        "x-usage-prompt-cached-tokens": "1000000",
+                        "x-usage-prompt-cache-type": "ephemeral",
+                    },
+                },
+            ),
+            candidateFixture("qwen/qwen3.7-flash:alibaba"),
+        );
+
+        // The reported variant is the caller's unchanged public tier; the
+        // served cost independently uses Alibaba's explicit-cache rate.
+        expect(tracking.costVariant).toBe("context_256k");
+        expect(tracking.cost?.totalCost).toBeCloseTo(0.02, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(0.04 * 1.055, 12);
+    });
+
+    it("uses Alibaba's implicit rate unless the response confirms an explicit hit", async () => {
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(false, "qwen/qwen3.7-flash"),
+            Response.json(
+                { choices: [] },
+                {
+                    headers: {
+                        "x-model-used": "qwen/qwen3.7-flash:alibaba",
+                        "x-usage-prompt-cached-tokens": "1000000",
+                    },
+                },
+            ),
+            candidateFixture("qwen/qwen3.7-flash:alibaba"),
+            // Even a stale request-side hint must not override what the
+            // provider actually reported on the response.
+            { hasExplicitCacheHit: true },
+        );
+
+        expect(tracking.cost?.totalCost).toBeCloseTo(0.04, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(0.04 * 1.055, 12);
+    });
+
+    it("prices a streamed Alibaba explicit-cache hit from terminal usage", async () => {
+        const usageEvent = JSON.stringify({
+            model: "qwen/qwen3.7-flash",
+            choices: [],
+            usage: {
+                prompt_tokens: 1_000_000,
+                completion_tokens: 0,
+                total_tokens: 1_000_000,
+                prompt_tokens_details: {
+                    cached_tokens: 1_000_000,
+                    cache_type: "ephemeral",
+                },
+            },
+        });
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true, "qwen/qwen3.7-flash"),
+            new Response(`data: ${usageEvent}\n\ndata: [DONE]\n\n`, {
+                headers: {
+                    "content-type": "text/event-stream",
+                    "x-model-used": "qwen/qwen3.7-flash:alibaba",
+                },
+            }),
+            candidateFixture("qwen/qwen3.7-flash:alibaba"),
+        );
+
+        expect(tracking.costVariant).toBe("context_256k");
+        expect(tracking.cost?.totalCost).toBeCloseTo(0.02, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(0.04 * 1.055, 12);
+    });
+});
+
+describe("trackResponse missing usage", () => {
+    it.each([
+        false,
+        true,
+    ])("classifies content_filter without changing usage billing (usage present: %s)", async (hasUsage) => {
+        const event = {
+            model: "openai/gpt-5.4-nano",
+            choices: [{ delta: {}, finish_reason: "content_filter" }],
+            usage: hasUsage
+                ? {
+                      prompt_tokens: 2,
+                      completion_tokens: 1,
+                      total_tokens: 3,
+                  }
+                : null,
+        };
+        const upstream = new Blob([
+            `data: ${JSON.stringify(event)}\n\ndata: [DONE]\n\n`,
+        ]).stream();
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            new Response(requireChatStreamUsage(upstream), {
+                headers: { "content-type": "text/event-stream" },
+            }),
+            candidateFixture(),
+        );
+        expect(tracking.responseStatus).toBe(hasUsage ? 200 : 422);
+        expect(tracking.isBilledUsage).toBe(hasUsage);
+        expect(tracking.errorTracking?.errorResponseCode).toBe(
+            hasUsage ? undefined : "content_policy_violation",
+        );
+        if (hasUsage) expect(tracking.cost?.totalCost).toBeGreaterThan(0);
+        else expect(tracking.cost?.totalCost).toBe(0);
+    });
+
+    it("does not bill earlier usage when the stream subsequently fails validation", async () => {
+        const event = {
+            model: "openai/gpt-5.4-nano",
+            usage: { prompt_tokens: 2, completion_tokens: 1, total_tokens: 3 },
+        };
+        // Usage arrived, but the provider disconnected without [DONE].
+        const upstream = new Blob([
+            `data: ${JSON.stringify(event)}\n\n`,
+        ]).stream();
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            new Response(requireChatStreamUsage(upstream), {
+                headers: { "content-type": "text/event-stream" },
+            }),
+            candidateFixture(),
+        );
+        expect(tracking.responseStatus).toBe(502);
+        expect(tracking.isBilledUsage).toBe(false);
+        expect(tracking.cost?.totalCost).toBeGreaterThan(0);
+        expect(tracking.errorTracking?.errorResponseCode).toBe("usage_missing");
+        expect(summarizeStreamForLog(tracking.errorOutput)).toMatchObject({
+            chunks: 2,
+            doneSeen: false,
+        });
+    });
+
+    it("records that [DONE] arrived when the validator rejects a stream there", async () => {
+        const chunk = {
+            choices: [{ delta: { content: "partial" }, finish_reason: null }],
+        };
+        // The validator swallows this [DONE]; the tracker must still see it.
+        const upstream = new Blob([
+            `data: ${JSON.stringify(chunk)}\n\ndata: [DONE]\n\n`,
+        ]).stream();
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            new Response(requireChatStreamUsage(upstream), {
+                headers: { "content-type": "text/event-stream" },
+            }),
+            candidateFixture(),
+        );
+        expect(tracking.responseStatus).toBe(502);
+        expect(tracking.errorTracking?.errorResponseCode).toBe("usage_missing");
+        expect(summarizeStreamForLog(tracking.errorOutput)).toMatchObject({
+            chunks: 2,
+            doneSeen: true,
+        });
+    });
+
+    it.each([
+        { choices: null },
+        { choices: [{ content_filter_results: "unrecognized metadata" }] },
+        { prompt_filter_results: [{}] },
+    ])("does not mistake valid usage for a failure because of unrelated metadata: %j", async (metadata) => {
+        const event = {
+            model: "openai/gpt-5.4-nano",
+            ...metadata,
+            usage: { prompt_tokens: 2, completion_tokens: 1, total_tokens: 3 },
+        };
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            new Response(`data: ${JSON.stringify(event)}\n\ndata: [DONE]\n\n`, {
+                headers: { "content-type": "text/event-stream" },
+            }),
+            candidateFixture(),
+        );
+        expect(tracking.responseStatus).toBe(200);
+        expect(tracking.isBilledUsage).toBe(true);
+        expect(tracking.errorTracking).toBeUndefined();
+    });
+
+    const emptyStream = () =>
+        new Response("data: [DONE]\n\n", {
+            headers: { "content-type": "text/event-stream" },
+        });
+
+    it("marks a text response that carried no billable usage at all", async () => {
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            emptyStream(),
+            candidateFixture(),
+        );
+        expect(tracking.isBilledUsage).toBe(false);
+        expect(tracking.errorTracking).toMatchObject({
+            errorResponseCode: "usage_missing",
+        });
+        // Reserved for upstream hostnames; the provider is already on the row.
+        expect(tracking.errorTracking?.errorSource).toBeUndefined();
+    });
+
+    it("retains a knowable provider fee without billing incomplete text", async () => {
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true, "perplexity/sonar"),
+            emptyStream(),
+            candidateFixture("perplexity/sonar"),
+        );
+        expect(tracking.isBilledUsage).toBe(false);
+        expect(tracking.responseStatus).toBe(502);
+        expect(tracking.cost?.totalCost).toBeGreaterThan(0);
+        expect(tracking.errorTracking?.errorResponseCode).toBe("usage_missing");
     });
 });
 
@@ -1303,5 +3469,84 @@ describe("reduceAdjustmentsToEventFields", () => {
         const parsedWithout = JSON.parse(serializedWithout);
         expect(parsedWithout).not.toHaveProperty("adjustmentCosts");
         expect(parsedWithout).not.toHaveProperty("adjustmentUnits");
+    });
+});
+
+describe("trackResponse model identity", () => {
+    const model = "google/gemini-3.7-flash" as const;
+    const usage = {
+        prompt_tokens: 1000,
+        completion_tokens: 50,
+        total_tokens: 1050,
+    };
+
+    function response() {
+        return Response.json(
+            {
+                id: "gen-provider-123",
+                model: "google/gemini-3.7-flash-upstream",
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "ok" },
+                        finish_reason: "stop",
+                    },
+                ],
+                usage,
+            },
+            {
+                headers: {
+                    "x-model-used": model,
+                    "x-usage-prompt-text-tokens": "1000",
+                    "x-usage-completion-text-tokens": "50",
+                },
+            },
+        );
+    }
+
+    it("records the exact fallback ID while keeping the original price", async () => {
+        const route = `${model}:openrouter:ai-studio-priority` as const;
+        const sameModel = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(false, model),
+            response(),
+            candidateFixture(route),
+        );
+        const differentModel = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(),
+            response(),
+            candidateFixture(route),
+        );
+        for (const tracking of [sameModel, differentModel]) {
+            expect(tracking).toMatchObject({
+                modelUsed: route,
+                modelProviderUsed: "openrouter",
+                fallbackUsed: true,
+            });
+        }
+        // A fallback still charges the customer's original quote.
+        expect(differentModel.price).not.toEqual(sameModel.price);
+    });
+
+    it.each([
+        200, 502,
+    ])("distinguishes same-provider routes on HTTP %i", async (status) => {
+        const primary = "openai/gpt-6-astra" as const;
+        const fallback = "openai/gpt-6-astra:azure:datazone" as const;
+        for (const attempted of [primary, fallback]) {
+            const tracking = await trackResponse(
+                "generate.text",
+                requestTrackingFixture(false, primary),
+                status === 200 ? response() : new Response(null, { status }),
+                candidateFixture(attempted),
+            );
+            expect(tracking).toMatchObject({
+                responseStatus: status,
+                modelUsed: attempted,
+                modelProviderUsed: "azure",
+                fallbackUsed: attempted !== primary,
+            });
+        }
     });
 });

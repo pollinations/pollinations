@@ -1,11 +1,12 @@
 ## 🔐 Authentication
 
-Pollinations recognises two key types. Use the right one for the surface you're building.
+Pollinations recognises two prefixes. Use the right *kind* of `pk_` for the surface you're building.
 
 | Key type | Prefix | Where it goes | What it can do |
 |---|---|---|---|
 | Secret key | `sk_` | Server-only (env var, secrets manager) | Full account access. Can create child keys, list usage, run any model the account allows. **Never ship to a browser, mobile app, or repo.** |
-| Publishable key | `pk_` | Browsers, mobile apps, public clients | Calls models on behalf of the developer who created the key. Restricted to the permissions and budget set at creation. Safe to embed. |
+| App key (BYOP) | `pk_` with redirect URIs | OAuth `client_id` for web/mobile/CLI consent | Users authorize your app; you receive a scoped user `sk_`. Create at [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys). This is the supported client path. |
+| Raw publishable key | `pk_` with no app / OAuth binding | Legacy only | Existing integrations only. Rate-limited to 1 pollen per IP per hour. **Do not mint new raw `pk_` keys, and do not embed them in new browser code.** |
 
 Both forms accept the same transports:
 
@@ -39,7 +40,7 @@ Endpoints are discoverable via RFC 8414 metadata — resolve them from there rat
 GET https://enter.pollinations.ai/.well-known/oauth-authorization-server
 ```
 
-The full integration guide — authorization request, token exchange, device flow, userinfo, scopes, revocation — is [Bring Your Own Pollen (BYOP)](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md).
+The full integration guide—authorization request, token exchange, device flow, userinfo, scopes, and revocation—is [Connect User Wallets](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md).
 
 ## 🧪 Use any OpenAI SDK
 
@@ -56,7 +57,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="openai",
+    model="openai/gpt-5.4-nano",
     messages=[{"role": "user", "content": "Summarise the theory of relativity in one sentence."}],
 )
 print(response.choices[0].message.content)
@@ -73,13 +74,13 @@ const client = new OpenAI({
 });
 
 const response = await client.chat.completions.create({
-    model: "openai",
+    model: "openai/gpt-5.4-nano",
     messages: [{ role: "user", content: "Summarise the theory of relativity in one sentence." }],
 });
 console.log(response.choices[0].message.content);
 ```
 
-Model IDs come from `GET /v1/models`. Anything `openai`, `claude`, `mistral`, `deepseek`, etc. routes to the corresponding provider on our side — you don't need separate keys per provider.
+Model IDs come from `GET /v1/models`. IDs such as `openai/gpt-5.4-nano`, `anthropic/claude-sonnet-4.6`, `mistralai/mistral-small-4`, and `deepseek/deepseek-v4-flash` route to the corresponding provider on our side — you don't need separate keys per provider.
 
 ## 🌊 Streaming chat completions
 
@@ -91,7 +92,7 @@ Set `stream: true` to receive Server-Sent Events (SSE) deltas as the model write
 curl -N "https://gen.pollinations.ai/v1/chat/completions" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"model":"openai","stream":true,"messages":[{"role":"user","content":"Count to five, one word per line."}]}'
+  -d '{"model":"openai/gpt-5.4-nano","stream":true,"messages":[{"role":"user","content":"Count to five, one word per line."}]}'
 ```
 
 `-N` disables curl's output buffering so deltas appear as they arrive. Each event is a line of the form `data: {…}` terminated by `data: [DONE]`.
@@ -100,7 +101,7 @@ curl -N "https://gen.pollinations.ai/v1/chat/completions" \
 
 ```python
 stream = client.chat.completions.create(
-    model="openai",
+    model="openai/gpt-5.4-nano",
     stream=True,
     messages=[{"role": "user", "content": "Count to five, one word per line."}],
 )
@@ -114,14 +115,14 @@ When `stream: true` is set, usage info still arrives on the final chunk (`stream
 
 ## 🖼️ Vision: passing images into chat
 
-Models that accept image input (`openai`, `claude`, `gemini`, …) use the standard OpenAI multimodal `content` shape — an array of typed parts instead of a plain string.
+Models that accept image input (`openai/gpt-5.4-nano`, `anthropic/claude-sonnet-4.6`, `google/gemini-3.7-flash`, …) use the standard OpenAI multimodal `content` shape — an array of typed parts instead of a plain string.
 
 ```bash
 curl "https://gen.pollinations.ai/v1/chat/completions" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "openai",
+    "model": "openai/gpt-5.4-nano",
     "messages": [{
       "role": "user",
       "content": [
@@ -146,7 +147,7 @@ Three endpoints accept `multipart/form-data` request bodies. Each has its own fi
 curl -X POST "https://gen.pollinations.ai/v1/audio/transcriptions" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -F "file=@./recording.mp3" \
-  -F "model=openai-audio" \
+  -F "model=openai/gpt-audio-mini" \
   -F "response_format=verbose_json" \
   -F "temperature=0"
 ```
@@ -164,7 +165,7 @@ curl -X POST "https://gen.pollinations.ai/v1/images/edits" \
   -F "size=1024x1024"
 ```
 
-Repeat `-F "image=@…"` to pass multiple reference images on models that accept them (`seedream`, `nanobanana`, `klein`).
+Repeat `-F "image=@…"` to pass multiple reference images on models that accept them (`bytedance/seedream-4.0`, `google/gemini-2.5-flash-image`, `black-forest-labs/flux.2-klein-4b`).
 
 **Upload arbitrary media** to the media store (a separate host: `media.pollinations.ai`). Returns a `https://media.pollinations.ai/<id>` URL you can pass anywhere a remote image, audio, or video URL is accepted.
 
@@ -178,7 +179,7 @@ Each upload gets its own unique id — re-uploading the same bytes yields a new 
 
 ## 💡 Tips
 
-- **Use `pk_` keys in browsers.** Anywhere a `sk_` key could be read off the wire, use a publishable key with a tight budget and an allow-list of models.
+- **Do not put raw `pk_` keys in browsers.** For client apps, register an App Key and use [BYOP](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) so users authorize a scoped `sk_`. Raw `pk_` keys are legacy and rate-limited (1 pollen/IP/hour).
 - **One key per app.** Child keys scope budget and permissions independently — easier to audit, easier to revoke without touching production.
-- **Image/audio `GET` URLs are cache-friendly.** They're idempotent on `(prompt, model, seed)` — cache them on a CDN if you serve the same generations to many users.
+- **Retry the same request after a timeout.** Keep the endpoint, body, query parameters, and seed unchanged. Your retry waits for the generation already in progress or receives the completed cached result instead of starting another generation.
 - **Watch `429` and `503`.** A `Retry-After` header tells you how long to back off. `502` from us means upstream provider — usually transient.

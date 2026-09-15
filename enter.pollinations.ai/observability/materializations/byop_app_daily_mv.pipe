@@ -28,7 +28,7 @@ SQL >
             'quest',
             'unfunded'
         ) AS funding_source,
-        sumState(toUInt64(1)) AS all_calls,
+        sumState(toUInt64(is_final)) AS all_calls,  -- attempts are not requests
         sumState(toUInt64(response_status >= 200 AND response_status < 300)) AS successful_calls,
         sumState(
             toUInt64(response_status >= 200 AND response_status < 300 AND is_billed_usage)

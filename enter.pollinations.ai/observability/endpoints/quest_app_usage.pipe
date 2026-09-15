@@ -1,0 +1,22 @@
+DESCRIPTION >
+    Cumulative billed usage across a BYOP owner's apps, counting only spend from
+    users other than the owner. Owner self-spend is excluded so a developer
+    cannot complete a paid-usage quest by paying themselves in their own app.
+    User reach is counted separately from consented BYOP keys in D1.
+
+TOKEN tinybird_read READ
+
+NODE quest_app_usage_node
+SQL >
+    %
+    SELECT
+        owner_user_id AS userId,
+        sumMergeIf(gross_consumption, is_external) AS pollenUsed,
+        sumMergeIf(billed_paid_calls, is_external) AS paidRequests
+    FROM byop_app_payer_daily
+    WHERE owner_user_id = {{String(user_id, '')}}
+      AND environment = 'production'
+    GROUP BY userId
+    LIMIT 1
+
+TYPE endpoint

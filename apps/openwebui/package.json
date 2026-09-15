@@ -1,0 +1,25 @@
+{
+    "name": "openwebui",
+    "private": true,
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "check": "wrangler deploy --dry-run",
+        "deploy": "wrangler deploy",
+        "deploy:staging": "wrangler deploy --env staging",
+        "push-secrets": "sops exec-file --no-fifo secrets/secrets.vars.json 'node scripts/push-secrets.mjs {} production'",
+        "push-secrets:staging": "sops exec-file --no-fifo secrets/secrets.vars.json 'node scripts/push-secrets.mjs {} staging'",
+        "push-image": "bash scripts/push-image.sh",
+        "containers:list": "wrangler containers list",
+        "containers:images": "wrangler containers images list"
+    },
+    "dependencies": {
+        "@cloudflare/containers": "^0.3.7"
+    },
+    "devDependencies": {
+        "wrangler": "^4.110.0"
+    },
+    "engines": {
+        "node": ">=22"
+    }
+}

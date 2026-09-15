@@ -2,8 +2,8 @@ import chalk from "chalk";
 import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
 import {
+    fail,
     getOutputMode,
-    printError,
     printInfo,
     printResult,
     printSuccess,
@@ -117,10 +117,7 @@ const list = new Command("list")
                 : ["name", "prefix", "balance", "expires", "permissions"];
             printTable(rows, cols);
         } catch (err) {
-            printError(
-                `Failed to list keys: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to list keys", err);
         }
     });
 
@@ -150,10 +147,7 @@ const info = new Command("info")
                     keyInfo.permissions?.account?.join(", ") ?? "none",
             });
         } catch (err) {
-            printError(
-                `Failed to fetch key info: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to fetch key info", err);
         }
     });
 
@@ -197,12 +191,10 @@ Examples:
                 type: opts.type,
             };
             if (opts.redirectUri && opts.type !== "publishable") {
-                printError("--redirect-uri requires --type publishable");
-                process.exit(1);
+                fail("--redirect-uri requires --type publishable");
             }
             if (opts.earnings === true && opts.type !== "publishable") {
-                printError("--earnings requires --type publishable");
-                process.exit(1);
+                fail("--earnings requires --type publishable");
             }
             if (opts.expiresIn !== undefined)
                 body.expiresIn = Number(opts.expiresIn);
@@ -210,8 +202,7 @@ Examples:
             if (opts.budget !== undefined) {
                 const budget = Number(opts.budget);
                 if (!Number.isFinite(budget) || budget < 0) {
-                    printError("--budget must be a non-negative number");
-                    process.exit(1);
+                    fail("--budget must be a non-negative number");
                 }
                 body.pollenBudget = budget;
             }
@@ -244,10 +235,7 @@ Examples:
                 earnings: created.metadata?.earningsEnabled,
             });
         } catch (err) {
-            printError(
-                `Failed to create key: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to create key", err);
         }
     });
 
@@ -265,10 +253,7 @@ const revoke = new Command("revoke")
 
             printSuccess(`Key ${id} revoked.`);
         } catch (err) {
-            printError(
-                `Failed to revoke key: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to revoke key", err);
         }
     });
 

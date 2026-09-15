@@ -1,5 +1,7 @@
 import type { FC } from "react";
 import { useState } from "react";
+import { useModelCategories } from "../models/use-model-categories.ts";
+import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
 import { AccountPermissionsInput } from "./account-permissions-input.tsx";
 import { ExpiryDaysInput } from "./expiry-days-input.tsx";
 import { PollenBudgetInput } from "./pollen-budget-input.tsx";
@@ -60,6 +62,10 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
         setExpiryDays,
         setAccountPermissions,
     } = value;
+    // A dashboard key belongs to the account, so it can call that account's own
+    // private models. Offer them here too, or a key already scoped to one shows
+    // up as granting nothing and loses the grant on the next edit.
+    const modelCategories = useModelCategories(useOwnCommunityModels());
 
     return (
         <div className="space-y-6">
@@ -84,6 +90,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 allowedModels={permissions.allowedModels}
                 onModelsChange={setAllowedModels}
                 modelsInitiallyExpanded={modelsInitiallyExpanded}
+                modelCategories={modelCategories}
             />
         </div>
     );

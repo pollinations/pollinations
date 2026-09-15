@@ -51,12 +51,6 @@ A single text prompt (the **"vibe"**) drives the entire theme generation through
 | **Animator**   | Creates WebGL background scene    | Self-contained HTML with Three.js          |
 | **Copywriter** | Rewrites UI text to match vibe    | Themed copy (same meaning, different tone) |
 
-### Not Yet in Pipeline
-
-**Supporter Logos** (Community page) — Currently use a static prompt defined in `community.ts`, not the theme vibe. This avoids regenerating ~12 images on every theme test. The `illustrator.ts` pipeline exists but is not yet connected.
-
----
-
 ## File Structure
 
 ```
@@ -65,7 +59,6 @@ src/theme/
 │   ├── designer.ts      #    → STYLING_GUIDELINES (colors, fonts, tokens)
 │   ├── animator.ts      #    → BACKGROUND_GUIDELINES (WebGL scene)
 │   ├── copywriter.ts    #    → WRITING_GUIDELINES (text transformation)
-│   ├── illustrator.ts   #    → DRAWING_GUIDELINES (not used yet — future: logos)
 │   └── helpers/         #    Processing logic (parse responses, etc.)
 │
 ├── buildPrompts.ts      # Assembles: guidelines + vibe → final prompt

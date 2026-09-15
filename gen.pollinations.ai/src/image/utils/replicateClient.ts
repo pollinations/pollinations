@@ -1,3 +1,4 @@
+import { UpstreamError } from "@shared/error.ts";
 /**
  * Generic Replicate prediction client.
  *
@@ -22,7 +23,7 @@ const CANCEL_REQUEST_TIMEOUT_MS = 5000;
 export class ReplicateError extends Error {
     /**
      * `url` is the Replicate endpoint the failing request targeted. Callers
-     * thread it into HttpError.upstreamUrl so error tracking records an
+     * thread it into UpstreamError.requestUrl so error tracking records an
      * upstream host even for network-level failures ("Network connection
      * lost"), which otherwise surface as bare TypeErrors with no context.
      */
@@ -30,10 +31,25 @@ export class ReplicateError extends Error {
         message: string,
         readonly status?: number,
         readonly url?: string,
+        readonly responseBody?: string,
     ) {
         super(message);
         this.name = "ReplicateError";
     }
+}
+
+/** Preserve non-Replicate failures; map classified provider failures once. */
+export function toReplicateUpstreamError(
+    error: unknown,
+    messagePrefix: string,
+): unknown {
+    return error instanceof ReplicateError
+        ? UpstreamError.fromProvider(error.status ?? 500, {
+              message: `${messagePrefix}: ${error.message}`,
+              responseBody: error.responseBody,
+              requestUrl: error.url ? new URL(error.url) : undefined,
+          })
+        : error;
 }
 
 interface ReplicatePrediction<TOutput> {
@@ -221,9 +237,10 @@ async function replicateFetch<T>(
         // (auth, validation of our request, Replicate outages) maps to 502 —
         // the failure is on our side of the boundary, not the user's input.
         throw new ReplicateError(
-            `Replicate ${args.method} ${args.url} failed (HTTP ${response.status}): ${text.slice(0, 300)}`,
+            `Replicate ${args.method} ${args.url} failed (HTTP ${response.status}): ${text}`,
             classifyReplicateHttpStatus(response.status),
             args.url,
+            text,
         );
     }
     try {

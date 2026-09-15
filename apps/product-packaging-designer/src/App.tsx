@@ -12,7 +12,7 @@ import {
     Sun,
     Upload,
 } from "lucide-react";
-import { type React, useEffect, useState } from "react";
+import { type ChangeEvent, useEffect, useState } from "react";
 
 type StyleOption = {
     id: string;
@@ -82,7 +82,6 @@ const POLLINATIONS_API = "https://gen.pollinations.ai/image";
 const POLLINATIONS_MEDIA_API = "https://media.pollinations.ai/upload";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const MAX_DISPLAY_SIZE = 10 * 1024 * 1024;
 const VALID_FILE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const UPLOAD_TIMEOUT = 30000; // 30 seconds
 
@@ -95,7 +94,6 @@ const handleError = (error: unknown, fallbackMessage: string): string => {
 
 const validateFile = (
     file: File | null,
-    maxSize: number,
 ): { isValid: boolean; error?: string } => {
     if (!file) {
         return { isValid: false, error: "No file provided" };
@@ -108,8 +106,8 @@ const validateFile = (
         };
     }
 
-    if (file.size > maxSize) {
-        const sizeMB = Math.round(maxSize / (1024 * 1024));
+    if (file.size > MAX_FILE_SIZE) {
+        const sizeMB = Math.round(MAX_FILE_SIZE / (1024 * 1024));
         return {
             isValid: false,
             error: `File size exceeds ${sizeMB}MB limit. Please choose a smaller image.`,
@@ -133,7 +131,7 @@ function App() {
     const [imageLoaded, setImageLoaded] = useState<boolean>(false);
     const [file, setFile] = useState<File | null>(null);
     const [apiKey, setApiKey] = useState<string | null>(null);
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+    const isAuthenticated = Boolean(apiKey);
 
     useEffect(() => {
         // Load theme
@@ -153,7 +151,6 @@ function App() {
         if (keyFromUrl) {
             sessionStorage.setItem("pollinations_api_key", keyFromUrl);
             setApiKey(keyFromUrl);
-            setIsAuthenticated(true);
             // Clean up URL
             window.history.replaceState(
                 {},
@@ -164,7 +161,6 @@ function App() {
             const savedKey = sessionStorage.getItem("pollinations_api_key");
             if (savedKey) {
                 setApiKey(savedKey);
-                setIsAuthenticated(true);
             }
         }
     }, []);
@@ -180,7 +176,6 @@ function App() {
     const handleLogout = () => {
         sessionStorage.removeItem("pollinations_api_key");
         setApiKey(null);
-        setIsAuthenticated(false);
     };
 
     const toggleTheme = () => {
@@ -189,9 +184,9 @@ function App() {
         localStorage.setItem("theme", newTheme);
     };
 
-    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
         // Check authentication first
-        if (!isAuthenticated || !apiKey) {
+        if (!apiKey) {
             alert("Please authenticate with Pollinations to upload images.");
             handleAuthenticate();
             return;
@@ -203,7 +198,7 @@ function App() {
             return;
         }
 
-        const validation = validateFile(uploadedFile, MAX_DISPLAY_SIZE);
+        const validation = validateFile(uploadedFile);
         if (!validation.isValid) {
             alert(validation.error);
             return;
@@ -240,7 +235,7 @@ function App() {
         file: File,
         tag?: string,
     ): Promise<string> => {
-        const validation = validateFile(file, MAX_FILE_SIZE);
+        const validation = validateFile(file);
         if (!validation.isValid) {
             throw new Error(validation.error || "File validation failed");
         }
@@ -276,15 +271,8 @@ function App() {
                 throw new Error(errorMessage);
             }
 
-            const data = await response.json();
-            if (!data.url && !data.secure_url && !data.media_url) {
-                throw new Error(
-                    "Invalid response from Pollinations media service - no URL received",
-                );
-            }
-
-            const mediaUrl = data.url || data.secure_url || data.media_url;
-            return mediaUrl;
+            const data = (await response.json()) as { url: string };
+            return data.url;
         } catch (error) {
             console.error("Pollinations media upload failed:", error);
 
@@ -311,23 +299,14 @@ function App() {
 
     const generatePackaging = async () => {
         // Check authentication
-        if (!isAuthenticated || !apiKey) {
+        if (!apiKey) {
             alert("Please authenticate with Pollinations first.");
             handleAuthenticate();
             return;
         }
 
-        if (!uploadedImage && !file) {
+        if (!file) {
             alert("Please upload an image first!");
-            return;
-        }
-
-        if (file && file.size > MAX_FILE_SIZE) {
-            alert(
-                `Image too large! Please use an image under ${
-                    MAX_FILE_SIZE / (1024 * 1024)
-                }MB.`,
-            );
             return;
         }
 
@@ -336,17 +315,7 @@ function App() {
         setImageLoaded(false);
 
         try {
-            let uploadedUrl: string = "";
-
-            if (file) {
-                uploadedUrl = await uploadToPollinationsMedia(file);
-            } else {
-                uploadedUrl = uploadedImage || "";
-            }
-
-            if (!uploadedUrl) {
-                throw new Error("No valid image URL available");
-            }
+            const uploadedUrl = await uploadToPollinationsMedia(file);
 
             const style = customStyle.trim() || selectedStyle;
             const selectedPackaging = packagingTypes.find(

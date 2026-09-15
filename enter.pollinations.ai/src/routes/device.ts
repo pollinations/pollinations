@@ -7,7 +7,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "../env.ts";
 import { type AuthVariables, auth } from "../middleware/auth.ts";
-import { hasAccountReadPermission } from "./account-permissions.ts";
+import { hasAccountPermission } from "./account-permissions.ts";
 
 type AuthedContext = Context<{
     Bindings: Env["Bindings"];
@@ -344,9 +344,10 @@ export async function exchangeDeviceCode(
  */
 export async function handleUserinfo(c: AuthedContext) {
     const user = c.var.auth.requireUser();
-    const includeProfilePII =
-        !c.var.auth.apiKey ||
-        hasAccountReadPermission(c.var.auth.apiKey, "profile");
+    const includeProfilePII = hasAccountPermission(
+        c.var.auth.apiKey,
+        "profile",
+    );
     const db = drizzle(c.env.DB, { schema });
     const row = await db.query.user.findFirst({
         where: eq(schema.user.id, user.id),

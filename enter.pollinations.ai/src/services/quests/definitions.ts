@@ -22,13 +22,17 @@ export type QuestCategory = (typeof QUEST_CATEGORIES)[number];
 
 /**
  * Completion scope — drives the idempotency key shape (see toReward):
- *   - "perUser" — each user earns it independently. Key includes the userId
- *                 (`quest:${id}:user:${userId}`), so every user can complete it.
+ *   - "perUser" — each GitHub identity earns it independently. Key includes the
+ *                 immutable GitHub user ID (`quest:${id}:github:${githubId}`).
  *   - "once"    — one reward total, whoever triggers it. Key omits the userId
- *                 (`quest:${id}`), so it can only ever be recorded once. Used by
- *                 issue bounties: one issue, one reward, regardless of assignee.
+ *                 (`quest:${id}`), so it can only ever be recorded once.
  */
 export type QuestScope = "perUser" | "once";
+
+export type QuestGoal = {
+    target: number;
+    unit: "pollen" | "users" | "days";
+};
 
 /**
  * Quest board state. A BOARD flag, not a per-user status:
@@ -48,6 +52,8 @@ export type QuestDefinition = {
     scope: QuestScope;
     rewardAmount: number;
     balanceBucket: Bucket;
+    /** Optional measurable target for quests with meaningful partial progress. */
+    goal?: QuestGoal;
     /**
      * Optional static link for the quest (e.g. the GitHub quest board, the app
      * directory). Snapshotted onto each reward by toReward and shown on the

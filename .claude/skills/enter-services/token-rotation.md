@@ -33,7 +33,7 @@ this gains explicit workspace handling (tracked in #11127).
 replacement. It is not an Enter Worker secret and does not belong in Enter
 SOPS files.
 
-`TINYBIRD_LEGACY_READ_TOKEN` (consumed by `apps/operation/observability`)
+`TINYBIRD_LEGACY_READ_TOKEN` (consumed by `operations/observability`)
 lives in the retired `pollinations_ai` workspace and has no rotation path —
 rotate manually or migrate observability off the legacy workspace and delete
 the token.
@@ -97,21 +97,21 @@ Rollback below).
 
 | Worker | Pod / Host | SSH target | Restart |
 |---|---|---|---|
-| Flux | Vast.ai 5090 instance(s) — see `image.pollinations.ai/GPU_INSTANCES.md` for current instance | `vastai show instances` for IP/port | restart `flux` screen |
+| Flux | Vast.ai instance(s) — see `operations/infrastructure/gpu/GPU_INSTANCES.md` for the current fleet | `vastai show instances` for IP/port | restart `flux` screen |
 | Z-Image | 3× RunPod single-GPU pods (`runpodctl pod list`) | rotating tcp port via RunPod GraphQL | `/root/relaunch-zimage.sh` |
 | Klein 4B | RunPod (id changes if recreated — verify with `runpodctl pod list` and `KLEIN_URL` in `gen.pollinations.ai/secrets/prod.vars.json`) | RunPod relay, interactive-only | `/workspace/restart.sh` (token baked in via `export`; edit + re-run inside an interactive session) |
 | LTX-2 + ACE-Step + Sana | Lambda Labs GH200 | SSH key in enter SOPS | `systemctl restart ltx2 acestep sana` |
 
 Hosts move (pods get recreated, Flux migrated from RunPod to Vast.ai in
 2026-07) — confirm current host/pod identity against
-`image.pollinations.ai/GPU_INSTANCES.md` before rotating; don't trust this
+`operations/infrastructure/gpu/GPU_INSTANCES.md` before rotating; don't trust this
 table's specifics as current without checking.
 
 ## SOPS recipient rotation
 
 Recipients are age public keys declared per path in `.sops.yaml`
 `creation_rules` — there is no separate role registry; that file is the source
-of truth. Economics secrets (`apps/operation/economics/**/secrets/*`) encrypt to
+of truth. Economics secrets (`operations/economics/**/secrets/*`) encrypt to
 a single dedicated age key; the repo-wide worker/CI secrets (`*.vars.json`,
 `env.json`) encrypt to the team key set. Rotating a recipient means changing the
 `age:` list on the relevant `creation_rules` entry, as a two-phase,

@@ -6,6 +6,10 @@ import { Hono } from "hono";
 import { createMiddleware } from "hono/factory";
 
 export type MockGithubState = {
+    secretScanningPublicKeys: Array<{
+        key_identifier: string;
+        key: string;
+    }>;
     user: {
         id: number;
         login: string;
@@ -29,6 +33,7 @@ export type MockGithubState = {
         closedByPullRequestsReferences?: Array<{
             number: number;
             mergedAt: string | null;
+            author: { databaseId?: number | null } | null;
         }>;
     }>;
     mergedPullRequests: Array<{
@@ -48,6 +53,7 @@ export type MockGithubState = {
 
 export function createMockGithub(): MockAPI<MockGithubState> {
     const state: MockGithubState = {
+        secretScanningPublicKeys: [],
         user: {
             id: 12345,
             login: "testuser",
@@ -65,9 +71,10 @@ export function createMockGithub(): MockAPI<MockGithubState> {
 
     const githubAuth = createMiddleware(async (c, next) => {
         const authHeader = c.req.header("Authorization");
+        // Real GitHub rejects OAuth client_id/secret Basic auth with 401, so the
+        // mock must too — accepting it hid a live 401 behind green tests.
         const isUserToken = authHeader?.includes("mock_github_auth_token");
-        const isAppCredentials = authHeader?.startsWith("Basic ");
-        if (!isUserToken && !isAppCredentials) {
+        if (!isUserToken) {
             return c.json({ message: "Bad credentials" }, 401);
         }
         return await next();
@@ -84,6 +91,9 @@ export function createMockGithub(): MockAPI<MockGithubState> {
 
     const githubAPI = new Hono()
         .use("*", trackRequest)
+        .get("/meta/public_keys/secret_scanning", (c) =>
+            c.json({ public_keys: state.secretScanningPublicKeys }),
+        )
         .get("/search/issues", (c) => {
             if (state.failQuestSearch) {
                 return c.json({ message: "rate limited" }, 403);
@@ -174,6 +184,7 @@ export function createMockGithub(): MockAPI<MockGithubState> {
     };
 
     const reset = () => {
+        state.secretScanningPublicKeys = [];
         state.requests = [];
     };
 

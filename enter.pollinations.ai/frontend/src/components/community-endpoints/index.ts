@@ -1,2 +1,6 @@
 export { CommunityEndpoints } from "./community-endpoints.tsx";
-export type { CommunityEndpoint } from "./types.ts";
+export { Deployments } from "./deployments.tsx";
+export {
+    type CommunityEndpoint,
+    publicCommunityFallbackOptions,
+} from "./types.ts";

@@ -1,0 +1,415 @@
+import {
+    Alert,
+    Button,
+    CopyButton,
+    Dialog,
+    DiscordIcon,
+    FieldStack,
+    GitHubIcon,
+    Heading,
+    Input,
+    Section,
+    Surface,
+    Text,
+    TrashIcon,
+} from "@pollinations/ui";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { authClient } from "../auth.ts";
+import { ConnectedApps } from "../components/account/connected-apps.tsx";
+import { Route as DashboardRoute } from "./_dashboard.tsx";
+
+const DELETE_CONFIRMATION = "DELETE";
+
+type DiscordConnection = {
+    id: string;
+    username: string | null;
+    displayName: string | null;
+    avatarUrl: string | null;
+};
+
+export const Route = createFileRoute("/_dashboard/account")({
+    beforeLoad: ({ context, location }) => {
+        if (!context.user) {
+            throw redirect({
+                to: "/sign-in",
+                search: { next: location.href },
+            });
+        }
+    },
+    component: AccountPage,
+});
+
+function AccountPage() {
+    const { user, githubUsername, discordAvailable } =
+        DashboardRoute.useLoaderData();
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [discordConnection, setDiscordConnection] = useState<
+        DiscordConnection | null | undefined
+    >();
+    const [connectionPending, setConnectionPending] = useState(false);
+    const [connectionError, setConnectionError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!discordAvailable) return;
+        void (async () => {
+            try {
+                const { data, error } = await authClient.listAccounts();
+                if (error) throw error;
+
+                const account = data?.find(
+                    (account) => account.providerId === "discord",
+                );
+                if (!account) {
+                    setDiscordConnection(null);
+                    return;
+                }
+
+                const infoResponse = await authClient
+                    .accountInfo({
+                        query: { accountId: account.accountId },
+                    })
+                    .catch(() => null);
+                const info = infoResponse?.data;
+                const profile = info?.data as
+                    | { username?: unknown }
+                    | undefined;
+                setDiscordConnection({
+                    id: account.accountId,
+                    username:
+                        typeof profile?.username === "string"
+                            ? profile.username
+                            : null,
+                    displayName: info?.user.name || null,
+                    avatarUrl: info?.user.image || null,
+                });
+            } catch {
+                setConnectionError("Could not load connected accounts.");
+                setDiscordConnection(null);
+            }
+        })();
+    }, [discordAvailable]);
+
+    if (!user) return null;
+
+    const displayName = user.name || githubUsername || "Pollinations user";
+
+    async function handleDiscordConnection(): Promise<void> {
+        setConnectionPending(true);
+        setConnectionError(null);
+
+        try {
+            if (discordConnection) {
+                const { error } = await authClient.unlinkAccount({
+                    providerId: "discord",
+                });
+                if (error) {
+                    setConnectionError("Could not disconnect Discord.");
+                } else {
+                    setDiscordConnection(null);
+                }
+                return;
+            }
+
+            const { error } = await authClient.linkSocial({
+                provider: "discord",
+                callbackURL: "/account",
+            });
+            if (error) setConnectionError("Could not connect Discord.");
+        } catch {
+            setConnectionError(
+                discordConnection
+                    ? "Could not disconnect Discord."
+                    : "Could not connect Discord.",
+            );
+        } finally {
+            setConnectionPending(false);
+        }
+    }
+
+    return (
+        <div className="flex flex-col gap-6">
+            <Section title="Profile" framed>
+                <div className="flex items-center gap-4">
+                    {user.image ? (
+                        <img
+                            src={user.image}
+                            alt={`${displayName} avatar`}
+                            className="h-16 w-16 shrink-0 rounded-full"
+                        />
+                    ) : (
+                        <div
+                            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-surface-opaque text-theme-text-muted"
+                            aria-hidden="true"
+                        >
+                            <GitHubIcon className="h-7 w-7" />
+                        </div>
+                    )}
+                    <div className="min-w-0">
+                        <Heading as="h3" size="subsection">
+                            {displayName}
+                        </Heading>
+                        {githubUsername && (
+                            <a
+                                href={`https://github.com/${encodeURIComponent(githubUsername)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-theme-text-base transition-colors hover:text-theme-text-strong"
+                            >
+                                @{githubUsername}
+                            </a>
+                        )}
+                        <Text size="sm" tone="muted" className="truncate">
+                            {user.email}
+                        </Text>
+                    </div>
+                </div>
+                <Surface
+                    variant="card"
+                    className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                >
+                    <div>
+                        <Text tone="strong" weight="semibold">
+                            Pollinations ID
+                        </Text>
+                        <Text size="sm" tone="muted">
+                            Your unique account identifier.
+                        </Text>
+                    </div>
+                    <CopyButton
+                        value={user.id}
+                        tooltip={null}
+                        aria-label="Copy Pollinations ID"
+                        className="flex max-w-full items-center gap-2 rounded-lg bg-theme-bg-pale px-3 py-2 text-left font-mono text-xs text-theme-text-base transition-colors hover:text-theme-text-strong"
+                    >
+                        {(copied) => (
+                            <>
+                                <span className="truncate">{user.id}</span>
+                                <span className="shrink-0 font-sans font-medium">
+                                    {copied ? "Copied" : "Copy"}
+                                </span>
+                            </>
+                        )}
+                    </CopyButton>
+                </Surface>
+            </Section>
+
+            {discordAvailable && (
+                <Section title="Connected accounts" framed>
+                    <Surface
+                        variant="card"
+                        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                        <div className="flex items-center gap-3">
+                            {discordConnection?.avatarUrl ? (
+                                <img
+                                    src={discordConnection.avatarUrl}
+                                    alt="Discord avatar"
+                                    className="h-10 w-10 shrink-0 rounded-full"
+                                />
+                            ) : (
+                                <DiscordIcon className="h-6 w-6 shrink-0" />
+                            )}
+                            <div>
+                                <Text tone="strong" weight="semibold">
+                                    Discord
+                                </Text>
+                                <Text size="sm" tone="muted">
+                                    {discordConnection
+                                        ? [
+                                              discordConnection.displayName,
+                                              discordConnection.username &&
+                                                  `@${discordConnection.username}`,
+                                          ]
+                                              .filter(Boolean)
+                                              .join(" · ")
+                                        : discordConnection === undefined
+                                          ? "Checking connection..."
+                                          : "Connect your Discord identity for community features."}
+                                </Text>
+                                {discordConnection && (
+                                    <Text size="sm" tone="muted">
+                                        Discord ID: {discordConnection.id}
+                                    </Text>
+                                )}
+                            </div>
+                        </div>
+                        <Button
+                            type="button"
+                            className="shrink-0 self-start sm:self-center"
+                            disabled={
+                                discordConnection === undefined ||
+                                connectionPending
+                            }
+                            onClick={() => void handleDiscordConnection()}
+                        >
+                            {connectionPending
+                                ? "Working..."
+                                : discordConnection
+                                  ? "Disconnect Discord"
+                                  : discordConnection === undefined
+                                    ? "Checking..."
+                                    : "Connect Discord"}
+                        </Button>
+                    </Surface>
+                    {connectionError && (
+                        <Text size="sm" tone="muted">
+                            {connectionError}
+                        </Text>
+                    )}
+                </Section>
+            )}
+
+            <div id="connectors" className="scroll-mt-6">
+                <ConnectedApps />
+            </div>
+
+            <Section title="Danger zone" framed>
+                <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+                    <Text tone="strong" weight="semibold">
+                        Delete Pollinations account
+                    </Text>
+                    <Button
+                        type="button"
+                        intent="danger"
+                        className="shrink-0 self-start sm:self-center"
+                        onClick={() => setDeleteDialogOpen(true)}
+                    >
+                        Delete account
+                    </Button>
+                </div>
+                <div className="space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
+                    <p className="flex items-start gap-1.5">
+                        <TrashIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            Permanently close your account and revoke access.
+                        </span>
+                    </p>
+                </div>
+            </Section>
+
+            <DeleteAccountDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+            />
+        </div>
+    );
+}
+
+type DeleteAccountDialogProps = {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+};
+
+function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
+    const [confirmation, setConfirmation] = useState("");
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    function handleOpenChange(nextOpen: boolean): void {
+        if (isDeleting) return;
+        if (!nextOpen) {
+            setConfirmation("");
+            setError(null);
+        }
+        onOpenChange(nextOpen);
+    }
+
+    async function handleDelete(): Promise<void> {
+        if (confirmation !== DELETE_CONFIRMATION || isDeleting) return;
+
+        setIsDeleting(true);
+        setError(null);
+
+        const result = await authClient.deleteUser();
+        if (result.error) {
+            setError(result.error.message || "Account deletion failed.");
+            setIsDeleting(false);
+            return;
+        }
+
+        window.location.assign("/news");
+    }
+
+    return (
+        <Dialog
+            open={open}
+            onOpenChange={handleOpenChange}
+            title="Delete Pollinations account?"
+            size="sm"
+        >
+            <div className="mt-4 flex flex-col gap-5 px-6 pb-6">
+                <Alert intent="danger" title="This cannot be undone">
+                    <div className="flex flex-col gap-3">
+                        <p>Deleting your Pollinations account removes:</p>
+                        <ul className="list-disc space-y-1 pl-5">
+                            <li>
+                                Profile, sessions, GitHub connection, and API
+                                keys
+                            </li>
+                            <li>
+                                Pollen balances, access to reward history,
+                                agents, and community models
+                            </li>
+                            <li>Published media listings and tags</li>
+                        </ul>
+                        <p>
+                            We retain only your immutable GitHub user ID with
+                            records of rewards already issued to prevent
+                            duplicate quest payouts.
+                        </p>
+                        <p>
+                            Cached copies of uploaded and generated media may
+                            remain temporarily until their retention period
+                            ends. Required billing and usage records may also be
+                            retained.
+                        </p>
+                    </div>
+                </Alert>
+
+                <FieldStack
+                    label={
+                        <>
+                            Type{" "}
+                            <span className="font-mono font-semibold text-intent-danger-text">
+                                {DELETE_CONFIRMATION}
+                            </span>{" "}
+                            to confirm
+                        </>
+                    }
+                    error={error}
+                >
+                    <Input
+                        value={confirmation}
+                        onChange={(event) =>
+                            setConfirmation(event.currentTarget.value)
+                        }
+                        autoComplete="off"
+                        spellCheck={false}
+                        disabled={isDeleting}
+                    />
+                </FieldStack>
+
+                <div className="flex justify-end gap-2">
+                    <Button
+                        type="button"
+                        onClick={() => handleOpenChange(false)}
+                        disabled={isDeleting}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        type="button"
+                        intent="danger"
+                        onClick={() => void handleDelete()}
+                        disabled={
+                            confirmation !== DELETE_CONFIRMATION || isDeleting
+                        }
+                    >
+                        {isDeleting ? "Deleting..." : "Delete account"}
+                    </Button>
+                </div>
+            </div>
+        </Dialog>
+    );
+}

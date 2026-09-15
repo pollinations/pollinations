@@ -13,9 +13,15 @@ import {
     LockIcon,
     ScrollArea,
 } from "@pollinations/ui";
-import type { FC } from "react";
+import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
+import {
+    isAppKey,
+    isPublishableKey,
+    readRedirectUris,
+    shouldPostKeyMetadata,
+} from "./key-type.ts";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
 import type { ApiKey, ApiKeyUpdateParams } from "./types.ts";
 
@@ -23,43 +29,18 @@ interface EditApiKeyDialogProps {
     apiKey: ApiKey;
     onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onClose: () => void;
-}
-
-function readInitialRedirectUris(
-    metadata: Record<string, unknown> | null | undefined,
-): string[] {
-    const list = metadata?.redirectUris;
-    if (Array.isArray(list)) {
-        return list.filter((v): v is string => typeof v === "string" && !!v);
-    }
-    return [];
-}
-
-function sameRedirectUris(a: string[], b: string[]): boolean {
-    if (a.length !== b.length) return false;
-    return a.every((v, i) => v === b[i]);
+    header?: ReactNode;
 }
 
 function cleanRedirectUris(uris: string[]): string[] {
     return uris.map((v) => v.trim()).filter((v) => v !== "");
 }
 
-function isPublishableKey(apiKey: ApiKey): boolean {
-    return apiKey.metadata?.keyType === "publishable";
-}
-
-function isAppKey(apiKey: ApiKey): boolean {
-    return (
-        isPublishableKey(apiKey) &&
-        (readInitialRedirectUris(apiKey.metadata).length > 0 ||
-            apiKey.metadata?.earningsEnabled === true)
-    );
-}
-
 export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     apiKey,
     onUpdate,
     onClose,
+    header,
 }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [name, setName] = useState(apiKey.name || "");
@@ -69,7 +50,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     const appKey = isAppKey(apiKey);
     const plaintextKey = apiKey.metadata?.plaintextKey as string | undefined;
 
-    const initialRedirectUris = readInitialRedirectUris(apiKey.metadata);
+    const initialRedirectUris = readRedirectUris(apiKey.metadata);
     const initialEarningsEnabled = apiKey.metadata?.earningsEnabled === true;
     const [redirectUris, setRedirectUris] =
         useState<string[]>(initialRedirectUris);
@@ -95,34 +76,21 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         setIsSubmitting(true);
         setError(null);
         try {
-            const { expiryDays, ...permissions } = keyPermissions.permissions;
-            await onUpdate(apiKey.id, {
-                name,
-                ...permissions,
-                expiresAt: expiryDays
-                    ? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000)
-                    : null,
-            });
-
-            // Save app settings only for keys that belong in the App section.
-            if (appKey) {
-                const cleaned = cleanRedirectUris(redirectUris);
-                if (
-                    sameRedirectUris(cleaned, initialRedirectUris) &&
-                    earningsEnabled === initialEarningsEnabled
-                ) {
-                    onClose();
-                    return;
-                }
-                const metadataBody = {
+            // Metadata must post before onUpdate: onUpdate ends in
+            // router.invalidate(), which would refetch the key list before this
+            // write lands and close the dialog onto a stale card.
+            const cleaned = cleanRedirectUris(redirectUris);
+            if (
+                shouldPostKeyMetadata(apiKey, {
                     redirectUris: cleaned,
                     earningsEnabled,
-                };
+                })
+            ) {
                 const metaRes = await apiClient["api-keys"][
                     ":id"
                 ].metadata.$post({
                     param: { id: apiKey.id },
-                    json: metadataBody,
+                    json: { redirectUris: cleaned, earningsEnabled },
                 });
                 if (!metaRes.ok) {
                     const err = await metaRes.json().catch(() => null);
@@ -132,6 +100,15 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     );
                 }
             }
+
+            const { expiryDays, ...permissions } = keyPermissions.permissions;
+            await onUpdate(apiKey.id, {
+                name,
+                ...permissions,
+                expiresAt: expiryDays
+                    ? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000)
+                    : null,
+            });
 
             onClose();
         } catch (error) {
@@ -152,6 +129,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
             onOpenChange={(open) => !open && onClose()}
             contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
         >
+            {header}
             <div className="shrink-0 p-6 pb-4">
                 <DialogTitle className="text-xl font-bold mb-4">
                     {appKey ? "Edit App Key" : "Edit API Key"}
@@ -222,7 +200,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         />
                     </Field.Root>
 
-                    {appKey && (
+                    {isPublishable && (
                         <PublishableKeySettings
                             redirectUris={redirectUris}
                             onRedirectUrisChange={setRedirectUris}

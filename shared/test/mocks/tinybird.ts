@@ -28,8 +28,9 @@ export type MockTinybirdState = {
     earningsResponse: UsageRow[];
     earningsTransactionsResponse: UsageRow[];
     appDirectoryResponse: UsageRow[];
-    paidAppSpendResponse: UsageRow[];
+    appUsageResponse: UsageRow[];
     modelModalitiesResponse: UsageRow[];
+    agentUsageResponse: UsageRow[];
     pipeCalls: PipeCall[];
 };
 
@@ -44,8 +45,9 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         earningsResponse: [],
         earningsTransactionsResponse: [],
         appDirectoryResponse: [],
-        paidAppSpendResponse: [],
+        appUsageResponse: [],
         modelModalitiesResponse: [],
+        agentUsageResponse: [],
         pipeCalls: [],
     };
 
@@ -107,13 +109,17 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.appDirectoryResponse }, 200);
         })
-        .get("/v0/pipes/quest_paid_app_spend.json", (c) => {
+        .get("/v0/pipes/quest_app_usage.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
-            return c.json({ data: state.paidAppSpendResponse }, 200);
+            return c.json({ data: state.appUsageResponse }, 200);
         })
         .get("/v0/pipes/quest_model_modalities.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.modelModalitiesResponse }, 200);
+        })
+        .get("/v0/pipes/quest_agent_usage.json", (c) => {
+            state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
+            return c.json({ data: state.agentUsageResponse }, 200);
         })
         .post("/v0/datasources/:datasource/delete", (c) => {
             return c.json({ delete_id: "mock-delete" }, 200);
@@ -136,8 +142,9 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         state.earningsResponse = [];
         state.earningsTransactionsResponse = [];
         state.appDirectoryResponse = [];
-        state.paidAppSpendResponse = [];
+        state.appUsageResponse = [];
         state.modelModalitiesResponse = [];
+        state.agentUsageResponse = [];
         state.pipeCalls = [];
     };
 

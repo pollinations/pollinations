@@ -1,3 +1,4 @@
+import { UpstreamError } from "@shared/error.ts";
 /**
  * Ideogram 4.0 (turbo / balanced / quality) image generation via Replicate.
  *
@@ -17,12 +18,11 @@
 
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import {
-    ReplicateError,
     runReplicatePrediction,
+    toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:ideogram:ops");
@@ -75,17 +75,17 @@ const IDEOGRAM_VARIANTS: Record<
     "ideogram-v4-turbo": {
         replicateModel: "ideogram-ai/ideogram-v4-turbo",
         displayName: "Ideogram 4.0 Turbo",
-        trackingLabel: "ideogram-v4-turbo",
+        trackingLabel: "ideogram-ai/ideogram-v4-turbo",
     },
     "ideogram-v4-balanced": {
         replicateModel: "ideogram-ai/ideogram-v4-balanced",
         displayName: "Ideogram 4.0 Balanced",
-        trackingLabel: "ideogram-v4-balanced",
+        trackingLabel: "ideogram-ai/ideogram-v4-balanced",
     },
     "ideogram-v4-quality": {
         replicateModel: "ideogram-ai/ideogram-v4-quality",
         displayName: "Ideogram 4.0 Quality",
-        trackingLabel: "ideogram-v4-quality",
+        trackingLabel: "ideogram-ai/ideogram-v4-quality",
     },
 };
 
@@ -161,19 +161,16 @@ async function callIdeogramReplicateAPI(
         });
     } catch (err) {
         logError(`${variant.displayName} prediction call failed:`, err);
-        if (err instanceof ReplicateError) {
-            throw new HttpError(
-                `${variant.displayName} generation failed: ${err.message}`,
-                err.status ?? 500,
-                undefined,
-                err.url,
-            );
-        }
-        throw err;
+        throw toReplicateUpstreamError(
+            err,
+            `${variant.displayName} generation failed`,
+        );
     }
 
     if (!outputUrl) {
-        throw new HttpError(`${variant.displayName} returned no image`, 500);
+        throw UpstreamError.fromProvider(500, {
+            message: `${variant.displayName} returned no image`,
+        });
     }
 
     const imageResponse = await fetchUpstream(outputUrl, {

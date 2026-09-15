@@ -612,6 +612,64 @@ test("POST /api/stripe/billing/portal creates a Stripe Portal session", async ({
     });
 });
 
+test("POST /api/stripe/billing/portal returns to standalone top-up without changing the shared default", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const response = await SELF.fetch(`${base}/billing/portal`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            cookie: `better-auth.session_token=${sessionToken}`,
+        },
+        body: JSON.stringify({
+            return: "top-up",
+            redirect: "https://app.example/chat",
+        }),
+    });
+    expect(response.status).toBe(200);
+    const request = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/billing_portal/sessions",
+    );
+    const url = new URL(String(request?.body.return_url));
+    expect(url.origin).toBe(new URL(env.STRIPE_SUCCESS_URL).origin);
+    expect(url.pathname).toBe("/top-up");
+    expect(url.searchParams.get("redirect")).toBe("https://app.example/chat");
+    expect(url.searchParams.get("stripe_billing_return")).toBe("true");
+    const defaultUrl = new URL(
+        String(mocks.stripe.state.portalConfigurations[0].default_return_url),
+    );
+    expect(defaultUrl.pathname).toBe("/pollen");
+    expect(defaultUrl.searchParams.has("redirect")).toBe(false);
+});
+
+test("POST /api/stripe/billing/portal returns to Pollen for any other return value", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    for (const value of ["/top-up", "https://evil.example", 123, null]) {
+        mocks.stripe.state.requests.length = 0;
+        const response = await SELF.fetch(`${base}/billing/portal`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({ return: value }),
+        });
+        expect(response.status).toBe(200);
+        const request = mocks.stripe.state.requests.find(
+            (request) => request.path === "/v1/billing_portal/sessions",
+        );
+        const url = new URL(String(request?.body.return_url));
+        expect(url.origin).toBe(new URL(env.STRIPE_SUCCESS_URL).origin);
+        expect(url.pathname).toBe("/pollen");
+        expect(url.searchParams.get("stripe_billing_return")).toBe("true");
+    }
+});
+
 test("POST /api/stripe/billing/portal updates existing Stripe Portal headline", async ({
     sessionToken,
     mocks,
@@ -1206,6 +1264,81 @@ test("PATCH /api/stripe/auto-top-up does not charge immediately when balance is 
         .limit(1);
     expect(updatedUser?.packBalance).toBe(1);
     expect(updatedUser?.autoTopUpEnabled).toBe(true);
+});
+
+test.for([
+    {
+        name: "disabled even with high balance and invalid pack",
+        setup: {
+            autoTopUpEnabled: false,
+            packBalance: 6,
+            autoTopUpAmountUsd: 7,
+        },
+        reason: "auto top-up disabled",
+    },
+    {
+        name: "paid balance is above threshold even with invalid pack",
+        setup: {
+            autoTopUpEnabled: true,
+            packBalance: 6,
+            autoTopUpAmountUsd: 7,
+        },
+        reason: "paid balance above threshold",
+    },
+    {
+        name: "balance is at threshold and configured pack is invalid",
+        setup: {
+            autoTopUpEnabled: true,
+            packBalance: 5,
+            autoTopUpAmountUsd: 7,
+        },
+        reason: "auto top-up pack invalid",
+    },
+])("POST /api/stripe/auto-top-up/trigger skips before Stripe when $name", async ({
+    setup,
+    reason,
+}, { sessionToken, mocks }) => {
+    void sessionToken;
+    await mocks.enable("stripe", "tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+
+    expect(user).toBeTruthy();
+    if (!user) throw new Error("Expected seeded test user");
+
+    await db.update(userTable).set(setup).where(eq(userTable.id, user.id));
+
+    const response = await SELF.fetch(`${base}/auto-top-up/trigger`, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${env.PLN_ENTER_TOKEN}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: user.id, environment: env.ENVIRONMENT }),
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+        status: "skipped",
+        reason,
+    });
+
+    expect(mocks.stripe.state.invoices).toHaveLength(0);
+    expect(
+        mocks.stripe.state.requests.some(
+            (request) => request.path === "/v1/invoices",
+        ),
+    ).toBe(false);
+    const attempts = await env.DB.prepare(
+        `SELECT COUNT(*) AS count FROM stripe_auto_top_up_attempt WHERE user_id = ?`,
+    )
+        .bind(user.id)
+        .first<{ count: number }>();
+    expect(attempts?.count).toBe(0);
 });
 
 test("POST /api/stripe/auto-top-up/trigger creates and pays auto top-up invoice", async ({
@@ -3249,8 +3382,123 @@ test("POST /api/webhooks/stripe emits checkout.session.async_payment_failed to T
     expect(mocks.tinybird.state.stripeEvents[0]).toMatchObject({
         event_id: "evt_test_async_failed",
         event_type: "checkout.session.async_payment_failed",
+        session_id: "cs_test_async_failed",
+        user_id: "u_test",
+        amount_cents: 429,
         currency: "eur",
         payment_status: "unpaid",
+        payment_method: "unknown",
         payment_methods_offered: "sepa_debit",
+        customer_email: "buyer@example.com",
+        livemode: 0,
     });
+});
+
+test("POST /api/webhooks/stripe emits checkout.session.expired to Tinybird without payment_methods_offered", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    // Expired sessions serialize a hardcoded "expired" status and omit
+    // payment_methods_offered (unlike the completed/async handlers).
+    const expiredEvent = {
+        id: "evt_test_expired",
+        type: "checkout.session.expired",
+        livemode: false,
+        data: {
+            object: {
+                id: "cs_test_expired",
+                object: "checkout.session",
+                amount_total: 429,
+                currency: "eur",
+                payment_status: "unpaid",
+                payment_method_types: ["card"],
+                metadata: { userId: "u_test" },
+                customer_email: "buyer@example.com",
+            },
+        },
+    };
+
+    const response = await postSignedStripeWebhook(expiredEvent);
+    expect(response.status).toBe(200);
+
+    expect(mocks.tinybird.state.stripeEvents).toHaveLength(1);
+    const emitted = mocks.tinybird.state.stripeEvents[0];
+    expect(emitted).toMatchObject({
+        event_id: "evt_test_expired",
+        event_type: "checkout.session.expired",
+        session_id: "cs_test_expired",
+        user_id: "u_test",
+        amount_cents: 429,
+        currency: "eur",
+        payment_status: "expired",
+        payment_method: "unknown",
+        customer_email: "buyer@example.com",
+        livemode: 0,
+    });
+    // Exact serialization: the expired handler does not emit the offered
+    // payment methods, so the shared mapper must not synthesize them here.
+    expect(emitted.payment_methods_offered).toBe("");
+});
+
+test("GET /api/stripe/checkout/p5?return=top-up returns to the standalone page", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+
+    const response = await SELF.fetch(
+        `${base}/checkout/p5?return=top-up&redirect=${encodeURIComponent("https://app.example/chat")}`,
+        {
+            method: "GET",
+            headers: { cookie: `better-auth.session_token=${sessionToken}` },
+            redirect: "manual",
+        },
+    );
+    expect(response.status).toBe(302);
+
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    const successUrl = new URL(String(body?.success_url));
+    expect(successUrl.origin).toBe(new URL(env.STRIPE_SUCCESS_URL).origin);
+    expect(successUrl.pathname).toBe("/top-up");
+    expect(successUrl.searchParams.get("redirect")).toBe(
+        "https://app.example/chat",
+    );
+    expect(successUrl.searchParams.get("pack")).toBe("p5");
+    expect(successUrl.searchParams.get("stripe_success")).toBe("true");
+    expect(new URL(String(body?.cancel_url)).pathname).toBe("/top-up");
+});
+
+test("GET /api/stripe/checkout/p5 returns to Pollen for any other return value", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+
+    for (const value of ["/top-up", "https://evil.example/x", "elsewhere"]) {
+        mocks.stripe.state.requests.length = 0;
+        const response = await SELF.fetch(
+            `${base}/checkout/p5?return=${encodeURIComponent(value)}`,
+            {
+                method: "GET",
+                headers: {
+                    cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                redirect: "manual",
+            },
+        );
+        expect(response.status).toBe(302);
+        const body = mocks.stripe.state.requests.find(
+            (request) => request.path === "/v1/checkout/sessions",
+        )?.body;
+        for (const target of [body?.success_url, body?.cancel_url]) {
+            const url = new URL(String(target));
+            expect(url.origin, value).toBe(
+                new URL(env.STRIPE_SUCCESS_URL).origin,
+            );
+            expect(url.pathname, value).toBe("/pollen");
+        }
+    }
 });

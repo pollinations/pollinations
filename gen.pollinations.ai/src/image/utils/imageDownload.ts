@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer";
+import { UpstreamError } from "@shared/error.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
-import { HttpError } from "../httpError.ts";
+import { fetchUserImage, MAX_IMAGE_SIZE, UserImageError } from "@/userImage.ts";
 
 export function bufferToUint8Array(buffer: Buffer): Uint8Array<ArrayBuffer> {
     return new Uint8Array(buffer);
@@ -10,33 +11,13 @@ export function base64ToBuffer(base64: string): Buffer {
     const input = base64
         .replace(/^data:[^,]+,/, "")
         .replace(/\s/g, "")
-        .replace(/-/g, "+")
-        .replace(/_/g, "/")
         .replace(/=+$/, "");
-    const buffer = Buffer.alloc(Math.floor((input.length * 6) / 8));
-    let bits = 0;
-    let value = 0;
-    let index = 0;
-
-    for (const char of input) {
-        const digit =
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".indexOf(
-                char,
-            );
-        if (digit < 0) {
-            throw new HttpError("Invalid base64 image response", 502);
-        }
-        value = (value << 6) | digit;
-        bits += 6;
-
-        if (bits >= 8) {
-            bits -= 8;
-            buffer[index] = (value >> bits) & 0xff;
-            index += 1;
-        }
+    if (!/^[A-Za-z0-9+/_-]*$/.test(input)) {
+        throw UpstreamError.fromProvider(502, {
+            message: "Invalid base64 image response",
+        });
     }
-
-    return buffer;
+    return Buffer.from(input, "base64");
 }
 
 export function detectMimeType(buffer: Uint8Array): string {
@@ -124,49 +105,19 @@ export function readImageDimensions(
     return null;
 }
 
+/**
+ * Downloads one user-supplied image for a generation request.
+ *
+ * Redirects are followed here, unlike the text path: an image URL pasted into
+ * the `image` parameter is routinely a shortener or a CDN that redirects, and
+ * refusing those would reject URLs that work today.
+ */
 export async function downloadUserImage(
     imageUrl: string,
     signal?: AbortSignal,
 ): Promise<{ buffer: Buffer; mimeType: string }> {
-    let imageResponse: Response;
-    try {
-        imageResponse = await fetch(imageUrl, { signal });
-    } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        throw new HttpError(
-            `Failed to fetch image ${imageUrl}: ${message}`,
-            400,
-            { validation: true },
-        );
-    }
-
-    if (!imageResponse.ok) {
-        throw new HttpError(
-            `Failed to fetch image ${imageUrl}: ${imageResponse.status} ${imageResponse.statusText}`,
-            400,
-            { validation: true },
-        );
-    }
-
-    let buffer: Buffer;
-    try {
-        buffer = Buffer.from(await imageResponse.arrayBuffer());
-    } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        throw new HttpError(
-            `Failed to read image ${imageUrl}: ${message}`,
-            400,
-            { validation: true },
-        );
-    }
-
-    const mimeType = detectImageMimeType(buffer);
-    if (!mimeType) {
-        throw new HttpError(`Unsupported image format from ${imageUrl}`, 400, {
-            validation: true,
-        });
-    }
-    return { buffer, mimeType };
+    const { bytes, mimeType } = await fetchUserImage(imageUrl, { signal });
+    return { buffer: Buffer.from(bytes), mimeType };
 }
 
 export async function downloadImageAsBase64(
@@ -184,6 +135,30 @@ export async function downloadImageAsBase64(
  * passing data URIs avoids that.
  */
 export async function toDataUri(url: string): Promise<string> {
+    // Multipart uploads are already canonical data URIs. Validate without
+    // allocating another full decoded image and then encoding it again.
+    const inline = /^data:([^;,\s]+);base64,([A-Za-z0-9+/]*={0,2})$/.exec(url);
+    if (inline && inline[0] === url && inline[2].length % 4 === 0) {
+        const [, mimeType, base64] = inline;
+        const tail = base64.slice(-4);
+        // Check padding bits too; other accepted encodings still normalize
+        // through the existing decoder below.
+        if (mimeType === mimeType.toLowerCase() && btoa(atob(tail)) === tail) {
+            const padding = base64.endsWith("==")
+                ? 2
+                : base64.endsWith("=")
+                  ? 1
+                  : 0;
+            const size = (base64.length / 4) * 3 - padding;
+            if (size > MAX_IMAGE_SIZE) {
+                throw new UserImageError(
+                    `Image too large: ${size} bytes (max ${MAX_IMAGE_SIZE} bytes remaining). Please use a smaller image.`,
+                    "image_too_large",
+                );
+            }
+            return url;
+        }
+    }
     const { buffer, mimeType } = await downloadUserImage(url);
     return `data:${mimeType};base64,${buffer.toString("base64")}`;
 }

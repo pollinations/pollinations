@@ -27,7 +27,7 @@ sops --output-type dotenv decrypt secrets/dev.vars.json > .dev.vars   # enter.po
 sops --output-type dotenv decrypt secrets/env.json > .env             # generation service secrets
 ``` 
 
-The variables are kept encrypted in `**/secrets/*.json`. If you need to edit them, run `sops edit /secrets/file.json`. This will open an editor and when you save the file, write it to the encrypted file. `enter.pollinations.ai` uses `secrets/{dev,staging,prod}.vars.json` for app/runtime secrets. Credential rotation is agent-driven — see `apps/operation/economics/ingest/agent.system.txt`'s `secret` mode and the `## Rotation` section in each `apps/operation/economics/ingest/connectors/*.md` guide. (hint: set the editor env variable: `export EDITOR=/path/to/your/editor` to open with your favorite editor)
+The variables are kept encrypted in `**/secrets/*.json`. If you need to edit them, run `sops edit /secrets/file.json`. This will open an editor and when you save the file, write it to the encrypted file. `enter.pollinations.ai` uses `secrets/{dev,staging,prod}.vars.json` for app/runtime secrets. Economics provider access is documented in `.claude/skills/economics-provider-collection/`. Follow the repository secret-mutation approval rules before changing any credential. (hint: set the editor env variable: `export EDITOR=/path/to/your/editor` to open with your favorite editor)
 
 
 ###### Common SOPS commands:
@@ -70,6 +70,9 @@ This will enable comprehensive debug output to help troubleshoot issues during d
 # Architecture Overview
 
 Current-state architecture diagrams for pollinations.ai infrastructure and model routing.
+
+For the agent-specific request paths, credential delegation, MCP gateway, and
+billing model, see [Agents and MCP Architecture](./AGENTS_AND_MCP.md).
 
 ## Models & Providers
 
@@ -287,5 +290,5 @@ graph TD
 Billing history: Polar handled pack billing and free daily tier subscriptions
 before the Stripe/D1 migration at the end of January 2026. The remaining Polar
 runtime and webhook integration was removed on May 2, 2026. Historical Polar
-handling for accounting lives in the economics ingest connector prompt
-(`apps/operation/economics/ingest/agent.system.txt`).
+handling for accounting lives in the Economics provider collection skill
+(`.claude/skills/economics-provider-collection/`).

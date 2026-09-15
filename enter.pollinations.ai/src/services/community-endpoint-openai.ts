@@ -5,6 +5,7 @@ import {
     communityImageEditsUrl,
     communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
+    communityResponsesUrl,
 } from "@shared/community-endpoint-urls.ts";
 import {
     COMMUNITY_ENDPOINT_TIMEOUT_MS,
@@ -59,6 +60,12 @@ export type CommunityEndpointTestResult = {
     inputModalities?: ModelInputModality[];
     /** Image tests only: editing failed, but generation remains usable. */
     imageEditError?: string;
+    /**
+     * Text endpoints only: when the declared API is `chat_completions`, the
+     * probe also checks whether the upstream responds correctly to a minimal
+     * /v1/responses request. Set when the probe succeeds.
+     */
+    responsesSupported?: boolean;
 };
 
 function authorizationHeaders(bearerToken: string): HeadersInit {
@@ -280,7 +287,67 @@ export async function testCommunityEndpoint({
     parser.feed(`${stream}\n\n`);
     if (!hasUsage)
         throw new Error("Endpoint omitted valid terminal streaming usage");
+    if (api === "chat_completions") {
+        const responsesSupported = await probeResponsesEndpoint(
+            communityOpenAIBaseUrl(url),
+            bearerToken,
+            model,
+        );
+        if (responsesSupported) {
+            result.responsesSupported = true;
+        }
+    }
     return result;
+}
+
+/**
+ * Probe whether an upstream endpoint supports /v1/responses by sending a
+ * minimal request and validating the response shape. Returns TRUE when the
+ * upstream returns a valid terminal Response with usage. Fails silently —
+ * a 400, 404, or timeout means the endpoint does not support Responses.
+ */
+async function probeResponsesEndpoint(
+    baseUrl: string,
+    bearerToken: string,
+    model: string,
+): Promise<boolean> {
+    const url = communityResponsesUrl(baseUrl);
+    let response: Response;
+    try {
+        response = await fetch(url, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${normalizeCommunityEndpointBearerToken(bearerToken)}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                input: "Reply with OK.",
+                model,
+                store: false,
+                stream: false,
+            }),
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+        });
+    } catch {
+        return false;
+    }
+    if (!response.ok) return false;
+    let body: string;
+    try {
+        body = await response.text();
+    } catch {
+        return false;
+    }
+    try {
+        const parsed = CreateResponseResponseSchema.safeParse(JSON.parse(body));
+        return (
+            parsed.success &&
+            ["completed", "incomplete"].includes(parsed.data.status) &&
+            parsed.data.usage != null
+        );
+    } catch {
+        return false;
+    }
 }
 
 export async function testCommunityImageEndpoint({

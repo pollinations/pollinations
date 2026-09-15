@@ -88,11 +88,13 @@ function accountUrl(
     path: string,
     params?: URLSearchParams,
 ): string {
+    let end = apiBaseUrl.length;
+    while (apiBaseUrl[end - 1] === "/") end--;
     const qs = params?.toString();
-    return `${apiBaseUrl.replace(/\/+$/, "")}${path}${qs ? `?${qs}` : ""}`;
+    return `${apiBaseUrl.slice(0, end)}${path}${qs ? `?${qs}` : ""}`;
 }
 
-async function fetchAccountJson<T>(
+export async function fetchAccountJson<T>(
     apiBaseUrl: string,
     apiKey: string,
     path: string,

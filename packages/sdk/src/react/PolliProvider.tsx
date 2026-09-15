@@ -6,13 +6,13 @@ import {
     useRef,
     useState,
 } from "react";
-import { pollinationsErrorFromResponse } from "../error-response.js";
 import { type AccountPermission, PollinationsError } from "../types.js";
 import {
     AuthContext,
     type AuthContextValue,
     type AuthorizeRequest,
 } from "./contexts.js";
+import { fetchAccountJson } from "./hooks.js";
 import { consumeOAuthCallback } from "./oauth.js";
 import {
     resolveStorage,
@@ -250,25 +250,28 @@ export function PolliProvider({
 
     const updateApiKey = useCallback(
         (nextApiKey: string | null) => {
-            let cleanupError: Error | null = null;
-            if (nextApiKey) {
-                storage.setItem(storageKey, nextApiKey);
-            } else {
-                try {
+            let storageError: Error | null = null;
+            try {
+                if (nextApiKey) {
+                    storage.setItem(storageKey, nextApiKey);
+                } else {
                     storage.removeItem(storageKey);
-                } catch (cause) {
-                    cleanupError =
-                        cause instanceof Error
-                            ? cause
-                            : new Error("Could not clear app connection");
                 }
+            } catch (cause) {
+                storageError =
+                    cause instanceof Error
+                        ? cause
+                        : new Error(
+                              nextApiKey
+                                  ? "Could not save app connection"
+                                  : "Could not clear app connection",
+                          );
             }
             keyRevision.current++;
             setApiKey(nextApiKey);
-            setError(cleanupError);
+            setError(storageError);
             setKeyCheckFailed(false);
             setIsHydrated(true);
-            return cleanupError;
         },
         [storage, storageKey],
     );
@@ -284,15 +287,14 @@ export function PolliProvider({
             try {
                 const storedKey = storage.getItem(storageKey);
                 if (!storedKey) {
-                    setKeyCheckFailed(!!updateApiKey(null));
+                    setApiKey(null);
                     return;
                 }
-                const response = await fetch(
-                    `${resolvedApiBaseUrl.replace(/\/+$/, "")}/account/key`,
-                    { headers: { Authorization: `Bearer ${storedKey}` } },
+                await fetchAccountJson(
+                    resolvedApiBaseUrl,
+                    storedKey,
+                    "/account/key",
                 );
-                if (!response.ok)
-                    throw await pollinationsErrorFromResponse(response);
                 if (keyRevision.current === revision) setApiKey(storedKey);
             } catch (cause) {
                 if (keyRevision.current !== revision) return;

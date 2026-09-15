@@ -285,7 +285,7 @@ describe("PolliProvider", () => {
     });
 
     it("ignores repeated login calls while a redirect is pending", async () => {
-        stubWindow("https://app.example/");
+        const win = stubWindow("https://app.example/");
         const storage = memoryStorage();
         let login: (() => void) | null = null;
 
@@ -309,10 +309,18 @@ describe("PolliProvider", () => {
             expect(pendingLogin["polli:pk_test:oauth_verifier"]).toBeTruthy();
             login?.();
             expect(storage.snapshot()).toEqual(pendingLogin);
+            await vi.waitFor(() =>
+                expect(
+                    new URL((win.location as { href: string }).href).pathname,
+                ).toBe("/authorize"),
+            );
         });
     });
 
-    it("exchanges the callback code once and restores the original route", async () => {
+    it.each([
+        false,
+        true,
+    ])("exchanges the callback code once and retains the key (storage full: %s)", async (storageFull) => {
         const win = stubWindow(
             "https://app.example/?code=single-use&state=expected",
         );
@@ -321,6 +329,11 @@ describe("PolliProvider", () => {
             "polli:pk_test:oauth_verifier": "v".repeat(64),
             "polli:pk_test:oauth_return_path": "/?view=models#/details",
         });
+        if (storageFull) {
+            vi.spyOn(storage, "setItem").mockImplementation(() => {
+                throw new Error("Storage full");
+            });
+        }
         const fetchMock = vi.fn<typeof fetch>(async () =>
             Response.json({
                 access_token: "sk_delegated",
@@ -356,15 +369,19 @@ describe("PolliProvider", () => {
         expect(form.get("client_id")).toBe("pk_test");
         expect(form.get("redirect_uri")).toBe("https://app.example/");
         expect(form.get("code_verifier")).toBe("v".repeat(64));
-        expect(storage.snapshot()).toEqual({
-            "polli:pk_test:token": "sk_delegated",
-        });
+        expect(storage.snapshot()).toEqual(
+            storageFull ? {} : { "polli:pk_test:token": "sk_delegated" },
+        );
         expect(
             (win.history as { replaceState: ReturnType<typeof vi.fn> })
                 .replaceState,
         ).toHaveBeenCalledWith({}, "", "/?view=models#/details");
         expect(auth.current?.apiKey).toBe("sk_delegated");
+        expect(auth.current?.isLoggedIn).toBe(true);
         expect(auth.current?.isHydrated).toBe(true);
+        expect(auth.current?.error?.message ?? null).toBe(
+            storageFull ? "Storage full" : null,
+        );
     });
 
     it.each([
@@ -434,7 +451,7 @@ describe("PolliProvider", () => {
                     <PolliProvider
                         appKey="pk_test"
                         storage={storage}
-                        apiBaseUrl="https://enter.example/api/"
+                        apiBaseUrl="https://enter.example/api///"
                     >
                         <Probe />
                     </PolliProvider>
@@ -539,7 +556,7 @@ describe("PolliProvider", () => {
         expect(storage.getItem("polli:pk_test:token")).toBe(nextKey);
     });
 
-    it("finishes a key-check retry even when storage cleanup fails", async () => {
+    it("finishes a retry signed out when the saved key was removed", async () => {
         stubWindow("https://app.example/");
         const storage = memoryStorage({ "polli:pk_test:token": "sk_stored" });
         vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Offline")));
@@ -559,20 +576,16 @@ describe("PolliProvider", () => {
         });
         expect(auth.current?.retryConnection).toBeTypeOf("function");
         storage.removeItem("polli:pk_test:token");
-        vi.spyOn(storage, "removeItem").mockImplementationOnce(() => {
-            throw new Error("Storage unavailable");
-        });
+        const remove = vi.spyOn(storage, "removeItem");
         await act(async () => {
             await auth.current?.retryConnection?.();
         });
         expect(auth.current?.isHydrated).toBe(true);
-        expect(auth.current?.error?.message).toBe("Storage unavailable");
         expect(auth.current?.isLoggedIn).toBe(false);
-        await act(async () => {
-            await auth.current?.retryConnection?.();
-        });
-        expect(auth.current?.isHydrated).toBe(true);
         expect(auth.current?.error).toBeNull();
+        expect(auth.current?.retryConnection).toBeNull();
+        expect(remove).not.toHaveBeenCalled();
+        expect(fetch).toHaveBeenCalledTimes(1);
     });
 
     it("retries a temporary key-check failure with the same key, without restarting OAuth", async () => {

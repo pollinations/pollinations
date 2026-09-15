@@ -203,8 +203,18 @@ provide `retryConnection()` through `useAuth()` and `useAuthActions()`. Retrying
 checks the same key without starting OAuth; `retryConnection` is `null` when no
 retry is available.
 
+The check adds an account request to startup, so a saved key is not reported as
+connected while Enter is unavailable. A subsequent `useAccountKey()` hook makes
+its own request. A `403` also retains the key and exposes Enter's error; retry
+is manual and will not resolve an access restriction until that restriction
+changes. `isHydrated` becomes false during each retry and true when it finishes;
+conditionally mounted children will therefore remount if gated on this value.
+
 Storage or navigation failures during `login()` are exposed through `error`
-and allow another login attempt. `logout()` clears the connection locally;
+and allow another login attempt. If saving a successfully exchanged key fails,
+the provider keeps that key in memory and reports the storage error. The current
+session works, but the new key will not survive a reload unless saved later.
+`logout()` clears the connection locally;
 it does not revoke the key. If storage removal fails, the current app still
 disconnects and reports the error, but the saved key may remain until removal
 succeeds. Account hooks expose temporary request failures through `error` and

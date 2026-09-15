@@ -217,3 +217,66 @@ test("applies the same 404 rule to aliases of hidden models", async ({
     });
     expect(response.status).toBe(404);
 });
+
+test("source=official returns only official models", async () => {
+    const response = await fetchWorker("/v1/models?source=official");
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { data: { community: boolean }[] };
+    expect(body.data.length).toBeGreaterThan(0);
+    for (const model of body.data) {
+        expect(model.community).toBe(false);
+    }
+});
+
+test("source=community returns only community models", async () => {
+    const response = await fetchWorker("/v1/models?source=community");
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { data: { community: boolean }[] };
+    for (const model of body.data) {
+        expect(model.community).toBe(true);
+    }
+});
+
+test("legacy community=false is equivalent to source=official", async () => {
+    const [official, legacy] = await Promise.all([
+        fetchWorker("/v1/models?source=official"),
+        fetchWorker("/v1/models?community=false"),
+    ]);
+    expect(official.status).toBe(200);
+    expect(legacy.status).toBe(200);
+    const officialBody = (await official.json()) as { data: { id: string }[] };
+    const legacyBody = (await legacy.json()) as { data: { id: string }[] };
+    expect(officialBody.data.map((m) => m.id).sort()).toEqual(
+        legacyBody.data.map((m) => m.id).sort(),
+    );
+});
+
+test("health=true adds health metadata to model entries", async () => {
+    const response = await fetchWorker("/v1/models?health=true");
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+        data: { id: string; health?: object }[];
+    };
+    expect(body.data.length).toBeGreaterThan(0);
+    // At least some models should have health data
+    const modelsWithHealth = body.data.filter((m) => m.health);
+    expect(modelsWithHealth.length).toBeGreaterThan(0);
+    for (const model of modelsWithHealth) {
+        expect(model.health).toMatchObject({
+            status: expect.stringMatching(/^(on|degraded|off|unknown)$/),
+            success_rate: expect.any(Number),
+            sample_size: expect.any(Number),
+            window_minutes: expect.any(Number),
+            stale: expect.any(Boolean),
+        });
+    }
+});
+
+test("without health=true, entries have no health field", async () => {
+    const response = await fetchWorker("/v1/models");
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { data: { health?: object }[] };
+    for (const model of body.data) {
+        expect(model.health).toBeUndefined();
+    }
+});

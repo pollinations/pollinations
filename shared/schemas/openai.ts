@@ -758,6 +758,19 @@ export const OpenAIModelSchema = z
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),
         per_user_rpm: z.number().positive().nullable().optional(),
+        health: z
+            .object({
+                status: z.enum(["on", "degraded", "off", "unknown"]),
+                success_rate: z.number().min(0).max(1).nullable(),
+                sample_size: z.number().int().nonnegative(),
+                window_minutes: z.number().int().positive(),
+                checked_at: z.string().datetime().nullable(),
+                stale: z.boolean(),
+            })
+            .optional()
+            .describe(
+                "Recent reliability data when `health=true` is requested. Absent otherwise.",
+            ),
     })
     .meta({
         description: "OpenAI-compatible model object with capability metadata",

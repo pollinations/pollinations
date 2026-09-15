@@ -71,6 +71,7 @@ import {
 import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
+import { getModelHealthMap } from "@/model-health.ts";
 import {
     CreateEmbeddingRequestSchema,
     CreateEmbeddingResponseSchema,
@@ -250,15 +251,27 @@ function hasPaidBalance(c: any): boolean | undefined {
     return (user.packBalance ?? 0) > 0;
 }
 
-// Optionally filter entries by the validated `?community` query parameter.
-function filterEntriesByCommunityParam(
+// Filter entries by source: "official" or "community".
+// Supports both the legacy `community` param and the new `source` param.
+function filterEntriesBySource(
     entries: GenerationModelEntry[],
-    communityParam: string | undefined,
+    params: { community?: string; source?: string },
 ): GenerationModelEntry[] {
-    if (communityParam === undefined) return entries;
-    const wantCommunity = communityParam === "true" || communityParam === "1";
+    // Determine effective source from either param
+    let source: "official" | "community" | undefined;
+    if (params.source) {
+        source = params.source as "official" | "community";
+    } else if (params.community !== undefined) {
+        source =
+            params.community === "true" || params.community === "1"
+                ? "community"
+                : "official";
+    }
+    if (source === undefined) return entries;
     return entries.filter(
-        (entry) => (entry.communityEndpoint !== undefined) === wantCommunity,
+        (entry) =>
+            (entry.communityEndpoint !== undefined) ===
+            (source === "community"),
     );
 }
 
@@ -273,20 +286,38 @@ const modelsListHandler = (
     [
         validator("query", ModelListQueryParamsSchema),
         async (c: Context<Env>) => {
-            const { community } = c.req.valid(
+            const { community, source, health } = c.req.valid(
                 "query" as never,
             ) as ModelListQueryParams;
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
+            const entries = filterEntriesBySource(
+                filterEntriesByPermissions(
+                    await getEntries(c),
+                    allowedModels,
+                    paidBalance,
+                ),
+                { community, source },
+            );
+
+            const wantHealth = health === "true" || health === "1";
+            let healthMap: Map<
+                string,
+                import("@shared/registry/model-health.ts").ModelHealth
+            > | null = null;
+            if (wantHealth) {
+                healthMap = await getModelHealthMap();
+            }
+
             return c.json(
-                filterEntriesByCommunityParam(
-                    filterEntriesByPermissions(
-                        await getEntries(c),
-                        allowedModels,
-                        paidBalance,
-                    ),
-                    community,
-                ).map((entry) => entry.info),
+                entries.map((entry) => {
+                    const info = entry.info;
+                    if (wantHealth && healthMap) {
+                        const h = healthMap.get(entry.id);
+                        if (h) info.health = h;
+                    }
+                    return info;
+                }),
             );
         },
     ] as const;
@@ -333,7 +364,10 @@ async function getVisibleVideoModelEntries(c: Context<Env>) {
 // /v1/models/:model (retrieve). `created` derives from the registry addedDate
 // so both endpoints return stable timestamps instead of per-request wall-clock
 // values.
-function toOpenAIModelEntry(entry: GenerationModelEntry) {
+function toOpenAIModelEntry(
+    entry: GenerationModelEntry,
+    health?: import("@shared/registry/model-health.ts").ModelHealth,
+) {
     return {
         id: entry.info.name,
         object: "model" as const,
@@ -362,6 +396,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         ...(entry.info.per_user_rpm !== undefined && {
             per_user_rpm: entry.info.per_user_rpm,
         }),
+        ...(health && { health }),
     };
 }
 
@@ -420,22 +455,38 @@ export const proxyRoutes = new Hono<Env>()
         }),
         validator("query", ModelListQueryParamsSchema),
         async (c) => {
-            const { community } = c.req.valid(
+            const { community, source, health } = c.req.valid(
                 "query" as never,
             ) as ModelListQueryParams;
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
-            const modelEntries = filterEntriesByCommunityParam(
+            const modelEntries = filterEntriesBySource(
                 filterEntriesByPermissions(
                     await getVisibleModelEntries(c),
                     allowedModels,
                     paidBalance,
                 ),
-                community,
+                { community, source },
             );
+
+            const wantHealth = health === "true" || health === "1";
+            let healthMap: Map<
+                string,
+                import("@shared/registry/model-health.ts").ModelHealth
+            > | null = null;
+            if (wantHealth) {
+                healthMap = await getModelHealthMap();
+            }
+
             return c.json({
                 object: "list" as const,
-                data: modelEntries.map(toOpenAIModelEntry),
+                data: modelEntries.map((entry) => {
+                    const healthData =
+                        wantHealth && healthMap
+                            ? healthMap.get(entry.id)
+                            : undefined;
+                    return toOpenAIModelEntry(entry, healthData);
+                }),
             });
         },
     )

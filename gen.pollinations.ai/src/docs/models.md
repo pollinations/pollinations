@@ -15,17 +15,46 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 
 ### Query Parameters
 
-All model discovery endpoints accept an optional `community` query parameter:
+All model discovery endpoints accept optional filters:
 
 | Parameter | Values | Behaviour |
 |-----------|--------|-----------|
 | *(omitted)* | | Returns all models (default, backward-compatible) |
 | `community=false` | `false`, `0` | Excludes community models — returns official models only |
 | `community=true` | `true`, `1` | Returns community models only |
+| `source` | `official`, `community` | Filter by model source. Preferred over `community`. |
+| `health` | `true`, `1` | Include health metadata for each model |
 
 Any other value (e.g. `tru`, `yes`, `2`) returns **400 Bad Request**.
 
-Example: `GET /models?community=false`
+Example: `GET /models?source=official`
+
+### Health metadata
+
+When `health=true` is passed, each model entry includes a `health` field with recent reliability data:
+
+```json
+{
+  "id": "openai/gpt-5-nano",
+  "health": {
+    "status": "on",
+    "success_rate": 0.98,
+    "sample_size": 1250,
+    "window_minutes": 1440,
+    "checked_at": "2026-09-15T10:00:00.000Z",
+    "stale": false
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `status` | `on` (≥95% success), `degraded` (≥80%), `off` (<80%), or `unknown` (insufficient data) |
+| `success_rate` | `2xx / (2xx + 5xx)`. Fallback rescues count as successes; caller 4xx errors excluded. |
+| `sample_size` | Total requests in window |
+| `window_minutes` | Rolling window size (default 1440 = 24h) |
+| `checked_at` | When health was last fetched |
+| `stale` | `true` if upstream data was unavailable and stale cache was used |
 
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.

@@ -1,0 +1,36 @@
+{
+  "pr_number": 14920,
+  "title": "Add AI Flashcards to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14920",
+  "merged_at": "2026-09-15T11:42:06Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [AI Flashcards](https://chibbit-99.github.io/flashcardgen) to learn\n- Create AI flashcards. Helps turn content into study cards for review.\n\nFixes #11210",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Study cards, freshly pollinated",
+    "blurb": "AI Flashcards has joined the learn garden. Feed it some content and it grows a tidy stack of study cards for the part where your brain has to remember things.",
+    "summary": "Added AI Flashcards to the learn app directory, giving learners a tool that turns content into AI-generated study cards for review.",
+    "impact": "Users can now discover AI Flashcards through pollinations.ai learn resources and turn their material into review-ready flashcards.",
+    "keywords": [
+      "community",
+      "learn",
+      "flashcards",
+      "study",
+      "education",
+      "ai-app"
+    ],
+    "visual_concept": "A cozy study nook with Polli acting as a tiny librarian or student, arranging a stack of glowing AI-generated flashcards beside a retro terminal. Flashcards sprout like code-plants from a flower pot, representing content being transformed into memorable study material.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing tiny round study glasses and carefully sorting glowing flashcards at a warm retro desk; a lime green (#ecf874) code-plant grows card-shaped leaves from a flower pot beside a CRT monitor. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, warm cream and lavender study nook, subtle pixel-font text: 'AI FLASHCARDS', nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-15/PR-14920.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing tiny round study glasses and carefully sorting glowing flashcards at a warm retro desk; a lime green (#ecf874) code-plant grows card-shaped leaves from a flower pot beside a CRT monitor. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, warm cream and lavender study nook, subtle pixel-font text: 'AI FLASHCARDS', nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-15T11:43:06.811417+00:00",
+  "app_name": "AI Flashcards",
+  "app_url": "https://chibbit-99.github.io/flashcardgen"
+}

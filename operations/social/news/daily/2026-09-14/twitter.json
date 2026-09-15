@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-09-14",
+  "period_start": "2026-09-14",
+  "period_end": "2026-09-14",
+  "generated_at": "2026-09-15T06:30:50.869953+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-14/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 13 PRs: Pollinations models now plug directly into LLM apps; agent usage and creation earn Pollen; community apps gained icons + screenshots; shared UIs render inline media and copyable code. Also hardened image routing and streamed responses. Normal gardening."
+}

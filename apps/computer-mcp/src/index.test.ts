@@ -3,6 +3,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { describe, expect, it } from "vitest";
 import {
+    MCP_AGENT_ID_HEADER,
     MCP_USAGE_HEADERS,
     MCP_USER_ID_HEADER,
 } from "../../../shared/registry/mcp.ts";
@@ -11,11 +12,17 @@ const MCP_URL = "https://mcp.internal/";
 
 let lastResponse: Response | undefined;
 
-async function connect(userId: string): Promise<Client> {
+async function connect(
+    userId: string,
+    managedAgentId?: string,
+): Promise<Client> {
     const transport = new StreamableHTTPClientTransport(new URL(MCP_URL), {
         fetch: async (input, init) => {
             const headers = new Headers(init?.headers);
             headers.set(MCP_USER_ID_HEADER, userId);
+            if (managedAgentId) {
+                headers.set(MCP_AGENT_ID_HEADER, managedAgentId);
+            }
             lastResponse = await SELF.fetch(input, { ...init, headers });
             return lastResponse;
         },
@@ -66,22 +73,16 @@ describe("computer MCP worker", () => {
         const client = await connect("user-tools");
         const { tools } = await client.listTools();
         expect(tools.map((tool) => tool.name)).toEqual(["bash"]);
-        expect(
-            (
-                tools[0].inputSchema.properties?.mode as {
-                    enum?: string[];
-                }
-            ).enum,
-        ).toEqual(["worker", "container"]);
-        expect(tools[0].inputSchema.properties).toHaveProperty("workspace");
-        expect(
-            (
-                tools[0].inputSchema.properties?.workspace as {
-                    default?: string;
-                }
-            ).default,
-        ).toBe("default");
-        expect(tools[0].inputSchema.properties).not.toHaveProperty("cwd");
+        const properties = tools[0]?.inputSchema.properties ?? {};
+        expect((properties.mode as { enum?: string[] }).enum).toEqual([
+            "worker",
+            "container",
+        ]);
+        expect(properties).toHaveProperty("workspace");
+        expect((properties.workspace as { default?: string }).default).toBe(
+            "default",
+        );
+        expect(properties).not.toHaveProperty("cwd");
         expect(lastResponse?.headers.has(MCP_USAGE_HEADERS.cost)).toBe(false);
         await client.close();
     });
@@ -169,6 +170,28 @@ describe("computer MCP worker", () => {
         const ls = await bash(bob, "ls /workspace");
         expect(ls.text).not.toContain("secret.txt");
         await bob.close();
+    });
+
+    it("gives each managed agent its own computer for the same user", async () => {
+        const firstAgent = await connect("user-agents", "agent-one");
+        await bash(firstAgent, "echo 'first agent' > identity.txt");
+        await firstAgent.close();
+
+        const secondAgent = await connect("user-agents", "agent-two");
+        const secondFiles = await bash(secondAgent, "ls /workspace");
+        expect(secondFiles.text).not.toContain("identity.txt");
+        await bash(secondAgent, "echo 'second agent' > identity.txt");
+        await secondAgent.close();
+
+        const firstAgain = await connect("user-agents", "agent-one");
+        const identity = await bash(firstAgain, "cat identity.txt");
+        expect(identity.text.trim()).toBe("first agent");
+        await firstAgain.close();
+
+        const direct = await connect("user-agents");
+        const directFiles = await bash(direct, "ls /workspace");
+        expect(directFiles.text).not.toContain("identity.txt");
+        await direct.close();
     });
 
     it("defaults to one workspace and keeps named workspaces isolated", async () => {

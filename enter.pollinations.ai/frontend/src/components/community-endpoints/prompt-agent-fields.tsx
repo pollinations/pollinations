@@ -23,6 +23,8 @@ export function PromptAgentFields({
         value: string | AgentFormState["mcpServers"],
     ) => void;
 }) {
+    const hasComputer = form.mcpServers.includes("computer");
+
     return (
         <div className="space-y-4">
             <FieldStack
@@ -116,6 +118,13 @@ export function PromptAgentFields({
                     </a>
                     .
                 </p>
+                {hasComputer && (
+                    <Alert intent="info" title="Persistent computer">
+                        Each caller gets a private workspace for this agent.
+                        Files and memory survive between chats; the full Linux
+                        container starts only when the agent needs it.
+                    </Alert>
+                )}
             </div>
         </div>
     );

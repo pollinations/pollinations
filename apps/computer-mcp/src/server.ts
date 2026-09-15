@@ -5,9 +5,10 @@ import { z } from "zod";
 const SERVER_INSTRUCTIONS =
     "A private, persistent computer with one tool: bash. Use worker mode for " +
     "quick shell tasks and container mode for full Linux. Choose a workspace " +
-    "for isolated files; /workspace/README.md explains the memory layout.";
+    "for isolated files; managed agents are isolated from one another " +
+    "automatically. /workspace/README.md explains the memory layout.";
 
-const BASH_DESCRIPTION = `Run a bash command in a private, persistent workspace. workspace defaults to "default"; use a stable lowercase name for a separate filesystem. Commands start in /workspace, whose files survive between runs. Use \`cd\` inside the command when needed.
+const BASH_DESCRIPTION = `Run a bash command in a private, persistent workspace. Each managed agent gets its own computer for each caller automatically. workspace defaults to "default"; use a stable lowercase name for an additional filesystem inside that computer. Commands start in /workspace, whose files survive between runs. Use \`cd\` inside the command when needed.
 
 mode defaults to worker: fast startup with coreutils, grep, sed, awk, jq, tar, find, xargs, diff, curl and git, but no Node, Python or package managers. mode=container starts a full Debian container with Node.js, npm, apt, git, native binaries and outbound network; it has a slower cold start. Only /workspace persists when the container restarts.
 

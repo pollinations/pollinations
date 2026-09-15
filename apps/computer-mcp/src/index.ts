@@ -21,6 +21,7 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { withMcpUsageHeaders } from "../../../shared/mcp-usage.ts";
 import {
     COMPUTER_TOOL_CALL_PRICE,
+    MCP_AGENT_ID_HEADER,
     MCP_USER_ID_HEADER,
 } from "../../../shared/registry/mcp.ts";
 import { createMediaAssets, type MediaService } from "./assets.ts";
@@ -196,17 +197,29 @@ export default {
                 { status: 401 },
             );
         }
+        const managedAgentId = request.headers.get(MCP_AGENT_ID_HEADER);
         const workspaceName = requestedWorkspace(await readJsonRpc(request));
-        // One Durable Object per user and workspace; its SQLite holds the
-        // isolated filesystem and its lazy container backend.
+        // Managed agents get one computer installation per caller and agent.
+        // Direct MCP use remains one computer per caller and workspace.
         const stub = env.COMPUTER.get(
             env.COMPUTER.idFromName(
-                `user:${userId}:workspace:${workspaceName}`,
+                computerName(userId, managedAgentId, workspaceName),
             ),
         );
         return stub.fetch(request);
     },
 } satisfies ExportedHandler<Env>;
+
+function computerName(
+    userId: string,
+    managedAgentId: string | null,
+    workspaceName: string,
+): string {
+    const owner = managedAgentId
+        ? `user:${userId}:agent:${managedAgentId}`
+        : `user:${userId}`;
+    return `${owner}:workspace:${workspaceName}`;
+}
 
 function requestedWorkspace(payload: JsonRpcPayload): string {
     const value = payload.params?.arguments?.workspace;

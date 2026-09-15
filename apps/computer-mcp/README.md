@@ -5,8 +5,9 @@ plus a bash shell, exposed as a Streamable HTTP MCP server. Nothing runs while
 idle.
 
 Built on [`@cloudflare/computer`](https://github.com/cloudflare/computer)
-(preview). Each user/workspace pair gets one Durable Object whose SQLite holds
-its filesystem. The single `bash` tool defaults to
+(preview). Managed agents get one Durable Object for each caller, agent and
+workspace; direct MCP use gets one for each caller and workspace. Its SQLite
+holds the filesystem. The single `bash` tool defaults to
 [just-bash](https://github.com/vercel-labs/just-bash) in a throwaway Dynamic
 Worker that talks back to the Durable Object for file access. Set
 `mode: "container"` to lazily start a Debian Cloudflare Container with Node.js,
@@ -42,8 +43,11 @@ current facts in `memory/facts.md` and a dated append-only journal in
 The Worker is private (`workers_dev: false`, no routes). Gen's
 `/mcp/computer` route authenticates the caller, then calls this Worker through
 the `COMPUTER_MCP` service binding with the `x-pollinations-user-id` header
-set. That header and the tool's workspace name select the Durable Object. The
-object name is `user:<userId>:workspace:<name>`. A missing user header is a 401
+set. For delegated agent runs, Gen also derives an agent header from the signed
+`ag_` credential. Those headers and the tool's workspace name select the
+Durable Object. Its name is `user:<userId>:agent:<agentId>:workspace:<name>`
+for an agent, or `user:<userId>:workspace:<name>` for direct MCP use. Caller
+supplied identity headers are discarded by Gen. A missing user header is a 401
 here.
 The registry entry lives in `shared/registry/mcp.ts`.
 

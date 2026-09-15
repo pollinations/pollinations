@@ -54,6 +54,8 @@ export function CommunityEndpointCard({
     const isAgent = endpoint.type !== "proxy";
     const hasUpstreamEndpoint =
         endpoint.type === "proxy" || endpoint.type === "endpoint_agent";
+    const hasPersistentComputer =
+        agent?.type === "prompt_agent" && agent.mcpServers.includes("computer");
     const priceGroups =
         endpoint.type === "proxy" ? communityPriceGroups(endpoint) : [];
     const testableModelId = openWebUiTestableModelId(endpoint);
@@ -154,6 +156,13 @@ export function CommunityEndpointCard({
                         label="Source"
                         value={`${agent.repository}/agent.ts @ ${agent.deployedCommitSha.slice(0, 7)}`}
                         copyLabel="Copy source"
+                    />
+                )}
+                {hasPersistentComputer && (
+                    <CommunityDetailRow
+                        icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                        label="Computer"
+                        value="Private per caller · persists between chats"
                     />
                 )}
                 {hasUpstreamEndpoint && (

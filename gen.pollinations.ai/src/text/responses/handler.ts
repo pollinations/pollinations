@@ -155,7 +155,7 @@ async function handleDirectResponse(
             request,
         );
         if (capabilityError)
-            throw new UpstreamError(400, { message: capabilityError });
+            throw new ResponsesInvalidRequestError(capabilityError);
         validateDirectResponsesRequest(request);
         const { result, candidate } = await withModelFallback(
             directResponsesCandidates(c, request),

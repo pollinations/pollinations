@@ -527,7 +527,6 @@ describe("static provider fallbacks", () => {
         { tool_choice: "required" },
         { functions: [{ name: "weather" }] },
         { function_call: { name: "weather" } },
-        { parallel_tool_calls: true },
         { response_format: { type: "json_object" } },
         {
             response_format: {
@@ -599,6 +598,8 @@ describe("static provider fallbacks", () => {
         { tool_choice: "none" },
         { function_call: "auto", functions: [] },
         { tools: [], parallel_tool_calls: false },
+        { tools: [], parallel_tool_calls: true },
+        { parallel_tool_calls: true },
         { logit_bias: {} },
         { response_format: { type: "text" } },
         { text: { format: { type: "text" } } },

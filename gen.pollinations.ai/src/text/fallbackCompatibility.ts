@@ -76,7 +76,6 @@ export function textCapabilityError(
                 request.functions.length > 0) ||
             forcesToolChoice(request.tool_choice) ||
             forcesToolChoice(request.function_call) ||
-            request.parallel_tool_calls === true ||
             hasToolHistory(request.messages) ||
             hasToolHistory(request.input))
     )

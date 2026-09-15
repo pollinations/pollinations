@@ -1,3 +1,4 @@
+import { Dialog as ArkDialog } from "@ark-ui/react/dialog";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { AccountMenu } from "../compositions/AccountMenu.tsx";
@@ -64,18 +65,32 @@ describe("shared control accessibility", () => {
 
     it("renders dialog header and footer compositions", () => {
         const headerMarkup = renderToStaticMarkup(
-            <DialogHeader
-                title="Model Details"
-                description="Configure endpoint settings."
-                data-testid="dialog-header"
-            />,
+            <ArkDialog.Root open>
+                <ArkDialog.Content>
+                    <DialogHeader
+                        title={<span>Model Details</span>}
+                        description="Configure endpoint settings."
+                        data-testid="dialog-header"
+                    />
+                </ArkDialog.Content>
+            </ArkDialog.Root>,
         );
         expect(headerMarkup).toContain("Model Details");
         expect(headerMarkup).toContain("Configure endpoint settings.");
         expect(headerMarkup).toContain('data-testid="dialog-header"');
+        const titleId = headerMarkup.match(/<h2[^>]*id="([^"]+)"/)?.[1];
+        const descriptionId = headerMarkup.match(
+            /<div[^>]*id="([^"]+)"[^>]*>Configure endpoint settings\./,
+        )?.[1];
+        expect(titleId).toBeTruthy();
+        expect(descriptionId).toBeTruthy();
+        expect(headerMarkup).toContain(`aria-labelledby="${titleId}"`);
+        expect(headerMarkup).toContain(`aria-describedby="${descriptionId}"`);
 
         const headerNoDescMarkup = renderToStaticMarkup(
-            <DialogHeader title="Title Only" />,
+            <ArkDialog.Root open>
+                <DialogHeader title="Title Only" />
+            </ArkDialog.Root>,
         );
         expect(headerNoDescMarkup).toContain("Title Only");
 

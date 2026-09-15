@@ -104,7 +104,10 @@ export const Dialog: FC<DialogProps> = ({
 export const DialogTitle = ArkDialog.Title;
 export const DialogDescription = ArkDialog.Description;
 
-export type DialogHeaderProps = ComponentPropsWithoutRef<"div"> & {
+export type DialogHeaderProps = Omit<
+    ComponentPropsWithoutRef<"div">,
+    "title"
+> & {
     title?: ReactNode;
     description?: ReactNode;
     titleClassName?: string;

@@ -1,5 +1,4 @@
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
-import { emitSettlementErrorEvent } from "@shared/billing/settle-error-event.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
 import { sendToTinybird } from "@shared/events.ts";
 import {
@@ -145,28 +144,6 @@ async function settleUsage(
             c.var.log,
         ),
     );
-    if (deduction?.settlementError) {
-        c.executionCtx.waitUntil(
-            emitSettlementErrorEvent({
-                settlementError: deduction.settlementError,
-                status: usage.status,
-                requestId: event.requestId,
-                environment: event.environment,
-                requestPath: event.requestPath,
-                method: "POST",
-                startTime: startedAt,
-                endTime: endedAt,
-                modelRequested: event.modelRequested ?? undefined,
-                resolvedModelRequested: event.resolvedModelRequested,
-                userId: event.userId,
-                userTier: event.userTier,
-                apiKeyId: event.apiKeyId,
-                tinybirdIngestUrl: c.env.TINYBIRD_INGEST_URL,
-                tinybirdIngestToken: c.env.TINYBIRD_INGEST_TOKEN,
-                log: c.var.log,
-            }),
-        );
-    }
 }
 
 export const mcpRoutes = new Hono<Env>()

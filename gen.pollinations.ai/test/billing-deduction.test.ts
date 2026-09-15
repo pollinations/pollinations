@@ -322,7 +322,6 @@ describe("billing deduction", () => {
 
         // The debit should be preserved even though reconciliation failed
         expect(result.billedPrice).toBe(3);
-        expect(result.settlementError).toBe("api_key_reconciliation");
         expect(result.payerBucket).toBe("tier");
         expect((await getUserBalance(db, userId)).tierBalance).toBe(97);
     });
@@ -345,7 +344,6 @@ describe("billing deduction", () => {
 
         // The debit should be preserved even though community reward failed
         expect(result.billedPrice).toBe(1);
-        expect(result.settlementError).toBe("community_reward_credit");
         expect(result.communityModelReward).toBeNull();
         expect((await getUserBalance(db, payerId)).tierBalance).toBe(99);
     });

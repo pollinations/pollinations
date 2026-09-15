@@ -1,5 +1,4 @@
 import { getUserBalance, payerBucketToMeter } from "@shared/billing/balance.ts";
-import { emitSettlementErrorEvent } from "@shared/billing/settle-error-event.ts";
 import {
     handleBalanceDeduction,
     type MarkupResolution,
@@ -860,26 +859,6 @@ async function settleRealtimeSession(
             modelPaidOnly: tracking.modelDefinition.paidOnly,
         });
         c.var.balance.apiKeyReservation = undefined;
-    }
-
-    if (tracking.deduction?.settlementError) {
-        await emitSettlementErrorEvent({
-            settlementError: tracking.deduction.settlementError,
-            status: 200,
-            requestId: tracking.requestId,
-            environment: tracking.environment,
-            requestPath: tracking.requestPath,
-            method: "POST",
-            startTime: tracking.sessionStartTime,
-            endTime: eventEndTime,
-            modelRequested: tracking.modelRequested,
-            resolvedModelRequested: tracking.resolvedModelRequested,
-            userId: tracking.identity.userId,
-            apiKeyId: tracking.identity.apiKeyId,
-            tinybirdIngestUrl: c.env.TINYBIRD_INGEST_URL,
-            tinybirdIngestToken: c.env.TINYBIRD_INGEST_TOKEN,
-            log: c.get("log").getChild("realtime"),
-        });
     }
 
     if (!tracking.rateLimitConsumed) {

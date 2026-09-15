@@ -33,11 +33,6 @@ export type CommunityModelRewardResolution = {
     credit: number;
 };
 
-export type SettlementError =
-    | "api_key_reconciliation"
-    | "dev_credit"
-    | "community_reward_credit";
-
 export type CommunityModelRewardInput = {
     userId: string;
     rewardRate: number;
@@ -178,7 +173,6 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
     payerBucket: Bucket | null;
     postDeductionPackBalance: number | null;
     billedPrice: number;
-    settlementError?: SettlementError;
 }> {
     const {
         db,
@@ -275,7 +269,6 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
     let payerBucket: Bucket | null = null;
     let postDeductionPackBalance: number | null = null;
     let payerDeducted = !userId;
-    let settlementError: SettlementError | undefined;
 
     try {
         if (userId) {
@@ -305,9 +298,8 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         }
 
         // API key budgets are decremented by the amount the user authorized the
-        // app to spend, including BYOP markup when it applies. A failure here
-        // must not discard the committed user debit — the settlement error is
-        // surfaced to the caller so it can be persisted.
+        // app to spend, including BYOP markup when it applies. Later failures
+        // must not discard the committed user debit.
         if (apiKeyId && hasApiKeyBudget(apiKeyPollenBalance)) {
             try {
                 await reconcileApiKeyBalance(
@@ -328,15 +320,11 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
                                 : String(error),
                     },
                 );
-                settlementError = "api_key_reconciliation";
             }
         }
 
         // 4. Credits. Both require a payer bucket (nothing to net against
         //    otherwise) and write to it so the flows stay in balance.
-        //    Wrapped in individual try-catch so a credit failure does not
-        //    swallow the committed billedPrice — the caller must always
-        //    learn the debit amount even when a credit side-effect fails.
         if (markup) {
             try {
                 await creditDev(db, markup, payerBucket);
@@ -346,7 +334,6 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
                     error:
                         error instanceof Error ? error.message : String(error),
                 });
-                settlementError = settlementError ?? "dev_credit";
                 markup = null;
             }
         }
@@ -368,7 +355,6 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
                                 : String(error),
                     },
                 );
-                settlementError = settlementError ?? "community_reward_credit";
                 communityModelReward = null;
             }
         }
@@ -403,7 +389,6 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         payerBucket,
         postDeductionPackBalance,
         billedPrice,
-        settlementError,
     };
 }
 

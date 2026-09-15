@@ -2,12 +2,10 @@ import { getLogger } from "@logtape/logtape";
 import type { ApiKeyType } from "@shared/auth/api-key-creation.ts";
 import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
-import { emitSettlementErrorEvent } from "@shared/billing/settle-error-event.ts";
 import {
     type CommunityModelRewardResolution,
     handleBalanceDeduction,
     type MarkupResolution,
-    type SettlementError,
     selectCommunityModelReward,
 } from "@shared/billing/track-helpers.ts";
 import {
@@ -386,7 +384,6 @@ export const track = (eventType: EventType) =>
                 let communityModelReward: CommunityModelRewardResolution | null =
                     null;
                 let billedPrice = 0;
-                let settlementError: SettlementError | undefined;
                 let shouldRunAutoTopUp = false;
                 billingStarted = true;
                 try {
@@ -419,7 +416,6 @@ export const track = (eventType: EventType) =>
                     communityModelReward = deduction.communityModelReward;
                     payerBucket = deduction.payerBucket;
                     billedPrice = deduction.billedPrice;
-                    settlementError = deduction.settlementError;
                     const totalPrice = responseTracking.price?.totalPrice ?? 0;
                     if (
                         totalPrice > 0 &&
@@ -432,11 +428,9 @@ export const track = (eventType: EventType) =>
                         shouldRunAutoTopUp = true;
                     }
                 } catch (error) {
-                    const requestId = c.get("requestId");
                     log.error(
-                        "Billing deduction failed for request {requestId}; continuing tracking: {error}",
+                        "Billing deduction failed after response; continuing tracking: {error}",
                         {
-                            requestId,
                             error:
                                 error instanceof Error
                                     ? error.message
@@ -536,36 +530,6 @@ export const track = (eventType: EventType) =>
                     ].join("\n"),
                     { event: finalEvent },
                 );
-
-                if (settlementError) {
-                    await emitSettlementErrorEvent({
-                        settlementError,
-                        requestId: finalEvent.requestId,
-                        status: responseTracking.responseStatus,
-                        environment: finalEvent.environment,
-                        requestPath: finalEvent.requestPath,
-                        method: c.req.method,
-                        startTime,
-                        endTime,
-                        modelRequested: finalEvent.modelRequested ?? undefined,
-                        resolvedModelRequested:
-                            finalEvent.resolvedModelRequested,
-                        requestInputs: stringifyRequestInputs(
-                            await collectRequestInputs(c),
-                        ),
-                        userId: finalEvent.userId,
-                        userTier: finalEvent.userTier,
-                        apiKeyId: finalEvent.apiKeyId,
-                        edgeColo: (
-                            c.req.raw as Request & {
-                                cf?: { colo?: string };
-                            }
-                        ).cf?.colo,
-                        tinybirdIngestUrl: c.env.TINYBIRD_INGEST_URL,
-                        tinybirdIngestToken: c.env.TINYBIRD_INGEST_TOKEN,
-                        log,
-                    });
-                }
 
                 if (shouldRunAutoTopUp) {
                     await triggerAutoTopUp(c.env, userId, log);

@@ -108,7 +108,6 @@ function mockRealtimeProvider(initialMessage?: string, estimatedCost = 0) {
     let upstreamServer: WebSocket | undefined;
     let upstreamServerAccepted = false;
     const tinybirdRequests: Request[] = [];
-    const errorEvents: Request[] = [];
 
     const fetchMock = vi
         .spyOn(globalThis, "fetch")
@@ -116,10 +115,6 @@ function mockRealtimeProvider(initialMessage?: string, estimatedCost = 0) {
             const request = new Request(input, init);
             if (request.url.includes("/v0/events?name=generation_event_v2")) {
                 tinybirdRequests.push(request);
-                return new Response("", { status: 202 });
-            }
-            if (request.url.includes("/v0/events?name=error_event")) {
-                errorEvents.push(request);
                 return new Response("", { status: 202 });
             }
             // checkBalance fetches the model-stats pipe for estimated pricing.
@@ -159,7 +154,6 @@ function mockRealtimeProvider(initialMessage?: string, estimatedCost = 0) {
     return {
         fetchMock,
         tinybirdRequests,
-        errorEvents,
         get request() {
             if (!upstreamRequest) {
                 throw new Error("Expected upstream realtime request");
@@ -1390,13 +1384,13 @@ test("does not retry a partially completed realtime deduction", async () => {
         user?.packBalance ?? 0,
         8,
     );
-    // Settlement error is caught (not thrown), so the generation event IS emitted
     await waitForTinybirdRequests(session.upstream, 1);
     expect(session.upstream.tinybirdRequests).toHaveLength(1);
-    // The settlement failure should also emit an error_event
-    expect(session.upstream.errorEvents).toHaveLength(1);
-    const errorBody = await session.upstream.errorEvents[0].text();
-    expect(errorBody).toContain("settlement_api_key_reconciliation");
+    const event = (await session.upstream.tinybirdRequests[0].json()) as Record<
+        string,
+        unknown
+    >;
+    expect(event.totalPrice).toBeCloseTo(0.003553 * 0.75, 8);
 });
 
 test.each([

@@ -1,0 +1,35 @@
+{
+  "pr_number": 14693,
+  "title": "fix: preserve committed debit amounts when credit side-effects fail",
+  "author": "sharktide",
+  "url": "https://github.com/pollinations/pollinations/pull/14693",
+  "merged_at": "2026-09-15T22:05:36Z",
+  "labels": [],
+  "pr_body_excerpt": "- Preserves the actual wallet debit when subsequent API-key budget reconciliation or developer/community credits fail. Uses ordinary error logs only—no new Tinybird events, error types or caller plumbing.\n- Keeps pre-debit failures, reservation release, prices, owner exemptions and rounding unchanged. Does not retry charges or add automatic credit recovery.\n- Tests three focused real-D1 failure cases and extends the existing realtime regression to verify the recorded charge without charging twice.\n- Validation: 166 tests pass across five relevant Gen files; Gen typecheck and Biome pass. Changes only three files, with no net increase in runtime code.\n\nFixes #14679",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The ledger keeps its pollen",
+    "blurb": "A charge that made it out of the wallet now stays recorded, even if the later credit bookkeeping stumbles over a root. The hive gets one honest receipt, not a second sting.",
+    "summary": "Billing now preserves the committed wallet debit when API-key budget reconciliation or developer/community credit side-effects fail, while leaving pre-debit failures, reservation release, owner exemptions, prices, and rounding unchanged.",
+    "impact": "Users and developers get an accurately recorded single charge in these partial-failure cases, with no automatic retry or duplicate debit.",
+    "keywords": [
+      "billing",
+      "wallet",
+      "debits",
+      "credits",
+      "reconciliation",
+      "D1",
+      "realtime"
+    ],
+    "visual_concept": "Depict a cozy garden ledger station: Polli carefully stamps a completed pollen debit into a glowing ledger while a few smaller side-accounting tubes gently sputter nearby, making the distinction between the committed charge and optional follow-up credits clear. A CRT monitor robot can hold the receipt and a code-plant garden reinforces that the main transaction is safely rooted; use a single clear receipt rather than duplicate coins to represent no double charge.",
+    "image_prompt": "Cozy pixel art scene in a warm garden bookkeeping nook: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; wearing a tiny accountant visor, she stamps one glowing pollen receipt into a sturdy ledger while a friendly CRT-monitor robot holds it beside rooted code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes; subtle pixel-font text reads \"ONE TRUE DEBIT\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-15/PR-14693.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden bookkeeping nook: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; wearing a tiny accountant visor, she stamps one glowing pollen receipt into a sturdy ledger while a friendly CRT-monitor robot holds it beside rooted code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes; subtle pixel-font text reads \"ONE TRUE DEBIT\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-15T22:06:54.906152+00:00"
+}

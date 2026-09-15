@@ -342,7 +342,7 @@ async function generateTextResponse(
 
     try {
         const capabilityError = textCapabilityError(
-            c.var.model.definition,
+            c.var.model?.definition,
             requestData,
         );
         if (capabilityError)

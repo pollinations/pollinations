@@ -1,0 +1,35 @@
+{
+  "pr_number": 14936,
+  "title": "fix(sdk): handle browser auth failures",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14936",
+  "merged_at": "2026-09-15T22:48:13Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fix browser storage and navigation errors that can crash the auth provider or leave login stuck.\n- Restore saved keys without a startup request. Keep login usable when saving a new key fails; document the storage and logout limitations.\n- Keep existing OAuth + PKCE and account-hook error handling. No startup checks or automatic retries.\n- Simplify auth docs and comments. Add SDK tests to CI; 92 tests pass, including shuffled order, plus type-check, build and formatting. Related #12320.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Login keeps buzzing",
+    "blurb": "Browser storage occasionally has opinions. The SDK now keeps saved keys and login flows usable when storage or navigation refuses to cooperate.",
+    "summary": "Hardened the React SDK auth provider against browser storage and navigation failures: saved keys now restore without a startup request, and a failed key save no longer leaves login stuck, while existing OAuth + PKCE handling remains intact.",
+    "impact": "Browser-based SDK apps gain more reliable login recovery, with previously saved keys available immediately and new-key login still usable even when local storage cannot save it.",
+    "keywords": [
+      "sdk",
+      "react",
+      "authentication",
+      "browser",
+      "oauth",
+      "storage",
+      "pkce"
+    ],
+    "visual_concept": "Depict the React SDK authentication flow as a cozy garden gate beside a retro browser terminal: a saved key is safely tucked into a small seed vault while a few harmless storage-error pixels bounce away. Polli, wearing a tiny locksmith tool belt, keeps the gate open for a user-shaped glow; the monitor robot can hold an OAuth + PKCE map, with code-plants and flowers showing that the login path continues growing despite a fussy browser.",
+    "image_prompt": "A cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black oval eyes, bright pink rectangular cheek blushes, light blue rounded wings, and a tiny locksmith tool belt, carefully opening a garden gate labeled \"LOGIN\" beside a warm retro browser terminal; a small seed vault holds a glowing saved key while the eager CRT monitor robot holds an \"OAUTH + PKCE\" map and a few tiny error pixels harmlessly drift away. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, code-plants and flowers, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-15/PR-14936.jpg",
+    "prompt": "A cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black oval eyes, bright pink rectangular cheek blushes, light blue rounded wings, and a tiny locksmith tool belt, carefully opening a garden gate labeled \"LOGIN\" beside a warm retro browser terminal; a small seed vault holds a glowing saved key while the eager CRT monitor robot holds an \"OAUTH + PKCE\" map and a few tiny error pixels harmlessly drift away. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, code-plants and flowers, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-15T22:49:20.998346+00:00"
+}

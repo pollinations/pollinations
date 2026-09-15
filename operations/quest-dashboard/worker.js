@@ -4,10 +4,12 @@
 // No build step, no secrets: D1 binds by id at the account level.
 
 // Recent feed with attribution.
+// Private Bonus rewards have no quest_id and must not appear on this board.
 const FEED_SQL = `
   SELECT r.id, r.quest_id, r.title, r.pollen_amount, r.balance_bucket,
          r.earned_at, r.claimed_at, u.github_username, u.name, u.image
     FROM rewards r JOIN user u ON u.id = r.user_id
+   WHERE r.quest_id IS NOT NULL
    ORDER BY CASE WHEN r.earned_at > 10000000000 THEN r.earned_at ELSE r.earned_at * 1000 END DESC
    LIMIT 40`;
 
@@ -17,7 +19,7 @@ const AGG_SQL = `
          SUM(CASE WHEN r.claimed_at IS NOT NULL THEN 1 ELSE 0 END) AS claimed,
          SUM(r.pollen_amount) AS pollen,
          SUM(CASE WHEN r.claimed_at IS NOT NULL THEN r.pollen_amount ELSE 0 END) AS claimed_pollen
-    FROM rewards r GROUP BY r.quest_id, r.title
+    FROM rewards r WHERE r.quest_id IS NOT NULL GROUP BY r.quest_id, r.title
    ORDER BY claimed_pollen DESC, pollen DESC, earned DESC`;
 
 const TOT_SQL = `
@@ -25,12 +27,13 @@ const TOT_SQL = `
          SUM(CASE WHEN claimed_at IS NOT NULL THEN 1 ELSE 0 END) AS total_claimed,
          SUM(pollen_amount) AS total_pollen,
          COUNT(DISTINCT user_id) AS users
-    FROM rewards`;
+    FROM rewards WHERE quest_id IS NOT NULL`;
 
 const TOP_SQL = `
   SELECT u.github_username, u.name, u.image, COUNT(*) AS quests,
          SUM(r.pollen_amount) AS pollen
     FROM rewards r JOIN user u ON u.id = r.user_id
+   WHERE r.quest_id IS NOT NULL
    GROUP BY r.user_id ORDER BY pollen DESC LIMIT 8`;
 
 const ASSET_PATHS = new Set([

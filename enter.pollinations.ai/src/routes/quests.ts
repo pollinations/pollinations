@@ -1,14 +1,15 @@
 import { claimReward } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { describeRoute, resolver } from "hono-openapi";
+import { describeRoute, resolver, validator } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import { hashGiftCode } from "../services/gift-rewards.ts";
 import { checkQuestsForUser } from "../services/quest-checker.ts";
 import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
 import { listQuestCards } from "../services/quests/index.ts";
@@ -21,6 +22,12 @@ import { requireAccountPermission } from "./account-permissions.ts";
 // Bumped to v29: the Discord quest links to account connection and the server.
 const CACHE_KEY = "quests:catalog:v29";
 const CACHE_TTL = 60;
+const giftCodeSchema = z.object({
+    code: z
+        .string()
+        .trim()
+        .regex(/^[a-f0-9]{32}$/i),
+});
 const QUEST_CHECK_THROTTLE_SECONDS = 60;
 
 export type QuestCatalogResponse = {
@@ -90,6 +97,37 @@ function formatRewardTimestamp(value: Date | number | string): string {
 }
 
 export const questsRoutes = new Hono<Env>()
+    .post(
+        "/gifts/preview",
+        describeRoute({ hide: true }),
+        auth({ allowApiKey: false, allowSessionCookie: true }),
+        validator("json", giftCodeSchema),
+        async (c) => {
+            c.var.auth.requireUser();
+            const hash = await hashGiftCode(c.req.valid("json").code);
+            const [reward] = await drizzle(c.env.DB)
+                .select({
+                    id: rewardsTable.id,
+                    title: rewardsTable.title,
+                    pollenAmount: rewardsTable.pollenAmount,
+                })
+                .from(rewardsTable)
+                .where(
+                    and(
+                        eq(rewardsTable.id, hash),
+                        isNull(rewardsTable.userId),
+                        isNull(rewardsTable.claimedAt),
+                    ),
+                )
+                .limit(1);
+            if (!reward)
+                throw new HTTPException(404, {
+                    message: "Gift code is invalid or no longer available",
+                });
+            c.header("Cache-Control", "no-store");
+            return c.json(reward);
+        },
+    )
     .get(
         "/catalog",
         describeRoute({
@@ -260,6 +298,10 @@ export const questsRoutes = new Hono<Env>()
             },
         }),
         auth({ allowApiKey: true, allowSessionCookie: true }),
+        validator(
+            "json",
+            z.object({ code: giftCodeSchema.shape.code.optional() }).optional(),
+        ),
         async (c) => {
             await c.var.auth.requireAuthorization({
                 message: "Authentication required to claim quest rewards",
@@ -274,7 +316,12 @@ export const questsRoutes = new Hono<Env>()
             const rewardId = c.req.param("rewardId");
             const db = drizzle(c.env.DB, { schema });
 
-            const result = await claimReward(db, { rewardId, userId: user.id });
+            const code = c.req.valid("json")?.code;
+            const result = await claimReward(db, {
+                rewardId,
+                userId: user.id,
+                giftCodeHash: code ? await hashGiftCode(code) : undefined,
+            });
             if (!result.reward) {
                 throw new HTTPException(404, {
                     message: "Reward not found",

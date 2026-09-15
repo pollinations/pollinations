@@ -73,7 +73,9 @@ If you publish an externally hosted community model, you are responsible for the
 
 Fees are per plan/order/invoice; currency is by default USD. Pollen purchases, including auto top-up charges, include a service fee shown before payment.
 
-**Pollen.** "Pollen" is an in-service credit used only to pay for Pollinations API usage. Pollen is not legal tender, e-money, cryptocurrency, a deposit, a bank account balance, or stored value outside the Service. Pollen is not transferable, withdrawable, or redeemable for cash except where required by law or expressly approved by us as a refund under these Terms.
+**Pollen.** "Pollen" is an in-service credit used only to pay for Pollinations API usage. Pollen is not legal tender, e-money, cryptocurrency, a deposit, a bank account balance, or stored value outside the Service. Once credited to a wallet, Pollen is not transferable, withdrawable, or redeemable for cash except where required by law or expressly approved by us as a refund under these Terms.
+
+**Gift codes.** Signed-in users can buy a single-use Pollen gift code and share it before redemption. The code is shown after payment and on the Stripe invoice. Anyone with the code can sign in and claim its full value as Paid Pollen; it cannot be moved to another wallet after claiming. Unclaimed codes do not expire; claimed Pollen follows the wallet-inactivity rule below. Keep gift codes private.
 
 **Balances.** Your wallet may include:
 

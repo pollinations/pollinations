@@ -6,6 +6,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import type Stripe from "stripe";
 import type { Env } from "../env.ts";
+import { recordGiftReward } from "../services/gift-rewards.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 import {
     creditAutoTopUpInvoice,
@@ -471,6 +472,13 @@ const handleCheckoutSessionCompleted = async (
     }
 
     const userId = metadata.userId;
+    if (metadata.giftCode) {
+        await recordGiftReward(env.DB, session);
+        return {
+            success: true,
+            message: "Gift reward recorded",
+        };
+    }
     // Localized presentment subtotal (Adaptive Pricing), used only to confirm
     // the session was actually paid — never as a credit source. Pollen credited
     // is the pack's fixed USD amount, looked up from packKey below.

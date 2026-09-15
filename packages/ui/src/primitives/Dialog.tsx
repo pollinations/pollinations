@@ -1,6 +1,6 @@
 import { Dialog as ArkDialog } from "@ark-ui/react/dialog";
 import { Portal } from "@ark-ui/react/portal";
-import type { FC, ReactNode } from "react";
+import type { ComponentPropsWithoutRef, FC, ReactNode } from "react";
 import { useRef } from "react";
 import { cn } from "../lib/cn.ts";
 
@@ -97,3 +97,70 @@ export const Dialog: FC<DialogProps> = ({
 };
 
 export const DialogTitle = ArkDialog.Title;
+export const DialogDescription = ArkDialog.Description;
+
+export type DialogHeaderProps = ComponentPropsWithoutRef<"div"> & {
+    title?: ReactNode;
+    description?: ReactNode;
+    titleClassName?: string;
+    descriptionClassName?: string;
+};
+
+export const DialogHeader: FC<DialogHeaderProps> = ({
+    title,
+    description,
+    children,
+    className,
+    titleClassName,
+    descriptionClassName,
+    ...props
+}) => {
+    return (
+        <div
+            className={cn("polli:shrink-0 polli:p-6 polli:pb-4", className)}
+            {...props}
+        >
+            {title && (
+                <DialogTitle
+                    className={cn(
+                        "polli:font-subheading polli:text-lg polli:font-semibold polli:text-theme-text-strong",
+                        titleClassName,
+                    )}
+                >
+                    {title}
+                </DialogTitle>
+            )}
+            {description && (
+                <DialogDescription
+                    className={cn(
+                        "polli:mt-1 polli:text-sm polli:text-theme-text-muted",
+                        descriptionClassName,
+                    )}
+                >
+                    {description}
+                </DialogDescription>
+            )}
+            {children}
+        </div>
+    );
+};
+
+export type DialogFooterProps = ComponentPropsWithoutRef<"div">;
+
+export const DialogFooter: FC<DialogFooterProps> = ({
+    children,
+    className,
+    ...props
+}) => {
+    return (
+        <div
+            className={cn(
+                "polli:flex polli:shrink-0 polli:items-center polli:justify-end polli:gap-2 polli:p-6 polli:pt-4",
+                className,
+            )}
+            {...props}
+        >
+            {children}
+        </div>
+    );
+};

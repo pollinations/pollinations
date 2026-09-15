@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { AccountMenu } from "../compositions/AccountMenu.tsx";
+import { DialogFooter, DialogHeader } from "./Dialog.tsx";
 import { DropdownItem } from "./DropdownItem.tsx";
 import { IconButton } from "./IconButton.tsx";
 import { TableHeaderCell } from "./Table.tsx";
@@ -59,5 +60,31 @@ describe("shared control accessibility", () => {
         );
 
         expect(markup).toContain('aria-sort="descending"');
+    });
+
+    it("renders dialog header and footer compositions", () => {
+        const headerMarkup = renderToStaticMarkup(
+            <DialogHeader
+                title="Model Details"
+                description="Configure endpoint settings."
+                data-testid="dialog-header"
+            />,
+        );
+        expect(headerMarkup).toContain("Model Details");
+        expect(headerMarkup).toContain("Configure endpoint settings.");
+        expect(headerMarkup).toContain('data-testid="dialog-header"');
+
+        const headerNoDescMarkup = renderToStaticMarkup(
+            <DialogHeader title="Title Only" />,
+        );
+        expect(headerNoDescMarkup).toContain("Title Only");
+
+        const footerMarkup = renderToStaticMarkup(
+            <DialogFooter data-testid="dialog-footer">
+                <button type="button">Cancel</button>
+            </DialogFooter>,
+        );
+        expect(footerMarkup).toContain("Cancel");
+        expect(footerMarkup).toContain('data-testid="dialog-footer"');
     });
 });

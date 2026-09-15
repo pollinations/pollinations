@@ -1,0 +1,34 @@
+{
+  "pr_number": 14895,
+  "title": "fix: include OpenRouter credit fees in registry costs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14895",
+  "merged_at": "2026-09-15T00:06:15Z",
+  "labels": [],
+  "pr_body_excerpt": "- Includes OpenRouter's 5.5% credit-purchase fee directly in registry costs as `baseRate * 1.055`, covering primary/fallback entries, cost variants, and search/cache charges. [Fee source](https://openrouter.ai/pricing).\n- Keeps `priceMultiplier` unchanged; customer prices derive from fee-inclusive costs. Preserves the original quote during fallback and excludes the fee from direct-provider costs.\n- Documents the registry rule in the model-management skill. No provider-wide cost transformation or routing changes.\n- Updates pricing assertions and the intentional pricing snapshot; all 528 changed snapshot values increase by exactly 5.5%.\n- Validation: full Enter and Gen suites, lint/build, and the required aggregate check passed in [CI](https://github.com/pollinations/pollinations/actions/runs/34911036052). Also passed 138 focused local tests. No deployment or live billing verification of this change.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The ledger found 5.5%",
+    "blurb": "The model registry now carries OpenRouter’s credit-purchase fee in its cost math, rather than leaving a tiny accounting bee outside the hive. Quotes remain consistent through fallbacks, variants, search, and cache paths.",
+    "summary": "Updated OpenRouter registry costs to use `baseRate * 1.055` for primary and fallback models, cost variants, and search/cache charges, while retaining the original quote during fallback and leaving direct-provider costs unchanged.",
+    "impact": "Customer prices derived from OpenRouter-backed registry entries now consistently reflect the 5.5% credit-purchase fee across 528 validated pricing snapshots, while direct-provider pricing remains as before.",
+    "keywords": [
+      "OpenRouter",
+      "pricing",
+      "model registry",
+      "cost variants",
+      "fallbacks",
+      "billing"
+    ],
+    "visual_concept": "A cozy garden accounting scene: Polli audits a glowing model-price ledger while a small 5.5% pollen stamp is carefully added to OpenRouter-tagged entries. Branching code-vines represent primary and fallback routes reconnecting to the same original quote, with a retro terminal and flowers making the bookkeeping feel friendly rather than ominous.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny accountant glasses and carefully stamping “5.5%” onto a glowing OpenRouter model-cost ledger; branching code-vines for primary and fallback entries lead back to one unchanged quote, beside a warm CRT terminal and flower pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, subtle pixel-font text: “COSTS MATCH”, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-15/PR-14895.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny accountant glasses and carefully stamping “5.5%” onto a glowing OpenRouter model-cost ledger; branching code-vines for primary and fallback entries lead back to one unchanged quote, beside a warm CRT terminal and flower pots. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, subtle pixel-font text: “COSTS MATCH”, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-15T00:07:16.599222+00:00"
+}

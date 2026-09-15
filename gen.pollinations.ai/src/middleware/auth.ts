@@ -23,6 +23,8 @@ type ModelVariables = {
 
 export type AuthVariables = {
     auth: {
+        /** Verified x402 authorization and rate-limit identity, not a user. */
+        paymentPayer?: string;
         user?: AuthUser;
         apiKey?: AuthenticatedApiKey;
         requireUser: () => AuthUser;
@@ -32,7 +34,8 @@ export type AuthVariables = {
 };
 
 export type GenerationAuthSnapshot = {
-    user: Pick<AuthUser, "id" | "tier">;
+    paymentPayer?: string;
+    user?: Pick<AuthUser, "id" | "tier">;
     apiKey?: Omit<AuthenticatedApiKey, "rawKey">;
     agentRun?: AgentRunClaims;
 };
@@ -51,6 +54,7 @@ function installAuth(
         user?: AuthUser;
         apiKey?: AuthenticatedApiKey;
         agentRun?: AgentRunClaims;
+        paymentPayer?: string;
     },
 ): void {
     const { user, agentRun } = authResult;
@@ -96,6 +100,9 @@ function installAuth(
         requireUser,
         requireModelAccess,
         ...(agentRun && { agentRun }),
+        ...(authResult.paymentPayer && {
+            paymentPayer: authResult.paymentPayer,
+        }),
     });
 }
 
@@ -129,6 +136,7 @@ export const authFromSnapshot = (snapshot: GenerationAuthSnapshot) =>
             user: snapshot.user as AuthUser,
             apiKey: snapshot.apiKey as AuthenticatedApiKey | undefined,
             agentRun: snapshot.agentRun,
+            paymentPayer: snapshot.paymentPayer,
         });
         await next();
     });

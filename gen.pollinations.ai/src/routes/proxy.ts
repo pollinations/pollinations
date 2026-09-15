@@ -94,6 +94,7 @@ import {
     apiKeyBudgetReservation,
     generationAccess,
 } from "@/utils/generation-access.ts";
+import { x402Payment } from "@/x402/payment.ts";
 import {
     type GenerationModelEntry,
     getGenerationModelRegistry,
@@ -207,7 +208,7 @@ const chatCompletionHandlers = factory.createHandlers(
     textBodyLimit,
     validator("json", CreateChatCompletionRequestSchema),
     mediaResponses("chat/completions"),
-    resolveModel("generate.text"),
+    every(resolveModel("generate.text"), x402Payment()),
     every(textBalanceNotice, track("generate.text")),
     textCache,
     every(generationAccess, deduplicateGeneration),
@@ -671,6 +672,7 @@ export const proxyRoutes = new Hono<Env>()
                 "Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.",
                 "",
                 "Successful text JSON responses contain usage. Text streams contain a usage chunk before `[DONE]`; missing text-provider usage fails the response.",
+                "Anonymous text-only calls can pay per request with x402, including streaming. Send a non-empty `Idempotency-Key` and an explicit `max_tokens` cap from 1 to 4096.",
                 "",
                 "Metadata is passed unchanged to endpoint agents; see the agent’s documentation for supported keys.",
                 "",
@@ -814,7 +816,7 @@ export const proxyRoutes = new Hono<Env>()
         }),
         textBodyLimit,
         validator("json", CreateChatCompletionRequestSchema),
-        resolveModel("generate.text"),
+        every(resolveModel("generate.text"), x402Payment()),
         every(textBalanceNotice, track("generate.text")),
         textCache,
         generationAccess,
@@ -915,7 +917,7 @@ export const proxyRoutes = new Hono<Env>()
             }),
         ),
         validator("query", GenerateImageRequestQueryParamsSchema),
-        resolveModel("generate.image"),
+        every(resolveModel("generate.image"), x402Payment()),
         ...imageVideoHandlers,
     )
     .get(
@@ -1139,7 +1141,7 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         validator("json", CreateImageRequestSchema),
-        resolveModel("generate.image"),
+        every(resolveModel("generate.image"), x402Payment()),
         track("generate.image"),
         every(prepareOpenAIImageGeneration, formatOpenAIImageResponse),
         prepareGenerationRequest,

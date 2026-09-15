@@ -22,6 +22,7 @@ import {
     mediaResponseHeaders,
 } from "@shared/utils/api-docs.ts";
 import { type Context, Hono } from "hono";
+import { every } from "hono/combine";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
@@ -43,6 +44,7 @@ import {
     apiKeyBudgetReservation,
     generationAccess,
 } from "@/utils/generation-access.ts";
+import { x402Payment } from "@/x402/payment.ts";
 import {
     callCommunitySpeechEndpoint,
     callCommunityTranscriptionEndpoint,
@@ -63,7 +65,7 @@ import {
     UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
 } from "./transcription-response.ts";
 
-const CreateSpeechRequestSchema = z
+export const CreateSpeechRequestSchema = z
     .object({
         model: z.string().optional(),
         input: z.string().min(1).max(10000).meta({
@@ -3458,9 +3460,12 @@ export const audioRoutes = new Hono<Env>()
                 ...errorResponseDescriptions(400, 401, 402, 403, 500),
             },
         }),
-        resolveModel("generate.audio", {
-            supportedEndpoint: "/v1/audio/speech",
-        }),
+        every(
+            resolveModel("generate.audio", {
+                supportedEndpoint: "/v1/audio/speech",
+            }),
+            x402Payment(parseSpeechRequest),
+        ),
         track("generate.audio"),
         prepareGenerationRequest,
         audioCache,

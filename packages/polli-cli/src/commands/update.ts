@@ -36,10 +36,7 @@ const npmGlobalPrefix = (): string | undefined => {
 export const updateCommand = new Command("update")
     .description("Update the Pollinations CLI to the latest version")
     .action(async () => {
-        const kind = detectInstall(
-            process.argv[1] ?? "",
-            npmGlobalPrefix(),
-        );
+        const kind = detectInstall(process.argv[1] ?? "", npmGlobalPrefix());
 
         if (kind === "npx") {
             printResult({

@@ -43,10 +43,6 @@ import {
     getImageModelIds,
     getVideoModelIds,
 } from "@shared/registry/image.ts";
-import {
-    type ModelHealth,
-    modelHealthFromCounts,
-} from "@shared/registry/model-health.ts";
 import { ModelInfoSchema } from "@shared/registry/model-info.ts";
 import {
     DEFAULT_3D_MODEL,
@@ -88,7 +84,7 @@ import {
     Generate3dRequestQueryParamsSchema,
 } from "@/schemas/model3d.ts";
 import {
-    type ModelListQueryParams,
+    ModelListHeadersSchema,
     ModelListQueryParamsSchema,
 } from "@/schemas/models.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
@@ -113,10 +109,7 @@ import {
     simpleAudioQuerySchema,
     textBodyLimit,
 } from "./generation-handlers.ts";
-import {
-    getModelHealthSnapshot,
-    ModelHealthRowSchema,
-} from "./model-status.ts";
+import { filterCatalogEntries } from "./model-catalog.ts";
 import { handleRealtimeWebSocket } from "./realtime.ts";
 
 const ModelInfoListSchema = z.array(ModelInfoSchema).meta({
@@ -258,122 +251,6 @@ function hasPaidBalance(c: any): boolean | undefined {
     return (user.packBalance ?? 0) > 0;
 }
 
-const MODEL_HEALTH_WINDOW_MINUTES = 24 * 60;
-const MODEL_SOURCE_HEADER = "Pollinations-Model-Source";
-const MODEL_RELIABILITY_HEADER = "Pollinations-Model-Reliability";
-
-type CatalogEntry = { entry: GenerationModelEntry; health?: ModelHealth };
-
-function catalogFilters(c: Context<Env>) {
-    const { community, source, reliability } = c.req.valid(
-        "query" as never,
-    ) as ModelListQueryParams;
-    const headerSource = c.req.header(MODEL_SOURCE_HEADER);
-    const headerReliability = c.req.header(MODEL_RELIABILITY_HEADER);
-
-    if (
-        headerSource !== undefined &&
-        headerSource !== "official" &&
-        headerSource !== "community"
-    ) {
-        throw new HTTPException(400, {
-            message: `${MODEL_SOURCE_HEADER} must be official or community`,
-        });
-    }
-    if (
-        headerReliability !== undefined &&
-        headerReliability !== "all" &&
-        headerReliability !== "reliable"
-    ) {
-        throw new HTTPException(400, {
-            message: `${MODEL_RELIABILITY_HEADER} must be all or reliable`,
-        });
-    }
-
-    const legacySource =
-        community === undefined
-            ? undefined
-            : community === "true" || community === "1"
-              ? "community"
-              : "official";
-    const sources = new Set(
-        [source, legacySource, headerSource].filter(Boolean),
-    );
-    if (sources.size > 1) {
-        throw new HTTPException(400, {
-            message: "Conflicting model source filters",
-        });
-    }
-    if (
-        reliability !== undefined &&
-        headerReliability !== undefined &&
-        reliability !== headerReliability
-    ) {
-        throw new HTTPException(400, {
-            message: "Conflicting model reliability filters",
-        });
-    }
-
-    return {
-        source: [...sources][0] as "official" | "community" | undefined,
-        reliability: reliability ?? headerReliability,
-    };
-}
-
-async function filterCatalogEntries(
-    c: Context<Env>,
-    entries: GenerationModelEntry[],
-): Promise<CatalogEntry[]> {
-    const filters = catalogFilters(c);
-    const filtered = entries.filter(
-        (entry) =>
-            filters.source === undefined ||
-            entry.info.community === (filters.source === "community"),
-    );
-    if (filters.reliability === undefined) {
-        return filtered.map((entry) => ({ entry }));
-    }
-
-    const snapshot = await getModelHealthSnapshot(MODEL_HEALTH_WINDOW_MINUTES);
-    const checkedAt = snapshot?.checkedAt ?? null;
-    const stale = snapshot?.stale ?? true;
-    const unknown = modelHealthFromCounts(
-        0,
-        0,
-        MODEL_HEALTH_WINDOW_MINUTES,
-        checkedAt,
-        stale,
-    );
-    const healthByModel = new Map<string, ModelHealth>();
-    for (const rawRow of snapshot?.rows ?? []) {
-        const parsed = ModelHealthRowSchema.safeParse(rawRow);
-        if (!parsed.success) continue;
-        const row = parsed.data;
-        healthByModel.set(
-            `${row.model}\0${row.event_type}`,
-            modelHealthFromCounts(
-                row.status_2xx,
-                row.errors_5xx,
-                MODEL_HEALTH_WINDOW_MINUTES,
-                checkedAt,
-                stale,
-            ),
-        );
-    }
-
-    return filtered
-        .map((entry) => ({
-            entry,
-            health:
-                healthByModel.get(`${entry.id}\0${entry.eventType}`) ?? unknown,
-        }))
-        .filter(
-            ({ health }) =>
-                filters.reliability === "all" ||
-                (health.status === "on" && !health.stale),
-        );
-}
-
 // Factory for model-list endpoints. Permission filtering always happens before
 // the optional discovery-only source and reliability filters.
 const modelsListHandler = (
@@ -383,6 +260,7 @@ const modelsListHandler = (
 ) =>
     [
         validator("query", ModelListQueryParamsSchema),
+        validator("header", ModelListHeadersSchema),
         async (c: Context<Env>) => {
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
@@ -392,12 +270,7 @@ const modelsListHandler = (
                 paidBalance,
             );
             const catalog = await filterCatalogEntries(c, entries);
-            return c.json(
-                catalog.map(({ entry, health }) => ({
-                    ...entry.info,
-                    ...(health && { health }),
-                })),
-            );
+            return c.json(catalog.map((entry) => entry.info));
         },
     ] as const;
 
@@ -443,7 +316,7 @@ async function getVisibleVideoModelEntries(c: Context<Env>) {
 // /v1/models/:model (retrieve). `created` derives from the registry addedDate
 // so both endpoints return stable timestamps instead of per-request wall-clock
 // values.
-function toOpenAIModelEntry(entry: GenerationModelEntry, health?: ModelHealth) {
+function toOpenAIModelEntry(entry: GenerationModelEntry) {
     return {
         id: entry.info.name,
         object: "model" as const,
@@ -463,7 +336,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry, health?: ModelHealth) {
         }),
         pricing: entry.info.pricing,
         capabilities: entry.info.capabilities,
-        ...(health && { health }),
+        ...(entry.info.health && { health: entry.info.health }),
         supported_parameters: entry.info.supported_parameters,
         ...(entry.info.tools && { tools: entry.info.tools }),
         ...(entry.info.reasoning && { reasoning: entry.info.reasoning }),
@@ -530,6 +403,7 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         validator("query", ModelListQueryParamsSchema),
+        validator("header", ModelListHeadersSchema),
         async (c) => {
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
@@ -543,9 +417,7 @@ export const proxyRoutes = new Hono<Env>()
             );
             return c.json({
                 object: "list" as const,
-                data: modelEntries.map(({ entry, health }) =>
-                    toOpenAIModelEntry(entry, health),
-                ),
+                data: modelEntries.map(toOpenAIModelEntry),
             });
         },
     )
@@ -782,6 +654,8 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Successful text JSON responses contain usage. Text streams contain a usage chunk before `[DONE]`; missing text-provider usage fails the response.",
                 "",
+                "Metadata is passed unchanged to endpoint agents; see the agent’s documentation for supported keys.",
+                "",
                 mediaResponseDescription,
             ].join("\n"),
             responses: {
@@ -827,6 +701,8 @@ export const proxyRoutes = new Hono<Env>()
                 "Response storage, previous response IDs, conversations, background execution, and encrypted or referenced state are not supported. Direct providers may accept caller-supplied function tools; managed prompt agents ignore these definitions and use only their configured MCP tools. Completed MCP output items can be replayed as history without executing them again.",
                 "",
                 "Successful text JSON responses and terminal streaming events contain usage; missing text-provider usage fails the response.",
+                "",
+                "Metadata is passed unchanged to endpoint agents; see the agent’s documentation for supported keys.",
                 "",
                 mediaResponseDescription,
             ].join("\n"),

@@ -1,8 +1,10 @@
+import { env } from "cloudflare:test";
 import { calculateUsageBilling } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { openaiUsageToUsage } from "@shared/registry/usage-headers.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { withModelFallback } from "../../src/fallback.ts";
+import { syncTextEnvironment } from "../../src/text/environment.ts";
 import { generateTextPortkey } from "../../src/text/generateTextPortkey.js";
 
 const azureModelConfig = {
@@ -18,9 +20,99 @@ const azureModelConfig = {
 
 afterEach(() => {
     vi.restoreAllMocks();
+    syncTextEnvironment(env);
 });
 
 describe("generateTextPortkey", () => {
+    it.each([
+        429, 503,
+    ])("rescues Scout upstream %i at the primary price", async (status) => {
+        syncTextEnvironment({
+            ...env,
+            AI_GATEWAY_API_KEY: "test-vercel-key",
+        });
+        const primary = "meta/llama-4-scout" as const;
+        const fallback = "meta/llama-4-scout:openrouter:novita-bf16";
+        const routes: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const body = JSON.parse(String(init?.body));
+                if (
+                    String(input) ===
+                    "https://openrouter.ai/api/v1/chat/completions"
+                ) {
+                    expect(body.model).toBe("meta-llama/llama-4-scout");
+                    expect(body.provider.allow_fallbacks).toBe(false);
+                    const route = body.provider.only[0];
+                    routes.push(route);
+                    expect(route).toBe("novita/bf16");
+                } else {
+                    expect(String(input)).toBe(
+                        "https://ai-gateway.vercel.sh/v1/chat/completions",
+                    );
+                    expect(body.model).toBe("meta/llama-4-scout");
+                    expect(body.providerOptions).toEqual({
+                        gateway: { only: ["deepinfra"] },
+                    });
+                    expect(
+                        new Headers(init?.headers).get("Authorization"),
+                    ).toBe("Bearer test-vercel-key");
+                    routes.push("vercel-deepinfra");
+                    return Response.json(
+                        { error: { message: "Capacity exhausted" } },
+                        { status },
+                    );
+                }
+                expect(body.max_tokens).toBe(128);
+                return Response.json({
+                    model: "meta-llama/llama-4-scout",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "Red." },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    // Images are included in provider prompt_tokens.
+                    usage: {
+                        prompt_tokens: 167,
+                        completion_tokens: 3,
+                        total_tokens: 170,
+                    },
+                });
+            },
+        );
+        const { result, candidate, index } = await withModelFallback(
+            [primary, ...TEXT_SERVICES[primary].fallbacks].map((id) => ({
+                id,
+                definition: TEXT_SERVICES[id as keyof typeof TEXT_SERVICES],
+            })),
+            ({ id }) =>
+                generateTextPortkey(
+                    [{ role: "user", content: "Name the color." }],
+                    { model: id, max_tokens: 128 },
+                ),
+        );
+        expect(routes).toEqual(["vercel-deepinfra", "novita/bf16"]);
+        expect(candidate.id).toBe(fallback);
+        expect(index).toBe(1);
+        expect(result.choices?.[0]?.message?.content).toBe("Red.");
+        const billing = calculateUsageBilling({
+            model: primary,
+            usage: openaiUsageToUsage(
+                result.usage as Parameters<typeof openaiUsageToUsage>[0],
+            ),
+            servedBy: TEXT_SERVICES[fallback],
+            quotedBy: TEXT_SERVICES[primary],
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(
+            ((167 * 0.18 + 3 * 0.59) / 1_000_000) * 1.055,
+            12,
+        );
+        // Customer charges use the ledger's eight-decimal precision.
+        expect(billing.price.totalPrice).toBe(0.0000176);
+    });
+
     it("falls back from East US to Sweden Grok and bills image and reasoning usage", async () => {
         const hosts: string[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(

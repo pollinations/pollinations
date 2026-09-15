@@ -24,16 +24,28 @@ returns the existing complete catalog without a health lookup.
 | `reliability` | `all`, `reliable` | Add health to every result, or keep only results with status `on` |
 
 `community=true|false|1|0` remains available as a legacy source filter.
-Conflicting or invalid filters return **400 Bad Request**. Source, access, and
+Query filters override connection-wide headers; `source` overrides `community`.
+Invalid filter values return **400 Bad Request**. Source, access, and
 reliability filters combine with AND semantics. Reliability never grants or
 removes permission to generate with a model.
 
 Health uses the last 24 hours of completed requests. `success_rate` is
 `2xx / (2xx + 5xx)`, so successful fallback rescues count as successes while
-caller-side 4xx responses are excluded. `sample_size`, `window_minutes`,
+final 4xx responses are excluded. This is the gateway's final-response metric,
+not the health of an individual upstream provider. `sample_size`, `window_minutes`,
 `checked_at`, and `stale` disclose confidence and freshness. Missing or small
 samples are `unknown`; alpha/preview status remains a separate field. Stale or
 unknown models are excluded by `reliability=reliable`.
+
+`health` is an optional Pollinations extension on every list endpoint, including
+`/v1/models`. It contains only `status`, `success_rate`, `sample_size`,
+`window_minutes`, `checked_at`, and `stale`. At least 10 measured requests and
+less than 5% failures are required for status `on`. No data is represented by a
+null success rate, not zero or perfect health.
+
+Detailed counters and latency statistics remain separate at `/v1/models/status`;
+`/v1/models/status/routes` breaks down individual primary and fallback attempts.
+Neither diagnostic payload is embedded in model lists.
 
 ```bash
 curl 'https://gen.pollinations.ai/v1/models?source=official&reliability=reliable'

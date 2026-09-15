@@ -3,19 +3,19 @@ import {
     SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { modelHealthFromCounts } from "@shared/registry/model-health.ts";
 import {
     RESTRICTED_TEXT_TEST_MODEL,
     test,
 } from "@shared/test/fixtures/index.ts";
 import { afterEach, expect, vi } from "vitest";
-import worker from "../src/index.ts";
-import { resetModelHealthCache } from "../src/routes/model-status.ts";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
     return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
 }
 
 async function fetchWorkerWithMock(path: string, init: RequestInit = {}) {
+    const { default: worker } = await import("../src/index.ts");
     const context = createExecutionContext();
     const response = await worker.fetch(
         new Request(`https://gen.pollinations.ai${path}`, init),
@@ -27,8 +27,8 @@ async function fetchWorkerWithMock(path: string, init: RequestInit = {}) {
 }
 
 afterEach(() => {
-    resetModelHealthCache();
     vi.restoreAllMocks();
+    vi.resetModules();
 });
 
 function healthRow(model: string, status_2xx: number, errors_5xx: number) {
@@ -37,7 +37,7 @@ function healthRow(model: string, status_2xx: number, errors_5xx: number) {
         event_type: "generate.text",
         provider: "test",
         model_used: model,
-        total_requests: status_2xx + errors_5xx,
+        total_requests: status_2xx + errors_5xx + 50,
         status_2xx,
         errors_4xx: 50,
         errors_5xx,
@@ -127,7 +127,7 @@ test("retrieve matches the list entry exactly (shared mapper)", async () => {
 });
 
 test("adds measured health and filters reliable models on demand", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
         Response.json({
             data: [
                 healthRow("openai/gpt-5-nano", 98, 2),
@@ -141,6 +141,7 @@ test("adds measured health and filters reliable models on demand", async () => {
         data: { id: string; health?: unknown }[];
     };
     expect(unfilteredBody.data[0]).not.toHaveProperty("health");
+    expect(fetchSpy).not.toHaveBeenCalled();
 
     const withHealth = await fetchWorkerWithMock("/v1/models?reliability=all");
     const withHealthBody = (await withHealth.json()) as {
@@ -222,19 +223,77 @@ test("reports unknown health when monitoring is unavailable", async () => {
     });
 });
 
-test("rejects invalid or conflicting discovery filters", async () => {
+test("rejects invalid discovery filters", async () => {
     const responses = await Promise.all([
         fetchWorker("/models?source=other"),
-        fetchWorker("/models?source=official&community=true"),
-        fetchWorker("/models?reliability=all", {
-            headers: { "Pollinations-Model-Reliability": "reliable" },
-        }),
+        fetchWorker("/models?reliability=other"),
         fetchWorker("/models", {
             headers: { "Pollinations-Model-Source": "other" },
         }),
     ]);
 
     expect(responses.every(({ status }) => status === 400)).toBe(true);
+});
+
+test("applies compact health consistently across every catalog", async () => {
+    const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValue(Response.json({ data: [] }));
+    for (const path of [
+        "/models",
+        "/v1/models",
+        "/text/models",
+        "/image/models",
+        "/video/models",
+        "/audio/models",
+        "/embeddings/models",
+        "/3d/models",
+    ]) {
+        const response = await fetchWorkerWithMock(
+            `${path}?reliability=all&source=official&community=true`,
+            {
+                headers: {
+                    "Pollinations-Model-Source": "community",
+                    "Pollinations-Model-Reliability": "reliable",
+                },
+            },
+        );
+        expect(response.status, path).toBe(200);
+        const body = (await response.json()) as
+            | { data: Record<string, unknown>[] }
+            | Record<string, unknown>[];
+        const models = Array.isArray(body) ? body : body.data;
+        expect(models.length, path).toBeGreaterThan(0);
+        for (const model of models) {
+            expect(model.community, path).toBe(false);
+            expect(model.health, path).toEqual({
+                status: "unknown",
+                success_rate: null,
+                sample_size: 0,
+                window_minutes: 1440,
+                checked_at: expect.any(String),
+                stale: false,
+            });
+        }
+    }
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+});
+
+test("requires enough samples and respects reliability boundaries", () => {
+    for (const [successes, failures, status] of [
+        [0, 0, "unknown"],
+        [9, 0, "unknown"],
+        [10, 0, "on"],
+        [96, 4, "on"],
+        [95, 5, "degraded"],
+        [81, 19, "degraded"],
+        [80, 20, "off"],
+    ] as const) {
+        expect(
+            modelHealthFromCounts(successes, failures, 1440, null, false)
+                .status,
+        ).toBe(status);
+    }
 });
 
 test("exposes supported Chat parameters across rich listings", async () => {

@@ -11,7 +11,7 @@ export const ModelHealthSchema = z
     })
     .meta({
         description:
-            "Recent final-response reliability. Caller-side 4xx errors are excluded; successful fallback rescues count as successes.",
+            "Recent gateway final-response reliability. Final 4xx responses are excluded; successful fallback rescues count as successes. Not individual upstream health.",
     });
 
 export type ModelHealth = z.infer<typeof ModelHealthSchema>;

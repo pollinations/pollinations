@@ -53,7 +53,6 @@ import {
     PeriodPicker,
     type PeriodSelection,
     PlusIcon,
-    Prose,
     ReasoningIcon,
     ScrollArea,
     SearchIcon,
@@ -89,6 +88,7 @@ import {
     ModalityDot,
     ModalityTab,
 } from "@pollinations/ui/gen";
+import { Prose } from "@pollinations/ui/markdown";
 import {
     formatPollen,
     PaidChip,

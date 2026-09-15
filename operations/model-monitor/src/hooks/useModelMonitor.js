@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { mergeModelHealth, normalizeCatalogModel } from "../model-data.js";
+import {
+    attachRouteHealth,
+    mergeModelHealth,
+    normalizeCatalogModel,
+    rollupRows,
+} from "../model-data.js";
 
-const MODEL_HEALTH_URL = "https://gen.pollinations.ai/v1/models/status";
+const MODEL_ROUTE_HEALTH_URL =
+    "https://gen.pollinations.ai/v1/models/status/routes";
 const MODEL_CATALOG_URL = "https://gen.pollinations.ai/models";
 
-// Minutes parameter for the parameterized model_health pipe
+// Minutes parameter for the parameterized model_route_health pipe
 const WINDOW_MINUTES = {
     "7d": 10080,
     "24h": 1440,
@@ -26,7 +32,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
     const pollInterval =
         POLL_INTERVALS[aggregationWindow] || POLL_INTERVALS["60m"];
     const [models, setModels] = useState([]);
-    const [healthStats, setHealthStats] = useState([]);
+    const [routeStats, setRouteStats] = useState([]);
     const [lastUpdated, setLastUpdated] = useState(null);
     const [catalogError, setCatalogError] = useState(null);
     const [healthError, setHealthError] = useState(null);
@@ -62,12 +68,14 @@ export function useModelMonitor(aggregationWindow = "60m") {
         }
     }, []);
 
-    // Fetch health stats through gen.pollinations.ai, which caches Tinybird.
-    const fetchHealthStats = useCallback(async () => {
+    // One request covers the whole page: model_route_health returns a rollup
+    // row per model alongside the routes that make it up, so the headline and
+    // its breakdown can never disagree about the same window.
+    const fetchRouteStats = useCallback(async () => {
         try {
             const minutes =
                 WINDOW_MINUTES[aggregationWindow] || WINDOW_MINUTES["60m"];
-            const url = `${MODEL_HEALTH_URL}?minutes=${minutes}`;
+            const url = `${MODEL_ROUTE_HEALTH_URL}?minutes=${minutes}`;
             const response = await fetch(url);
 
             if (!response.ok) {
@@ -82,7 +90,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
             }
 
             const data = await response.json();
-            setHealthStats(data.data || []);
+            setRouteStats(data.data || []);
             setLastUpdated(new Date(sourceTimestamp));
             setHealthError(
                 response.headers.get("X-Model-Status-Stale") === "true"
@@ -90,20 +98,27 @@ export function useModelMonitor(aggregationWindow = "60m") {
                     : null,
             );
         } catch (err) {
-            console.error("Failed to fetch health stats:", err);
+            console.error("Failed to fetch model health stats:", err);
             setHealthError("Failed to fetch health stats");
         }
     }, [aggregationWindow]);
 
-    const allModels = useMemo(
-        () => mergeModelHealth(models, healthStats, endpointStatus.catalog),
-        [models, healthStats, endpointStatus.catalog],
-    );
+    const allModels = useMemo(() => {
+        // The rollup rows carry the same shape model_health used to, so the
+        // identity and catalog-anomaly rules are unchanged; only the arithmetic
+        // behind each headline moved into the pipe.
+        const withHealth = mergeModelHealth(
+            models,
+            rollupRows(routeStats),
+            endpointStatus.catalog,
+        );
+        return attachRouteHealth(withHealth, routeStats);
+    }, [models, routeStats, endpointStatus.catalog]);
 
     const refresh = useCallback(() => {
         fetchModels();
-        fetchHealthStats();
-    }, [fetchModels, fetchHealthStats]);
+        fetchRouteStats();
+    }, [fetchModels, fetchRouteStats]);
 
     useEffect(() => {
         refresh();

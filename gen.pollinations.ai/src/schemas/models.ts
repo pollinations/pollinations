@@ -16,3 +16,11 @@ export const ModelListQueryParamsSchema = z.object({
 });
 
 export type ModelListQueryParams = z.infer<typeof ModelListQueryParamsSchema>;
+
+// Reuse the query enums for header validation and OpenAPI documentation.
+export const ModelListHeadersSchema = z.object({
+    "pollinations-model-source": ModelListQueryParamsSchema.shape.source,
+    "pollinations-model-reliability":
+        ModelListQueryParamsSchema.shape.reliability,
+});
+export type ModelListHeaders = z.infer<typeof ModelListHeadersSchema>;

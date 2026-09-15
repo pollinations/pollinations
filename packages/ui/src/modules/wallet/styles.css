@@ -23,15 +23,6 @@
     --polli-color-tier-deep: oklch(0.87 0.10 152);
 }
 
-@theme inline {
-    --color-paid-pale: var(--polli-color-paid-pale);
-    --color-paid-soft: var(--polli-color-paid-soft);
-    --color-paid-deep: var(--polli-color-paid-deep);
-    --color-tier-pale: var(--polli-color-tier-pale);
-    --color-tier-soft: var(--polli-color-tier-soft);
-    --color-tier-deep: var(--polli-color-tier-deep);
-}
-
 .polli-wallet-chip-paid {
     background-color: var(--polli-color-paid-pale);
     color: var(--polli-color-paid-deep);

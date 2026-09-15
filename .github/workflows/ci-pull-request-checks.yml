@@ -217,12 +217,87 @@ jobs:
         if: steps.gen-files.outputs.any_changed == 'true'
         run: npm run typecheck --workspace pollinations-gen
 
-  # Carries the status-check name required by the main branch ruleset so the
-  # three jobs above gate merges without a ruleset change.
+  connect:
+    name: Build and test Connect
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check Connect and product dependencies for changes
+        id: connect-files
+        run: |
+          git diff --name-only HEAD^1 HEAD > "$RUNNER_TEMP/connect-changed-files"
+          if grep -Eq '^(operations/connect/|enter\.pollinations\.ai/|gen\.pollinations\.ai/|packages/(auth|sdk|ui)/|shared/|package(-lock)?\.json$|\.github/workflows/ci-pull-request-checks\.yml$)' "$RUNNER_TEMP/connect-changed-files"; then
+            echo "any_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "any_changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node.js
+        if: steps.connect-files.outputs.any_changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: steps.connect-files.outputs.any_changed == 'true'
+        run: npm ci
+
+      - name: Build and typecheck Connect
+        if: steps.connect-files.outputs.any_changed == 'true'
+        run: npm run build:connect
+
+      # Credential-issuing integration tests require their own scoped run.
+      # This job exercises local fixtures without production/provider secrets.
+      - name: Test Connect
+        if: steps.connect-files.outputs.any_changed == 'true'
+        working-directory: operations/connect
+        run: |
+          npm test -- --exclude test/runtime.test.ts --exclude test/local-sign-in.test.ts
+          npm test -- test/runtime.test.ts --testNamePattern='preserves real Enter error responses|opening review state preserves prepared data'
+
+      - name: Install capture browser
+        if: steps.connect-files.outputs.any_changed == 'true'
+        working-directory: operations/connect
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify real navigation and screen captures
+        if: steps.connect-files.outputs.any_changed == 'true'
+        working-directory: operations/connect
+        run: |
+          # Vite serves product source; the capture service owns disposable Workers.
+          node ../../node_modules/vite/bin/vite.js --config vite.live.config.ts > "$RUNNER_TEMP/connect-source.log" 2>&1 &
+          CONNECT_SOURCE_PID=$!
+          trap 'kill "$CONNECT_SOURCE_PID" 2>/dev/null || true' EXIT
+          for attempt in {1..60}; do
+            if ! kill -0 "$CONNECT_SOURCE_PID" 2>/dev/null; then
+              break
+            fi
+            if curl --fail --silent --output /dev/null http://localhost:4180/connect; then
+              CONNECT_CAPTURE_TEST=1 npm test -- test/runtime.test.ts --testNamePattern='cancellation.*Map edges|Device lookup and approval recovery'
+              CONNECT_CAPTURE_TEST=1 npm test -- test/captures.test.ts --testNamePattern='capture smoke covers every section|captures Device recovery without key creation'
+              exit 0
+            fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/connect-source.log"
+          echo "Connect source server did not become ready."
+          exit 1
+
+  # Carries the status-check name required by the main branch ruleset so all
+  # jobs above gate merges without a ruleset change.
   gate:
     name: Check formatting and linting
     runs-on: ubuntu-latest
-    needs: [lint, enter, gen]
+    needs: [lint, enter, gen, connect]
     if: always()
 
     steps:

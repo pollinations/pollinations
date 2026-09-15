@@ -33,6 +33,72 @@ async function capture(
 }
 
 it.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
+    "capture smoke covers every section in mobile dark and desktop light",
+    async () => {
+        const cases = [
+            ["app", "main", "consent"],
+            ["app", "topup", "topup-account-wallet"],
+            ["device", "main", "consent"],
+            ["device", "link", "sign-in"],
+            ["account", "main", "dashboard-enter-signed-out"],
+            ["account", "news", "dashboard-news"],
+            ["account", "catalog", "dashboard-catalog"],
+            ["account", "models", "dashboard-models"],
+            ["account", "keys", "dashboard-keys"],
+            ["account", "apps", "dashboard-apps"],
+            ["account", "agents", "dashboard-agents"],
+            ["account", "topup", "dashboard-enter-connected"],
+            ["account", "activity", "dashboard-activity"],
+            ["account", "quests", "dashboard-quests"],
+            ["account", "account", "dashboard-account"],
+            ["admin", "main", "dashboard-sign-in"],
+        ];
+        expect(
+            cases.map(([flow, section]) => `${flow}/${section}`).sort(),
+        ).toEqual(
+            reviewFlows.map(({ flow, section }) => `${flow}/${section}`).sort(),
+        );
+        const { startRuntime } = await import("../runtime");
+        const service = createCaptureService({
+            loadCases: async () => ({ reviewCasesForFlow }),
+            loadRuntime: async () => startRuntime,
+        });
+        try {
+            for (const [flow, section, id] of cases) {
+                const recipe = reviewCasesForFlow(flow, section).find(
+                    (item) => item.id === id,
+                );
+                expect(recipe, `${flow}/${section}/${id}`).toBeDefined();
+                // CI inspects prepared pages; it never approves consent or
+                // submits controls that create reusable credentials.
+                expect(recipe?.steps ?? []).toEqual([]);
+                expect(recipe?.action).toBeUndefined();
+                expect(recipe?.provider).toBeUndefined();
+                for (const presentation of [
+                    { theme: "dark", size: "mobile" },
+                    { theme: "light", size: "desktop" },
+                ]) {
+                    const result = await capture(
+                        service,
+                        flow,
+                        section,
+                        id,
+                        presentation,
+                    );
+                    expect(
+                        result.status,
+                        `${flow}/${section}/${id} (${presentation.size} ${presentation.theme}): ${result.status === "error" ? result.error : ""}`,
+                    ).toBe("ready");
+                }
+            }
+        } finally {
+            await service.close();
+        }
+    },
+    300_000,
+);
+
+it.runIf(process.env.CONNECT_CAPTURE_TEST === "1")(
     "captures App access declined through the real cancellation controls",
     async () => {
         const { startRuntime } = await import("../runtime");

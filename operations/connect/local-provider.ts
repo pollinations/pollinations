@@ -115,7 +115,7 @@ export function createLocalProvider() {
 :root{color-scheme:light dark;font-family:system-ui}body{margin:0;min-height:100svh;display:grid;place-items:center}main{max-width:28rem;padding:2rem}h1{font-size:1.6rem}p{line-height:1.5;opacity:.75}form{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:1.5rem}button{font:inherit;padding:.75rem 1rem;border:1px solid currentColor;border-radius:.5rem;cursor:pointer}button[value=continue]{font-weight:600}
 </style></head><body><main><h1>Local GitHub sign-in</h1>
 <p>This uses the local test account. It does not sign in to GitHub or access a real account.</p>
-<form method="post"><button name="decision" value="continue">Continue as pollinations agent</button><button name="decision" value="cancel">Cancel</button></form>
+<form method="post"><button name="decision" value="continue">Continue as ${localIdentity.login}</button><button name="decision" value="cancel">Cancel</button></form>
 </main></body></html>`,
                     {
                         headers: {
@@ -190,8 +190,10 @@ export function createLocalProvider() {
             }
             if (url.origin === "https://api.github.com") {
                 if (
-                    request.headers.get("authorization") !==
-                    `Bearer ${providerToken}`
+                    ![
+                        `Bearer ${providerToken}`,
+                        `token ${providerToken}`,
+                    ].includes(request.headers.get("authorization") ?? "")
                 )
                     return Response.json(
                         { message: "Bad credentials" },

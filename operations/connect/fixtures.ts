@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { D1Database } from "@cloudflare/workers-types";
 import { serializeSignedCookie } from "better-call";
 import { type Conditions, defaultConditions } from "./conditions-data";
+import githubProfile from "./github-profile.json";
 
 export type { Conditions } from "./conditions-data";
 
@@ -19,11 +20,11 @@ export const ADMIN_CLIENT_ID = "pk_admin_preview_only";
 export const CALLBACK_URL = "http://localhost:4180/connect-example.html";
 const SESSION_TOKEN = "connect-local-session-fixture-not-a-real-credential";
 export const localIdentity = {
-    id: 100000001,
-    login: "pollinations-agent",
-    name: "pollinations agent",
+    // Public profile imported from https://api.github.com/users/pollinationsagent.
+    // Keep the same identity in D1, local sign-in and disposable review databases.
+    ...githubProfile,
+    // GitHub does not publish this account's email; authentication remains local.
     email: "pollinations-agent@connect.test",
-    avatar_url: "/pollen-connect-preview/agent.svg",
 } as const;
 
 export async function seedFixtures(
@@ -70,7 +71,7 @@ export async function seedFixtures(
                 VALUES (?, ?, ?, ?, ?, 0.25, 'tier', ?, ?)`)
                 .bind(
                     `connect-local-${quest}`,
-                    `quest:${quest}:github:100000001`,
+                    `quest:${quest}:github:${localIdentity.id}`,
                     USER_ID,
                     quest,
                     title,
@@ -160,13 +161,14 @@ export async function syncLocalIdentity(db: D1Database) {
     const now = Math.floor(Date.now() / 1000);
     await db.batch([
         db
-            .prepare(`UPDATE user SET name = ?, email = ?, github_username = ?, image = ?
+            .prepare(`UPDATE user SET name = ?, email = ?, github_username = ?, image = ?, github_id = ?
             WHERE id = ?`)
             .bind(
                 localIdentity.name,
                 localIdentity.email,
                 localIdentity.login,
                 localIdentity.avatar_url,
+                localIdentity.id,
                 USER_ID,
             ),
         // A provider link selects the existing fixture user on a real callback.
@@ -175,15 +177,10 @@ export async function syncLocalIdentity(db: D1Database) {
             .prepare(`INSERT INTO account
             (id, provider_id, account_id, user_id, created_at, updated_at)
             SELECT 'connect-local-github-account', 'github', ?, id, ?, ?
-            FROM user WHERE id = ? AND NOT EXISTS
-                (SELECT 1 FROM account WHERE provider_id = 'github' AND account_id = ?)`)
-            .bind(
-                String(localIdentity.id),
-                now,
-                now,
-                USER_ID,
-                String(localIdentity.id),
-            ),
+            FROM user WHERE id = ?
+            ON CONFLICT(id) DO UPDATE SET
+                account_id = excluded.account_id, updated_at = excluded.updated_at`)
+            .bind(String(localIdentity.id), now, now, USER_ID),
     ]);
 }
 

@@ -170,7 +170,7 @@ export function createReviewServices() {
         },
         async integrations(request: Request): Promise<Response> {
             const url = new URL(request.url);
-            if (request.method === "GET" && setup.connections) {
+            if (request.method === "GET") {
                 if (url.pathname === "/connections")
                     return Response.json({
                         data:

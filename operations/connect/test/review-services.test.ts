@@ -7,6 +7,42 @@ import { createReviewServices } from "../review-services";
 import { parseReviewSetup, prepareReviewData } from "../review-setup";
 
 describe("local external-service review conditions", () => {
+    it("keeps app lists available by default and resets connected fixtures without accepting writes", async () => {
+        const service = createReviewServices();
+        const request = (path: string, method = "GET") =>
+            service.integrations(
+                new Request(`https://composio.internal${path}`, { method }),
+            );
+        for (const connected of [false, true, false]) {
+            if (connected) service.configure({ connections: "connected" });
+            const response = await request("/connections");
+            expect(response.status).toBe(200);
+            const { data } = await response.json();
+            expect(data).toHaveLength(connected ? 1 : 0);
+            if (connected)
+                expect(data[0]).toMatchObject({
+                    toolkit: "github",
+                    status: "ACTIVE",
+                });
+            const catalog = await request("/toolkits");
+            expect(catalog.status).toBe(200);
+            expect((await catalog.json()).data).toEqual([
+                {
+                    slug: "github",
+                    name: "GitHub",
+                    description: "Code and repositories.",
+                    logo: null,
+                },
+            ]);
+            service.configure({});
+        }
+        for (const [path, method] of [
+            ["/connections", "POST"],
+            ["/connections/connect-review-integration", "DELETE"],
+            ["/unknown", "GET"],
+        ])
+            expect((await request(path, method)).status).toBe(503);
+    });
     it("keeps credited payments and claimed rewards consistent with the wallet, including repeated preparation", async () => {
         const worker = new Miniflare({
             modules: true,

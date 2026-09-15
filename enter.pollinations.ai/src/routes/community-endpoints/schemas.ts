@@ -149,6 +149,7 @@ const ProxyCreateFieldsSchema = {
     title: EndpointFieldsSchema.title,
     description: EndpointFieldsSchema.description,
     visibility: VisibilitySchema.optional().default("private"),
+    hidden: z.boolean().optional().default(false),
     bearerToken: EndpointFieldsSchema.bearerToken,
     upstreamModel: EndpointFieldsSchema.upstreamModel,
     imagePricing: ImagePricingSchema.optional().default("request"),

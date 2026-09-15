@@ -21,7 +21,7 @@ export default defineWorkersConfig(async ({ mode }) => {
     return {
         plugins: [tsconfigPaths(), codeAgentSdk()],
         resolve: {
-            dedupe: ["zod"],
+            dedupe: ["react", "react-dom", "zod"],
             alias: [
                 { find: /^@\/(.*)$/, replacement: `${enterSrc}$1` },
                 { find: /^@shared\/(.*)$/, replacement: `${sharedSrc}$1` },

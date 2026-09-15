@@ -26,6 +26,29 @@ on:
           - monthly
 
 jobs:
+  refresh-community-history:
+    # Keep the website's complete history independent of generation/Buffer failures.
+    # Manual summary backfills do not change this archive.
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Refresh community PR history on the news branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_HISTORY_OUTPUT: ${{ runner.temp }}/community-pr-history.json
+        run: node pollinations.ai/scripts/update-community-pr-history.mjs --publish-news
+
   generate-summary:
     runs-on: ubuntu-latest
     permissions:

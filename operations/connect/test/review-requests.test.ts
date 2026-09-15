@@ -1,16 +1,109 @@
 import { once } from "node:events";
+import {
+    cp,
+    mkdtemp,
+    readFile,
+    rm,
+    symlink,
+    writeFile,
+} from "node:fs/promises";
 import type { AddressInfo } from "node:net";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
+import { createServer } from "vite";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { getDefaultErrorMessage } from "../../../shared/error";
 import {
     createReviewRequests,
     describeReviewRequest,
+    type LoadReviewErrors,
     parseReviewRequests,
 } from "../review-requests";
 
 afterEach(() => vi.useRealTimers());
 describe("local review transport", () => {
+    it("uses refreshed shared error source without replacing rules or releasing held writes", async () => {
+        const directory = await mkdtemp(
+            path.join(os.tmpdir(), "connect-error-source-"),
+        );
+        const repository = fileURLToPath(new URL("../../../", import.meta.url));
+        await cp(
+            path.join(repository, "shared"),
+            path.join(directory, "shared"),
+            { recursive: true },
+        );
+        await symlink(
+            path.join(repository, "node_modules"),
+            path.join(directory, "node_modules"),
+            "dir",
+        );
+        const vite = await createServer({
+            configFile: false,
+            root: directory,
+            logLevel: "silent",
+            server: { middlewareMode: true, watch: null },
+        });
+        const controller = new AbortController();
+        try {
+            const sourcePath = path.join(directory, "shared/error.ts");
+            const transport = createReviewRequests(
+                () =>
+                    vite.ssrLoadModule(
+                        sourcePath,
+                    ) as ReturnType<LoadReviewErrors>,
+            );
+            const rules = [
+                { path: "/api/api-keys", outcome: "unavailable" },
+                { path: "/api/api-keys", method: "POST", outcome: "pending" },
+            ] as const;
+            transport.configure(rules);
+            const held = transport.intercept(
+                new Request("http://localhost:4180/api/api-keys", {
+                    method: "POST",
+                    signal: controller.signal,
+                }),
+            );
+            let settled = false;
+            const completion = held.then(
+                () => {
+                    settled = true;
+                },
+                (error) => {
+                    settled = true;
+                    return error;
+                },
+            );
+            const request = () =>
+                new Request("http://localhost:4180/api/api-keys");
+            const first = await transport.intercept(request());
+            expect(await first?.json()).toMatchObject({
+                error: { message: getDefaultErrorMessage(503) },
+            });
+            const evidence = transport.evidence();
+            const source = await readFile(sourcePath, "utf8");
+            const updated = "Updated shared service-unavailable message.";
+            await writeFile(
+                sourcePath,
+                source.replace(getDefaultErrorMessage(503), updated),
+            );
+            vite.environments.ssr.moduleGraph.invalidateAll();
+            const second = await transport.intercept(request());
+            expect(second?.status).toBe(503);
+            expect(await second?.json()).toMatchObject({
+                error: { code: "SERVICE_UNAVAILABLE", message: updated },
+            });
+            expect(transport.evidence()).toEqual(evidence);
+            expect(settled).toBe(false);
+            controller.abort();
+            expect(await completion).toMatchObject({ name: "AbortError" });
+        } finally {
+            controller.abort();
+            await vite.close();
+            await rm(directory, { recursive: true, force: true });
+        }
+    });
     it("rejects nonlocal targets and arbitrary response bodies", () => {
         for (const path of [
             "https://example.com/api/keys",

@@ -1,4 +1,9 @@
-import { getDefaultErrorMessage, getErrorCode } from "../../shared/error.ts";
+export type LoadReviewErrors = () => Promise<
+    Pick<
+        typeof import("../../shared/error.ts"),
+        "getDefaultErrorMessage" | "getErrorCode"
+    >
+>;
 export const reviewErrorStatuses = {
     "server-error": 500,
     unavailable: 503,
@@ -44,7 +49,9 @@ export function parseReviewRequests(value: unknown): ReviewRequest[] {
 
 // Only Connect's transport knows about review conditions. Enter and Gen keep
 // their real response handling, loaders, forms and recovery behavior.
-export function createReviewRequests() {
+export function createReviewRequests(
+    loadErrors: LoadReviewErrors = () => import("../../shared/error.ts"),
+) {
     let rules: ReviewRequest[] = [];
     const consumed = new Map<string, ReviewRequest>();
     function configure(value: unknown) {
@@ -93,6 +100,9 @@ export function createReviewRequests() {
             }
             // Keep the chosen fault active until another situation is prepared.
             const status = reviewErrorStatuses[rule.outcome];
+            // The dev server loads these through Vite so edits reach the
+            // existing transport without resetting its rules or held requests.
+            const { getDefaultErrorMessage, getErrorCode } = await loadErrors();
             const message = getDefaultErrorMessage(status);
             const code = getErrorCode(status);
             // Better Auth endpoints use a flat error; Enter/Gen use the shared

@@ -2,6 +2,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createServer } from "vite";
 import type { ReviewCaseModule } from "./captures";
+import type { LoadReviewErrors } from "./review-requests";
 import { startServer } from "./server";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
@@ -53,8 +54,8 @@ const vite = await createServer({
                     )
                         return;
                     if (this.environment.name === "client") {
-                        await runtime.reload();
                         server.environments.ssr.moduleGraph.invalidateAll();
+                        await runtime.reload();
                         server.ws.send({
                             type: "custom",
                             event: "connect:source-refreshed",
@@ -70,6 +71,10 @@ const vite = await createServer({
 });
 try {
     runtime = await startServer({
+        loadReviewErrors: () =>
+            vite.ssrLoadModule(
+                path.join(repository, "shared/error.ts"),
+            ) as ReturnType<LoadReviewErrors>,
         loadReviewCases: async () =>
             (await vite.ssrLoadModule(
                 `${here}review-inventory.ts`,

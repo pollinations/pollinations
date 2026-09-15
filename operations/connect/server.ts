@@ -1,20 +1,29 @@
 import { once } from "node:events";
 import { serve } from "@hono/node-server";
 import { createCaptureService, type ReviewCaseModule } from "./captures";
+import type { LoadReviewErrors } from "./review-requests";
 import { bundleWorkers, startRuntime } from "./runtime.ts";
 import { buildSourceStyles } from "./source-styles";
 
-export async function startServer(
-    options: { loadReviewCases?: () => Promise<ReviewCaseModule> } = {},
-) {
+export async function startServer(options: {
+    loadReviewCases?: () => Promise<ReviewCaseModule>;
+    loadReviewErrors: LoadReviewErrors;
+}) {
     let scripts = await bundleWorkers();
-    const runtime = await startRuntime({ scripts });
+    const runtime = await startRuntime({
+        scripts,
+        loadReviewErrors: options.loadReviewErrors,
+    });
     let ready = Promise.resolve();
     const captures = options.loadReviewCases
         ? createCaptureService({
               loadCases: options.loadReviewCases,
-              loadRuntime: async () => (options) =>
-                  startRuntime({ ...options, scripts }),
+              loadRuntime: async () => (runtimeOptions) =>
+                  startRuntime({
+                      ...runtimeOptions,
+                      scripts,
+                      loadReviewErrors: options.loadReviewErrors,
+                  }),
           })
         : undefined;
     const server = serve({

@@ -28,7 +28,7 @@ import {
 } from "./fixtures.ts";
 import { createLocalProvider } from "./local-provider";
 import { prepareDashboardReview } from "./review-dashboard-fixtures";
-import { createReviewRequests } from "./review-requests";
+import { createReviewRequests, type LoadReviewErrors } from "./review-requests";
 import { createReviewServices } from "./review-services";
 import { parseReviewSetup, prepareReviewData } from "./review-setup";
 
@@ -150,7 +150,11 @@ export async function bundleWorkers() {
 type WorkerScripts = Awaited<ReturnType<typeof bundleWorkers>>;
 
 export async function startRuntime(
-    options: { persist?: boolean; scripts?: WorkerScripts } = {},
+    options: {
+        persist?: boolean;
+        scripts?: WorkerScripts;
+        loadReviewErrors?: LoadReviewErrors;
+    } = {},
 ) {
     const pendingBodies = new Set<(reason?: unknown) => Promise<void>>();
     function webResponse(response: WorkerResponse) {
@@ -191,7 +195,7 @@ export async function startRuntime(
     }
 
     const localProvider = createLocalProvider();
-    const reviewRequests = createReviewRequests();
+    const reviewRequests = createReviewRequests(options.loadReviewErrors);
     const reviewServices = createReviewServices();
     const scripts = options.scripts ?? (await bundleWorkers());
     // No Wrangler environment files or service deployment config are loaded.

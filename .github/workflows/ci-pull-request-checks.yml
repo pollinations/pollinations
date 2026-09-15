@@ -73,6 +73,9 @@ jobs:
             echo "✅ All files are properly formatted"
           fi
 
+      - name: Test SDK
+        run: npm test --workspace @pollinations/sdk
+
       - name: Test maintenance scripts
         run: >-
           node --test

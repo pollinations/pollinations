@@ -1,0 +1,35 @@
+{
+  "pr_number": 14855,
+  "title": "feat(ui): extract remaining website v2 components and styles",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14855",
+  "merged_at": "2026-09-15T19:37:59Z",
+  "labels": [],
+  "pr_body_excerpt": "- Extracts the remaining shared UI from #14472: chat components, headers, uploads, menus, model controls, icons, fonts and theme styles. No website pages or backend changes.\n- Moves Markdown/Prose to `@pollinations/ui/markdown` and updates both existing gallery imports.\n- Preserves the newer account-menu reuse on main. Removes duplicated tab styling and fixes native accessibility labels and disabled tab links.\n- Verified: 47 UI tests, SDK/UI builds, UI/gallery typechecks, gallery production build, and browser checks for light/dark themes, Markdown, dropdowns and dialogs.\n- Follows #14843; keeps the remaining library extraction in one PR.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The UI gets a hive mind",
+    "blurb": "The remaining website v2 building blocks have moved into the shared UI library: chat, uploads, menus, model controls, Markdown, icons, fonts, and theme pieces. Less copied styling wandering between apps; more components knowing where they live.",
+    "summary": "Extracted the remaining website v2 chat, header, upload, menu, model-control, icon, font, theme, and Markdown components into @pollinations/ui, including a new @pollinations/ui/markdown entrypoint used by both gallery imports.",
+    "impact": "Pollinations surfaces now share consistent light/dark theming, account menus, accessible tab labels and disabled links, and reusable UI behavior that can be maintained and improved in one place.",
+    "keywords": [
+      "ui-library",
+      "website-v2",
+      "components",
+      "markdown",
+      "themes",
+      "accessibility",
+      "gallery"
+    ],
+    "visual_concept": "Depict Polli as a careful librarian or builder organizing many small shared interface blocks—chat bubbles, upload tray, dropdown menu, model-control dial, Markdown page, icons, and theme swatches—into one cozy modular garden shed labeled UI. Code-plants growing from the component trays represent reuse, while a CRT monitor robot happily connects the modules; the scene should communicate that scattered website pieces now belong to one friendly shared library.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee with pink cheek blush, light blue wings, and tiny librarian glasses, placing chat bubbles, an upload folder, dropdown menu, Markdown page, model dial, and icon tiles into a lime green (#ecf874) modular garden shelf labeled \"UI\" in simple pixel font; code-plants sprout from the shared components while a cute CRT monitor robot helps connect them. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with dark purple (#110518) outlines and a warm cream background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-15/PR-14855.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee with pink cheek blush, light blue wings, and tiny librarian glasses, placing chat bubbles, an upload folder, dropdown menu, Markdown page, model dial, and icon tiles into a lime green (#ecf874) modular garden shelf labeled \"UI\" in simple pixel font; code-plants sprout from the shared components while a cute CRT monitor robot helps connect them. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with dark purple (#110518) outlines and a warm cream background."
+  },
+  "generated_at": "2026-09-15T19:39:09.706496+00:00"
+}

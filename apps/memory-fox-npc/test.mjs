@@ -43,3 +43,22 @@ test("keeps it a small prompt agent with no new service", () => {
     assert.doesNotMatch(p, /vector database/i);
     assert.doesNotMatch(p, /new frontend/i);
 });
+
+test("supports forget-everything via truncation", () => {
+    const p = agent.systemPrompt;
+    assert.match(p, /forget everything/i);
+    assert.match(p, /: > \/workspace\/memory-fox-npc\/memories\.md/);
+    assert.doesNotMatch(p, /rm -rf \//);
+});
+
+test("isolates users via per-caller computer, never asks for ids", () => {
+    const p = agent.systemPrompt;
+    assert.match(p, /private computer/i);
+    assert.match(p, /Never ask for a user id/);
+});
+
+test("stores only explicit facts and keeps replies short", () => {
+    const p = agent.systemPrompt;
+    assert.match(p, /Only store facts the user explicitly asked to keep/);
+    assert.match(p, /1-4 sentences/);
+});

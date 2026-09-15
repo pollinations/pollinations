@@ -249,16 +249,6 @@ async function waitForTinybirdRequests(
     }
 }
 
-async function waitForErrorEvents(
-    upstream: ReturnType<typeof mockRealtimeProvider>,
-    count = 1,
-) {
-    for (let attempt = 0; attempt < 20; attempt++) {
-        if (upstream.errorEvents.length >= count) return;
-        await new Promise((resolve) => setTimeout(resolve, 10));
-    }
-}
-
 async function openPaidRealtimeSession({
     name,
     model = "gpt-realtime-2.1",
@@ -1404,7 +1394,6 @@ test("does not retry a partially completed realtime deduction", async () => {
     await waitForTinybirdRequests(session.upstream, 1);
     expect(session.upstream.tinybirdRequests).toHaveLength(1);
     // The settlement failure should also emit an error_event
-    await waitForErrorEvents(session.upstream, 1);
     expect(session.upstream.errorEvents).toHaveLength(1);
     const errorBody = await session.upstream.errorEvents[0].text();
     expect(errorBody).toContain("settlement_api_key_reconciliation");

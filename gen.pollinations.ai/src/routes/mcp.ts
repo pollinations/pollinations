@@ -149,6 +149,7 @@ async function settleUsage(
         c.executionCtx.waitUntil(
             emitSettlementErrorEvent({
                 settlementError: deduction.settlementError,
+                status: usage.status,
                 requestId: event.requestId,
                 environment: event.environment,
                 requestPath: event.requestPath,

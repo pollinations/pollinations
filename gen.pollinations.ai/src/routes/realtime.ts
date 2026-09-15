@@ -865,6 +865,7 @@ async function settleRealtimeSession(
     if (tracking.deduction?.settlementError) {
         await emitSettlementErrorEvent({
             settlementError: tracking.deduction.settlementError,
+            status: 200,
             requestId: tracking.requestId,
             environment: tracking.environment,
             requestPath: tracking.requestPath,

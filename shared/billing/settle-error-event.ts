@@ -20,6 +20,7 @@ export type SettlementErrorEventInput = {
     environment?: string;
     requestPath?: string;
     method: string;
+    status: number;
     startTime: Date;
     endTime: Date;
     modelRequested?: string;
@@ -43,6 +44,7 @@ export async function emitSettlementErrorEvent(
         environment,
         requestPath,
         method,
+        status,
         startTime,
         endTime,
         modelRequested,
@@ -65,7 +67,7 @@ export async function emitSettlementErrorEvent(
         environment,
         route_path: requestPath,
         method,
-        status: 200,
+        status,
         duration_ms: endTime.getTime() - startTime.getTime(),
         error_class: "SettlementFailure",
         error_code: `settlement_${settlementError}`,

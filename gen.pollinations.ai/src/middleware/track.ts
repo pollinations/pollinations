@@ -541,6 +541,7 @@ export const track = (eventType: EventType) =>
                     await emitSettlementErrorEvent({
                         settlementError,
                         requestId: finalEvent.requestId,
+                        status: responseTracking.responseStatus,
                         environment: finalEvent.environment,
                         requestPath: finalEvent.requestPath,
                         method: c.req.method,

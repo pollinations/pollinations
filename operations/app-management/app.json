@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "📚",
+    "name": "AI Flashcards",
+    "url": "https://chibbit-99.github.io/flashcardgen",
+    "description": "Create AI flashcards. Helps turn content into study cards for review.",
+    "language": "en",
+    "category": "learn",
+    "platform": "web",
+    "githubUsername": "Chibbit-99",
+    "githubUserId": "206646205",
+    "repositoryUrl": "https://github.com/Chibbit-99/flashcardgen",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-05-21",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/11210",
+    "approvedDate": "2026-09-15",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "PollenBatch Multi-Image Generation + Character Generation Engine",
     "url": "https://donwrightdesigns.github.io/pollenbatch",

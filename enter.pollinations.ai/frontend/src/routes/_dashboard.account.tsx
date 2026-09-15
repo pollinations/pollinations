@@ -20,6 +20,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
 import { ConnectedApps } from "../components/account/connected-apps.tsx";
+import { apiErrorMessage } from "../lib/api-error.ts";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
 const DELETE_CONFIRMATION = "DELETE";
@@ -72,8 +73,15 @@ function AccountPage() {
                     .accountInfo({
                         query: { accountId: account.accountId },
                     })
-                    .catch(() => null);
-                const info = infoResponse?.data;
+                    .catch((error: unknown) => ({ data: null, error }));
+                if (infoResponse.error)
+                    setConnectionError(
+                        apiErrorMessage(
+                            infoResponse.error,
+                            "Could not load Discord identity.",
+                        ),
+                    );
+                const info = infoResponse.data;
                 const profile = info?.data as
                     | { username?: unknown }
                     | undefined;
@@ -86,8 +94,13 @@ function AccountPage() {
                     displayName: info?.user.name || null,
                     avatarUrl: info?.user.image || null,
                 });
-            } catch {
-                setConnectionError("Could not load connected accounts.");
+            } catch (error) {
+                setConnectionError(
+                    apiErrorMessage(
+                        error,
+                        "Could not load connected accounts.",
+                    ),
+                );
                 setDiscordConnection(null);
             }
         })();
@@ -106,11 +119,8 @@ function AccountPage() {
                 const { error } = await authClient.unlinkAccount({
                     providerId: "discord",
                 });
-                if (error) {
-                    setConnectionError("Could not disconnect Discord.");
-                } else {
-                    setDiscordConnection(null);
-                }
+                if (error) throw error;
+                setDiscordConnection(null);
                 return;
             }
 
@@ -118,12 +128,15 @@ function AccountPage() {
                 provider: "discord",
                 callbackURL: "/account",
             });
-            if (error) setConnectionError("Could not connect Discord.");
-        } catch {
+            if (error) throw error;
+        } catch (error) {
             setConnectionError(
-                discordConnection
-                    ? "Could not disconnect Discord."
-                    : "Could not connect Discord.",
+                apiErrorMessage(
+                    error,
+                    discordConnection
+                        ? "Could not disconnect Discord."
+                        : "Could not connect Discord.",
+                ),
             );
         } finally {
             setConnectionPending(false);
@@ -257,7 +270,7 @@ function AccountPage() {
                         </Button>
                     </Surface>
                     {connectionError && (
-                        <Text size="sm" tone="muted">
+                        <Text size="sm" tone="muted" role="alert">
                             {connectionError}
                         </Text>
                     )}

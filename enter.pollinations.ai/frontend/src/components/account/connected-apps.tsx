@@ -14,6 +14,7 @@ import {
 } from "@pollinations/ui";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
+import { apiErrorMessage, apiResponseError } from "../../lib/api-error.ts";
 
 type Connection = {
     id: string;
@@ -36,10 +37,6 @@ function readableSlug(slug: string): string {
         .filter(Boolean)
         .map((part) => part[0]?.toUpperCase() + part.slice(1))
         .join(" ");
-}
-
-function errorMessage(error: unknown, fallback: string): string {
-    return error instanceof Error ? error.message : fallback;
 }
 
 type AppCardProps = {
@@ -142,7 +139,11 @@ export function ConnectedApps() {
 
     const loadConnections = useCallback(async () => {
         const response = await apiClient.account.integrations.$get();
-        if (!response.ok) throw new Error("Could not load connected apps.");
+        if (!response.ok)
+            throw await apiResponseError(
+                response,
+                "Could not load connected apps.",
+            );
         setConnections(
             ((await response.json()) as { data: Connection[] }).data,
         );
@@ -152,7 +153,11 @@ export function ConnectedApps() {
         const response = await apiClient.account.integrations.toolkits.$get({
             query: query ? { search: query } : {},
         });
-        if (!response.ok) throw new Error("Could not load available apps.");
+        if (!response.ok)
+            throw await apiResponseError(
+                response,
+                "Could not load available apps.",
+            );
         return ((await response.json()) as { data: Toolkit[] }).data;
     }, []);
 
@@ -160,7 +165,10 @@ export function ConnectedApps() {
         void loadConnections()
             .catch((loadError) =>
                 setConnectionsError(
-                    errorMessage(loadError, "Could not load connected apps."),
+                    apiErrorMessage(
+                        loadError,
+                        "Could not load connected apps.",
+                    ),
                 ),
             )
             .finally(() => setConnectionsLoading(false));
@@ -181,7 +189,10 @@ export function ConnectedApps() {
                     if (!cancelled) {
                         setToolkits([]);
                         setToolkitsError(
-                            errorMessage(searchError, "Could not search apps."),
+                            apiErrorMessage(
+                                searchError,
+                                "Could not search apps.",
+                            ),
                         );
                     }
                 })
@@ -203,14 +214,18 @@ export function ConnectedApps() {
             const response = await apiClient.account.integrations.$post({
                 json: { toolkit },
             });
-            if (!response.ok) throw new Error("Could not connect this app.");
+            if (!response.ok)
+                throw await apiResponseError(
+                    response,
+                    "Could not connect this app.",
+                );
             window.location.assign(
                 ((await response.json()) as { redirectUrl: string })
                     .redirectUrl,
             );
         } catch (connectError) {
             setActionError(
-                errorMessage(connectError, "Could not connect this app."),
+                apiErrorMessage(connectError, "Could not connect this app."),
             );
             setPendingId(null);
         }
@@ -224,14 +239,20 @@ export function ConnectedApps() {
                 ":id"
             ].$delete({ param: { id: connection.id } });
             if (!response.ok) {
-                throw new Error("Could not disconnect this app.");
+                throw await apiResponseError(
+                    response,
+                    "Could not disconnect this app.",
+                );
             }
             setConnections((current) =>
                 current.filter(({ id }) => id !== connection.id),
             );
         } catch (disconnectError) {
             setActionError(
-                errorMessage(disconnectError, "Could not disconnect this app."),
+                apiErrorMessage(
+                    disconnectError,
+                    "Could not disconnect this app.",
+                ),
             );
         } finally {
             setPendingId(null);

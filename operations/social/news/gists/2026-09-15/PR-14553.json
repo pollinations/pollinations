@@ -1,0 +1,35 @@
+{
+  "pr_number": 14553,
+  "title": "feat: filter model catalogs by source and reliability",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/14553",
+  "merged_at": "2026-09-15T23:37:32Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #14535\n\n- Adds `source=official|community` and opt-in `reliability=all|reliable` across all eight model-list endpoints, including `/v1/models`. Equivalent `Pollinations-Model-*` headers support client connections; explicit queries take precedence.\n- Returns six compact health fields from the existing cached 24-hour feed. Final 4xx responses are excluded; successful fallback rescues count once. Unknown/stale models are excluded by reliable filtering.\n- Isolates discovery in one catalog helper. Default payloads, generation access/routing and billing remain unchanged. Detailed monitoring stays on the status endpoints; no database or Tinybird deployment changes.\n- Incorporates schema-based header documentation from @ismailbanouigu (#14810) and adapted OpenAI/AI SDK integration coverage from @harisrehman155 (#14570), with co-author credits.\n\nValidation: 25 focused tests passed (catalog/retrieve, OpenAPI, community access and two-client integration), Gen TypeScript, Biome 2.3.10 and diff checks passed. A broader local run encountered a missing Enter OAuth dependency; no full-suite claim.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A catalog with a pulse",
+    "blurb": "Model lists can now sort the well-tended flowers from the community garden. Ask for official or community sources, then opt into reliable models when you need the path with fewer surprises.",
+    "summary": "All eight model-list endpoints, including /v1/models, now support source=official|community and opt-in reliability=all|reliable filters via query parameters or Pollinations-Model-* headers, with six compact 24-hour health fields included in catalog responses.",
+    "impact": "Developers can discover official or community models and filter for reliably healthy options without changing generation routing, access, billing, or default catalog payloads.",
+    "keywords": [
+      "model-catalog",
+      "v1-models",
+      "reliability",
+      "model-health",
+      "community-models",
+      "headers",
+      "openai"
+    ],
+    "visual_concept": "A cozy model garden organized into two clearly labeled beds—official and community—while Polli, wearing a tiny gardener hat and holding a health-check clipboard, uses a small sieve to select healthy glowing code-flowers. A friendly CRT monitor robot can display compact heart/status indicators, with reliable blooms thriving and unknown or stale plants gently left outside the selected basket.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, sorting glowing code-flowers into little garden beds labeled in simple pixel text “OFFICIAL,” “COMMUNITY,” and “RELIABLE,” while a cute CRT monitor robot shows six tiny green health indicators; lime green (#ecf874) is prominent among warm cream, mint, lavender, and peach garden lights. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, chunky sprites, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-15/PR-14553.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, sorting glowing code-flowers into little garden beds labeled in simple pixel text “OFFICIAL,” “COMMUNITY,” and “RELIABLE,” while a cute CRT monitor robot shows six tiny green health indicators; lime green (#ecf874) is prominent among warm cream, mint, lavender, and peach garden lights. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, chunky sprites, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-09-15T23:39:04.189441+00:00"
+}

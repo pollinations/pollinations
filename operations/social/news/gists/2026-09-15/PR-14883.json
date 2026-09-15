@@ -1,0 +1,34 @@
+{
+  "pr_number": 14883,
+  "title": "feat: add polli update command for global CLI installs",
+  "author": "davealan74",
+  "url": "https://github.com/pollinations/pollinations/pull/14883",
+  "merged_at": "2026-09-15T22:18:57Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #14879\n\n## Summary\n- Adds `polli update`, which delegates to `npm install -g @pollinations/cli@latest` for global installs\n- Detects npx-cache and local/project installs and prints instructions instead of creating a second global install (no sudo, no silent updates, no generic updater framework)\n- Preserves existing output conventions: human messages on stderr, structured `--json` result on stdout, non-zero exit on failure\n- Adds `polli update` to README and the CLI skill quick-reference table\n\n## Test plan\n- `npx vitest run` in `packages/polli-cli` — all 116 tests pass (5 new for `detectInstallKind`)\n- `npx tsc --noEmit` — no new errors in touched files\n- `npx biome check --write` on touched files — clean\n- Manually verified end-to-end against the real npm registry using isolated npm prefixes (no interference with any real global install):\n  - Packed the CLI, installed it globally into an isolated `--prefix`, pinned to an old version, ran `polli update` — it detected the global install, ran `npm install -g @pollinations/cli@latest`, and confirmed the prefix now has the latest published version\n  - Installed the CLI the way npx does (into a `_npx` cache-style directory) and ran `polli update` — printed the npx guidance, made no changes\n  - Ran the CLI straight from a local checkout (not under `npm root -g`) and ran `polli update` — printed the local-install guidance, made no changes",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli learns to molt",
+    "blurb": "The CLI can now tend its own global install with `polli update`. If it finds an npx cache or a project-local copy, it politely explains the situation instead of planting a second CLI in your machine.",
+    "summary": "Added `polli update` to globally installed `@pollinations/cli`, which runs `npm install -g @pollinations/cli@latest` while detecting npx-cache and local/project installs and providing the appropriate guidance instead.",
+    "impact": "Global CLI users can update with one command, while npx and local-install users get clear next steps without a sudo prompt, silent update, or accidental second global installation.",
+    "keywords": [
+      "polli-cli",
+      "cli",
+      "update",
+      "npm",
+      "global-install",
+      "npx"
+    ],
+    "visual_concept": "A cozy command-line maintenance scene: Polli, wearing a tiny mechanic tool belt, carefully waters a healthy potted CLI code-plant beside a retro terminal displaying `polli update`. A small labeled npx-cache box and a local-project planter have friendly signposts explaining they stay in their own gardens, representing install-aware guidance rather than duplicate installs.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wearing a tiny mechanic tool belt as she tends a potted code-plant beside a retro terminal reading `polli update`; nearby, friendly little planters labeled `NPX CACHE` and `LOCAL` have signposts, with pixel flowers and vines growing around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-15/PR-14883.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wearing a tiny mechanic tool belt as she tends a potted code-plant beside a retro terminal reading `polli update`; nearby, friendly little planters labeled `NPX CACHE` and `LOCAL` have signposts, with pixel flowers and vines growing around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-15T22:19:54.473309+00:00"
+}

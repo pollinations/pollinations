@@ -44,7 +44,12 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
 | Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|opencode\|openclaw\|pi\|prime> on` (available adapters: `polli harness --help`) |
+| Update the CLI | `polli update` (check only: `polli update --check`) |
 | Machine-readable output | append `--json` to any command |
+
+CLI updates: an unobtrusive notice (max once a day, on stderr) appears when a newer
+version is published; updates are never automatic. Disable notices with
+`POLLI_NO_UPDATE_NOTICES=1`.
 
 ## Setup
 

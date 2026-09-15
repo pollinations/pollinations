@@ -12,12 +12,14 @@ import { keysCommand } from "./commands/keys.js";
 import { modelsCommand } from "./commands/models.js";
 import { myModelsCommand } from "./commands/my-models.js";
 import { questsCommand } from "./commands/quests.js";
+import { updateCommand } from "./commands/update.js";
 import { uploadCommand } from "./commands/upload.js";
 import { usageCommand } from "./commands/usage.js";
 
 import { setKeyOverride } from "./lib/config.js";
 import { setOutputMode } from "./lib/output.js";
 import { flavor } from "./lib/quotes.js";
+import { checkForUpdate, printUpdateNotice } from "./lib/update-check.js";
 
 const pkg = JSON.parse(
     readFileSync(new URL("../package.json", import.meta.url), "utf-8"),
@@ -59,6 +61,15 @@ program
         if (opts.key) {
             setKeyOverride(opts.key);
         }
+    })
+    .hook("postAction", async () => {
+        // Skip the notice for the commands that manage updates themselves.
+        if (program.args[0] === "update") return;
+        try {
+            printUpdateNotice(await checkForUpdate(pkg.version));
+        } catch {
+            // never let the update check break a command
+        }
     });
 
 // Auth & account
@@ -80,6 +91,9 @@ program.addCommand(uploadCommand);
 // Discovery
 program.addCommand(modelsCommand);
 program.addCommand(docsCommand);
+
+// Self-maintenance
+program.addCommand(updateCommand);
 
 // Show help when run with no args
 if (process.argv.length <= 2) {

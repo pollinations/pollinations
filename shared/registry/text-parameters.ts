@@ -253,7 +253,7 @@ export const CHAT_PARAMETERS = {
         "seed",
         "reasoning_effort",
     ],
-    openRouterLlamaScoutNovita: [
+    llamaScout: [
         ...CHAT,
         ...SAMPLING,
         ...PENALTIES,

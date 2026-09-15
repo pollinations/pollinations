@@ -386,18 +386,7 @@ export const TEXT_FALLBACKS = {
         },
     },
     "meta/llama-4-scout": {
-        "meta/llama-4-scout:deepinfra": {
-            provider: "deepinfra",
-            addedDate: new Date("2026-09-15").getTime(),
-            // Direct access bypasses OpenRouter's quota; same DeepInfra backend.
-            cost: {
-                promptTextTokens: perMillion(0.1),
-                promptImageTokens: perMillion(0.1),
-                completionTextTokens: perMillion(0.3),
-            },
-        },
         "meta/llama-4-scout:openrouter:novita-bf16": {
-            supportedParameters: CHAT_PARAMETERS.openRouterLlamaScoutNovita,
             provider: "openrouter",
             addedDate: new Date("2026-09-15").getTime(),
             // OpenRouter Novita BF16, verified 2026-09-15. Callers retain the
@@ -407,12 +396,6 @@ export const TEXT_FALLBACKS = {
                 promptImageTokens: perMillion(0.18) * 1.055,
                 completionTextTokens: perMillion(0.59) * 1.055,
             },
-            // Live requests reject tools and structured output despite catalog
-            // tool-choice claims. Do not drop these controls to obtain a rescue.
-            tools: false,
-            supportsStructuredOutput: false,
-            contextLength: 131072,
-            maxCompletionTokens: 16384,
         },
     },
     "x-ai/grok-4.20": {

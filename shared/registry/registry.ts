@@ -230,7 +230,7 @@ export type ModelDefinition = {
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
     /** Internal provider-route output-token cap used for fallback compatibility. */
     maxCompletionTokens?: number;
-    /** Internal route limitation: false when JSON/structured output is rejected. */
+    /** False when the model rejects JSON/structured output requests. */
     supportsStructuredOutput?: boolean;
 };
 

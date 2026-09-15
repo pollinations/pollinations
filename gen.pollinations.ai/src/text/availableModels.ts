@@ -710,13 +710,8 @@ const models: ModelDefinition[] = [
     },
     {
         name: "meta/llama-4-scout",
-        config: portkeyConfig["Llama-4-Scout-17B-16E-Instruct"],
+        config: portkeyConfig["meta/llama-4-scout"],
         // No reasoning mode.
-        transform: stripReasoning,
-    },
-    {
-        name: "meta/llama-4-scout:deepinfra",
-        config: portkeyConfig["llama-scout-deepinfra"],
         transform: stripReasoning,
     },
     {

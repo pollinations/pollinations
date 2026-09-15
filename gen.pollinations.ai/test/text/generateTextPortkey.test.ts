@@ -25,18 +25,14 @@ afterEach(() => {
 
 describe("generateTextPortkey", () => {
     it.each([
-        [429, false],
-        [503, false],
-        [429, true],
-    ] as const)("rescues Scout upstream %i (direct unavailable: %s) at the original quote", async (status, directUnavailable) => {
+        429, 503,
+    ])("rescues Scout upstream %i at the primary price", async (status) => {
         syncTextEnvironment({
             ...env,
-            DEEPINFRA_API_KEY: "test-direct-deepinfra-key",
+            AI_GATEWAY_API_KEY: "test-vercel-key",
         });
         const primary = "meta/llama-4-scout" as const;
-        const fallback = directUnavailable
-            ? "meta/llama-4-scout:openrouter:novita-bf16"
-            : "meta/llama-4-scout:deepinfra";
+        const fallback = "meta/llama-4-scout:openrouter:novita-bf16";
         const routes: string[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -49,30 +45,23 @@ describe("generateTextPortkey", () => {
                     expect(body.provider.allow_fallbacks).toBe(false);
                     const route = body.provider.only[0];
                     routes.push(route);
-                    if (route === "deepinfra/fp8") {
-                        return Response.json(
-                            { error: { message: "Capacity exhausted" } },
-                            { status },
-                        );
-                    }
                     expect(route).toBe("novita/bf16");
                 } else {
                     expect(String(input)).toBe(
-                        "https://api.deepinfra.com/v1/openai/chat/completions",
+                        "https://ai-gateway.vercel.sh/v1/chat/completions",
                     );
-                    expect(body.model).toBe(
-                        "meta-llama/Llama-4-Scout-17B-16E-Instruct",
-                    );
-                    expect(body.provider).toBeUndefined();
+                    expect(body.model).toBe("meta/llama-4-scout");
+                    expect(body.providerOptions).toEqual({
+                        gateway: { only: ["deepinfra"] },
+                    });
                     expect(
                         new Headers(init?.headers).get("Authorization"),
-                    ).toBe("Bearer test-direct-deepinfra-key");
-                    routes.push("deepinfra-direct");
-                    if (directUnavailable)
-                        return Response.json(
-                            { error: { message: "Unavailable" } },
-                            { status: 503 },
-                        );
+                    ).toBe("Bearer test-vercel-key");
+                    routes.push("vercel-deepinfra");
+                    return Response.json(
+                        { error: { message: "Capacity exhausted" } },
+                        { status },
+                    );
                 }
                 expect(body.max_tokens).toBe(128);
                 return Response.json({
@@ -104,13 +93,9 @@ describe("generateTextPortkey", () => {
                     { model: id, max_tokens: 128 },
                 ),
         );
-        expect(routes).toEqual([
-            "deepinfra/fp8",
-            "deepinfra-direct",
-            ...(directUnavailable ? ["novita/bf16"] : []),
-        ]);
+        expect(routes).toEqual(["vercel-deepinfra", "novita/bf16"]);
         expect(candidate.id).toBe(fallback);
-        expect(index).toBe(directUnavailable ? 2 : 1);
+        expect(index).toBe(1);
         expect(result.choices?.[0]?.message?.content).toBe("Red.");
         const billing = calculateUsageBilling({
             model: primary,
@@ -121,13 +106,11 @@ describe("generateTextPortkey", () => {
             quotedBy: TEXT_SERVICES[primary],
         });
         expect(billing.cost.totalCost).toBeCloseTo(
-            directUnavailable
-                ? ((167 * 0.18 + 3 * 0.59) / 1_000_000) * 1.055
-                : (167 * 0.1 + 3 * 0.3) / 1_000_000,
+            ((167 * 0.18 + 3 * 0.59) / 1_000_000) * 1.055,
             12,
         );
         // Customer charges use the ledger's eight-decimal precision.
-        expect(billing.price.totalPrice).toBe(0.00001857);
+        expect(billing.price.totalPrice).toBe(0.0000176);
     });
 
     it("falls back from East US to Sweden Grok and bills image and reasoning usage", async () => {

@@ -15,7 +15,10 @@ import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { TEXT_FALLBACKS } from "@shared/registry/text-fallbacks.ts";
 import { describe, expect, it } from "vitest";
 import { findModelByName } from "../src/text/availableModels.ts";
-import { supportsTextFallbackRequest } from "../src/text/fallbackCompatibility.ts";
+import {
+    supportsTextFallbackRequest,
+    textCapabilityError,
+} from "../src/text/fallbackCompatibility.ts";
 import { resolveDirectResponsesTarget } from "../src/text/responses/client.ts";
 
 const OPENROUTER_ROUTES = [
@@ -474,17 +477,17 @@ describe("static provider fallbacks", () => {
         });
     });
 
-    it("rescues ordinary Scout requests without weakening its public contract", () => {
+    it("shares Scout capabilities and pricing across its two routes", () => {
         const primary = TEXT_SERVICES["meta/llama-4-scout"];
         const route =
             TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"];
         expect(primary).toMatchObject({
-            tools: true,
-            contextLength: 327680,
+            tools: false,
+            contextLength: 131072,
             paidOnly: true,
             priceMultiplier: 1,
         });
-        expect(primary.cost.promptTextTokens).toBe((0.1 / 1_000_000) * 1.055);
+        expect(primary.cost.promptTextTokens).toBe(0.1 / 1_000_000);
         expect(
             supportsTextFallbackRequest(route, {
                 messages: [{ role: "user", content: "Hello" }],
@@ -571,8 +574,11 @@ describe("static provider fallbacks", () => {
                 },
             ],
         },
-    ])("skips Novita for requests requiring tools or structured output: %j", (request) => {
+    ])("rejects unsupported Scout capabilities on both routes: %j", (request) => {
         const before = JSON.stringify(request);
+        expect(
+            textCapabilityError(TEXT_SERVICES["meta/llama-4-scout"], request),
+        ).toMatch(/does not support/);
         expect(
             supportsTextFallbackRequest(
                 TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"],
@@ -582,10 +588,10 @@ describe("static provider fallbacks", () => {
         expect(JSON.stringify(request)).toBe(before);
         expect(
             supportsTextFallbackRequest(
-                TEXT_SERVICES["meta/llama-4-scout:deepinfra"],
+                TEXT_SERVICES["meta/llama-4-scout"],
                 request,
             ),
-        ).toBe(true);
+        ).toBe(false);
     });
 
     it.each([
@@ -629,15 +635,16 @@ describe("static provider fallbacks", () => {
         ).toBe(true);
     });
 
-    it("uses direct DeepInfra before Novita and skips it for Responses", () => {
+    it("uses the same primary and single fallback for both API formats", () => {
         const primary = "meta/llama-4-scout";
-        const direct = `${primary}:deepinfra`;
         const novita = `${primary}:openrouter:novita-bf16`;
-        expect(TEXT_SERVICES[primary].fallbacks).toEqual([direct, novita]);
-        expect(findModelByName(direct)?.config()).toMatchObject({
-            model: "meta-llama/Llama-4-Scout-17B-16E-Instruct",
-            directEndpoint:
-                "https://api.deepinfra.com/v1/openai/chat/completions",
+        expect(TEXT_SERVICES[primary].fallbacks).toEqual([novita]);
+        expect(findModelByName(primary)?.config()).toMatchObject({
+            model: "meta/llama-4-scout",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                providerOptions: { gateway: { only: ["deepinfra"] } },
+            },
         });
         const request = {
             model: primary,
@@ -646,9 +653,15 @@ describe("static provider fallbacks", () => {
             store: false as const,
             safe: undefined,
         };
-        expect(resolveDirectResponsesTarget(direct, request)).toBeNull();
+        expect(resolveDirectResponsesTarget(primary, request)).toMatchObject({
+            endpoint: "https://ai-gateway.vercel.sh/v1/responses",
+            defaults: { providerOptions: { gateway: { only: ["deepinfra"] } } },
+        });
         expect(resolveDirectResponsesTarget(novita, request)).toMatchObject({
             endpoint: "https://openrouter.ai/api/v1/responses",
+            defaults: {
+                provider: { only: ["novita/bf16"], allow_fallbacks: false },
+            },
         });
     });
 

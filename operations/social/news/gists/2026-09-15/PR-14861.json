@@ -1,0 +1,35 @@
+{
+  "pr_number": 14861,
+  "title": "FEAT: Expose per-route model health (primary vs fallback)",
+  "author": "gggff123",
+  "url": "https://github.com/pollinations/pollinations/pull/14861",
+  "merged_at": "2026-09-15T00:00:48Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #14897\n\n- Adds a cached `/v1/models/status/routes` endpoint and Tinybird pipe containing caller-visible model totals alongside every observed primary/fallback route.\n- Adds expandable route rows, rescue counts, and a Primary off badge to the monitor while preserving caller-visible headline health.\n- Records upstream attempt duration separately from full request duration so fallback latency excludes earlier failures. Historical rows without attempt timing are excluded from route latency. Documents both counting grains and timing semantics.\n- Validation: 71 tracking tests, 18 monitor tests, 2 OpenAPI tests, TypeScript, Biome, and synthetic ClickHouse checks for rescued requests and missing historical timing.\n- Staging: Tinybird deployment 146 is active and verified through the endpoint and local dashboard, including counts, rescue failures, and attempt latency. Production datasource/pipe deployment is required before monitor rollout. Configured-but-unused routes and provider/region visibility remain follow-ups.\n\nCloses #14860\n\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Routes Learn to Self-Report",
+    "blurb": "The model monitor can now show which routes are thriving, which ones called for backup, and how long each upstream attempt actually took. Even fallback paths deserve honest weather reports.",
+    "summary": "Added the cached `/v1/models/status/routes` endpoint and Tinybird route-health pipe, exposing caller-visible totals, primary-versus-fallback routes, rescue counts, and per-attempt upstream latency that excludes time spent on earlier failed attempts.",
+    "impact": "Developers and operators can now inspect route-level model health in the monitor, expand routes to see primary and fallback behavior, and compare accurate fallback attempt latency without historical rows lacking attempt timing skewing the result.",
+    "keywords": [
+      "model health",
+      "route status",
+      "fallbacks",
+      "observability",
+      "Tinybird",
+      "latency",
+      "monitor"
+    ],
+    "visual_concept": "A cozy route-health garden: individual model routes are flowering paths leading from a primary gate to a helpful fallback gate, with tiny timing clocks and a rescue-count signpost. Polli, wearing a small observability headset and carrying a clipboard, watches the paths while the CRT Monitor Robot enthusiastically displays a healthy route map; code-plants and flowers make the technical dashboard feel alive.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blushes, a happy smile, and small rounded light-blue wings, wearing a tiny observability headset and holding a clipboard beside a garden of glowing model-route paths: a primary gate, a friendly fallback gate, pixel clocks, and a small \"RESCUES\" sign; a chunky CRT Monitor Robot shows an expandable route-health map while code-plants bloom nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-15/PR-14861.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blushes, a happy smile, and small rounded light-blue wings, wearing a tiny observability headset and holding a clipboard beside a garden of glowing model-route paths: a primary gate, a friendly fallback gate, pixel clocks, and a small \"RESCUES\" sign; a chunky CRT Monitor Robot shows an expandable route-health map while code-plants bloom nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-15T00:05:56.254942+00:00"
+}

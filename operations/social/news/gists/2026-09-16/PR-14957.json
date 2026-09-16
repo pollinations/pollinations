@@ -1,0 +1,34 @@
+{
+  "pr_number": 14957,
+  "title": "fix(catgpt): update selfie reference URL and switch to nanobanana-2-lite",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/14957",
+  "merged_at": "2026-09-16T20:52:31Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #15035\n\nfixes the expired selfie reference URL for catgpt caricature generation and upgrades the preferred image model to nanobanana-2-lite\r\n\\- replace expired 30-day R2 selfie reference URL with durable raw GitHub asset\r\n\\- set `nanobanana-2-lite` as preferred model with tiered fallback to `nanobanana` and `gptimage`\r\n\\- add `google/gemini-3.1-flash-lite-image` to authorisation scopes in `getAuthorizeUrl`\r\n\\- update test suite to cover `nanobanana-2-lite` catalog spellings and fallback tiers\r\n\\- `README.md` now reflects current model, gateway architecture, and auth flow\r",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The selfie garden regrows",
+    "blurb": "CatGPT’s caricature reference no longer wilts after 30 days, and its image brain has moved to nanobanana-2-lite. A small cat portrait pipeline, now with considerably fewer expired leaves.",
+    "summary": "CatGPT now uses a durable GitHub-hosted selfie reference, prefers nanobanana-2-lite for caricatures with nanobanana and gptimage fallback tiers, and authorizes google/gemini-3.1-flash-lite-image in its auth flow.",
+    "impact": "People generating CatGPT caricatures get a working reference image and the newer nanobanana-2-lite model by default, while the app can continue through its defined fallback models when needed.",
+    "keywords": [
+      "catgpt",
+      "caricatures",
+      "nanobanana-2-lite",
+      "image-generation",
+      "auth",
+      "fallbacks"
+    ],
+    "visual_concept": "A cozy CatGPT portrait garden: a durable framed cat selfie hangs beside a retro image-generation terminal, while Polli helps refresh a blooming caricature print. The terminal should show a gentle three-step model path from nanobanana-2-lite to nanobanana to gptimage, represented as sprouting code-plants rather than a sterile diagram.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace where Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, happy smile, and small rounded light-blue translucent wings, wears a tiny painter’s beret while hanging a framed cat selfie beside a retro CRT terminal growing three labeled code-plants: “nanobanana-2-lite”, “nanobanana”, and “gptimage”; a cheerful pixel cat caricature print blooms nearby among flowers and vines. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14957.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace where Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, happy smile, and small rounded light-blue translucent wings, wears a tiny painter’s beret while hanging a framed cat selfie beside a retro CRT terminal growing three labeled code-plants: “nanobanana-2-lite”, “nanobanana”, and “gptimage”; a cheerful pixel cat caricature print blooms nearby among flowers and vines. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-16T20:53:30.645971+00:00"
+}

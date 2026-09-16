@@ -74,15 +74,20 @@ export function AppUserMenu({
             className="polli:flex polli:shrink-0 polli:justify-end"
         >
             {!isLoggedIn ? (
-                <LoginButton className="polli:gap-2 polli:whitespace-nowrap">
+                <LoginButton className="polli:gap-2 polli:p-1 polli:pr-3 polli:whitespace-nowrap">
+                    {/* Same geometry as the connected pill: the mark sits where the avatar will be. */}
                     <span
                         aria-hidden="true"
-                        className="polli:block polli:h-5 polli:w-5 polli:shrink-0 polli:bg-current"
-                        style={{
-                            mask: `url('${markUrl}') center / contain no-repeat`,
-                            WebkitMask: `url('${markUrl}') center / contain no-repeat`,
-                        }}
-                    />
+                        className="polli:flex polli:h-8 polli:w-8 polli:shrink-0 polli:items-center polli:justify-center"
+                    >
+                        <span
+                            className="polli:block polli:h-6 polli:w-6 polli:bg-current"
+                            style={{
+                                mask: `url('${markUrl}') center / contain no-repeat`,
+                                WebkitMask: `url('${markUrl}') center / contain no-repeat`,
+                            }}
+                        />
+                    </span>
                     {labels.authorize}
                 </LoginButton>
             ) : (

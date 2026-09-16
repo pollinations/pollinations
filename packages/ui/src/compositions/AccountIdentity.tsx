@@ -47,7 +47,7 @@ export function AccountAvatar({
             rel="noopener noreferrer"
             aria-label="Open dashboard"
             title="Open dashboard"
-            className="polli:shrink-0 polli:rounded-full polli:cursor-pointer polli:focus-visible:outline-2 polli:focus-visible:outline-offset-2 polli:focus-visible:outline-current"
+            className="polli:shrink-0 polli:rounded-full polli:cursor-pointer polli:transition-transform polli:hover:scale-105 polli:hover:brightness-110 polli:focus-visible:outline-2 polli:focus-visible:outline-offset-2 polli:focus-visible:outline-current polli:motion-reduce:transition-none polli:motion-reduce:hover:scale-100"
         >
             {avatar}
         </a>

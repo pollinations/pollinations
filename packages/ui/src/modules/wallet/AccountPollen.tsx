@@ -12,7 +12,7 @@ export type AccountPollenSource =
       }
     | {
           type: "allowance";
-          /** The app's remaining budget, never the owner's wallet total. */
+          /** The app's remaining budget, never the owner's wallet total. `null` = unlimited. */
           remaining?: number | null;
           generationEnabled?: boolean;
       };
@@ -22,8 +22,10 @@ export function getAccountPollenStatus(
     source: AccountPollenSource,
 ): PollenStatus | undefined {
     if (source.type === "allowance") {
-        return source.generationEnabled !== false &&
-            source.remaining != null &&
+        if (source.generationEnabled === false) return undefined;
+        // null is the API's explicit "no budget"; undefined is not loaded yet.
+        if (source.remaining === null) return { state: "unlimited" };
+        return source.remaining != null &&
             Number.isFinite(source.remaining) &&
             source.remaining <= 0
             ? { state: "limit-reached" }

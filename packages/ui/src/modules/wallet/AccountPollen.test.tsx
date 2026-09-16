@@ -12,18 +12,15 @@ describe("account Pollen", () => {
         [0, 0, "paid", "paid-required"],
         [0.01, 0, "paid", undefined],
         [0, 0, "none", undefined],
-    ] as const)(
-        "resolves wallet %s/%s with requirement %s",
-        (paid, quest, requirement, expected) => {
-            expect(
-                getAccountPollenStatus({
-                    type: "wallet",
-                    balances: { paid, quest },
-                    requirement,
-                })?.state,
-            ).toBe(expected);
-        },
-    );
+    ] as const)("resolves wallet %s/%s with requirement %s", (paid, quest, requirement, expected) => {
+        expect(
+            getAccountPollenStatus({
+                type: "wallet",
+                balances: { paid, quest },
+                requirement,
+            })?.state,
+        ).toBe(expected);
+    });
 
     it("does not turn unavailable or invalid data into an empty wallet or limit", () => {
         for (const balances of [
@@ -36,7 +33,7 @@ describe("account Pollen", () => {
                 getAccountPollenStatus({ type: "wallet", balances }),
             ).toBeUndefined();
         }
-        for (const remaining of [undefined, null, NaN, Infinity, 0.01]) {
+        for (const remaining of [undefined, NaN, Infinity, 0.01]) {
             expect(
                 getAccountPollenStatus({ type: "allowance", remaining }),
             ).toBeUndefined();
@@ -54,6 +51,16 @@ describe("account Pollen", () => {
             getAccountPollenStatus({
                 type: "allowance",
                 remaining: 0,
+                generationEnabled: false,
+            }),
+        ).toBeUndefined();
+        expect(
+            getAccountPollenStatus({ type: "allowance", remaining: null }),
+        ).toEqual({ state: "unlimited" });
+        expect(
+            getAccountPollenStatus({
+                type: "allowance",
+                remaining: null,
                 generationEnabled: false,
             }),
         ).toBeUndefined();
@@ -104,7 +111,9 @@ describe("account Pollen", () => {
     it("shows the allowance without a recovery link, even when exhausted", () => {
         expect(
             renderToStaticMarkup(
-                <AccountPollen source={{ type: "allowance", remaining: 3.25 }} />,
+                <AccountPollen
+                    source={{ type: "allowance", remaining: 3.25 }}
+                />,
             ),
         ).toContain("3.25 Pollen");
         const exhausted = renderToStaticMarkup(
@@ -115,10 +124,11 @@ describe("account Pollen", () => {
         );
         expect(exhausted).toContain("Limit reached");
         expect(exhausted).not.toContain("/top-up");
-        expect(
-            renderToStaticMarkup(
-                <AccountPollen source={{ type: "allowance", remaining: null }} />,
-            ),
-        ).toBe("");
+        const unlimited = renderToStaticMarkup(
+            <AccountPollen source={{ type: "allowance", remaining: null }} />,
+        );
+        expect(unlimited).toContain("Unlimited");
+        expect(unlimited).toContain("polli:bg-intent-info-bg-light");
+        expect(unlimited).not.toContain("<a ");
     });
 });

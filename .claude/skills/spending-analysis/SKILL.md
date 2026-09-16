@@ -74,10 +74,11 @@ No cash purchase ≠ non-payment or abuse; pack spend ≠ proof of cash.
 # Auto-top-up: principal vs gross payment
 
 Auto-top-up `amount_usd` in D1 is the Pollen principal credited; Stripe fees and taxes sit
-on top. For gross cash, match each completed top-up to its Stripe invoice by
-`stripe_invoice_id` and use `amount_paid` (check the currency). Fetch those invoice IDs
-directly instead of paging the whole invoice list. Keep principal, gross payment, tax,
-refunds and net revenue as separate numbers.
+on top. Gross cash is on the same row: `stripe_amount_paid` (minor units) and
+`stripe_currency`, set when the invoice is paid (#14959). Rows paid before that
+migration have NULL there; for those, fetch the invoice by `stripe_invoice_id` and use
+`amount_paid`. Keep principal, gross payment, tax, refunds and net revenue as separate
+numbers.
 
 # Historical pricing changes
 

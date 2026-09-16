@@ -256,9 +256,9 @@ Polar credits, and claimed rewards by bucket. No cash purchase is not an abuse s
 itself.
 
 Auto-top-up `amount_usd` is the Pollen principal credited, not what the customer paid (fees
-and tax sit on top). It proves a funding event happened; for the exact dollars, match the
-Stripe invoice's `amount_paid` (method in `spending-analysis`) — rarely needed for an abuse
-verdict.
+and tax sit on top). It proves a funding event happened; the exact dollars are in
+`stripe_amount_paid` on the same row (NULL for rows paid before #14959) — rarely needed for
+an abuse verdict.
 
 ---
 

@@ -5,7 +5,6 @@ import { WalletKindIcon } from "./wallet-display.tsx";
 
 export type PollenStatus = {
     state: "no-pollen" | "limit-reached" | "paid-required" | "unlimited";
-    wallet?: "paid" | "tier";
 };
 
 const labels = {
@@ -15,42 +14,39 @@ const labels = {
     unlimited: "Unlimited",
 } as const;
 
+const intents = {
+    "no-pollen": "danger",
+    "limit-reached": "danger",
+    "paid-required": "warning",
+    unlimited: "info",
+} as const;
+
 /** The caller supplies a confirmed status; this component does not infer affordability. */
 export function PollenStatusBadge({
     state,
-    wallet,
-    showIcon = true,
     topUpHref,
-}: PollenStatus & { showIcon?: boolean; topUpHref?: string }) {
+}: PollenStatus & { topUpHref?: string }) {
     const budgetState = state === "limit-reached" || state === "unlimited";
-    const kind = state === "paid-required" ? "paid" : wallet;
-    const Icon = budgetState ? KeyIcon : WalletIcon;
     const label = labels[state];
     return (
         <Chip
             size="sm"
-            intent={
-                state === "unlimited"
-                    ? "info"
-                    : state === "paid-required"
-                      ? "warning"
-                      : "danger"
-            }
-            aria-label={
-                kind && !budgetState
-                    ? `${kind === "tier" ? "Quest" : "Paid"}: ${label}`
-                    : label
-            }
+            intent={intents[state]}
+            aria-label={state === "paid-required" ? `Paid: ${label}` : label}
         >
-            {showIcon &&
-                (kind && !budgetState ? (
-                    <WalletKindIcon kind={kind} />
-                ) : (
-                    <Icon
-                        aria-hidden="true"
-                        className="polli:h-3.5 polli:w-3.5 polli:shrink-0"
-                    />
-                ))}
+            {state === "paid-required" ? (
+                <WalletKindIcon kind="paid" />
+            ) : budgetState ? (
+                <KeyIcon
+                    aria-hidden="true"
+                    className="polli:h-3.5 polli:w-3.5 polli:shrink-0"
+                />
+            ) : (
+                <WalletIcon
+                    aria-hidden="true"
+                    className="polli:h-3.5 polli:w-3.5 polli:shrink-0"
+                />
+            )}
             {label}
             {!budgetState && topUpHref && (
                 <>

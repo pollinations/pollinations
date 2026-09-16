@@ -1,0 +1,34 @@
+{
+  "pr_number": 14869,
+  "title": "feat: add CatGPT comic prompt agent (registered, three verified comics)",
+  "author": "Creatneworld",
+  "url": "https://github.com/pollinations/pollinations/pull/14869",
+  "merged_at": "2026-09-16T14:51:24Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #14822\n\nAdds `apps/catgpt-comic/` — a Pollinations **prompt agent** (no code, no scaffolding, per the issue's \"a prompt agent is fine\" guidance). It answers any message with a short, sarcastic CatGPT line plus the matching single-panel comic, returned inline as a Markdown image.\n\n**Live agent, already registered**\n\n| | |\n| --- | --- |\n| Agent ID | `c35c537b-5bda-4919-bc30-b8b710674ad5` |\n| Callable model | `community/Creatneworld/catgpt-comic` (alias `Creatneworld/catgpt-comic`) |\n| Public repository | https://github.com/Creatneworld/catgpt-comic-agent |\n| Type | `prompt_agent` · base model `anthropic/claude-haiku-4.5` · `mcpServers: [\"pollinations\"]` |\n\nThe agent is currently `private` — making managed agents public needs community publisher access, which I requested in #14870. Until that is granted the agent is callable with my own account; the three responses below are real output from it, and the raw JSON of each call is in the public repository.\n\n**Three real comic responses** (live calls to `https://gen.pollinations.ai/v1/chat/completions`)\n\n**1. \"Why do boxes call to me?\"** → *\"They know.\"*\n\n![CatGPT comic — Why do boxes call to me? / They know.](https://media.pollinations.ai/2cf1ff642ec3aa815fbf357c9786159f8bd645ded019d94428041ae262b16a2a)\n\n**2. \"What's the meaning of life?\"** → *\"Naps. Next question.\"*\n\n![CatGPT comic — What's the meaning of life? / Naps. Next question.](https://media.pollinations.ai/2fe0a2d02b706d5b00f7d69120ffaaaf0bf98a7c32b2b346cb1db0a5c181a2c1)\n\n**3. \"How do I fix my code?\"** → *\"Knock it off the table.\"*\n\n![CatGPT comic — How do I fix my code? / Knock it off the table.](https://media.pollinations.ai/59cbc57a1500ab015551179a3c0f05da0305f615842cf40cc96b2dac6f6b6557)\n\nEvery comic is rendered by the agent's own `generateImage` call and carries the `CATGPT` title box, the human's question, the cat's answer and the `@missfitcomics` signature.\n\nTranscripts with the full raw responses: [1](https://github.com/Creatneworld/catgpt-comic-age",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "CatGPT Has Opinions",
+    "blurb": "A new prompt agent answers life’s questions the way a cat would: briefly, sarcastically, and with a custom single-panel comic. Ask about code, boxes, or existence at your own risk.",
+    "summary": "Added the registered `community/Creatneworld/catgpt-comic` prompt agent, powered by Claude Haiku 4.5 and Pollinations MCP, which turns any chat message into a sarcastic CatGPT reply plus an inline generated single-panel comic.",
+    "impact": "Developers can call `Creatneworld/catgpt-comic` through the chat API to receive a complete Markdown comic with the question, cat answer, CATGPT title box, and `@missfitcomics` signature.",
+    "keywords": [
+      "community",
+      "prompt-agent",
+      "CatGPT",
+      "comics",
+      "image-generation",
+      "Claude"
+    ],
+    "visual_concept": "Depict CatGPT as a smug, cozy pixel cat at a tiny retro desk, producing a one-panel comic from a glowing terminal prompt. Polli wears a little editor's beret and hovers beside the cat with a question card, while a CRT monitor shows a simple comic panel; include a box, a code printout knocked off the desk, and small flowering code-plants to connect the agent, comics, and Pollinations garden.",
+    "image_prompt": "Cozy pixel art scene of a smug round tabby CatGPT wearing tiny spectacles at a retro terminal, generating a single-panel comic while Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wears a little editor's beret and holds up a question card; a cardboard box, a fallen code printout, and flowering code-plants surround them. Cozy 8-bit pixel art aesthetic with a prominent soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle CRT glow, pixel-font text \"CATGPT\", soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14869.jpg",
+    "prompt": "Cozy pixel art scene of a smug round tabby CatGPT wearing tiny spectacles at a retro terminal, generating a single-panel comic while Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wears a little editor's beret and holds up a question card; a cardboard box, a fallen code printout, and flowering code-plants surround them. Cozy 8-bit pixel art aesthetic with a prominent soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle CRT glow, pixel-font text \"CATGPT\", soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-16T14:52:27.151194+00:00"
+}

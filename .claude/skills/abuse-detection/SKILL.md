@@ -316,9 +316,9 @@ npx wrangler d1 execute production-pollinations-enter-db --remote \
 ## Unbanning: the trap
 
 If the account was banned by the payment-fraud policy, **clearing `banned` is not
-enough to remove it from the review queue**. The daily job rescores all attributable
-history but takes no enforcement action. Add a reviewed exception to the repository
-variable `FRAUD_BAN_EXCLUDED_USER_IDS` (comma separated) to omit it from that queue.
+enough**. The daily job rescores all attributable history, so it will re-ban the
+same account on its next run. You must also add the user id to the repository variable
+`FRAUD_BAN_EXCLUDED_USER_IDS` (comma separated), or the unban lasts under an hour.
 
 Auto top-up stays off after an unban; re-enable it deliberately if the user asks.
 
@@ -327,21 +327,15 @@ Auto top-up stays off after an unban; re-enable it deliberately if the user asks
 Separate from the abuse scoring above, `.github/workflows/billing-check-fraud.yml`
 scores accounts daily on Stripe signals (`enter.pollinations.ai/src/utils/stripe-fraud-score.ts`).
 
-- Scheduled and manually dispatched checks are read-only during calibration.
-  The report always passes `apply: false`; bans and refunds require manual decisions.
-- One daily Discord message via `DISCORD_FRAUD_WEBHOOK_URL` covers fraud review,
-  dispute deadlines, refund/Pollen reconciliation, the last 24 hours of Stripe
-  events and scan health. Polli summarizes bounded, read-only evidence; it receives
-  no Stripe/D1 credentials, emails or card data. Excluded and already-banned
-  accounts are omitted from the fraud queue, not from disputes.
-  No KV history or score-delta tracking. One post per scheduled run; manual reruns
-  post again. Polli failures send a short failure notice, not an invented report.
-- Refund reconciliation requires the `stripe_refund` ledger and webhook deployment
-  from #15044. Missing or mismatched records are unverified, not proof of a failed
-  deduction (historical manual adjustments may predate the ledger).
-- Issuer warnings are **suspected** fraud, not proof. They enter the review queue
-  even below 0.75. Radar blocks have zero weight; highest-risk flags contribute but
-  never qualify an account alone. Scores are heuristic, not probabilities.
+- Bans **only** when `FRAUD_BAN_ENABLED` is set. It is deliberately unset: the job
+  is a review queue, not an enforcer.
+- Every run posts accounts still needing review to the private Discord channel via
+  `DISCORD_FRAUD_WEBHOOK_URL`, as a TSV of score, user id, name. No message means
+  nothing needs action.
+- A ban needs a **confirmed** signal: a fraudulent dispute, a fraud report, or an
+  early fraud warning. Radar's blocked and highest-risk flags raise the score but
+  never convict alone, because repeated declines of one legitimate card escalate
+  them.
 - Charges before 2026-05-01 carry no identity and are not scanned. Accounts whose
   activity predates that must be reviewed and banned by hand.
 - One account is excluded by id in the source (a settled case). Add later

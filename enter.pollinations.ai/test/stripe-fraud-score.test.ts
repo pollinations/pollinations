@@ -59,7 +59,7 @@ async function queryD1(body: Query | { batch: Query[] }) {
 }
 const client = () => new Stripe("sk_test_mock", { maxNetworkRetries: 0 });
 
-test("scan reads every page; dry run is read-only; apply bans and expires checkouts", async ({
+test("hourly scan reads every page; dry run is read-only; apply bans and expires checkouts", async ({
     sessionToken,
     mocks,
 }) => {
@@ -103,7 +103,7 @@ test("scan reads every page; dry run is read-only; apply bans and expires checko
         url: null,
     });
     const stripe = client();
-    expect(await runFraudBanCheck(stripe, queryD1)).toMatchObject({
+    expect(await runFraudBanCheck(stripe, queryD1)).toEqual({
         candidates: 1,
         applied: 0,
         charges: 106,
@@ -161,69 +161,6 @@ test("scan reads every page; dry run is read-only; apply bans and expires checko
         )?.n,
     ).toBe(0);
     expect(mocks.stripe.state.checkoutSessions[0].status).toBe("expired");
-});
-
-test("manual review includes a first warning below threshold and prioritizes higher scores", async ({
-    sessionToken,
-    mocks,
-}) => {
-    expect(sessionToken).toBeTruthy();
-    await mocks.enable("stripe");
-    const user = await env.DB.prepare("SELECT id FROM user LIMIT 1").first<{
-        id: string;
-    }>();
-    if (!user) throw Error("Missing user");
-    await env.DB.prepare(
-        "INSERT INTO user (id, name, email, created_at, updated_at) VALUES ('higher_score', 'Review account', 'review@example.test', ?, ?)",
-    )
-        .bind(Date.now(), Date.now())
-        .run();
-    mocks.stripe.state.fraudCharges.push(
-        {
-            id: "ch_first_warning",
-            livemode: true,
-            metadata: { userId: user.id },
-        },
-        ...Array.from({ length: 6 }, (_, i) => ({
-            id: `ch_review_${i}`,
-            livemode: true,
-            metadata: { userId: "higher_score" },
-        })),
-    );
-    mocks.stripe.state.fraudWarnings.push({
-        id: "issfr_first",
-        livemode: true,
-        charge: "ch_first_warning",
-    });
-    mocks.stripe.state.fraudDisputes.push(
-        ...Array.from({ length: 6 }, (_, i) => ({
-            id: `dp_review_${i}`,
-            livemode: true,
-            reason: "fraudulent",
-            charge: `ch_review_${i}`,
-        })),
-    );
-    const result = await runFraudBanCheck(client(), queryD1);
-    expect(result).toMatchObject({ candidates: 1, applied: 0 });
-    expect(result.report.map(({ id, score }) => ({ id, score }))).toEqual([
-        { id: "higher_score", score: 0.75 },
-        { id: user.id, score: 0.15 },
-    ]);
-    expect(
-        await env.DB.prepare(
-            "SELECT COUNT(*) AS n FROM user WHERE banned = 1",
-        ).first(),
-    ).toEqual({ n: 0 });
-    await env.DB.prepare(
-        "UPDATE user SET banned = 1 WHERE id = 'higher_score'",
-    ).run();
-    expect(
-        (
-            await runFraudBanCheck(client(), queryD1, {
-                excludedUserIds: [user.id],
-            })
-        ).report,
-    ).toEqual([]);
 });
 
 test("incomplete Stripe scans cannot apply any bans", async ({
@@ -411,13 +348,6 @@ test("charges before the attribution window are skipped, not treated as a gap", 
         reason: "fraudulent",
         charge: "ch_before_window",
     });
-    mocks.stripe.state.fraudWarnings.push(
-        ...["issfr_old_1", "issfr_old_2"].map((id) => ({
-            id,
-            livemode: true,
-            charge: "ch_before_window",
-        })),
-    );
     mocks.stripe.state.archivedCharges.push({
         id: "ch_before_window",
         object: "charge",
@@ -429,60 +359,4 @@ test("charges before the attribution window are skipped, not treated as a gap", 
     ]);
     expect(result.charges).toBe(1);
     expect(result.confirmed.has(user.id)).toBe(false);
-    // Disputes and repeated warnings share one archived-charge lookup.
-    expect(
-        mocks.stripe.state.requests.filter(
-            (request) => request.path === "/v1/charges/ch_before_window",
-        ),
-    ).toHaveLength(1);
-});
-
-test("scan skips old event pages without losing signals at the charge cutoff", async ({
-    mocks,
-}) => {
-    await mocks.enable("stripe");
-    const cutoff = FRAUD_SCAN_START_SECONDS;
-    mocks.stripe.state.fraudCharges.push(
-        ...["dispute", "warning"].map((id) => ({
-            id: `ch_${id}`,
-            livemode: true,
-            created: cutoff,
-            metadata: { userId: id },
-        })),
-    );
-    for (const [kind, rows] of [
-        ["dispute", mocks.stripe.state.fraudDisputes],
-        ["warning", mocks.stripe.state.fraudWarnings],
-    ] as const) {
-        rows.push(
-            {
-                id: `${kind}_boundary`,
-                livemode: true,
-                reason: "fraudulent",
-                charge: `ch_${kind}`,
-                created: cutoff,
-            },
-            ...Array.from({ length: 101 }, (_, i) => ({
-                id: `${kind}_old_${i}`,
-                livemode: true,
-                reason: "fraudulent",
-                charge: `ch_archive_${i}`,
-                created: cutoff - 1,
-            })),
-        );
-    }
-    const result = await collectStripeFraudScores(
-        client(),
-        ["dispute", "warning"].map((id) => ({ id, stripe_customer_id: null })),
-        cutoff + 100,
-    );
-    expect(result.scores.get("dispute")).toBe(0.39);
-    expect(result.scores.get("warning")).toBe(0.15);
-    expect([...result.confirmed].sort()).toEqual(["dispute", "warning"]);
-    // One page per source, and no individual charge lookups for old events.
-    expect(mocks.stripe.state.requests.map((request) => request.path)).toEqual([
-        "/v1/charges",
-        "/v1/disputes",
-        "/v1/radar/early_fraud_warnings",
-    ]);
 });

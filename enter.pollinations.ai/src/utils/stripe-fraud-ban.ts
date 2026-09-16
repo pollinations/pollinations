@@ -13,11 +13,12 @@ type FraudReportUser = FraudUser & {
     banned: number | null;
     ban_expires: number | null;
 };
+export type FraudCandidate = { id: string; name: string | null; score: number };
 type QueryRunner = (
     body: FraudQuery | { batch: FraudQuery[] },
 ) => Promise<{ results?: unknown[] }[]>;
 
-/** Scan attributable Stripe history. Callers must explicitly enable writes. */
+/** All-history hourly check. Callers must explicitly enable writes. */
 export async function runFraudBanCheck(
     stripe: Stripe,
     query: QueryRunner,
@@ -61,11 +62,11 @@ export async function runFraudBanCheck(
     const excluded = new Set([FRAUD_BAN_EXCLUDED_USER_ID, ...excludedUserIds]);
     // Radar's own risk prediction can reach the threshold on volume alone, so a
     // ban additionally requires a dispute, a fraud report or a fraud warning.
-    const confirmedUsers = users.filter(
-        (user) => !excluded.has(user.id) && result.confirmed.has(user.id),
-    );
-    const candidates = confirmedUsers.filter(
-        (user) => (result.scores.get(user.id) ?? 0) >= FRAUD_BAN_THRESHOLD,
+    const candidates = users.filter(
+        (user) =>
+            !excluded.has(user.id) &&
+            (result.scores.get(user.id) ?? 0) >= FRAUD_BAN_THRESHOLD &&
+            result.confirmed.has(user.id),
     );
     // Public Actions logs contain aggregate counts only.
     console.log(
@@ -84,7 +85,7 @@ export async function runFraudBanCheck(
             for (const customer of result.customers.get(user.id) ?? []) {
                 await expireOpenStripeCheckoutSessions(stripe, customer, () => {
                     console.error(
-                        "Checkout expiry failed; the next apply run will retry.",
+                        "Checkout expiry failed; the next hourly run will retry.",
                     );
                 });
             }
@@ -95,20 +96,16 @@ export async function runFraudBanCheck(
         applied: apply ? candidates.length : 0,
         charges: result.charges,
         unmapped: result.unmapped,
-        disputes: result.disputes,
-        warnings: result.warnings,
         // Private report of accounts still needing action; never printed to public logs.
-        // Review every confirmed signal, including a first issuer warning below
-        // the threshold. Scores prioritize the queue during manual calibration.
-        report: confirmedUsers
+        report: candidates
             .filter((user) => !isActiveBan(user))
-            .map((user) => ({
-                id: user.id,
-                name: user.name,
-                // biome-ignore lint/style/noNonNullAssertion: Confirmed users are derived from these same collected payments.
-                ...result.details.get(user.id)!,
-            }))
-            .sort((a, b) => b.score - a.score),
+            .map(
+                (user): FraudCandidate => ({
+                    id: user.id,
+                    name: user.name,
+                    score: result.scores.get(user.id) ?? 0,
+                }),
+            ),
     };
 }
 

@@ -1,0 +1,34 @@
+{
+  "pr_number": 15006,
+  "title": "perf: skip charges from before identity was recorded",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15006",
+  "merged_at": "2026-09-16T18:47:08Z",
+  "labels": [],
+  "pr_body_excerpt": "Before 2026-05-12 checkout created a throwaway Stripe customer per purchase and wrote the user id only on the Checkout Session, so those charges carry no identity the scan can use. A live scan on 2026-09-16 attributed **0 of the 12,248 charges before May** and 100% from June onward.\n\n- Lower-bounds the charge list at 2026-05-01, keeping an 11-day margin before the deploy that fixed identity.\n- Drops ~35% of the charges scanned each hour with no change to the candidate list.\n- Disputes and warnings are listed by their own date, so one can reference a charge older than the window. `paymentFor` now retrieves the charge and skips it only when it provably predates the window; an unknown or unreadable date still fails the scan as an incomplete page.\n- Test: a recent dispute against a pre-window charge is skipped rather than failing, and the existing incomplete-coverage guard still fires.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The scan knows its seasons",
+    "blurb": "The fraud scanner now leaves the pre-identity fossil record alone. Fewer Stripe charges to inspect, with the same useful trail of suspicious pollen.",
+    "summary": "The hourly Stripe fraud scan now starts at 2026-05-01, avoiding pre-May 2026 charges created before checkout records reliably carried user identity while still resolving and safely skipping older charges referenced by recent disputes or warnings.",
+    "impact": "The scan processes roughly 35% fewer charges per hour without changing its candidate list, while incomplete or unreadable charge data continues to trigger the existing coverage guard.",
+    "keywords": [
+      "stripe",
+      "fraud-scan",
+      "billing",
+      "performance",
+      "identity",
+      "checkout"
+    ],
+    "visual_concept": "A cozy archive-garden metaphor for pruning irrelevant historical records: Polli, wearing a tiny archivist visor, tends a calendar-shaped hedge and marks May 2026 as the beginning of a well-labeled charge trail. Older unlabeled paper receipts rest safely in a background compost bin while a friendly CRT monitor robot checks recent dispute notices, representing careful handling of references outside the scan window.",
+    "image_prompt": "Cozy pixel art scene in a warm garden archive where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and a tiny archivist visor, gently trims a calendar hedge at a lime green (#ecf874) sign reading \"MAY 2026\" while a chunky CRT monitor robot checks recent receipt scrolls beside her; older unlabeled receipts rest safely in a compost basket, with flowers and code-plants around the path. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-15006.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden archive where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and a tiny archivist visor, gently trims a calendar hedge at a lime green (#ecf874) sign reading \"MAY 2026\" while a chunky CRT monitor robot checks recent receipt scrolls beside her; older unlabeled receipts rest safely in a compost basket, with flowers and code-plants around the path. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-16T18:48:13.768850+00:00"
+}

@@ -12,7 +12,7 @@ import {
     ExternalLinkIcon,
     KeyIcon,
     LogInIcon,
-    SignOutIcon,
+    PowerIcon,
     WalletIcon,
 } from "../../primitives/icons/index.tsx";
 import { LoginButton } from "../auth/sdk.ts";
@@ -41,11 +41,11 @@ const defaultLabels: AppUserMenuLabels = {
     authorize: "Connect Pollen",
     appUserMenu: "App user menu",
     thisApp: "This app",
-    editAppAllowance: "Edit app allowance",
-    logout: "Disconnect app",
+    editAppAllowance: "Edit allowance",
+    logout: "Disconnect",
     yourAccount: "Your account",
-    topUpWallet: "Top up wallet",
-    dashboard: "Pollinations dashboard",
+    topUpWallet: "Top up",
+    dashboard: "Dashboard",
 };
 
 function MenuGroupLabel({ children }: { children: string }) {
@@ -158,7 +158,7 @@ export function AppUserMenu({
                                     logout();
                                 }}
                             >
-                                <SignOutIcon
+                                <PowerIcon
                                     className="polli:h-4 polli:w-4 polli:shrink-0"
                                     aria-hidden="true"
                                 />

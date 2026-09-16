@@ -6,11 +6,20 @@ export const ModelHealthSchema = z
             description:
                 "Based on the reported window: healthy above 95% success, degraded above 80% through 95%, down at 80% or below, unknown below 10 measured requests. Check stale before relying on this status.",
         }),
-        success_rate: z.number().min(0).max(1).nullable(),
+        success_rate: z.number().min(0).max(1).nullable().meta({
+            description:
+                "Successful requests / measured requests (0–1); null with no samples.",
+        }),
         sample_size: z.number().int().nonnegative(),
         window_minutes: z.number().int().positive(),
-        checked_at: z.string().datetime().nullable(),
-        stale: z.boolean(),
+        checked_at: z.string().datetime().nullable().meta({
+            description:
+                "UTC snapshot-fetch time, not the last model request; null if unavailable.",
+        }),
+        stale: z.boolean().meta({
+            description:
+                "Refresh failed: data is older or unavailable. Excluded by status=healthy.",
+        }),
     })
     .meta({
         description:

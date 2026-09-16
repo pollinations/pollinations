@@ -15,35 +15,44 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 
 ### Filters and health
 
-All model discovery endpoints accept the same optional filters. Omitting them
-returns the existing complete catalog without a health lookup.
+All model list endpoints above accept the same optional filters. With no
+filters, the API returns the complete accessible catalog without health data.
 
 | Query | Values | Behaviour |
 |-------|--------|-----------|
 | `source` | `official`, `community` | Return one source; omit for both |
-| `status` | `all`, `healthy` | Add health to every result, or keep only healthy results with fresh data |
+| `status` | `all`, `healthy` | `all`: include health without filtering; `healthy`: include only healthy models with fresh data |
 
 `community=true|false|1|0` remains available as a legacy source filter.
 Query filters override connection-wide headers; `source` overrides `community`.
-Invalid filter values return **400 Bad Request**. Source, access, and
-status filters combine with AND semantics. Status never grants or
-removes permission to generate with a model.
+Invalid filter values return **400 Bad Request**. Source and status filters
+combine with the caller's access restrictions; they do not change generation
+permissions. Omitting both the status query and header skips the health lookup.
 
 Health uses the last 24 hours of completed requests. `success_rate` is
 `2xx / (2xx + 5xx)`, so successful fallback rescues count as successes while
 final 4xx responses are excluded. This is the gateway's final-response metric,
-not the health of an individual upstream provider. `sample_size`, `window_minutes`,
-`checked_at`, and `stale` disclose confidence and freshness. Missing or small
-samples are `unknown`; alpha/preview status remains a separate field. Stale or
-unknown models are excluded by `status=healthy`.
+not the health of an individual upstream provider.
 
 `health` is an optional Pollinations extension on every list endpoint, including
 `/v1/models`. It contains only `status`, `success_rate`, `sample_size`,
 `window_minutes`, `checked_at`, and `stale`. With at least 10 measured requests,
 status is `healthy` below 5% failures, `degraded` from 5% to below 20%, and
 `down` at 20% or more. Smaller samples are `unknown`. These describe recent
-request outcomes, not live availability. No data is represented by a null
-success rate, not zero or perfect health.
+request outcomes, not live availability; alpha/preview status is separate.
+`success_rate` is a fraction from 0 to 1, or null when there are no samples.
+
+Health snapshots are cached for 60 seconds. `checked_at` is the snapshot-fetch
+time in UTC, not the model's last request time. If refresh fails, `status=all`
+can return an older snapshot marked `stale`, or `unknown` with a null
+`checked_at` when no snapshot exists. `status=healthy` excludes both stale and
+unknown results.
+
+The dashboard defaults to `source:official status:healthy`, so unknown models
+are hidden. Select `status:all` to include every health state, or
+`source:community` for community models. Its dots are green for healthy, amber
+for degraded/down, and grey for unknown/stale. Filtering is local; it does not
+poll for updates.
 
 Detailed counters and latency statistics remain separate at `/v1/models/status`;
 `/v1/models/status/routes` breaks down individual primary and fallback attempts.

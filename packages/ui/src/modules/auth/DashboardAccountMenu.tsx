@@ -25,7 +25,7 @@ export function DashboardAccountMenu({
         <>
             {error && <Alert>{error}</Alert>}
             <AccountMenu
-                name={user.preferred_username || user.name || user.email}
+                name={user.name || user.preferred_username || user.email}
                 avatarUrl={user.picture}
                 className={className}
                 side={side}

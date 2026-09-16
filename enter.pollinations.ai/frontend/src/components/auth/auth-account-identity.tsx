@@ -28,7 +28,7 @@ export function AuthAccountIdentity({
 }) {
     return (
         <AccountIdentity
-            name={user.githubUsername || user.name || user.email}
+            name={user.name || user.githubUsername || user.email}
             avatarUrl={user.image}
             dashboardHref="/pollen"
             secondaryContent={

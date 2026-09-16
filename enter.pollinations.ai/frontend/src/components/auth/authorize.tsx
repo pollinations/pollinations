@@ -589,7 +589,7 @@ export function Authorize() {
                             />
                         )}
                         <span className="text-sm font-medium text-theme-text-strong truncate">
-                            {user.githubUsername || user.email}
+                            {user.name || user.githubUsername || user.email}
                         </span>
                     </a>
                     <div className="inline-flex items-stretch rounded-full bg-theme-bg-pale border border-theme-border text-sm overflow-hidden shrink-0">

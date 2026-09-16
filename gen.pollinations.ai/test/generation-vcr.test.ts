@@ -2553,6 +2553,36 @@ test("simple text supports audio output models", async ({
     });
 });
 
+test("chat completions leave explicit text-only modalities untouched on audio models", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "openai/gpt-audio-mini",
+            messages: [{ role: "user", content: "vcr text-only modalities" }],
+            modalities: ["text"],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    await response.json();
+    await wait();
+
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
+    expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
+        modalities: ["text"],
+    });
+    expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty("audio");
+});
+
 test("simple text prompts can include slashes", async ({
     paidApiKey,
     mocks,

@@ -150,6 +150,26 @@ their native `models.json` provider support.
 
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
 
+## MCP servers
+
+Install the live MCP catalog into your coding agents — one command, one
+dedicated key per client:
+
+```bash
+polli mcp install                # every detected client
+polli mcp install codex          # a single client
+polli mcp install --servers pollinations,ffmpeg
+polli mcp status
+polli mcp remove                 # strips Pollinations entries + deletes their keys
+```
+
+`install` reads the server catalog from `gen.pollinations.ai/mcp` at runtime,
+mints a child API key (`polli-mcp-<client>`) for each client, and writes the
+client's own config format. Codex points at an env var (`POLLINATIONS_MCP_KEY`)
+and VS Code at a password prompt input, so no plaintext key lands in those
+configs. Claude Desktop is bridged via `mcp-remote`; every other client talks
+to the hosted HTTPS URL directly.
+
 ## Links
 
 - [gen.pollinations.ai](https://gen.pollinations.ai) — API

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14999,
+  "title": "fix: keep the code and message of every terminal stream error",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14999",
+  "merged_at": "2026-09-16T15:09:53Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces the per-producer branches in `finishReasonError` (`gen.pollinations.ai/src/middleware/track.ts`) with one extractor that finds the terminal error object in the three protocol positions: Chat `{error}`, Responses `{type:\"error\"}`, `{type:\"response.failed\", response:{error}}`\n- Every stream error now reaches Tinybird with its own `error_response_code` and `error_message`; before, only `upstream_stream_error` kept its message and `agent_error` collapsed to \"Upstream ended generation with finish_reason=error\" (124 real-user agent 502s in 7 days, see #14994)\n- Drops the `usage_missing` special-cased fallback string; the validator's own message is recorded instead\n- Net −18 lines in track.ts; adds a regression test for `agent_error`; updates the Chat-over-Responses failure test to the passed-through `upstream_error` code and message\n- Verified: gen tsc, tracking-observability (72), generation-vcr + responses + text-cache (98), biome 2.3.10\n\nAddresses #14994\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Errors keep their names",
+    "blurb": "The stream-error courier stopped losing its labels somewhere in the hive. Terminal failures now arrive in Tinybird with the code and message they were born with.",
+    "summary": "Unified terminal stream-error extraction in gen.pollinations.ai so Chat `{error}`, Responses `{type:\"error\"}`, and `response.failed` events each record their original error code and message in Tinybird.",
+    "impact": "Developers and operators can now distinguish real stream failures—including previously collapsed agent 502s—using the upstream error details instead of a generic finish-reason message.",
+    "keywords": [
+      "streaming",
+      "error tracking",
+      "Tinybird",
+      "observability",
+      "Responses API",
+      "Chat API"
+    ],
+    "visual_concept": "Polli acts as a careful mail carrier in a cozy observability garden, sorting three differently shaped terminal-error envelopes into labeled jars on a glowing analytics terminal. Each envelope retains its own code and message, while code-plants and small flowers make the tracking system feel organized and alive.",
+    "image_prompt": "A cozy pixel art observability garden where Polli, the cute yellow-and-brown striped bee mascot wearing tiny librarian glasses, carefully sorts three glowing error envelopes labeled with distinct code and message glyphs into jars beside a retro CRT analytics terminal; each envelope comes from a different little code-plant. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle scanlines, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) pixel-font text: \"ERROR DETAILS KEPT\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14999.jpg",
+    "prompt": "A cozy pixel art observability garden where Polli, the cute yellow-and-brown striped bee mascot wearing tiny librarian glasses, carefully sorts three glowing error envelopes labeled with distinct code and message glyphs into jars beside a retro CRT analytics terminal; each envelope comes from a different little code-plant. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle scanlines, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) pixel-font text: \"ERROR DETAILS KEPT\"."
+  },
+  "generated_at": "2026-09-16T15:10:54.177117+00:00"
+}

@@ -23,7 +23,7 @@ import type {
 const ID = "dsh";
 const LABEL = "DeepSeek Harness";
 const PROVIDER = "pollinations";
-const DEFAULT_MODEL = "deepseek";
+const DEFAULT_MODEL = "deepseek/deepseek-v4-flash";
 const KEY_ENV = "POLLI_DSH_API_KEY";
 const MCP_ID = "mcp-pollinations";
 const MCP_URL = `${BASE_URL}/mcp/pollinations`;
@@ -277,12 +277,12 @@ export const dsh: HarnessAdapter = {
     label: LABEL,
     description: "Configure DeepSeek Harness as a Pollinations provider",
     restartHint:
-        "Changes apply on the next request. Start DeepSeek Harness with: npx @deepseek-ai/dsh web",
+        "Changes apply on the next request. Start DeepSeek Harness with: npx @deepseek-ai/dsh@latest web",
 
     async on(ctx, options) {
         if (!commandExists("npx", ctx.env)) {
             throw new Error(
-                "DeepSeek Harness requires npx. Install Node.js, then run: npx @deepseek-ai/dsh web",
+                "DeepSeek Harness requires npx. Install Node.js, then run: npx @deepseek-ai/dsh@latest web",
             );
         }
         const model = options.model ?? DEFAULT_MODEL;

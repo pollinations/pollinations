@@ -27,14 +27,6 @@ on:
           - gen
           - media
         default: all
-      sync_openrouter_only:
-        description: 'Sync only the approved OpenRouter secret to Gen'
-        type: boolean
-        default: false
-      sync_discord_secrets:
-        description: 'Sync the approved Discord secrets to Enter'
-        type: boolean
-        default: false
       finalize_canonical_permissions:
         description: 'Repeat canonical allowlist cleanup after both Enter and Gen deploy (use service=all)'
         type: boolean
@@ -55,7 +47,6 @@ jobs:
       enter: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'enter') || steps.filter.outputs.enter == 'true' }}
       gen: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'gen') || steps.filter.outputs.gen == 'true' }}
       media: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'media') || steps.filter.outputs.media == 'true' }}
-      openrouter_only: ${{ inputs.sync_openrouter_only || steps.generation-secret-scope.outputs.openrouter_only == 'true' }}
       mcp_apps: ${{ steps.mcp-apps.outputs.apps || '[]' }}
       canonical_permissions: ${{ inputs.finalize_canonical_permissions || steps.filter.outputs.canonical_permissions == 'true' }}
     steps:
@@ -63,23 +54,6 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
-
-      - name: Detect OpenRouter-only secret rotation
-        id: generation-secret-scope
-        if: github.event_name == 'push'
-        env:
-          BEFORE_SHA: ${{ github.event.before }}
-        run: |
-          python3 - <<'PYTHON'
-          import json, os, subprocess
-          path = "gen.pollinations.ai/secrets/prod.vars.json"
-          before = json.loads(subprocess.check_output(["git", "show", f"{os.environ['BEFORE_SHA']}:{path}"]))
-          with open(path) as source:
-              after = json.load(source)
-          changed = {key for key in before.keys() | after.keys() if key != "sops" and before.get(key) != after.get(key)}
-          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-              output.write(f"openrouter_only={str(changed == {'OPENROUTER_API_KEY'}).lower()}\n")
-          PYTHON
 
       - name: Detect changed services
         id: filter
@@ -241,25 +215,23 @@ jobs:
       - name: Install root dependencies
         run: npm ci
 
-      - name: Setup SOPS
-        if: github.event_name == 'workflow_dispatch' && inputs.sync_discord_secrets
-        uses: nhedger/setup-sops@v3
-
       - name: Build and deploy to Cloudflare
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
         run: npm run deploy:production --workspace pollinations-enter
 
-      - name: Push Discord secrets
-        if: github.event_name == 'workflow_dispatch' && inputs.sync_discord_secrets
+      - name: Setup SOPS
+        uses: nhedger/setup-sops@v3
+
+      # Same ordering as deploy-gen below: deploy first so the secret push
+      # edits the deployed version. Re-applies secrets/prod.vars.json; a new
+      # or changed value goes through the Secret Mutation Safety gate before
+      # it is merged.
+      - name: Push enter secrets
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
-        run: >-
-          sops exec-file --no-fifo enter.pollinations.ai/secrets/prod.vars.json
-          'jq "{DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_BOT_TOKEN}" {}
-          | npx wrangler secret bulk - --env production
-          --config enter.pollinations.ai/wrangler.toml'
+        run: npm run push-secrets:production --workspace pollinations-enter
 
   deploy-gen:
     needs: [changes, migrate, deploy-media, deploy-mcp-apps]
@@ -294,6 +266,8 @@ jobs:
       - name: Setup SOPS
         uses: nhedger/setup-sops@v3
 
+      # Re-apply the reviewed production secrets after every Gen deploy so the
+      # deployed worker stays in sync with the encrypted source of truth.
       # Deploy BEFORE pushing secrets: a fresh `wrangler deploy` makes the
       # latest worker version the deployed one. `wrangler secret bulk` edits
       # the latest version's settings and fails (Cloudflare 10214) if that
@@ -309,22 +283,10 @@ jobs:
         run: npm run deploy:production --workspace pollinations-gen
 
       - name: Push generation secrets
-        if: needs.changes.outputs.openrouter_only != 'true'
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GEN }}
         run: npm run push-secrets:production --workspace pollinations-gen
-
-      - name: Push approved OpenRouter secret only
-        if: needs.changes.outputs.openrouter_only == 'true'
-        env:
-          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GEN }}
-        run: |
-          set -euo pipefail
-          sops --decrypt gen.pollinations.ai/secrets/prod.vars.json \
-            | jq '{OPENROUTER_API_KEY}' \
-            | ./node_modules/.bin/wrangler secret bulk - --config gen.pollinations.ai/wrangler.toml --env production
 
       - name: Verify production VPC binding
         env:

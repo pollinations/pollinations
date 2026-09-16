@@ -1,5 +1,6 @@
 import { Chip, SparklesIcon, Tooltip } from "@pollinations/ui";
 import { PaidChip, TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
+import type { ModelHealth } from "@shared/registry/model-health.ts";
 import type { FC } from "react";
 
 export type BalanceAccess = "quest" | "paid" | "free";
@@ -8,6 +9,7 @@ type ModelStatusChipsProps = {
     showNew: boolean;
     showAlpha: boolean;
     alphaTooltip?: boolean;
+    health?: ModelHealth;
 };
 
 type BalanceAccessChipProps = {
@@ -19,13 +21,35 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
     showNew,
     showAlpha,
     alphaTooltip = true,
+    health,
 }) => {
-    if (!showNew && !showAlpha) return null;
+    if (!showNew && !showAlpha && !health) return null;
+
+    const unknown = !health || health.stale || health.status === "unknown";
+    const healthy = !unknown && health.status === "healthy";
+    const healthLabel = unknown
+        ? "Status unknown or stale"
+        : healthy
+          ? "Healthy over the last 24 hours"
+          : "Elevated errors over the last 24 hours";
 
     const alphaTooltipLabel = "Alpha model — experimental, may be unstable";
 
     return (
         <span className="inline-flex shrink-0 items-center gap-1.5">
+            {health && (
+                <Tooltip
+                    triggerAs="span"
+                    content={healthLabel}
+                    ariaLabel={healthLabel}
+                    tapEnabled
+                >
+                    <span
+                        aria-hidden="true"
+                        className={`inline-block h-2 w-2 rounded-full ${unknown ? "bg-theme-text-muted" : healthy ? "bg-intent-success-text" : "bg-intent-warning-text"}`}
+                    />
+                </Tooltip>
+            )}
             {showNew && (
                 <Chip intent="new" size="sm">
                     New

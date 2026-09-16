@@ -5,7 +5,7 @@ import {
     createMediaResponse,
     MediaChatCompletionSchema,
     MediaResponseSchema,
-    mediaResponseStream,
+    textResponseStream,
 } from "../src/media/response-output.ts";
 import { mediaPrompt } from "../src/media/responses.ts";
 import { getGenerationModelRegistry } from "../src/model-registry.ts";
@@ -32,10 +32,27 @@ describe("media text protocols", () => {
                 },
                 { role: "assistant", content: "not the prompt" },
             ]),
-        ).toBe("a cat\nin space");
-        expect(mediaPrompt(" literal prompt ")).toBe(" literal prompt ");
-        expect(mediaPrompt("猫 🚀 ... %2F")).toBe("猫 🚀 ... %2F");
-        expect(mediaPrompt(" . ")).toBe(" . ");
+        ).toEqual({ prompt: "a cat\nin space", images: [] });
+        expect(mediaPrompt(" literal prompt ").prompt).toBe(" literal prompt ");
+        expect(mediaPrompt("猫 🚀 ... %2F").prompt).toBe("猫 🚀 ... %2F");
+        expect(mediaPrompt(" . ").prompt).toBe(" . ");
+    });
+
+    it("collects Chat image_url and Responses input_image parts in order", () => {
+        const data = "data:image/png;base64,AAAA";
+        expect(
+            mediaPrompt([
+                {
+                    role: "user",
+                    content: [
+                        { type: "image_url", image_url: { url: url } },
+                        { type: "text", text: "make it night" },
+                        { type: "input_image", image_url: data },
+                        { type: "input_image", image_url: { url: url } },
+                    ],
+                },
+            ]),
+        ).toEqual({ prompt: "make it night", images: [url, data, url] });
     });
 
     it.each([
@@ -48,7 +65,25 @@ describe("media text protocols", () => {
         "\udc00",
         [{ role: "assistant", content: "hello" }],
         [{ role: "user", content: [{ type: "input_image", image_url: url }] }],
-    ])("rejects absent text and attachments: %j", (input) => {
+        [
+            {
+                role: "user",
+                content: [
+                    { type: "text", text: "summarise" },
+                    { type: "input_file", file_data: "AAAA" },
+                ],
+            },
+        ],
+        [
+            {
+                role: "user",
+                content: [
+                    { type: "text", text: "listen" },
+                    { type: "input_audio", input_audio: { data: "AAAA" } },
+                ],
+            },
+        ],
+    ])("rejects absent text and non-image attachments: %j", (input) => {
         expect(() => mediaPrompt(input)).toThrow();
     });
 
@@ -79,9 +114,7 @@ describe("media text protocols", () => {
 
     it("emits ordered Responses events and adapts them to one Chat text delta", async () => {
         const response = createMediaResponse("media-model", url, "image/png");
-        const events = (
-            await new Response(mediaResponseStream(response)).text()
-        )
+        const events = (await new Response(textResponseStream(response)).text())
             .split("\n\n")
             .filter((line) => line.startsWith("event:"))
             .map((line) => JSON.parse(line.split("\ndata: ")[1]));
@@ -94,7 +127,7 @@ describe("media text protocols", () => {
         });
         const chat = await new Response(
             responsesToChatStream(
-                mediaResponseStream(response),
+                textResponseStream(response),
                 response.model,
                 { requireUsage: false },
             ),
@@ -112,10 +145,7 @@ describe("media text protocols", () => {
         expect(chunks.some((chunk) => chunk.usage != null)).toBe(false);
         expect(chat).toContain("data: [DONE]");
         const strict = await new Response(
-            responsesToChatStream(
-                mediaResponseStream(response),
-                response.model,
-            ),
+            responsesToChatStream(textResponseStream(response), response.model),
         ).text();
         expect(strict).toContain("usage_missing");
     });

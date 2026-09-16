@@ -12,6 +12,7 @@ SQL >
     SELECT
         owner_user_id AS userId,
         sumMergeIf(gross_consumption, is_external) AS pollenUsed,
+        sumMergeIf(paid_consumption, is_external) AS paidPollenUsed,
         sumMergeIf(billed_paid_calls, is_external) AS paidRequests
     FROM byop_app_payer_daily
     WHERE owner_user_id = {{String(user_id, '')}}

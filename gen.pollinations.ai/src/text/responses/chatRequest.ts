@@ -426,6 +426,7 @@ export function chatToResponsesRequest(
 
     const request: CreateResponseRequest = {
         model: options.model,
+        metadata: options.metadata,
         input,
         store: false,
         stream: options.stream === true,

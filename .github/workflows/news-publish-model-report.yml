@@ -20,6 +20,7 @@ on:
 # scoped via the App's installation permissions, not this block.
 permissions:
   contents: read
+  issues: write
 
 # Live runs (cron + non-dry workflow_dispatch) serialize on one group and
 # never cancel each other — cancelling between Discord post and the snapshot
@@ -82,3 +83,9 @@ jobs:
           TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
           DISCORD_MODELS_WEBHOOK_URL: ${{ secrets.DISCORD_MODELS_WEBHOOK_URL }}
         run: python operations/social/scripts/publish_models_news.py
+
+      - name: Report failure as an issue
+        if: failure()
+        uses: ./.github/actions/failure-issue
+        with:
+          token: ${{ github.token }}

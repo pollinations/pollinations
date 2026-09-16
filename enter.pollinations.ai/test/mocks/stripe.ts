@@ -168,6 +168,7 @@ export type MockStripeState = {
     invoicePayments: StripeInvoicePayment[];
     paymentIntents: StripePaymentIntent[];
     fraudCharges: Record<string, unknown>[];
+    refunds: Record<string, unknown>[];
     fraudDisputes: Record<string, unknown>[];
     fraudWarnings: Record<string, unknown>[];
     failFraudWarnings: boolean;
@@ -217,6 +218,22 @@ export function createMockStripe(): MockAPI<MockStripeState> {
             c.json({ id: "acct_1SrY3q7rcjS3l7tr", object: "account" }),
         )
         .get("/v1/charges", (c) => fraudPage(c, state.fraudCharges))
+        .get("/v1/charges/:id", (c) => {
+            const charge = state.fraudCharges.find(
+                (entry) => entry.id === c.req.param("id"),
+            );
+            return charge
+                ? c.json(charge)
+                : c.json(
+                      {
+                          error: {
+                              type: "invalid_request_error",
+                              message: "No such charge",
+                          },
+                      },
+                      404,
+                  );
+        })
         .get("/v1/disputes", (c) => fraudPage(c, state.fraudDisputes))
         .get("/v1/radar/early_fraud_warnings", (c) =>
             state.failFraudWarnings
@@ -231,6 +248,27 @@ export function createMockStripe(): MockAPI<MockStripeState> {
                   )
                 : fraudPage(c, state.fraudWarnings),
         )
+        .post("/v1/refunds", async (c) => {
+            const body = await c.req.parseBody();
+            const chargeId = String(body.charge ?? "");
+            const refund = {
+                id: `re_${state.refunds.length + 1}`,
+                object: "refund",
+                charge: chargeId,
+                reason: body.reason ?? null,
+                status: "succeeded",
+            };
+            state.refunds.push(refund);
+            // Mirror Stripe: the charge now reads as refunded, so a retry stops.
+            const charge = state.fraudCharges.find(
+                (entry) => entry.id === chargeId,
+            );
+            if (charge) {
+                charge.refunded = true;
+                charge.amount_refunded = charge.amount;
+            }
+            return c.json(refund);
+        })
         .post("/v1/customers", async (c) => {
             const form = await parseForm(c.req.raw);
             recordRequest(c, state, form);
@@ -622,6 +660,7 @@ function createInitialState(): MockStripeState {
         invoicePayments: [],
         paymentIntents: [],
         fraudCharges: [],
+        refunds: [],
         fraudDisputes: [],
         fraudWarnings: [],
         failFraudWarnings: false,

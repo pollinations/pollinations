@@ -12,6 +12,7 @@ import {
     markAutoTopUpInvoiceFailed,
 } from "../utils/stripe-billing/index.ts";
 import { recordStripeCardFingerprintAttempt } from "../utils/stripe-card-gate.ts";
+import { refundEarlyFraudWarning } from "../utils/stripe-early-fraud.ts";
 
 interface StripeEventData {
     eventType: string;
@@ -794,6 +795,31 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     customerEmail: paymentIntent.receipt_email || "",
                     recordFailedCardFingerprint: true,
                 });
+                break;
+            }
+
+            case "radar.early_fraud_warning.created": {
+                const warning = event.data
+                    .object as Stripe.Radar.EarlyFraudWarning;
+                console.log(`Early fraud warning: ${warning.id}`);
+                // Refund small warned charges before the issuer turns them into
+                // a dispute we would lose plus a flat fee. Runs after the ACK so
+                // a slow Stripe call cannot make the webhook time out.
+                c.executionCtx.waitUntil(
+                    refundEarlyFraudWarning(stripe, c.env.DB, warning)
+                        .then((result) =>
+                            console.log(
+                                `Early fraud warning ${warning.id}: ${
+                                    result.refunded
+                                        ? `refunded ${result.amountCents} cents`
+                                        : `left alone, ${result.reason}`
+                                }`,
+                            ),
+                        )
+                        .catch((err) =>
+                            console.error("Early fraud refund failed:", err),
+                        ),
+                );
                 break;
             }
 

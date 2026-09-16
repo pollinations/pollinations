@@ -1,0 +1,20 @@
+TOKEN tinybird_ingest APPEND
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+    Best-effort signed-in product analytics: page views and checkout starts.
+    Server-authenticated user IDs join directly to d1_user (signups) and
+    stripe_event (fulfilled payments). No anonymous visitors or backfill.
+
+SCHEMA >
+    `timestamp` DateTime64(3) `json:$.timestamp`,
+    `event_id` String `json:$.event_id`,
+    `event` LowCardinality(String) `json:$.event`,
+    `user_id` String `json:$.user_id`,
+    `environment` LowCardinality(String) `json:$.environment`,
+    `page` LowCardinality(String) `json:$.page` DEFAULT '',
+    `pack_key` LowCardinality(String) `json:$.pack_key` DEFAULT ''
+
+ENGINE "MergeTree"
+ENGINE_SORTING_KEY "environment, timestamp, event, user_id"
+ENGINE_PRIMARY_KEY "environment, timestamp"

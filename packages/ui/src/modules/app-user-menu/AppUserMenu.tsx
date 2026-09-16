@@ -83,7 +83,7 @@ export function AppUserMenu({
         if (returnUrl) editKeyUrl.searchParams.set("redirect", returnUrl);
     }
     let pollenSource: AccountPollenSource | undefined;
-    if (key.data?.pollenBudget !== null && key.data) {
+    if (key.data && key.data.pollenBudget !== null) {
         pollenSource = {
             type: "budget",
             remaining: key.data.pollenBudget,

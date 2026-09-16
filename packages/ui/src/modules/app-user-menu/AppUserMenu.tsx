@@ -15,7 +15,7 @@ import {
     WalletIcon,
 } from "../../primitives/icons/index.tsx";
 import { LoginButton } from "../auth/sdk.ts";
-import { formatPollen } from "../wallet/format-pollen.ts";
+import { AccountPollen } from "../wallet/AccountPollen.tsx";
 
 export type AppUserMenuLabels = {
     authorize: string;
@@ -104,16 +104,16 @@ export function AppUserMenu({
                     menuClassName="polli:w-max polli:min-w-0"
                     secondaryContent={
                         key.data ? (
-                            <span className="polli:inline-flex polli:items-center polli:gap-1 polli:text-xs polli:text-theme-text-base polli:tabular-nums">
-                                <KeyIcon
-                                    className="polli:h-3.5 polli:w-3.5 polli:shrink-0"
-                                    aria-hidden="true"
-                                />
-                                {key.data.pollenBudget == null
-                                    ? "Unlimited"
-                                    : `${formatPollen(key.data.pollenBudget)} pollen`}
-                            </span>
-                        ) : null
+                            <AccountPollen
+                                source={{
+                                    type: "allowance",
+                                    remaining: key.data.pollenBudget,
+                                    generationEnabled:
+                                        key.data.permissions?.models?.length !==
+                                        0,
+                                }}
+                            />
+                        ) : undefined
                     }
                 >
                     {(close) => (

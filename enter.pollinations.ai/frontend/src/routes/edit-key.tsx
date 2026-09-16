@@ -142,7 +142,11 @@ function EditKeyPage() {
 
     const accountHeader = (
         <AuthModalHeader>
-            <AuthAccountIdentity user={user} balances={balances} />
+            <AuthAccountIdentity
+                user={user}
+                balances={balances}
+                topUpHref="/top-up"
+            />
         </AuthModalHeader>
     );
 

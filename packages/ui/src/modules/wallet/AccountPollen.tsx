@@ -23,8 +23,6 @@ export function getAccountPollenStatus(
 ): PollenStatus | undefined {
     if (source.type === "budget") {
         if (source.generationEnabled === false) return undefined;
-        // null is the API's explicit "no budget"; undefined is not loaded yet.
-        if (source.remaining === null) return { state: "unlimited" };
         return source.remaining != null &&
             Number.isFinite(source.remaining) &&
             source.remaining <= 0
@@ -52,22 +50,29 @@ export function AccountPollen({
     const status = getAccountPollenStatus(source);
     if (status) return <PollenStatusBadge {...status} topUpHref={topUpHref} />;
     if (source.type === "budget") {
+        if (source.generationEnabled === false) return null;
+        // null is the API's explicit "no budget"; undefined is not loaded yet.
+        const unlimited = source.remaining === null;
         if (
-            source.generationEnabled === false ||
-            source.remaining == null ||
-            !Number.isFinite(source.remaining)
+            !unlimited &&
+            (source.remaining == null || !Number.isFinite(source.remaining))
         )
             return null;
         return (
             <span
-                title="Available app Pollen"
+                title={unlimited ? "Unlimited app budget" : "App budget left"}
+                aria-label={
+                    unlimited
+                        ? "Unlimited app budget"
+                        : `App budget left: ${formatPollen(source.remaining as number)}`
+                }
                 className="polli:inline-flex polli:items-center polli:gap-1 polli:tabular-nums"
             >
                 <KeyIcon
                     aria-hidden="true"
                     className="polli:h-3.5 polli:w-3.5 polli:shrink-0"
                 />
-                {formatPollen(source.remaining)} Pollen
+                {unlimited ? "∞" : formatPollen(source.remaining as number)}
             </span>
         );
     }

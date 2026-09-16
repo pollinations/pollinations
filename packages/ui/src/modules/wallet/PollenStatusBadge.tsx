@@ -4,21 +4,19 @@ import { KeyIcon, WalletIcon } from "../../primitives/icons/index.tsx";
 import { WalletKindIcon } from "./wallet-display.tsx";
 
 export type PollenStatus = {
-    state: "no-pollen" | "limit-reached" | "paid-required" | "unlimited";
+    state: "no-pollen" | "limit-reached" | "paid-required";
 };
 
 const labels = {
     "no-pollen": "No Pollen",
     "limit-reached": "Limit reached",
     "paid-required": "Paid required",
-    unlimited: "Unlimited",
 } as const;
 
 const intents = {
     "no-pollen": "danger",
     "limit-reached": "danger",
     "paid-required": "warning",
-    unlimited: "info",
 } as const;
 
 /** The caller supplies a confirmed status; this component does not infer affordability. */
@@ -26,7 +24,7 @@ export function PollenStatusBadge({
     state,
     topUpHref,
 }: PollenStatus & { topUpHref?: string }) {
-    const budgetState = state === "limit-reached" || state === "unlimited";
+    const budgetState = state === "limit-reached";
     const label = labels[state];
     return (
         <Chip

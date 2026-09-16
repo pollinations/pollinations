@@ -56,13 +56,6 @@ describe("account Pollen", () => {
         ).toBeUndefined();
         expect(
             getAccountPollenStatus({ type: "budget", remaining: null }),
-        ).toEqual({ state: "unlimited" });
-        expect(
-            getAccountPollenStatus({
-                type: "budget",
-                remaining: null,
-                generationEnabled: false,
-            }),
         ).toBeUndefined();
     });
 
@@ -113,7 +106,7 @@ describe("account Pollen", () => {
             renderToStaticMarkup(
                 <AccountPollen source={{ type: "budget", remaining: 3.25 }} />,
             ),
-        ).toContain("3.25 Pollen");
+        ).toContain("3.25");
         const exhausted = renderToStaticMarkup(
             <AccountPollen
                 source={{ type: "budget", remaining: 0 }}
@@ -125,8 +118,19 @@ describe("account Pollen", () => {
         const unlimited = renderToStaticMarkup(
             <AccountPollen source={{ type: "budget", remaining: null }} />,
         );
-        expect(unlimited).toContain("Unlimited");
-        expect(unlimited).toContain("polli:bg-intent-info-bg-light");
-        expect(unlimited).not.toContain("<a ");
+        expect(unlimited).toContain("∞");
+        expect(unlimited).toContain('aria-label="Unlimited app budget"');
+        expect(unlimited).not.toContain("polli:bg-intent-info-bg-light");
+        expect(
+            renderToStaticMarkup(
+                <AccountPollen
+                    source={{
+                        type: "budget",
+                        remaining: null,
+                        generationEnabled: false,
+                    }}
+                />,
+            ),
+        ).toBe("");
     });
 });

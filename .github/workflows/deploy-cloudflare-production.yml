@@ -47,7 +47,6 @@ permissions:
 jobs:
   changes:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     outputs:
       enter: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'enter') || steps.filter.outputs.enter == 'true' }}
       gen: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'gen') || steps.filter.outputs.gen == 'true' }}
@@ -129,7 +128,6 @@ jobs:
     needs: changes
     if: needs.changes.outputs.gen == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -168,7 +166,6 @@ jobs:
        needs.changes.outputs.gen == 'true' ||
        needs.changes.outputs.media == 'true')
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
     steps:
@@ -208,7 +205,6 @@ jobs:
       (needs.deploy-mcp-apps.result == 'success' ||
        needs.deploy-mcp-apps.result == 'skipped')
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
     steps:
@@ -254,7 +250,6 @@ jobs:
       (needs.deploy-mcp-apps.result == 'success' ||
        needs.deploy-mcp-apps.result == 'skipped')
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
     steps:
@@ -325,7 +320,6 @@ jobs:
       needs.deploy-enter.result == 'success' &&
       needs.deploy-gen.result == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
     steps:
@@ -347,7 +341,6 @@ jobs:
     needs: [changes, migrate]
     if: needs.changes.outputs.media == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -393,7 +386,6 @@ jobs:
       (needs.deploy-media.result == 'success' ||
        needs.deploy-media.result == 'skipped')
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:

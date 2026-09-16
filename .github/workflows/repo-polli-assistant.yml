@@ -25,7 +25,6 @@ jobs:
         (github.event_name == 'issues' && (contains(github.event.issue.body, '!polli') || contains(github.event.issue.title, '!polli')))
       )
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     permissions:
       contents: read
     outputs:
@@ -53,7 +52,6 @@ jobs:
     needs: authorize-write
     if: needs.authorize-write.outputs.authorized == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     permissions:
       contents: write
       pull-requests: write

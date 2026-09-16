@@ -23,7 +23,6 @@ jobs:
         startsWith(github.event.issue.title, '[App Submission]')) &&
        !contains(github.event.issue.labels.*.name, 'APP-APPROVED'))
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     permissions:
       contents: read
       issues: write

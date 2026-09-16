@@ -17,7 +17,6 @@ jobs:
     # Only run if PR was merged (skip closed-without-merge)
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     permissions:
       contents: write
       pull-requests: read

@@ -239,11 +239,20 @@ function stripPngMetadata(data: Uint8Array): Uint8Array {
 }
 
 // ---------------------------------------------------------------------------
-// GIF: drop Comment Extension (0xFE) and Application Extension (0xFF) blocks.
-//      These carry XMP, authorship, and free-text metadata.
+// GIF: drop Comment Extension (0xFE) and metadata Application Extensions (0xFF).
+//      Preserves behavioural extensions such as NETSCAPE2.0 / ANIMEXTS1.0 looping.
 // ---------------------------------------------------------------------------
 
-const GIF_METADATA_EXTENSIONS = new Set([0xfe, 0xff]);
+const BEHAVIOURAL_APP_EXTENSIONS = new Set(["NETSCAPE2.0", "ANIMEXTS1.0"]);
+
+function isBehaviouralAppExtension(data: Uint8Array, offset: number): boolean {
+    if (offset + 14 > data.length || data[offset + 2] !== 11) return false;
+    let id = "";
+    for (let i = 0; i < 11; i++) {
+        id += String.fromCharCode(data[offset + 3 + i]);
+    }
+    return BEHAVIOURAL_APP_EXTENSIONS.has(id);
+}
 
 function skipGifSubBlocks(data: Uint8Array, offset: number): number {
     while (offset < data.length) {
@@ -321,8 +330,14 @@ function stripGifMetadata(data: Uint8Array): Uint8Array {
             if (afterExt < 0) {
                 return malformedAfterMetadata(data, stripped, "GIF");
             }
-            if (GIF_METADATA_EXTENSIONS.has(label)) {
+            if (label === 0xfe) {
                 stripped = true;
+            } else if (label === 0xff) {
+                if (isBehaviouralAppExtension(data, offset)) {
+                    segments.push(data.subarray(offset, afterExt));
+                } else {
+                    stripped = true;
+                }
             } else {
                 segments.push(data.subarray(offset, afterExt));
             }

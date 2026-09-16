@@ -514,6 +514,162 @@ function gifWithAppExtension(): Uint8Array {
     ]);
 }
 
+function gifWithNetscapeLoop(): Uint8Array {
+    const netscapeExt = [
+        0x21,
+        0xff,
+        0x0b,
+        0x4e,
+        0x45,
+        0x54,
+        0x53,
+        0x43,
+        0x41,
+        0x50,
+        0x45, // "NETSCAPE"
+        0x32,
+        0x2e,
+        0x30, // "2.0"
+        0x03,
+        0x01,
+        0x00,
+        0x00, // sub-block: loop infinitely
+        0x00, // terminator
+    ];
+    return new Uint8Array([
+        0x47,
+        0x49,
+        0x46,
+        0x38,
+        0x39,
+        0x61,
+        0x01,
+        0x00,
+        0x01,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        ...netscapeExt,
+        0x2c,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x01,
+        0x00,
+        0x01,
+        0x00,
+        0x00,
+        0x02,
+        0x02,
+        0x4c,
+        0x01,
+        0x00,
+        0x3b,
+    ]);
+}
+
+function gifWithAnimextsLoop(): Uint8Array {
+    const animextsExt = [
+        0x21,
+        0xff,
+        0x0b,
+        0x41,
+        0x4e,
+        0x49,
+        0x4d,
+        0x45,
+        0x58,
+        0x54,
+        0x53, // "ANIMEXTS"
+        0x31,
+        0x2e,
+        0x30, // "1.0"
+        0x03,
+        0x01,
+        0x00,
+        0x00,
+        0x00,
+    ];
+    return new Uint8Array([
+        0x47,
+        0x49,
+        0x46,
+        0x38,
+        0x39,
+        0x61,
+        0x01,
+        0x00,
+        0x01,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        ...animextsExt,
+        0x2c,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x01,
+        0x00,
+        0x01,
+        0x00,
+        0x00,
+        0x02,
+        0x02,
+        0x4c,
+        0x01,
+        0x00,
+        0x3b,
+    ]);
+}
+
+function gifWithNetscapeLoopAndComment(): Uint8Array {
+    const netscapeExt = [
+        0x21, 0xff, 0x0b, 0x4e, 0x45, 0x54, 0x53, 0x43, 0x41, 0x50, 0x45, 0x32,
+        0x2e, 0x30, 0x03, 0x01, 0x00, 0x00, 0x00,
+    ];
+    const comment = [
+        0x47, 0x50, 0x53, 0x3a, 0x6c, 0x61, 0x74, 0x3d, 0x35, 0x31,
+    ];
+    const commentExt = [0x21, 0xfe, comment.length, ...comment, 0x00];
+    return new Uint8Array([
+        0x47,
+        0x49,
+        0x46,
+        0x38,
+        0x39,
+        0x61,
+        0x01,
+        0x00,
+        0x01,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        ...netscapeExt,
+        ...commentExt,
+        0x2c,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x01,
+        0x00,
+        0x01,
+        0x00,
+        0x00,
+        0x02,
+        0x02,
+        0x4c,
+        0x01,
+        0x00,
+        0x3b,
+    ]);
+}
+
 // GIF tests
 
 describe("stripImageMetadata - GIF", () => {
@@ -532,6 +688,23 @@ describe("stripImageMetadata - GIF", () => {
         const result = stripImageMetadata(gifWithAppExtension());
         expect(result).not.toBe(gifWithAppExtension());
         expect([...result]).toEqual([...gifMinimal()]);
+    });
+
+    it("preserves NETSCAPE2.0 loop-control application extension", () => {
+        const input = gifWithNetscapeLoop();
+        expect(stripImageMetadata(input)).toBe(input);
+    });
+
+    it("preserves ANIMEXTS1.0 loop-control application extension", () => {
+        const input = gifWithAnimextsLoop();
+        expect(stripImageMetadata(input)).toBe(input);
+    });
+
+    it("strips metadata while preserving NETSCAPE2.0 loop-control extension", () => {
+        const input = gifWithNetscapeLoopAndComment();
+        const result = stripImageMetadata(input);
+        expect(result).not.toBe(input);
+        expect([...result]).toEqual([...gifWithNetscapeLoop()]);
     });
 
     it("returns a truncated GIF header unchanged", () => {

@@ -51,13 +51,15 @@ describe("shared control accessibility", () => {
         expect(descriptionId).toBeTruthy();
         expect(button).toContain(`id="${descriptionId}"`);
         expect(button).toContain("10 Pollen");
-        expect(
-            renderToStaticMarkup(
-                <AccountMenu name="Alex Morgan">
-                    <DropdownItem>Disconnect</DropdownItem>
-                </AccountMenu>,
-            ),
-        ).not.toContain("aria-describedby");
+        const plainTrigger = renderToStaticMarkup(
+            <AccountMenu name="Alex Morgan">
+                <DropdownItem>Disconnect</DropdownItem>
+            </AccountMenu>,
+        ).match(/<button\b[^>]*>/)?.[0];
+        expect(plainTrigger).toContain(
+            'aria-label="Account menu for Alex Morgan"',
+        );
+        expect(plainTrigger).not.toContain("aria-describedby");
     });
 
     it("uses a caller-owned dashboard destination in standalone identities", () => {

@@ -77,13 +77,14 @@ export { WorkspaceServiceProxy };
 // User-Agent by default, and APIs such as api.github.com reject that.
 export class Egress extends WorkerEntrypoint {
     override fetch(request: Request): Promise<Response> {
-        if (request.headers.has("user-agent")) return fetch(request);
-        const headers = new Headers(request.headers);
-        headers.set(
-            "user-agent",
-            "pollinations-computer (+https://pollinations.ai)",
-        );
-        return fetch(new Request(request, { headers }));
+        const outbound = new Request(request);
+        if (!outbound.headers.has("user-agent")) {
+            outbound.headers.set(
+                "user-agent",
+                "pollinations-computer (+https://pollinations.ai)",
+            );
+        }
+        return fetch(outbound);
     }
 }
 

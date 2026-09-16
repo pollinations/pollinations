@@ -1,0 +1,34 @@
+{
+  "pr_number": 14974,
+  "title": "fix(ci): never let bots trigger the Polli auto-fix agent",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14974",
+  "merged_at": "2026-09-16T18:06:09Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the `pollinations-ai[bot]` ID from the auto-fix allowlist; any `Bot` sender now has the `POLLI` label removed without a comment\n- Triage workflow no longer applies the `POLLI` label from the LLM verdict; it comments that a maintainer can hand small fixes to Polli\n- Closes the chain: untrusted issue text → LLM verdict → bot-applied label → write-capable `claude-code-action`\n\nReported by @fisventurous in Discord (repo safety review); confirmed against `main`.\n\nRemaining findings from the same review are not in this PR: sender gate on `apps-publish-submissions.yml`, SDK/UI/MCP tests in PR CI, filename interpolation in CI shell steps.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polli gets a human gate",
+    "blurb": "Polli’s auto-fix garden now has a proper gatekeeper. Bots can no longer pass each other a label and accidentally summon a write-capable helper.",
+    "summary": "Updated the issue triage and Polli auto-fix workflows so any Bot sender has its POLLI label silently removed, while LLM triage verdicts now leave a maintainer-facing handoff comment instead of applying the label.",
+    "impact": "Maintainers retain an explicit human handoff before Polli’s write-capable auto-fix action runs, closing the bot-label chain from untrusted issue text to repository changes.",
+    "keywords": [
+      "ci",
+      "github-actions",
+      "polli",
+      "issue-triage",
+      "repository-safety",
+      "automation"
+    ],
+    "visual_concept": "A cozy garden-shed workflow gate represents the new human approval boundary: Polli, wearing a tiny caretaker hat, gently removes a POLLI tag from a small bot-shaped visitor and leaves a handwritten note for a maintainer. A glowing retro terminal and code-plants show the protected automation behind the gate.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed hackerspace where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny caretaker hat, gently removes a pixel tag reading 'POLLI' from a small boxy bot visitor while pinning a note for a human maintainer beside a closed garden gate. Lime green (#ecf874) glows from a retro terminal behind code-plants and flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14974.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed hackerspace where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny caretaker hat, gently removes a pixel tag reading 'POLLI' from a small boxy bot visitor while pinning a note for a human maintainer beside a closed garden gate. Lime green (#ecf874) glows from a retro terminal behind code-plants and flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-16T18:09:14.300593+00:00"
+}

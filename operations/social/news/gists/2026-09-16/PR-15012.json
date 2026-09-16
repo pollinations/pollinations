@@ -1,0 +1,34 @@
+{
+  "pr_number": 15012,
+  "title": "fix: allow 1000-character agent descriptions",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15012",
+  "merged_at": "2026-09-16T17:24:40Z",
+  "labels": [],
+  "pr_body_excerpt": "- Raises `COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH` from 160 to 1000 (single source in `shared/community-endpoints.ts`; DB column is unbounded text, no migration)\n- Agent and community-endpoint zod schemas now reject over-long descriptions with `Description must be at most 1000 characters`, so the CLI's raw API error names the limit\n- Drops the \"one line\" wording from the dashboard description helper; the field's `maxLength` follows the constant\n- Adds a test: 1000-char description accepted, 1001 rejected with the limit in the message\n- Code-agent sync keeps trimming the GitHub repo description (GitHub caps it at 350, so the slice never fires)\n\nAddresses feedback in #14930.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Room for the whole buzz",
+    "blurb": "Agent descriptions have been given a larger flowerpot. Write the useful details now; the form knows exactly where the fence is.",
+    "summary": "Raised the shared agent and community-endpoint description limit from 160 to 1000 characters, with dashboard validation and CLI API errors now explicitly reporting the 1000-character cap.",
+    "impact": "Builders can add substantially richer agent and endpoint descriptions, while descriptions over 1000 characters receive a clear, consistent validation message.",
+    "keywords": [
+      "agents",
+      "community-endpoints",
+      "descriptions",
+      "validation",
+      "dashboard",
+      "cli"
+    ],
+    "visual_concept": "A cozy community-agent listing board has grown from a tiny label into a long, readable scroll, representing room for detailed descriptions. Polli, wearing tiny librarian glasses, helps pin the expanded scroll beside a retro terminal; code-plants and flowers reinforce that community projects have room to grow.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown stripes, black antennae and oval eyes, bright pink rectangular blush marks, a small happy smile, and rounded light blue translucent wings, wearing tiny librarian glasses as she pins a long description scroll onto a community agent board beside a retro terminal. The board has a small pixel-font label reading “1000 CHARACTERS,” with code-plants, flowers, and vines growing nearby; cozy 8-bit pixel art, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-15012.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown stripes, black antennae and oval eyes, bright pink rectangular blush marks, a small happy smile, and rounded light blue translucent wings, wearing tiny librarian glasses as she pins a long description scroll onto a community agent board beside a retro terminal. The board has a small pixel-font label reading “1000 CHARACTERS,” with code-plants, flowers, and vines growing nearby; cozy 8-bit pixel art, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-16T17:25:36.146065+00:00"
+}

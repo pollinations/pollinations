@@ -15,7 +15,7 @@ Available: coreutils, grep, sed, awk, jq, xan (CSV), file, html-to-markdown, tar
 
 Write a file by passing its content in \`stdin\` and running \`cat > path\`; stdin is used as-is, no quoting.
 
-Send files out with \`assets publish <path>\`, which copies one file to media storage and prints an unlisted URL kept 30 days (tar a folder first), or \`git push\` to a repository you own with a token in the remote URL.
+Send files out with \`assets publish <path>\`, which copies one file to media storage and prints an unlisted URL kept 30 days (tar a folder first).
 
 Output is stdout and stderr, truncated at 64 KB; a non-zero exit is an error.`;
 

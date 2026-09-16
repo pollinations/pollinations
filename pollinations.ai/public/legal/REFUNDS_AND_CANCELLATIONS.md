@@ -1,6 +1,6 @@
 # Refunds & Cancellations
 
-**Updated: 2026-09-16**
+**Updated: 2026-09-17**
 
 ## Refunds & Cancellations (digital API services & Pollen)
 
@@ -21,25 +21,23 @@ All sales are final except where required by law or expressly approved by us. Ou
 
 Paid Pollen packs/top-ups are non-refundable once provisioned, including unused Paid Pollen balance. We do not guarantee refunds because you changed your mind, stopped using the Service, disliked an output, chose the wrong model, authorized an app you no longer want to use, or did not use the full balance.
 
-Used Pollen cannot be refunded or clawed back. Quest Pollen, free or promotional grants, quest or other rewards, and developer earnings have no cash value and are not refundable.
+**Once any Pollen from a paid pack/top-up has been used, that purchase is not eligible for a discretionary refund, including a partial refund of its remaining Pollen.** We do not offer prorated refunds for partially used packs. Refunds required by law and corrections of proven duplicate or unauthorized charges remain exceptions.
+
+Quest Pollen, free or promotional grants, quest or other rewards, and developer earnings have no cash value and are not refundable.
 
 ## 3) Limited Refund Review
 
-We may review refund requests for unused Paid Pollen balance in these cases:
+We may review a full refund of a completely unused paid pack/top-up in these cases:
 
-- A refund is required by law.
-- A duplicate or unauthorized charge is proven.
 - We fail to provision paid Pollen after payment.
-- A material, documented technical fault prevents any meaningful use within a reasonable start period, and you contact us promptly before substantial use.
+- A material, documented technical fault prevents use within a reasonable start period, and you contact us promptly before using any Pollen from that purchase.
+- You request review under the price-change provision in Terms §6.
 
-Approval is discretionary except where required by law. On any approved refund, associated Pollen, credits, benefits, and developer earnings may be reversed or adjusted. See Terms §6 for developer-earnings reversibility.
+An unused pack does not automatically qualify for a refund; approval is discretionary except where required by law. Requests based on statutory rights or proven duplicate or unauthorized charges are reviewed even if Pollen has been used. On any approved refund, associated Pollen, credits, benefits, and developer earnings may be reversed or adjusted. See Terms §6 for developer-earnings reversibility. This update does not remove refund rights attached to purchases made under earlier terms.
 
 ## 4) EU/EEA Consumer Withdrawal
 
-If you purchase as a consumer in the EEA, you may have a 14-day right of withdrawal for distance contracts. For digital content or digital services not supplied on a physical medium, that right can be lost once performance begins if you:
-
-- expressly request immediate access, and
-- acknowledge that you lose the withdrawal right once performance begins.
+If you purchase as a consumer in the EEA, you may have a 14-day right of withdrawal for distance contracts. Starting to use Pollen does not by itself remove that right. Any exception depends on the type of contract and the applicable legal requirements, including any required express consent and acknowledgement.
 
 We do not currently collect a separate immediate-delivery waiver at checkout. Requests based on a non-waivable withdrawal right will be reviewed under applicable law.
 
@@ -59,4 +57,4 @@ If you provide a valid VAT ID or purchase for business use, consumer withdrawal 
 
 ## 8) How to Request Review
 
-Email billing@pollinations.ai with your order ID, account email, and a short description of the issue. We aim to review within 5-10 business days. Approved refunds return to the original payment method subject to payment-network timelines. A refund of a full purchase includes that purchase's service fee and tax; partial refunds are prorated on the amount paid. Business days are calculated in EET/EEST (Tallinn).
+Email billing@pollinations.ai with your order ID, account email, and a short description of the issue. We aim to review within 5-10 business days. Approved refunds return to the original payment method subject to payment-network timelines. An approved full-purchase refund includes that purchase's service fee and tax. Refunds required by law are handled according to the applicable requirements. Business days are calculated in EET/EEST (Tallinn).

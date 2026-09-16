@@ -1,6 +1,8 @@
 # Terms of Service
 
-**Updated: 2026-09-16**
+**Updated: 2026-09-17**
+
+_2026-09-17 — Clarified that discretionary refunds cover whole, completely unused packs only; statutory rights, payment corrections, and refund rights attached to earlier purchases are preserved._
 
 _2026-09-16 — Accounts may be suspended immediately where we reasonably believe there is payment fraud or abuse._
 
@@ -96,13 +98,13 @@ Developer earnings are credited as Pollen to the developer wallet in the same ba
 
 **Payments.** Payments are processed by Stripe Payments Europe, Limited. Stripe sends purchase invoices by email.
 
-**No late payments.** All Pollen is prepaid: there are no invoices, due dates, or late fees. The only way a balance can go below zero is when final usage on a request exceeds the pre-flight estimate; that negative balance clears automatically through later credits to that balance or future top-ups, as described under Request billing above. We may refuse new paid-model requests until a negative Paid Pollen balance is covered.
+**No late payments.** All Pollen is prepaid: there are no invoices, due dates, or late fees. A balance can go below zero when final usage on a request exceeds the pre-flight estimate, or when credits already spent are reversed following a refund or payment dispute. A negative balance clears through later credits to that balance or future top-ups, as described under Request billing above. We may refuse new paid-model requests until a negative Paid Pollen balance is covered.
 
-**Price changes.** Prices, model costs, and Pollen rates may change at any time without notice; what's shown at top-up or in the pre-flight estimate is what applies to that transaction. If a change materially raises the cost of models you actively use, you may request a refund of unused Paid Pollen balance within 14 days.
+**Price changes.** Prices, model costs, and Pollen rates may change at any time without notice; what's shown at top-up or in the pre-flight estimate is what applies to that transaction. If a change materially raises the cost of models you actively use, you may request review of a full refund of a completely unused paid pack/top-up within 14 days of that change, under our Refunds & Cancellations Policy. This does not offer a partial refund of a pack already used or remove refund rights attached to purchases made under earlier terms.
 
 ## 7) Refunds & Cancellations
 
-Refunds, cancellations, and chargebacks are governed by our **[Refunds & Cancellations Policy](/refunds)**. Nothing in these Terms limits non-waivable statutory rights.
+Refunds, cancellations, and chargebacks are governed by our **[Refunds & Cancellations Policy](/refunds)**. Discretionary refunds are limited to whole, completely unused paid packs/top-ups; once any Pollen from a purchase is used, we do not offer a refund of that purchase or its remaining balance. Statutory rights and corrections of proven duplicate or unauthorized charges remain exceptions. Nothing in these Terms limits non-waivable statutory rights.
 
 ## 8) IP & Open-Source
 

@@ -437,13 +437,10 @@ log.warn("Chat completions error {status}: {body}", {
 
 For aggregated model health stats, query Tinybird directly.
 
-> **⚠️ Use the prod read token from SOPS — do NOT use `.tinyb`.** The `.tinyb` in `enter.pollinations.ai/observability/` points to the **staging** workspace (`pollinations_enter_staging`), which has ~no real traffic, so prod queries come back empty. Get the prod token instead:
-> ```bash
-> TB=$(sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.TINYBIRD_READ_TOKEN')
-> ```
-> This single token works for **both** pipes (`/v0/pipes/...`) and raw SQL (`/v0/sql`) against the prod workspace (`pollinations_enter`). For raw SQL, `enter.pollinations.ai/observability/scripts/tb-prod.sh "<sql>"` does the token lookup for you. The public Model Monitor reads cached health data through `gen.pollinations.ai`; it does not expose a Tinybird token.
+> **Token**: the prod read token lives in SOPS (`enter.pollinations.ai/secrets/prod.vars.json` → `TINYBIRD_READ_TOKEN`) and works for pipes and raw SQL against `pollinations_enter`. Do not use `.tinyb`: it points at staging, which has no real traffic. For raw SQL, `enter.pollinations.ai/observability/scripts/tb-prod.sh "<sql>"` does the lookup for you (see Raw SQL Queries below). The public Model Monitor reads cached health data through `gen.pollinations.ai`; it does not expose a Tinybird token.
 
 ```bash
+TB=$(sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.TINYBIRD_READ_TOKEN')
 H="https://api.europe-west2.gcp.tinybird.co"
 
 # Get model health stats — pass minutes (default pipe window is short; use 240 for last 4h)
@@ -554,33 +551,13 @@ Reading code gives plausible causes, not a verdict. If the suspect logic is a pu
 - For ad-hoc queries, use **Cloudflare Dashboard** → Workers & Pages → pollinations-enter → Observability → Investigate
 - Or use `wrangler tail` for real-time logs
 
-## Alternative: Tinybird (Recommended for Aggregates)
+## Raw SQL Queries (Tinybird)
 
-Tinybird provides pre-aggregated model health stats and raw event data.
-
-### Token Locations
-
-- **Prod read token (use this)**: `enter.pollinations.ai/secrets/prod.vars.json` → `TINYBIRD_READ_TOKEN` (via SOPS). Works for both pipes and raw `/v0/sql` against prod (`pollinations_enter`).
-- **`.tinyb`** = **staging** workspace (`pollinations_enter_staging`) — empty of prod traffic. Only use for staging-specific debugging.
-
-### Basic Queries
-
-```bash
-# Prod read token from SOPS — works for pipes AND raw SQL
-TB=$(sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.TINYBIRD_READ_TOKEN')
-
-# Get model health (last 4h)
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_health.json?token=$TB&minutes=240" | jq '.data'
-```
-
-### Raw SQL Queries
-
-The prod `TINYBIRD_READ_TOKEN` above can query the raw `generation_event_v2` datasource directly via `/v0/sql` (verified). Reuse `$TB`:
+`tb-prod.sh` below is `enter.pollinations.ai/observability/scripts/tb-prod.sh`: prod workspace, token from SOPS, no row cap.
 
 ```bash
 # Find users with frequent 403 errors (last 24 hours)
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
-  --data-urlencode "q=SELECT ge.user_id, any(users.github_username) AS github_username, argMax(ge.user_tier, ge.start_time) AS user_tier, count() as error_403_count
+tb-prod.sh "SELECT ge.user_id, any(users.github_username) AS github_username, argMax(ge.user_tier, ge.start_time) AS user_tier, count() as error_403_count
 FROM generation_event_v2 ge
 LEFT JOIN (SELECT id, github_username FROM d1_user WHERE synced_at = (SELECT max(synced_at) FROM d1_user)) users ON ge.user_id = users.id
 WHERE ge.response_status = 403
@@ -592,8 +569,7 @@ ORDER BY error_403_count DESC
 LIMIT 20"
 
 # Find users with 500 errors (actual backend issues)
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
-  --data-urlencode "q=SELECT ge.user_id, any(users.github_username) AS github_username, ge.model_requested, ge.error_message, count() as error_count
+tb-prod.sh "SELECT ge.user_id, any(users.github_username) AS github_username, ge.model_requested, ge.error_message, count() as error_count
 FROM generation_event_v2 ge
 LEFT JOIN (SELECT id, github_username FROM d1_user WHERE synced_at = (SELECT max(synced_at) FROM d1_user)) users ON ge.user_id = users.id
 WHERE ge.response_status >= 500
@@ -603,8 +579,7 @@ ORDER BY error_count DESC
 LIMIT 20"
 
 # Check specific user's recent errors
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
-  --data-urlencode "q=SELECT start_time, response_status, model_requested, error_message
+tb-prod.sh "SELECT start_time, response_status, model_requested, error_message
 FROM generation_event_v2
 WHERE user_id = 'USER_ID_HERE'
   AND start_time > now() - interval 24 hour
@@ -613,16 +588,14 @@ LIMIT 50"
 
 # Daily 5xx timeline — run this first; a multi-week aggregate hides incident days.
 # Canonical definition: exclude 4xx and cache hits.
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
-  --data-urlencode "q=SELECT toDate(start_time) AS day, countIf(response_status >= 500 AND cache_hit = 0) AS errors_5xx, count() AS total
+tb-prod.sh "SELECT toDate(start_time) AS day, countIf(response_status >= 500 AND cache_hit = 0) AS errors_5xx, count() AS total
 FROM generation_event_v2
 WHERE start_time > now() - interval 28 day
 GROUP BY day
 ORDER BY day"
 
 # Slow-but-200 tail: users whose successful requests exceeded a client timeout
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
-  --data-urlencode "q=SELECT user_id, countIf(response_time > 30000) AS slow_count, max(response_time) AS max_ms
+tb-prod.sh "SELECT user_id, countIf(response_time > 30000) AS slow_count, max(response_time) AS max_ms
 FROM generation_event_v2
 WHERE start_time > now() - interval 24 hour
 GROUP BY user_id

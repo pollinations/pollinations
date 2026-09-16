@@ -78,7 +78,7 @@ jobs:
 
       - name: Setup SOPS
         if: inputs.push_secrets
-        uses: nhedger/setup-sops@v2
+        uses: nhedger/setup-sops@v3
 
       # Deploy first so the secret push edits the deployed version (see the
       # production workflow for why).
@@ -114,7 +114,7 @@ jobs:
 
       - name: Setup SOPS
         if: inputs.push_secrets
-        uses: nhedger/setup-sops@v2
+        uses: nhedger/setup-sops@v3
 
       - name: Push generation secrets
         if: inputs.push_secrets

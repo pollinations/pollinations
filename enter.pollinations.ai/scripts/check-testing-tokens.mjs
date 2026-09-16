@@ -7,7 +7,6 @@ import { readFileSync } from "node:fs";
 const targets = {
     ENTER_API_TOKEN_REMOTE: "https://gen.pollinations.ai",
     ENTER_API_TOKEN_STAGING: "https://staging.gen.pollinations.ai",
-    ENTER_API_TOKEN_LOCAL: "http://localhost:8788",
 };
 
 const tokens = Object.fromEntries(
@@ -28,20 +27,13 @@ for (const [name, base] of Object.entries(targets)) {
         failed++;
         continue;
     }
-    try {
-        const res = await fetch(`${base}/account/balance`, {
-            headers: { Authorization: `Bearer ${token}` },
-            signal: AbortSignal.timeout(10_000),
-        });
-        console.log(
-            `${name}: ${res.status}${res.ok ? "" : " — re-mint this token"}`,
-        );
-        if (!res.ok) failed++;
-    } catch (error) {
-        const reason = error instanceof Error ? error.message : String(error);
-        console.log(`${name}: unreachable (${reason})`);
-        // The local dev server is often not running; that is not a token problem.
-        if (name !== "ENTER_API_TOKEN_LOCAL") failed++;
-    }
+    const res = await fetch(`${base}/account/balance`, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(10_000),
+    });
+    console.log(
+        `${name}: ${res.status}${res.ok ? "" : " — re-mint this token"}`,
+    );
+    if (!res.ok) failed++;
 }
 process.exit(failed ? 1 : 0);

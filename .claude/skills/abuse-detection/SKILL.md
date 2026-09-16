@@ -5,25 +5,18 @@ description: Detect and analyze abusive accounts on Pollinations. IP clustering,
 
 # Requirements
 
-- **Tinybird CLI** (`tb`): Must be authenticated
-- Run queries from `enter.pollinations.ai/observability/` (has `.tinyb` config)
+- `sops` and `jq` (the prod Tinybird read token comes from SOPS)
 - **Cloudflare D1** access for banning users (via wrangler)
 
-**Tinybird query pattern:**
+**Tinybird query pattern** (prod workspace `pollinations_enter`, no row cap):
 ```bash
-cd enter.pollinations.ai/observability
-tb --cloud sql "SELECT ... FROM generation_event_v2 ..."
+enter.pollinations.ai/observability/scripts/tb-prod.sh "SELECT ... FROM generation_event_v2 ... FORMAT JSONCompact"
 ```
 
-> **Workspace**: This skill is **prod-only** — abuse signal lives in `pollinations_enter`;
-> `pollinations_enter_staging` has no real traffic. `.tinyb` is local state and has pointed
-> at staging before, so prefer `observability/scripts/tb-prod.sh "<sql>"`: it reads the
-> prod token from SOPS and has no row cap. `tb-prod.sh --check` confirms events are fresh.
-> Don't switch or save credentials just to run an audit.
+> **Workspace**: prod-only — staging has no real traffic. `tb-prod.sh --check` confirms
+> events are fresh. Don't switch or save credentials just to run an audit.
 
 > **Quoting**: Use double quotes for the SQL string. Use single quotes inside SQL. Avoid `!=` with `$'...'` shell quoting (escaping issues) — prefer `NOT IN ('undefined', '')` instead.
-
-> **`tb` CLI caps at 100 rows.** For large result sets use `tb-prod.sh` (above) with `FORMAT JSONCompact`.
 
 ---
 
@@ -81,8 +74,6 @@ FROM (
 )
 WHERE pack_spend = 0 AND err_pct >= 95
 ```
-
-> **Note**: `tb --cloud sql` caps output at 100 rows. For large result sets, use `observability/scripts/tb-prod.sh` with `FORMAT JSONCompact`.
 
 ---
 

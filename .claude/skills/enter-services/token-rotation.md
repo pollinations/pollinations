@@ -97,8 +97,8 @@ wrangler secret list --env production   # or --env staging
 ```
 
 If a name is missing, push just that one with `wrangler secret put <NAME>
---env production`. Never run `wrangler secret bulk` by hand — it touches every
-secret.
+--env production`. `wrangler secret bulk` writes every name in the file, so
+leave it to the workflows.
 
 Approval: re-pushing an unchanged, already-approved secret (what the deploy
 workflows do) needs no new approval. A new or changed value needs Secret

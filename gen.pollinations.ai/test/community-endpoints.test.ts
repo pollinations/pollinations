@@ -9817,7 +9817,7 @@ fixtureTest(
         );
         const headers = {
             "Pollinations-Model-Source": "community",
-            "Pollinations-Model-Reliability": "reliable",
+            "Pollinations-Model-Status": "healthy",
         };
         const openai = new OpenAI({
             apiKey: paidApiKey,
@@ -9898,7 +9898,7 @@ fixtureTest(
         const clock = vi.spyOn(Date, "now").mockReturnValue(now + 61_000);
         try {
             const all = await fetchGen(
-                "https://gen.pollinations.ai/models?source=community&reliability=all",
+                "https://gen.pollinations.ai/models?source=community&status=all",
             );
             expect(await all.json()).toEqual(
                 expect.arrayContaining([

@@ -15,40 +15,51 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 
 ### Filters and health
 
-All model discovery endpoints accept the same optional filters. Omitting them
-returns the existing complete catalog without a health lookup.
+All model list endpoints above accept the same optional filters. With no
+filters, the API returns the complete accessible catalog without health data.
 
 | Query | Values | Behaviour |
 |-------|--------|-----------|
 | `source` | `official`, `community` | Return one source; omit for both |
-| `reliability` | `all`, `reliable` | Add health to every result, or keep only results with status `on` |
+| `status` | `all`, `healthy` | `all`: include health without filtering; `healthy`: include only healthy models with fresh data |
 
 `community=true|false|1|0` remains available as a legacy source filter.
 Query filters override connection-wide headers; `source` overrides `community`.
-Invalid filter values return **400 Bad Request**. Source, access, and
-reliability filters combine with AND semantics. Reliability never grants or
-removes permission to generate with a model.
+Invalid filter values return **400 Bad Request**. Source and status filters
+combine with the caller's access restrictions; they do not change generation
+permissions. Omitting both the status query and header skips the health lookup.
 
 Health uses the last 24 hours of completed requests. `success_rate` is
 `2xx / (2xx + 5xx)`, so successful fallback rescues count as successes while
 final 4xx responses are excluded. This is the gateway's final-response metric,
-not the health of an individual upstream provider. `sample_size`, `window_minutes`,
-`checked_at`, and `stale` disclose confidence and freshness. Missing or small
-samples are `unknown`; alpha/preview status remains a separate field. Stale or
-unknown models are excluded by `reliability=reliable`.
+not the health of an individual upstream provider.
 
 `health` is an optional Pollinations extension on every list endpoint, including
 `/v1/models`. It contains only `status`, `success_rate`, `sample_size`,
-`window_minutes`, `checked_at`, and `stale`. At least 10 measured requests and
-less than 5% failures are required for status `on`. No data is represented by a
-null success rate, not zero or perfect health.
+`window_minutes`, `checked_at`, and `stale`. With at least 10 measured requests,
+status is `healthy` below 5% failures, `degraded` from 5% to below 20%, and
+`down` at 20% or more. Smaller samples are `unknown`. These describe recent
+request outcomes, not live availability; alpha/preview status is separate.
+`success_rate` is a fraction from 0 to 1, or null when there are no samples.
+
+Health snapshots are cached for 60 seconds. `checked_at` is the snapshot-fetch
+time in UTC, not the model's last request time. If refresh fails, `status=all`
+can return an older snapshot marked `stale`, or `unknown` with a null
+`checked_at` when no snapshot exists. `status=healthy` excludes both stale and
+unknown results.
+
+The dashboard defaults to `source:official status:healthy`, so unknown models
+are hidden. Select `status:all` to include every health state, or
+`source:community` for community models. Its dots are green for healthy, amber
+for degraded/down, and grey for unknown/stale. Filtering is local; it does not
+poll for updates.
 
 Detailed counters and latency statistics remain separate at `/v1/models/status`;
 `/v1/models/status/routes` breaks down individual primary and fallback attempts.
 Neither diagnostic payload is embedded in model lists.
 
 ```bash
-curl 'https://gen.pollinations.ai/v1/models?source=official&reliability=reliable'
+curl 'https://gen.pollinations.ai/v1/models?source=official&status=healthy'
 ```
 
 OpenAI-compatible clients that append `/models` to their base URL can use the
@@ -56,7 +67,7 @@ equivalent headers instead of query parameters:
 
 ```text
 Pollinations-Model-Source: official
-Pollinations-Model-Reliability: reliable
+Pollinations-Model-Status: healthy
 ```
 
 These headers work with Open WebUI and Cline custom OpenAI connections.
@@ -104,6 +115,6 @@ Community models and agents use a canonical `community/owner/model` id and appea
 The old `owner/model` IDs remain generation aliases in each model's `aliases` array. Key creation and updates accept only canonical model IDs. Existing stored permissions are migrated with the rename.
 
 The `source=community` and `source=official` filters are equivalent source filters
-for discovery. Source, access, and reliability filters combine with AND semantics.
+for discovery. Source, access, and status filters combine with AND semantics.
 
 For registration, publishing, pricing, fallbacks, and health monitoring, see [Publish a Model](/docs#tag/publish-a-model). For ownership endpoints and schemas, see [Community Models](/docs#tag/community-models) under Resources.

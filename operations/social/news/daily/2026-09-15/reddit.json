@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-15",
+  "period_start": "2026-09-15",
+  "period_end": "2026-09-15",
+  "generated_at": "2026-09-16T06:30:52.712164+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-15/images/reddit.jpg"
+    }
+  ],
+  "title": "15 merged PRs: model health, tools, and fixes",
+  "text": "15 PRs merged today. The largest operational change is model discovery getting more honest: catalogs can now be filtered by source and reliability, and routes expose per-route model health, including primary versus fallback status. That should make it easier to see what actually served a request instead of treating the model list as a promise written in permanent marker.\n\nTwo community-facing tools landed as well: PollenBatch multi-image generation with a character generation engine, and AI Flashcards in Learn. Scout is back with Vercel as primary and Novita as fallback.\n\nOn the less-visible side: committed debit amounts are preserved when credit side effects fail; Grafana stops reloading against stale session cookies; the SDK handles browser auth failures; API docs validation now permits bodyless agent sync; and the CLI has a `polli update` command for global installs.\n\nThe website v2 component extraction continues, including shared dialog header/footer compositions. README and generated API docs were refreshed, plus a few smaller rough edges around brand-icon upload help.\n\nPR list: https://github.com/pollinations/pollinations/pulls\n\nRelevant changes include [#14553](https://github.com/pollinations/pollinations/pull/14553), [#14861](https://github.com/pollinations/pollinations/pull/14861), [#14919](https://github.com/pollinations/pollinations/pull/14919), [#14920](https://github.com/pollinations/pollinations/pull/14920), and [#14693](https://github.com/pollinations/pollinations/pull/14693)."
+}

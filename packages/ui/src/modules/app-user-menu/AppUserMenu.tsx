@@ -8,7 +8,6 @@ import { AccountMenu } from "../../compositions/AccountMenu.tsx";
 import { cn } from "../../lib/cn.ts";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
 import {
-    AccountIcon,
     ExternalLinkIcon,
     KeyIcon,
     LogInIcon,
@@ -21,17 +20,12 @@ import { AccountPollen } from "../wallet/AccountPollen.tsx";
 export type AppUserMenuLabels = {
     authorize: string;
     appUserMenu: string;
-    thisApp: string;
     permissions: string;
+    buyPollen: string;
     logout: string;
-    yourAccount: string;
-    topUpWallet: string;
-    dashboard: string;
 };
 
 export type AppUserMenuProps = {
-    /** Optional caller-owned dashboard destination for the menu item. */
-    dashboardHref?: string;
     labels?: Partial<AppUserMenuLabels>;
     /** Logged-out CTA style. The connected account always uses a pill. */
     triggerVariant?: "pill" | "action";
@@ -40,27 +34,15 @@ export type AppUserMenuProps = {
 const defaultLabels: AppUserMenuLabels = {
     authorize: "Connect Pollen",
     appUserMenu: "App user menu",
-    thisApp: "This app",
     permissions: "Permissions",
+    buyPollen: "Buy Pollen",
     logout: "Disconnect",
-    yourAccount: "Your account",
-    topUpWallet: "Top up",
-    dashboard: "Dashboard",
 };
-
-function MenuGroupLabel({ children }: { children: string }) {
-    return (
-        <span className="polli:block polli:px-3 polli:pt-1.5 polli:pb-0.5 polli:text-[0.65rem] polli:font-semibold polli:uppercase polli:tracking-wide polli:text-theme-text-base/70">
-            {children}
-        </span>
-    );
-}
 
 const actionTriggerClass =
     "polli:min-h-14 polli:rounded-xl polli:border-r-4 polli:border-b-4 polli:border-solid polli:border-theme-text-strong/20 polli:py-2 polli:hover:border-theme-text-strong/45";
 
 export function AppUserMenu({
-    dashboardHref,
     labels: labelOverrides,
     triggerVariant = "pill",
 }: AppUserMenuProps) {
@@ -129,7 +111,6 @@ export function AppUserMenu({
                 >
                     {(close) => (
                         <>
-                            <MenuGroupLabel>{labels.thisApp}</MenuGroupLabel>
                             {editKeyUrl && (
                                 <DropdownItem
                                     as="a"
@@ -150,6 +131,23 @@ export function AppUserMenu({
                                 </DropdownItem>
                             )}
                             <DropdownItem
+                                as="a"
+                                href={topUpUrl.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={close}
+                            >
+                                <WalletIcon
+                                    className="polli:h-4 polli:w-4 polli:shrink-0"
+                                    aria-hidden="true"
+                                />
+                                {labels.buyPollen}
+                                <ExternalLinkIcon
+                                    className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
+                                    aria-hidden="true"
+                                />
+                            </DropdownItem>
+                            <DropdownItem
                                 type="button"
                                 className="polli:justify-start polli:text-left"
                                 onClick={() => {
@@ -162,47 +160,6 @@ export function AppUserMenu({
                                     aria-hidden="true"
                                 />
                                 {labels.logout}
-                            </DropdownItem>
-                            <hr className="polli:my-1 polli:border-t polli:border-divider" />
-                            <MenuGroupLabel>
-                                {labels.yourAccount}
-                            </MenuGroupLabel>
-                            <DropdownItem
-                                as="a"
-                                href={topUpUrl.href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={close}
-                            >
-                                <WalletIcon
-                                    className="polli:h-4 polli:w-4 polli:shrink-0"
-                                    aria-hidden="true"
-                                />
-                                {labels.topUpWallet}
-                                <ExternalLinkIcon
-                                    className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
-                                    aria-hidden="true"
-                                />
-                            </DropdownItem>
-                            <DropdownItem
-                                as="a"
-                                href={
-                                    dashboardHref ??
-                                    new URL("/pollen", enterUrl).href
-                                }
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={close}
-                            >
-                                <AccountIcon
-                                    className="polli:h-4 polli:w-4 polli:shrink-0"
-                                    aria-hidden="true"
-                                />
-                                {labels.dashboard}
-                                <ExternalLinkIcon
-                                    className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
-                                    aria-hidden="true"
-                                />
                             </DropdownItem>
                         </>
                     )}

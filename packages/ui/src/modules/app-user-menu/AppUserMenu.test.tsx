@@ -17,10 +17,7 @@ describe("AppUserMenu", () => {
     test("applies the action treatment to the logged-out trigger", () => {
         const html = renderToStaticMarkup(
             <PolliProvider appKey="pk_test" storage={memoryStorage()}>
-                <AppUserMenu
-                    dashboardHref="https://enter.pollinations.ai"
-                    triggerVariant="action"
-                />
+                <AppUserMenu triggerVariant="action" />
             </PolliProvider>,
         );
 

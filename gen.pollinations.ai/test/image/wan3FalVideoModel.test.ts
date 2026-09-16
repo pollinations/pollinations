@@ -58,7 +58,8 @@ function mockFalFetch(
             const href = typeof url === "string" ? url : url.toString();
             if (
                 href === "https://media.pollinations.ai/start.png" ||
-                href === "https://media.pollinations.ai/end.png"
+                href === "https://media.pollinations.ai/end.png" ||
+                href === REF_IMAGE_URL
             ) {
                 return new Response(CLEAN_JPEG_BYTES, {
                     headers: { "Content-Type": "image/jpeg" },
@@ -256,7 +257,7 @@ describe("Wan 3.0 Prime via Fal", () => {
             aspect_ratio: "9:16",
             duration: 5,
             audio: true,
-            reference_image_urls: [REF_IMAGE_URL],
+            reference_image_urls: [CLEAN_JPEG_DATA_URI],
             reference_video_urls: [REF_VIDEO_URL],
             reference_audio_urls: [REF_AUDIO_URL],
         });
@@ -279,9 +280,57 @@ describe("Wan 3.0 Prime via Fal", () => {
         });
 
         expect(requests[0].url).toBe(R2V_ENDPOINT);
-        expect(requests[0].body?.reference_image_urls).toEqual([REF_IMAGE_URL]);
+        expect(requests[0].body?.reference_image_urls).toEqual([
+            CLEAN_JPEG_DATA_URI,
+        ]);
         expect(requests[0].body).not.toHaveProperty("reference_video_urls");
         expect(requests[0].body).not.toHaveProperty("reference_audio_urls");
+    });
+
+    it("downloads and sanitises remote reference images before submitting to Fal", async () => {
+        const requests: ProviderRequest[] = [];
+        mockFalFetch(requests);
+
+        await callWan3FalAPI("artistic style", {
+            ...baseParams,
+            reference_images: [REF_IMAGE_URL],
+        });
+
+        expect(requests[0].url).toBe(R2V_ENDPOINT);
+        expect(requests[0].body?.reference_image_urls).toEqual([
+            CLEAN_JPEG_DATA_URI,
+        ]);
+    });
+
+    it("strips metadata from metadata-bearing data URIs in reference_images before submitting to Fal", async () => {
+        const requests: ProviderRequest[] = [];
+        mockFalFetch(requests);
+
+        await callWan3FalAPI("artistic style", {
+            ...baseParams,
+            reference_images: [EXIF_JPEG_DATA_URI],
+        });
+
+        expect(requests[0].url).toBe(R2V_ENDPOINT);
+        expect(requests[0].body?.reference_image_urls).toEqual([
+            CLEAN_JPEG_DATA_URI,
+        ]);
+    });
+
+    it("strips metadata from mixed remote and metadata-bearing reference images", async () => {
+        const requests: ProviderRequest[] = [];
+        mockFalFetch(requests);
+
+        await callWan3FalAPI("artistic style", {
+            ...baseParams,
+            reference_images: [REF_IMAGE_URL, EXIF_JPEG_DATA_URI],
+        });
+
+        expect(requests[0].url).toBe(R2V_ENDPOINT);
+        expect(requests[0].body?.reference_image_urls).toEqual([
+            CLEAN_JPEG_DATA_URI,
+            CLEAN_JPEG_DATA_URI,
+        ]);
     });
 
     it("rejects frame + reference combination with 400", async () => {

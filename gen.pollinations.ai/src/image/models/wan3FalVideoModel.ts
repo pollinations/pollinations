@@ -117,7 +117,11 @@ export async function callWan3FalAPI(
               }
             : {}),
         ...(safeParams.reference_images?.length
-            ? { reference_image_urls: safeParams.reference_images }
+            ? {
+                  reference_image_urls: await Promise.all(
+                      safeParams.reference_images.map((img) => toDataUri(img)),
+                  ),
+              }
             : {}),
         ...(safeParams.reference_videos?.length
             ? { reference_video_urls: safeParams.reference_videos }

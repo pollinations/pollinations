@@ -1,0 +1,34 @@
+{
+  "pr_number": 14912,
+  "title": "feat(auth): surface key management link on 403 model permissions",
+  "author": "fisventurous",
+  "url": "https://github.com/pollinations/pollinations/pull/14912",
+  "merged_at": "2026-09-16T13:57:33Z",
+  "labels": [],
+  "pr_body_excerpt": "surfaces key management URL when requests fail due to model permission limits\r\n\r\ncloses #14814\r\n\r\n\\- append `https://enter.pollinations.ai/keys` to 403 error in gateway `requireModelAccess`\r\n\\- append same key management link to 403 error in realtime route `requireAllowedModel`\r\n\\- update gateway model permissions tests for new error message format\r\n\\- surface key management link in MCP `parseApiError` 403 handler without duplicating if already present\r\n\\- add unit tests for MCP 403 error parsing\r\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "403s Know Where to Go",
+    "blurb": "Permission errors now leave a little trail back to the key garden. If a model is outside a key’s access, the API and MCP point directly to key management instead of making you forage for it.",
+    "summary": "403 model-permission errors from the gateway, realtime route, and MCP now include https://enter.pollinations.ai/keys, with MCP avoiding duplicate links when the gateway already supplied one.",
+    "impact": "Developers whose API key lacks access to a requested model can go straight from the 403 response to key management and update access without hunting through the dashboard.",
+    "keywords": [
+      "auth",
+      "api-keys",
+      "model-permissions",
+      "403",
+      "mcp",
+      "realtime"
+    ],
+    "visual_concept": "A friendly signpost or garden path represents the new actionable 403 response, leading from a politely locked model gate to the key-management kiosk. Polli, wearing a tiny locksmith tool belt, points the way while the eager CRT robot reads an error slip; code-plants and flowers make the access-control scene feel helpful rather than blocked.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny locksmith tool belt as she points from a polite pixel sign reading “403” toward a lime green (#ecf874) key-management garden kiosk; beside her, a cute chunky CRT-monitor robot holds an error slip while code-plants bloom around a small access gate. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, warm cream background, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14912.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny locksmith tool belt as she points from a polite pixel sign reading “403” toward a lime green (#ecf874) key-management garden kiosk; beside her, a cute chunky CRT-monitor robot holds an error slip while code-plants bloom around a small access gate. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, warm cream background, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-16T13:58:34.896081+00:00"
+}

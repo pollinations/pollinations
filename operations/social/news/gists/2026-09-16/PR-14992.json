@@ -1,0 +1,34 @@
+{
+  "pr_number": 14992,
+  "title": "fix: require confirmed fraud before an automatic ban",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14992",
+  "merged_at": "2026-09-16T13:50:53Z",
+  "labels": [],
+  "pr_body_excerpt": "Radar escalates its risk level on every retry of an already-declined card, so a paying customer with a retry storm can out-score a card tester on volume alone. One live account shows this: 1,400 charges from **2 cards**, $1,523 spent, no dispute and no fraud report, but 963 blocked and 399 highest-risk charges all inside a single month of retries after `insufficient_funds`.\n\n- A ban now also requires one signal confirmed after the fact: a fraudulent dispute, a fraud report, or an early fraud warning.\n- Radar's blocked and highest-risk flags still raise the score, but never convict on their own.\n- `collectStripeFraudScores` returns the set of users with confirmed evidence; `runFraudBanCheck` requires it alongside the threshold.\n- Of the 23 candidates in the simulator, 22 already carry confirmed evidence, so this removes one account and protects legitimate customers at any threshold.\n- Test: 600 blocked highest-risk charges on one customer ban nobody; adding a single fraud warning to the same history bans.\n\nThe simulator mirrors this rule so the two cannot drift.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive checks the evidence",
+    "blurb": "A noisy card retry storm no longer gets to impersonate a fraud verdict. Polli now waits for confirmed evidence before closing the garden gate.",
+    "summary": "Automatic Stripe fraud bans now require both the existing risk-score threshold and confirmed post-event evidence—a fraudulent dispute, fraud report, or early fraud warning—while the simulator mirrors the same rule.",
+    "impact": "Legitimate customers with repeated insufficient-funds retries can remain active even when Radar marks many attempts blocked or highest-risk, while accounts with confirmed fraud evidence still qualify for automatic bans.",
+    "keywords": [
+      "stripe",
+      "fraud-protection",
+      "billing",
+      "radar",
+      "account-safety",
+      "retries"
+    ],
+    "visual_concept": "Depict fraud scoring as a cozy garden gate: a pile of noisy retry papers and red risk flags raises a gauge, but Polli only closes the gate after examining a clearly stamped confirmed-evidence document. Include gentle code-plants and a small monitor robot holding the score readout, emphasizing careful verification rather than punishment.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny detective glasses as she checks a \"CONFIRMED\" evidence stamp beside a garden gate; a cute CRT-monitor robot holds a risk-score ledger while harmless retry papers compost into code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14992.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny detective glasses as she checks a \"CONFIRMED\" evidence stamp beside a garden gate; a cute CRT-monitor robot holds a risk-score ledger while harmless retry papers compost into code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
+  },
+  "generated_at": "2026-09-16T13:51:53.794455+00:00"
+}

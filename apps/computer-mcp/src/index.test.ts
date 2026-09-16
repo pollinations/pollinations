@@ -4,6 +4,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { describe, expect, it } from "vitest";
 import {
     MCP_USAGE_HEADERS,
+    MCP_USER_GITHUB_HEADER,
     MCP_USER_ID_HEADER,
 } from "../../../shared/registry/mcp.ts";
 
@@ -11,11 +12,12 @@ const MCP_URL = "https://mcp.internal/";
 
 let lastResponse: Response | undefined;
 
-async function connect(userId: string): Promise<Client> {
+async function connect(userId: string, github?: string): Promise<Client> {
     const transport = new StreamableHTTPClientTransport(new URL(MCP_URL), {
         fetch: async (input, init) => {
             const headers = new Headers(init?.headers);
             headers.set(MCP_USER_ID_HEADER, userId);
+            if (github) headers.set(MCP_USER_GITHUB_HEADER, github);
             lastResponse = await SELF.fetch(input, { ...init, headers });
             return lastResponse;
         },
@@ -229,6 +231,26 @@ describe("computer MCP worker", () => {
             "",
         ]);
         expect(result.isError).toBe(false);
+        await client.close();
+    });
+
+    it("authors commits as the caller's GitHub account unless configured", async () => {
+        const client = await connect("user-github", "583231+octocat");
+        const result = await bash(
+            client,
+            [
+                "echo 1 > a.txt && git init . >/dev/null && git add a.txt && git commit -m one >/dev/null",
+                "git config user.name Me && git config user.email me@example.com",
+                "echo 2 > a.txt && git add a.txt && git commit -m two >/dev/null",
+                "git log | grep Author",
+            ].join(" && "),
+            undefined,
+            "/workspace",
+        );
+        expect(result.text.trim().split("\n")).toEqual([
+            "Author: Me <me@example.com>",
+            "Author: octocat <583231+octocat@users.noreply.github.com>",
+        ]);
         await client.close();
     });
 });

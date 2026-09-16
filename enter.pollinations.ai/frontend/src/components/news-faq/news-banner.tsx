@@ -68,7 +68,7 @@ const PINNED_NEWS: Highlight[] = [
         emoji: "🌱",
         title: "More ways to earn Pollen",
         description:
-            "Earn 15 Pollen for your first external Paid Pollen request, 15 for reaching ten external app users, and 3 for an eligible two-year-old GitHub account. [View quests](/quests).",
+            "Earn 15 Pollen for your first external Paid Pollen request, 3 for reaching ten external app users, and 5 when other users spend 3 Paid Pollen through your apps. [View quests](/quests).",
     },
     {
         date: "2026-07-15",

@@ -22,6 +22,11 @@ If upstream returns a new numeric billing field, extend the usage contract and o
 - Calculate expected price from observed usage and compare it with response headers/body and Tinybird. Allow only the repository's normal rounding.
 - Do not change the multiplier to hide incomplete usage accounting.
 - Do not guess unposted units or derive a price from an unrelated provider.
+- When investigating whether a past pricing change actually took effect as described,
+  verify the deployed code at that revision and the billed `generation_event_v2` events
+  around it — a PR title or public announcement describing the change is not evidence
+  that it shipped that way; a same-day unrelated multiplier or promotion change can
+  offset or contradict the advertised effect.
 
 ## Provider and fallback attribution
 

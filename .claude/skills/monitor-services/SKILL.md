@@ -17,6 +17,27 @@ Or run once: `/monitor-services`
 
 ---
 
+## Host Discovery
+
+When you need to establish WHERE a service currently runs (not just whether
+a documented host answers), use an evidence hierarchy — local Mac artifacts
+(launchd plists, `ps`, `/tmp` logs, orphaned checkouts) are evidence of
+*intent or history*, not of the current deployment, and can actively
+mislead when they point at a stale or broken dev-phase setup:
+
+1. SSH the candidate live host and check its process manager
+   (`systemctl status`, `ps`) directly.
+2. Cross-check the infra provider's own inventory (`aws ec2
+   describe-instances`, `runpodctl pod list`, `vastai show instances`) for
+   what's actually running/billed.
+3. Only then treat local launchd/cron/plist artifacts as secondary,
+   corroborating evidence — never as the answer on their own.
+
+"Where does X run?" is answered on the host, not on the laptop that once
+launched it.
+
+---
+
 ## Services
 
 ### 1. LTX-2.3 Video (GH200 - Lambda Labs)
@@ -342,6 +363,26 @@ Vast SSH gotcha: long-lived sessions get dropped — use short commands, never
 
 ---
 
+### 9. Scheduled Social-Publishing Workflows (CI)
+
+Scheduled GitHub Actions that fail "quietly red" are invisible unless
+something explicitly checks their run status — missing social posts look
+like quiet days, not outages. `NEWS_summary.yml` ran red nearly every day
+for two months (Buffer token expired) before anyone noticed.
+
+**Health check:**
+```bash
+gh run list --workflow=NEWS_summary.yml --limit 5
+gh run list --workflow=NEWS_publish.yml --limit 5
+gh run list --workflow=NEWS_pr_gist.yml --limit 5
+```
+Flag if the most recent runs show consecutive `failure` conclusions.
+
+This is a read-only status check only — do not create alerts, schedules, or
+notification webhooks as part of this step.
+
+---
+
 ## Procedure
 
 When invoked, run checks in this order:
@@ -356,10 +397,37 @@ When invoked, run checks in this order:
 8. **Sana worker** - curl health on GH200 port 8766
 9. **Sana registry** - check OVH legacy registry for 1 worker with 0% errors
 10. **Disk space** - check OVH disk usage
+11. **Scheduled social-publishing workflows** - `gh run list` on NEWS_summary.yml / NEWS_publish.yml / NEWS_pr_gist.yml, flag consecutive failures (§9)
 
 For each:
 - If healthy: report OK with latency
 - If unhealthy: attempt restart, wait, re-check, report result
+
+### Interpreting failures: attribute before you act
+
+A health check failing is not automatically a service outage. Before
+restarting or excluding something from a health computation, attribute the
+failure to its actual cause — the same HTTP status or error phrase (e.g.
+`402`, "payment required") can describe different failing actors:
+
+- A **test/probe credential** (e.g. `TEST_TOKEN` from `.testingtokens`)
+  running out of balance produces the same wire error as the **provider
+  account itself** being suspended, out of credits, or rate-limited. Only
+  the second is a real backend problem.
+- Before tuning a health threshold or excusing a class of errors, trace the
+  actual decision/veto path (logs, not just the aggregate rate) for a few
+  concrete failing cases and confirm which actor failed.
+- Don't let a fallback-rescued request (one that ultimately succeeded via a
+  secondary provider) count as a failure in success accounting.
+
+Separately, when checking whether something is genuinely disabled (a cron,
+a scheduled job, a background process) rather than just "removed from
+config", verify against a live execution signal — data written, requests
+served, run history — never the config diff or commit message alone. For
+Cloudflare Worker crons specifically: deleting the `[triggers]` block in
+`wrangler.toml` does **not** remove already-deployed cron schedules; only
+an explicit `crons = []` detaches them. Config/docs claiming something is
+off can silently diverge from what's actually still running.
 
 ## Auth
 

@@ -1,0 +1,37 @@
+{
+  "pr_number": 14972,
+  "title": "Add GitMuse to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14972",
+  "merged_at": "2026-09-16T12:54:00Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [GitMuse](https://fadyabohamza-netizen.github.io/gitmuse) to build\n- AI-powered git workflow assistant: generates Conventional Commits messages from any diff, explains error messages / stack traces with specific fixes, and writes pull request descriptions. It uses the \n\nFixes #14971",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Commit messages found their muse",
+    "blurb": "GitMuse joined the garden: an AI git sidekick for turning diffs into Conventional Commits, deciphering stack traces, and drafting PR descriptions. Less staring at `git diff`; more shipping the thing.",
+    "summary": "Added GitMuse to the app build, giving developers an AI-powered git workflow assistant that generates Conventional Commit messages from diffs, explains errors and stack traces with fixes, and writes pull request descriptions.",
+    "impact": "Developers can use GitMuse to turn the messy parts around commits, debugging, and PR write-ups into concrete next steps without leaving their workflow to consult the ancient scrolls.",
+    "keywords": [
+      "GitMuse",
+      "git",
+      "developer tools",
+      "conventional commits",
+      "debugging",
+      "pull requests",
+      "community app"
+    ],
+    "visual_concept": "GitMuse is a developer-facing git workflow assistant, represented as a cozy retro terminal growing commit-message flowers from a tangled code diff. Polli should be an attentive collaborator wearing a tiny conductor hat, guiding glowing git branches into neat Conventional Commit labels while a friendly CRT robot holds a PR document; vines and flowers make the workflow feel cultivated rather than bureaucratic.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace: Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wears a tiny conductor hat while arranging tangled glowing git branches into neat code-plant flowers beside a retro terminal labeled \"GITMUSE\"; a chunky CRT monitor robot eagerly holds a pull-request scroll. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14972.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace: Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings, wears a tiny conductor hat while arranging tangled glowing git branches into neat code-plant flowers beside a retro terminal labeled \"GITMUSE\"; a chunky CRT monitor robot eagerly holds a pull-request scroll. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-16T12:55:18.668884+00:00",
+  "app_name": "GitMuse",
+  "app_url": "https://fadyabohamza-netizen.github.io/gitmuse"
+}

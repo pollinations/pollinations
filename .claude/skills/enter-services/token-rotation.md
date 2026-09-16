@@ -86,23 +86,23 @@ Rollback below).
 
 A secret lives in three places: the SOPS file, the staging Worker, and the
 production Worker. Merging only updates the file. `Deploy / Cloudflare
-production` (`.github/workflows/deploy-cloudflare-production.yml`) pushes
-secrets for the **gen** Worker only, not enter — so a feature that reads a
-new enter secret can merge, promote, and still 503 in production.
+production` pushes the enter and gen secrets after each deploy; `Deploy /
+Cloudflare staging` pushes them when `push_secrets` is ticked. So a merged
+secret reaches a Worker only once that Worker has been deployed again.
 
-Before relying on a new or changed secret, list what the Worker actually has:
+To confirm, list what the Worker actually has:
 
 ```bash
 wrangler secret list --env production   # or --env staging
 ```
 
-If it's missing, push just that name with `wrangler secret put <NAME> --env
-production`. Never `wrangler secret bulk` — it touches every secret.
+If a name is missing, push just that one with `wrangler secret put <NAME>
+--env production`. Never run `wrangler secret bulk` by hand — it touches every
+secret.
 
-Approval: re-pushing an unchanged, already-approved secret (what a normal
-deploy or `push-secrets:*` does) needs no new approval. A new or changed
-value needs Secret Mutation Safety approval (root `AGENTS.md`) before the
-`put`.
+Approval: re-pushing an unchanged, already-approved secret (what the deploy
+workflows do) needs no new approval. A new or changed value needs Secret
+Mutation Safety approval (root `AGENTS.md`) before the `put`.
 
 ## What breaks what
 

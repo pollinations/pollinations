@@ -16,21 +16,14 @@ tb --cloud sql "SELECT ... FROM generation_event_v2 ..."
 ```
 
 > **Workspace**: This skill is **prod-only** — abuse signal lives in `pollinations_enter`;
-> `pollinations_enter_staging` has no real traffic. Don't trust `.tinyb` to point at prod:
-> it's local state and has pointed at staging before. Before reading any result (especially
-> an empty one): check which workspace is configured (by name — never print tokens), pass a
-> production read `TB_TOKEN` inline on the command, and confirm recent events exist for a
-> known-active user or model. Don't switch or save credentials just to run an audit.
+> `pollinations_enter_staging` has no real traffic. `.tinyb` is local state and has pointed
+> at staging before, so prefer `observability/scripts/tb-prod.sh "<sql>"`: it reads the
+> prod token from SOPS and has no row cap. `tb-prod.sh --check` confirms events are fresh.
+> Don't switch or save credentials just to run an audit.
 
 > **Quoting**: Use double quotes for the SQL string. Use single quotes inside SQL. Avoid `!=` with `$'...'` shell quoting (escaping issues) — prefer `NOT IN ('undefined', '')` instead.
 
-> **`tb` CLI caps at 100 rows.** For large result sets, use the HTTP API with a
-> production `TB_TOKEN` you've checked (see above — don't lift it from `.tinyb` unchecked):
-> ```bash
-> curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql" \
->   -H "Authorization: Bearer $TB_TOKEN" \
->   --data-urlencode "q=SELECT ... FORMAT JSONCompact" | python3 -c "import json,sys; ..."
-> ```
+> **`tb` CLI caps at 100 rows.** For large result sets use `tb-prod.sh` (above) with `FORMAT JSONCompact`.
 
 ---
 
@@ -89,7 +82,7 @@ FROM (
 WHERE pack_spend = 0 AND err_pct >= 95
 ```
 
-> **Note**: `tb --cloud sql` caps output at 100 rows. For large result sets, use the Tinybird HTTP API with `FORMAT JSONCompact`.
+> **Note**: `tb --cloud sql` caps output at 100 rows. For large result sets, use `observability/scripts/tb-prod.sh` with `FORMAT JSONCompact`.
 
 ---
 

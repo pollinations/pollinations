@@ -37,4 +37,3 @@ Biome config is at `biome.jsonc` in repo root.
 - Run from repo root
 - Requires Node.js/npx
 - Only formats changed files (not entire codebase)
-- Don't format sops-encrypted files (e.g. `**/secrets/*.json`); reformatting can break their integrity MAC. If one was touched, confirm `sops decrypt <file>` still works before committing.

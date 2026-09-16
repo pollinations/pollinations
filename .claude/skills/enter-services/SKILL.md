@@ -37,28 +37,24 @@ production`, dispatched from the `production` branch) — never
 `wrangler deploy --env production` from a local machine. See AGENTS.md
 "Cloudflare Production Deployment Safety".
 
+Staging deploys through the `Deploy / Cloudflare staging` workflow
+(`workflow_dispatch`: pick the branch and the `service`). It runs
+`migrate:staging` first, then `deploy:staging`. Tick `push_secrets` to also
+push `secrets/staging.vars.json` to the Workers; a new or changed value needs
+Secret Mutation Safety approval (`AGENTS.md`) before it is merged. The same
+npm scripts also work locally per service:
+
 ```bash
 cd enter.pollinations.ai
 npm run deploy:staging   # staging only
 ```
 
-There is no staging workflow in GitHub Actions. Deploy staging by hand, per
-service (`enter.pollinations.ai` and `gen.pollinations.ai` each have
-`deploy:staging`). If the branch adds a D1 migration, run
-`npm run migrate:staging` in `enter.pollinations.ai` first. Set
-`CLOUDFLARE_ACCOUNT_ID` explicitly — the local wrangler login covers more than
-one account and can pick the wrong one.
-
-`deploy:staging` does not push secrets. Merging a SOPS change only updates the
-file: check the Worker has each secret it needs (`wrangler secret list --env
-staging`) and push missing ones with `npm run push-secrets:staging`. Re-pushing
-an unchanged, already-approved secret is not a rotation; a new or changed value
-needs Secret Mutation Safety approval (`AGENTS.md`). Details:
+Check what a Worker has with `wrangler secret list --env staging`. Details:
 [token-rotation.md](token-rotation.md).
 
 ## Testing on Staging
 
-- Test token: `ENTER_API_TOKEN_STAGING` in `enter.pollinations.ai/.testingtokens`. It has expired before without the file changing — if auth fails, re-mint before blaming the deploy.
+- Test token: `ENTER_API_TOKEN_STAGING` in `enter.pollinations.ai/.testingtokens`. If auth fails, run `npm run check-tokens` in `enter.pollinations.ai` before blaming the deploy; tokens expire without the file changing.
 - Agents are called by `owner/name` model id on staging, same as production.
 - Cheap read-only checks: `wrangler d1 migrations list DB --remote --env staging`, `wrangler secret list --env staging`, and the dispatch namespace list.
 
@@ -107,6 +103,6 @@ current source before relying on them.
 # Notes
 
 - **Production** deploys on push to `production` branch
-- **Staging** deploys manually per service with `npm run deploy:staging`; there is no staging branch workflow
+- **Staging** deploys via the `Deploy / Cloudflare staging` workflow (manual dispatch), or per service with `npm run deploy:staging`
 - Always test on staging before merging to production
 - `enter.pollinations.ai` handles auth/billing; generation requests are served by the `gen.pollinations.ai` Worker

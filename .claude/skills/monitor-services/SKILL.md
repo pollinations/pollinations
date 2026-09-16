@@ -355,23 +355,6 @@ Vast SSH gotcha: long-lived sessions get dropped — use short commands, never
 
 ---
 
-### 9. Scheduled Social-Publishing Workflows (CI)
-
-Scheduled GitHub Actions that fail quietly look like quiet days, not outages
-— the news summary workflow was red daily for two months (expired Buffer
-token) before anyone noticed.
-
-**Health check:**
-```bash
-gh run list --workflow=news-generate-summary.yml --limit 5
-gh run list --workflow=news-publish-social.yml --limit 5
-gh run list --workflow=news-create-pr-gist.yml --limit 5
-```
-Flag consecutive `failure` conclusions. Read-only — don't create alerts or
-schedules here.
-
----
-
 ## Procedure
 
 When invoked, run checks in this order:
@@ -386,7 +369,7 @@ When invoked, run checks in this order:
 8. **Sana worker** - curl health on GH200 port 8766
 9. **Sana registry** - check OVH legacy registry for 1 worker with 0% errors
 10. **Disk space** - check OVH disk usage
-11. **Scheduled social-publishing workflows** - `gh run list` on the three `news-*.yml` workflows, flag consecutive failures (§9)
+11. **Scheduled workflows** - the `news-*` and README workflows open a `Workflow failing: …` issue when they fail; check `gh issue list --search "Workflow failing in:title"`
 
 For each:
 - If healthy: report OK with latency

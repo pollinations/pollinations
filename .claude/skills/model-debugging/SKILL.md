@@ -441,7 +441,7 @@ For aggregated model health stats, query Tinybird directly.
 > ```bash
 > TB=$(sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.TINYBIRD_READ_TOKEN')
 > ```
-> This single token works for **both** pipes (`/v0/pipes/...`) and raw SQL (`/v0/sql`) against the prod workspace (`pollinations_enter`). The public Model Monitor reads cached health data through `gen.pollinations.ai`; it does not expose a Tinybird token.
+> This single token works for **both** pipes (`/v0/pipes/...`) and raw SQL (`/v0/sql`) against the prod workspace (`pollinations_enter`). For raw SQL, `enter.pollinations.ai/observability/scripts/tb-prod.sh "<sql>"` does the token lookup for you. The public Model Monitor reads cached health data through `gen.pollinations.ai`; it does not expose a Tinybird token.
 
 ```bash
 H="https://api.europe-west2.gcp.tinybird.co"

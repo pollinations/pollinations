@@ -30,12 +30,10 @@ gh pr list --head <branch-name> --state merged --json number --jq '.[0].number'
 
 ## Step 2: Commit and push
 
-0. Finish `npm ci` / builds before committing. Commit hooks may run package-manager commands and touch `node_modules`, so never run them alongside `git commit`. If a hook changed the install, restore from the lockfile and rerun the checks.
 1. `git status` and `git diff --stat` to review changes
 2. Stage relevant files (avoid `.env`, credentials, `.claude/settings.local.json`)
 3. Commit with conventional format (`feat:`, `fix:`, `refactor:`, etc.). Several `Co-authored-by:` lines must sit together at the end with no blank line between them, or squash merge keeps only the last one. Check with `git interpret-trailers --parse`.
-4. Run `git status --short` again before pushing. Remove only files a hook demonstrably created.
-5. Push: `git push` (or `git push -u origin HEAD` for new branches)
+4. Push: `git push` (or `git push -u origin HEAD` for new branches)
 
 ## Step 3: Create PR (only if no open PR exists)
 

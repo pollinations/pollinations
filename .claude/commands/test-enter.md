@@ -19,8 +19,7 @@ npx vitest run test/specific-file.test.ts
 **Fresh worktree / running `npx vitest` directly (not `npm run test`):**
 1. `npm ci` if `node_modules` is missing (also pins `npx biome` to the lockfile version)
 2. `npm run decrypt-vars`
-3. `mkdir -p dist/client` — the Workers pool needs the `[assets]` directory from `wrangler.toml` to exist (`NonExistentAssetsDirError` otherwise). No frontend build needed.
-4. "0 tests collected" is a startup error, not a pass. Rerun without `--reporter=json`, or `npx vitest list <file>`, to see the cause.
+3. "0 tests collected" is a startup error, not a pass. Rerun without `--reporter=json`, or `npx vitest list <file>`, to see the cause.
 
 **Frontend changes:** `AuthModal`, `AuthModalLoading`, `ErrorBanner`, `AuthInfoCard` come from `@pollinations/ui/auth`, not the package root — copy the import block from `frontend/src/components/auth/authorize.tsx`. `tsc` ignores missing-module errors for `@pollinations/ui`; only `npm run build:frontend` (which also regenerates the route tree) catches a bad import.
 

@@ -1,0 +1,34 @@
+{
+  "pr_number": 15029,
+  "title": "feat: fall back to Vertex global before AI Studio for gemini-fast",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15029",
+  "merged_at": "2026-09-16T19:52:43Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `google/gemini-2.5-flash-lite:openrouter:vertex-global`, an OpenRouter route pinned to `google-vertex` (global), same price as the EU primary\n- Declares it as the first fallback pair for `google/gemini-2.5-flash-lite` (`gemini-fast`); the existing AI Studio pair stays as the last resort\n- Why: every \"Gemini blocked the response: OTHER\" 502 in Tinybird has `fallback_used=true`. Vertex EU 429s spill to AI Studio, which blocks 41% / 13% of the two heaviest keys' fallback calls. Vertex global has its own quota and the same safety behaviour, so the spill now stays on Vertex\n- Only Google serves this model on OpenRouter (2 Vertex + 3 AI Studio endpoints), so this mirrors the Claude `:openrouter:vertex-global` pairs\n- Updates the static fallback test and the enter effective-prices snapshot\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Gemini finds another garden",
+    "blurb": "gemini-fast now checks Vertex global before asking AI Studio for a hand. Same model, another patch of quota, fewer conversations wandering into the weeds.",
+    "summary": "Added the OpenRouter route `google/gemini-2.5-flash-lite:openrouter:vertex-global` as gemini-fast’s first fallback, keeping Vertex EU 429 spillover on Google Vertex global before the existing AI Studio fallback.",
+    "impact": "Users of `google/gemini-2.5-flash-lite` get a more resilient fallback path with Vertex global’s independent quota and matching safety behavior, reducing reliance on AI Studio when Vertex EU is busy.",
+    "keywords": [
+      "gemini-fast",
+      "gemini-2.5-flash-lite",
+      "vertex-ai",
+      "openrouter",
+      "fallbacks",
+      "reliability"
+    ],
+    "visual_concept": "Depict gemini-fast’s fallback routing as a cozy garden path: Polli guides glowing text-message pollen from a busy Vertex EU greenhouse to a second, open Vertex global greenhouse, while the AI Studio shed waits quietly farther down the path as the final backup. Use two friendly CRT route-sign monitors and sprouting code-plants to make independent capacity and orderly fallback priority visible.",
+    "image_prompt": "A cozy pixel art garden routing scene where Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wears a tiny courier cap and guides glowing text-pollen from a busy \"VERTEX EU\" greenhouse toward an open \"VERTEX GLOBAL\" greenhouse; a smaller \"AI STUDIO\" shed waits peacefully at the end of the garden path, with code-plants, flowers, and helpful CRT monitor robots as route signs. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-15029.jpg",
+    "prompt": "A cozy pixel art garden routing scene where Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wears a tiny courier cap and guides glowing text-pollen from a busy \"VERTEX EU\" greenhouse toward an open \"VERTEX GLOBAL\" greenhouse; a smaller \"AI STUDIO\" shed waits peacefully at the end of the garden path, with code-plants, flowers, and helpful CRT monitor robots as route signs. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-16T19:53:54.188954+00:00"
+}

@@ -129,12 +129,8 @@ type RealtimeBillingContext = {
 function requireAllowedModel(c: Context<Env>, model: string): void {
     const apiKey = c.var.auth.apiKey;
     const allowedModels = apiKey?.permissions?.models;
-    if (allowedModels && !allowedModels.includes(model)) {
-        const link = keyPermissionsLink(
-            apiKey?.id,
-            c.env?.ENVIRONMENT,
-            c.req.url,
-        );
+    if (apiKey && allowedModels && !allowedModels.includes(model)) {
+        const link = keyPermissionsLink(apiKey.id, c.env?.ENVIRONMENT);
         throw new HTTPException(403, {
             message: `Model '${model}' is not allowed for this API key. Manage key permissions at ${link}`,
         });

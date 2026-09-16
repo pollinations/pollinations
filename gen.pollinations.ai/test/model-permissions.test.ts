@@ -240,29 +240,16 @@ test("restored auth allows old and future names without expanding account or com
     ]);
 });
 
-test("keyPermissionsLink resolves production, staging, and fallback links", () => {
+test("keyPermissionsLink resolves production and staging editor links", () => {
     expect(keyPermissionsLink("key-1")).toBe(
         "https://enter.pollinations.ai/edit-key?id=key-1",
     );
     expect(keyPermissionsLink("key-1", "staging")).toBe(
         "https://staging.enter.pollinations.ai/edit-key?id=key-1",
     );
-    expect(
-        keyPermissionsLink(
-            "key-1",
-            "production",
-            "https://staging.gen.pollinations.ai/foo",
-        ),
-    ).toBe("https://staging.enter.pollinations.ai/edit-key?id=key-1");
-    expect(keyPermissionsLink(undefined)).toBe(
-        "https://enter.pollinations.ai/keys",
-    );
-    expect(keyPermissionsLink(undefined, "staging")).toBe(
-        "https://staging.enter.pollinations.ai/keys",
-    );
 });
 
-test("requireModelAccess uses staging host for staging requests", async () => {
+test("requireModelAccess uses staging host for staging environment", async () => {
     const snapshot = {
         user: { id: "permission-test", tier: "seed" },
         apiKey: {
@@ -287,14 +274,6 @@ test("requireModelAccess uses staging host for staging requests", async () => {
     } as CloudflareBindings);
     expect(responseEnv.status).toBe(403);
     expect(await responseEnv.text()).toBe(
-        "Model 'forbidden-model' is not allowed for this API key. Manage key permissions at https://staging.enter.pollinations.ai/edit-key?id=staging-key-id",
-    );
-
-    const responseUrl = await app.request(
-        "https://staging.gen.pollinations.ai/forbidden-model",
-    );
-    expect(responseUrl.status).toBe(403);
-    expect(await responseUrl.text()).toBe(
         "Model 'forbidden-model' is not allowed for this API key. Manage key permissions at https://staging.enter.pollinations.ai/edit-key?id=staging-key-id",
     );
 });

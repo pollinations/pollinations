@@ -1,0 +1,34 @@
+{
+  "pr_number": 14953,
+  "title": "fix: cache the community model catalog in KV",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14953",
+  "merged_at": "2026-09-16T11:07:30Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n- Every gen isolate re-ran the full `community_endpoint` join on its own 60s expiry: ~958k runs/day, ~80% of production D1 time (`wrangler d1 insights`), and the source of the `D1 DB is overloaded` / \"Unable to verify balance\" bursts that fail every route sharing the database (e.g. 2026-09-16 09:25–09:45).\n- Adds one KV copy of the catalog rows (`community-endpoints:v1`, 60s TTL) read by every isolate; D1 is queried only on a miss. Uses the existing gen `KV` binding, no config change.\n- `resetGenerationModelRegistryCache(env)` now clears KV as well as the in-memory cache; test call sites await it.\n- New test proves a fresh isolate is served from KV without touching D1. Catalog changes stay visible within ~2 minutes as before.\n\n## Test plan\n- [x] `tsc --noEmit` in gen\n- [x] `test/model-registry.test.ts` 5/5\n- [x] `community-endpoints`, `tracking-observability`, `embeddings`, `elevenlabs-tts-timestamps`, `model3d` test files green\n- [ ] After production deploy: `wrangler d1 insights production-pollinations-enter-db --timePeriod 1d` shows the registry query at ~1–2 runs/min\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One catalog, many hives",
+    "blurb": "The community model catalog now gets one tiny KV pantry instead of making every gen isolate forage through D1. Fewer database pileups means balance checks and generation routes can keep humming along.",
+    "summary": "Cached the community model catalog in the existing gen KV binding under `community-endpoints:v1` with a 60-second TTL, so fresh isolates read KV before querying D1 and the registry query drops from roughly 958,000 runs per day toward 1–2 runs per minute.",
+    "impact": "Users should see steadier generation and balance verification because the shared D1 database no longer receives a full community-endpoint catalog join from every isolate on its own cache expiry.",
+    "keywords": [
+      "community-models",
+      "KV",
+      "D1",
+      "model-registry",
+      "reliability",
+      "caching"
+    ],
+    "visual_concept": "Depict the community model catalog as a shared, neatly labeled seed library: Polli, wearing a tiny librarian hat, places glowing catalog cards into a small lime-green KV cabinet while many cozy little terminal beehives read from it. A distant D1 filing cabinet rests peacefully, surrounded by code-plants and flowers, representing the sharply reduced database work.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny librarian hat as she stores glowing model-catalog cards in a shared lime green (#ecf874) cabinet labeled \"KV\"; several small retro terminals happily read the same catalog while a peaceful database filing cabinet rests among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14953.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny librarian hat as she stores glowing model-catalog cards in a shared lime green (#ecf874) cabinet labeled \"KV\"; several small retro terminals happily read the same catalog while a peaceful database filing cabinet rests among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-16T11:08:31.240532+00:00"
+}

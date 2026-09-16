@@ -11,7 +11,7 @@ const SERVER_INSTRUCTIONS =
 
 const BASH_DESCRIPTION = `Run a bash command on your private, persistent computer. Files survive between runs, except /tmp, which is emptied after every call. cwd defaults to /workspace and is created if missing; keep one folder per project.
 
-Available: coreutils, grep, sed, awk, jq, tar, find, xargs, diff, curl, git. Not available: Node, Python, package managers. curl and git clone reach any public URL.
+Available: coreutils, grep, sed, awk, jq, xan (CSV), file, html-to-markdown, tar, find, xargs, diff, curl, git. Not available: Node, Python, package managers. This is an emulated bash, not Linux: run \`<command> --help\` to check supported flags. curl and git clone reach any public URL.
 
 Write a file by passing its content in \`stdin\` and running \`cat > path\`; stdin is used as-is, no quoting.
 

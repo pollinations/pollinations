@@ -527,6 +527,10 @@ export const TEXT_FALLBACKS = {
         },
     },
     "google/gemini-2.5-flash-lite": {
+        "google/gemini-2.5-flash-lite:openrouter:vertex-global": {
+            provider: "openrouter",
+            addedDate: new Date("2026-09-16").getTime(),
+        },
         "google/gemini-2.5-flash-lite:openrouter:ai-studio": {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),

@@ -4,13 +4,13 @@ import {
     useAuthActions,
     useAuthState,
 } from "@pollinations/sdk/react";
+import markUrl from "../../brand/mark.svg";
 import { AccountMenu } from "../../compositions/AccountMenu.tsx";
 import { cn } from "../../lib/cn.ts";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
 import {
     ExternalLinkIcon,
     KeyIcon,
-    LogInIcon,
     PowerIcon,
     WalletIcon,
 } from "../../primitives/icons/index.tsx";
@@ -79,9 +79,13 @@ export function AppUserMenu({
                             `${actionTriggerClass} polli:px-4`,
                     )}
                 >
-                    <LogInIcon
-                        className="polli:h-4 polli:w-4 polli:shrink-0"
+                    <span
                         aria-hidden="true"
+                        className="polli:block polli:h-4 polli:w-4 polli:shrink-0 polli:bg-current"
+                        style={{
+                            mask: `url('${markUrl}') center / contain no-repeat`,
+                            WebkitMask: `url('${markUrl}') center / contain no-repeat`,
+                        }}
                     />
                     {labels.authorize}
                 </LoginButton>

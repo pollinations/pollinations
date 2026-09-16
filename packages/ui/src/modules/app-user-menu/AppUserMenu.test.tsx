@@ -26,7 +26,8 @@ describe("AppUserMenu", () => {
         expect(html).toContain("polli:border-r-4");
         expect(html).toContain("polli:border-theme-text-strong/20");
         expect(html).not.toContain("polli:border-brand-dark/20");
-        expect(html).toContain('d="M15 12H3"');
-        expect(html).not.toContain('d="M7 11V7a5 5 0 0 1 10 0v4"');
+        expect(html).toContain("Connect with Pollinations");
+        expect(html).toContain("mask:url(");
+        expect(html).not.toContain('d="M15 12H3"');
     });
 });

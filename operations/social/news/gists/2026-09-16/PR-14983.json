@@ -1,0 +1,34 @@
+{
+  "pr_number": 14983,
+  "title": "fix(community-monitor): owner traffic is not evidence, deterministic relist, served-model notices",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14983",
+  "merged_at": "2026-09-16T13:30:03Z",
+  "labels": [],
+  "pr_body_excerpt": "Context: the monitor vetoed correct hides of chigwell models and asked for a manual relist because \"real traffic is 100% ok\". That traffic was the owner's own uptime monitor (`LLM7-monitoring` key, ~2 req/min per model, identical usage on every request). Every other caller has had 0% success on those models for 7 days, and the probe's 400 is the provider's own `model_unavailable`. The agent had written the exemption into its memory and applied it every cycle.\n\n- Adds a caller split before any traffic rate counts: exclude the owner (`owner_user_id`) and the probe account; require ≥10 attributable final requests from ≥3 distinct callers. Owner or single-caller traffic never hides, vetoes, or relists.\n- Replaces the two recovery paths with one deterministic gate: hidden ≥1h, three consecutive passing exact-ID probes on separate cycles spanning ≥90 min (failure/inconclusive resets), plus a non-owner traffic veto. Owner requests never shorten it. Audio/video/embeddings need 90% across ≥10 requests from ≥3 non-owner callers in two cycles.\n- Forbids owner/model/provider exemptions in agent memory (the two poisoned notes were archived on the box today).\n- Adds duty 2d: compares the model name each upstream writes into its stream with the declared `upstream_model` and measures fallback share; posts informational `MISMATCH` / `FALLBACK` panels tagging the owner so callers learn what actually answers them. Never hides or relists.\n- `probe.mjs` records `servedModel` and gains `--models-file` for batch recovery probes; `chat-stream.mjs` returns the streamed model name; test added.\n\nVerified: `node --test operations/community-monitor/*.test.mjs` (16 pass); live `--models-file` run against two hidden IDs; live `--model community/chigwell/llm7-fast` reports `servedModel: mistral-Nemo-Instruct-2407` (an earlier run of the same listing streamed `codestral-latest`).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The garden gets receipts",
+    "blurb": "The model monitor now ignores a provider watering its own plants when judging whether the garden is healthy. Recovery is deterministic, and mismatched upstream answers get a polite little signpost.",
+    "summary": "Community model monitoring now excludes owner and probe traffic, requires at least 10 final requests from 3 non-owner callers for traffic evidence, and restores hidden models only after three passing exact-ID probes across 90 minutes plus non-owner validation.",
+    "impact": "Callers get more reliable model availability decisions, while new informational MISMATCH and FALLBACK notices reveal when an upstream serves a different model or falls back to another one.",
+    "keywords": [
+      "community-monitor",
+      "model-availability",
+      "probes",
+      "fallbacks",
+      "served-model",
+      "reliability"
+    ],
+    "visual_concept": "Depict Polli as a careful garden inspector using a clipboard and magnifying glass to check several code-plants. A CRT monitor robot compares each plant's labeled seed packet with the name shown on a tiny terminal stream, while three separate friendly visitor markers provide honest growth measurements; a small notice board reads MISMATCH / FALLBACK. This represents independent caller evidence, deterministic recovery checks, and transparent served-model reporting.",
+    "image_prompt": "A cozy pixel-art model garden where Polli, the cute yellow-and-brown striped bee with pink cheek blush, light-blue wings, and a tiny inspector hat, checks code-plants with a clipboard while a chunky CRT monitor robot compares seed labels to the model names on glowing terminals; three small visitor markers stand beside the plants and a friendly pixel notice board says “MISMATCH” and “FALLBACK.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, flowers and vines, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14983.jpg",
+    "prompt": "A cozy pixel-art model garden where Polli, the cute yellow-and-brown striped bee with pink cheek blush, light-blue wings, and a tiny inspector hat, checks code-plants with a clipboard while a chunky CRT monitor robot compares seed labels to the model names on glowing terminals; three small visitor markers stand beside the plants and a friendly pixel notice board says “MISMATCH” and “FALLBACK.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, flowers and vines, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-16T13:31:05.966929+00:00"
+}

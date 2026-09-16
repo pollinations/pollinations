@@ -36,16 +36,16 @@ function healthRow(model: string, status_2xx: number, errors_5xx: number) {
         model,
         event_type: "generate.text",
         provider: "test",
-        model_used: model,
+        model_used: "",
+        is_rollup: 1,
+        fallback_used: 0,
         total_requests: status_2xx + errors_5xx + 50,
         status_2xx,
         errors_4xx: 50,
         errors_5xx,
-        own_calls: status_2xx + errors_5xx,
-        own_calls_ok: status_2xx,
-        primary_5xx: errors_5xx,
-        primary_retried_503s: 0,
+        served: status_2xx + errors_5xx + 50,
         fallback_rescues: 2,
+        retried_503s: 0,
         last_error_at: "1970-01-01 00:00:00",
         latency_p50_ms: null,
         latency_p95_ms: null,
@@ -127,14 +127,16 @@ test("retrieve matches the list entry exactly (shared mapper)", async () => {
 });
 
 test("adds measured health and filters healthy models on demand", async () => {
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-        Response.json({
-            data: [
-                healthRow("openai/gpt-5-nano", 98, 2),
-                healthRow("anthropic/claude-haiku-4.5", 8, 2),
-            ],
-        }),
-    );
+    const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockImplementation(async () =>
+            Response.json({
+                data: [
+                    healthRow("openai/gpt-5-nano", 98, 2),
+                    healthRow("anthropic/claude-haiku-4.5", 8, 2),
+                ],
+            }),
+        );
 
     const unfiltered = await fetchWorkerWithMock("/v1/models");
     const unfilteredBody = (await unfiltered.json()) as {
@@ -158,7 +160,6 @@ test("adds measured health and filters healthy models on demand", async () => {
         success_rate: 0.98,
         sample_size: 100,
         window_minutes: 1440,
-        stale: false,
     });
     expect(
         withHealthBody.data.find(
@@ -214,8 +215,6 @@ test("reports unknown health when monitoring is unavailable", async () => {
         status: "unknown",
         success_rate: null,
         sample_size: 0,
-        checked_at: null,
-        stale: true,
     });
 });
 
@@ -234,8 +233,8 @@ test("rejects invalid discovery filters", async () => {
 test("applies compact health consistently across every catalog", async () => {
     const fetchSpy = vi
         .spyOn(globalThis, "fetch")
-        .mockResolvedValue(Response.json({ data: [] }));
-    for (const path of [
+        .mockImplementation(async () => Response.json({ data: [] }));
+    const paths = [
         "/models",
         "/v1/models",
         "/text/models",
@@ -244,7 +243,8 @@ test("applies compact health consistently across every catalog", async () => {
         "/audio/models",
         "/embeddings/models",
         "/3d/models",
-    ]) {
+    ];
+    for (const path of paths) {
         const response = await fetchWorkerWithMock(
             `${path}?status=all&source=official&community=true`,
             {
@@ -267,12 +267,10 @@ test("applies compact health consistently across every catalog", async () => {
                 success_rate: null,
                 sample_size: 0,
                 window_minutes: 1440,
-                checked_at: expect.any(String),
-                stale: false,
             });
         }
     }
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(fetchSpy).toHaveBeenCalledTimes(paths.length);
 });
 
 test("requires enough samples and respects status boundaries", () => {
@@ -285,10 +283,9 @@ test("requires enough samples and respects status boundaries", () => {
         [81, 19, "degraded"],
         [80, 20, "down"],
     ] as const) {
-        expect(
-            modelHealthFromCounts(successes, failures, 1440, null, false)
-                .status,
-        ).toBe(status);
+        expect(modelHealthFromCounts(successes, failures, 1440).status).toBe(
+            status,
+        );
     }
 });
 

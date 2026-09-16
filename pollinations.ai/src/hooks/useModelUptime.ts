@@ -2,7 +2,7 @@ import { API_BASE } from "../api.config";
 import { useCachedFetch } from "./useCachedFetch";
 import type { Model } from "./useModelList";
 
-const MODEL_STATUS_URL = `${API_BASE}/v1/models/status?minutes=1440`;
+const MODEL_STATUS_URL = `${API_BASE}/models/status?minutes=1440`;
 
 export type UptimeHealth = "healthy" | "degraded" | "down" | "unknown";
 
@@ -15,6 +15,8 @@ export interface UptimeStatus {
 interface ModelHealthRow {
     model?: string;
     event_type?: string;
+    /** 1 on the model total, 0 on a single primary or fallback route. */
+    is_rollup?: number | boolean;
     status_2xx?: number;
     errors_5xx?: number;
 }
@@ -32,7 +34,7 @@ async function fetchRows(): Promise<ModelHealthRow[]> {
         throw new Error(`Failed to fetch model status (${response.status})`);
     }
     const body = (await response.json()) as ModelStatusResponse;
-    return Array.isArray(body?.data) ? body.data : [];
+    return (body?.data ?? []).filter((row) => row.is_rollup);
 }
 
 function computeStatus(row: ModelHealthRow | undefined): UptimeStatus {

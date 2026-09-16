@@ -278,20 +278,14 @@ describe("/openapi.json", () => {
             }),
         );
 
-        const statusOperation = schema.paths["/v1/models/status"] as {
+        const statusOperation = schema.paths["/models/status"] as {
             get: {
                 parameters: { name: string }[];
             };
         };
         expect(statusOperation.get.parameters.map(({ name }) => name)).toEqual([
             "minutes",
-            "format",
         ]);
-        expect(
-            collectPropertySets(schema.paths["/v1/models/status"]).some(
-                (properties) => "data" in properties,
-            ),
-        ).toBe(true);
 
         const speechRequestPropertySets = collectPropertySets(schema).filter(
             (properties) =>

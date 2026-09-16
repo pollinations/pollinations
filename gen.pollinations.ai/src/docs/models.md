@@ -35,18 +35,15 @@ final 4xx responses are excluded. This is the gateway's final-response metric,
 not the health of an individual upstream provider.
 
 `health` is an optional Pollinations extension on every list endpoint, including
-`/v1/models`. It contains only `status`, `success_rate`, `sample_size`,
-`window_minutes`, `checked_at`, and `stale`. With at least 10 measured requests,
+`/v1/models`. It contains only `status`, `success_rate`, `sample_size`, and
+`window_minutes`. With at least 10 measured requests,
 status is `healthy` below 5% failures, `degraded` from 5% to below 20%, and
 `down` at 20% or more. Smaller samples are `unknown`. These describe recent
 request outcomes, not live availability; alpha/preview status is separate.
 `success_rate` is a fraction from 0 to 1, or null when there are no samples.
 
-Health snapshots are cached for 60 seconds. `checked_at` is the snapshot-fetch
-time in UTC, not the model's last request time. If refresh fails, `status=all`
-can return an older snapshot marked `stale`, or `unknown` with a null
-`checked_at` when no snapshot exists. `status=healthy` excludes both stale and
-unknown results.
+Health data is cached for 60 seconds. When it is unavailable every model is
+`unknown`, and `status=healthy` excludes unknown results.
 
 The dashboard defaults to `source:official status:healthy`, so unknown models
 are hidden. Select `status:all` to include every health state, or
@@ -54,9 +51,9 @@ are hidden. Select `status:all` to include every health state, or
 for degraded/down, and grey for unknown/stale. Filtering is local; it does not
 poll for updates.
 
-Detailed counters and latency statistics remain separate at `/v1/models/status`;
-`/v1/models/status/routes` breaks down individual primary and fallback attempts.
-Neither diagnostic payload is embedded in model lists.
+Detailed counters and latency statistics remain separate at `/models/status`,
+which also breaks down individual primary and fallback attempts. That
+diagnostic payload is not embedded in model lists.
 
 ```bash
 curl 'https://gen.pollinations.ai/v1/models?source=official&status=healthy'

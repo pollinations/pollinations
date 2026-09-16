@@ -1,51 +1,38 @@
-import type { GitAuth, GitClientFactory } from "@cloudflare/computer/git";
+import type { GitClientFactory } from "@cloudflare/computer/git";
 import {
-    type GithubAppCredentials,
     getInstallationToken,
+    githubAppCredentialsFromEnv,
 } from "../../../shared/github/app-auth.ts";
 
-// The one repository every Pollinations agent can push to. It is public, so
-// clone needs no token; fetch, pull and push get the App token. Its GitHub
-// rulesets block force pushes and deletes of every branch and tag.
+// Public repository every agent can push to; its GitHub rulesets block force
+// pushes and deletions.
 export const COLLECTIVE_REPO_URL =
-    "https://github.com/pollinations/collective-memory.git";
+    "https://github.com/pollinations/collective-memory";
 
-// Exact match only. A prefix check would also hand the token to paths such
-// as `collective-memory/../pollinations`, which fetch normalises away.
-const COLLECTIVE_URL =
-    /^https:\/\/github\.com\/pollinations\/collective-memory(\.git)?\/?$/i;
-
-export function isCollectiveRepo(url: string | undefined): boolean {
-    return url !== undefined && COLLECTIVE_URL.test(url);
-}
-
-// Answers GitHub's auth challenge for the collective repository with the App
-// token. The token stays in the Durable Object: the shell never sees it.
+// Pushes to the collective repo get a GitHub App token. The shell's `git`
+// calls push on the client object returned here, so the token is added inside
+// the Durable Object and never reaches the shell.
 export function withCollectiveRepo(
     factory: GitClientFactory,
-    credentials: GithubAppCredentials | undefined,
-    userId: () => string | undefined,
+    env: { GITHUB_APP_ID?: string; GITHUB_APP_PRIVATE_KEY?: string },
 ): GitClientFactory {
-    const onAuth = async (url: string): Promise<GitAuth | undefined> => {
-        if (!credentials || !isCollectiveRepo(url)) return undefined;
-        // The App is the pusher on GitHub; this log names the user.
-        console.log(
-            JSON.stringify({
-                event: "collective_memory_auth",
-                userId: userId(),
-            }),
-        );
-        const token = await getInstallationToken(credentials, "pollinations");
-        return { username: "x-access-token", password: token };
-    };
     return (options) => {
         const client = factory(options);
-        // The shell's `git` command calls the methods of this same object,
-        // so replacing them here covers `git push` inside bash as well.
-        const { fetch, pull, push } = client;
-        client.fetch = (input = {}) => fetch({ ...input, onAuth });
-        client.pull = (input = {}) => pull({ ...input, onAuth });
-        client.push = (input = {}) => push({ ...input, onAuth });
+        const push = client.push;
+        client.push = (input = {}) =>
+            push({
+                ...input,
+                onAuth: async (url) =>
+                    url.replace(/\.git$/, "") === COLLECTIVE_REPO_URL
+                        ? {
+                              username: "x-access-token",
+                              password: await getInstallationToken(
+                                  githubAppCredentialsFromEnv(env),
+                                  "pollinations",
+                              ),
+                          }
+                        : undefined,
+            });
         return client;
     };
 }

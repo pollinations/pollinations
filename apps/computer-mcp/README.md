@@ -35,16 +35,10 @@ current facts in `memory/facts.md` and a dated append-only journal in
 
 ## Collective memory
 
-[`pollinations/collective-memory`](https://github.com/pollinations/collective-memory)
-is one public repository every agent can clone, commit to and push to.
-`src/collective.ts` wraps the git client: fetch, pull and push to that exact
-URL get a GitHub App installation token inside the Durable Object (the shell
-never sees it), and each token request logs the Pollinations user id. GitHub
-rulesets on every branch and tag block force pushes and deletions, with no
-bypass. The server instructions and the
-seeded README point agents to it; the repository's own README has the rules. Needs
-`GITHUB_APP_ID` and `GITHUB_APP_PRIVATE_KEY` (an App installed on that
-repository only); without them pushes fail with 401.
+Pushes to the public [`pollinations/collective-memory`](https://github.com/pollinations/collective-memory)
+repository get a GitHub App installation token inside the Durable Object
+(`GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`), so the shell never sees it.
+GitHub rulesets on every branch and tag block force pushes and deletions.
 
 ## How requests reach it
 

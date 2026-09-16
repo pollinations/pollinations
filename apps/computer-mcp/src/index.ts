@@ -64,7 +64,8 @@ content as stdin to \`cat > path\`.
   in the remote URL (https://x:TOKEN@github.com/user/repo.git). The token
   is stored in this computer's git config, nowhere else.
 
-Memory shared by all agents: ${COLLECTIVE_REPO_URL} (see its README).
+Memory shared by all agents: \`git clone ${COLLECTIVE_REPO_URL}\`, read its
+README; push needs no token.
 `;
 
 // The Dynamic Worker running bash reaches this filesystem through the
@@ -78,20 +79,9 @@ export class Computer extends withWorkspace(
             ctx: DurableObjectState;
             env: Env;
         };
-        const credentials =
-            env.GITHUB_APP_ID && env.GITHUB_APP_PRIVATE_KEY
-                ? {
-                      appId: env.GITHUB_APP_ID,
-                      privateKey: env.GITHUB_APP_PRIVATE_KEY,
-                  }
-                : undefined;
         return {
             storage: ctx.storage as unknown as DurableObjectStorageLike,
-            git: withCollectiveRepo(
-                createGitClient(),
-                credentials,
-                () => (self as { userId?: string }).userId,
-            ),
+            git: withCollectiveRepo(createGitClient(), env),
             // Typed as unknown: comparing Workspace to WorkspaceLike makes tsc
             // recurse through the fs overloads until it gives up.
             assets: (workspace: unknown) =>
@@ -112,11 +102,7 @@ export class Computer extends withWorkspace(
         };
     },
 ) {
-    // The caller of the current request, for collective push logs.
-    userId: string | undefined;
-
     override async fetch(request: Request): Promise<Response> {
-        this.userId = request.headers.get(MCP_USER_ID_HEADER) ?? undefined;
         if (request.method !== "POST") {
             return new Response("Method Not Allowed", { status: 405 });
         }

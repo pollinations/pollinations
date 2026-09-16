@@ -1,0 +1,34 @@
+{
+  "pr_number": 14986,
+  "title": "fix: pass empty agent output through instead of a 502",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14986",
+  "merged_at": "2026-09-16T13:44:14Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the \"Agent produced no response\" check in `shared/agents/output.ts`; an agent run now returns its output items as they are, with the model's own finish reason\n- 469 × 502 in 24h (7 users, 445 from one external health checker) came from prompt agents called with a tiny `max_tokens`: the base model spent the budget on reasoning, so no text existed. The bare base model returns 200 / `finish_reason: length` / empty content for the same request; agents now do the same\n- Updates the runtime test to expect a completed response with empty output\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Empty is still an answer",
+    "blurb": "Sometimes a tiny token budget gets spent thinking, leaving the agent with nothing to say. The API now passes that quiet little result through honestly instead of declaring a 502-sized emergency.",
+    "summary": "Prompt agents now return empty output with the model's own `finish_reason`—matching base-model behavior—rather than turning runs exhausted by tiny `max_tokens` budgets into 502 errors.",
+    "impact": "Calls where reasoning consumes the available token budget now receive a normal completed response such as `finish_reason: length` with empty content, so clients can handle the result without retrying around a 502.",
+    "keywords": [
+      "agents",
+      "text-api",
+      "error-handling",
+      "finish-reason",
+      "max-tokens",
+      "502"
+    ],
+    "visual_concept": "Depict an agent terminal that has calmly produced an empty response sheet marked with a tiny `length` label, rather than an alarming error sign. Polli should inspect the blank page with a knowing smile while a friendly CRT monitor robot recognizes it as a valid completed result; nearby code-plants and flowers make the quiet outcome feel normal and healthy.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace: Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny librarian glasses while calmly holding a blank API response sheet beside a retro terminal showing `finish_reason: length`; a cute CRT-monitor robot gives the sheet an approving look as code-plants bloom from lime green (#ecf874) pots, with subtle pixel-font text: `200 OK`. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14986.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace: Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny librarian glasses while calmly holding a blank API response sheet beside a retro terminal showing `finish_reason: length`; a cute CRT-monitor robot gives the sheet an approving look as code-plants bloom from lime green (#ecf874) pots, with subtle pixel-font text: `200 OK`. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-16T13:45:20.312912+00:00"
+}

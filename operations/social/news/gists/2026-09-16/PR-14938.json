@@ -1,0 +1,34 @@
+{
+  "pr_number": 14938,
+  "title": "feat: add Tinybird-native page view and checkout tracking",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14938",
+  "merged_at": "2026-09-16T18:16:36Z",
+  "labels": [],
+  "pr_body_excerpt": "Chosen over #14924 (PostHog), which is closed: no new vendor or client SDK, consistent with #14234.\n\n## Summary\n\n- Adds two events: signed-in `page_viewed` and `checkout_started`. Signups and fulfilled payments are not duplicated; join `d1_user` and `stripe_event` for the funnel.\n- Reuses Tinybird ingestion with zero new dependencies. A bodyless, same-origin page-view POST derives identity from the authenticated session; browsers cannot submit events or arbitrary properties. DNT honored on both sides.\n- Adds `product_event` and a private `product_analytics_daily` endpoint with distinct event/user counts. These are activity counts, not signup-cohort conversion rates.\n- The page enum in `shared/product-analytics.ts` is hand-maintained; a new route drops its views until added.\n\n## Activation\n\nDisabled by default. Deploy the datasource and pipe to staging, verify the ingest token APPEND scope, then enable `TINYBIRD_ANALYTICS_ENABLED` and `VITE_TINYBIRD_ANALYTICS_ENABLED`. Production requires separate approval. No token changes or cloud deployment performed.\n\n## Verification\n\n- 81 tests across `product-analytics.test.ts` and `stripe.test.ts`, typecheck and Biome pass.\n\nPartially addresses #14234.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The garden gets a visitor log",
+    "blurb": "The hive can now count its own footsteps without inviting another vendor into the garden. Tinybird tracks signed-in page visits and checkout starts, while DNT remains a polite little gatekeeper.",
+    "summary": "Added Tinybird-native signed-in page_viewed and checkout_started events, plus a private product_analytics_daily endpoint for distinct event and user activity counts, using same-origin session-derived identity and honoring Do Not Track.",
+    "impact": "The team can inspect page-to-checkout activity through existing Tinybird infrastructure without a new client SDK, arbitrary browser event properties, or duplicate signup and payment events.",
+    "keywords": [
+      "tinybird",
+      "analytics",
+      "conversion-tracking",
+      "checkout",
+      "privacy",
+      "observability"
+    ],
+    "visual_concept": "A cozy garden ledger scene represents privacy-conscious product analytics: Polli, wearing a tiny analyst visor, records two simple signposts—page visit and checkout—into a glowing Tinybird-style data journal. A small retro terminal displays only neat aggregate tally marks, with flowers and code-plants growing around it to show existing infrastructure doing the work; a subtle DNT leaf sign protects the garden gate.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny analyst visor, carefully writing two garden signposts labeled “PAGE VIEW” and “CHECKOUT” into a glowing retro data ledger beside a CRT terminal with simple aggregate tally marks; a small leafy “DNT” gate sign and code-plants protect the garden. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14938.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny analyst visor, carefully writing two garden signposts labeled “PAGE VIEW” and “CHECKOUT” into a glowing retro data ledger beside a CRT terminal with simple aggregate tally marks; a small leafy “DNT” gate sign and code-plants protect the garden. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-16T18:17:36.262896+00:00"
+}

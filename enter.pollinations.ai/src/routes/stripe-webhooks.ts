@@ -12,6 +12,7 @@ import {
     markAutoTopUpInvoiceFailed,
 } from "../utils/stripe-billing/index.ts";
 import { recordStripeCardFingerprintAttempt } from "../utils/stripe-card-gate.ts";
+import { reverseStripeRefund } from "../utils/stripe-refunds.ts";
 
 interface StripeEventData {
     eventType: string;
@@ -802,6 +803,12 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "refund.failed": {
                 const refund = event.data.object as Stripe.Refund;
                 console.log(`Refund ${event.type}: ${refund.id}`);
+                await reverseStripeRefund(
+                    c.env.DB,
+                    stripe,
+                    refund.id,
+                    event.livemode,
+                );
                 c.executionCtx.waitUntil(
                     sendStripeEventToTinybird(c.env, {
                         eventType: event.type,

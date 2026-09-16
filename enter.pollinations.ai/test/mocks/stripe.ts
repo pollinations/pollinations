@@ -57,6 +57,7 @@ type StripeCheckoutSession = {
     customer: string | null;
     url: string | null;
     status?: "open" | "complete" | "expired";
+    payment_intent?: string;
 };
 
 type StripePortalSession = {
@@ -168,6 +169,7 @@ export type MockStripeState = {
     invoicePayments: StripeInvoicePayment[];
     paymentIntents: StripePaymentIntent[];
     fraudCharges: Record<string, unknown>[];
+    refunds: Record<string, unknown>[];
     // Charges retrievable by id but outside the listed scan window.
     archivedCharges: Record<string, unknown>[];
     fraudDisputes: Record<string, unknown>[];
@@ -219,6 +221,13 @@ export function createMockStripe(): MockAPI<MockStripeState> {
             c.json({ id: "acct_1SrY3q7rcjS3l7tr", object: "account" }),
         )
         .get("/v1/charges", (c) => fraudPage(c, state.fraudCharges))
+        .get("/v1/refunds/:id", (c) => {
+            recordRequest(c, state);
+            const refund = state.refunds.find(
+                (row) => row.id === c.req.param("id"),
+            );
+            return refund ? c.json(refund) : stripeNotFound(c);
+        })
         .get("/v1/charges/:id", (c) => {
             const id = c.req.param("id");
             const charge = [
@@ -333,10 +342,13 @@ export function createMockStripe(): MockAPI<MockStripeState> {
             recordRequest(c, state);
             const customer = c.req.query("customer");
             const status = c.req.query("status");
+            const paymentIntent = c.req.query("payment_intent");
             const data = state.checkoutSessions.filter(
                 (session) =>
                     (!customer || session.customer === customer) &&
-                    (!status || session.status === status),
+                    (!status || session.status === status) &&
+                    (!paymentIntent ||
+                        session.payment_intent === paymentIntent),
             );
             return c.json({
                 object: "list",
@@ -562,8 +574,14 @@ export function createMockStripe(): MockAPI<MockStripeState> {
         .get("/v1/invoice_payments", (c) => {
             recordRequest(c, state);
             const invoiceId = c.req.query("invoice");
+            const paymentIntent = c.req.query("payment[payment_intent]");
+            const status = c.req.query("status");
             const data = state.invoicePayments.filter(
-                (payment) => !invoiceId || payment.invoice === invoiceId,
+                (payment) =>
+                    (!invoiceId || payment.invoice === invoiceId) &&
+                    (!paymentIntent ||
+                        payment.payment.payment_intent === paymentIntent) &&
+                    (!status || payment.status === status),
             );
             return c.json({
                 object: "list",
@@ -642,6 +660,7 @@ function createInitialState(): MockStripeState {
         invoicePayments: [],
         paymentIntents: [],
         fraudCharges: [],
+        refunds: [],
         archivedCharges: [],
         fraudDisputes: [],
         fraudWarnings: [],

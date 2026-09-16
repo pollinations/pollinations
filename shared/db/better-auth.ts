@@ -445,6 +445,18 @@ export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
   index("idx_stripe_checkout_credits_user_id").on(table.userId),
 ]);
 
+export const stripeRefund = sqliteTable("stripe_refund", {
+  refundId: text("refund_id").primaryKey(),
+  status: text("status").notNull(),
+  chargeId: text("charge_id").notNull(),
+  paymentIntentId: text("payment_intent_id").notNull(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  amount: integer("amount").notNull(),
+  currency: text("currency").notNull(),
+  pollenReversed: real("pollen_reversed").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow().notNull(),
+}, (table) => [index("idx_stripe_refund_charge_id").on(table.chargeId)]);
+
 export const polarCheckoutCredits = sqliteTable("polar_checkout_credits", {
   orderId: text("order_id").primaryKey(),
   eventId: text("event_id").notNull(),

@@ -116,12 +116,370 @@ import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
 import { STRIPE_NEW_CARD_GATE_METADATA } from "../../src/utils/stripe-card-gate.ts";
 import { test } from "../fixtures.ts";
-import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
+import {
+    type MockStripeState,
+    mockCardPaymentMethod,
+    mockCustomer,
+} from "../mocks/stripe.ts";
 
 const base = "http://localhost:3000/api/stripe";
 const stripeWebhookUrl = "http://localhost:3000/api/webhooks/stripe";
 const stripePmcId = "pmc_1SrYT96O03AauPe8ijLy6sZU";
 const checkoutAmounts = POLLEN_PACKS.map((pack) => `/checkout/${pack.packKey}`);
+
+async function seedRefundPurchase(
+    state: MockStripeState,
+    currency = "usd",
+    amount = 1038,
+    pollen = 10,
+) {
+    const userId = await getSeededUserId();
+    await env.DB.prepare(
+        "UPDATE user SET pack_balance = 3, tier_balance = 7 WHERE id = ?",
+    )
+        .bind(userId)
+        .run();
+    await env.DB.prepare(
+        "INSERT INTO stripe_checkout_credits (session_id, event_id, event_type, user_id, pollen_credited) VALUES ('cs_refund', 'evt_purchase', 'checkout.session.completed', ?, ?)",
+    )
+        .bind(userId, pollen)
+        .run();
+    state.checkoutSessions.push({
+        id: "cs_refund",
+        object: "checkout.session",
+        mode: "payment",
+        customer: "cus_refund",
+        url: null,
+        payment_intent: "pi_refund",
+    });
+    state.fraudCharges.push({
+        id: "ch_refund",
+        object: "charge",
+        payment_intent: "pi_refund",
+        captured: true,
+        amount,
+        amount_captured: amount,
+        currency,
+        livemode: false,
+        metadata: { userId },
+    });
+    state.refunds.push({
+        id: "re_refund",
+        object: "refund",
+        charge: "ch_refund",
+        amount,
+        currency,
+        status: "succeeded",
+    });
+    return userId;
+}
+
+function refundEvent(id = "re_refund", type = "refund.created") {
+    return {
+        id: `evt_${id}_${type}`,
+        type,
+        livemode: false,
+        data: { object: { id, object: "refund", status: "pending" } },
+    };
+}
+
+for (const currency of ["usd", "eur", "jpy"]) {
+    test(`Stripe refund reverses the recorded Pollen grant once (${currency})`, async ({
+        sessionToken,
+        mocks,
+    }) => {
+        expect(sessionToken).toBeTruthy();
+        await mocks.enable("stripe", "tinybird");
+        const userId = await seedRefundPurchase(mocks.stripe.state, currency);
+        // Both event types, concurrent duplicate deliveries, and a stale pending
+        // snapshot must all converge to the same successful refund adjustment.
+        const responses = await Promise.all([
+            postSignedStripeWebhook(refundEvent()),
+            postSignedStripeWebhook(refundEvent("re_refund", "refund.updated")),
+        ]);
+        expect(responses.map((r) => r.status)).toEqual([200, 200]);
+        expect((await postSignedStripeWebhook(refundEvent())).status).toBe(200);
+        expect(
+            await env.DB.prepare(
+                "SELECT pack_balance, tier_balance, banned FROM user WHERE id = ?",
+            )
+                .bind(userId)
+                .first(),
+        ).toMatchObject({ pack_balance: -7, tier_balance: 7, banned: 0 });
+        expect(
+            await env.DB.prepare(
+                "SELECT amount, currency, pollen_reversed FROM stripe_refund",
+            ).all(),
+        ).toMatchObject({
+            results: [{ amount: 1038, currency, pollen_reversed: 10 }],
+        });
+        expect(
+            await env.DB.prepare(
+                "SELECT COUNT(*) AS n FROM stripe_checkout_credits WHERE session_id = 'cs_refund'",
+            ).first(),
+        ).toEqual({ n: 1 });
+        expect(
+            mocks.stripe.state.requests.some((r) => r.method === "POST"),
+        ).toBe(false);
+    });
+}
+
+test("Stripe partial refunds use cumulative rounding and preserve subsequent wallet activity", async ({
+    sessionToken,
+    mocks,
+}) => {
+    expect(sessionToken).toBeTruthy();
+    await mocks.enable("stripe", "tinybird");
+    const userId = await seedRefundPurchase(mocks.stripe.state, "eur", 3, 1);
+    mocks.stripe.state.refunds[0].amount = 1;
+    expect((await postSignedStripeWebhook(refundEvent())).status).toBe(200);
+    expect(
+        await env.DB.prepare(
+            "SELECT pollen_reversed FROM stripe_refund",
+        ).first(),
+    ).toEqual({ pollen_reversed: 0.33333333 });
+    await env.DB.prepare(
+        "UPDATE user SET pack_balance = pack_balance + 20 WHERE id = ?",
+    )
+        .bind(userId)
+        .run();
+    mocks.stripe.state.refunds.push(
+        { ...mocks.stripe.state.refunds[0], id: "re_second" },
+        { ...mocks.stripe.state.refunds[0], id: "re_third" },
+    );
+    const responses = await Promise.all([
+        postSignedStripeWebhook(refundEvent("re_second")),
+        postSignedStripeWebhook(refundEvent("re_third")),
+    ]);
+    expect(responses.map((r) => r.status)).toEqual([200, 200]);
+    expect(
+        await env.DB.prepare(
+            "SELECT pack_balance, tier_balance FROM user WHERE id = ?",
+        )
+            .bind(userId)
+            .first(),
+    ).toEqual({ pack_balance: 22, tier_balance: 7 });
+    expect(
+        await env.DB.prepare(
+            "SELECT SUM(pollen_reversed) AS total, COUNT(*) AS n FROM stripe_refund",
+        ).first(),
+    ).toEqual({ total: 1, n: 3 });
+});
+
+for (const status of ["pending", "requires_action"]) {
+    test(`Stripe ${status} refund leaves Pollen untouched until success`, async ({
+        sessionToken,
+        mocks,
+    }) => {
+        expect(sessionToken).toBeTruthy();
+        await mocks.enable("stripe", "tinybird");
+        const userId = await seedRefundPurchase(mocks.stripe.state);
+        mocks.stripe.state.refunds[0].status = status;
+        expect((await postSignedStripeWebhook(refundEvent())).status).toBe(200);
+        expect(
+            await env.DB.prepare("SELECT pack_balance FROM user WHERE id = ?")
+                .bind(userId)
+                .first(),
+        ).toEqual({ pack_balance: 3 });
+        expect(
+            await env.DB.prepare(
+                "SELECT COUNT(*) AS n FROM stripe_refund",
+            ).first(),
+        ).toEqual({ n: 0 });
+        mocks.stripe.state.refunds[0].status = "succeeded";
+        expect(
+            (
+                await postSignedStripeWebhook(
+                    refundEvent("re_refund", "refund.updated"),
+                )
+            ).status,
+        ).toBe(200);
+        expect(
+            await env.DB.prepare("SELECT pack_balance FROM user WHERE id = ?")
+                .bind(userId)
+                .first(),
+        ).toEqual({ pack_balance: -7 });
+    });
+}
+
+for (const status of ["failed", "canceled"]) {
+    test(`Stripe ${status} refund restores a prior debit only once`, async ({
+        sessionToken,
+        mocks,
+    }) => {
+        expect(sessionToken).toBeTruthy();
+        await mocks.enable("stripe", "tinybird");
+        const userId = await seedRefundPurchase(mocks.stripe.state);
+        expect((await postSignedStripeWebhook(refundEvent())).status).toBe(200);
+        await env.DB.prepare(
+            "UPDATE user SET pack_balance = pack_balance + 20 WHERE id = ?",
+        )
+            .bind(userId)
+            .run();
+        mocks.stripe.state.refunds[0].status = status;
+        const responses = await Promise.all([
+            postSignedStripeWebhook(refundEvent("re_refund", "refund.failed")),
+            postSignedStripeWebhook(refundEvent("re_refund", "refund.updated")),
+        ]);
+        expect(responses.map((r) => r.status)).toEqual([200, 200]);
+        expect(
+            await env.DB.prepare(
+                "SELECT pack_balance, tier_balance FROM user WHERE id = ?",
+            )
+                .bind(userId)
+                .first(),
+        ).toEqual({ pack_balance: 23, tier_balance: 7 });
+        expect(
+            await env.DB.prepare(
+                "SELECT status, pollen_reversed FROM stripe_refund",
+            ).first(),
+        ).toEqual({ status, pollen_reversed: 10 });
+        // A replacement refund is a new operation and can reverse the grant.
+        mocks.stripe.state.refunds.push({
+            ...mocks.stripe.state.refunds[0],
+            id: "re_replacement",
+            status: "succeeded",
+        });
+        expect(
+            (await postSignedStripeWebhook(refundEvent("re_replacement")))
+                .status,
+        ).toBe(200);
+        expect(
+            await env.DB.prepare("SELECT pack_balance FROM user WHERE id = ?")
+                .bind(userId)
+                .first(),
+        ).toEqual({ pack_balance: 13 });
+    });
+
+    test(`Stripe ${status} refund before success never debits Pollen`, async ({
+        sessionToken,
+        mocks,
+    }) => {
+        expect(sessionToken).toBeTruthy();
+        await mocks.enable("stripe", "tinybird");
+        const userId = await seedRefundPurchase(mocks.stripe.state);
+        mocks.stripe.state.refunds[0].status = status;
+        expect(
+            (
+                await postSignedStripeWebhook(
+                    refundEvent("re_refund", "refund.failed"),
+                )
+            ).status,
+        ).toBe(200);
+        // Even a stale success read cannot resurrect a terminal refund.
+        mocks.stripe.state.refunds[0].status = "succeeded";
+        expect((await postSignedStripeWebhook(refundEvent())).status).toBe(200);
+        expect(
+            await env.DB.prepare("SELECT pack_balance FROM user WHERE id = ?")
+                .bind(userId)
+                .first(),
+        ).toEqual({ pack_balance: 3 });
+    });
+}
+
+test("Stripe refund retries when purchase fulfillment has not arrived", async ({
+    sessionToken,
+    mocks,
+}) => {
+    expect(sessionToken).toBeTruthy();
+    await mocks.enable("stripe", "tinybird");
+    const userId = await seedRefundPurchase(mocks.stripe.state);
+    await env.DB.prepare(
+        "DELETE FROM stripe_checkout_credits WHERE session_id = 'cs_refund'",
+    ).run();
+    expect((await postSignedStripeWebhook(refundEvent())).status).toBe(500);
+    expect(
+        await env.DB.prepare("SELECT COUNT(*) AS n FROM stripe_refund").first(),
+    ).toEqual({ n: 0 });
+    expect(
+        await env.DB.prepare("SELECT pack_balance FROM user WHERE id = ?")
+            .bind(userId)
+            .first(),
+    ).toEqual({ pack_balance: 3 });
+    await env.DB.prepare(
+        "INSERT INTO stripe_checkout_credits (session_id, event_id, event_type, user_id, pollen_credited) VALUES ('cs_refund', 'evt_purchase', 'checkout.session.completed', ?, 10)",
+    )
+        .bind(userId)
+        .run();
+    expect((await postSignedStripeWebhook(refundEvent())).status).toBe(200);
+});
+
+test("Stripe refund rejects conflicting ownership and currency without recording a debit", async ({
+    sessionToken,
+    mocks,
+}) => {
+    expect(sessionToken).toBeTruthy();
+    await mocks.enable("stripe", "tinybird");
+    await seedRefundPurchase(mocks.stripe.state);
+    mocks.stripe.state.fraudCharges[0].metadata = { userId: "another_user" };
+    expect((await postSignedStripeWebhook(refundEvent())).status).toBe(500);
+    mocks.stripe.state.fraudCharges[0].metadata = {};
+    mocks.stripe.state.refunds[0].currency = "eur";
+    expect((await postSignedStripeWebhook(refundEvent())).status).toBe(500);
+    expect(
+        await env.DB.prepare("SELECT COUNT(*) AS n FROM stripe_refund").first(),
+    ).toEqual({ n: 0 });
+});
+
+test("Stripe refund follows invoice payment linkage for auto-top-up credits", async ({
+    sessionToken,
+    mocks,
+}) => {
+    expect(sessionToken).toBeTruthy();
+    await mocks.enable("stripe", "tinybird");
+    const userId = await seedRefundPurchase(mocks.stripe.state);
+    mocks.stripe.state.checkoutSessions.length = 0;
+    await env.DB.prepare(
+        "DELETE FROM stripe_checkout_credits WHERE session_id = 'cs_refund'",
+    ).run();
+    await env.DB.prepare(
+        "INSERT INTO stripe_auto_top_up_attempt (id, user_id, stripe_invoice_id, amount_usd, status) VALUES ('attempt_refund', ?, 'in_refund', 20, 'paid')",
+    )
+        .bind(userId)
+        .run();
+    mocks.stripe.state.fraudCharges[0].metadata = {};
+    mocks.stripe.state.invoicePayments.push({
+        id: "inpay_refund",
+        object: "invoice_payment",
+        invoice: "in_refund",
+        amount_paid: 1038,
+        amount_requested: 1038,
+        currency: "usd",
+        is_default: true,
+        livemode: false,
+        payment: { type: "payment_intent", payment_intent: "pi_refund" },
+        status: "paid",
+    } as MockStripeState["invoicePayments"][number]);
+    expect((await postSignedStripeWebhook(refundEvent())).status).toBe(200);
+    expect(
+        await env.DB.prepare("SELECT pack_balance FROM user WHERE id = ?")
+            .bind(userId)
+            .first(),
+    ).toEqual({ pack_balance: -17 });
+});
+
+test("Stripe refund transaction rolls back its ledger insert if the balance write fails", async ({
+    sessionToken,
+    mocks,
+}) => {
+    expect(sessionToken).toBeTruthy();
+    await mocks.enable("stripe", "tinybird");
+    const userId = await seedRefundPurchase(mocks.stripe.state);
+    await env.DB.exec(
+        "CREATE TRIGGER reject_refund_debit BEFORE UPDATE OF pack_balance ON user BEGIN SELECT RAISE(ABORT, 'test balance write failed'); END;",
+    );
+    expect((await postSignedStripeWebhook(refundEvent())).status).toBe(500);
+    expect(
+        await env.DB.prepare("SELECT COUNT(*) AS n FROM stripe_refund").first(),
+    ).toEqual({ n: 0 });
+    await env.DB.exec("DROP TRIGGER reject_refund_debit;");
+    expect((await postSignedStripeWebhook(refundEvent())).status).toBe(200);
+    expect(
+        await env.DB.prepare("SELECT pack_balance FROM user WHERE id = ?")
+            .bind(userId)
+            .first(),
+    ).toEqual({ pack_balance: -7 });
+});
 
 function signStripeWebhookPayload(payload: string): string {
     const timestamp = Math.floor(Date.now() / 1000);

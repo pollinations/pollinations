@@ -1,0 +1,71 @@
+{
+  "date": "2026-09-15",
+  "period_start": "2026-09-15",
+  "period_end": "2026-09-15",
+  "title": "Model discovery now comes with health labels and route receipts",
+  "summary": "A broad shipping day: healthier model selection, new community tools, shared UI consolidation, and fewer ways for browsers and dashboards to become philosophical.\n\nModel catalogs can now be filtered to official or community sources and, when requested, to reliably healthy options. New route-status data exposes primary and fallback behavior, rescue counts, and real per-attempt latency. Scout is also back in the catalog with text, vision, streaming, and multi-image support, plus immediate capability errors when a request needs a different model.\n\nThe app directory picked up PollenBatch for quick multi-image exploration, high-resolution follow-ups, and more consistent recurring characters. AI Flashcards also joined the learn directory, turning source material into review cards. One makes visual iteration cheaper in attention; the other makes studying less dependent on fluorescent lighting.\n\nMore website v2 pieces—chat, headers, uploads, menus, model controls, themes, icons, fonts, and Markdown—now live in the shared UI package. New dialog compositions standardize accessible titles, descriptions, and action areas, while community endpoint icon help moved into a compact keyboard- and touch-friendly tooltip.",
+  "pr_count": 15,
+  "prs": [
+    {
+      "number": 14553,
+      "date": "2026-09-15"
+    },
+    {
+      "number": 14693,
+      "date": "2026-09-15"
+    },
+    {
+      "number": 14855,
+      "date": "2026-09-15"
+    },
+    {
+      "number": 14861,
+      "date": "2026-09-15"
+    },
+    {
+      "number": 14883,
+      "date": "2026-09-15"
+    },
+    {
+      "number": 14899,
+      "date": "2026-09-15"
+    },
+    {
+      "number": 14901,
+      "date": "2026-09-15"
+    },
+    {
+      "number": 14914,
+      "date": "2026-09-15"
+    },
+    {
+      "number": 14915,
+      "date": "2026-09-15"
+    },
+    {
+      "number": 14917,
+      "date": "2026-09-15"
+    },
+    {
+      "number": 14919,
+      "date": "2026-09-15"
+    },
+    {
+      "number": 14920,
+      "date": "2026-09-15"
+    },
+    {
+      "number": 14927,
+      "date": "2026-09-15"
+    },
+    {
+      "number": 14936,
+      "date": "2026-09-15"
+    },
+    {
+      "number": 14939,
+      "date": "2026-09-15"
+    }
+  ],
+  "generated_at": "2026-09-16T06:30:52.712164+00:00"
+}

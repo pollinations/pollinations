@@ -21,7 +21,7 @@ describe("AppUserMenu", () => {
             </PolliProvider>,
         );
 
-        expect(html).toContain("Connect with Pollinations");
+        expect(html).toContain("Pollinations Connect");
         expect(html).toContain("mask:url(");
         expect(html).toContain("polli:rounded-full");
         expect(html).not.toContain("polli:border-r-4");

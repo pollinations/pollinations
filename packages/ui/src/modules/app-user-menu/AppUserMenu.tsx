@@ -32,7 +32,7 @@ export type AppUserMenuProps = {
 };
 
 const defaultLabels: AppUserMenuLabels = {
-    authorize: "Connect with Pollinations",
+    authorize: "Pollinations Connect",
     appUserMenu: "App user menu",
     permissions: "Permissions",
     buyPollen: "Buy Pollen",
@@ -74,21 +74,21 @@ export function AppUserMenu({
             className="polli:flex polli:shrink-0 polli:justify-end"
         >
             {!isLoggedIn ? (
-                <LoginButton className="polli:gap-2 polli:p-1 polli:pr-3 polli:whitespace-nowrap">
-                    {/* Same geometry as the connected pill: the mark sits where the avatar will be. */}
+                <LoginButton className="polli:h-10 polli:gap-0 polli:overflow-hidden polli:border polli:border-theme-bg-active polli:bg-surface-white polli:p-0 polli:text-theme-text-strong polli:whitespace-nowrap polli:hover:bg-surface-white polli:[.dark_&]:bg-transparent polli:[.dark_&]:hover:bg-transparent">
+                    {/* Amber cell with the mark, then a light cell with the label. */}
                     <span
                         aria-hidden="true"
-                        className="polli:flex polli:h-8 polli:w-8 polli:shrink-0 polli:items-center polli:justify-center"
+                        className="polli:flex polli:h-full polli:w-10 polli:shrink-0 polli:items-center polli:justify-center polli:bg-theme-bg-active"
                     >
                         <span
-                            className="polli:block polli:h-6 polli:w-6 polli:bg-current"
+                            className="polli:block polli:h-5 polli:w-5 polli:bg-current"
                             style={{
                                 mask: `url('${markUrl}') center / contain no-repeat`,
                                 WebkitMask: `url('${markUrl}') center / contain no-repeat`,
                             }}
                         />
                     </span>
-                    {labels.authorize}
+                    <span className="polli:px-3">{labels.authorize}</span>
                 </LoginButton>
             ) : (
                 <AccountMenu

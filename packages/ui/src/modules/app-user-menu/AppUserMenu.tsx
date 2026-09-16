@@ -48,9 +48,11 @@ export function AppUserMenu({
     const { isLoggedIn } = useAuthState();
     const profile = useAccountProfile({ enabled: isLoggedIn });
     const key = useAccountKey({ enabled: isLoggedIn });
-    // Present only when the key may read account usage; otherwise key-only.
-    const wallet = useAccountBalance({ enabled: isLoggedIn }).data
-        ?.accountBalance;
+    // Only keys with the usage scope may read the wallet; skip the request otherwise.
+    const canReadWallet =
+        key.data?.permissions?.account?.includes("usage") ?? false;
+    const wallet = useAccountBalance({ enabled: isLoggedIn && canReadWallet })
+        .data?.accountBalance;
     const returnUrl =
         typeof window === "undefined"
             ? undefined

@@ -50,7 +50,8 @@ export function AppUserMenu({
     const key = useAccountKey({ enabled: isLoggedIn });
     // Only keys with the usage scope may read the wallet; skip the request otherwise.
     const canReadWallet =
-        key.data?.permissions?.account?.includes("usage") ?? false;
+        key.data?.pollenBudget === null &&
+        (key.data.permissions?.account?.includes("usage") ?? false);
     const wallet = useAccountBalance({ enabled: isLoggedIn && canReadWallet })
         .data?.accountBalance;
     const returnUrl =
@@ -99,7 +100,20 @@ export function AppUserMenu({
                     className="polli:max-w-80"
                     secondaryContent={
                         key.data ? (
-                            <span className="polli:inline-flex polli:items-center polli:gap-2">
+                            // A budgeted key shows only its own budget. An
+                            // unlimited key shows the wallet it draws from
+                            // when it may read it, otherwise just "unlimited".
+                            key.data.pollenBudget === null && wallet ? (
+                                <AccountPollen
+                                    source={{
+                                        type: "wallet",
+                                        balances: {
+                                            paid: wallet.paid,
+                                            quest: wallet.tier,
+                                        },
+                                    }}
+                                />
+                            ) : (
                                 <AccountPollen
                                     source={{
                                         type: "budget",
@@ -107,21 +121,10 @@ export function AppUserMenu({
                                         generationEnabled:
                                             key.data.permissions?.models
                                                 ?.length !== 0,
-                                        withUnit: !wallet,
+                                        withUnit: true,
                                     }}
                                 />
-                                {wallet && (
-                                    <AccountPollen
-                                        source={{
-                                            type: "wallet",
-                                            balances: {
-                                                paid: wallet.paid,
-                                                quest: wallet.tier,
-                                            },
-                                        }}
-                                    />
-                                )}
-                            </span>
+                            )
                         ) : undefined
                     }
                 >

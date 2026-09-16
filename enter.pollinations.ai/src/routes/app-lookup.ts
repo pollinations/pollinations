@@ -2,8 +2,8 @@ import {
     getRedirectUris,
     parseMetadata,
 } from "@shared/auth/api-key-metadata.ts";
-import { resolveMarkupPct } from "@shared/billing/markup.ts";
 import { isUserBanned } from "@shared/auth/ban.ts";
+import { resolveMarkupPct } from "@shared/billing/markup.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { eq } from "drizzle-orm";

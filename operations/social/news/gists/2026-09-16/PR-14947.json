@@ -1,0 +1,36 @@
+{
+  "pr_number": 14947,
+  "title": "Add Comicstyles to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14947",
+  "merged_at": "2026-09-16T08:50:58Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Comicstyles](https://comicstyles.com) to image\n- ComicStyles turns a one-line idea into a comic story, with no install, no account and no API key required. Type your premise, let the platform write the story and its split into panels, then watch eac\n\nFixes #14923",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Panels join the garden",
+    "blurb": "ComicStyles has landed in the app garden. Bring a one-line premise; leave with a whole little comic, because apparently ideas enjoy becoming sequential art now.",
+    "summary": "Added ComicStyles to the Pollinations app directory, giving users a no-install, no-account, no-API-key tool that turns a one-line premise into a written, panel-split comic story.",
+    "impact": "Users can now discover ComicStyles through Pollinations and go from a short idea to a multi-panel comic without setup or credentials.",
+    "keywords": [
+      "community-app",
+      "comicstyles",
+      "image",
+      "comics",
+      "storytelling",
+      "app-directory"
+    ],
+    "visual_concept": "Depict ComicStyles as a cozy comic-making desk: a one-line idea on a note blooms into several illustrated comic panels arranged like garden plots. Polli, wearing a tiny artist beret, helps place panels while a few code-flowers and vines grow around a retro drawing terminal, making the no-setup creative flow feel welcoming.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny painter's beret as she arranges a one-line idea into a row of charming comic panels on a retro drawing terminal; comic-panel garden plots, flowers, and code-vines bloom around her, with lime green (#ecf874) prominently glowing from the screen. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, simple pixel-font text: \"ONE IDEA → COMIC\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14947.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny painter's beret as she arranges a one-line idea into a row of charming comic panels on a retro drawing terminal; comic-panel garden plots, flowers, and code-vines bloom around her, with lime green (#ecf874) prominently glowing from the screen. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, simple pixel-font text: \"ONE IDEA → COMIC\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-16T08:51:53.688233+00:00",
+  "app_name": "Comicstyles",
+  "app_url": "https://comicstyles.com"
+}

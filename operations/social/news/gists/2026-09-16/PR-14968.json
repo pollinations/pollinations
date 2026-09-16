@@ -1,0 +1,34 @@
+{
+  "pr_number": 14968,
+  "title": "feat: post fraud ban candidates to a private Discord channel",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14968",
+  "merged_at": "2026-09-16T12:01:14Z",
+  "labels": [],
+  "pr_body_excerpt": "The hourly fraud check only logged aggregate counts, so nobody could see who it would ban without enabling bans. This turns it into a review queue.\n\n- Scheduled runs now always execute read-only. Bans are still written only when `FRAUD_BAN_ENABLED` is set.\n- `runFraudBanCheck` returns a `report` of candidates that are not already banned, plus scanned/unmapped counts.\n- When `DISCORD_FRAUD_WEBHOOK_URL` is set, the script posts a summary line with the report attached as TSV to the private `polli-admin` channel. Nothing is posted when no account needs action, so a message means someone crossed the threshold. No mentions.\n- Manually banning an account removes it from the next report; no state is kept.\n- Public Actions logs stay counts-only. Without the secret, nothing is posted.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The hive gets a watchlist",
+    "blurb": "Fraud checks now leave a quiet, reviewable trail for the gardeners. Candidates can be inspected in a private Discord queue before any ban switch is flipped.",
+    "summary": "The hourly fraud check now runs read-only by default and, when DISCORD_FRAUD_WEBHOOK_URL is configured, posts a TSV report of currently actionable, not-yet-banned candidates plus scanned and unmapped counts to the private polli-admin channel.",
+    "impact": "Admins get a private no-mentions review queue only when an account crosses the threshold, while public Actions logs remain counts-only and bans still require FRAUD_BAN_ENABLED.",
+    "keywords": [
+      "fraud-prevention",
+      "billing",
+      "discord",
+      "admin-tools",
+      "automation",
+      "review-queue"
+    ],
+    "visual_concept": "Depict Polli as a careful garden inspector with a tiny clipboard, reviewing a neatly organized TSV-style paper report beside a cozy private CRT terminal. A small monitor robot can point excitedly at a threshold marker while code-plants and flowers make the otherwise internal moderation workflow feel calm and deliberate; the scene should imply review before action, not punishment.",
+    "image_prompt": "A cozy pixel art garden-shed admin desk where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny inspector glasses, reviews a neat TSV candidate report on a clipboard beside a private CRT monitor glowing lime green (#ecf874); a chunky monitor robot points at a small threshold flag while gentle code-plants and flowers grow around the desk. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, dark purple (#110518) outlines, subtle pixel-font screen text: \"REVIEW QUEUE\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14968.jpg",
+    "prompt": "A cozy pixel art garden-shed admin desk where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny inspector glasses, reviews a neat TSV candidate report on a clipboard beside a private CRT monitor glowing lime green (#ecf874); a chunky monitor robot points at a small threshold flag while gentle code-plants and flowers grow around the desk. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, dark purple (#110518) outlines, subtle pixel-font screen text: \"REVIEW QUEUE\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-16T12:02:26.050299+00:00"
+}

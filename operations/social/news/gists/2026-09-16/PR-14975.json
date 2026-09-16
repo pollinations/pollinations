@@ -1,0 +1,33 @@
+{
+  "pr_number": 14975,
+  "title": "Add tsgabrielle and fadyabohamza-netizen to the List",
+  "author": "gggff123",
+  "url": "https://github.com/pollinations/pollinations/pull/14975",
+  "merged_at": "2026-09-16T14:31:18Z",
+  "labels": [],
+  "pr_body_excerpt": "Closes #14902 and #14981",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Two More Bees Enter",
+    "blurb": "The GitHub gate has two new names on its little clipboard. tsgabrielle and fadyabohamza-netizen can now find their way into the hive.",
+    "summary": "Added the GitHub identities tsgabrielle and fadyabohamza-netizen to the shared authentication allowlist, enabling their approved access.",
+    "impact": "The two newly listed contributors can now authenticate through the shared GitHub-based access flow.",
+    "keywords": [
+      "github",
+      "authentication",
+      "access",
+      "contributors",
+      "allowlist"
+    ],
+    "visual_concept": "A cozy hive entrance represented by a small retro terminal gate and a handwritten contributor list, with Polli warmly stamping two new name cards. Tiny code-plants and flowers make the access-control work feel like welcoming contributors into a garden rather than a security checkpoint.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black antennae, oval eyes, pink rectangular cheek blush, light-blue rounded wings, and a tiny librarian hat, warmly adding two small name cards to a glowing retro terminal's contributor list beside a garden gate; code-plants, flowers, and vines grow around the terminal, with lime green (#ecf874) prominent and simple pixel text reading \"WELCOME\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, chunky sprites, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14975.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black antennae, oval eyes, pink rectangular cheek blush, light-blue rounded wings, and a tiny librarian hat, warmly adding two small name cards to a glowing retro terminal's contributor list beside a garden gate; code-plants, flowers, and vines grow around the terminal, with lime green (#ecf874) prominent and simple pixel text reading \"WELCOME\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, chunky sprites, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-16T14:32:20.775510+00:00"
+}

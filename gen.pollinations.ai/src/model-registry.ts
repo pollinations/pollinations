@@ -25,10 +25,10 @@ import {
     applyAgentMetadata,
 } from "./agent-catalog.ts";
 import {
-    COMMUNITY_ENDPOINT_CACHE_KEY,
     type CommunityModelEnv,
     type CommunityModelRegistryEntry,
     getCommunityModelRegistryEntries,
+    resetCommunityModelRegistryCache,
 } from "./community-models.ts";
 import { linkFallbackEntries } from "./fallback.ts";
 import { mediaPromptRoute } from "./media/prompt-route.ts";
@@ -312,5 +312,5 @@ export async function resetGenerationModelRegistryCache(
     env: CommunityModelEnv,
 ): Promise<void> {
     cachedRegistry = null;
-    await env.KV.delete(COMMUNITY_ENDPOINT_CACHE_KEY);
+    await resetCommunityModelRegistryCache(env);
 }

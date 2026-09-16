@@ -1,9 +1,6 @@
 import { env } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-    COMMUNITY_ENDPOINT_CACHE_KEY,
-    type CommunityModelEnv,
-} from "../src/community-models.ts";
+import type { CommunityModelEnv } from "../src/community-models.ts";
 import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
@@ -143,9 +140,6 @@ describe("getGenerationModelRegistry", () => {
     it("serves the community catalog from KV without querying D1", async () => {
         await resetGenerationModelRegistryCache(env);
         const healthy = await getGenerationModelRegistry(env);
-        await expect(
-            env.KV.get(COMMUNITY_ENDPOINT_CACHE_KEY),
-        ).resolves.not.toBeNull();
 
         // A different DB binding misses the in-memory cache; the catalog must
         // still come from KV, so the failing D1 is never reached.

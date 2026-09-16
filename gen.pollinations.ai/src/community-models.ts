@@ -31,40 +31,38 @@ export type CommunityModelRegistryEntry = {
 export type CommunityModelEnv = Pick<CloudflareBindings, "DB" | "KV">;
 
 // One shared copy of the catalog for every gen isolate: each isolate running
-// this full-table query on its own 60s expiry was most of the D1 load.
-export const COMMUNITY_ENDPOINT_CACHE_KEY = "community-endpoints:v1";
-const COMMUNITY_ENDPOINT_CACHE_TTL_SECONDS = 60;
+// the full-table query on its own 60s expiry was most of the D1 load. Bump
+// the version when the entry shape changes, or Workers mid-deploy serve each
+// other's entries.
+const COMMUNITY_CATALOG_CACHE_KEY = "community-catalog:v1";
+const COMMUNITY_CATALOG_CACHE_TTL_SECONDS = 60;
 
-type CommunityEndpointRow = Awaited<
-    ReturnType<typeof queryCommunityEndpointRows>
->[number];
-
-async function loadCommunityEndpointRows(
+export async function getCommunityModelRegistryEntries(
     env: CommunityModelEnv,
-): Promise<CommunityEndpointRow[]> {
-    const cached = await env.KV.get<CommunityEndpointRow[]>(
-        COMMUNITY_ENDPOINT_CACHE_KEY,
+): Promise<CommunityModelRegistryEntry[]> {
+    const cached = await env.KV.get<CommunityModelRegistryEntry[]>(
+        COMMUNITY_CATALOG_CACHE_KEY,
         "json",
     ).catch(() => null);
-    if (cached) {
-        // Date columns come back from JSON as strings.
-        return cached.map((row) => ({
-            ...row,
-            pendingAt: row.pendingAt && new Date(row.pendingAt),
-            hiddenAt: row.hiddenAt && new Date(row.hiddenAt),
-            createdAt: new Date(row.createdAt),
-        }));
-    }
-    const rows = await queryCommunityEndpointRows(env.DB);
-    await env.KV.put(COMMUNITY_ENDPOINT_CACHE_KEY, JSON.stringify(rows), {
-        expirationTtl: COMMUNITY_ENDPOINT_CACHE_TTL_SECONDS,
+    if (cached) return cached;
+    const entries = await queryCommunityModelRegistryEntries(env.DB);
+    await env.KV.put(COMMUNITY_CATALOG_CACHE_KEY, JSON.stringify(entries), {
+        expirationTtl: COMMUNITY_CATALOG_CACHE_TTL_SECONDS,
     }).catch(() => {});
-    return rows;
+    return entries;
 }
 
-async function queryCommunityEndpointRows(dbBinding: CloudflareBindings["DB"]) {
+export async function resetCommunityModelRegistryCache(
+    env: CommunityModelEnv,
+): Promise<void> {
+    await env.KV.delete(COMMUNITY_CATALOG_CACHE_KEY);
+}
+
+async function queryCommunityModelRegistryEntries(
+    dbBinding: CloudflareBindings["DB"],
+): Promise<CommunityModelRegistryEntry[]> {
     const db = drizzle(dbBinding, { schema });
-    return db
+    const rows = await db
         .select({
             id: schema.communityEndpoint.id,
             ownerUserId: schema.communityEndpoint.ownerUserId,
@@ -95,13 +93,6 @@ async function queryCommunityEndpointRows(dbBinding: CloudflareBindings["DB"]) {
             eq(schema.communityEndpoint.ownerUserId, schema.user.id),
         )
         .where(isNotNull(schema.user.githubUsername));
-}
-
-export async function getCommunityModelRegistryEntries(
-    env: CommunityModelEnv,
-): Promise<CommunityModelRegistryEntry[]> {
-    if (!env.DB) return [];
-    const rows = await loadCommunityEndpointRows(env);
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
         if (!row.ownerGithubUsername) return [];
         const baseUrl = row.baseUrl;

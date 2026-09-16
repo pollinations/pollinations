@@ -16,6 +16,9 @@ export const MCP_USAGE_HEADERS = {
 // Gen overwrites this header before forwarding a user-scoped MCP request.
 // Private MCP Workers use it to select the caller's connected accounts.
 export const MCP_USER_ID_HEADER = "x-pollinations-user-id";
+// The caller's linked GitHub account as `id+username`, the local part of its
+// noreply address. Gen overwrites it too.
+export const MCP_USER_GITHUB_HEADER = "x-pollinations-user-github";
 
 type McpServerDefinitionBase = {
     id: string;

@@ -264,12 +264,33 @@ The ban system uses **Better Auth** fields on the `user` table in Cloudflare D1:
 | `ban_reason` | text | Shown in 403 error response |
 | `ban_expires` | integer (epoch ms) | `NULL` for permanent, epoch ms for temporary |
 
-**Enforcement** (`src/middleware/auth.ts`):
+**Enforcement** (`shared/auth/api-key.ts`, `shared/auth/ban.ts`):
 - `assertNotBanned()` runs on every authenticated request (session + API key)
 - If `banned = 1` and not expired → HTTP 403 with ban reason
 - If `ban_expires` is set and has passed → ban is automatically lifted
+- A ban also hides the user's community models, blocks checkout and auto top-up,
+  and sends the sign-in flow to the Account Suspended screen
 
 **There is no admin API for banning** — use `wrangler d1 execute` directly.
+
+## A ban is three statements, not one
+
+Setting `banned = 1` alone leaves the account logged in and still charging its
+card. Use all three, matching `fraudBanQueries()` in
+`enter.pollinations.ai/src/utils/stripe-fraud-ban.ts`:
+
+```sql
+UPDATE user SET banned = 1, ban_reason = '<reason>', ban_expires = NULL, auto_top_up_enabled = 0
+  WHERE id = '<USER_ID>' AND (COALESCE(banned, 0) = 0 OR ban_expires <= unixepoch());
+UPDATE user SET auto_top_up_enabled = 0 WHERE id = '<USER_ID>';
+DELETE FROM session WHERE user_id = '<USER_ID>';
+```
+
+Then expire any open Stripe Checkout sessions for the user's
+`stripe_customer_id`, or they can still complete a purchase already in flight.
+
+Verify afterwards: banned count, `ban_reason`, `auto_top_up_enabled = 0`, and
+zero rows left in `session`.
 
 ## Ban Commands
 
@@ -283,14 +304,47 @@ IDS=$(cat user_ids_to_ban.txt | sed "s/^/'/;s/$/'/" | paste -sd, -)
 npx wrangler d1 execute production-pollinations-enter-db --remote \
   --command "UPDATE user SET banned = 1, ban_reason = 'Automated: bot farm abuse' WHERE id IN ($IDS)"
 
-# Unban a user (if false positive)
+# Unban a user (if false positive) - see the warning below first
 npx wrangler d1 execute production-pollinations-enter-db --remote \
-  --command "UPDATE user SET banned = 0, ban_reason = NULL WHERE id = '<USER_ID>'"
+  --command "UPDATE user SET banned = 0, ban_reason = NULL, ban_expires = NULL WHERE id = '<USER_ID>'"
 
 # Temporary ban (expires after 7 days)
 npx wrangler d1 execute production-pollinations-enter-db --remote \
   --command "UPDATE user SET banned = 1, ban_reason = 'Temporary: rate abuse', ban_expires = $(date -v+7d +%s)000 WHERE id = '<USER_ID>'"
 ```
+
+## Unbanning: the trap
+
+If the account was banned by the payment-fraud policy, **clearing `banned` is not
+enough**. The daily job rescores all attributable history, so it will re-ban the
+same account on its next run. You must also add the user id to the repository variable
+`FRAUD_BAN_EXCLUDED_USER_IDS` (comma separated), or the unban lasts under an hour.
+
+Auto top-up stays off after an unban; re-enable it deliberately if the user asks.
+
+## Payment-fraud bans
+
+Separate from the abuse scoring above, `.github/workflows/billing-check-fraud.yml`
+scores accounts daily on Stripe signals (`enter.pollinations.ai/src/utils/stripe-fraud-score.ts`).
+
+- Bans **only** when `FRAUD_BAN_ENABLED` is set. It is deliberately unset: the job
+  is a review queue, not an enforcer.
+- Every run posts accounts still needing review to the private Discord channel via
+  `DISCORD_FRAUD_WEBHOOK_URL`, as a TSV of score, user id, name. No message means
+  nothing needs action.
+- A ban needs a **confirmed** signal: a fraudulent dispute, a fraud report, or an
+  early fraud warning. Radar's blocked and highest-risk flags raise the score but
+  never convict alone, because repeated declines of one legitimate card escalate
+  them.
+- Charges before 2026-05-01 carry no identity and are not scanned. Accounts whose
+  activity predates that must be reviewed and banned by hand.
+- One account is excluded by id in the source (a settled case). Add later
+  exceptions to `FRAUD_BAN_EXCLUDED_USER_IDS` instead of editing code.
+
+**Before a manual payment-fraud ban**, confirm the account owns its charges using
+the Checkout Session metadata our server wrote (`metadata.userId`). Never ban on a
+billing-email match: the buyer controls that field, which is why production
+refuses it.
 
 **D1 database names:**
 - Production: `production-pollinations-enter-db`
@@ -333,6 +387,7 @@ npx wrangler d1 execute production-pollinations-enter-db --remote \
 | 2026-03-06 | Banned bot farm | 277 | IP cluster ≥100, 95%+ errors, $0 pack spend |
 | 2026-03-06 | Rate-limited bot farm | 42 | Same bot farm, no pack spend |
 | 2026-03-06 | Rate-limited bot farm | 59 | Multi-signal: IP clusters, gibberish suffixes, disposable emails, hammering |
+| 2026-09-16 | Banned card testers | 22 | Stripe fraud signals; 9 found by the scan, 13 by hand (pre-May charges). 176 card fingerprints added to the Radar block list |
 
 ---
 

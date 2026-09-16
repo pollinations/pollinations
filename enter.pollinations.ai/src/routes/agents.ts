@@ -468,7 +468,7 @@ export const agentsRoutes = new Hono<Env>()
             tags: ["🤖 Community Agents"],
             summary: "Update Agent",
             description:
-                "Update a prompt agent's configuration or a code agent's visibility and safety policy. A code agent's identity and repository are fixed after creation. API keys require `account:keys`.",
+                "Update a prompt agent's configuration or a code agent's visibility and safety policy. Send only the fields to change; the rest keep their current values. A code agent's identity and repository are fixed after creation. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Updated agent",
@@ -492,18 +492,22 @@ export const agentsRoutes = new Hono<Env>()
             const db = drizzle(c.env.DB, { schema });
             const id = c.req.param("id");
             const stored = await requireOwnedAgent(db, id, user.id);
-            const parsed = (
+            const current = parseListingPayload(stored.type, stored.payload);
+            if (!current) {
+                throw new Error(`Agent ${id} has invalid configuration`);
+            }
+            // Prompt fields left out of the update keep their stored values.
+            const parsed =
                 stored.type === "code_agent"
-                    ? CodeAgentUpdateSchema
-                    : UpdatePromptAgentSchema
-            ).safeParse(input);
+                    ? CodeAgentUpdateSchema.safeParse(input)
+                    : UpdatePromptAgentSchema.safeParse({
+                          ...current,
+                          ...input,
+                      });
             if (!parsed.success) {
                 throw new HTTPException(400, {
                     message: parsed.error.issues[0]?.message,
                 });
-            }
-            if (!parseListingPayload(stored.type, stored.payload)) {
-                throw new Error(`Agent ${id} has invalid configuration`);
             }
             const data = parsed.data;
             const update: Partial<

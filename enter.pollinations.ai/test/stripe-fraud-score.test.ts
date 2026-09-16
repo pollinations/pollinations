@@ -9,6 +9,7 @@ import {
     cappedFraudScore,
     collectStripeFraudScores,
     FRAUD_BAN_EXCLUDED_USER_ID,
+    FRAUD_SCAN_START_SECONDS,
     hasConfirmedFraud,
 } from "../src/utils/stripe-fraud-score.ts";
 import { test } from "./fixtures.ts";
@@ -318,4 +319,44 @@ test("confirmed signals are disputes, warnings and fraud reports only", () => {
     expect(hasConfirmedFraud([{ chargeId: "ch_a", ew: true }])).toBe(true);
     expect(hasConfirmedFraud([{ chargeId: "ch_a", fraud: true }])).toBe(true);
     expect(hasConfirmedFraud([])).toBe(false);
+});
+
+test("charges before the attribution window are skipped, not treated as a gap", async ({
+    sessionToken,
+    mocks,
+}) => {
+    expect(sessionToken).toBeTruthy();
+    await mocks.enable("stripe");
+    const user = await env.DB.prepare("SELECT id FROM user LIMIT 1").first<{
+        id: string;
+    }>();
+    if (!user) throw Error("Missing user");
+    mocks.stripe.state.fraudCharges.push({
+        id: "ch_inside",
+        object: "charge",
+        livemode: true,
+        customer: "cus_window",
+        metadata: { userId: user.id },
+        created: FRAUD_SCAN_START_SECONDS + 1,
+    });
+    // Raised recently, but against a charge from the unattributable era. The
+    // scan never lists that charge, so it must be skipped rather than failing.
+    mocks.stripe.state.fraudDisputes.push({
+        id: "dp_old",
+        object: "dispute",
+        livemode: true,
+        reason: "fraudulent",
+        charge: "ch_before_window",
+    });
+    mocks.stripe.state.archivedCharges.push({
+        id: "ch_before_window",
+        object: "charge",
+        livemode: true,
+        created: FRAUD_SCAN_START_SECONDS - 1,
+    });
+    const result = await collectStripeFraudScores(client(), [
+        { id: user.id, stripe_customer_id: "cus_window" },
+    ]);
+    expect(result.charges).toBe(1);
+    expect(result.confirmed.has(user.id)).toBe(false);
 });

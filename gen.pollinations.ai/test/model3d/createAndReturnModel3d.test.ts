@@ -1,6 +1,12 @@
 import { createExecutionContext, env } from "cloudflare:test";
 import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
+
+const CLEAN_JPEG_BYTES = new Uint8Array([
+    0xff, 0xd8, 0xff, 0xc0, 0x00, 0x0b, 0x08, 0x00, 0x01, 0x00, 0x01, 0x03,
+    0x01, 0x11, 0x00, 0xff, 0xda, 0x00, 0x03, 0x00, 0xff, 0xd9,
+]);
+
 import { test as workerTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import worker from "../../src/index.ts";
@@ -52,13 +58,30 @@ describe("createAndReturnModel3d dispatch", () => {
     ])("routes %s to the expected primary provider host", async (model, expectedHost) => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")
-            .mockResolvedValue(new Response("{}", { status: 500 }));
+            .mockImplementation(async (input) => {
+                const url =
+                    typeof input === "string"
+                        ? input
+                        : input instanceof Request
+                          ? input.url
+                          : input.toString();
+                if (url.includes("example.com")) {
+                    return new Response(CLEAN_JPEG_BYTES, {
+                        headers: { "content-type": "image/jpeg" },
+                    });
+                }
+                return new Response("{}", { status: 500 });
+            });
 
         await expect(
             createAndReturnModel3d("a test prompt", baseParams(model)),
         ).rejects.toBeTruthy();
 
-        expect(fetchSpy.mock.calls[0]?.[0]).toContain(expectedHost);
+        expect(
+            fetchSpy.mock.calls.some((call) =>
+                String(call[0]).includes(expectedHost),
+            ),
+        ).toBe(true);
     });
 
     it("throws for an unrecognized model id", async () => {
@@ -82,6 +105,11 @@ workerTest("uses the shared fallback loop for 3D", async ({ paidApiKey }) => {
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
                 const request = new Request(input, init);
+                if (request.url.includes("example.com")) {
+                    return new Response(CLEAN_JPEG_BYTES, {
+                        headers: { "content-type": "image/jpeg" },
+                    });
+                }
                 if (request.url.includes("public_model_stats.json")) {
                     return Response.json({ data: [] });
                 }
@@ -142,6 +170,11 @@ workerTest(
             vi.spyOn(globalThis, "fetch").mockImplementation(
                 async (input, init) => {
                     const request = new Request(input, init);
+                    if (request.url.includes("example.com")) {
+                        return new Response(CLEAN_JPEG_BYTES, {
+                            headers: { "content-type": "image/jpeg" },
+                        });
+                    }
                     if (request.url.includes("public_model_stats.json")) {
                         return Response.json({ data: [] });
                     }

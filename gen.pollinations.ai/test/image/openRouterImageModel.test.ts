@@ -18,7 +18,6 @@ const PNG = Buffer.from(
     "base64",
 );
 const PNG_DATA_URI = `data:image/png;base64,${PNG.toString("base64")}`;
-const SVG_DATA_URI = "data:image/svg+xml;base64,PHN2Zy8+";
 const WIDE_PNG = Buffer.alloc(24);
 WIDE_PNG.set([0x89, 0x50, 0x4e, 0x47]);
 WIDE_PNG.writeUInt32BE(2560, 16);
@@ -45,6 +44,12 @@ function mockOpenRouterFetch(requests: Record<string, unknown>[]) {
         .spyOn(globalThis, "fetch")
         .mockImplementation(async (url, init) => {
             const href = typeof url === "string" ? url : url.toString();
+            if (href === REFERENCE_IMAGE_URL) {
+                return new Response(PNG, {
+                    status: 200,
+                    headers: { "Content-Type": "image/png" },
+                });
+            }
             if (href !== OPENROUTER_IMAGE_URL) {
                 return new Response("unexpected URL", { status: 404 });
             }
@@ -116,7 +121,7 @@ describe("OpenRouter Grok Imagine Pro", () => {
             ...baseParams,
             width: 1280,
             height: 720,
-            image: [PNG_DATA_URI],
+            image: [REFERENCE_IMAGE_URL],
         });
 
         expect(requests[0]).toEqual({
@@ -177,7 +182,7 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
             model: "x-ai/grok-imagine-image-2.0",
             quality,
             resolution,
-            image: [PNG_DATA_URI, PNG_DATA_URI, PNG_DATA_URI],
+            image: [REFERENCE_IMAGE_URL, PNG_DATA_URI, REFERENCE_IMAGE_URL],
         });
 
         expect(requests[0]).toEqual({
@@ -805,6 +810,8 @@ describe("OpenRouter Seedream 4.5 Pro", () => {
 describe("OpenRouter Recraft vector", () => {
     const svg =
         '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0"/></svg>';
+    const SVG_URL = "https://example.com/reference.svg";
+    const RECRAFT_SVG_DATA_URI = `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
 
     function mockRecraftResponse(
         requests: Record<string, unknown>[],
@@ -814,6 +821,11 @@ describe("OpenRouter Recraft vector", () => {
             .spyOn(globalThis, "fetch")
             .mockImplementation(async (url, init) => {
                 const href = typeof url === "string" ? url : url.toString();
+                if (href === SVG_URL) {
+                    return new Response(svg, {
+                        headers: { "Content-Type": "image/svg+xml" },
+                    });
+                }
                 if (href !== OPENROUTER_IMAGE_URL) {
                     return new Response("unexpected URL", { status: 404 });
                 }
@@ -891,7 +903,7 @@ describe("OpenRouter Recraft vector", () => {
         const result = await callOpenRouterRecraftVectorAPI("edit prompt", {
             ...baseParams,
             model: "recraft/recraft-v4.1-vector",
-            image: [SVG_DATA_URI],
+            image: [SVG_URL],
         });
 
         expect(requests[0]).toEqual({
@@ -906,7 +918,7 @@ describe("OpenRouter Recraft vector", () => {
             input_references: [
                 {
                     type: "image_url",
-                    image_url: { url: SVG_DATA_URI },
+                    image_url: { url: RECRAFT_SVG_DATA_URI },
                 },
             ],
         });

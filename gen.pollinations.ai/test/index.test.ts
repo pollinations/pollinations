@@ -778,6 +778,11 @@ fixtureTest(
                 ) {
                     return Response.json({ data: [] });
                 }
+                if (request.url === "https://example.com/source.svg") {
+                    return new Response(svg, {
+                        headers: { "content-type": "image/svg+xml" },
+                    });
+                }
                 throw new Error(`Unexpected fetch: ${request.url}`);
             },
         );
@@ -946,7 +951,9 @@ fixtureTest(
             input_references: [
                 {
                     type: "image_url",
-                    image_url: { url: "https://example.com/source.svg" },
+                    image_url: {
+                        url: `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`,
+                    },
                 },
             ],
         });

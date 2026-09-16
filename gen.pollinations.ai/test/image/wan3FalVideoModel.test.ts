@@ -4,6 +4,10 @@ import { callWan3FalAPI } from "../../src/image/models/wan3FalVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
 const CLEAN_JPEG_DATA_URI = "data:image/jpeg;base64,/9j/2gADAP/Z";
+const CLEAN_JPEG_BYTES = new Uint8Array([
+    0xff, 0xd8, 0xff, 0xc0, 0x00, 0x0b, 0x08, 0x00, 0x01, 0x00, 0x01, 0x03,
+    0x01, 0x11, 0x00, 0xff, 0xda, 0x00, 0x03, 0x00, 0xff, 0xd9,
+]);
 
 const TEXT_ENDPOINT =
     "https://queue.fal.run/alibaba/wan-3.0-prime/text-to-video";
@@ -82,6 +86,14 @@ function mockFalFetch(
             if (href === VIDEO_URL) {
                 return new Response(VIDEO_BYTES, {
                     headers: { "Content-Type": "video/mp4" },
+                });
+            }
+            if (
+                href === "https://media.pollinations.ai/start.png" ||
+                href === "https://media.pollinations.ai/end.png"
+            ) {
+                return new Response(CLEAN_JPEG_BYTES, {
+                    headers: { "Content-Type": "image/jpeg" },
                 });
             }
             return new Response("unexpected URL", { status: 404 });
@@ -186,6 +198,23 @@ describe("Wan 3.0 Prime via Fal", () => {
         expect(requests[0].body?.start_image_url).toBe(START);
         expect(requests[0].body?.end_image_url).toBe(END);
         expect(requests[0].body?.aspect_ratio).toBe("adaptive");
+    });
+
+    it("downloads and sanitises remote start and end images before submitting to Fal", async () => {
+        const requests: ProviderRequest[] = [];
+        mockFalFetch(requests);
+
+        await callWan3FalAPI("smooth transition", {
+            ...baseParams,
+            image: [
+                "https://media.pollinations.ai/start.png",
+                "https://media.pollinations.ai/end.png",
+            ],
+        });
+
+        expect(requests[0].url).toBe(IMAGE_ENDPOINT);
+        expect(requests[0].body?.start_image_url).toBe(CLEAN_JPEG_DATA_URI);
+        expect(requests[0].body?.end_image_url).toBe(CLEAN_JPEG_DATA_URI);
     });
 
     it("R2V maps Pollinations references to the Fal Prime contract", async () => {

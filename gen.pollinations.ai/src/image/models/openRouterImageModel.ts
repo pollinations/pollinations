@@ -14,7 +14,6 @@ import {
     base64ToBuffer,
     downloadUserImage,
     readImageDimensions,
-    sanitizeDataUri,
     toDataUri,
 } from "../utils/imageDownload.ts";
 import { writeExifMetadata } from "../writeExifMetadata.ts";
@@ -428,7 +427,7 @@ export async function callOpenRouterGrokImagineProAPI(
 ): Promise<ImageGenerationResult> {
     const apiKey = requireOpenRouterImageApiKey();
     const referenceImage = safeParams.image?.[0]
-        ? await sanitizeDataUri(safeParams.image[0])
+        ? await toDataUri(safeParams.image[0])
         : undefined;
     const requestBody: Record<string, unknown> = {
         model: GROK_IMAGINE_QUALITY_MODEL,
@@ -496,7 +495,7 @@ export async function callOpenRouterGrokImagineImage2API(
     const inputReferences = await Promise.all(
         safeParams.image.map(async (url) => ({
             type: "image_url",
-            image_url: { url: await sanitizeDataUri(url) },
+            image_url: { url: await toDataUri(url) },
         })),
     );
     const requestBody: Record<string, unknown> = {
@@ -654,7 +653,7 @@ export async function callOpenRouterRecraftVectorAPI(
 ): Promise<ImageGenerationResult> {
     const apiKey = requireOpenRouterImageApiKey();
     const referenceImage = safeParams.image?.[0]
-        ? await sanitizeDataUri(safeParams.image[0])
+        ? await toDataUri(safeParams.image[0])
         : undefined;
     const requestBody: Record<string, unknown> = {
         model: RECRAFT_VECTOR_MODEL,

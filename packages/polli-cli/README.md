@@ -92,6 +92,7 @@ Keys can't be edited — to change a name, budget, or model list, revoke and rec
 polli usage                  # pollen balance
 polli usage --history        # recent requests
 polli usage --daily          # daily spend
+polli usage --history --key polli-harness-1 --days 1   # cost of one harness key, last day
 polli earnings               # developer earnings (default 30 days, --days up to 90)
 polli quests --claimable     # only rewards ready to claim
 polli agents list            # managed prompt agents

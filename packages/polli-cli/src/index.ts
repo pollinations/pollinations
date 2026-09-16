@@ -41,14 +41,22 @@ program
     )
     .version(`${pkg.version} — ${flavor.version}`)
     .option("--json", "Output as JSON")
-    .option("--key <key>", "Override stored API key for this command")
+    .option(
+        "--key <key>",
+        "Override stored API key for this command",
+        // Commander shares the option store between the program and its
+        // subcommands, so this accumulates every --key value; preAction
+        // picks the one that precedes the command name as the auth
+        // override — later values are that command's own --key filters.
+        (value, previous: string[] = []) => [...previous, value],
+    )
     .addHelpText(
         "after",
         chalk.dim(
             `\nAI agent? Read the skill file for the full usage map:\n  https://raw.githubusercontent.com/pollinations/pollinations/main/packages/polli-cli/SKILL.md\n`,
         ),
     )
-    .hook("preAction", () => {
+    .hook("preAction", (_command, actionCommand) => {
         const opts = program.opts();
 
         if (opts.json) {
@@ -56,8 +64,20 @@ program
             process.env.NO_COLOR = "1";
         }
 
-        if (opts.key) {
-            setKeyOverride(opts.key);
+        // A --key that appears BEFORE the action command name authenticates
+        // the request; a later --key belongs to that command's own filters
+        // (e.g. the usage key filter) and must not become credentials.
+        const argv = process.argv;
+        const nameIdx = argv.indexOf(actionCommand.name());
+        for (let i = 0; i < nameIdx; i++) {
+            if (argv[i] === "--key") {
+                setKeyOverride(argv[i + 1] ?? "");
+                break;
+            }
+            if (argv[i]?.startsWith("--key=")) {
+                setKeyOverride(argv[i].slice("--key=".length));
+                break;
+            }
         }
     });
 

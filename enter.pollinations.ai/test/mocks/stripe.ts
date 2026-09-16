@@ -201,6 +201,13 @@ export function createMockStripe(): MockAPI<MockStripeState> {
 
     function fraudPage(c: Context, rows: Record<string, unknown>[]) {
         recordRequest(c, state);
+        const since = Number(c.req.query("created[gte]") ?? 0);
+        const until = Number(c.req.query("created[lte]") ?? Infinity);
+        rows = rows.filter(
+            (row) =>
+                typeof row.created !== "number" ||
+                (row.created >= since && row.created <= until),
+        );
         const cursor = c.req.query("starting_after");
         const start = cursor
             ? rows.findIndex((row) => row.id === cursor) + 1
@@ -220,22 +227,13 @@ export function createMockStripe(): MockAPI<MockStripeState> {
         )
         .get("/v1/charges", (c) => fraudPage(c, state.fraudCharges))
         .get("/v1/charges/:id", (c) => {
-            const id = c.req.param("id");
+            recordRequest(c, state);
             const charge = [
                 ...state.fraudCharges,
                 ...state.archivedCharges,
-            ].find((entry) => entry.id === id);
-            return charge
-                ? c.json(charge)
-                : c.json(
-                      {
-                          error: {
-                              type: "invalid_request_error",
-                              message: "No such charge",
-                          },
-                      },
-                      404,
-                  );
+            ].find((row) => row.id === c.req.param("id"));
+            if (!charge) return stripeNotFound(c);
+            return c.json(charge);
         })
         .get("/v1/disputes", (c) => fraudPage(c, state.fraudDisputes))
         .get("/v1/radar/early_fraud_warnings", (c) =>

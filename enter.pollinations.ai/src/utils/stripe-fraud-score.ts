@@ -9,6 +9,17 @@ export const FRAUD_BAN_EXCLUDED_USER_ID = "GcN1eNVQXW58eLIppqxlgvI6a1w9Scic";
 const WEIGHTS = { fd: 5, ew: 2, fraud: 3, hr: 1, rb: 0 } as const;
 type Signal = keyof typeof WEIGHTS;
 const SIGNALS = Object.keys(WEIGHTS) as Signal[];
+/**
+ * Signals where a person or a card issuer confirmed fraud after the fact. The
+ * rest are only Radar's prediction at the moment of the attempt, and repeated
+ * declines of one legitimate card escalate those on their own, so prediction
+ * volume alone must never ban an account.
+ */
+const CONFIRMED_SIGNALS = [
+    "fd",
+    "ew",
+    "fraud",
+] as const satisfies readonly Signal[];
 export type FraudPayment = { chargeId: string } & Partial<
     Record<Signal, boolean>
 >;
@@ -47,6 +58,12 @@ export function cappedFraudScore(payments: Iterable<FraudPayment>): number {
         0,
     );
     return Number(score.toFixed(2));
+}
+
+export function hasConfirmedFraud(payments: Iterable<FraudPayment>): boolean {
+    for (const payment of payments)
+        if (CONFIRMED_SIGNALS.some((signal) => payment[signal])) return true;
+    return false;
 }
 
 export type FraudUser = { id: string; stripe_customer_id: string | null };
@@ -168,6 +185,11 @@ export async function collectStripeFraudScores(
     return {
         scores: new Map(
             [...byUser].map(([id, list]) => [id, cappedFraudScore(list)]),
+        ),
+        confirmed: new Set(
+            [...byUser]
+                .filter(([, list]) => hasConfirmedFraud(list))
+                .map(([id]) => id),
         ),
         customers,
         charges: payments.size,

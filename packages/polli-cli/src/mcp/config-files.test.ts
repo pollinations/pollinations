@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, readFileSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -77,6 +77,23 @@ describe("read/writeJsonObject", () => {
         expect(readJsonObject(file)).toEqual({});
         writeJsonObject(file, { a: 1 });
         expect(readJsonObject(file)).toEqual({ a: 1 });
+    });
+});
+
+describe("secret file permissions", () => {
+    it("writes owner-only even when the config already exists as 0644", () => {
+        const dir = mkdtempSync(join(tmpdir(), "polli-mcp-"));
+        const jsonFile = join(dir, "mcp.json");
+        writeJsonObject(jsonFile, {});
+        chmodSync(jsonFile, 0o644);
+        writeJsonObject(jsonFile, { mcpServers: {} });
+        expect(statSync(jsonFile).mode & 0o777).toBe(0o600);
+
+        const envFile = join(dir, ".env");
+        upsertEnvFile(envFile, { A: "1" });
+        chmodSync(envFile, 0o644);
+        upsertEnvFile(envFile, { A: "2" });
+        expect(statSync(envFile).mode & 0o777).toBe(0o600);
     });
 });
 

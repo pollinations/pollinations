@@ -15,7 +15,7 @@ export const readJsonObject = (path: string): JsonObject => {
 };
 
 export const writeJsonObject = (path: string, value: JsonObject) =>
-    writeTextAtomic(path, `${JSON.stringify(value, null, 2)}\n`);
+    writeTextAtomic(path, `${JSON.stringify(value, null, 2)}\n`, 0o600);
 
 const asArgs = (entry: JsonObject): unknown[] => {
     if (Array.isArray(entry.args)) return entry.args;
@@ -76,5 +76,5 @@ export const upsertEnvFile = (path: string, values: Record<string, string>) => {
     for (const [name, value] of Object.entries(values)) {
         kept.push(`${name}=${value}`);
     }
-    writeTextAtomic(path, `${kept.join("\n")}\n`);
+    writeTextAtomic(path, `${kept.join("\n")}\n`, 0o600);
 };

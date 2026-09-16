@@ -1,8 +1,5 @@
 import { AccountIdentity } from "@pollinations/ui";
-import {
-    AccountPollen,
-    type AccountPollenSource,
-} from "@pollinations/ui/wallet";
+import { AccountPollen } from "@pollinations/ui/wallet";
 import type { User } from "../../auth.ts";
 
 export type AuthAccountBalances = {
@@ -14,15 +11,10 @@ export type AuthAccountBalances = {
 export function AuthAccountIdentity({
     user,
     balances,
-    requirement,
     topUpHref,
 }: {
     user: Pick<User, "name" | "email" | "image" | "githubUsername">;
     balances?: AuthAccountBalances | null;
-    requirement?: Extract<
-        AccountPollenSource,
-        { type: "wallet" }
-    >["requirement"];
     /** Omit on the top-up page itself. */
     topUpHref?: string;
 }) {
@@ -34,7 +26,7 @@ export function AuthAccountIdentity({
             secondaryContent={
                 balances !== undefined ? (
                     <AccountPollen
-                        source={{ type: "wallet", balances, requirement }}
+                        source={{ type: "wallet", balances }}
                         topUpHref={topUpHref}
                     />
                 ) : undefined

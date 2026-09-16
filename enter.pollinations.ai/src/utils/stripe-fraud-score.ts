@@ -14,14 +14,17 @@ export const FRAUD_BAN_THRESHOLD = 0.75;
 export const FRAUD_SCAN_START_SECONDS = Math.floor(Date.UTC(2026, 4, 1) / 1000);
 // Manually settled account: never automatically ban it.
 export const FRAUD_BAN_EXCLUDED_USER_ID = "GcN1eNVQXW58eLIppqxlgvI6a1w9Scic";
+// Radar blocks alone carry no weight: a decline is not evidence of fraud.
 const WEIGHTS = { fd: 5, ew: 2, fraud: 3, hr: 1, rb: 0 } as const;
 type Signal = keyof typeof WEIGHTS;
-const SIGNALS = Object.keys(WEIGHTS) as Signal[];
+const SIGNALS = (Object.keys(WEIGHTS) as Signal[]).filter(
+    (signal) => WEIGHTS[signal] > 0,
+);
 /**
- * Signals where a person or a card issuer confirmed fraud after the fact. The
- * rest are only Radar's prediction at the moment of the attempt, and repeated
- * declines of one legitimate card escalate those on their own, so prediction
- * volume alone must never ban an account.
+ * Reports from a person or issuer after the payment, rather than only Radar's
+ * prediction at the moment of the attempt. An issuer warning is still suspected
+ * fraud, not proof. Repeated legitimate declines can escalate Radar predictions,
+ * so prediction volume alone must never ban an account.
  */
 const CONFIRMED_SIGNALS = [
     "fd",
@@ -141,7 +144,6 @@ export async function collectStripeFraudScores(
                     charge.fraud_details?.stripe_report === "fraudulent" ||
                     charge.fraud_details?.user_report === "fraudulent",
                 hr: charge.outcome?.risk_level === "highest",
-                rb: charge.outcome?.type === "blocked",
             },
         });
     }
@@ -151,10 +153,12 @@ export async function collectStripeFraudScores(
      * trusting a map with a hole in it: anything inside the window must be
      * present, or the charge pages did not load completely.
      */
+    const archivedChargeIds = new Set<string>();
     async function paymentFor(value: string | Stripe.Charge) {
         const id = typeof value === "string" ? value : value.id;
         const known = payments.get(id);
         if (known) return known.payment;
+        if (archivedChargeIds.has(id)) return null;
         const charge =
             typeof value === "string"
                 ? await stripe.charges.retrieve(id).catch(() => null)
@@ -165,11 +169,14 @@ export async function collectStripeFraudScores(
             typeof charge?.created === "number" ? charge.created : null;
         if (created === null || created >= FRAUD_SCAN_START_SECONDS)
             throw new FraudCheckError("Incomplete Stripe charge coverage");
+        archivedChargeIds.add(id);
         return null;
     }
+    // A dispute or warning cannot predate its charge. Earlier events cannot
+    // affect this window; recent events against older charges are checked above.
     for await (const dispute of stripe.disputes.list({
         limit: 100,
-        created: { lte: until },
+        created: { gte: FRAUD_SCAN_START_SECONDS, lte: until },
     })) {
         if (!dispute.livemode)
             throw new FraudCheckError("Expected live Stripe disputes");
@@ -180,7 +187,7 @@ export async function collectStripeFraudScores(
     }
     for await (const warning of stripe.radar.earlyFraudWarnings.list({
         limit: 100,
-        created: { lte: until },
+        created: { gte: FRAUD_SCAN_START_SECONDS, lte: until },
     })) {
         if (!warning.livemode)
             throw new FraudCheckError("Expected live Stripe warnings");

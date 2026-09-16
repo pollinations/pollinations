@@ -18,7 +18,7 @@ type QueryRunner = (
     body: FraudQuery | { batch: FraudQuery[] },
 ) => Promise<{ results?: unknown[] }[]>;
 
-/** All-history hourly check. Callers must explicitly enable writes. */
+/** Scan attributable Stripe history. Callers must explicitly enable writes. */
 export async function runFraudBanCheck(
     stripe: Stripe,
     query: QueryRunner,
@@ -85,7 +85,7 @@ export async function runFraudBanCheck(
             for (const customer of result.customers.get(user.id) ?? []) {
                 await expireOpenStripeCheckoutSessions(stripe, customer, () => {
                     console.error(
-                        "Checkout expiry failed; the next hourly run will retry.",
+                        "Checkout expiry failed; the next apply run will retry.",
                     );
                 });
             }

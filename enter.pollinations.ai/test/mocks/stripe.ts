@@ -201,6 +201,13 @@ export function createMockStripe(): MockAPI<MockStripeState> {
 
     function fraudPage(c: Context, rows: Record<string, unknown>[]) {
         recordRequest(c, state);
+        const since = Number(c.req.query("created[gte]") ?? 0);
+        const until = Number(c.req.query("created[lte]") ?? Infinity);
+        rows = rows.filter(
+            (row) =>
+                typeof row.created !== "number" ||
+                (row.created >= since && row.created <= until),
+        );
         const cursor = c.req.query("starting_after");
         const start = cursor
             ? rows.findIndex((row) => row.id === cursor) + 1

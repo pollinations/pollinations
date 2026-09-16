@@ -59,7 +59,7 @@ async function queryD1(body: Query | { batch: Query[] }) {
 }
 const client = () => new Stripe("sk_test_mock", { maxNetworkRetries: 0 });
 
-test("hourly scan reads every page; dry run is read-only; apply bans and expires checkouts", async ({
+test("scan reads every page; dry run is read-only; apply bans and expires checkouts", async ({
     sessionToken,
     mocks,
 }) => {
@@ -411,6 +411,13 @@ test("charges before the attribution window are skipped, not treated as a gap", 
         reason: "fraudulent",
         charge: "ch_before_window",
     });
+    mocks.stripe.state.fraudWarnings.push(
+        ...["issfr_old_1", "issfr_old_2"].map((id) => ({
+            id,
+            livemode: true,
+            charge: "ch_before_window",
+        })),
+    );
     mocks.stripe.state.archivedCharges.push({
         id: "ch_before_window",
         object: "charge",
@@ -422,4 +429,60 @@ test("charges before the attribution window are skipped, not treated as a gap", 
     ]);
     expect(result.charges).toBe(1);
     expect(result.confirmed.has(user.id)).toBe(false);
+    // Disputes and repeated warnings share one archived-charge lookup.
+    expect(
+        mocks.stripe.state.requests.filter(
+            (request) => request.path === "/v1/charges/ch_before_window",
+        ),
+    ).toHaveLength(1);
+});
+
+test("scan skips old event pages without losing signals at the charge cutoff", async ({
+    mocks,
+}) => {
+    await mocks.enable("stripe");
+    const cutoff = FRAUD_SCAN_START_SECONDS;
+    mocks.stripe.state.fraudCharges.push(
+        ...["dispute", "warning"].map((id) => ({
+            id: `ch_${id}`,
+            livemode: true,
+            created: cutoff,
+            metadata: { userId: id },
+        })),
+    );
+    for (const [kind, rows] of [
+        ["dispute", mocks.stripe.state.fraudDisputes],
+        ["warning", mocks.stripe.state.fraudWarnings],
+    ] as const) {
+        rows.push(
+            {
+                id: `${kind}_boundary`,
+                livemode: true,
+                reason: "fraudulent",
+                charge: `ch_${kind}`,
+                created: cutoff,
+            },
+            ...Array.from({ length: 101 }, (_, i) => ({
+                id: `${kind}_old_${i}`,
+                livemode: true,
+                reason: "fraudulent",
+                charge: `ch_archive_${i}`,
+                created: cutoff - 1,
+            })),
+        );
+    }
+    const result = await collectStripeFraudScores(
+        client(),
+        ["dispute", "warning"].map((id) => ({ id, stripe_customer_id: null })),
+        cutoff + 100,
+    );
+    expect(result.scores.get("dispute")).toBe(0.39);
+    expect(result.scores.get("warning")).toBe(0.15);
+    expect([...result.confirmed].sort()).toEqual(["dispute", "warning"]);
+    // One page per source, and no individual charge lookups for old events.
+    expect(mocks.stripe.state.requests.map((request) => request.path)).toEqual([
+        "/v1/charges",
+        "/v1/disputes",
+        "/v1/radar/early_fraud_warnings",
+    ]);
 });

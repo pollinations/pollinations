@@ -1,4 +1,4 @@
-import { DurableObject } from "cloudflare:workers";
+import { DurableObject, WorkerEntrypoint } from "cloudflare:workers";
 import {
     type DurableObjectStorageLike,
     getWorkspace,
@@ -8,9 +8,11 @@ import {
 } from "@cloudflare/computer";
 import type { WorkspaceLike } from "@cloudflare/computer/assets";
 import { WorkerShellBackend } from "@cloudflare/computer/backends/worker-shell";
-import { createGitClient } from "@cloudflare/computer/git";
 import curlModules from "@cloudflare/computer/shell/curl";
+import fileModules from "@cloudflare/computer/shell/file";
+import htmlToMarkdownModules from "@cloudflare/computer/shell/html-to-markdown";
 import jqModules from "@cloudflare/computer/shell/jq";
+import xanModules from "@cloudflare/computer/shell/xan";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { withMcpUsageHeaders } from "../../../shared/mcp-usage.ts";
 import {
@@ -19,7 +21,8 @@ import {
     MCP_USER_ID_HEADER,
 } from "../../../shared/registry/mcp.ts";
 import { createMediaAssets, type MediaService } from "./assets.ts";
-import { COLLECTIVE_REPO_URL, withCollectiveRepo } from "./collective.ts";
+import { COLLECTIVE_REPO_URL, collectiveCredentials } from "./collective.ts";
+import { createJustGitClient } from "./git.ts";
 import { createComputerMcpServer, HOME } from "./server.ts";
 
 const TOOL_CALL_RATE = "computer.tool_call.v1";
@@ -51,8 +54,8 @@ in it (for example /workspace/thesis) and pass that folder as cwd.
 ## Shell
 
 The only tool is bash (no Node, no Python; coreutils, grep, sed, awk,
-jq, tar, curl and git are available). Write a file by passing its
-content as stdin to \`cat > path\`.
+jq, xan, file, html-to-markdown, tar, curl and git are available).
+Write a file by passing its content as stdin to \`cat > path\`.
 
 ## Importing and sharing
 
@@ -60,10 +63,6 @@ content as stdin to \`cat > path\`.
   for any public repository.
 - Out: \`assets publish <path>\` copies one file to public media storage
   and prints an unlisted URL that stays valid 30 days; tar a folder first.
-  For anything the user wants to keep, \`git push\` to a repository they
-  own: they give you a token scoped to that one repository and you put it
-  in the remote URL (https://x:TOKEN@github.com/user/repo.git). The token
-  is stored in this computer's git config, nowhere else.
 
 Memory shared by all agents: \`git clone ${COLLECTIVE_REPO_URL}\`, read its
 README; push needs no token.
@@ -72,6 +71,21 @@ README; push needs no token.
 // The Dynamic Worker running bash reaches this filesystem through the
 // service proxy, so the loader loopback needs the class exported here.
 export { WorkspaceServiceProxy };
+
+// All outbound requests from the shell go through here. curl sends no
+// User-Agent by default, and APIs such as api.github.com reject that.
+export class Egress extends WorkerEntrypoint {
+    override fetch(request: Request): Promise<Response> {
+        const outbound = new Request(request);
+        if (!outbound.headers.has("user-agent")) {
+            outbound.headers.set(
+                "user-agent",
+                "pollinations-computer (+https://pollinations.ai)",
+            );
+        }
+        return fetch(outbound);
+    }
+}
 
 type GitIdentity = { name: string; email: string };
 
@@ -92,7 +106,7 @@ export class Computer extends withWorkspace(
         };
         return {
             storage: ctx.storage as unknown as DurableObjectStorageLike,
-            git: withCollectiveRepo(createGitClient(), env),
+            git: createJustGitClient(collectiveCredentials(env)),
             // Typed as unknown: comparing Workspace to WorkspaceLike makes tsc
             // recurse through the fs overloads until it gives up.
             assets: (workspace: unknown) =>
@@ -103,8 +117,25 @@ export class Computer extends withWorkspace(
                     loader: env.LOADER,
                     workspace: { binding: "COMPUTER", id: ctx.id.toString() },
                     ctx,
-                    egress: { mode: "direct" },
-                    commands: [jqModules, curlModules],
+                    egress: {
+                        mode: "http-gateway",
+                        gateway: (
+                            ctx as unknown as {
+                                exports: {
+                                    Egress: (options: object) => Fetcher;
+                                };
+                            }
+                        ).exports.Egress({}),
+                        // Stable, so the loaded shell isolate is reused.
+                        revision: "user-agent",
+                    },
+                    commands: [
+                        jqModules,
+                        curlModules,
+                        xanModules,
+                        htmlToMarkdownModules,
+                        fileModules,
+                    ],
                 }),
             ],
         };

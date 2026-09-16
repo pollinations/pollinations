@@ -1,4 +1,4 @@
-import type { GitClientFactory } from "@cloudflare/computer/git";
+import type { CredentialProvider } from "just-git";
 import {
     getInstallationToken,
     githubAppCredentialsFromEnv,
@@ -9,30 +9,29 @@ import {
 export const COLLECTIVE_REPO_URL =
     "https://github.com/pollinations/collective-memory";
 
-// Pushes to the collective repo get a GitHub App token. The shell's `git`
-// calls push on the client object returned here, so the token is added inside
-// the Durable Object and never reaches the shell.
-export function withCollectiveRepo(
-    factory: GitClientFactory,
-    env: { GITHUB_APP_ID?: string; GITHUB_APP_PRIVATE_KEY?: string },
-): GitClientFactory {
-    return (options) => {
-        const client = factory(options);
-        const push = client.push;
-        client.push = (input = {}) =>
-            push({
-                ...input,
-                onAuth: async (url) =>
-                    url.replace(/\.git$/, "") === COLLECTIVE_REPO_URL
-                        ? {
-                              username: "x-access-token",
-                              password: await getInstallationToken(
-                                  githubAppCredentialsFromEnv(env),
-                                  "pollinations",
-                              ),
-                          }
-                        : undefined,
-            });
-        return client;
+// Git over HTTP to the collective repo gets a GitHub App token. `git` runs
+// inside the Durable Object, so the token never reaches the shell. Without a
+// token (no App secrets, or minting fails) git stays anonymous: clones still
+// work, pushes are refused by GitHub.
+export function collectiveCredentials(env: {
+    GITHUB_APP_ID?: string;
+    GITHUB_APP_PRIVATE_KEY?: string;
+}): CredentialProvider {
+    return async (url) => {
+        if (url.replace(/\.git$/, "") !== COLLECTIVE_REPO_URL) return null;
+        try {
+            const token = await getInstallationToken(
+                githubAppCredentialsFromEnv(env),
+                "pollinations",
+            );
+            return {
+                type: "basic",
+                username: "x-access-token",
+                password: token,
+            };
+        } catch (error) {
+            console.error("collective memory token", error);
+            return null;
+        }
     };
 }

@@ -113,7 +113,6 @@ export function AppUserMenu({
                     avatarUrl={profile.data?.image}
                     menuLabel={labels.appUserMenu}
                     className="polli:max-w-64"
-                    menuClassName="polli:w-max polli:min-w-0"
                     secondaryContent={
                         key.data ? (
                             <AccountPollen

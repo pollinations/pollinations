@@ -34,7 +34,7 @@ export function AccountMenu({
             align="end"
             side={side}
             className={cn(
-                "polli:w-[var(--reference-width)] polli:min-w-48 polli:p-1",
+                "polli:w-max polli:min-w-[var(--reference-width)] polli:p-1",
                 menuClassName,
             )}
             trigger={(open) => (

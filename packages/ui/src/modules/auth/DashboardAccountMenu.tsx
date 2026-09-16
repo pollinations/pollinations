@@ -29,7 +29,6 @@ export function DashboardAccountMenu({
                 avatarUrl={user.picture}
                 className={className}
                 side={side}
-                menuClassName="polli:w-max polli:min-w-0"
             >
                 <DropdownItem
                     onClick={() => {

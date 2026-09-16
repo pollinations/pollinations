@@ -221,11 +221,24 @@ callers instead of new synthetic probes; insufficient evidence means no action.
 Successful fallback rescues count as successes. Hiding writes the
 `hidden_at`, `hidden_reason`, and `hidden_by` audit fields, removes the model
 from catalogs and fallback selection, and keeps exact-ID calls working. The
-monitor relists only its own hides after at least 90% success across ten
-post-hide requests in one hour plus a passing same-operation probe, or two
-passing same-operation checks after hiding, on separate cycles at least 30
-minutes apart. Image recovery probes retain the four-hour routine cadence.
-Audio/video/embedding recovery uses the same 90% traffic gate across two callers.
-Owner requests use these gates too; owners and maintainers retain manual control.
+monitor relists only its own hides through one deterministic gate: three
+consecutive passing same-operation probes on separate cycles spanning at least
+90 minutes, plus no veto from the latest hour's traffic by callers other than
+the owner and the probe (at least 90% when they made ten or more requests).
+Image recovery probes retain the four-hour routine cadence. Audio/video/embedding
+recovery needs 90% across at least ten requests from three non-owner callers in
+two consecutive cycles. Owner requests use the same gate; owners and maintainers
+retain manual control.
+
+Traffic is split by caller before any rate counts. The owner's own requests and
+the probe account are excluded, and a rate needs at least ten attributable
+requests from three distinct callers. A model whose only healthy traffic is its
+owner's uptime monitor is not healthy.
+
+The monitor also compares the model name each upstream writes into its stream
+with the listing's declared upstream model, and measures how much of a listing's
+traffic is served by a configured fallback. Sustained discrepancies are posted
+as informational `MISMATCH` / `FALLBACK` panels so callers know what answers
+them; they never hide or relist anything.
 Discord posts are limited to actual hide and relist actions rather than advance
 warnings or routine recovery chatter.

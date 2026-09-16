@@ -1,4 +1,5 @@
 import {
+    useAccountKey,
     useAccountProfile,
     useAuthActions,
     useAuthState,
@@ -11,7 +12,6 @@ import {
     KeyIcon,
     LogInIcon,
     SignOutIcon,
-    SproutIcon,
     WalletIcon,
 } from "../../primitives/icons/index.tsx";
 import { LoginButton } from "../auth/sdk.ts";
@@ -20,14 +20,14 @@ import { Balance } from "../wallet/sdk.ts";
 export type AppUserMenuLabels = {
     authorize: string;
     appUserMenu: string;
-    getFreePollen: string;
-    topUpAccount: string;
+    editAppAllowance: string;
+    topUpWallet: string;
     logout: string;
 };
 
 export type AppUserMenuProps = {
+    /** Optional caller-owned dashboard destination for the linked avatar. */
     dashboardHref?: string;
-    onTopUpKey?: () => void;
     labels?: Partial<AppUserMenuLabels>;
     /** Logged-out CTA style. The connected account always uses a pill. */
     triggerVariant?: "pill" | "action";
@@ -36,8 +36,8 @@ export type AppUserMenuProps = {
 const defaultLabels: AppUserMenuLabels = {
     authorize: "Connect Pollen",
     appUserMenu: "App user menu",
-    getFreePollen: "Get free Pollen",
-    topUpAccount: "Buy Pollen",
+    editAppAllowance: "Edit app allowance",
+    topUpWallet: "Top up wallet",
     logout: "Disconnect",
 };
 
@@ -48,12 +48,24 @@ export function AppUserMenu({
     dashboardHref,
     labels: labelOverrides,
     triggerVariant = "pill",
-    onTopUpKey,
 }: AppUserMenuProps) {
     const labels = { ...defaultLabels, ...labelOverrides };
     const { logout, enterUrl } = useAuthActions();
     const { isLoggedIn } = useAuthState();
     const profile = useAccountProfile({ enabled: isLoggedIn });
+    const key = useAccountKey({ enabled: isLoggedIn });
+    const returnUrl =
+        typeof window === "undefined"
+            ? undefined
+            : new URL(window.location.pathname, window.location.origin).href;
+    const topUpUrl = new URL("/top-up", enterUrl);
+    if (returnUrl) topUpUrl.searchParams.set("redirect", returnUrl);
+    const keyId = key.data?.id;
+    const editAllowanceUrl = keyId ? new URL("/edit-key", enterUrl) : undefined;
+    if (editAllowanceUrl && keyId) {
+        editAllowanceUrl.searchParams.set("id", keyId);
+        if (returnUrl) editAllowanceUrl.searchParams.set("redirect", returnUrl);
+    }
 
     return (
         <div
@@ -95,24 +107,10 @@ export function AppUserMenu({
                 >
                     {(close) => (
                         <>
-                            {onTopUpKey && (
-                                <DropdownItem
-                                    onClick={() => {
-                                        close();
-                                        onTopUpKey();
-                                    }}
-                                >
-                                    <KeyIcon
-                                        className="polli:h-4 polli:w-4 polli:shrink-0"
-                                        aria-hidden="true"
-                                    />
-                                    Add Pollen
-                                </DropdownItem>
-                            )}
-                            {dashboardHref && (
+                            {editAllowanceUrl && (
                                 <DropdownItem
                                     as="a"
-                                    href={dashboardHref}
+                                    href={editAllowanceUrl.href}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={close}
@@ -121,51 +119,30 @@ export function AppUserMenu({
                                         className="polli:h-4 polli:w-4 polli:shrink-0"
                                         aria-hidden="true"
                                     />
-                                    {labels.topUpAccount}
+                                    {labels.editAppAllowance}
                                     <ExternalLinkIcon
                                         className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
                                         aria-hidden="true"
                                     />
                                 </DropdownItem>
                             )}
-                            {!onTopUpKey && !dashboardHref && (
-                                <>
-                                    <DropdownItem
-                                        as="a"
-                                        href={new URL("/quests", enterUrl).href}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        onClick={close}
-                                    >
-                                        <SproutIcon
-                                            className="polli:h-4 polli:w-4 polli:shrink-0"
-                                            aria-hidden="true"
-                                        />
-                                        {labels.getFreePollen}
-                                        <ExternalLinkIcon
-                                            className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
-                                            aria-hidden="true"
-                                        />
-                                    </DropdownItem>
-                                    <DropdownItem
-                                        as="a"
-                                        href={new URL("/pollen", enterUrl).href}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        onClick={close}
-                                    >
-                                        <WalletIcon
-                                            className="polli:h-4 polli:w-4 polli:shrink-0"
-                                            aria-hidden="true"
-                                        />
-                                        {labels.topUpAccount}
-                                        <ExternalLinkIcon
-                                            className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
-                                            aria-hidden="true"
-                                        />
-                                    </DropdownItem>
-                                </>
-                            )}
+                            <DropdownItem
+                                as="a"
+                                href={topUpUrl.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={close}
+                            >
+                                <WalletIcon
+                                    className="polli:h-4 polli:w-4 polli:shrink-0"
+                                    aria-hidden="true"
+                                />
+                                {labels.topUpWallet}
+                                <ExternalLinkIcon
+                                    className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
+                                    aria-hidden="true"
+                                />
+                            </DropdownItem>
                             <DropdownItem
                                 type="button"
                                 className="polli:justify-start polli:text-left"

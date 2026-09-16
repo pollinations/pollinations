@@ -10,7 +10,7 @@ export type MediaService = {
     get(id: string): Promise<Response | null>;
 };
 
-// Backs the in-shell `assets publish <path>` command with the Pollinations
+// Backs the publish_file tool with the Pollinations
 // media service: the file is copied to media storage and its public URL is
 // printed. The command's expiry argument is ignored; media keeps files for
 // 30 days and refreshes that on every read.

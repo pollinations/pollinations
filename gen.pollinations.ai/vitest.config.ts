@@ -402,7 +402,7 @@ export default defineConfig(async ({ mode }) => {
                                             content: [
                                                 {
                                                     type: "text",
-                                                    text: `computer:${request.headers.get("x-pollinations-user-id")}`,
+                                                    text: `computer:${request.headers.get("x-pollinations-user-id")}:${request.headers.get("x-pollinations-agent-id") ?? "direct"}`,
                                                 },
                                             ],
                                         },

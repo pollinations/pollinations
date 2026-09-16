@@ -43,7 +43,7 @@ it.each([
                     type,
                     systemPrompt: "Hello",
                     baseModel: "openai",
-                    mcpServers: [],
+                    mcpServers: ["computer"],
                 }
               : undefined;
     const html = renderToStaticMarkup(
@@ -71,5 +71,9 @@ it.each([
         expect(syncButton).not.toContain("disabled");
     } else {
         expect(syncButton).toBeUndefined();
+    }
+    if (type === "prompt_agent") {
+        expect(html).toContain("Persistent computer");
+        expect(html).toContain("Files and memory survive between chats");
     }
 });

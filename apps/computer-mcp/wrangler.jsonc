@@ -10,12 +10,20 @@
   "compatibility_date": "2026-06-17",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
-  // Dynamic Worker loader: each shell exec runs just-bash in a fresh isolate.
-  "worker_loaders": [{ "binding": "LOADER" }],
+  "containers": [
+    {
+      "class_name": "Computer",
+      "image": "./Dockerfile",
+      "instance_type": "standard-2",
+      "max_instances": 20,
+      "rollout_active_grace_period": 0,
+      "rollout_step_percentage": [100]
+    }
+  ],
   "services": [
     { "binding": "MEDIA", "service": "pollinations-media-prod", "entrypoint": "MediaUpload" }
   ],
-  // One Durable Object per Pollinations user id; its SQLite holds the filesystem.
+  // One Durable Object per caller, agent and workspace; SQLite holds its files.
   "durable_objects": {
     "bindings": [{ "name": "COMPUTER", "class_name": "Computer" }]
   },
@@ -25,7 +33,16 @@
       "name": "pollinations-computer-mcp-staging",
       "workers_dev": false,
       "observability": { "enabled": true },
-      "worker_loaders": [{ "binding": "LOADER" }],
+      "containers": [
+        {
+          "class_name": "Computer",
+          "image": "./Dockerfile",
+          "instance_type": "standard-2",
+          "max_instances": 5,
+          "rollout_active_grace_period": 0,
+          "rollout_step_percentage": [100]
+        }
+      ],
       "services": [
         { "binding": "MEDIA", "service": "pollinations-media-staging", "entrypoint": "MediaUpload" }
       ],

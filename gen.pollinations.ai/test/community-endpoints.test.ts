@@ -2599,7 +2599,10 @@ describe("community endpoint helpers", () => {
             );
 
             const claims = await verifyAgentRunToken(token, secret);
-            expect(claims).toMatchObject({ parentApiKeyId: "parent-key-id" });
+            expect(claims).toMatchObject({
+                parentApiKeyId: "parent-key-id",
+                managedAgentId: endpoint.id,
+            });
         });
 
         it("passes arbitrary metadata without changing model identity or delegation", async () => {

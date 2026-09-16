@@ -52,6 +52,10 @@ function EditKeyPage() {
     const balance = useAccountBalance(Boolean(user));
     const [outcome, setOutcome] = useState<Outcome>("editing");
     const returnUrl = redirect ?? null;
+    const topUpHref =
+        typeof window === "undefined"
+            ? "/top-up"
+            : `/top-up?${new URLSearchParams({ redirect: window.location.href })}`;
 
     useEffect(() => {
         const from = preferredReturnUrl(redirect);
@@ -115,7 +119,7 @@ function EditKeyPage() {
             <AuthAccountIdentity
                 user={user}
                 balance={balance}
-                topUpHref="/top-up"
+                topUpHref={topUpHref}
             />
         </AuthModalHeader>
     );

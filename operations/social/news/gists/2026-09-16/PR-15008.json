@@ -1,0 +1,34 @@
+{
+  "pr_number": 15008,
+  "title": "feat: redeploy code agents after every enter production deploy",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15008",
+  "merged_at": "2026-09-16T16:47:13Z",
+  "labels": [],
+  "pr_body_excerpt": "Code agents run a copy of the enter runtime frozen at upload time. Runtime fixes such as the agent error passthrough (#14986, #14999) never reached the 5 deployed agents; CloudCompile's public agent still returns the removed \"Agent produced no response\".\n\n- Adds `POST /api/admin/code-agents/redeploy`: re-uploads every code agent at its pinned owner commit with the current runtime and lists per-agent failures\n- Calls it from `Deploy / Cloudflare production` after the enter deploy (token read from the existing SOPS prod secrets, no new secret)\n- Owner code is not changed: the pinned `deployedCommitSha` is kept, unlike the owner sync route which pulls HEAD\n- Test: one agent redeployed, one with a missing agent.ts reported as failed\n\nAddresses #14994\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fresh runtime, same agent",
+    "blurb": "Code agents now get a fresh copy of the enter runtime after every production deploy, while keeping their owner code pinned exactly where it was. The hive upgrades the plumbing without rearranging anyone’s garden.",
+    "summary": "Added POST /api/admin/code-agents/redeploy and wired it into the Cloudflare production deploy so every deployed code agent is re-uploaded with the current enter runtime while retaining its pinned deployedCommitSha.",
+    "impact": "Runtime fixes, including improved agent error passthrough, now reach all deployed agents after production releases without pulling newer owner-code HEAD commits; redeploy failures are reported per agent.",
+    "keywords": [
+      "code agents",
+      "enter",
+      "runtime",
+      "deployment",
+      "cloudflare",
+      "reliability"
+    ],
+    "visual_concept": "A cozy garden workshop where several tiny code-agent seedlings sit in labeled pots, each preserving its own pinned scroll while receiving fresh glowing runtime water from a production-deploy pipe. Polli is the careful gardener, using a small maintenance tool to refresh the shared machinery without disturbing the plants’ original code; a CRT monitor robot can display a tidy per-agent status list.",
+    "image_prompt": "In a cozy pixel-art garden workshop, Polli—the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded light-blue translucent wings—wears a tiny mechanic tool belt and carefully refreshes glowing runtime water for several code-agent plants in pots, each holding an untouched pinned-code scroll; a friendly CRT monitor robot shows green per-agent checkmarks beside one small repair notice. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"FRESH RUNTIME\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-15008.jpg",
+    "prompt": "In a cozy pixel-art garden workshop, Polli—the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and small rounded light-blue translucent wings—wears a tiny mechanic tool belt and carefully refreshes glowing runtime water for several code-agent plants in pots, each holding an untouched pinned-code scroll; a friendly CRT monitor robot shows green per-agent checkmarks beside one small repair notice. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"FRESH RUNTIME\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-16T16:48:10.409626+00:00"
+}

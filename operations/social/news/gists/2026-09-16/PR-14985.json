@@ -1,0 +1,34 @@
+{
+  "pr_number": 14985,
+  "title": "fix: replace dead Z-Image Vast GPU after host-reclaim outage",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14985",
+  "merged_at": "2026-09-16T13:14:59Z",
+  "labels": [],
+  "pr_body_excerpt": "## What happened\n\nProduction Z-Image instance `46003779` (RTX 5090, California, $0.351/hr) went down around 2026-09-14 03:26 UTC. The host lost the container, and by the time it was caught the host had reclaimed the GPU slot entirely — `vastai start` returned \"Required resources are currently unavailable\" and the same machine showed up as a fresh offer to other renters. Not recoverable.\n\nFor roughly two days, all Z-Image traffic ran on the Fal fallback. No user-facing errors (100% success, 0 5xx per the monitor), but zero Vast redundancy and full fallback pricing instead of the Vast rate. The dead instance kept billing storage-only (~$0.044/hr) the whole time.\n\n## What changed\n\n- Rented and validated a replacement (`51212460`, RTX 5090, South Korea, $0.622/hr, reliability 0.9985) in isolation: auth rejection (403), 512x512/1024x1024 generation, oversized-dimension rejection (422), byte-identical fixed-seed output, `QUEUE_LIMIT=3` burst shedding (3 admitted, 4th shed in 20ms), restart recovery (~10s once weights cached).\n- Joined it to the existing shared Cloudflare Tunnel (`zimage-vast.myceli.ai`) using the tunnel's existing connector token — no new tunnel or secret created. All four QUIC connections registered, worker appeared in `/register`, 9/9 attributed production requests returned 200.\n- Destroyed the dead `46003779` instance.\n- Updated `GPU_INSTANCES.md` with the new instance, rate, and incident notes.\n\n## Note on price\n\nNew rate ($0.622/hr) is higher than the old one ($0.351/hr) because live RTX 5090 offers meeting our verified/reliability/bandwidth bar were running ~$0.54–0.66/hr at rental time — the old rate was a deal from whenever that instance was originally provisioned, not current market. This is a placeholder; a cheaper replacement is a planned follow-up.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The backup hive is buzzing",
+    "blurb": "A reclaimed GPU left its old flowerpot, so Polli found Z-Image a fresh RTX 5090 home and plugged it back into the shared tunnel. The fallback kept the lights on; redundancy is back where it belongs.",
+    "summary": "Replaced the unrecoverable Vast Z-Image instance 46003779 with validated RTX 5090 instance 51212460, reconnecting it through the existing zimage-vast.myceli.ai Cloudflare Tunnel and restoring Vast-backed generation redundancy.",
+    "impact": "Z-Image requests continue returning successfully with a tested Vast backend alongside the Fal fallback, including verified fixed-seed output, dimension validation, burst shedding, and restart recovery.",
+    "keywords": [
+      "Z-Image",
+      "Vast",
+      "RTX 5090",
+      "GPU",
+      "Cloudflare Tunnel",
+      "reliability"
+    ],
+    "visual_concept": "Depict Z-Image as a cozy pixel image-generator garden whose old empty GPU flowerpot has been replaced by a sturdy new RTX 5090 server planter. Polli, wearing a tiny mechanic tool belt, connects the new glowing server to a shared tunnel vine while a small CRT monitor robot confirms the connection; sprouts and pixel flowers communicate restored redundancy and healthy service.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny mechanic tool belt as she connects a fresh RTX 5090 server flowerpot to a glowing tunnel vine; a cute chunky CRT-monitor robot with eager square eyes helps beside code-plants and blooming flowers, with simple pixel text: 'BACKUP ONLINE'. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14985.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny mechanic tool belt as she connects a fresh RTX 5090 server flowerpot to a glowing tunnel vine; a cute chunky CRT-monitor robot with eager square eyes helps beside code-plants and blooming flowers, with simple pixel text: 'BACKUP ONLINE'. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-16T13:15:58.534903+00:00"
+}

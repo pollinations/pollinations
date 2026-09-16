@@ -37,11 +37,7 @@ export function AccountMenu({
             name={name}
             avatarUrl={avatarUrl}
             dashboardHref={dashboardHref}
-            className={
-                secondaryContent != null
-                    ? "polli:h-11 polli:w-11"
-                    : "polli:h-8 polli:w-8"
-            }
+            large={secondaryContent != null}
         />
     );
 

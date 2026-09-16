@@ -11,14 +11,16 @@ function initials(name: string) {
 export function AccountAvatar({
     name,
     avatarUrl,
-    className,
+    large = false,
     dashboardHref,
 }: {
     name: string;
     avatarUrl?: string | null;
-    className: string;
+    /** Larger beside two-line details. */
+    large?: boolean;
     dashboardHref?: string;
 }) {
+    const className = large ? "polli:h-11 polli:w-11" : "polli:h-8 polli:w-8";
     const avatar = avatarUrl ? (
         <img
             src={avatarUrl}
@@ -83,11 +85,7 @@ export function AccountIdentity({
                 name={name}
                 avatarUrl={avatarUrl}
                 dashboardHref={dashboardHref}
-                className={
-                    secondaryContent != null
-                        ? "polli:h-11 polli:w-11"
-                        : "polli:h-8 polli:w-8"
-                }
+                large={secondaryContent != null}
             />
             <AccountDetails name={name} secondaryContent={secondaryContent} />
         </span>

@@ -1,0 +1,34 @@
+{
+  "pr_number": 15033,
+  "title": "fix: agent updates keep fields that are left out",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15033",
+  "merged_at": "2026-09-16T21:16:41Z",
+  "labels": [],
+  "pr_body_excerpt": "- `PATCH /account/agents/:id` for prompt agents merges the request into the stored config, so `{\"title\": \"x\"}` or `{\"systemPrompt\": \"...\"}` alone works (was 400 \"expected string, received undefined\")\n- `polli agents update <id>` no longer requires `--config`; help says to pass only the fields to change\n- Tests: enter partial update keeps baseModel/mcpServers/systemPrompt; CLI body without config\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01RBs8TiuvtC8xLLDP9MqfaH",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Patch the patch",
+    "blurb": "Prompt agents can now keep their thoughts while you change one small detail. Send a new title or system prompt; the rest of the hive stays put.",
+    "summary": "Fixed `PATCH /account/agents/:id` for prompt agents to merge partial updates into the stored configuration, preserving omitted `baseModel`, `mcpServers`, and `systemPrompt`, while `polli agents update <id>` now accepts only the fields being changed without requiring `--config`.",
+    "impact": "Users can update an agent title or a single prompt field independently instead of supplying a complete config and encountering missing-field validation errors.",
+    "keywords": [
+      "agents",
+      "patch",
+      "partial-updates",
+      "polli-cli",
+      "configuration",
+      "api"
+    ],
+    "visual_concept": "A prompt-agent configuration is a cozy garden of labeled plants: title, base model, MCP servers, and system prompt. Polli carefully replants only one small title flower while the other established code-plants remain healthy and untouched; a nearby CRT robot can hold a tiny PATCH watering can or configuration clipboard to make the selective-update metaphor clear.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she gently replaces one flower labeled “TITLE” in a code-garden while sturdy plants labeled “MODEL”, “MCP”, and “PROMPT” remain untouched; a friendly chunky CRT monitor robot holds a small PATCH watering can. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text “PATCH”, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-15033.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she gently replaces one flower labeled “TITLE” in a code-garden while sturdy plants labeled “MODEL”, “MCP”, and “PROMPT” remain untouched; a friendly chunky CRT monitor robot holds a small PATCH watering can. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text “PATCH”, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-16T21:17:40.921004+00:00"
+}

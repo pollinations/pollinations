@@ -1,4 +1,4 @@
-import { InfinityIcon, KeyIcon } from "../../primitives/icons/index.tsx";
+import { KeyIcon } from "../../primitives/icons/index.tsx";
 import { formatPollen } from "./format-pollen.ts";
 import { PollenStatusBadge } from "./PollenStatusBadge.tsx";
 import { WalletKindIcon } from "./wallet-display.tsx";
@@ -20,7 +20,7 @@ function isEmpty(amount: number | null | undefined): boolean {
     return amount != null && Number.isFinite(amount) && amount <= 0;
 }
 
-/** Icon + amount; an exhausted budget or empty wallet becomes a red badge. */
+/** Icon + amount; unlimited, exhausted, or empty states become a badge. */
 export function AccountPollen({
     source,
     topUpHref,
@@ -38,12 +38,13 @@ export function AccountPollen({
             (source.remaining == null || !Number.isFinite(source.remaining))
         )
             return null;
+        if (unlimited) return <PollenStatusBadge state="unlimited" />;
         const remaining = source.remaining as number;
-        if (!unlimited && isEmpty(remaining))
+        if (isEmpty(remaining))
             return <PollenStatusBadge state="limit-reached" />;
         return (
             <span
-                title={unlimited ? "Unlimited app budget" : "App budget left"}
+                title="App budget left"
                 className="polli:inline-flex polli:items-center polli:gap-1 polli:tabular-nums"
             >
                 <KeyIcon
@@ -51,15 +52,7 @@ export function AccountPollen({
                     className="polli:h-3.5 polli:w-3.5 polli:shrink-0"
                 />
                 <span className="polli:sr-only">App budget: </span>
-                {unlimited ? (
-                    <>
-                        <InfinityIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
-                        <span className="polli:sr-only">unlimited</span>
-                    </>
-                ) : (
-                    formatPollen(remaining)
-                )}
-                {unlimited ? "pollen" : " pollen"}
+                {formatPollen(remaining)} pollen
             </span>
         );
     }

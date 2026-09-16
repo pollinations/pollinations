@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { AccountPollen } from "./AccountPollen.tsx";
 
 describe("account Pollen", () => {
-    it("shows the app budget as an amount or an infinity sign", () => {
+    it("shows the app budget as an amount or an Unlimited badge", () => {
         const some = renderToStaticMarkup(
             <AccountPollen source={{ type: "budget", remaining: 3.25 }} />,
         );
@@ -12,9 +12,9 @@ describe("account Pollen", () => {
         const unlimited = renderToStaticMarkup(
             <AccountPollen source={{ type: "budget", remaining: null }} />,
         );
-        expect(unlimited).toContain("M12 12c-2-2.67");
-        expect(unlimited).toContain(">unlimited<");
-        expect(unlimited).toContain("pollen");
+        expect(unlimited).toContain("Unlimited");
+        expect(unlimited).toContain("polli:bg-intent-info-bg-light");
+        expect(unlimited).not.toContain("pollen");
     });
 
     it("turns an exhausted app budget into a badge without a link", () => {

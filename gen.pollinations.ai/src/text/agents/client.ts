@@ -63,6 +63,7 @@ export async function createPromptAgentResponsesClient(
     const runtime = await loadPromptAgentRuntime(c, endpoint, apiKey);
     const target: DirectResponsesTarget = {
         authConfigured: true,
+        callerFacingStatus: true,
         endpoint: `${new URL(c.req.url).origin}/v1/responses`,
         headers: { Authorization: `Bearer ${apiKey}` },
         model: endpoint.id,

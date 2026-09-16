@@ -466,11 +466,11 @@ test("catalog returns quest definitions without ledger stats", async ({
     });
     expectStableCatalogFields("app_pollen_10", {
         state: "available",
-        rewardAmount: 3,
+        rewardAmount: 5,
         balanceBucket: "tier",
     });
     expect(byId.get("app_pollen_10")?.goal).toEqual({
-        target: 10,
+        target: 3,
         unit: "pollen",
     });
 });
@@ -1137,7 +1137,7 @@ test("app growth quests reward paid usage and ten-user reach, not the first conn
         {
             userId: user.id,
             pollenUsed: 11,
-            paidPollenUsed: 11,
+            paidPollenUsed: 3.01,
             paidRequests: 1,
         },
     ];
@@ -1207,7 +1207,7 @@ test("app growth quests reward paid usage and ten-user reach, not the first conn
     ]);
 });
 
-test("app milestones award 3 Pollen at inclusive thresholds", async ({
+test("app milestones award their rewards at inclusive thresholds", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -1218,7 +1218,7 @@ test("app milestones award 3 Pollen at inclusive thresholds", async ({
         {
             userId: user.id,
             pollenUsed: 10,
-            paidPollenUsed: 10,
+            paidPollenUsed: 3,
             paidRequests: 1,
         },
     ];
@@ -1242,7 +1242,7 @@ test("app milestones award 3 Pollen at inclusive thresholds", async ({
     expect(rewards).toEqual(
         expect.arrayContaining([
             { questId: "app_users_10", pollenAmount: 3 },
-            { questId: "app_pollen_10", pollenAmount: 3 },
+            { questId: "app_pollen_10", pollenAmount: 5 },
             { questId: "app_paid_request", pollenAmount: 15 },
         ]),
     );
@@ -1259,7 +1259,7 @@ test("app milestones do not record below their thresholds, even with Quest Polle
         {
             userId: user.id,
             pollenUsed: 100,
-            paidPollenUsed: 9.99,
+            paidPollenUsed: 2.99,
             paidRequests: 0,
         },
     ];
@@ -1275,8 +1275,8 @@ test("app milestones do not record below their thresholds, even with Quest Polle
     });
     expect(result.progress).toContainEqual({
         questId: "app_pollen_10",
-        current: 9.99,
-        target: 10,
+        current: 2.99,
+        target: 3,
         unit: "pollen",
     });
 
@@ -1320,6 +1320,10 @@ test("existing app rewards retain their original amounts and remain claimable on
     const originalRewards = [
         { questId: "app_active", amount: 7 },
         { questId: "app_users_10", amount: 15 },
+        { questId: "app_pollen_10", amount: 3 },
+    ];
+    mocks.tinybird.state.appUsageResponse = [
+        { userId: user.id, pollenUsed: 3, paidPollenUsed: 3, paidRequests: 0 },
     ];
     await recordRewards(
         db,
@@ -1346,7 +1350,7 @@ test("existing app rewards retain their original amounts and remain claimable on
         .select()
         .from(schema.rewards)
         .where(eq(schema.rewards.userId, user.id));
-    expect(rewards).toHaveLength(2);
+    expect(rewards).toHaveLength(3);
     for (const reward of rewards) {
         const claim = { rewardId: reward.id, userId: user.id };
         const claimed = await claimReward(db, claim);
@@ -1362,7 +1366,7 @@ test("existing app rewards retain their original amounts and remain claimable on
         .select({ value: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.value).toBeCloseTo((user.tierBalance ?? 0) + 22);
+    expect(balance?.value).toBeCloseTo((user.tierBalance ?? 0) + 25);
 });
 
 test("quest check records model-usage rewards per modality", async ({

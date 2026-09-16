@@ -58,8 +58,8 @@ body:
   - type: input
     id: discord-username
     attributes:
-      label: Discord username
-      description: Optional. If you're in the Pollinations Discord server, share your username so we can assign you the Community Provider role and tag you about your deployments.
+      label: Discord username (optional)
+      description: Not required for review. If you're in the Pollinations Discord server, share your username so we can assign you the Community Provider role and tag you about your deployments.
       placeholder: "your-discord-username"
 
   - type: textarea

@@ -21,6 +21,51 @@ export function fraudCheckErrorMessage(error) {
     return "Unexpected failure; details hidden to protect credentials and payment data.";
 }
 
+/** Private operators' report: one summary line plus the candidate list as a file. */
+export function buildFraudReport(result, apply) {
+    const mode = apply
+        ? `bans applied: ${result.applied}`
+        : `read-only · ${result.candidates} candidate${result.candidates === 1 ? "" : "s"}`;
+    const content = `Fraud ban check · ${mode} · ${result.report.length} awaiting review · ${result.charges} charges scanned, ${result.unmapped} unmapped`;
+    if (!result.report.length) return { content, file: null };
+    const lines = result.report.map(
+        (user) => `${user.score.toFixed(2)}\t${user.id}\t${user.name ?? ""}`,
+    );
+    return {
+        content,
+        file: {
+            name: `fraud-candidates-${new Date().toISOString().slice(0, 10)}.tsv`,
+            body: `score\tuser_id\tname\n${lines.join("\n")}\n`,
+        },
+    };
+}
+
+/** Posts only when an account still needs action, so a message means review. */
+export async function postFraudReport(webhookUrl, result, apply, fetchImpl) {
+    const { content, file } = buildFraudReport(result, apply);
+    if (!file) return false;
+    const form = new FormData();
+    form.set(
+        "payload_json",
+        JSON.stringify({ content, allowed_mentions: { parse: [] } }),
+    );
+    form.set(
+        "files[0]",
+        new Blob([file.body], { type: "text/tab-separated-values" }),
+        file.name,
+    );
+    const response = await fetchImpl(webhookUrl, {
+        method: "POST",
+        body: form,
+        signal: AbortSignal.timeout(30000),
+    });
+    if (!response.ok)
+        throw new FraudCheckError(
+            `Discord report failed: HTTP ${response.status}`,
+        );
+    return true;
+}
+
 // Production-only job. These identities match Enter's production bindings.
 const D1_DATABASE_ID = "fc771b05-4e24-48bf-980c-d09f21279bd1";
 const CF_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501";
@@ -71,14 +116,23 @@ async function main() {
             throw new FraudCheckError("D1 query failed");
         return data.result;
     }
-    await runFraudBanCheck(stripe, query, {
-        apply: process.env.FRAUD_BAN_APPLY === "true",
+    const apply = process.env.FRAUD_BAN_APPLY === "true";
+    const result = await runFraudBanCheck(stripe, query, {
+        apply,
         // Add manually restored accounts here before lifting their bans.
         excludedUserIds: (process.env.FRAUD_BAN_EXCLUDED_USER_IDS ?? "")
             .split(",")
             .map((id) => id.trim())
             .filter(Boolean),
     });
+    // Candidate identities go only to the private operators' channel.
+    if (process.env.DISCORD_FRAUD_WEBHOOK_URL)
+        await postFraudReport(
+            process.env.DISCORD_FRAUD_WEBHOOK_URL,
+            result,
+            apply,
+            fetch,
+        );
 }
 
 if (import.meta.main) {

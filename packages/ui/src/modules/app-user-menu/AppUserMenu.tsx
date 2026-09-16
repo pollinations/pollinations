@@ -5,7 +5,7 @@ import {
     useAuthActions,
     useAuthState,
 } from "@pollinations/sdk/react";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import markUrl from "../../brand/mark.svg";
 import { AccountMenu } from "../../compositions/AccountMenu.tsx";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
@@ -16,7 +16,10 @@ import {
     WalletIcon,
 } from "../../primitives/icons/index.tsx";
 import { LoginButton } from "../auth/sdk.ts";
-import { AccountPollen } from "../wallet/AccountPollen.tsx";
+import {
+    AccountPollen,
+    type AccountPollenSource,
+} from "../wallet/AccountPollen.tsx";
 
 export type AppUserMenuLabels = {
     authorize: string;
@@ -57,34 +60,19 @@ export function AppUserMenu({
         enabled: isLoggedIn && canReadWallet,
     });
     const wallet = balance.data?.accountBalance;
-    // Permissions and Buy Pollen open Enter in a new tab. When the user comes
-    // back, re-read the key and wallet so the pill reflects what they changed.
-    const returning = useRef(false);
-    const expectReturn = () => {
-        returning.current = true;
-    };
     useEffect(() => {
         if (!isLoggedIn) return;
-        const onReturn = () => {
-            if (!returning.current) return;
-            returning.current = false;
+        const onVisible = () => {
+            if (document.visibilityState !== "visible") return;
             void key.refresh();
             void balance.refresh();
         };
-        const onVisible = () => {
-            if (document.visibilityState === "visible") onReturn();
-        };
-        window.addEventListener("focus", onReturn);
         document.addEventListener("visibilitychange", onVisible);
-        return () => {
-            window.removeEventListener("focus", onReturn);
+        return () =>
             document.removeEventListener("visibilitychange", onVisible);
-        };
     }, [isLoggedIn, key.refresh, balance.refresh]);
     const returnUrl =
-        typeof window === "undefined"
-            ? undefined
-            : new URL(window.location.pathname, window.location.origin).href;
+        typeof window === "undefined" ? undefined : window.location.href;
     const topUpUrl = new URL("/top-up", enterUrl);
     if (returnUrl) topUpUrl.searchParams.set("redirect", returnUrl);
     const keyId = key.data?.id;
@@ -93,6 +81,21 @@ export function AppUserMenu({
         editKeyUrl = new URL("/edit-key", enterUrl);
         editKeyUrl.searchParams.set("id", keyId);
         if (returnUrl) editKeyUrl.searchParams.set("redirect", returnUrl);
+    }
+    let pollenSource: AccountPollenSource | undefined;
+    if (key.data?.pollenBudget !== null && key.data) {
+        pollenSource = {
+            type: "budget",
+            remaining: key.data.pollenBudget,
+            generationEnabled: key.data.permissions?.models?.length !== 0,
+        };
+    } else if (wallet) {
+        pollenSource = {
+            type: "wallet",
+            balances: { paid: wallet.paid, quest: wallet.tier },
+        };
+    } else if (key.data && !canReadWallet) {
+        pollenSource = { type: "budget", remaining: null };
     }
 
     return (
@@ -131,31 +134,8 @@ export function AppUserMenu({
                     menuLabel={labels.appUserMenu}
                     className="polli:max-w-80"
                     secondaryContent={
-                        key.data ? (
-                            // A budgeted key shows only its own budget. An
-                            // unlimited key shows the wallet it draws from
-                            // when it may read it, otherwise just "unlimited".
-                            key.data.pollenBudget === null && wallet ? (
-                                <AccountPollen
-                                    source={{
-                                        type: "wallet",
-                                        balances: {
-                                            paid: wallet.paid,
-                                            quest: wallet.tier,
-                                        },
-                                    }}
-                                />
-                            ) : (
-                                <AccountPollen
-                                    source={{
-                                        type: "budget",
-                                        remaining: key.data.pollenBudget,
-                                        generationEnabled:
-                                            key.data.permissions?.models
-                                                ?.length !== 0,
-                                    }}
-                                />
-                            )
+                        pollenSource ? (
+                            <AccountPollen source={pollenSource} />
                         ) : undefined
                     }
                 >
@@ -167,10 +147,7 @@ export function AppUserMenu({
                                     href={editKeyUrl.href}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    onClick={() => {
-                                        expectReturn();
-                                        close();
-                                    }}
+                                    onClick={close}
                                 >
                                     <KeyIcon
                                         className="polli:h-4 polli:w-4 polli:shrink-0"
@@ -188,10 +165,7 @@ export function AppUserMenu({
                                 href={topUpUrl.href}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                onClick={() => {
-                                    expectReturn();
-                                    close();
-                                }}
+                                onClick={close}
                             >
                                 <WalletIcon
                                     className="polli:h-4 polli:w-4 polli:shrink-0"

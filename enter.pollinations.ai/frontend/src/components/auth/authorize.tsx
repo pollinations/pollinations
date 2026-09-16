@@ -25,6 +25,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
+import { useAccountBalance } from "../../hooks/use-account-balance.ts";
 import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
 import { AccountPermissionsInput } from "../keys/account-permissions-input.tsx";
@@ -35,10 +36,7 @@ import { computeCategoryModalities } from "../models/model-categories.ts";
 import { useModelCategories } from "../models/use-model-categories.ts";
 import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
 import { AppAttribution } from "./app-attribution.tsx";
-import {
-    type AuthAccountBalances,
-    AuthAccountIdentity,
-} from "./auth-account-identity.tsx";
+import { AuthAccountIdentity } from "./auth-account-identity.tsx";
 
 type Attribution = {
     found: boolean;
@@ -98,9 +96,7 @@ export function Authorize() {
     const [deviceOutcome, setDeviceOutcome] = useState<
         "pending" | "approved" | "denied"
     >("pending");
-    const [balances, setBalances] = useState<
-        AuthAccountBalances | null | undefined
-    >(undefined);
+    const balance = useAccountBalance(Boolean(user));
     const [permissionsExpanded, setPermissionsExpanded] = useState(false);
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
@@ -323,22 +319,6 @@ export function Authorize() {
         code_challenge_method,
         setAccountPermissions,
     ]);
-
-    useEffect(() => {
-        if (!user) return;
-
-        apiClient.customer.balance
-            .$get()
-            .then((response) => (response.ok ? response.json() : null))
-            .then((data) => {
-                setBalances(
-                    data
-                        ? { quest: data.tierBalance, paid: data.packBalance }
-                        : null,
-                );
-            })
-            .catch(() => setBalances(null));
-    }, [user]);
 
     async function handleAuthorize(): Promise<void> {
         if (!canAuthorize || isAuthorizing) return;
@@ -577,7 +557,7 @@ export function Authorize() {
             <AuthModalHeader>
                 <AuthAccountIdentity
                     user={user}
-                    balances={balances}
+                    balance={balance}
                     topUpHref="/top-up"
                 />
             </AuthModalHeader>

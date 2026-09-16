@@ -16,7 +16,7 @@ import { useEffect, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import { AuthAccountIdentity } from "../components/auth/auth-account-identity.tsx";
-import { BuyPollenPanel, PollenBalance } from "../components/pollen";
+import { BuyPollenPanel } from "../components/pollen";
 import type { BillingState } from "../components/pollen/auto-top-up-panel.tsx";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 import { preferredReturnUrl, ReturnToApp } from "../lib/return-to-app.tsx";
@@ -26,8 +26,6 @@ import { validateTopUpSearch } from "../lib/top-up-search.ts";
 type WalletState = {
     tierBalance: number;
     packBalance: number;
-    paidWeek?: number;
-    tierWeek?: number;
 };
 
 /**
@@ -100,16 +98,6 @@ function TopUpPage() {
                     tierBalance: data.tierBalance ?? 0,
                     packBalance: data.packBalance ?? 0,
                 });
-                // Earnings are optional; their failure must not hide the wallet.
-                void apiClient.customer.balance.today
-                    .$get()
-                    .then((r) => (r.ok ? r.json() : null))
-                    .then((earnings) => {
-                        if (!canceled && earnings) {
-                            setWallet((w) => (w ? { ...w, ...earnings } : w));
-                        }
-                    })
-                    .catch(() => {});
             })
             .catch(() => {
                 if (!canceled) setWalletError(true);
@@ -162,14 +150,7 @@ function TopUpPage() {
     }
 
     const accountIdentity = (
-        <AuthAccountIdentity
-            user={user}
-            balances={
-                wallet
-                    ? { paid: wallet.packBalance, quest: wallet.tierBalance }
-                    : undefined
-            }
-        />
+        <AuthAccountIdentity user={user} balance={wallet ?? undefined} />
     );
 
     if (search.stripe_success) {
@@ -183,7 +164,6 @@ function TopUpPage() {
                             and return to the app.
                         </p>
                     </AuthInfoCard>
-                    {wallet && <PollenBalance {...wallet} compact />}
                     <ReturnToApp returnUrl={returnUrl} />
                 </div>
             </AuthModal>
@@ -218,9 +198,6 @@ function TopUpPage() {
                 {search.stripe_canceled && (
                     <ErrorBanner>Checkout was cancelled.</ErrorBanner>
                 )}
-                <Section title="Wallet">
-                    <PollenBalance {...wallet} compact />
-                </Section>
                 <Section title="Top-up" framed>
                     <BuyPollenPanel
                         initialBillingState={billing}

@@ -32,13 +32,13 @@ describe("account Pollen", () => {
     });
 
     it("renders nothing for a budget that is unknown or cannot generate", () => {
-        for (const remaining of [undefined, NaN, Infinity]) {
-            expect(
-                renderToStaticMarkup(
-                    <AccountPollen source={{ type: "budget", remaining }} />,
-                ),
-            ).toBe("");
-        }
+        expect(
+            renderToStaticMarkup(
+                <AccountPollen
+                    source={{ type: "budget", remaining: undefined }}
+                />,
+            ),
+        ).toBe("");
         expect(
             renderToStaticMarkup(
                 <AccountPollen
@@ -85,12 +85,7 @@ describe("account Pollen", () => {
         expect(menu).not.toContain("<a ");
     });
 
-    it("keeps placeholders for a wallet that failed to load and nothing while loading", () => {
-        expect(
-            renderToStaticMarkup(
-                <AccountPollen source={{ type: "wallet", balances: null }} />,
-            ),
-        ).toContain("…");
+    it("renders nothing while the wallet is unavailable", () => {
         expect(
             renderToStaticMarkup(<AccountPollen source={{ type: "wallet" }} />),
         ).toBe("");

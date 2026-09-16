@@ -1,0 +1,34 @@
+{
+  "pr_number": 14996,
+  "title": "fix: pin Open WebUI container to ENAM and cache the model list",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14996",
+  "merged_at": "2026-09-16T14:37:23Z",
+  "labels": [],
+  "pr_body_excerpt": "- Pins the Open WebUI container to `ENAM` (`constraints.regions`), next to Postgres in us-east-1. It had started in Riga, so every DB session cost ~3 transatlantic round trips (~0.45 s) and a page load took ~20 s.\n- Sets `MODELS_CACHE_TTL=300`: the upstream default of 1 s rebuilt the ~360-model list on every page load (6–8 s per `/api/models`).\n- Documents placement and the ~5 min 500/503 rollout gap in the README.\n- Verified on staging: `/health/db` 0.9 s → 0.3 s, `/api/config` 1.4 s → 0.4 s, egress moved from Riga to Ohio. gen's own `/v1/models` was measured at ~0.1 s throughout; the API was not the cause.\n- Production applies on the next `Deploy / Applications` run from `production`; the single instance rolls to the new region with ~5 min of downtime.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The models stopped migrating",
+    "blurb": "Open WebUI moved in next to its database and learned to keep the model menu around for five whole minutes. The hive no longer sends every page load on a transatlantic field trip.",
+    "summary": "Pinned the Open WebUI container to ENAM alongside its us-east-1 Postgres database and set MODELS_CACHE_TTL=300, avoiding remote database round trips and rebuilding the roughly 360-model list on every page load.",
+    "impact": "Open WebUI pages should load much faster: staging database health checks fell from 0.9 s to 0.3 s, config requests from 1.4 s to 0.4 s, and the model-list cache now serves repeated requests for five minutes.",
+    "keywords": [
+      "open-webui",
+      "performance",
+      "model-list",
+      "caching",
+      "container-placement",
+      "ENAM"
+    ],
+    "visual_concept": "A cozy Open WebUI garden shed is relocated beside a friendly Postgres-shaped storage silo in an ENAM/Ohio meadow, connected by a short glowing cable instead of a long ocean-spanning route. Polli, wearing a tiny logistics cap, tends a neatly labeled five-minute cache jar full of model cards while a CRT robot happily reads the fast local connection; flowers and code-plants reinforce the infrastructure-as-garden metaphor.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny logistics cap as she places a glowing jar labeled \"5 MIN CACHE\" beside a retro Open WebUI terminal and a friendly Postgres storage silo, joined by a short local cable amid code-plants and flowers; a happy CRT monitor robot watches nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14996.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny logistics cap as she places a glowing jar labeled \"5 MIN CACHE\" beside a retro Open WebUI terminal and a friendly Postgres storage silo, joined by a short local cable amid code-plants and flowers; a happy CRT monitor robot watches nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-16T14:38:49.019211+00:00"
+}

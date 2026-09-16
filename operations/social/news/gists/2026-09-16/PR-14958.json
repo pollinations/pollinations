@@ -1,0 +1,34 @@
+{
+  "pr_number": 14958,
+  "title": "fix: award 5 Pollen for 3 Paid Pollen of app usage",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14958",
+  "merged_at": "2026-09-16T10:57:25Z",
+  "labels": [],
+  "pr_body_excerpt": "- Lowers the external Paid-Pollen app milestone from 10 to 3 Pollen spent and raises its reward from 3 to 5 Pollen.\n- Updates quest progress and dashboard copy. Keeps the existing quest ID and earned rewards to prevent duplicate payouts.\n- Leaves the ten-connected-users reward at 3 Pollen and the first-connection quest retired. No additional Tinybird changes.\n- Verified: 39 quest tests, TypeScript and Biome; tests cover 2.99, 3 and 3.01 Paid Pollen and preservation of already-earned rewards.\n\nFollow-up to #14950. Deploy/backfill its Tinybird changes before promoting Enter.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A smaller bloom, more pollen",
+    "blurb": "The app-growth garden now blooms after 3 Paid Pollen of usage, and the harvest is 5 Pollen. Existing rewards stay safely where they landed; no double-dipping in this flowerbed.",
+    "summary": "The external Paid-Pollen app-growth milestone now awards 5 Pollen after an app spends 3 Paid Pollen instead of awarding 3 Pollen after 10, while retaining the existing quest ID and previously earned rewards.",
+    "impact": "App builders can reach the Paid-Pollen usage reward sooner and receive 5 Pollen, while already-completed quests remain preserved without duplicate payouts.",
+    "keywords": [
+      "quests",
+      "pollen",
+      "app-growth",
+      "rewards",
+      "dashboard",
+      "paid-pollen"
+    ],
+    "visual_concept": "Depict Polli as a cheerful gardener measuring a small code-plant that has reached a clearly marked 3-Pollen milestone, where five glowing Pollen seeds are ready to harvest. A cozy quest dashboard or retro terminal confirms the reward, with an already-collected basket kept intact to represent preserved earned rewards.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, happily tending a code-plant that reaches a wooden sign reading “3 POLLEN”; five glowing Pollen seeds bloom beside it while a retro terminal shows “+5.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream garden shed, chunky sprites, soft warm lighting, subtle flowers and vines, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14958.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, happily tending a code-plant that reaches a wooden sign reading “3 POLLEN”; five glowing Pollen seeds bloom beside it while a retro terminal shows “+5.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream garden shed, chunky sprites, soft warm lighting, subtle flowers and vines, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-16T10:58:26.787029+00:00"
+}

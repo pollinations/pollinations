@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "Comicstyles",
+    "url": "https://comicstyles.com",
+    "description": "ComicStyles turns a one-line idea into a comic story, with no install, no account and no API key required. Type your premise, let the platform write the story and its split into panels, then watch eac",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "wannerdev",
+    "githubUserId": "7975579",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": "letmebeme",
+    "other": null,
+    "submittedDate": "2026-09-15",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14923",
+    "approvedDate": "2026-09-16",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "💬",
     "name": "Moko - The Remembering Fox",
     "url": "https://heard-was-lessons-altered.trycloudflare.com",

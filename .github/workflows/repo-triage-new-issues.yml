@@ -73,6 +73,7 @@ jobs:
             - If the issue reports an outage or model errors — use your tools to investigate (code_search for error handlers, find_similar for related reports, doc_search for service architecture). Comment with what you found, even partial context helps.
             - If the issue is spam, test, or gibberish — close with close_reason "not_planned", no comment needed.
             - If you genuinely can't help (too vague, needs internal access, needs human judgment) — do nothing.
+            - Never ask a reporter for a field the issue template marks optional, such as the Discord username on Community Publisher Access requests.
             - Comments should be playful, concise, and helpful. Be a friendly team member.
             - For duplicates, reference the original issue number.
             - For resolved issues, reference the specific file/commit/PR.

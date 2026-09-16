@@ -63,8 +63,8 @@ import { requireChatStreamUsage } from "../src/text/chat/usage.ts";
 import { summarizeStreamForLog } from "../src/text/streamSummary.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
-afterEach(() => {
-    resetGenerationModelRegistryCache();
+afterEach(async () => {
+    await resetGenerationModelRegistryCache(env);
     vi.restoreAllMocks();
 });
 

@@ -1,0 +1,36 @@
+{
+  "pr_number": 14945,
+  "title": "Add Moko - The Remembering Fox to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14945",
+  "merged_at": "2026-09-16T08:45:28Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Moko - The Remembering Fox](https://heard-was-lessons-altered.trycloudflare.com) to chat\n- A web chat with Moko, a desert fox NPC that remembers facts you ask it to keep between conversations. Each user's facts are stored in a per-user memory file (Pollinations Computer MCP), recalled acros\n\nFixes #14941",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A fox remembers",
+    "blurb": "Moko, a desert fox with a notably better memory than most chat tabs, has joined the chat garden. Tell her what to keep, and she can carry it into the next conversation.",
+    "summary": "Added Moko, a desert fox NPC web chat that stores facts each user asks it to remember in a per-user Pollinations Computer MCP memory file and recalls them across conversations.",
+    "impact": "Users can now chat with Moko and keep chosen personal context between sessions instead of reintroducing it every time.",
+    "keywords": [
+      "Moko",
+      "chat",
+      "memory",
+      "MCP",
+      "community-app",
+      "NPC"
+    ],
+    "visual_concept": "Depict Moko as a small friendly desert fox beside a cozy retro terminal and a labeled memory-file cabinet, with tiny glowing note cards traveling from one chat window to another. Polli should hover nearby in librarian glasses, helping the fox tuck remembered facts into a garden-like archive with desert flowers and code-plants.",
+    "image_prompt": "Cozy pixel art scene of Moko, a small friendly desert fox NPC, carefully filing glowing memory notes into a tiny retro computer archive while Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink blush, and librarian glasses, helps beside a lime green (#ecf874) terminal; desert flowers and code-plants grow around the desk, with a small pixel-font label reading \"REMEMBERED\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14945.jpg",
+    "prompt": "Cozy pixel art scene of Moko, a small friendly desert fox NPC, carefully filing glowing memory notes into a tiny retro computer archive while Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink blush, and librarian glasses, helps beside a lime green (#ecf874) terminal; desert flowers and code-plants grow around the desk, with a small pixel-font label reading \"REMEMBERED\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-16T08:46:32.578542+00:00",
+  "app_name": "Moko - The Remembering Fox",
+  "app_url": "https://heard-was-lessons-altered.trycloudflare.com"
+}

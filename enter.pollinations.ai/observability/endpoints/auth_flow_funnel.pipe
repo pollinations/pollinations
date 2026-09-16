@@ -1,0 +1,40 @@
+DESCRIPTION >
+    Daily pre-login funnel from product_event. Sign-in: signed-out views of a
+    sign-in page, /sign-in/social calls and completed sessions, linked by the
+    auth_flow cookie id. Device: codes issued to CLIs, approved or denied in
+    the browser, and tokens collected. authorize_granted counts PKCE consents,
+    link_* Discord account linking. Each pct column is relative to the
+    previous stage; client_id narrows device and consent counts to one app.
+
+TOKEN tinybird_read READ
+
+NODE daily
+SQL >
+    %
+    SELECT
+        toDate(timestamp) AS date,
+        uniqIf(flow_id, event = 'sign_in_viewed') AS sign_in_viewed,
+        uniqIf(flow_id, event = 'sign_in_started') AS sign_in_started,
+        uniqIf(event_id, event = 'sign_in_completed') AS sign_in_completed,
+        if(sign_in_viewed = 0, 0, round(100 * sign_in_started / sign_in_viewed, 1)) AS pct_sign_in_started,
+        if(sign_in_started = 0, 0, round(100 * sign_in_completed / sign_in_started, 1)) AS pct_sign_in_completed,
+        uniqIf(flow_id, event = 'device_code_issued') AS device_code_issued,
+        uniqIf(flow_id, event = 'device_approved') AS device_approved,
+        uniqIf(flow_id, event = 'device_denied') AS device_denied,
+        uniqIf(flow_id, event = 'device_token_issued') AS device_token_issued,
+        if(device_code_issued = 0, 0, round(100 * device_approved / device_code_issued, 1)) AS pct_device_approved,
+        if(device_approved = 0, 0, round(100 * device_token_issued / device_approved, 1)) AS pct_device_token_issued,
+        uniqIf(event_id, event = 'authorize_granted') AS authorize_granted,
+        uniqIf(user_id, event = 'link_started') AS link_started,
+        uniqIf(user_id, event = 'link_completed') AS link_completed
+    FROM product_event
+    WHERE environment = {{String(environment, 'production')}}
+        AND timestamp >= now() - toIntervalDay(least(greatest({{Int32(days, 30)}}, 1), 366))
+        AND timestamp <= now()
+        {% if defined(client_id) %}
+        AND (client_id = {{String(client_id)}} OR event LIKE 'sign_in_%')
+        {% end %}
+    GROUP BY date
+    ORDER BY date
+
+TYPE endpoint

@@ -7,6 +7,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "../env.ts";
 import { type AuthVariables, auth } from "../middleware/auth.ts";
+import { captureProductEvent } from "../utils/product-analytics.ts";
 import { hasAccountPermission } from "./account-permissions.ts";
 
 type AuthedContext = Context<{
@@ -97,8 +98,9 @@ export const deviceRoutes = new Hono<Env>()
         const expiresAt = new Date(Date.now() + DEFAULT_EXPIRES_IN * 1000);
 
         const db = drizzle(c.env.DB, { schema });
+        const id = crypto.randomUUID();
         await db.insert(schema.deviceCode).values({
-            id: crypto.randomUUID(),
+            id,
             deviceCode,
             userCode,
             status: "pending" satisfies DeviceStatus,
@@ -106,6 +108,15 @@ export const deviceRoutes = new Hono<Env>()
             clientId: body.client_id || null,
             scope: body.scope || null,
         });
+        c.executionCtx.waitUntil(
+            captureProductEvent(
+                c.env,
+                "device_code_issued",
+                "",
+                { flow_id: id, client_id: body.client_id || "" },
+                `device:${id}:issued`,
+            ),
+        );
 
         const baseUrl = getPublicOrigin(c);
         return c.json({
@@ -191,6 +202,15 @@ export const deviceRoutes = new Hono<Env>()
                     })
                     .where(eq(schema.deviceCode.id, device.id)),
             ]);
+            c.executionCtx.waitUntil(
+                captureProductEvent(
+                    c.env,
+                    "device_approved",
+                    user.id,
+                    { flow_id: device.id, client_id: device.clientId ?? "" },
+                    `device:${device.id}:approved`,
+                ),
+            );
 
             return c.json({ success: true });
         },
@@ -199,6 +219,7 @@ export const deviceRoutes = new Hono<Env>()
         "/deny",
         auth({ allowApiKey: false, allowSessionCookie: true }),
         async (c) => {
+            const user = c.var.auth.requireUser();
             const body = await c.req.json<{ userCode: string }>();
 
             if (!body.userCode) {
@@ -214,6 +235,15 @@ export const deviceRoutes = new Hono<Env>()
                 .update(schema.deviceCode)
                 .set({ status: "denied" satisfies DeviceStatus })
                 .where(eq(schema.deviceCode.id, device.id));
+            c.executionCtx.waitUntil(
+                captureProductEvent(
+                    c.env,
+                    "device_denied",
+                    user.id,
+                    { flow_id: device.id, client_id: device.clientId ?? "" },
+                    `device:${device.id}:denied`,
+                ),
+            );
 
             return c.json({ success: true });
         },
@@ -308,6 +338,16 @@ export async function exchangeDeviceCode(
                 return c.json({ error: "authorization_pending" }, 400);
             }
 
+            // The row goes away below, so record the outcome first.
+            c.executionCtx.waitUntil(
+                captureProductEvent(
+                    c.env,
+                    "device_token_issued",
+                    device.userId ?? "",
+                    { flow_id: device.id, client_id: device.clientId ?? "" },
+                    `device:${device.id}:token`,
+                ),
+            );
             // Delete device code row and KV entry concurrently
             await Promise.all([
                 db

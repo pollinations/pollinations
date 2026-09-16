@@ -26,3 +26,11 @@ export const productPageViewSchema = z.strictObject({
         "/_dashboard/account",
     ]),
 });
+
+// Signed-out views of the pages where a sign-in can start. flow_id is the
+// random auth_flow cookie value the browser minted; the server hooks read the
+// same cookie on /sign-in/social and the GitHub callback.
+export const authFlowViewSchema = z.strictObject({
+    page: z.enum(["/sign-in", "/app/sign-in", "/authorize", "/device"]),
+    flow_id: z.uuid(),
+});

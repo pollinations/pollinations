@@ -1,9 +1,13 @@
 import {
     createExecutionContext,
     env,
+    SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import { productPageViewSchema } from "@shared/product-analytics.ts";
+import {
+    authFlowViewSchema,
+    productPageViewSchema,
+} from "@shared/product-analytics.ts";
 import { afterEach, expect, vi } from "vitest";
 import { productAnalyticsRoutes } from "../src/routes/product-analytics.ts";
 import { captureProductEvent } from "../src/utils/product-analytics.ts";
@@ -18,11 +22,12 @@ async function pageView(
     overrides: Record<string, string> = {},
     enabled = "true",
     body?: string,
+    path = "page-view",
 ) {
     const ctx = createExecutionContext();
     const response = await productAnalyticsRoutes.fetch(
         new Request(
-            `http://localhost:3000/page-view?${new URLSearchParams(query)}`,
+            `http://localhost:3000/${path}?${new URLSearchParams(query)}`,
             {
                 method: "POST",
                 headers: {
@@ -42,7 +47,11 @@ async function pageView(
 
 test("disabled tracking does no network IO or session lookup", async () => {
     const fetch = vi.spyOn(globalThis, "fetch");
-    await captureProductEvent(env, "checkout_started", "user-1");
+    await captureProductEvent(
+        { ...env, TINYBIRD_ANALYTICS_ENABLED: "false" },
+        "checkout_started",
+        "user-1",
+    );
     const response = await pageView({ page: "/top-up" }, "", {}, "false");
     expect(response.status).toBe(204);
     expect(fetch).not.toHaveBeenCalled();
@@ -174,4 +183,104 @@ test("delivery failure never fails the caller and is not retried", async () => {
         captureProductEvent(bindings, "checkout_started", "user-1"),
     ).resolves.toBeUndefined();
     expect(fetch).toHaveBeenCalledTimes(2);
+});
+
+const FLOW_ID = "0f4b2a6e-1c3d-4e5f-8a9b-0c1d2e3f4a5b";
+
+test("signed-out sign-in page views need a flow id and one of the sign-in pages", async () => {
+    const originalFetch = globalThis.fetch;
+    const rows: Record<string, unknown>[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        if (
+            new URL(String(input)).searchParams.get("name") === "product_event"
+        ) {
+            rows.push(JSON.parse(String(init?.body)));
+            return new Response(null, { status: 202 });
+        }
+        return originalFetch(input, init);
+    });
+    const authFlow = (query: Record<string, string>) =>
+        pageView(query, "", {}, "true", undefined, "auth-flow");
+    for (const query of [
+        { page: "/top-up", flow_id: FLOW_ID },
+        { page: "/sign-in", flow_id: "not-a-uuid" },
+        { page: "/sign-in" },
+        { page: "/sign-in", flow_id: FLOW_ID, user_id: "someone" },
+    ]) {
+        expect(authFlowViewSchema.safeParse(query).success).toBe(false);
+        expect((await authFlow(query)).status).toBe(400);
+    }
+    expect(rows).toEqual([]);
+    expect(
+        (await authFlow({ page: "/sign-in", flow_id: FLOW_ID })).status,
+    ).toBe(204);
+    expect(rows).toEqual([
+        {
+            event: "sign_in_viewed",
+            page: "/sign-in",
+            flow_id: FLOW_ID,
+            user_id: "",
+            event_id: `view:${FLOW_ID}:/sign-in`,
+            timestamp: expect.any(String),
+            environment: "test",
+        },
+    ]);
+});
+
+test("GitHub sign-in records started and completed stages under the auth_flow cookie", async ({
+    mocks,
+}) => {
+    await mocks.enable("github", "tinybird");
+    const flowCookie = `auth_flow=${FLOW_ID}`;
+    const signIn = await SELF.fetch(
+        "http://localhost:3000/api/auth/sign-in/social",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: flowCookie,
+                Origin: "http://localhost:3000",
+            },
+            body: JSON.stringify({ provider: "github" }),
+        },
+    );
+    expect(signIn.status).toBe(200);
+    const { url } = (await signIn.json()) as { url: string };
+    const state = new URL(url).searchParams.get("state");
+    const callback = new URL("http://localhost:3000/api/auth/callback/github");
+    callback.searchParams.set("code", "test-code");
+    callback.searchParams.set("state", state ?? "");
+    const callbackResponse = await SELF.fetch(callback, {
+        headers: {
+            "User-Agent": "Mozilla/5.0 (compatible; test-browser)",
+            Accept: "text/html,application/xhtml+xml",
+            Cookie: `${signIn.headers.get("Set-Cookie")}; ${flowCookie}`,
+        },
+        redirect: "manual",
+    });
+    expect(callbackResponse.status).toBe(302);
+    await mocks.clear();
+    const user = await env.DB.prepare(
+        "SELECT id AS user_id FROM user LIMIT 1",
+    ).first<{ user_id: string }>();
+    expect(
+        mocks.tinybird.state.productEvents.map(
+            ({ timestamp: _, ...row }) => row,
+        ),
+    ).toEqual([
+        {
+            event: "sign_in_started",
+            flow_id: FLOW_ID,
+            user_id: "",
+            event_id: `start:${FLOW_ID}`,
+            environment: "test",
+        },
+        {
+            event: "sign_in_completed",
+            flow_id: FLOW_ID,
+            user_id: user?.user_id,
+            event_id: expect.any(String),
+            environment: "test",
+        },
+    ]);
 });

@@ -13,7 +13,7 @@ SQL >
         event,
         page,
         uniq(event_id) AS events,
-        uniq(user_id) AS users
+        uniqIf(user_id, user_id != '') AS users
     FROM product_event
     WHERE environment = {{String(environment, 'production')}}
         AND timestamp >= now() - toIntervalDay(least(greatest({{Int32(days, 30)}}, 1), 366))

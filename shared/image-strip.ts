@@ -272,6 +272,7 @@ function stripGifMetadata(data: Uint8Array): Uint8Array {
 
     const segments: Uint8Array[] = [data.subarray(0, offset)];
     let stripped = false;
+    let complete = false;
 
     while (offset < data.length) {
         const introducer = data[offset];
@@ -280,6 +281,7 @@ function stripGifMetadata(data: Uint8Array): Uint8Array {
         if (introducer === 0x3b) {
             segments.push(data.subarray(offset, offset + 1));
             offset++;
+            complete = offset === data.length;
             break;
         }
 
@@ -330,6 +332,8 @@ function stripGifMetadata(data: Uint8Array): Uint8Array {
 
         return malformedAfterMetadata(data, stripped, "GIF");
     }
+
+    if (!complete) return malformedAfterMetadata(data, stripped, "GIF");
 
     if (!stripped) return data;
 

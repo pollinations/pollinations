@@ -625,6 +625,18 @@ describe("stripImageMetadata — resilience", () => {
         );
     });
 
+    it("rejects GIF metadata followed by a missing trailer", () => {
+        const input = gifWithComment().subarray(0, -1);
+        expect(() => stripImageMetadata(input)).toThrow(
+            InvalidImageStructureError,
+        );
+    });
+
+    it("returns a clean GIF missing trailer unchanged", () => {
+        const input = gifMinimal().subarray(0, -1);
+        expect(stripImageMetadata(input)).toBe(input);
+    });
+
     it("returns empty input unchanged", () => {
         const empty = new Uint8Array(0);
         expect(stripImageMetadata(empty)).toBe(empty);

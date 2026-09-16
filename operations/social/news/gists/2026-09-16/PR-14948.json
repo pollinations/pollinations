@@ -1,0 +1,36 @@
+{
+  "pr_number": 14948,
+  "title": "Add cogitor to writing",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14948",
+  "merged_at": "2026-09-16T08:54:20Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [cogitor](https://github.com/SkalaSkalolaz/cogitor) to writing\n- **_Cogitor AI_** — lightweight AI chat on Go with a web interface and desktop GUI, supporting multiple LLM providers, local models, OpenAI-compatible APIs, Web Search, RAG, Vision, conversation histor\n\nFixes #14946",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A new cog in writing",
+    "blurb": "Cogitor AI has joined the writing garden: a lightweight chat companion for drafting, searching, and talking to a small forest of models. Polli has put it on the shelf next to the good pencils.",
+    "summary": "Added Cogitor AI to the writing app collection, highlighting its Go-based web and desktop chat interface with multi-provider LLM support, local models, web search, RAG, vision, and conversation history.",
+    "impact": "People browsing writing tools can now discover Cogitor as a lightweight option for AI-assisted writing and research across hosted or local models.",
+    "keywords": [
+      "community-apps",
+      "writing",
+      "Cogitor",
+      "LLM-chat",
+      "RAG",
+      "web-search"
+    ],
+    "visual_concept": "Depict Cogitor as a cozy writing workstation: a small retro computer showing a chat-and-draft interface, surrounded by notebooks, a fountain pen, and sprouting code-plants to represent its Go-based multi-model, search, RAG, and vision capabilities. Polli wears tiny round writer glasses and helps arrange pages, making the app-directory addition feel like a new friendly tool joining the garden.",
+    "image_prompt": "A cozy pixel art writing nook where Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny round writer glasses, helps a retro desktop computer draft a page in a simple chat interface; notebooks, a fountain pen, and little code-plants with magnifying-glass and image icons grow around it, representing Cogitor's multi-model chat, web search, RAG, and vision tools. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"COGITOR\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14948.jpg",
+    "prompt": "A cozy pixel art writing nook where Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny round writer glasses, helps a retro desktop computer draft a page in a simple chat interface; notebooks, a fountain pen, and little code-plants with magnifying-glass and image icons grow around it, representing Cogitor's multi-model chat, web search, RAG, and vision tools. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"COGITOR\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-16T08:55:27.425872+00:00",
+  "app_name": "cogitor",
+  "app_url": "https://github.com/SkalaSkalolaz/cogitor"
+}

@@ -1565,7 +1565,8 @@ test("Chat-over-Responses stream failure is tracked as an upstream error and rem
         modelUsed: "openai/gpt-5.6-luna",
         isBilledUsage: false,
         totalPrice: 0,
-        errorResponseCode: "upstream_finish_reason_error",
+        errorResponseCode: "upstream_error",
+        errorMessage: "provider failed",
     });
     expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
 });

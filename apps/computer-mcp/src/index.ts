@@ -19,6 +19,7 @@ import {
     MCP_USER_ID_HEADER,
 } from "../../../shared/registry/mcp.ts";
 import { createMediaAssets, type MediaService } from "./assets.ts";
+import { COLLECTIVE_REPO_URL, withCollectiveRepo } from "./collective.ts";
 import { createComputerMcpServer, HOME } from "./server.ts";
 
 const TOOL_CALL_RATE = "computer.tool_call.v1";
@@ -27,6 +28,9 @@ type Env = {
     COMPUTER: DurableObjectNamespace<Computer>;
     LOADER: WorkerLoader;
     MEDIA: MediaService;
+    // GitHub App installed on the collective memory repository only.
+    GITHUB_APP_ID?: string;
+    GITHUB_APP_PRIVATE_KEY?: string;
 };
 
 const README_PATH = `${HOME}/README.md`;
@@ -60,6 +64,9 @@ content as stdin to \`cat > path\`.
   own: they give you a token scoped to that one repository and you put it
   in the remote URL (https://x:TOKEN@github.com/user/repo.git). The token
   is stored in this computer's git config, nowhere else.
+
+Memory shared by all agents: \`git clone ${COLLECTIVE_REPO_URL}\`, read its
+README; push needs no token.
 `;
 
 // The Dynamic Worker running bash reaches this filesystem through the
@@ -85,7 +92,7 @@ export class Computer extends withWorkspace(
         };
         return {
             storage: ctx.storage as unknown as DurableObjectStorageLike,
-            git: createGitClient(),
+            git: withCollectiveRepo(createGitClient(), env),
             // Typed as unknown: comparing Workspace to WorkspaceLike makes tsc
             // recurse through the fs overloads until it gives up.
             assets: (workspace: unknown) =>

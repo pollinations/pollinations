@@ -35,6 +35,13 @@ not a tool: a `/workspace/README.md` seeded on first use tells the agent to keep
 current facts in `memory/facts.md` and a dated append-only journal in
 `memory/log/`.
 
+## Collective memory
+
+Pushes to the public [`pollinations/collective-memory`](https://github.com/pollinations/collective-memory)
+repository get a GitHub App installation token inside the Durable Object
+(`GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`), so the shell never sees it.
+GitHub rulesets on every branch and tag block force pushes and deletions.
+
 ## How requests reach it
 
 The Worker is private (`workers_dev: false`, no routes). Gen's

@@ -32,33 +32,40 @@ function imageMessage(urls: string[]) {
 }
 
 describe("imageUrlToBase64Transform", () => {
-    it("uses the declared flag rather than the provider name", async () => {
-        const input = imageMessage(["not-a-url"]);
-        const result = await transform(input, {
-            modelConfig: { provider: "bedrock" },
+    it("sanitizes HTTP(S) URLs regardless of requiresBase64ImageUrls flag", async () => {
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async () =>
+                new Response(PNG_BYTES, {
+                    headers: { "content-type": "image/png" },
+                }),
+        );
+
+        const input = imageMessage(["https://example.com/image.png"]);
+        const { messages } = await transform(input, {
+            modelConfig: { provider: "custom-provider" },
         });
-        expect(result.messages).toBe(input);
-        await expect(
-            transform(input, {
-                modelConfig: {
-                    provider: "custom-provider",
-                    requiresBase64ImageUrls: true,
-                },
-            }),
-        ).rejects.toMatchObject({
-            status: 400,
-            errorCode: "invalid_image_url",
-        });
+
+        const [part] = (
+            messages[0] as { content: { image_url: { url: string } }[] }
+        ).content;
+        expect(part.image_url.url).toMatch(/^data:image\/png;base64,/);
     });
 
-    it("leaves remote image URLs unchanged for Vertex", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
+    it("sanitizes remote image URLs for Vertex", async () => {
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async () =>
+                new Response(PNG_BYTES, {
+                    headers: { "content-type": "image/png" },
+                }),
+        );
         const input = imageMessage(["https://example.com/image.png"]);
 
-        const result = await transform(input, vertexOptions);
+        const { messages } = await transform(input, vertexOptions);
 
-        expect(result.messages).toBe(input);
-        expect(fetchSpy).not.toHaveBeenCalled();
+        const [part] = (
+            messages[0] as { content: { image_url: { url: string } }[] }
+        ).content;
+        expect(part.image_url.url).toMatch(/^data:image\/png;base64,/);
     });
 
     it("sanitizes data URLs for providers that do not require base64 conversion", async () => {

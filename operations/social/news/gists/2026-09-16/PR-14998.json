@@ -1,0 +1,33 @@
+{
+  "pr_number": 14998,
+  "title": "chore: prefix agent folders in apps with agent-",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14998",
+  "merged_at": "2026-09-16T14:56:31Z",
+  "labels": [],
+  "pr_body_excerpt": "- Moves `apps/catgpt-comic/` to `apps/agent-catgpt-comic/` so managed agents are recognisable next to the apps in `apps/`.\n- No content changes; the README links are relative and still resolve.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The agent gets a nameplate",
+    "blurb": "CatGPT Comic moved into an `agent-` folder, so the managed residents of `apps/` are easier to spot. The comic itself remains exactly where its relative links expect it to be.",
+    "summary": "Renamed `apps/catgpt-comic/` to `apps/agent-catgpt-comic/` so managed agent projects are clearly identifiable alongside community apps, with no content or README-link changes.",
+    "impact": "Repository contributors can now distinguish the CatGPT Comic managed agent by its `agent-` prefix while its existing documentation links continue to work.",
+    "keywords": [
+      "apps",
+      "agents",
+      "repository-organization",
+      "catgpt-comic",
+      "maintenance"
+    ],
+    "visual_concept": "A cozy app garden with clearly labeled project pots: Polli, wearing a tiny librarian hat, adds an `agent-` nameplate to a CatGPT Comic folder while a small code-plant and comic page remain happily unchanged.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian hat, placing a pixel nameplate reading \"agent-catgpt-comic\" on a cozy project-folder flower pot while a little comic-page code plant grows beside it. Prominent soft lime green (#ecf874) and pastel cream-lavender background, warm garden-shed lighting, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14998.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian hat, placing a pixel nameplate reading \"agent-catgpt-comic\" on a cozy project-folder flower pot while a little comic-page code plant grows beside it. Prominent soft lime green (#ecf874) and pastel cream-lavender background, warm garden-shed lighting, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-16T14:57:28.058885+00:00"
+}

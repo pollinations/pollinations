@@ -114,7 +114,7 @@ for (const [id] of external) {
 // These are outcomes inside the same optional host-app panel, not additional pages.
 const panelStates: [string, string[], number, number][] = [
     ["app-callback", ["waiting"], 8, 0],
-    ["app-callback-error", ["error", "denied", "check-error"], 9, 1],
+    ["app-callback-error", ["error", "denied"], 9, 1],
     ["app-account-error", ["account-error"], 10, 1],
 ];
 const panel = appLoginScreens.get("app-connected");
@@ -230,7 +230,7 @@ export const appLoginEdges: FlowEdge[] = [
         to: "loading",
         label: "Connect with Pollinations",
     },
-    { from: "app-ready", to: "app-callback", label: "Check stored key" },
+    { from: "app-ready", to: "app-connected", label: "Restore saved key" },
     { from: "app-ready", to: "app-connect", label: "No stored key" },
     {
         from: "app-connect",

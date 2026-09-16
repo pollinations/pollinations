@@ -42,7 +42,7 @@ import {
     ModelFilterTokens,
 } from "./model-filter-tokens.tsx";
 import {
-    ensureModelQuerySource,
+    ensureModelQueryDefaults,
     getExplicitModelQuerySource,
     getModelQueryDraftFilter,
     getModelQueryDraftSuggestionValue,
@@ -253,7 +253,7 @@ export const Models: FC = () => {
     const urlSearch = modelSearch[searchParam] ?? "";
     const initialSearch =
         activePrimaryTab === "models"
-            ? ensureModelQuerySource(urlSearch)
+            ? ensureModelQueryDefaults(urlSearch)
             : urlSearch;
     const [search, setSearch] = useState(initialSearch);
     const [draftFilter, setDraftFilter] = useState<
@@ -313,17 +313,20 @@ export const Models: FC = () => {
     );
     const renderedFilterTokens = filterTokens;
     const renderedDraftFilter = draftFilter;
-    const modelModels = useMemo(
-        () =>
-            allModels.filter(
-                (model) =>
-                    !model.agent &&
-                    (explicitModelSource === undefined ||
-                        Boolean(model.community) ===
-                            (explicitModelSource === "community")),
-            ),
-        [allModels, explicitModelSource],
-    );
+    const modelModels = useMemo(() => {
+        const statusQuery = {
+            terms: [],
+            filters: parsedQuery.filters.filter(({ key }) => key === "status"),
+        };
+        return allModels.filter(
+            (model) =>
+                !model.agent &&
+                matchesModelQuery(model, statusQuery) &&
+                (explicitModelSource === undefined ||
+                    Boolean(model.community) ===
+                        (explicitModelSource === "community")),
+        );
+    }, [allModels, explicitModelSource, parsedQuery]);
     const modelSections = useMemo(
         () => categorizeModels(modelModels),
         [modelModels],
@@ -552,7 +555,7 @@ export const Models: FC = () => {
         setEditingFilterToken(undefined);
         const nextSearch =
             activePrimaryTab === "models"
-                ? ensureModelQuerySource(urlSearch)
+                ? ensureModelQueryDefaults(urlSearch)
                 : urlSearch;
         setDraftFilter(
             getModelQueryDraftFilter(nextSearch, false, supportedFilterKeys),

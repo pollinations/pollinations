@@ -9,30 +9,26 @@ export interface AuthStateValue {
 }
 
 /**
- * Per-call overrides for the OAuth authorize redirect. Each field maps to a
- * BYOP (bring-your-own-policy) URL parameter on `enter.pollinations.ai/authorize`
- * — see `<PolliProvider>` props for the same fields as provider-level defaults.
+ * Options for login(). Omitted fields use the provider's defaults.
  */
 export interface AuthorizeRequest {
     /** Extra OAuth scopes appended to provider defaults. */
     permissions?: AccountPermission[];
-    /** Restrict the minted key to these model slugs. Omit / empty = all models. */
+    /** Allowed models. Pass [] for all models. */
     models?: string[];
-    /** Pollen budget to request for the minted key. */
+    /** Pollen budget for the key. */
     budget?: number;
-    /** Days until the minted key expires. */
+    /** Key lifetime in days. */
     expiry?: number;
 }
 
 export interface AuthActionsValue {
     login: (request?: AuthorizeRequest) => void;
-    /** Available after a temporary stored-key validation failure; retries without signing in. */
-    retryConnection: (() => void) | null;
     logout: () => void;
     setApiKey: (apiKey: string | null) => void;
-    /** Resolved enter URL, useful for top-up / dashboard links. */
+    /** Auth and dashboard URL. */
     enterUrl: string;
-    /** Resolved account API URL used by opt-in account hooks. */
+    /** Base URL for account hooks. */
     apiBaseUrl: string;
 }
 

@@ -31,7 +31,7 @@ export function observeScreen(doc: Document): ObservedScreen | undefined {
         node =
             sdk === "signed-out"
                 ? "app-connect"
-                : sdk === "connection-error" || sdk === "connection-check-error"
+                : sdk === "connection-error"
                   ? "app-callback-error"
                   : sdk === "account-error"
                     ? "app-account-error"

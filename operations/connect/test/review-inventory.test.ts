@@ -149,7 +149,6 @@ describe("shared review inventory", () => {
         ).toEqual([
             "Connected",
             "Connection not completed",
-            "Connection check unavailable",
             "Account details unavailable",
             "Limit reached",
             "Access declined",

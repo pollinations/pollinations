@@ -20,7 +20,6 @@ export type { AppUserMenuLabels } from "./AppUserMenuView.tsx";
 export type AppUserMenuState =
     | "checking-connection"
     | "connection-error"
-    | "connection-check-error"
     | "loading-account"
     | "account-error"
     | "connected"
@@ -42,7 +41,7 @@ export function AppUserMenu({
     onTopUpKey,
     triggerVariant,
 }: AppUserMenuProps) {
-    const { login, logout, enterUrl, retryConnection } = useAuthActions();
+    const { login, logout, enterUrl } = useAuthActions();
     const { isLoggedIn, isHydrated, error } = useAuthState();
     const profile = useAccountProfile({ enabled: isLoggedIn });
     const key = useAccountKey({ enabled: isLoggedIn });
@@ -53,13 +52,11 @@ export function AppUserMenu({
           ? "loading-account"
           : accountState === "account-error"
             ? "account-error"
-            : retryConnection
-              ? "connection-check-error"
-              : error
-                ? "connection-error"
-                : isLoggedIn
-                  ? "connected"
-                  : "signed-out";
+            : error
+              ? "connection-error"
+              : isLoggedIn
+                ? "connected"
+                : "signed-out";
     useEffect(() => onStateChange?.(state), [onStateChange, state]);
     useEffect(() => {
         if (!isLoggedIn || accountState !== undefined) return;
@@ -85,7 +82,6 @@ export function AppUserMenu({
             error={!!error}
             labels={labels}
             pending={!isHydrated && triggerVariant !== "action"}
-            onRetry={retryConnection}
         >
             {!isLoggedIn ? (
                 triggerVariant === "action" ? (

@@ -407,13 +407,6 @@ export const appLoginReviewCases: ReviewCase[] = [
                     params: { app_callback: "error" },
                 },
             ],
-            [
-                "connection-check-error",
-                {
-                    screen: "add-pollen-connect",
-                    params: { app_callback: "check-error" },
-                },
-            ],
             ["loading-account", { params: { app_account: "loading" } }],
             ["account-error", { params: { app_account: "account-error" } }],
             ["limit-reached", { params: { sim_budget: "0" } }],
@@ -425,8 +418,7 @@ export const appLoginReviewCases: ReviewCase[] = [
             `app-${situation}`,
             situation === "checking-connection"
                 ? "app-callback"
-                : situation === "connection-error" ||
-                    situation === "connection-check-error"
+                : situation === "connection-error"
                   ? "app-callback-error"
                   : situation === "account-error"
                     ? "app-account-error"
@@ -485,21 +477,6 @@ export const appLoginReviewCases: ReviewCase[] = [
                         text: "Allow access",
                         action: "click",
                     },
-                    ...(situation === "connection-check-error"
-                        ? [
-                              {
-                                  selector: "[data-connect-state='connected']",
-                                  action: "requests" as const,
-                                  requests: [
-                                      {
-                                          path: "/gen/account/key",
-                                          outcome: "unavailable" as const,
-                                      },
-                                  ],
-                              },
-                              { selector: "html", action: "reload" as const },
-                          ]
-                        : []),
                 ],
                 expected: [
                     {

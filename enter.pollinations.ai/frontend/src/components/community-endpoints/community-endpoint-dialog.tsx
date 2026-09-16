@@ -5,17 +5,16 @@ import {
     CheckIcon,
     ChevronIcon,
     Dialog,
-    DialogTitle,
+    DialogFooter,
+    DialogHeader,
     Dropdown,
     DropdownItem,
     EditableCombobox,
     Field,
     FieldStack,
-    Heading,
     Input,
     ScrollArea,
     TabButton,
-    Text,
 } from "@pollinations/ui";
 import {
     AuthActionButtons,
@@ -410,25 +409,22 @@ export function CommunityEndpointDialog({
             triggerAsChild
             layout="flow"
         >
-            <div className="shrink-0 p-6 pb-4">
-                <Heading as={DialogTitle} size="section">
-                    {isEndpointAgent
+            <DialogHeader
+                title={
+                    isEndpointAgent
                         ? "Edit Endpoint Agent"
                         : isEdit
                           ? "Edit Model"
-                          : "Add Model"}
-                </Heading>
-                <Text
-                    size="xs"
-                    tone="soft"
-                    weight="semibold"
-                    className="polli:mt-1 polli:tracking-wide"
-                >
-                    {isEndpointAgent
+                          : "Add Model"
+                }
+                description={
+                    isEndpointAgent
                         ? "Update its listing and connection."
-                        : "Connect your endpoint to Pollinations."}
-                </Text>
-            </div>
+                        : "Connect your endpoint to Pollinations."
+                }
+                titleClassName="polli:text-2xl polli:leading-tight"
+                descriptionClassName="polli:font-body polli:text-xs polli:leading-normal polli:text-theme-text-soft polli:font-semibold polli:tracking-wide"
+            />
 
             <form
                 onSubmit={handleSubmit}
@@ -979,7 +975,7 @@ export function CommunityEndpointDialog({
                     </fieldset>
                 </ScrollArea>
 
-                <div className="p-6 pt-4 shrink-0">
+                <DialogFooter className="polli:block">
                     <AuthActionButtons
                         secondaryAction={
                             <Button
@@ -1005,7 +1001,7 @@ export function CommunityEndpointDialog({
                             </Button>
                         }
                     />
-                </div>
+                </DialogFooter>
             </form>
         </Dialog>
     );

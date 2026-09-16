@@ -121,11 +121,6 @@ export const appReturnVariants: ScreenVariant[] = [
         screen: "add-pollen-connect",
         params: { app_callback: "denied" },
     },
-    {
-        label: "Connection check unavailable",
-        screen: "add-pollen-connect",
-        params: { app_callback: "check-error" },
-    },
     { label: "Loading account", params: { app_account: "loading" } },
     {
         label: "Account details unavailable",

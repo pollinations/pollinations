@@ -21,8 +21,7 @@ export type AppUserMenuLabels = {
     logout: string;
     connectionError: string;
     checkingConnection: string;
-    connectionCheckError: string;
-    retryConnection: string;
+    retryAccount: string;
     getFreePollen: string;
     topUpAccount: string;
 };
@@ -34,8 +33,7 @@ const defaultLabels: AppUserMenuLabels = {
     logout: "Disconnect app",
     connectionError: "Connection was not completed. Please try again.",
     checkingConnection: "Checking connection…",
-    connectionCheckError: "Couldn’t check your connection.",
-    retryConnection: "Try again",
+    retryAccount: "Try again",
     getFreePollen: "Get free Pollen",
     topUpAccount: "Buy Pollen",
 };
@@ -67,7 +65,6 @@ export function PollinationsConnectionPanel({
     error,
     labels,
     pending = false,
-    onRetry,
     className,
     accountState,
     onRetryAccount,
@@ -79,7 +76,6 @@ export function PollinationsConnectionPanel({
     labels?: Partial<AppUserMenuLabels>;
     pending?: boolean;
     className?: string;
-    onRetry?: (() => void) | null;
 }) {
     const loadingLabel = pending
         ? (labels?.checkingConnection ?? defaultLabels.checkingConnection)
@@ -87,14 +83,11 @@ export function PollinationsConnectionPanel({
           ? "Loading account…"
           : undefined;
     const accountError = accountState === "account-error";
-    const retry = accountError ? onRetryAccount : onRetry;
     const message = accountError
         ? "Couldn’t load your account details."
-        : onRetry
-          ? (labels?.connectionCheckError ?? defaultLabels.connectionCheckError)
-          : error
-            ? (labels?.connectionError ?? defaultLabels.connectionError)
-            : undefined;
+        : error
+          ? (labels?.connectionError ?? defaultLabels.connectionError)
+          : undefined;
     return (
         <Surface
             data-theme="accent"
@@ -112,9 +105,9 @@ export function PollinationsConnectionPanel({
                 <PollinationsSignInButton isPending>
                     {loadingLabel}
                 </PollinationsSignInButton>
-            ) : accountError || retry ? (
-                <PollinationsSignInButton onClick={retry ?? undefined}>
-                    {labels?.retryConnection ?? defaultLabels.retryConnection}
+            ) : accountError ? (
+                <PollinationsSignInButton onClick={onRetryAccount}>
+                    {labels?.retryAccount ?? defaultLabels.retryAccount}
                 </PollinationsSignInButton>
             ) : (
                 children

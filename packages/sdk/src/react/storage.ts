@@ -1,8 +1,5 @@
 /**
- * Synchronous key/value store for the user's session token and OAuth login.
- * Modeled on `window.localStorage` — implement against any sync backend
- * (cookies, in-memory, sessionStorage). Async backends (IndexedDB, RN
- * AsyncStorage) are out of scope.
+ * Synchronous storage for API keys and OAuth state. Async adapters are unsupported.
  */
 export interface StorageAdapter {
     getItem(key: string): string | null;

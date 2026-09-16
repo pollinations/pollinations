@@ -170,7 +170,6 @@ export function situationLabel(
         "Authorization code creation failed": "Handoff failed",
         "Session expired before approval": "Session expired",
         "Connection not completed": "Not connected",
-        "Connection check unavailable": "Connection check failed",
         "Account details unavailable": "Account unavailable",
         "Missing security challenge": "Missing challenge",
         "Invalid security challenge": "Invalid challenge",

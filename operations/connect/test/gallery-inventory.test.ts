@@ -532,7 +532,7 @@ it("groups configuration controls without hiding loading, success, or error stat
                         "Pollinations sign-in error": 5,
                         "App connection error": 13,
                         "Allow access": 7,
-                        "App · Connection status": 8,
+                        "App · Connection status": 7,
                     };
                     if (card.title in counts)
                         expect(card.variants).toHaveLength(counts[card.title]);
@@ -781,7 +781,7 @@ it("bookends Apps Login with the existing reusable app components", () => {
         maintained: true,
     });
     expect(cards[0].variants).toBeUndefined();
-    expect(cards.at(-1)?.variants).toHaveLength(8);
+    expect(cards.at(-1)?.variants).toHaveLength(7);
     for (const id of ["app-connect", "app-connected"]) {
         const card = cards.find((card) => card.id === id);
         expect(appLoginScreens.get(id)).toEqual(card);
@@ -806,7 +806,7 @@ it("uses the canonical Apps graph by default", () => {
     expect(getFlowFocus("app")).toEqual(getFlowFocus("app", "main"));
     expect(getFlowFocus("app").nodes).toEqual(appLoginNodes);
 });
-it("keeps stored-key and allowance states on the existing App panel", () => {
+it("keeps callback and allowance states on the existing App panel", () => {
     const cards = galleryCardsForFlow("app", "main");
     const panel = cards.find((card) => card.id === "app-connected");
     expect(
@@ -814,14 +814,24 @@ it("keeps stored-key and allowance states on the existing App panel", () => {
     ).toMatchObject({ params: { sim_budget: "0" } });
     expect(
         panel?.variants
-            ?.slice(0, 5)
+            ?.slice(0, 4)
             .map((variant) => variant.params?.app_callback),
-    ).toEqual([undefined, "waiting", "error", "denied", "check-error"]);
+    ).toEqual([undefined, "waiting", "error", "denied"]);
     expect(cards.some((card) => card.id.startsWith("app-callback"))).toBe(
         false,
     );
     const states = appLoginScreens.get("app-callback-error");
-    expect(states?.variants).toEqual(panel?.variants?.slice(2, 5));
+    expect(states?.variants).toEqual(panel?.variants?.slice(2, 4));
+    expect(
+        panel?.variants?.some(
+            (variant) => variant.params?.app_callback === "check-error",
+        ),
+    ).toBe(false);
+    expect(appLoginEdges).toContainEqual({
+        from: "app-ready",
+        to: "app-connected",
+        label: "Restore saved key",
+    });
 });
 it("keeps account-detail failures on the return panel", () => {
     const cards = galleryCardsForFlow("app", "main");

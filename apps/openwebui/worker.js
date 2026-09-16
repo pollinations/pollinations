@@ -140,6 +140,11 @@ export class OpenWebUIContainer extends Container {
         // one wallet. Local embedding keeps that off a shared budget; the cost
         // is a ~90 MB model download onto the ephemeral disk after a restart.
         ENABLE_VERSION_UPDATE_CHECK: "false",
+
+        // Cache the gen /v1/models fetch per user. The upstream default is 1 s,
+        // so every page load refetched and rebuilt the ~360-model list, which
+        // took 6-8 s on the 0.5 vCPU instance and gated the whole page.
+        MODELS_CACHE_TTL: "300",
     };
 }
 

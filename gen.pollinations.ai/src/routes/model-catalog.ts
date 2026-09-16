@@ -31,14 +31,13 @@ export async function filterCatalogEntries(
               : "official";
     const source =
         query.source ?? communitySource ?? headers["pollinations-model-source"];
-    const reliability =
-        query.reliability ?? headers["pollinations-model-reliability"];
+    const status = query.status ?? headers["pollinations-model-status"];
     const filtered = entries.filter(
         (entry) =>
             source === undefined ||
             entry.info.community === (source === "community"),
     );
-    if (reliability === undefined) return filtered;
+    if (status === undefined) return filtered;
 
     // A missing feed must not turn discovery into a 502 or label a model healthy.
     const snapshot = await getModelHealthSnapshot(c, WINDOW_MINUTES).catch(
@@ -75,8 +74,8 @@ export async function filterCatalogEntries(
         const health =
             healthByModel.get(`${entry.id}\0${entry.eventType}`) ?? unknown;
         if (
-            reliability === "reliable" &&
-            (health.status !== "on" || health.stale)
+            status === "healthy" &&
+            (health.status !== "healthy" || health.stale)
         )
             return [];
         return [{ ...entry, info: { ...entry.info, health } }];

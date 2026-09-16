@@ -26,12 +26,12 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
     if (!showNew && !showAlpha && !health) return null;
 
     const unknown = !health || health.stale || health.status === "unknown";
-    const reliable = !unknown && health.status === "on";
+    const healthy = !unknown && health.status === "healthy";
     const healthLabel = unknown
-        ? "Reliability unknown or stale"
-        : reliable
-          ? "Reliable over the last 24 hours"
-          : "Reduced reliability over the last 24 hours";
+        ? "Status unknown or stale"
+        : healthy
+          ? "Healthy over the last 24 hours"
+          : "Elevated errors over the last 24 hours";
 
     const alphaTooltipLabel = "Alpha model — experimental, may be unstable";
 
@@ -46,7 +46,7 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
                 >
                     <span
                         aria-hidden="true"
-                        className={`inline-block h-2 w-2 rounded-full ${unknown ? "bg-theme-text-muted" : reliable ? "bg-intent-success-text" : "bg-intent-warning-text"}`}
+                        className={`inline-block h-2 w-2 rounded-full ${unknown ? "bg-theme-text-muted" : healthy ? "bg-intent-success-text" : "bg-intent-warning-text"}`}
                     />
                 </Tooltip>
             )}

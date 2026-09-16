@@ -54,11 +54,11 @@ const getCatalogModelPrices = () =>
 
 test("health indicators use three states, keeping stale success unknown", () => {
     for (const [status, stale, label] of [
-        ["on", false, "Reliable over the last 24 hours"],
-        ["degraded", false, "Reduced reliability over the last 24 hours"],
-        ["off", false, "Reduced reliability over the last 24 hours"],
-        ["unknown", false, "Reliability unknown or stale"],
-        ["on", true, "Reliability unknown or stale"],
+        ["healthy", false, "Healthy over the last 24 hours"],
+        ["degraded", false, "Elevated errors over the last 24 hours"],
+        ["down", false, "Elevated errors over the last 24 hours"],
+        ["unknown", false, "Status unknown or stale"],
+        ["healthy", true, "Status unknown or stale"],
     ] as const) {
         const markup = renderToStaticMarkup(
             createElement(ModelStatusChips, {

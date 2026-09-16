@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 
 it("preserves the API health summary for discovery filtering", () => {
     const health = {
-        status: "on" as const,
+        status: "healthy" as const,
         stale: false,
         success_rate: 1,
         sample_size: 10,

@@ -239,7 +239,7 @@ const isSourceSuggestion = (option: string): boolean =>
 const MODEL_FILTER_LABELS: Record<ModelQueryFilter["key"], string> = {
     access: "Access",
     source: "Source",
-    reliability: "Reliability",
+    status: "Status",
     publisher: "Publisher",
     id: "ID",
     type: "Type",
@@ -373,16 +373,14 @@ export const Models: FC = () => {
     const renderedFilterTokens = filterTokens;
     const renderedDraftFilter = draftFilter;
     const modelModels = useMemo(() => {
-        const reliabilityQuery = {
+        const statusQuery = {
             terms: [],
-            filters: parsedQuery.filters.filter(
-                ({ key }) => key === "reliability",
-            ),
+            filters: parsedQuery.filters.filter(({ key }) => key === "status"),
         };
         return allModels.filter(
             (model) =>
                 !model.agent &&
-                matchesModelQuery(model, reliabilityQuery) &&
+                matchesModelQuery(model, statusQuery) &&
                 (explicitModelSource === undefined ||
                     Boolean(model.community) ===
                         (explicitModelSource === "community")),

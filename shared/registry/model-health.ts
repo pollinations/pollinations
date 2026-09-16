@@ -2,7 +2,10 @@ import { z } from "zod";
 
 export const ModelHealthSchema = z
     .object({
-        status: z.enum(["on", "degraded", "off", "unknown"]),
+        status: z.enum(["healthy", "degraded", "down", "unknown"]).meta({
+            description:
+                "Based on the reported window: healthy above 95% success, degraded above 80% through 95%, down at 80% or below, unknown below 10 measured requests. Check stale before relying on this status.",
+        }),
         success_rate: z.number().min(0).max(1).nullable(),
         sample_size: z.number().int().nonnegative(),
         window_minutes: z.number().int().positive(),
@@ -18,7 +21,7 @@ export type ModelHealth = z.infer<typeof ModelHealthSchema>;
 
 const MIN_SAMPLE_SIZE = 10;
 const DEGRADED_FAILURE_RATE = 0.05;
-const OFF_FAILURE_RATE = 0.2;
+const DOWN_FAILURE_RATE = 0.2;
 
 export function modelHealthFromCounts(
     successes: number,
@@ -34,11 +37,11 @@ export function modelHealthFromCounts(
 
     if (sampleSize >= MIN_SAMPLE_SIZE && failureRate !== null) {
         status =
-            failureRate >= OFF_FAILURE_RATE
-                ? "off"
+            failureRate >= DOWN_FAILURE_RATE
+                ? "down"
                 : failureRate >= DEGRADED_FAILURE_RATE
                   ? "degraded"
-                  : "on";
+                  : "healthy";
     }
 
     return {

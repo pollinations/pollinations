@@ -252,7 +252,7 @@ function hasPaidBalance(c: any): boolean | undefined {
 }
 
 // Factory for model-list endpoints. Permission filtering always happens before
-// the optional discovery-only source and reliability filters.
+// the optional discovery-only source and status filters.
 const modelsListHandler = (
     getEntries: (
         c: Context<Env>,

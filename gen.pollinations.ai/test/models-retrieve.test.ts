@@ -126,7 +126,7 @@ test("retrieve matches the list entry exactly (shared mapper)", async () => {
     expect(retrieved).toEqual(listed);
 });
 
-test("adds measured health and filters reliable models on demand", async () => {
+test("adds measured health and filters healthy models on demand", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
         Response.json({
             data: [
@@ -143,7 +143,7 @@ test("adds measured health and filters reliable models on demand", async () => {
     expect(unfilteredBody.data[0]).not.toHaveProperty("health");
     expect(fetchSpy).not.toHaveBeenCalled();
 
-    const withHealth = await fetchWorkerWithMock("/v1/models?reliability=all");
+    const withHealth = await fetchWorkerWithMock("/v1/models?status=all");
     const withHealthBody = (await withHealth.json()) as {
         data: {
             id: string;
@@ -154,7 +154,7 @@ test("adds measured health and filters reliable models on demand", async () => {
         withHealthBody.data.find((model) => model.id === "openai/gpt-5-nano")
             ?.health,
     ).toMatchObject({
-        status: "on",
+        status: "healthy",
         success_rate: 0.98,
         sample_size: 100,
         window_minutes: 1440,
@@ -164,22 +164,18 @@ test("adds measured health and filters reliable models on demand", async () => {
         withHealthBody.data.find(
             (model) => model.id === "anthropic/claude-haiku-4.5",
         )?.health,
-    ).toMatchObject({ status: "off", sample_size: 10 });
+    ).toMatchObject({ status: "down", sample_size: 10 });
     expect(
         withHealthBody.data.find(
             (model) => model.id === "mistralai/mistral-small-4",
         )?.health,
     ).toMatchObject({ status: "unknown", sample_size: 0 });
 
-    const reliable = await fetchWorkerWithMock(
-        "/v1/models?reliability=reliable",
-    );
-    const reliableBody = (await reliable.json()) as {
+    const healthy = await fetchWorkerWithMock("/v1/models?status=healthy");
+    const healthyBody = (await healthy.json()) as {
         data: { id: string }[];
     };
-    expect(reliableBody.data.map(({ id }) => id)).toEqual([
-        "openai/gpt-5-nano",
-    ]);
+    expect(healthyBody.data.map(({ id }) => id)).toEqual(["openai/gpt-5-nano"]);
 });
 
 test("accepts client-safe model filter headers", async () => {
@@ -189,7 +185,7 @@ test("accepts client-safe model filter headers", async () => {
     const response = await fetchWorkerWithMock("/text/models", {
         headers: {
             "Pollinations-Model-Source": "official",
-            "Pollinations-Model-Reliability": "reliable",
+            "Pollinations-Model-Status": "healthy",
         },
     });
 
@@ -202,14 +198,14 @@ test("accepts client-safe model filter headers", async () => {
     expect(models.map(({ name }) => name)).toEqual(["openai/gpt-5-nano"]);
     expect(models[0]).toMatchObject({
         community: false,
-        health: { status: "on" },
+        health: { status: "healthy" },
     });
 });
 
 test("reports unknown health when monitoring is unavailable", async () => {
     vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("offline"));
 
-    const response = await fetchWorkerWithMock("/v1/models?reliability=all");
+    const response = await fetchWorkerWithMock("/v1/models?status=all");
     expect(response.status).toBe(200);
     const body = (await response.json()) as {
         data: { health: Record<string, unknown> }[];
@@ -226,7 +222,7 @@ test("reports unknown health when monitoring is unavailable", async () => {
 test("rejects invalid discovery filters", async () => {
     const responses = await Promise.all([
         fetchWorker("/models?source=other"),
-        fetchWorker("/models?reliability=other"),
+        fetchWorker("/models?status=other"),
         fetchWorker("/models", {
             headers: { "Pollinations-Model-Source": "other" },
         }),
@@ -250,11 +246,11 @@ test("applies compact health consistently across every catalog", async () => {
         "/3d/models",
     ]) {
         const response = await fetchWorkerWithMock(
-            `${path}?reliability=all&source=official&community=true`,
+            `${path}?status=all&source=official&community=true`,
             {
                 headers: {
                     "Pollinations-Model-Source": "community",
-                    "Pollinations-Model-Reliability": "reliable",
+                    "Pollinations-Model-Status": "healthy",
                 },
             },
         );
@@ -279,15 +275,15 @@ test("applies compact health consistently across every catalog", async () => {
     expect(fetchSpy).toHaveBeenCalledTimes(1);
 });
 
-test("requires enough samples and respects reliability boundaries", () => {
+test("requires enough samples and respects status boundaries", () => {
     for (const [successes, failures, status] of [
         [0, 0, "unknown"],
         [9, 0, "unknown"],
-        [10, 0, "on"],
-        [96, 4, "on"],
+        [10, 0, "healthy"],
+        [96, 4, "healthy"],
         [95, 5, "degraded"],
         [81, 19, "degraded"],
-        [80, 20, "off"],
+        [80, 20, "down"],
     ] as const) {
         expect(
             modelHealthFromCounts(successes, failures, 1440, null, false)

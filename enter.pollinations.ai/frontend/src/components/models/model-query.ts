@@ -3,12 +3,12 @@ import type { ModelPrice } from "./types.ts";
 
 export type ModelAccess = "paid" | "quest" | "free";
 export type ModelSource = "official" | "community";
-export type ModelReliability = "all" | "reliable";
+export type ModelStatus = "all" | "healthy";
 
 export type ModelQueryFilter =
     | { key: "access"; value: ModelAccess }
     | { key: "source"; value: ModelSource }
-    | { key: "reliability"; value: ModelReliability }
+    | { key: "status"; value: ModelStatus }
     | {
           key: "publisher" | "id" | "type" | "capability";
           value: string;
@@ -33,11 +33,11 @@ export type ModelQueryDraftFilter = {
 
 const ACCESS_VALUES: readonly ModelAccess[] = ["paid", "quest", "free"];
 const SOURCE_VALUES: readonly ModelSource[] = ["official", "community"];
-const RELIABILITY_VALUES: readonly ModelReliability[] = ["all", "reliable"];
+const STATUS_VALUES: readonly ModelStatus[] = ["all", "healthy"];
 export const MODEL_QUERY_FILTER_KEYS = [
     "access",
     "source",
-    "reliability",
+    "status",
     "publisher",
     "id",
     "type",
@@ -66,8 +66,8 @@ function parseModelQueryFilter(
             return isModelAccess(value) ? { key, value } : undefined;
         case "source":
             return isModelSource(value) ? { key, value } : undefined;
-        case "reliability":
-            return value === "all" || value === "reliable"
+        case "status":
+            return value === "all" || value === "healthy"
                 ? { key, value }
                 : undefined;
         case "publisher":
@@ -122,7 +122,7 @@ export function ensureModelQueryDefaults(query: string): string {
         .filter((token) => token.includes(":"))
         .map((token) => token.split(":")[0]);
     return [
-        ...["source:official", "reliability:reliable"].filter(
+        ...["source:official", "status:healthy"].filter(
             (token) => !keys.includes(token.split(":")[0]),
         ),
         normalizedQuery,
@@ -245,8 +245,8 @@ function getFilterValues(key: string, models: ModelPrice[]): string[] {
             return [...ACCESS_VALUES];
         case "source":
             return [...SOURCE_VALUES];
-        case "reliability":
-            return [...RELIABILITY_VALUES];
+        case "status":
+            return [...STATUS_VALUES];
         case "publisher":
             return models
                 .map(getModelPublisher)
@@ -302,10 +302,10 @@ function matchesFilter(model: ModelPrice, filter: ModelQueryFilter): boolean {
             return getModelAccess(model) === filter.value;
         case "source":
             return Boolean(model.community) === (filter.value === "community");
-        case "reliability":
+        case "status":
             return (
                 filter.value === "all" ||
-                (model.health?.status === "on" && !model.health.stale)
+                (model.health?.status === "healthy" && !model.health.stale)
             );
         case "publisher": {
             return getModelPublisher(model) === filter.value;

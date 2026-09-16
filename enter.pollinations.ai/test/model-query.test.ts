@@ -89,27 +89,27 @@ describe("parseModelQuery", () => {
 });
 
 describe("model query defaults", () => {
-    it("preselects official and reliable without replacing explicit or unfinished filters", () => {
+    it("preselects official and healthy without replacing explicit or unfinished filters", () => {
         expect(ensureModelQueryDefaults("")).toBe(
-            "source:official reliability:reliable",
+            "source:official status:healthy",
         );
         expect(ensureModelQueryDefaults("capability:reasoning")).toBe(
-            "source:official reliability:reliable capability:reasoning",
+            "source:official status:healthy capability:reasoning",
         );
         expect(ensureModelQueryDefaults("source:community")).toBe(
-            "reliability:reliable source:community",
+            "status:healthy source:community",
         );
-        expect(ensureModelQueryDefaults("source: reliability:")).toBe(
-            "source: reliability:",
+        expect(ensureModelQueryDefaults("source: status:")).toBe(
+            "source: status:",
         );
-        expect(
-            ensureModelQueryDefaults("SOURCE:community reliability:all"),
-        ).toBe("SOURCE:community reliability:all");
+        expect(ensureModelQueryDefaults("SOURCE:community status:all")).toBe(
+            "SOURCE:community status:all",
+        );
     });
 });
 
 it("filters by the API health result without hiding unknown models in all mode", () => {
-    for (const status of ["on", "degraded", "off", "unknown"] as const) {
+    for (const status of ["healthy", "degraded", "down", "unknown"] as const) {
         for (const stale of [false, true]) {
             const candidate = model({
                 health: {
@@ -121,17 +121,21 @@ it("filters by the API health result without hiding unknown models in all mode",
                     window_minutes: 1440,
                 },
             });
-            expect(matches(candidate, "reliability:reliable")).toBe(
-                status === "on" && !stale,
+            expect(matches(candidate, "status:healthy")).toBe(
+                status === "healthy" && !stale,
             );
-            expect(matches(candidate, "reliability:all")).toBe(true);
+            expect(matches(candidate, ensureModelQueryDefaults(""))).toBe(
+                status === "healthy" && !stale,
+            );
+            expect(matches(candidate, "status:all")).toBe(true);
         }
     }
-    expect(matches(model(), "reliability:reliable")).toBe(false);
-    expect(matches(model(), "reliability:all")).toBe(true);
-    expect(getModelQuerySuggestions("reliability:", [])).toEqual([
-        "reliability:all ",
-        "reliability:reliable ",
+    expect(matches(model(), "status:healthy")).toBe(false);
+    expect(matches(model(), ensureModelQueryDefaults(""))).toBe(false);
+    expect(matches(model(), "status:all")).toBe(true);
+    expect(getModelQuerySuggestions("status:", [])).toEqual([
+        "status:all ",
+        "status:healthy ",
     ]);
 });
 
@@ -345,8 +349,8 @@ describe("getModelQuerySuggestions", () => {
             "capability:",
             "id:",
             "publisher:",
-            "reliability:",
             "source:",
+            "status:",
             "type:",
         ]);
         expect(getModelQuerySuggestions("access:", models)).toEqual([

@@ -94,7 +94,7 @@ export function mergeModelCatalogs(
 
 async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
     const catalogUrl = new URL(url);
-    catalogUrl.searchParams.set("reliability", "all");
+    catalogUrl.searchParams.set("status", "all");
     const response = await fetch(catalogUrl.toString(), {
         cache: "no-store",
         signal: AbortSignal.timeout(15_000),

@@ -8,7 +8,6 @@ import {
 } from "@cloudflare/computer";
 import type { WorkspaceLike } from "@cloudflare/computer/assets";
 import { WorkerShellBackend } from "@cloudflare/computer/backends/worker-shell";
-import { createGitClient } from "@cloudflare/computer/git";
 import curlModules from "@cloudflare/computer/shell/curl";
 import fileModules from "@cloudflare/computer/shell/file";
 import htmlToMarkdownModules from "@cloudflare/computer/shell/html-to-markdown";
@@ -22,7 +21,8 @@ import {
     MCP_USER_ID_HEADER,
 } from "../../../shared/registry/mcp.ts";
 import { createMediaAssets, type MediaService } from "./assets.ts";
-import { COLLECTIVE_REPO_URL, withCollectiveRepo } from "./collective.ts";
+import { COLLECTIVE_REPO_URL, collectiveCredentials } from "./collective.ts";
+import { createJustGitClient } from "./git.ts";
 import { createComputerMcpServer, HOME } from "./server.ts";
 
 const TOOL_CALL_RATE = "computer.tool_call.v1";
@@ -63,10 +63,6 @@ Write a file by passing its content as stdin to \`cat > path\`.
   for any public repository.
 - Out: \`assets publish <path>\` copies one file to public media storage
   and prints an unlisted URL that stays valid 30 days; tar a folder first.
-  For anything the user wants to keep, \`git push\` to a repository they
-  own: they give you a token scoped to that one repository and you put it
-  in the remote URL (https://x:TOKEN@github.com/user/repo.git). The token
-  is stored in this computer's git config, nowhere else.
 
 Memory shared by all agents: \`git clone ${COLLECTIVE_REPO_URL}\`, read its
 README; push needs no token.
@@ -110,7 +106,7 @@ export class Computer extends withWorkspace(
         };
         return {
             storage: ctx.storage as unknown as DurableObjectStorageLike,
-            git: withCollectiveRepo(createGitClient(), env),
+            git: createJustGitClient(collectiveCredentials(env)),
             // Typed as unknown: comparing Workspace to WorkspaceLike makes tsc
             // recurse through the fs overloads until it gives up.
             assets: (workspace: unknown) =>

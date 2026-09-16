@@ -25,9 +25,7 @@ folders in it. Nothing is shared between users. Files come in with `curl -o` (an
 one file to the Pollinations media service (`MEDIA` service binding, the same
 one ffmpeg-mcp uses) and prints its unlisted `https://media.pollinations.ai/…`
 URL (a snapshot with media's 30-day retention, refreshed on reads; the
-command's expiry argument is ignored), or with `git push` to a repository the
-user owns, using a token they provide in the remote URL. The service mints no
-credentials of its own. Commits default to the caller's GitHub account
+command's expiry argument is ignored). Commits default to the caller's GitHub account
 (`id+username@users.noreply.github.com`, forwarded by gen), which a repo's
 `git config user.name/user.email` overrides. Every successful call is billed at one flat rate (`computer.tool_call.v1`, reported to gen as a
 usage receipt); discovery requests and storage are free. Memory is a convention,

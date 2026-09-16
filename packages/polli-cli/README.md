@@ -148,6 +148,11 @@ and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`). OpenCode uses
 its official plugin; OpenClaw uses `openclaw.json`, while Pi and Prime Agent use
 their native `models.json` provider support.
 
+OpenClaw and Prime Agent also register the hosted Pollinations MCP server in
+their own config (OpenClaw via its `mcp.servers` registry, Prime via
+`bearerTokenEnvVar`); use `--no-mcp` to skip. Pi has no MCP support by design,
+and Bloom has no documented MCP mechanism yet.
+
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
 
 ## MCP servers

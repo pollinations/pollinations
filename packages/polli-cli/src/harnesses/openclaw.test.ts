@@ -272,6 +272,44 @@ describe("openclaw harness", () => {
         expect(openclaw.status(ctx).configured).toBe(false);
     });
 
+    it("provisions the Pollinations MCP registry entry", () => {
+        configureOpenClaw(ctx, models, "sk_test_key", "kimi");
+        const doc = JSON.parse(read(configFile())) as {
+            mcp?: {
+                servers?: Record<
+                    string,
+                    {
+                        url: string;
+                        transport: string;
+                        headers: Record<string, string>;
+                    }
+                >;
+            };
+        };
+        const entry = doc.mcp?.servers?.pollinations;
+        expect(entry?.url).toBe("https://gen.pollinations.ai/mcp/pollinations");
+        expect(entry?.transport).toBe("streamable-http");
+        expect(entry?.headers.Authorization).toBe(
+            "Bearer ${POLLI_OPENCLAW_API_KEY}",
+        );
+
+        disableOpenClaw(ctx);
+        const after = existsSync(configFile())
+            ? (JSON.parse(read(configFile())) as {
+                  mcp?: { servers?: Record<string, unknown> };
+              })
+            : {};
+        expect(after.mcp?.servers?.pollinations).toBeUndefined();
+    });
+
+    it("skips MCP provisioning when requested", () => {
+        configureOpenClaw(ctx, models, "sk_test_key", "kimi", false);
+        const doc = JSON.parse(read(configFile())) as {
+            mcp?: { servers?: Record<string, unknown> };
+        };
+        expect(doc.mcp?.servers?.pollinations).toBeUndefined();
+    });
+
     it("stops before configuration when OpenClaw is unavailable", async () => {
         await expect(openclaw.on(ctx, {})).rejects.toThrow(
             "OpenClaw was not found",

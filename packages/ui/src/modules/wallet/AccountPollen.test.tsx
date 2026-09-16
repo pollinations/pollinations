@@ -16,7 +16,8 @@ describe("account Pollen", () => {
         );
         expect(unlimited).toContain("M12 12c-2-2.67");
         expect(unlimited).toContain("pollen");
-        expect(unlimited).toContain('aria-label="Unlimited app budget"');
+        expect(unlimited).toContain("App budget: ");
+        expect(unlimited).toContain(">unlimited<");
         expect(unlimited).not.toContain(EMPTY);
         for (const remaining of [0, -1]) {
             const zero = renderToStaticMarkup(

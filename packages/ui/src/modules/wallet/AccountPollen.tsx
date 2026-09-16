@@ -45,11 +45,6 @@ export function AccountPollen({
         return (
             <span
                 title={unlimited ? "Unlimited app budget" : "App budget left"}
-                aria-label={
-                    unlimited
-                        ? "Unlimited app budget"
-                        : `App budget left: ${formatPollen(remaining)}`
-                }
                 className={cn(
                     "polli:inline-flex polli:items-center polli:gap-1 polli:tabular-nums",
                     !unlimited && isEmpty(remaining) && emptyClass,
@@ -59,8 +54,12 @@ export function AccountPollen({
                     aria-hidden="true"
                     className="polli:h-3.5 polli:w-3.5 polli:shrink-0"
                 />
+                <span className="polli:sr-only">App budget: </span>
                 {unlimited ? (
-                    <InfinityIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
+                    <>
+                        <InfinityIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
+                        <span className="polli:sr-only">unlimited</span>
+                    </>
                 ) : (
                     formatPollen(Math.max(0, remaining))
                 )}

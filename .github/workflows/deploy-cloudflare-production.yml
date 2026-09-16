@@ -223,6 +223,23 @@ jobs:
       - name: Setup SOPS
         uses: nhedger/setup-sops@v3
 
+      # Code agents run a copy of the enter runtime frozen at upload time.
+      # Re-upload them so they pick up this deploy. Per-agent failures are
+      # listed in the response, not fatal. The sleep lets the new Worker
+      # version propagate so the redeploy bundles the new runtime.
+      - name: Redeploy code agents
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: |
+          token=$(sops -d --extract '["PLN_ENTER_TOKEN"]' enter.pollinations.ai/secrets/prod.vars.json)
+          echo "::add-mask::$token"
+          sleep 30
+          curl -fsS -X POST https://enter.pollinations.ai/api/admin/code-agents/redeploy \
+            -H "Authorization: Bearer $token"
+
+      - name: Setup SOPS
+        uses: nhedger/setup-sops@v3
+
       # Same ordering as deploy-gen below: deploy first so the secret push
       # edits the deployed version. Re-applies secrets/prod.vars.json; a new
       # or changed value goes through the Secret Mutation Safety gate before

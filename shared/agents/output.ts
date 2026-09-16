@@ -191,15 +191,6 @@ export function collectOutput(
             if (pendingCalls.size) {
                 throw new Error("Agent tool call has no result");
             }
-            if (
-                !items.some(
-                    (item) =>
-                        item.type !== "message" ||
-                        item.content.some((part) => part.text.trim()),
-                )
-            ) {
-                throw new Error("Agent produced no response");
-            }
             closeMessage(
                 finishReason === "length" || finishReason === "content_filter"
                     ? "incomplete"

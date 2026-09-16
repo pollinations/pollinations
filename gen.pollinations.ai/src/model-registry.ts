@@ -25,6 +25,7 @@ import {
     applyAgentMetadata,
 } from "./agent-catalog.ts";
 import {
+    COMMUNITY_ENDPOINT_CACHE_KEY,
     type CommunityModelEnv,
     type CommunityModelRegistryEntry,
     getCommunityModelRegistryEntries,
@@ -307,6 +308,9 @@ export async function getGenerationModelRegistry(
     return registry;
 }
 
-export function resetGenerationModelRegistryCache(): void {
+export async function resetGenerationModelRegistryCache(
+    env: CommunityModelEnv,
+): Promise<void> {
     cachedRegistry = null;
+    await env.KV.delete(COMMUNITY_ENDPOINT_CACHE_KEY);
 }

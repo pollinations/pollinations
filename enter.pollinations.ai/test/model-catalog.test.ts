@@ -5,6 +5,21 @@ import {
 } from "@frontend/components/models/model-catalog.ts";
 import { describe, expect, it } from "vitest";
 
+it("preserves the API health summary for discovery filtering", () => {
+    const health = {
+        status: "healthy" as const,
+        stale: false,
+        success_rate: 1,
+        sample_size: 10,
+        window_minutes: 1440,
+        checked_at: "2026-09-16T00:00:00Z",
+    };
+    const [model] = getModelPricesFromCatalog([
+        { name: "example/model", category: "text", health },
+    ]);
+    expect(model.health).toEqual(health);
+});
+
 it("keeps search aliases but never transfers historical statistics to a new ID", () => {
     const catalog = [
         {

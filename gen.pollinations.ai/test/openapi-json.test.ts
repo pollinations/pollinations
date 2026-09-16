@@ -108,6 +108,43 @@ describe("/openapi.json", () => {
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/v1/audio/music/upload"]).toBeUndefined();
+        for (const path of [
+            "/models",
+            "/v1/models",
+            "/text/models",
+            "/image/models",
+            "/video/models",
+            "/audio/models",
+            "/embeddings/models",
+            "/3d/models",
+        ]) {
+            expect(schema).toHaveProperty(
+                ["paths", path, "get", "parameters"],
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        in: "query",
+                        name: "status",
+                        schema: expect.objectContaining({
+                            enum: ["all", "healthy"],
+                        }),
+                    }),
+                    expect.objectContaining({
+                        in: "header",
+                        name: "pollinations-model-source",
+                        schema: expect.objectContaining({
+                            enum: ["official", "community"],
+                        }),
+                    }),
+                    expect.objectContaining({
+                        in: "header",
+                        name: "pollinations-model-status",
+                        schema: expect.objectContaining({
+                            enum: ["all", "healthy"],
+                        }),
+                    }),
+                ]),
+            );
+        }
 
         for (const [path, method] of [
             ["/image/{prompt}", "get"],

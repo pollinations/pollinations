@@ -161,6 +161,7 @@ fixtureTest(
             .update(userTable)
             .set({ banned: true })
             .where(eq(userTable.id, ownerUserId));
+        await resetGenerationModelRegistryCache(env);
         expect(
             (await getCommunityModelRegistryEntries(env)).filter(
                 (row) => row.communityEndpoint.ownerUserId === ownerUserId,
@@ -170,6 +171,7 @@ fixtureTest(
             .update(userTable)
             .set({ banned: false })
             .where(eq(userTable.id, ownerUserId));
+        await resetGenerationModelRegistryCache(env);
         expect(
             (await getCommunityModelRegistryEntries(env)).filter(
                 (row) => row.communityEndpoint.ownerUserId === ownerUserId,

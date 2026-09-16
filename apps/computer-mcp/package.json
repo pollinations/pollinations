@@ -16,6 +16,7 @@
     "@modelcontextprotocol/sdk": "1.30.0",
     "@platformatic/vfs": "^0.4.0",
     "ai": "^7.0.0",
+    "just-git": "1.8.2",
     "zod": "^4.4.3"
   },
   "devDependencies": {

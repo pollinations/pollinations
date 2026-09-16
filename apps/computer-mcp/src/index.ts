@@ -8,7 +8,6 @@ import {
 } from "@cloudflare/computer";
 import type { WorkspaceLike } from "@cloudflare/computer/assets";
 import { WorkerShellBackend } from "@cloudflare/computer/backends/worker-shell";
-import { createGitClient } from "@cloudflare/computer/git";
 import curlModules from "@cloudflare/computer/shell/curl";
 import jqModules from "@cloudflare/computer/shell/jq";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
@@ -19,7 +18,8 @@ import {
     MCP_USER_ID_HEADER,
 } from "../../../shared/registry/mcp.ts";
 import { createMediaAssets, type MediaService } from "./assets.ts";
-import { COLLECTIVE_REPO_URL, withCollectiveRepo } from "./collective.ts";
+import { COLLECTIVE_REPO_URL, collectiveCredentials } from "./collective.ts";
+import { createJustGitClient } from "./git.ts";
 import { createComputerMcpServer, HOME } from "./server.ts";
 
 const TOOL_CALL_RATE = "computer.tool_call.v1";
@@ -92,7 +92,7 @@ export class Computer extends withWorkspace(
         };
         return {
             storage: ctx.storage as unknown as DurableObjectStorageLike,
-            git: withCollectiveRepo(createGitClient(), env),
+            git: createJustGitClient(collectiveCredentials(env)),
             // Typed as unknown: comparing Workspace to WorkspaceLike makes tsc
             // recurse through the fs overloads until it gives up.
             assets: (workspace: unknown) =>

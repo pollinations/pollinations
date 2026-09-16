@@ -7,6 +7,7 @@ import {
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import { canonicalizeModelPermissionIds } from "@shared/registry/visible-model-ids.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
@@ -44,6 +45,25 @@ export type AuthEnv = {
 
 const AUTHENTICATION_REQUIRED_MESSAGE =
     "A valid API key is required. Get one at https://enter.pollinations.ai/keys";
+
+export function keyPermissionsLink(
+    apiKeyId?: string,
+    environment?: string,
+    reqUrl?: string,
+): string {
+    let isStaging = environment === "staging";
+    if (!isStaging && reqUrl) {
+        try {
+            isStaging = new URL(reqUrl).hostname.startsWith("staging.");
+        } catch {}
+    }
+    const enterBase = isStaging
+        ? PUBLIC_URLS.enter.staging
+        : PUBLIC_URLS.enter.production;
+    return apiKeyId
+        ? `${enterBase}/edit-key?id=${apiKeyId}`
+        : `${enterBase}/keys`;
+}
 
 function installAuth(
     c: Context<AuthEnv>,
@@ -84,8 +104,13 @@ function installAuth(
         if (!apiKey?.permissions?.models) return;
 
         if (!apiKey.permissions.models.includes(model.resolved)) {
+            const link = keyPermissionsLink(
+                apiKey.id,
+                c.env?.ENVIRONMENT,
+                c.req.url,
+            );
             throw new HTTPException(403, {
-                message: `Model '${model.requested}' is not allowed for this API key. Manage key permissions at https://enter.pollinations.ai/keys`,
+                message: `Model '${model.requested}' is not allowed for this API key. Manage key permissions at ${link}`,
             });
         }
     }

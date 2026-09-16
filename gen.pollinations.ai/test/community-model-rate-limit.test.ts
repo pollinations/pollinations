@@ -16,6 +16,7 @@ const QUOTA_BOUND_MODELS = new Set([
     "openai/gpt-image-2.5-flare",
     "openai/gpt-image-2.5-sunburst",
     "microsoft/mai-image-2.5-flash",
+    "inferenceport-ai/lightning-image-turbo",
 ]);
 
 describe("model rate limiting", () => {

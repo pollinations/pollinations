@@ -1,3 +1,4 @@
+import { ACCOUNT_RESTRICTED_MESSAGE, isUserBanned } from "@shared/auth/ban.ts";
 import {
     calculateServiceFeeCents,
     describePollenPack,
@@ -15,6 +16,7 @@ import type { Env } from "../env.ts";
 import { getCohortFromCountry } from "../utils/currency-router.ts";
 import { captureProductEvent } from "../utils/product-analytics.ts";
 import { createStripeClient } from "../utils/stripe.ts";
+import { getUserStripeBillingRow } from "../utils/stripe-billing/customer.ts";
 import {
     createBillingPortalSession,
     getBillingOverview,
@@ -26,6 +28,7 @@ import {
     getStripeNewCardGateStatus,
     stripeNewCardGateMetadata,
 } from "../utils/stripe-card-gate.ts";
+import { expireOpenStripeCheckoutSessions } from "../utils/stripe-fraud-ban.ts";
 
 /**
  * Stripe pack configuration
@@ -69,6 +72,16 @@ export const stripeRoutes = new Hono<Env>()
 
         // Create Stripe client
         const stripe = createStripeClient(c.env);
+
+        const buyer = await getUserStripeBillingRow(c.env.DB, userId);
+        if (isUserBanned(buyer)) {
+            if (buyer.stripeCustomerId)
+                await expireOpenStripeCheckoutSessions(
+                    stripe,
+                    buyer.stripeCustomerId,
+                );
+            return c.json({ error: ACCOUNT_RESTRICTED_MESSAGE }, 403);
+        }
 
         // Return the buyer to the standalone top-up page when checkout
         // started there, else to the Pollen dashboard. Both paths are fixed
@@ -184,6 +197,13 @@ export const stripeRoutes = new Hono<Env>()
             });
 
             // Redirect to Stripe Checkout (will use checkout.pollinations.ai custom domain)
+            if (isUserBanned(await getUserStripeBillingRow(c.env.DB, userId))) {
+                await expireOpenStripeCheckoutSessions(
+                    stripe,
+                    stripeCustomerId,
+                );
+                return c.json({ error: ACCOUNT_RESTRICTED_MESSAGE }, 403);
+            }
             if (checkoutSession.url) {
                 c.executionCtx.waitUntil(
                     captureProductEvent(

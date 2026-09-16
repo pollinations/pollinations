@@ -33,33 +33,44 @@ describe("shared control accessibility", () => {
         expect(markup).toContain('aria-label="Connected app"');
         expect(markup).toContain("?");
     });
-    it("keeps the whole account pill as the single menu trigger", () => {
+    it("keeps the dashboard link separate from the account menu trigger", () => {
         const markup = renderToStaticMarkup(
             <AccountMenu
                 name="Alex Morgan"
                 avatarUrl="/avatar.png"
+                dashboardHref="https://dev.enter.pollinations.ai/pollen"
                 secondaryContent="10 Pollen"
             >
                 <DropdownItem>Disconnect</DropdownItem>
             </AccountMenu>,
         );
-        expect(markup).not.toContain("<a ");
+        const link = markup.match(/<a\b[^>]*>[\s\S]*?<\/a>/)?.[0];
         const button = markup.match(/<button\b[^>]*>[\s\S]*?<\/button>/)?.[0];
+        expect(link).toContain(
+            'href="https://dev.enter.pollinations.ai/pollen"',
+        );
+        expect(link).toContain('aria-label="Open dashboard"');
+        expect(link).toContain('target="_blank"');
+        expect(link).toContain('rel="noopener noreferrer"');
+        expect(link).toContain('src="/avatar.png"');
         expect(button).toContain('aria-label="Account menu for Alex Morgan"');
-        expect(button).toContain('src="/avatar.png"');
+        expect(button).not.toContain("<a ");
         const descriptionId = button?.match(/aria-describedby="([^"]+)"/)?.[1];
         expect(descriptionId).toBeTruthy();
         expect(button).toContain(`id="${descriptionId}"`);
         expect(button).toContain("10 Pollen");
-        const plainTrigger = renderToStaticMarkup(
+    });
+
+    it("leaves an unlinked avatar inside the menu trigger", () => {
+        const markup = renderToStaticMarkup(
             <AccountMenu name="Alex Morgan">
                 <DropdownItem>Disconnect</DropdownItem>
             </AccountMenu>,
-        ).match(/<button\b[^>]*>/)?.[0];
-        expect(plainTrigger).toContain(
-            'aria-label="Account menu for Alex Morgan"',
         );
-        expect(plainTrigger).not.toContain("aria-describedby");
+        expect(markup).not.toContain("<a ");
+        const button = markup.match(/<button\b[^>]*>/)?.[0];
+        expect(button).toContain('aria-label="Account menu for Alex Morgan"');
+        expect(button).not.toContain("aria-describedby");
     });
 
     it("uses a caller-owned dashboard destination in standalone identities", () => {

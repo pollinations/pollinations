@@ -9,27 +9,13 @@ describe("account Pollen", () => {
         const some = renderToStaticMarkup(
             <AccountPollen source={{ type: "budget", remaining: 3.25 }} />,
         );
-        expect(some).toContain("3.25");
-        expect(some).not.toContain("pollen<");
+        expect(some).toContain("3.25 pollen");
         expect(some).not.toContain(EMPTY);
-        expect(
-            renderToStaticMarkup(
-                <AccountPollen
-                    source={{ type: "budget", remaining: 3.25, withUnit: true }}
-                />,
-            ),
-        ).toContain("3.25 pollen");
-        expect(
-            renderToStaticMarkup(
-                <AccountPollen
-                    source={{ type: "budget", remaining: null, withUnit: true }}
-                />,
-            ),
-        ).toContain("pollen");
         const unlimited = renderToStaticMarkup(
             <AccountPollen source={{ type: "budget", remaining: null }} />,
         );
         expect(unlimited).toContain("M12 12c-2-2.67");
+        expect(unlimited).toContain("pollen");
         expect(unlimited).toContain('aria-label="Unlimited app budget"');
         expect(unlimited).not.toContain(EMPTY);
         for (const remaining of [0, -1]) {
@@ -37,7 +23,7 @@ describe("account Pollen", () => {
                 <AccountPollen source={{ type: "budget", remaining }} />,
             );
             expect(zero).toContain(EMPTY);
-            expect(zero).toContain(">0<");
+            expect(zero).toMatch(/>0(<!-- -->)? pollen</);
         }
     });
 

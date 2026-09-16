@@ -48,7 +48,7 @@ export function AppUserMenu({
     const { isLoggedIn } = useAuthState();
     const profile = useAccountProfile({ enabled: isLoggedIn });
     const key = useAccountKey({ enabled: isLoggedIn });
-    // Only keys with the usage scope may read the wallet; skip the request otherwise.
+    // The wallet is shown only for an unlimited key that may read it; ask only then.
     const canReadWallet =
         key.data?.pollenBudget === null &&
         (key.data.permissions?.account?.includes("usage") ?? false);
@@ -121,7 +121,6 @@ export function AppUserMenu({
                                         generationEnabled:
                                             key.data.permissions?.models
                                                 ?.length !== 0,
-                                        withUnit: true,
                                     }}
                                 />
                             )

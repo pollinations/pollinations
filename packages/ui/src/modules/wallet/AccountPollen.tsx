@@ -15,8 +15,6 @@ export type AccountPollenSource =
           /** The app's remaining budget, never the owner's wallet total. `null` = unlimited. */
           remaining?: number | null;
           generationEnabled?: boolean;
-          /** Spell out the unit when the budget stands alone on the line. */
-          withUnit?: boolean;
       };
 
 const emptyClass = "polli:text-intent-danger-text";
@@ -66,7 +64,7 @@ export function AccountPollen({
                 ) : (
                     formatPollen(Math.max(0, remaining))
                 )}
-                {source.withUnit && (unlimited ? "pollen" : " pollen")}
+                {unlimited ? "pollen" : " pollen"}
             </span>
         );
     }

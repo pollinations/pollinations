@@ -112,6 +112,7 @@ function EditKeyPage() {
             <AccountIdentity
                 name={user.githubUsername || user.name}
                 avatarUrl={user.image}
+                dashboardHref="/pollen"
             />
         </AuthModalHeader>
     );

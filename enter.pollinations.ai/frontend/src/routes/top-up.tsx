@@ -164,6 +164,7 @@ function TopUpPage() {
         <AccountIdentity
             name={user.githubUsername || user.name}
             avatarUrl={user.image}
+            dashboardHref="/pollen"
         />
     );
 

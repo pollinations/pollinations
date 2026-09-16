@@ -83,6 +83,9 @@ export function AppUserMenu({
                         "Connected user"
                     }
                     avatarUrl={profile.data?.image}
+                    dashboardHref={
+                        dashboardHref ?? new URL("/pollen", enterUrl).href
+                    }
                     menuLabel={labels.appUserMenu}
                     className="polli:max-w-64"
                     menuClassName="polli:w-max polli:min-w-0"

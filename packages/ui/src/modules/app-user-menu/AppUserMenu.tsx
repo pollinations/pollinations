@@ -163,10 +163,7 @@ export function AppUserMenu({
                                 />
                                 {labels.logout}
                             </DropdownItem>
-                            <div
-                                role="separator"
-                                className="polli:my-1 polli:border-t polli:border-divider"
-                            />
+                            <hr className="polli:my-1 polli:border-t polli:border-divider" />
                             <MenuGroupLabel>
                                 {labels.yourAccount}
                             </MenuGroupLabel>

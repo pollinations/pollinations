@@ -56,6 +56,9 @@ type StripeCheckoutSession = {
     mode: string;
     customer: string | null;
     url: string;
+    metadata?: Record<string, string>;
+    payment_status?: string;
+    payment_intent?: string;
 };
 
 type StripePortalSession = {
@@ -267,6 +270,17 @@ export function createMockStripe(): MockAPI<MockStripeState> {
             };
             state.checkoutSessions.push(session);
             return c.json(session);
+        })
+        .get("/v1/checkout/sessions/:id", (c) => {
+            const session = state.checkoutSessions.find(
+                (session) => session.id === c.req.param("id"),
+            );
+            return session
+                ? c.json(session)
+                : c.json(
+                      { error: { message: "No such checkout session" } },
+                      404,
+                  );
         })
         .post("/v1/billing_portal/sessions", async (c) => {
             const form = await parseForm(c.req.raw);

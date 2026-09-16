@@ -1,6 +1,7 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
+import { ModelHealthSchema } from "../registry/model-health.ts";
 import { MODEL_CATEGORIES } from "../registry/registry.ts";
 import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
 import { SafeSchema } from "./safety.ts";
@@ -310,10 +311,12 @@ export const CreateChatCompletionRequestSchema = z
             description:
                 "AI model for text generation. See /v1/models for full list.",
         }),
-        agent_model: z.string().trim().min(1).max(128).optional().meta({
-            description:
-                "Pollinations extension: override an endpoint agent's inner model without changing the outer model selection. Omit to use the agent's registered default. Only supported by endpoint agents.",
-        }),
+        metadata: z
+            .record(z.string(), z.string())
+            .nullish()
+            .describe(
+                "Passed unchanged to endpoint agents. Each agent documents the metadata keys it accepts.",
+            ),
         modalities: z.array(z.enum(["text", "audio"])).optional(),
         audio: z
             .object({
@@ -438,7 +441,7 @@ export const CreateResponseRequestSchema = z
         tools: z.array(ResponseFunctionToolSchema).optional(),
         tool_choice: z.any().optional(),
         parallel_tool_calls: z.boolean().optional(),
-        metadata: z.record(z.string(), z.string()).optional(),
+        metadata: z.record(z.string(), z.string()).nullish(),
         user: z.string().optional(),
         safety_identifier: z.string().max(64).optional(),
         prompt_cache_key: z.string().optional(),
@@ -756,6 +759,7 @@ export const OpenAIModelSchema = z
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),
         per_user_rpm: z.number().positive().nullable().optional(),
+        health: ModelHealthSchema.optional(),
     })
     .meta({
         description: "OpenAI-compatible model object with capability metadata",

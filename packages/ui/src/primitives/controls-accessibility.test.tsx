@@ -1,6 +1,8 @@
+import { Dialog as ArkDialog } from "@ark-ui/react/dialog";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { AccountMenu } from "../compositions/AccountMenu.tsx";
+import { DialogFooter, DialogHeader } from "./Dialog.tsx";
 import { DropdownItem } from "./DropdownItem.tsx";
 import { IconButton } from "./IconButton.tsx";
 import { TableHeaderCell } from "./Table.tsx";
@@ -59,5 +61,45 @@ describe("shared control accessibility", () => {
         );
 
         expect(markup).toContain('aria-sort="descending"');
+    });
+
+    it("renders dialog header and footer compositions", () => {
+        const headerMarkup = renderToStaticMarkup(
+            <ArkDialog.Root open>
+                <ArkDialog.Content>
+                    <DialogHeader
+                        title={<span>Model Details</span>}
+                        description="Configure endpoint settings."
+                        data-testid="dialog-header"
+                    />
+                </ArkDialog.Content>
+            </ArkDialog.Root>,
+        );
+        expect(headerMarkup).toContain("Model Details");
+        expect(headerMarkup).toContain("Configure endpoint settings.");
+        expect(headerMarkup).toContain('data-testid="dialog-header"');
+        const titleId = headerMarkup.match(/<h2[^>]*id="([^"]+)"/)?.[1];
+        const descriptionId = headerMarkup.match(
+            /<div[^>]*id="([^"]+)"[^>]*>Configure endpoint settings\./,
+        )?.[1];
+        expect(titleId).toBeTruthy();
+        expect(descriptionId).toBeTruthy();
+        expect(headerMarkup).toContain(`aria-labelledby="${titleId}"`);
+        expect(headerMarkup).toContain(`aria-describedby="${descriptionId}"`);
+
+        const headerNoDescMarkup = renderToStaticMarkup(
+            <ArkDialog.Root open>
+                <DialogHeader title="Title Only" />
+            </ArkDialog.Root>,
+        );
+        expect(headerNoDescMarkup).toContain("Title Only");
+
+        const footerMarkup = renderToStaticMarkup(
+            <DialogFooter data-testid="dialog-footer">
+                <button type="button">Cancel</button>
+            </DialogFooter>,
+        );
+        expect(footerMarkup).toContain("Cancel");
+        expect(footerMarkup).toContain('data-testid="dialog-footer"');
     });
 });

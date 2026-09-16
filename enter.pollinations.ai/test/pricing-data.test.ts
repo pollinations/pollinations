@@ -39,6 +39,7 @@ import {
     hasPollinationsTools,
 } from "../frontend/src/components/models/model-info.ts";
 import { ModelRow } from "../frontend/src/components/models/model-row.tsx";
+import { ModelStatusChips } from "../frontend/src/components/models/model-status-chips.tsx";
 import { ModelPricingLedger } from "../frontend/src/components/models/price-badge.tsx";
 
 const getCatalogModelPrices = () =>
@@ -50,6 +51,32 @@ const getCatalogModelPrices = () =>
         ...getEmbeddingModelsInfo(),
         ...getModel3dModelsInfo(),
     ]);
+
+test("health indicators use three states, keeping stale success unknown", () => {
+    for (const [status, stale, label] of [
+        ["healthy", false, "Healthy over the last 24 hours"],
+        ["degraded", false, "Elevated errors over the last 24 hours"],
+        ["down", false, "Elevated errors over the last 24 hours"],
+        ["unknown", false, "Status unknown or stale"],
+        ["healthy", true, "Status unknown or stale"],
+    ] as const) {
+        const markup = renderToStaticMarkup(
+            createElement(ModelStatusChips, {
+                showNew: false,
+                showAlpha: false,
+                health: {
+                    status,
+                    stale,
+                    success_rate: null,
+                    sample_size: 0,
+                    checked_at: null,
+                    window_minutes: 1440,
+                },
+            }),
+        );
+        expect(markup).toContain(`aria-label="${label}"`);
+    }
+});
 
 const getCatalogModels = () => [
     ...getTextModelsInfo(),
@@ -207,7 +234,7 @@ test("catalog distinguishes flat image rates from image-token rates", () => {
     expect(nanoPrice?.prices).toContainEqual({
         direction: "output",
         kind: "image",
-        price: "120.0",
+        price: "126.6",
         unit: "token",
     });
 });
@@ -596,19 +623,19 @@ test("Qwen Image 3 uses Fal's output tier and reference-image rates", () => {
     ).toBeCloseTo(0.084, 8);
 });
 
-test("updated provider prices are reflected for xAI media and OpenRouter text", () => {
+test("updated provider prices are reflected for xAI media and text routes", () => {
     expect(
         getCostDefinition("meta/llama-4-scout").promptTextTokens,
     ).toBeCloseTo(0.0000001, 12);
     expect(
         getCostDefinition("stepfun/step-3.5-flash").promptTextTokens,
-    ).toBeCloseTo(0.0000001, 12);
+    ).toBeCloseTo(0.0000001 * 1.055, 12);
     expect(
         getCostDefinition("mistralai/mistral-small-4").promptCachedTokens,
-    ).toBeCloseTo(0.000000015, 12);
+    ).toBeCloseTo(0.000000015 * 1.055, 12);
     expect(
         getCostDefinition("qwen/qwen3-coder-next").promptCachedTokens,
-    ).toBeCloseTo(0.00000007, 12);
+    ).toBeCloseTo(0.00000007 * 1.055, 12);
     expect(
         getCostDefinition("mistralai/mistral-small-3.2").promptCachedTokens,
     ).toBeUndefined();
@@ -627,7 +654,7 @@ test("updated provider prices are reflected for xAI media and OpenRouter text", 
             promptImageTokens: 1,
             completionImageTokens: 1,
         }).totalCost,
-    ).toBeCloseTo(0.06, 8);
+    ).toBeCloseTo(0.06 * 1.055, 8);
     for (const [quality, resolution, expected] of [
         ["low", "1k", 0.05],
         ["low", "2k", 0.07],
@@ -641,7 +668,7 @@ test("updated provider prices are reflected for xAI media and OpenRouter text", 
                 undefined,
                 { quality, resolution },
             ).totalPrice,
-        ).toBeCloseTo(expected, 8);
+        ).toBeCloseTo(expected * 1.055, 8);
     }
     expect(
         calculateCost("x-ai/grok-imagine-video", {
@@ -654,7 +681,7 @@ test("updated provider prices are reflected for xAI media and OpenRouter text", 
             promptImageTokens: 1,
             completionVideoSeconds: 5,
         }).totalCost,
-    ).toBeCloseTo(0.71, 8);
+    ).toBeCloseTo(0.71 * 1.055, 8);
 });
 
 test("Gemini search cost follows each route's provider metadata", () => {
@@ -712,10 +739,13 @@ test("Gemini search cost follows each route's provider metadata", () => {
     expect(geminiSearchPrice.totalPrice).toBeCloseTo(0.535, 8);
 
     // OpenRouter search-capable routes bill per reported web search request.
-    expect(gemini3FlashCost.totalCost).toBeCloseTo(3.528, 8);
-    expect(geminiSearchFastCost.totalCost).toBeCloseTo(2.828, 8);
-    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(4.528, 8);
-    expect(ungroundedGeminiSearchFastCost.totalCost).toBeCloseTo(2.8, 8);
+    expect(gemini3FlashCost.totalCost).toBeCloseTo(3.528 * 1.055, 8);
+    expect(geminiSearchFastCost.totalCost).toBeCloseTo(2.828 * 1.055, 8);
+    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(4.528 * 1.055, 8);
+    expect(ungroundedGeminiSearchFastCost.totalCost).toBeCloseTo(
+        2.8 * 1.055,
+        8,
+    );
 });
 
 test("public model catalog exposes Gemini billing prices without internals", () => {
@@ -734,7 +764,7 @@ test("public model catalog exposes Gemini billing prices without internals", () 
         expect.arrayContaining([
             expect.objectContaining({
                 label: "Search",
-                price: "14",
+                price: "14.77",
                 currency: "pollen",
                 quantity: 1_000,
                 unit: "search requests",
@@ -1069,9 +1099,9 @@ test("MiniMax M2.7 uses the pinned DeepInfra OpenRouter rates", () => {
     expect(definition.paidOnly).toBe(true);
     expect(definition.priceMultiplier).toBe(1);
     expect(definition.cost).toMatchObject({
-        promptTextTokens: 0.25 / 1e6,
-        promptCachedTokens: 0.05 / 1e6,
-        completionTextTokens: 1 / 1e6,
+        promptTextTokens: (0.25 / 1e6) * 1.055,
+        promptCachedTokens: (0.05 / 1e6) * 1.055,
+        completionTextTokens: (1 / 1e6) * 1.055,
     });
 });
 
@@ -1138,9 +1168,9 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
         unit: "token_hour",
         units: 1_000_000,
     });
-    expect(cacheWrite[0].unitCost).toBeCloseTo(1 / 12_000_000, 15);
-    expect(cacheWrite[0].cost).toBeCloseTo(1 / 12, 15);
-    expect(cacheWrite[0].price).toBeCloseTo(1 / 12, 15);
+    expect(cacheWrite[0].unitCost).toBeCloseTo((1 / 12_000_000) * 1.055, 15);
+    expect(cacheWrite[0].cost).toBeCloseTo((1 / 12) * 1.055, 15);
+    expect(cacheWrite[0].price).toBeCloseTo((1 / 12) * 1.055, 15);
 
     const proCacheWrite = calculateBillingAdjustments(
         getRegistryModelDefinition("google/gemini-3.1-pro-preview"),
@@ -1152,8 +1182,11 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
         "google/gemini-3.1-pro-preview",
     );
     expect(proCacheWrite).toHaveLength(1);
-    expect(proCacheWrite[0].unitCost).toBeCloseTo(4.5 / 12_000_000, 15);
-    expect(proCacheWrite[0].cost).toBeCloseTo(0.375, 15);
+    expect(proCacheWrite[0].unitCost).toBeCloseTo(
+        (4.5 / 12_000_000) * 1.055,
+        15,
+    );
+    expect(proCacheWrite[0].cost).toBeCloseTo(0.375 * 1.055, 15);
 
     const geminiCacheWrite = calculateBillingAdjustments(
         getRegistryModelDefinition("google/gemini-3.7-flash"),
@@ -1165,8 +1198,11 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
         "google/gemini-3.7-flash",
     );
     expect(geminiCacheWrite).toHaveLength(1);
-    expect(geminiCacheWrite[0].unitCost).toBeCloseTo(0.5 / 12_000_000, 15);
-    expect(geminiCacheWrite[0].cost).toBeCloseTo(0.5 / 12, 15);
+    expect(geminiCacheWrite[0].unitCost).toBeCloseTo(
+        (0.5 / 12_000_000) * 1.055,
+        15,
+    );
+    expect(geminiCacheWrite[0].cost).toBeCloseTo((0.5 / 12) * 1.055, 15);
 
     for (const model of [
         "google/gemini-3-flash-preview",
@@ -1192,9 +1228,9 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
             kind: "search_request",
             unit: "request",
             units: 1,
-            unitCost: 0.014,
-            cost: 0.014,
-            price: 0.014,
+            unitCost: 0.014 * 1.055,
+            cost: 0.014 * 1.055,
+            price: 0.014 * 1.055,
         });
         expect(
             calculateBillingAdjustments(
@@ -1221,9 +1257,9 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
         kind: "search_request",
         unit: "request",
         units: 1,
-        unitCost: 0.014,
-        cost: 0.014,
-        price: 0.014,
+        unitCost: 0.014 * 1.055,
+        cost: 0.014 * 1.055,
+        price: 0.014 * 1.055,
     });
 
     const streamedSearch = calculateBillingAdjustments(
@@ -1246,9 +1282,9 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
             kind: "search_request",
             unit: "request",
             units: 2,
-            unitCost: 0.014,
-            cost: 0.028,
-            price: 0.028,
+            unitCost: 0.014 * 1.055,
+            cost: 0.028 * 1.055,
+            price: 0.028 * 1.055,
         },
     ]);
 
@@ -1333,9 +1369,9 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
             kind: "search_request",
             unit: "request",
             units: 3,
-            unitCost: 0.014,
-            cost: 0.042,
-            price: 0.042,
+            unitCost: 0.014 * 1.055,
+            cost: 0.042 * 1.055,
+            price: 0.042 * 1.055,
         },
     ]);
 

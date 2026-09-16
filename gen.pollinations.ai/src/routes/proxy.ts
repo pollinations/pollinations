@@ -84,7 +84,7 @@ import {
     Generate3dRequestQueryParamsSchema,
 } from "@/schemas/model3d.ts";
 import {
-    type ModelListQueryParams,
+    ModelListHeadersSchema,
     ModelListQueryParamsSchema,
 } from "@/schemas/models.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
@@ -109,6 +109,7 @@ import {
     simpleAudioQuerySchema,
     textBodyLimit,
 } from "./generation-handlers.ts";
+import { filterCatalogEntries } from "./model-catalog.ts";
 import { handleRealtimeWebSocket } from "./realtime.ts";
 
 const ModelInfoListSchema = z.array(ModelInfoSchema).meta({
@@ -250,21 +251,8 @@ function hasPaidBalance(c: any): boolean | undefined {
     return (user.packBalance ?? 0) > 0;
 }
 
-// Optionally filter entries by the validated `?community` query parameter.
-function filterEntriesByCommunityParam(
-    entries: GenerationModelEntry[],
-    communityParam: string | undefined,
-): GenerationModelEntry[] {
-    if (communityParam === undefined) return entries;
-    const wantCommunity = communityParam === "true" || communityParam === "1";
-    return entries.filter(
-        (entry) => (entry.communityEndpoint !== undefined) === wantCommunity,
-    );
-}
-
-// Factory for model-list endpoints: validates the community query parameter,
-// filters by API key permissions, paid balance, and community flag,
-// then returns the model list as JSON.
+// Factory for model-list endpoints. Permission filtering always happens before
+// the optional discovery-only source and status filters.
 const modelsListHandler = (
     getEntries: (
         c: Context<Env>,
@@ -272,22 +260,17 @@ const modelsListHandler = (
 ) =>
     [
         validator("query", ModelListQueryParamsSchema),
+        validator("header", ModelListHeadersSchema),
         async (c: Context<Env>) => {
-            const { community } = c.req.valid(
-                "query" as never,
-            ) as ModelListQueryParams;
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
-            return c.json(
-                filterEntriesByCommunityParam(
-                    filterEntriesByPermissions(
-                        await getEntries(c),
-                        allowedModels,
-                        paidBalance,
-                    ),
-                    community,
-                ).map((entry) => entry.info),
+            const entries = filterEntriesByPermissions(
+                await getEntries(c),
+                allowedModels,
+                paidBalance,
             );
+            const catalog = await filterCatalogEntries(c, entries);
+            return c.json(catalog.map((entry) => entry.info));
         },
     ] as const;
 
@@ -353,6 +336,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         }),
         pricing: entry.info.pricing,
         capabilities: entry.info.capabilities,
+        ...(entry.info.health && { health: entry.info.health }),
         supported_parameters: entry.info.supported_parameters,
         ...(entry.info.tools && { tools: entry.info.tools }),
         ...(entry.info.reasoning && { reasoning: entry.info.reasoning }),
@@ -419,19 +403,17 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         validator("query", ModelListQueryParamsSchema),
+        validator("header", ModelListHeadersSchema),
         async (c) => {
-            const { community } = c.req.valid(
-                "query" as never,
-            ) as ModelListQueryParams;
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
-            const modelEntries = filterEntriesByCommunityParam(
+            const modelEntries = await filterCatalogEntries(
+                c,
                 filterEntriesByPermissions(
                     await getVisibleModelEntries(c),
                     allowedModels,
                     paidBalance,
                 ),
-                community,
             );
             return c.json({
                 object: "list" as const,
@@ -672,6 +654,8 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Successful text JSON responses contain usage. Text streams contain a usage chunk before `[DONE]`; missing text-provider usage fails the response.",
                 "",
+                "Metadata is passed unchanged to endpoint agents; see the agent’s documentation for supported keys.",
+                "",
                 mediaResponseDescription,
             ].join("\n"),
             responses: {
@@ -717,6 +701,8 @@ export const proxyRoutes = new Hono<Env>()
                 "Response storage, previous response IDs, conversations, background execution, and encrypted or referenced state are not supported. Direct providers may accept caller-supplied function tools; managed prompt agents ignore these definitions and use only their configured MCP tools. Completed MCP output items can be replayed as history without executing them again.",
                 "",
                 "Successful text JSON responses and terminal streaming events contain usage; missing text-provider usage fails the response.",
+                "",
+                "Metadata is passed unchanged to endpoint agents; see the agent’s documentation for supported keys.",
                 "",
                 mediaResponseDescription,
             ].join("\n"),

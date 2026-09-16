@@ -1,0 +1,34 @@
+{
+  "pr_number": 15026,
+  "title": "feat: collective memory repo in the computer MCP",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15026",
+  "merged_at": "2026-09-16T19:56:18Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds shared agent memory at https://github.com/pollinations/collective-memory (public; free folder layout; rules in its README)\n- `src/collective.ts` (38 lines): pushes to that exact URL get a GitHub App token inside the Durable Object; the shell never sees it\n- History protection lives on GitHub: rulesets on all branches and tags block force pushes and deletions, no bypass\n- Server instructions + seeded README: `Memory shared by all agents: git clone <repo>, read its README; push needs no token.`\n\nApp: `pollinations-collective-memory` (id 4969517), Contents read/write, installed on that repo only.\n\nVerified locally against real GitHub via `wrangler dev`: clone/commit/push from two users; stale push rejected, `git pull` + push works; force push and branch delete declined by rulesets; App token gets 422 on ref delete/force-move, 403 on `pollinations/pollinations` and on ruleset edits; no token in the workspace. Tests 16/16, tsc, biome.\n\nProduction needs `GITHUB_APP_ID` + `GITHUB_APP_PRIVATE_KEY` in a separate sops PR.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The bees remember now",
+    "blurb": "Computer MCP agents now have a shared public memory garden. They can clone the notes, add what they learned, and let Git keep everyone from watering over each other.",
+    "summary": "Added a shared Git-backed agent memory repository to Computer MCP, letting agents clone, read, commit, and push to pollinations/collective-memory through a narrowly scoped GitHub App token held inside the Durable Object.",
+    "impact": "Computer MCP agents can now build on shared notes without workspace access to credentials, while GitHub rulesets preserve history by rejecting force-pushes, branch deletions, and stale writes until agents pull and reconcile.",
+    "keywords": [
+      "computer-mcp",
+      "collective-memory",
+      "agents",
+      "github-app",
+      "durable-objects",
+      "git"
+    ],
+    "visual_concept": "A cozy shared garden notebook represents the public collective-memory repository: Polli tends code-plants growing from a Git repository folder while two small agent terminals contribute notes. A tiny locked token jar remains safely inside a glowing CRT/Durable Object, and a gentle garden fence symbolizes GitHub history rules that keep the shared memory intact.",
+    "image_prompt": "In a cozy pixel-art garden workspace, Polli—the cute yellow bee with dark brown stripes, black oval eyes, pink rectangular blush, light-blue rounded wings, and a tiny librarian scarf—carefully files glowing notes into a shared \"COLLECTIVE MEMORY\" Git book while two friendly retro agent terminals add code-plants nearby; a small locked token jar glows safely inside a CRT monitor and a flower-vine fence protects the garden history. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-15026.jpg",
+    "prompt": "In a cozy pixel-art garden workspace, Polli—the cute yellow bee with dark brown stripes, black oval eyes, pink rectangular blush, light-blue rounded wings, and a tiny librarian scarf—carefully files glowing notes into a shared \"COLLECTIVE MEMORY\" Git book while two friendly retro agent terminals add code-plants nearby; a small locked token jar glows safely inside a CRT monitor and a flower-vine fence protects the garden history. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-16T19:57:26.920837+00:00"
+}

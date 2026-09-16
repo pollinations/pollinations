@@ -262,7 +262,7 @@ test("routes Composio with the authenticated user", async () => {
 
 test("routes Computer with the authenticated user and bills the flat call rate", async () => {
     const { key, userId } = await createTestApiKey({
-        user: { tierBalance: 1 },
+        user: { tierBalance: 1, githubId: 583231, githubUsername: "octocat" },
     });
     const response = await SELF.fetch(
         "https://gen.pollinations.ai/mcp/computer",
@@ -272,6 +272,7 @@ test("routes Computer with the authenticated user and bills the flat call rate",
                 Authorization: `Bearer ${key}`,
                 Cookie: "session=private",
                 "x-pollinations-user-id": "spoofed-user",
+                "x-pollinations-user-github": "1+spoofed",
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(MCP_REQUEST),
@@ -282,7 +283,11 @@ test("routes Computer with the authenticated user and bills the flat call rate",
     expect(await response.json()).toEqual({
         jsonrpc: "2.0",
         id: 1,
-        result: { content: [{ type: "text", text: `computer:${userId}` }] },
+        result: {
+            content: [
+                { type: "text", text: `computer:${userId}:583231+octocat` },
+            ],
+        },
     });
     for (const header of Object.values(MCP_USAGE_HEADERS)) {
         expect(response.headers.has(header)).toBe(false);

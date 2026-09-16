@@ -1,0 +1,34 @@
+{
+  "pr_number": 15000,
+  "title": "fix: seed Open WebUI task model with a non-reasoning model",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15000",
+  "merged_at": "2026-09-16T15:04:26Z",
+  "labels": [],
+  "pr_body_excerpt": "- Seeds `TASK_MODEL_EXTERNAL` as `openai/gpt-5.4-nano`. `gpt-5-nano` spent 256–1024 reasoning tokens and 3–12 s per title, tags and follow-up call; `gpt-5.4-nano` answers in ~2.3 s with none.\n- The live `task.model.external` config rows in prod and staging were updated directly (env values only seed an empty config table). This keeps a fresh database consistent.\n- Verified on production: Enter-to-reply 17.6 s → 5.3 s; all task calls now at ~2.3 s.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Replies found their wings",
+    "blurb": "Open WebUI's little task runner has been given a faster, non-reasoning brain. Polli watched the waiting time shrink while the titles and tags kept arriving on schedule.",
+    "summary": "Open WebUI now seeds TASK_MODEL_EXTERNAL with openai/gpt-5.4-nano instead of gpt-5-nano, avoiding 256–1024 reasoning tokens per task and bringing task calls to about 2.3 seconds.",
+    "impact": "Enter-to-reply on the production Open WebUI flow drops from 17.6 seconds to 5.3 seconds, so titles, tags, and follow-up tasks finish much sooner.",
+    "keywords": [
+      "open-webui",
+      "task-model",
+      "gpt-5.4-nano",
+      "latency",
+      "performance",
+      "chat"
+    ],
+    "visual_concept": "Depict Open WebUI as a cozy retro chat terminal whose small task cards zip through a garden path instead of lingering in a thought cloud. Polli, wearing tiny speed goggles, guides the cards toward a compact glowing model seed labeled “5.4 nano,” while code-plants and flowers show that the faster task model keeps the conversation garden moving.",
+    "image_prompt": "A cozy pixel art Open WebUI hackerspace where a retro chat terminal sends tiny title-and-tag task cards along a fast garden path to a glowing lime green (#ecf874) seed labeled “5.4 nano”; Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears tiny speed goggles and cheerfully guides them past blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-15000.jpg",
+    "prompt": "A cozy pixel art Open WebUI hackerspace where a retro chat terminal sends tiny title-and-tag task cards along a fast garden path to a glowing lime green (#ecf874) seed labeled “5.4 nano”; Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears tiny speed goggles and cheerfully guides them past blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-16T15:05:29.744084+00:00"
+}

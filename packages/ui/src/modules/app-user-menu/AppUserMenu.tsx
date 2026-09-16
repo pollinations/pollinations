@@ -78,10 +78,10 @@ export function AppUserMenu({
                     {/* Same silhouette as the connected pill: a round mark where the avatar will be. */}
                     <span
                         aria-hidden="true"
-                        className="polli:flex polli:h-8 polli:w-8 polli:shrink-0 polli:items-center polli:justify-center polli:rounded-full polli:bg-theme-text-strong polli:text-theme-bg-active"
+                        className="polli:flex polli:h-8 polli:w-8 polli:shrink-0 polli:items-center polli:justify-center polli:rounded-full polli:bg-theme-bg-pale polli:text-theme-text-strong"
                     >
                         <span
-                            className="polli:block polli:h-5 polli:w-5 polli:bg-current"
+                            className="polli:block polli:h-6 polli:w-6 polli:bg-current"
                             style={{
                                 mask: `url('${markUrl}') center / contain no-repeat`,
                                 WebkitMask: `url('${markUrl}') center / contain no-repeat`,

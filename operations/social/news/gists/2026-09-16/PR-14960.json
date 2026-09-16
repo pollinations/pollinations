@@ -1,0 +1,34 @@
+{
+  "pr_number": 14960,
+  "title": "feat: Sirius Elevator prompt agent — descent chapter (Fixes #14823)",
+  "author": "fadyabohamza-netizen",
+  "url": "https://github.com/pollinations/pollinations/pull/14960",
+  "merged_at": "2026-09-16T15:43:38Z",
+  "labels": [],
+  "pr_body_excerpt": "## Sirius Elevator: The Descent\n\nA playable prompt agent for the first chapter of the Sirius Cybernetics Elevator Challenge.\n\n**Deployed agent:** `fadyabohamza-netizen/sirius-elevator` ([agent ID `2e43f314-f6d6-4f2e-a91d-a17afe258b26`](https://enter.pollinations.ai/account/agents))\n\n**Public test repo with playtest transcript:** [fadyabohamza-netizen/sirius-elevator-agent](https://github.com/fadyabohamza-netizen/sirius-elevator-agent)\n\n---\n\n### What this does\n\n- Starts on **floor 3**, finishes on **floor 1**. The user must persuade a cheerful-but-neurotic elevator to descend.\n- Uses a deterministic **refusal countdown** (`refusals_remaining` JSON field) so the game reliably progresses.\n- Floor 3: 5 refusals required, witty neurotic protest.\n- Floor 2: 8 refusals required, maximum resistance, CAPS, emotional outbursts.\n- Floor 1: arrival announced, game over, fresh game available.\n- **Towel exception:** mentions a towel halve the remaining refusals.\n- Movement is always consistent with the `floor` / `action` / `message` fields — no skipped floors.\n\n### How to run\n\n```bash\ncurl https://gen.pollinations.ai/v1/chat/completions \\\n  -H \"Authorization: Bearer <POLLINATIONS_API_KEY>\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"fadyabohamza-netizen/sirius-elevator\",\"messages\":[{\"role\":\"user\",\"content\":\"hello\"}]}'\n```\n\n### What's included\n\n- `agent.json` — pure prompt agent. No code, no database, no new framework.\n- Based on the existing [character prompts](https://github.com/pollinations/pollinations/blob/main/apps/sirius-cybernetics-elevator-challenge/src/prompts.ts) and [BUILD_YOUR_OWN_AGENT.md](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md).\n\n### Customization\n\nEdit `systemPrompt` in `agent.json` to change the personality, starting floor, refusal count, or response format.\n\nFixes #14823\n\n\n## Maintainer follow-up\n\n- Replies are now dialogue plus a status line (`🛗 Floor 3 · 4 refusals left`) so the game plays in any chat client",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The elevator has feelings",
+    "blurb": "A cheerful, deeply neurotic elevator is now available as a playable prompt agent. Persuade it from Floor 3 to Floor 1; a towel may speed up the negotiations.",
+    "summary": "Added the deployed `fadyabohamza-netizen/sirius-elevator` prompt agent, a deterministic chat game that tracks floor state and refusal countdowns from Floor 3 through Floor 1, with towel mentions halving remaining refusals.",
+    "impact": "Developers can call the agent through `/v1/chat/completions` and get consistent elevator dialogue plus status lines such as `🛗 Floor 3 · 4 refusals left` in any chat client.",
+    "keywords": [
+      "community",
+      "prompt-agent",
+      "sirius-elevator",
+      "chat-completions",
+      "game",
+      "deterministic"
+    ],
+    "visual_concept": "Depict Polli as a tiny elevator operator wearing a little bellhop cap, gently presenting a towel to a cozy retro elevator with an expressive, anxious face in its panel. The elevator descends through a flower-filled building from a glowing Floor 3 sign toward Floor 1, with a small status display showing the refusal count; the scene represents reliable stateful play and the towel shortcut.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny bellhop cap, offering a folded towel to a cheerful but nervous retro elevator with expressive pixel eyes as it descends past flower pots and code-vines from Floor 3 toward Floor 1. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes; a small pixel display reads “FLOOR 3 · 4 LEFT,” nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14960.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny bellhop cap, offering a folded towel to a cheerful but nervous retro elevator with expressive pixel eyes as it descends past flower pots and code-vines from Floor 3 toward Floor 1. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes; a small pixel display reads “FLOOR 3 · 4 LEFT,” nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-16T15:44:52.319966+00:00"
+}

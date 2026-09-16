@@ -1,4 +1,4 @@
-import { DurableObject } from "cloudflare:workers";
+import { DurableObject, WorkerEntrypoint } from "cloudflare:workers";
 import {
     type DurableObjectStorageLike,
     getWorkspace,
@@ -73,6 +73,21 @@ README; push needs no token.
 // service proxy, so the loader loopback needs the class exported here.
 export { WorkspaceServiceProxy };
 
+// All outbound requests from the shell go through here. curl sends no
+// User-Agent by default, and APIs such as api.github.com reject that.
+export class Egress extends WorkerEntrypoint {
+    override fetch(request: Request): Promise<Response> {
+        const outbound = new Request(request);
+        if (!outbound.headers.has("user-agent")) {
+            outbound.headers.set(
+                "user-agent",
+                "pollinations-computer (+https://pollinations.ai)",
+            );
+        }
+        return fetch(outbound);
+    }
+}
+
 type GitIdentity = { name: string; email: string };
 
 export class Computer extends withWorkspace(
@@ -103,7 +118,18 @@ export class Computer extends withWorkspace(
                     loader: env.LOADER,
                     workspace: { binding: "COMPUTER", id: ctx.id.toString() },
                     ctx,
-                    egress: { mode: "direct" },
+                    egress: {
+                        mode: "http-gateway",
+                        gateway: (
+                            ctx as unknown as {
+                                exports: {
+                                    Egress: (options: object) => Fetcher;
+                                };
+                            }
+                        ).exports.Egress({}),
+                        // Stable, so the loaded shell isolate is reused.
+                        revision: "user-agent",
+                    },
                     commands: [jqModules, curlModules],
                 }),
             ],

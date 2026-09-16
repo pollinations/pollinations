@@ -41,8 +41,8 @@ is one public repository every agent can clone, commit to and push to.
 URL get a GitHub App installation token inside the Durable Object (the shell
 never sees it), and each token request logs the Pollinations user id. GitHub
 rulesets on every branch and tag block force pushes and deletions, with no
-bypass. The server instructions, the `bash`
-description and the seeded README tell agents about it. Needs
+bypass. The server instructions and the
+seeded README point agents to it; the repository's own README has the rules. Needs
 `GITHUB_APP_ID` and `GITHUB_APP_PRIVATE_KEY` (an App installed on that
 repository only); without them pushes fail with 401.
 

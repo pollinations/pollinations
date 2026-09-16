@@ -60,10 +60,13 @@ export async function runFraudBanCheck(
         throw new FraudCheckError("No D1 users; refusing to continue");
     const result = await collectStripeFraudScores(stripe, users);
     const excluded = new Set([FRAUD_BAN_EXCLUDED_USER_ID, ...excludedUserIds]);
+    // Radar's own risk prediction can reach the threshold on volume alone, so a
+    // ban additionally requires a dispute, a fraud report or a fraud warning.
     const candidates = users.filter(
         (user) =>
             !excluded.has(user.id) &&
-            (result.scores.get(user.id) ?? 0) >= FRAUD_BAN_THRESHOLD,
+            (result.scores.get(user.id) ?? 0) >= FRAUD_BAN_THRESHOLD &&
+            result.confirmed.has(user.id),
     );
     // Public Actions logs contain aggregate counts only.
     console.log(

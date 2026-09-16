@@ -18,7 +18,11 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { expect } from "vitest";
-import { type AuthEnv, authFromSnapshot } from "../src/middleware/auth.ts";
+import {
+    type AuthEnv,
+    authFromSnapshot,
+    keyPermissionsLink,
+} from "../src/middleware/auth.ts";
 import { TEXT_BALANCE_NOTICE_ENABLED } from "../src/middleware/text-balance-notice.ts";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
@@ -153,7 +157,11 @@ test("restored auth snapshots normalize aliases once without expanding model or 
             account: ["profile"],
         });
     }
-    expect((await app.request("/other%2Fcustom")).status).toBe(403);
+    const forbidden = await app.request("/other%2Fcustom");
+    expect(forbidden.status).toBe(403);
+    expect(await forbidden.text()).toBe(
+        "Model 'other/custom' is not allowed for this API key. Manage key permissions at https://enter.pollinations.ai/edit-key?id=test",
+    );
     expect((await app.request("/anthropic%2Fclaude-haiku-4.5")).status).toBe(
         403,
     );
@@ -253,15 +261,55 @@ test("restored auth allows old and future names without expanding account or com
         });
     }
     for (const model of ["other/custom", "flux"]) {
-        expect(
-            (await app.request(`/${encodeURIComponent(model)}`)).status,
-        ).toBe(403);
+        const res = await app.request(`/${encodeURIComponent(model)}`);
+        expect(res.status).toBe(403);
+        expect(await res.text()).toBe(
+            `Model '${model}' is not allowed for this API key. Manage key permissions at https://enter.pollinations.ai/edit-key?id=test`,
+        );
     }
     expect(snapshot.apiKey.permissions.models).toEqual([
         "openai-fast",
         "openai/gpt-5-nano",
         "owner/custom",
     ]);
+});
+
+test("keyPermissionsLink resolves production and staging editor links", () => {
+    expect(keyPermissionsLink("key-1")).toBe(
+        "https://enter.pollinations.ai/edit-key?id=key-1",
+    );
+    expect(keyPermissionsLink("key-1", "staging")).toBe(
+        "https://staging.enter.pollinations.ai/edit-key?id=key-1",
+    );
+});
+
+test("requireModelAccess uses staging host for staging environment", async () => {
+    const snapshot = {
+        user: { id: "permission-test", tier: "seed" },
+        apiKey: {
+            id: "staging-key-id",
+            permissions: {
+                models: ["openai"],
+                account: ["profile"],
+            },
+        },
+    };
+    const app = new Hono<AuthEnv>();
+    app.use("*", authFromSnapshot(snapshot));
+    app.get("/:model", (c) => {
+        const model = c.req.param("model");
+        c.set("model", { requested: model, resolved: model });
+        c.var.auth.requireModelAccess();
+        return c.json(c.var.auth.apiKey?.permissions);
+    });
+
+    const responseEnv = await app.request("/forbidden-model", undefined, {
+        ENVIRONMENT: "staging",
+    } as CloudflareBindings);
+    expect(responseEnv.status).toBe(403);
+    expect(await responseEnv.text()).toBe(
+        "Model 'forbidden-model' is not allowed for this API key. Manage key permissions at https://staging.enter.pollinations.ai/edit-key?id=staging-key-id",
+    );
 });
 
 test("filters OpenAI-compatible model list by API key permissions", async ({

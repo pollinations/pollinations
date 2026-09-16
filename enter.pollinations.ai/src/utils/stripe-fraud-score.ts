@@ -4,11 +4,30 @@ import type Stripe from "stripe";
 export class FraudCheckError extends Error {}
 
 export const FRAUD_BAN_THRESHOLD = 0.75;
+/**
+ * Charges before this date can never be attributed: checkout created a
+ * throwaway customer per purchase and wrote the user id only on the Checkout
+ * Session, so neither the stored customer nor the payment metadata identifies
+ * the buyer. A live scan on 2026-09-16 attributed 0 of the 12,248 charges
+ * before May and 100% from June, so scanning them is pure cost.
+ */
+export const FRAUD_SCAN_START_SECONDS = Math.floor(Date.UTC(2026, 4, 1) / 1000);
 // Manually settled account: never automatically ban it.
 export const FRAUD_BAN_EXCLUDED_USER_ID = "GcN1eNVQXW58eLIppqxlgvI6a1w9Scic";
 const WEIGHTS = { fd: 5, ew: 2, fraud: 3, hr: 1, rb: 0 } as const;
 type Signal = keyof typeof WEIGHTS;
 const SIGNALS = Object.keys(WEIGHTS) as Signal[];
+/**
+ * Signals where a person or a card issuer confirmed fraud after the fact. The
+ * rest are only Radar's prediction at the moment of the attempt, and repeated
+ * declines of one legitimate card escalate those on their own, so prediction
+ * volume alone must never ban an account.
+ */
+const CONFIRMED_SIGNALS = [
+    "fd",
+    "ew",
+    "fraud",
+] as const satisfies readonly Signal[];
 export type FraudPayment = { chargeId: string } & Partial<
     Record<Signal, boolean>
 >;
@@ -49,6 +68,12 @@ export function cappedFraudScore(payments: Iterable<FraudPayment>): number {
     return Number(score.toFixed(2));
 }
 
+export function hasConfirmedFraud(payments: Iterable<FraudPayment>): boolean {
+    for (const payment of payments)
+        if (CONFIRMED_SIGNALS.some((signal) => payment[signal])) return true;
+    return false;
+}
+
 export type FraudUser = { id: string; stripe_customer_id: string | null };
 
 /** Fail the whole scan before any writes if a source cannot be fully read. */
@@ -83,7 +108,7 @@ export async function collectStripeFraudScores(
     let conflicting = 0;
     for await (const charge of stripe.charges.list({
         limit: 100,
-        created: { lte: until },
+        created: { gte: FRAUD_SCAN_START_SECONDS, lte: until },
     })) {
         if (!charge.livemode)
             throw new FraudCheckError("Expected live Stripe charges");
@@ -120,13 +145,27 @@ export async function collectStripeFraudScores(
             },
         });
     }
-    function paymentFor(value: string | Stripe.Charge) {
-        const payment = payments.get(
-            typeof value === "string" ? value : value.id,
-        );
-        if (!payment)
+    /**
+     * Disputes and warnings are listed by their own date, so one can point at a
+     * charge older than the scan window. Confirm that is the reason before
+     * trusting a map with a hole in it: anything inside the window must be
+     * present, or the charge pages did not load completely.
+     */
+    async function paymentFor(value: string | Stripe.Charge) {
+        const id = typeof value === "string" ? value : value.id;
+        const known = payments.get(id);
+        if (known) return known.payment;
+        const charge =
+            typeof value === "string"
+                ? await stripe.charges.retrieve(id).catch(() => null)
+                : value;
+        // Unknown or unreadable means we cannot prove the charge predates the
+        // window, so treat it as a hole in the pages rather than skipping it.
+        const created =
+            typeof charge?.created === "number" ? charge.created : null;
+        if (created === null || created >= FRAUD_SCAN_START_SECONDS)
             throw new FraudCheckError("Incomplete Stripe charge coverage");
-        return payment.payment;
+        return null;
     }
     for await (const dispute of stripe.disputes.list({
         limit: 100,
@@ -134,8 +173,10 @@ export async function collectStripeFraudScores(
     })) {
         if (!dispute.livemode)
             throw new FraudCheckError("Expected live Stripe disputes");
-        if (dispute.reason === "fraudulent")
-            paymentFor(dispute.charge).fd = true;
+        if (dispute.reason === "fraudulent") {
+            const payment = await paymentFor(dispute.charge);
+            if (payment) payment.fd = true;
+        }
     }
     for await (const warning of stripe.radar.earlyFraudWarnings.list({
         limit: 100,
@@ -143,7 +184,8 @@ export async function collectStripeFraudScores(
     })) {
         if (!warning.livemode)
             throw new FraudCheckError("Expected live Stripe warnings");
-        paymentFor(warning.charge).ew = true;
+        const payment = await paymentFor(warning.charge);
+        if (payment) payment.ew = true;
     }
     // Never expire another account's checkout on an ambiguously shared customer.
     const customerOwners = new Map<string, Set<string>>();
@@ -168,6 +210,11 @@ export async function collectStripeFraudScores(
     return {
         scores: new Map(
             [...byUser].map(([id, list]) => [id, cappedFraudScore(list)]),
+        ),
+        confirmed: new Set(
+            [...byUser]
+                .filter(([, list]) => hasConfirmedFraud(list))
+                .map(([id]) => id),
         ),
         customers,
         charges: payments.size,

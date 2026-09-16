@@ -488,6 +488,14 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "google/gemini-2.5-flash-lite:openrouter:vertex-global",
+        config: portkeyConfig["gemini-fast-openrouter-vertex-global"],
+        transform: pipe(
+            adaptGoogleSearchToolForOpenRouter,
+            createGeminiThinkingTransform("v2.5"),
+        ),
+    },
+    {
         name: "google/gemini-2.5-flash-lite:openrouter:ai-studio",
         config: portkeyConfig["gemini-fast-openrouter-ai-studio"],
         transform: pipe(

@@ -15,9 +15,11 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { withMcpUsageHeaders } from "../../../shared/mcp-usage.ts";
 import {
     COMPUTER_TOOL_CALL_PRICE,
+    MCP_USER_GITHUB_HEADER,
     MCP_USER_ID_HEADER,
 } from "../../../shared/registry/mcp.ts";
 import { createMediaAssets, type MediaService } from "./assets.ts";
+import { COLLECTIVE_REPO_URL, withCollectiveRepo } from "./collective.ts";
 import { createComputerMcpServer, HOME } from "./server.ts";
 
 const TOOL_CALL_RATE = "computer.tool_call.v1";
@@ -26,6 +28,9 @@ type Env = {
     COMPUTER: DurableObjectNamespace<Computer>;
     LOADER: WorkerLoader;
     MEDIA: MediaService;
+    // GitHub App installed on the collective memory repository only.
+    GITHUB_APP_ID?: string;
+    GITHUB_APP_PRIVATE_KEY?: string;
 };
 
 const README_PATH = `${HOME}/README.md`;
@@ -59,30 +64,40 @@ content as stdin to \`cat > path\`.
   own: they give you a token scoped to that one repository and you put it
   in the remote URL (https://x:TOKEN@github.com/user/repo.git). The token
   is stored in this computer's git config, nowhere else.
+
+Memory shared by all agents: \`git clone ${COLLECTIVE_REPO_URL}\`, read its
+README; push needs no token.
 `;
 
 // The Dynamic Worker running bash reaches this filesystem through the
 // service proxy, so the loader loopback needs the class exported here.
 export { WorkspaceServiceProxy };
 
+type GitIdentity = { name: string; email: string };
+
 export class Computer extends withWorkspace(
-    class extends DurableObject<Env> {},
+    class extends DurableObject<Env> {
+        // Git reads this object on every commit, so fetch can fill in the
+        // caller's GitHub account after the workspace is built.
+        gitIdentity: GitIdentity = {
+            name: "Pollinations Agent",
+            email: "agent@pollinations.ai",
+        };
+    },
     (self) => {
-        const { ctx, env } = self as unknown as {
+        const { ctx, env, gitIdentity } = self as unknown as {
             ctx: DurableObjectState;
             env: Env;
+            gitIdentity: GitIdentity;
         };
         return {
             storage: ctx.storage as unknown as DurableObjectStorageLike,
-            git: createGitClient(),
+            git: withCollectiveRepo(createGitClient(), env),
             // Typed as unknown: comparing Workspace to WorkspaceLike makes tsc
             // recurse through the fs overloads until it gives up.
             assets: (workspace: unknown) =>
                 createMediaAssets(workspace as WorkspaceLike, env.MEDIA),
-            defaultGitIdentity: {
-                name: "Pollinations Agent",
-                email: "agent@pollinations.ai",
-            },
+            defaultGitIdentity: gitIdentity,
             backends: [
                 new WorkerShellBackend({
                     loader: env.LOADER,
@@ -98,6 +113,13 @@ export class Computer extends withWorkspace(
     override async fetch(request: Request): Promise<Response> {
         if (request.method !== "POST") {
             return new Response("Method Not Allowed", { status: 405 });
+        }
+        // Commits are authored as the caller's GitHub account, which GitHub
+        // links to the profile; `git config user.name/email` overrides it.
+        const github = request.headers.get(MCP_USER_GITHUB_HEADER);
+        if (github) {
+            this.gitIdentity.name = github.slice(github.indexOf("+") + 1);
+            this.gitIdentity.email = `${github}@users.noreply.github.com`;
         }
         const payload = await readJsonRpc(request);
         const workspace = await getWorkspace(this);

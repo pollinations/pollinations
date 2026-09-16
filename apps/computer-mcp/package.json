@@ -8,8 +8,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "check": "wrangler deploy --dry-run",
-    "deploy": "wrangler deploy",
-    "deploy:staging": "wrangler deploy --env staging"
+    "deploy": "sops exec-file --no-fifo secrets.vars.json 'wrangler deploy --secrets-file {}'",
+    "deploy:staging": "sops exec-file --no-fifo secrets.vars.json 'wrangler deploy --env staging --secrets-file {}'"
   },
   "dependencies": {
     "@cloudflare/computer": "0.3.0",

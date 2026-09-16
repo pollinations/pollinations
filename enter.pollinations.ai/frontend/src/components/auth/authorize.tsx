@@ -1,13 +1,10 @@
 import {
-    Alert,
     Button,
     Collapsible,
     ExternalLinkIcon,
-    InlineLink,
     MailIcon,
     ScrollArea,
     useScrollLock,
-    WalletIcon,
 } from "@pollinations/ui";
 import {
     AuthInfoCard,
@@ -28,7 +25,6 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
-import { config } from "../../config.ts";
 import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
 import { AccountPermissionsInput } from "../keys/account-permissions-input.tsx";
@@ -591,35 +587,6 @@ export function Authorize() {
                     <ErrorBanner>{error}</ErrorBanner>
                 ) : (
                     <div>
-                        {balances && balances.quest + balances.paid <= 0 && (
-                            <div className="py-4">
-                                <Alert
-                                    intent="info"
-                                    className="!bg-intent-danger-bg-light"
-                                    title={
-                                        <span className="inline-flex items-center gap-1.5 leading-none">
-                                            <WalletIcon className="h-4 w-4 shrink-0" />
-                                            You’re out of Pollen
-                                        </span>
-                                    }
-                                >
-                                    Complete a free{" "}
-                                    <InlineLink
-                                        href={`${config.baseUrl}/quests`}
-                                    >
-                                        Quest
-                                    </InlineLink>{" "}
-                                    or{" "}
-                                    <InlineLink
-                                        href={`${config.baseUrl}/pollen#buy-pollen`}
-                                    >
-                                        top up instantly
-                                    </InlineLink>{" "}
-                                    before using this app.
-                                </Alert>
-                            </div>
-                        )}
-
                         <div className="-mx-6 px-6 py-4 bg-theme-bg-pale border-y border-theme-border">
                             <p
                                 id="authorize-dialog-title"

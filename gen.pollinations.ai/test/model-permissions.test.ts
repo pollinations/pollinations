@@ -17,6 +17,7 @@ import {
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
+import { expect } from "vitest";
 import {
     type AuthEnv,
     authFromSnapshot,

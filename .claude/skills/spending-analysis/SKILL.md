@@ -54,42 +54,36 @@ curl -sS "https://api.europe-west2.gcp.tinybird.co/v0/sql" \
   | jq '.data'
 ```
 
-# Funding provenance vs consumption
+# Where the money came from vs what was spent
 
-`generation_event_v2` spend (including `pack_spend`/`selected_meter_slug`) reports what
-a wallet bucket *consumed*, not where the money came from. Community/BYOP contribution
-rewards and other earned credits can land in the same payer bucket as purchased packs,
-so nonzero bucket spend is not proof of cash funding — and checking checkout-session
-credits alone is incomplete too, since a successful auto-top-up never creates a
-`checkout.session.*` row. To attribute cash vs. earned funding, reconcile each source
-separately and do not sum figures that use different monetary bases:
+`generation_event_v2` spend (`pack_spend`, `selected_meter_slug`) says which bucket was
+*consumed*, not how it was funded. `pack_balance` is credited by Stripe purchases and
+auto-top-ups, but also by BYOP markup and community-model rewards (paid into the payer's
+bucket, `shared/billing/track-helpers.ts`) and some quest rewards. So pack spend ≠ cash.
+And Stripe checkout rows alone miss auto-top-ups, which never create a `checkout.session.*`
+event. To separate cash from earned funding, reconcile each source on its own and don't
+add figures with different monetary bases:
 
 - Stripe checkout `pollen_credited` (`stripe_event`, `payment_status = 'paid'`)
-- Paid auto-top-up `amount_usd` (principal credited — see below for the gross figure)
-- Relevant historical Polar credits (pre-Stripe, Nov 2025–Jan 2026)
+- Auto-top-up `amount_usd` (principal credited — see below)
+- Historical Polar credits (Nov 2025–Jan 2026)
 - Claimed community/BYOP rewards, by bucket
 
-Absence of cash purchases is not itself evidence of non-payment or abuse; positive
-wallet consumption is not itself proof of cash payment.
+No cash purchase ≠ non-payment or abuse; pack spend ≠ proof of cash.
 
-# Auto-top-up reconciliation (principal vs gross payment)
+# Auto-top-up: principal vs gross payment
 
-D1's auto-topup `amount_usd` is the *principal credited*, not the customer's total cash
-payment — Stripe fees and any exclusive taxes sit on top of it. For a gross-cash figure,
-match each completed auto-top-up to its paid Stripe invoice by `stripe_invoice_id` and
-use that invoice's `amount_paid` (in its verified currency), not `amount_usd`. Fetch the
-known invoice IDs directly with bounded concurrency rather than paginating the full
-invoice list — most invoices in a full scan are unrelated checkout invoices. Keep
-credited principal, gross payment, taxes, refunds, and net revenue as distinct figures
-throughout; do not report principal as "dollars paid".
+Auto-top-up `amount_usd` in D1 is the Pollen principal credited; Stripe fees and taxes sit
+on top. For gross cash, match each completed top-up to its Stripe invoice by
+`stripe_invoice_id` and use `amount_paid` (check the currency). Fetch those invoice IDs
+directly instead of paging the whole invoice list. Keep principal, gross payment, tax,
+refunds and net revenue as separate numbers.
 
-# Historical pricing interventions
+# Historical pricing changes
 
-For any investigation of a past price change or promotion, define the intervention from
-the exact deployed code snapshot at the time, not from a PR title or an announcement —
-those can diverge from what actually shipped (an "X% cheaper" announcement can coexist
-with an unrelated same-day multiplier change that offsets it). Confirm actual billed
-unit prices from `generation_event_v2` around the change:
+Define a past price change from the code deployed at the time, not the PR title or
+announcement — an "X% cheaper" announcement can coexist with a same-day multiplier change
+that cancels it. Confirm billed unit prices in `generation_event_v2`:
 
 ```bash
 curl -sS "https://api.europe-west2.gcp.tinybird.co/v0/sql" \
@@ -98,40 +92,26 @@ curl -sS "https://api.europe-west2.gcp.tinybird.co/v0/sql" \
   | jq '.data'
 ```
 
-Reconcile provider base cost, markup (`priceMultiplier`), and any pack-credit promotion
-together — they move independently, and a discount on one can be offset by a change to
-another. Keep raw cash payments distinct from credited Pollen units throughout; a
-credited-unit discount does not by itself change cash buying power. Record which
-users/models were exposed before the payment event being explained, note any
-simultaneous unrelated changes, and revise the causal hypothesis when event-level
-billing evidence contradicts the public narrative.
+Provider cost, `priceMultiplier` markup and pack-credit promotions move independently;
+check all three. Keep cash paid separate from Pollen credited — a Pollen discount doesn't
+change cash buying power. Note who was exposed before the payment event you're explaining
+and any simultaneous changes.
 
 # Conversion cohort analysis
 
-For "do these users pay more" or "did this cause conversion" claims, define the
-comparison before running it:
+For "these users pay more" or "X caused conversion" claims, define the comparison first:
 
-- **Outcome-independent cohort membership.** Don't select on payment, or on a
-  payment-triggered/onboarding/refund reward — that selects on the outcome. Classify
-  contribution rewards (e.g. PR/quest merges) separately from rewards that themselves
-  depend on having already paid.
-- **Freeze an explicit cutoff.** State the exact "as of" date for both cohort
-  membership and the payment check.
-- **Match observation windows.** A cohort from the last 7 days is provisional — each
-  member has had between 0 and 7 days to convert. Compare it only against another
-  provisional cohort measured the same way, or let it mature into a fixed per-user
-  window (e.g. "first 7 days after signup" for every member, regardless of signup date).
-- **Check temporal ordering, not just group size.** For any reward-linked cohort, count
-  how many members paid *before* first receiving the reward versus *after* — if most
-  paid first, the reward did not drive conversion, whatever the raw payer percentage
-  looks like.
-- **Deduplicate at user level.** Count each user once regardless of how many qualifying
-  events they have.
-- **Report group sizes and caveats alongside the number.** A percentage with no
-  denominator, cohort age, or selection description is not a comparison.
-
-Cash-funding provenance for the payment side is covered separately above ("Funding
-provenance vs consumption").
+- **Pick the cohort without looking at the outcome.** Don't select on payment or on
+  rewards that require a payment. Contribution rewards (PR/quest merges) are fine;
+  payment-triggered rewards are not.
+- **Freeze a cutoff date** for both membership and the payment check.
+- **Match observation windows.** A last-7-days cohort has had 0–7 days to convert;
+  compare it only with another cohort measured the same way, or use a fixed per-user
+  window ("first 7 days after signup").
+- **Check ordering.** For a reward-linked cohort, count who paid *before* the reward vs
+  *after*. If most paid first, the reward didn't drive conversion.
+- **Count each user once.**
+- **Report group sizes and caveats** with the percentage.
 
 # Notes
 
@@ -142,7 +122,6 @@ provenance vs consumption").
 - For pre-migration revenue history, note that Polar was the pre-Stripe merchant
   of record (Nov 2025–Jan 2026) and is retired. Do not combine historical Polar
   and Stripe totals without checking the cutoff for overlap.
-- Request-count metrics (e.g. BYOP/attribution shares) are volatile and dominated by
-  free/near-zero-price traffic, and drift fast between snapshots. Always report the
-  exact date window (start/end) alongside any count-based claim, and prefer
-  revenue-share (% of `total_price`) over raw request counts for strategic claims.
+- Request-count shares (e.g. BYOP share) are dominated by free traffic and drift fast.
+  Always state the date window, and prefer revenue share (% of `total_price`) for
+  strategic claims.

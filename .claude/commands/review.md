@@ -8,13 +8,12 @@ Review the requested PR or code changes using the Coding Principles, Testing, an
 
 Before reporting a finding:
 
-- Check reachability: passing tests prove the code does what you think, not that a real entry point calls it before an upstream validator, router, or permission check blocks it.
-- Verify subagent-reported findings against the source yourself before publishing, especially billing or security claims.
-- Trace a credential to where it is minted and what it grants before calling it exposed; a key-like variable name is not evidence.
-- Before saying code is missing, confirm the checkout is current (`git rev-list --count HEAD..origin/main`); if behind, search the requested ref, not the local branch.
-- A "this is already broken today" claim needs a concrete input, wrong output, and file/line; a defect that only appears under a future feature is not a present bug.
-- For a ported or reimplemented service, check that every security and billing invariant the original or a sibling enforces on the same shared resource is re-established; omissions do not show in a diff.
-- For billing-facing findings, name the account or credential owner that pays and the remedy; the viewer is not necessarily the payer.
-- A mock more permissive than the platform (for example buffering an unbounded stream where the API requires a known length) gives false confidence; check that the mock enforces what the platform enforces.
-- A host-language syntax check cannot validate embedded GLSL, SQL, or HTML in template literals, nor cross-module export gaps; use the real compiler, module loader, or typechecker.
-- Read each needed file or line range once and reuse it; do not re-read unchanged files or re-issue speculative shell dumps.
+- Passing tests don't prove a real entry point reaches the code. Check nothing upstream (validator, router, permission check) blocks it first.
+- Check subagent findings against the source yourself, especially billing or security claims.
+- Before calling code missing, make sure the checkout is current (`git rev-list --count HEAD..origin/main`) and search the requested ref, not the local branch.
+- "Already broken today" needs a concrete input, wrong output, and file/line. A bug that only appears under a future feature is not a present bug.
+- A key-like variable name is not an exposed credential. Trace where it is minted and what it grants.
+- For billing findings, say who pays (the account or key owner, not necessarily the viewer) and the fix.
+- For a ported or rewritten service, check the security and billing checks the original enforces on the same shared resource still exist; missing ones don't show in a diff.
+- A mock looser than the platform (e.g. buffering a stream the API requires a length for) hides bugs. A syntax check can't validate embedded SQL/GLSL/HTML or cross-module exports; use the real compiler or loader.
+- Read each file once and reuse it; don't re-read unchanged files.

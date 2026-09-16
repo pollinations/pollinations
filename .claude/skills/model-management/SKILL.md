@@ -87,12 +87,9 @@ Model approval never authorizes adding, rotating, synchronizing, deploying, revo
   protect keys while an old exact-string reader is still running.
 - Audit every modality registry and every model change merged to `main` since
   the current production revision; production can lag behind `main`.
-- When a model or provider is missing from the registry, do not treat "target file/entry
-  gone" alone as a gap to restore. Check `git log --all -- <path>` and
-  `gh pr list --state merged --search <model>` first to rule out an intentional removal
-  (a provider deliberately dropped), a prior add-then-revert (tried, then reverted as
-  unavailable), or a superseded replacement — only entries that survive both checks are
-  re-add/port candidates.
+- If a model or provider is missing from the registry, check `git log --all -- <path>`
+  and `gh pr list --state merged --search <model>` before re-adding it — it may have been
+  removed on purpose, added and reverted, or replaced.
 - Trace every reachable runtime route and any configured fallback.
 - Distinguish the configured provider from the provider that served an observed request.
 - Compare the intended change with open PRs and active plan entries.

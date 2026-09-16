@@ -28,7 +28,7 @@ When you test manually with a valid secret key (`sk_`), you bypass auth/quota is
 
 **Key insight**: High 401/402/403/400 rates are **expected** from real-world usage. Focus investigation on 500/504 errors.
 
-**Also watch for the invisible failure class**: a successful (200) response that is simply too slow for the client's own timeout never shows up in status-code rates, average latency, or p95 — the pain lives in the per-user latency tail. See "Slow-but-200 / Client-Side Timeout" below.
+**Also watch for slow-but-200 failures**: a 200 that arrives after the client's own timeout never shows in error rates or p95 — it only shows in the per-user latency tail. See "Slow-but-200 / Client-Side Timeout" below.
 
 ---
 
@@ -143,28 +143,28 @@ AZURE_CONTENT_SAFETY_API_KEY=<new-key>
 **Fix**: Check Vertex AI quota/status, may be transient
 
 ## Slow-but-200 / Client-Side Timeout
-**Error**: None server-side — the request completes with 200, but users report "no response" or a timeout
-**Cause**: Server-side latency tail exceeds the *client's* own timeout (e.g. Roblox HttpService ~30s), even though status-code rates and average/p95 latency look healthy
-**Impact**: Invisible to error-rate dashboards; usually concentrated on one user or request shape (e.g. very large prompts)
-**Fix**: Query the latency tail directly, grouped by user — `countIf(response_time>30000)` and `max(response_time)` — not just error rate or p95
+**Error**: None server-side — 200, but users see a timeout or "no response"
+**Cause**: The latency tail is above the client's own timeout (e.g. Roblox HttpService ~30s) while status rates and p95 look fine
+**Impact**: Invisible on error dashboards; usually one user or one request shape (e.g. huge prompts)
+**Fix**: Query the tail per user — `countIf(response_time>30000)`, `max(response_time)` (query in "Raw SQL Queries" below)
 
 ## Instant Rejection from a Per-Key Queue/Rate Limit
-**Error**: `Queue full`, or a 402/429 rejected on the user's very first request
-**Cause**: Could be an intended throttle, or leaked in-memory state (a slot never reaped)
-**Impact**: User blocked even though the backend is idle
-**Fix**: Compare the guard's state against the backend's own idle/load counters to localize the rejection. Waiting out any time-based window and firing exactly one request distinguishes a live interval throttle (clears) from something else (still rejected) — but treat the fix itself as an experiment: if a predicted fix (e.g. restarting to clear in-memory state) doesn't change the behavior, that's disconfirming evidence for the diagnosis, not a deployment problem — re-open with live state before trying a second fix. For any per-key limit keyed by client IP, check the distinct-IP cardinality the limiter actually sees; a multi-hop proxy can collapse many clients onto one egress IP, which looks identical to a leaked slot from the outside.
+**Error**: `Queue full`, or a 402/429 on the user's very first request
+**Cause**: An intended throttle, or leaked in-memory state (a slot never freed)
+**Impact**: User blocked while the backend is idle
+**Fix**: Compare the limiter's state with the backend's own load counters. Wait out the time window and send one request: if it clears, it was a live throttle. If a fix you predicted (e.g. a restart to clear memory) changes nothing, the diagnosis was wrong — re-check live state before trying a second fix. For IP-keyed limits, check how many distinct IPs the limiter actually sees: a proxy can collapse many clients onto one IP, which looks exactly like a leaked slot.
 
 ## Stream/Usage Errors (missing usage, dropped terminal SSE event)
-**Error**: Missing token usage (`usage_missing`) or a dropped terminal event (e.g. `[DONE]`) at the end of a stream
-**Cause**: Often an upstream disconnect or transport error masked downstream, not the provider omitting data
-**Impact**: Can misattribute a transport/parsing bug to the provider
-**Fix**: Inspect the terminal SSE evidence and the original transport error across provider → adapter → validator before blaming the provider — truncated error logs can retain only early chunks and miss the terminal evidence. When two components parse the same SSE body (e.g. a validator and a tracker), confirm they agree on end-of-stream handling (a stream closed with a single trailing newline, not a blank line, is a valid provider shape) — a disagreement between them shows up as a phantom provider failure.
+**Error**: Missing token usage (`usage_missing`) or a missing terminal event (e.g. `[DONE]`)
+**Cause**: Usually an upstream disconnect or transport error hidden downstream, not the provider omitting data
+**Impact**: A transport/parsing bug gets blamed on the provider
+**Fix**: Look at the last SSE chunks and the original transport error across provider → adapter → validator before blaming the provider; truncated logs often drop the end. If two components parse the same stream (e.g. validator and tracker), make sure they agree on end-of-stream — a stream ending with one trailing newline, not a blank line, is valid; a disagreement shows up as a phantom provider failure.
 
 ## Health-Check False Exclusions (402/403 During Automated Probing)
-**Error**: An automated health monitor excuses a failing candidate as "client noise" (e.g. 402 payment required, 403)
-**Cause**: The same status/wording can come from different failing actors — the probe's own wallet or gateway auth, vs. the upstream provider's own credits, quota, or hosting suspension
-**Impact**: Genuine provider outages get vetoed from being flagged (or the reverse: probe-side issues get misread as a provider outage)
-**Fix**: Before tuning any success threshold, trace each excluded candidate through the actual decision/veto log and attribute the failure to its real origin (probe-wallet/payer vs. upstream provider) rather than keying policy off the status code or phrase alone
+**Error**: A monitor excuses a failing model as "client noise" (402/403)
+**Cause**: The same status can come from the probe's own wallet/auth or from the provider's credits, quota, or suspension
+**Impact**: Real outages get vetoed, or probe problems look like outages
+**Fix**: Before tuning thresholds, follow a few excluded cases through the decision log and find who actually failed — probe or provider
 
 ---
 
@@ -268,10 +268,8 @@ sops -d enter.pollinations.ai/secrets/env.json > /tmp/env.json
 # Step 2: Add the token (use jq)
 jq '. + {"CLOUDFLARE_OBSERVABILITY_TOKEN": "your_token"}' /tmp/env.json > /tmp/env_updated.json
 
-# Step 3: Re-encrypt (must rename to match .sops.yaml pattern — sops matches
-# creation_rules against the INPUT file path, not the output redirect, so a
-# plaintext file whose name doesn't match e.g. `env\.json$` has no rule to
-# apply; rename it first as below, or use `sops --filename-override`)
+# Step 3: Re-encrypt. sops matches creation_rules against the INPUT file name,
+# not the output, so rename first (as below) or use `sops --filename-override`.
 cp /tmp/env_updated.json /tmp/env.json
 sops -e /tmp/env.json > enter.pollinations.ai/secrets/env.json
 
@@ -467,7 +465,7 @@ curl -s "$H/v0/pipes/recent_server_errors.json?token=$TB&minutes=240&limit=500" 
 
 # Debugging Workflow
 
-**Before diving in**: a user's framing of the failure (e.g. "the instance was turned off", "the model always fails") is a hypothesis embedded in the report, not a fact. A cheap ground-truth check against the user's stated premise up front can save a long investigation down a wrong framing — be prepared to report "your premise is X but reality is Y."
+**Before diving in**: the user's framing ("the instance was turned off", "the model always fails") is a hypothesis, not a fact. Check the premise cheaply first, and be ready to report "you said X, reality is Y."
 
 1. **Check Model Monitor** - https://monitor.pollinations.ai
    - Identify which models have high error rates
@@ -518,27 +516,27 @@ curl -s "$H/v0/pipes/recent_server_errors.json?token=$TB&minutes=240&limit=500" 
      -H "Authorization: Bearer $TOKEN" \
      -w "\nHTTP: %{http_code}\n" -o /dev/null
    ```
-   - Use a unique prompt (embed a timestamp/nonce) when verifying credentials or connectivity specifically — a cached response can return 200 even when the underlying API key is dead. Identical response bodies/ids across repeated calls is a caching tell, not a health signal.
+   - Use a unique prompt (timestamp/nonce) when checking credentials or connectivity — a cached response returns 200 even with a dead key. Identical bodies/ids across calls means cache, not health.
 
 ---
 
-# Diagnosing Latency / Hang Incidents Across a Multi-Hop Path
+# Diagnosing Timeouts Across a Multi-Hop Path
 
-Users can report timeouts that Tinybird/Worker telemetry doesn't show as errors at all, because the failure is happening at a hop your own logs can't see.
+Users can report timeouts that Tinybird/Worker logs don't show, because the failure is at a hop you don't log.
 
-1. **Rule out a suspected deploy by falsifying it, not confirming it.** Bucket the symptom metric hourly across the deploy boundary — a pre-existing, evenly-distributed signal exonerates the change. If a proxy/CDN hop is suspected, measure it directly: compare the public host's TTFB against the origin host's TTFB to quantify the hop's real contribution instead of assuming.
+1. **Try to disprove the suspected deploy, not confirm it.** Bucket the symptom hourly across the deploy time; if it existed before, the deploy is cleared. If a proxy/CDN hop is suspected, measure it: compare TTFB via the public host against TTFB direct to origin.
 
-2. **Check the outermost edge, not just your app's logs.** If the service sits behind an additional CDN/edge layer in front of the Worker, that layer's own access logs can show origin-connection failures (origin-comm errors, connect errors) that never reach Tinybird or the Worker — the request may look fast and successful downstream, or not be logged at all. "Dashboard is green but users time out" means look one hop further out than your app logs.
+2. **Check the outermost edge.** A CDN in front of the Worker has its own logs of origin-connection failures that never reach Tinybird. "Dashboard green, users time out" means look one hop further out.
 
-3. **Triage by TTFB signature, then confirm with A/B isolation — the signature alone doesn't tell you which hop is at fault.** ttfb≈0 (fails fast) points at a connection-level problem (dead socket, connect error); ttfb≈the read/response timeout (accepted, then went silent) points at an origin-side hang. But the signature only reflects the hop whose logs you're reading — confirm by isolating: run many sequential requests (not parallel; parallel batches produce spurious client-side failures that look like origin errors) direct-to-origin vs. via the suspected proxy/CDN, from the same network/egress region production actually uses. For anycast/multi-colo systems, "is the origin healthy?" has no single answer — a test from the wrong vantage point can invert the conclusion. Prefer an existing authorized probe location over spinning up a new paid cloud resource just to get the right vantage.
+3. **Use TTFB to narrow, then confirm with A/B.** TTFB≈0 → connection failure; TTFB≈timeout → origin hang. But that only describes the hop whose logs you're reading. Confirm with many *sequential* requests (parallel batches cause fake client-side failures) direct vs via the proxy, from the region production traffic uses — for anycast systems the answer depends on where you test from. Use an existing probe host rather than paying for a new one.
 
-4. **After deploying a fix, re-check hours later, not just immediately.** Removing one hanging call can look like a full fix until load shifts and the next serially-awaited call on the same path starts dominating. When a fix addresses a route/path rather than a single call, enumerate every serially-awaited external/regional dependency on that path (rate limiters, DB, KV, service bindings) rather than stopping at the first one found.
+4. **Re-check hours after the fix.** Removing one hanging call can look like a full fix until load shifts and the next awaited call on the same path dominates. If the fix is per-route, list every awaited external dependency on that route (rate limiter, DB, KV, service bindings), not just the first one found.
 
 ---
 
 # Diagnosing "the Output/Display Is Wrong" Reports
 
-Reading code produces plausible causes but no verdict. When the report is "X is wrong" and the suspect logic is a pure, exported transform function, import it into a scratch script and run it over the real inputs (fetch the minimum needed), then diff the derived field against the authoritative source-of-truth field across every row. A count of mismatches is a fix; a count of zero redirects the investigation — but zero mismatches over the fetched sample is not exhaustive proof if the live data set is incomplete.
+Reading code gives plausible causes, not a verdict. If the suspect logic is a pure exported function, import it in a scratch script, run it over real inputs, and diff the result against the source-of-truth field for every row. Mismatches → that's the bug. Zero mismatches → look elsewhere, unless the sample was incomplete.
 
 ---
 
@@ -613,8 +611,8 @@ WHERE user_id = 'USER_ID_HERE'
 ORDER BY start_time DESC
 LIMIT 50"
 
-# Daily error-rate timeline (recommended first query for rate analysis — a multi-week
-# aggregate hides incident-day spikes). Canonical definition: exclude 4xx, exclude cache hits.
+# Daily 5xx timeline — run this first; a multi-week aggregate hides incident days.
+# Canonical definition: exclude 4xx and cache hits.
 curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
   --data-urlencode "q=SELECT toDate(start_time) AS day, countIf(response_status >= 500 AND cache_hit = 0) AS errors_5xx, count() AS total
 FROM generation_event_v2
@@ -622,7 +620,7 @@ WHERE start_time > now() - interval 28 day
 GROUP BY day
 ORDER BY day"
 
-# Slow-but-200 tail: users with successful requests exceeding a client timeout threshold
+# Slow-but-200 tail: users whose successful requests exceeded a client timeout
 curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
   --data-urlencode "q=SELECT user_id, countIf(response_time > 30000) AS slow_count, max(response_time) AS max_ms
 FROM generation_event_v2
@@ -633,7 +631,7 @@ ORDER BY max_ms DESC
 LIMIT 20"
 ```
 
-Pull the per-day series before concluding from an aggregate — spikes are usually the actionable story, and monthly/weekly rollups hide them.
+Look at the per-day series before trusting an aggregate — spikes are the story, and rollups hide them.
 
 ### Datasource Schema
 
@@ -644,7 +642,7 @@ The `generation_event_v2` datasource is defined in `enter.pollinations.ai/observ
 - `total_price`, `total_cost`
 - `start_time`, `end_time`, `response_time`
 
-**Verify token scope empirically before designing a new data path.** A token that can hit `/v0/sql` (e.g. `SELECT 1` succeeds) may still be scoped to `PIPES:READ` only, which rejects any datasource query — `generation_event_v2`, `d1_user`, etc. — with "needs DATASOURCES:READ". Probe with a known datasource SELECT before assuming raw-SQL access; if it's rejected, build a dedicated pipe with the appropriate token grant instead.
+**Check token scope before designing a data path.** A token that runs `SELECT 1` may still be `PIPES:READ` only and reject datasource queries ("needs DATASOURCES:READ"). Try a SELECT on a known datasource first; if rejected, build a pipe with the right token instead.
 
 ---
 

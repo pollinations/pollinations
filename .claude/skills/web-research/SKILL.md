@@ -60,21 +60,16 @@ Run multi-model in parallel:
 
 ## Before reviewing a build plan
 
-Before evaluating or committing to an in-house build (an architecture plan, a custom
-implementation of some capability), run one vendor-scoped query — `"<vendor> <capability>
-<year>"` — and one `"<capability> MCP server"` query, and record the result. Treat a
-first-party vendor launch from the last two quarters as a mandatory section of the
-review ("why not the managed product"). A single dated vendor search is cheaper than any
-other part of the review and can invalidate the whole plan, so run it first, before the
-design is understood in detail — not after.
+Run two searches first — `"<vendor> <capability> <year>"` and `"<capability> MCP server"`
+— and record the result. A first-party vendor launch in the last two quarters gets its own
+section ("why not the managed product"). It's the cheapest part of the review and can
+invalidate the whole plan, so do it before studying the design.
 
-## Verifying numbers from PDFs or long documents
+## Numbers from PDFs or long documents
 
-A search or fetch that summarizes a document against a leading, hypothesis-shaped prompt
-("did X beat Y?", "which one scored highest?") tends to echo the prompt back, including
-invented quotes. Phrase the prompt neutrally instead (e.g. "list every numeric result
-table") and, for any number you will repeat to a user, extract and read the source
-text/tables directly rather than trusting the summary.
+A summarizer given a leading prompt ("did X beat Y?") tends to echo the prompt, including
+invented quotes. Ask neutrally ("list every numeric result table") and, for any number
+you'll repeat, read the source text or table yourself.
 
 ## Notes
 

@@ -15,23 +15,17 @@ cd enter.pollinations.ai/observability
 tb --cloud sql "SELECT ... FROM generation_event_v2 ..."
 ```
 
-> **Workspace**: This skill is **prod-only** — abuse signal lives in the `pollinations_enter`
-> workspace; `pollinations_enter_staging` (staging + dev + local, per the repo `AGENTS.md`
-> Tinybird section) has no real traffic and isn't worth analyzing. **Don't assume the
-> `.tinyb` in `observability/` already points at prod** — it's mutable local connection
-> state, not evidence of scope, and has been found pointing at staging. Before
-> interpreting any result (especially an empty one), run a read-only preflight: inspect
-> the configured workspace identity by name (never print token values), explicitly select
-> a production-scoped READ credential — an explicit `TB_TOKEN`, not whatever `.tinyb`
-> currently holds — and confirm recent event freshness for a known-active user/model.
-> Never switch or persist credentials merely to run the audit; pass `TB_TOKEN` inline for
-> that one command instead.
+> **Workspace**: This skill is **prod-only** — abuse signal lives in `pollinations_enter`;
+> `pollinations_enter_staging` has no real traffic. Don't trust `.tinyb` to point at prod:
+> it's local state and has pointed at staging before. Before reading any result (especially
+> an empty one): check which workspace is configured (by name — never print tokens), pass a
+> production read `TB_TOKEN` inline on the command, and confirm recent events exist for a
+> known-active user or model. Don't switch or save credentials just to run an audit.
 
 > **Quoting**: Use double quotes for the SQL string. Use single quotes inside SQL. Avoid `!=` with `$'...'` shell quoting (escaping issues) — prefer `NOT IN ('undefined', '')` instead.
 
-> **`tb` CLI caps at 100 rows.** For large result sets, use the HTTP API with an
-> explicitly chosen, verified-production `TB_TOKEN` (see the workspace preflight above —
-> do not read the token straight out of `.tinyb` without checking its workspace first):
+> **`tb` CLI caps at 100 rows.** For large result sets, use the HTTP API with a
+> production `TB_TOKEN` you've checked (see above — don't lift it from `.tinyb` unchecked):
 > ```bash
 > curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql" \
 >   -H "Authorization: Bearer $TB_TOKEN" \
@@ -233,7 +227,7 @@ WHERE abuse_score >= 90
 | **Cloudflare WARP/Workers** | IPv6 `2a06:98c0:3600::` — legit users behind Cloudflare | Check `ip_subnet` starts with `2a06:98c0` |
 | **VPN/proxy clusters** | Multiple real users behind same VPN exit | Check if cluster has paying users with real emails |
 | **Chinese CGNAT** | Mobile carriers (China Mobile/Unicom/Telecom) share IPs via NAT | Cross-reference with email pattern + spend |
-| **Free balance usage** | Accounts show small "spend" from non-pack balance, not real payment | Check `pack_spend` — see caveat below, it is a payment *signal*, not proof |
+| **Free balance usage** | Accounts show small "spend" from non-pack balance, not real payment | Check `pack_spend` — a strong signal, not proof of payment (see below) |
 | **High NSFW, legit user** | Some paying users generate NSFW content legitimately | Check pack spend > $5 — real customers |
 
 **Safe to ban (high confidence):**
@@ -253,25 +247,25 @@ WHERE abuse_score >= 90
 
 ---
 
-## Payment provenance vs wallet consumption
+## Pack spend is not proof of payment
 
-`pack_spend` (or any bucket-tagged debit) proves a balance was *spent*, not that it was
-*bought with cash*. Community/BYOP contribution rewards and other earned credits can
-land in the same payer bucket as purchased packs, so nonzero pack_spend alone is not
-proof of cash payment — and the reverse check is incomplete too: Stripe *checkout-session*
-credits alone miss successful auto-top-ups, which never create a `checkout.session.*`
-row. Before calling an account a "real customer" (or clearing it) on spend alone,
-reconcile the actual credit sources separately: Stripe checkout `pollen_credited`, paid
-auto-top-up `amount_usd`, relevant historical Polar credits, and claimed community/BYOP
-rewards by bucket. Zero cash purchases is not itself an abuse signal, and positive pack
-spend is not itself proof of cash payment.
+`pack_balance` is the bucket paid users draw from, but money gets into it in more than one
+way. Besides Stripe purchases and auto-top-ups, **earnings land there too**: BYOP markup and
+community-model rewards are credited to the same bucket the *payer* used
+(`shared/billing/track-helpers.ts`), and some quest rewards are pack-bucket
+(`shared/billing/rewards.ts`). So `pack_spend > 0` means "spent from the paid bucket", not
+"paid us cash". The reverse check is incomplete too: Stripe checkout rows miss auto-top-ups,
+which never create a `checkout.session.*` event.
 
-Auto-top-up `amount_usd` in D1 is *principal credited*, not the customer's gross
-payment (fees/taxes sit on top). It is enough to establish that a funding event
-happened, but do not report it as "the exact dollars this user paid" — that requires
-matching the completed auto-top-up to its Stripe invoice and reading `amount_paid` (see
-`spending-analysis`'s auto-top-up reconciliation for the method), and is usually
-unnecessary for an abuse verdict.
+Before calling an account a real customer (or clearing it) on spend alone, check the actual
+credit sources: Stripe checkout `pollen_credited`, auto-top-up `amount_usd`, historical
+Polar credits, and claimed rewards by bucket. No cash purchase is not an abuse signal by
+itself.
+
+Auto-top-up `amount_usd` is the Pollen principal credited, not what the customer paid (fees
+and tax sit on top). It proves a funding event happened; for the exact dollars, match the
+Stripe invoice's `amount_paid` (method in `spending-analysis`) — rarely needed for an abuse
+verdict.
 
 ---
 
@@ -363,9 +357,8 @@ npx wrangler d1 execute production-pollinations-enter-db --remote \
 
 - **IP coverage**: Started 2026-03-06, ~19% user coverage initially. Re-run analysis as coverage grows.
 - **d1_user sync lag**: The `d1_user` table in Tinybird syncs periodically (not real-time). After banning on D1, Tinybird data is stale — verify actions on D1 directly.
-- **Pack spend is the strongest payment *signal*, not proof of cash funding** — see
-  "Payment provenance vs wallet consumption" above. Total generation spend can include
-  non-pack balance-bucket usage, so filter on `pack_spend` to narrow the review, then
-  reconcile against actual credit sources before treating it as cash paid.
+- **Pack spend is the strongest payment signal, but not proof** — see "Pack spend is not
+  proof of payment". Filter on `pack_spend` to narrow the review, then check credit sources
+  before treating it as cash paid.
 - **Gibberish suffix usernames**: Bot farms use GitHub usernames with suffixes like `-boop`, `-a11y`, `-max`, `-sudo`, `-cmd`, `-stack`, `-pixel`, `-dot`, `-beep`, `-commits`, `-ops`, `-dotcom`, `-lang`, `-bit`. These are auto-generated.
 - Consider adding: account age signal, GitHub account age, user-agent clustering

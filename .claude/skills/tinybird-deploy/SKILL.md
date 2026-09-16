@@ -9,18 +9,13 @@ Deploy observability pipes and datasources to Tinybird Cloud.
 
 ## Requirements
 
-- **Preflight, before the first command of the session:** confirm the CLI actually resolves and is the Forward CLI, don't assume `~/.local/bin/tb` is present or first on PATH:
-  ```bash
-  which -a tb
-  tb --version
-  ```
-  If `tb` is missing, or the first path on PATH is a pyenv/pip shim (e.g. under `/Library/Frameworks/Python.framework/...` or a pyenv shims dir) rather than `~/.local/bin/tb`, PATH is wrong or the Forward CLI isn't installed. Fix PATH, or point the user at the documented Forward CLI install instructions — do not run an unreviewed curl-pipe-to-shell install on their behalf.
+- **Preflight:** `which -a tb && tb --version`. If `tb` is missing or resolves to a pyenv/pip shim instead of `~/.local/bin/tb`, PATH is wrong or the Forward CLI isn't installed — fix PATH or point the user at the install docs; don't curl-pipe an installer.
 - Use the **Tinybird Forward CLI** as `tb`. On this machine it should resolve to `~/.local/bin/tb` and support `tb --cloud deployment create --check`.
 - Do **not** install or update this workflow with `pip install tinybird-cli`; that can put the Classic CLI first on PATH.
 - If `tb --cloud` is missing, or Tinybird says this is a Forward workspace but the CLI is Classic, fix PATH so `~/.local/bin` wins. The Classic CLI is kept only as `tb-classic`.
 - Run commands from `enter.pollinations.ai/observability`.
 - Set `TB_TOKEN` explicitly to a token with `WORKSPACE:DEPLOY` for the target workspace, and pass `--host` on every deploy command. Do not rely on `.tinyb` or `tb workspace use` for workspace selection.
-- A token that can run a trivial query (e.g. `SELECT 1`) is not evidence it can read arbitrary datasources — Tinybird scopes are granular (`PIPES:READ` vs `DATASOURCES:READ` vs `WORKSPACE:DEPLOY`). Before relying on any token for a new data path, probe its actual scope empirically (e.g. a `SELECT` against a known datasource) rather than assuming today's known scope still holds — token scopes get reissued.
+- `SELECT 1` succeeding doesn't mean a token can read datasources (`PIPES:READ` vs `DATASOURCES:READ` vs `WORKSPACE:DEPLOY`). Probe with a SELECT on a known datasource before relying on a token for a new path.
 
 ## Workspaces
 
@@ -102,7 +97,7 @@ Never pass `--auto` or run `deployment promote` unless the user explicitly asks 
 
 Prod deploys use the same command shape after explicitly replacing `TB_TOKEN` with the `tinybird-prod-deploy` Keychain token, but only after staging validation and verification. Deploying to both workspaces is still manual until #11127 is resolved.
 
-Treat staging and prod promotion as separate approvals, since a user who approved "both" in one breath may still want to stop after staging (e.g. to look at results first). Don't collapse them into one batched command on a single approval. This is about not assuming scope beyond what was said — it is not license to re-ask: if the user's instruction already explicitly names both environments for this change (e.g. "deploy to staging and prod"), that already is the two approvals; proceed through both without an extra confirmation prompt in between.
+Staging and prod are separate approvals — don't batch them into one command, since the user may want to look at staging first. But if the instruction already names both ("deploy to staging and prod"), that is both approvals; don't re-ask in between.
 
 ## Step 3: Verify
 

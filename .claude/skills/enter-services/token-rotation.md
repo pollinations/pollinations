@@ -84,33 +84,25 @@ Rollback below).
 
 ## A merged secret is not a deployed secret
 
-A secret has three distinct states: in the encrypted SOPS file, on the
-staging Worker, and on the production Worker. Merging a SOPS change only
-sets the first. `Deploy / Cloudflare production`
-(`.github/workflows/deploy-cloudflare-production.yml`) runs
-`push-secrets:production` for the **gen** Worker only — it does not push
-enter's secrets. A feature that reads a new secret on enter can merge and
-promote cleanly and still 503 in production because the secret was never
-pushed there.
+A secret lives in three places: the SOPS file, the staging Worker, and the
+production Worker. Merging only updates the file. `Deploy / Cloudflare
+production` (`.github/workflows/deploy-cloudflare-production.yml`) pushes
+secrets for the **gen** Worker only, not enter — so a feature that reads a
+new enter secret can merge, promote, and still 503 in production.
 
-Before declaring a feature that depends on a new or changed secret
-deployable, verify it on the *specific* Worker you're about to rely on with
-a read-only listing:
+Before relying on a new or changed secret, list what the Worker actually has:
 
 ```bash
 wrangler secret list --env production   # or --env staging
 ```
 
-If it's missing, push just that name — `wrangler secret put <NAME> --env production`
-is the minimal operation; never `wrangler secret bulk`, which touches every
-secret on the Worker.
+If it's missing, push just that name with `wrangler secret put <NAME> --env
+production`. Never `wrangler secret bulk` — it touches every secret.
 
-This verification is separate from the approval question. Re-applying an
-**unchanged**, already-approved secret (e.g. the idempotent sync a normal
-deploy or `push-secrets:*` performs) is deployment reconciliation, not a
-mutation, and doesn't need a fresh Secret Mutation Safety approval. A
-secret that is genuinely new or whose value changed does — get that
-approval (see root `AGENTS.md`) before the `wrangler secret put`, not after.
+Approval: re-pushing an unchanged, already-approved secret (what a normal
+deploy or `push-secrets:*` does) needs no new approval. A new or changed
+value needs Secret Mutation Safety approval (root `AGENTS.md`) before the
+`put`.
 
 ## What breaks what
 
@@ -141,13 +133,11 @@ table's specifics as current without checking.
 
 Recipients are age public keys declared per path in `.sops.yaml`
 `creation_rules` — there is no separate role registry; that file is the source
-of truth. A `creation_rules` `path_regex` matches the path of the file sops
-**reads**, not an output redirect target: `sops -e plaintext.json >
-secrets/env.json` fails with "no matching creation rules found" if
-`plaintext.json`'s own name doesn't match the rule. Either encrypt in place
-at the final path (`cp plaintext.json secrets/env.json && sops -e -i
-secrets/env.json`) or pass `--filename-override <target-path>` if the
-plaintext has to keep a different name. Economics secrets (`operations/economics/**/secrets/*`) encrypt to
+of truth. A `creation_rules` `path_regex` matches the file sops **reads**,
+not where the output goes: `sops -e plaintext.json > secrets/env.json` fails
+with "no matching creation rules found". Either copy to the final path first
+and encrypt in place (`sops -e -i secrets/env.json`), or pass
+`--filename-override <target-path>`. Economics secrets (`operations/economics/**/secrets/*`) encrypt to
 a single dedicated age key; the repo-wide worker/CI secrets (`*.vars.json`,
 `env.json`) encrypt to the team key set. Rotating a recipient means changing the
 `age:` list on the relevant `creation_rules` entry, as a two-phase,

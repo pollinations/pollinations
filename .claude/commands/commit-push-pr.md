@@ -30,11 +30,11 @@ gh pr list --head <branch-name> --state merged --json number --jq '.[0].number'
 
 ## Step 2: Commit and push
 
-0. Finish any dependency-sensitive checks (lockfile/install-affecting, e.g. `npm ci`, a build) BEFORE committing — commit hooks can probe package-manager commands and mutate ignored files like `node_modules`; don't run one in parallel with `git commit`. If a hook does mutate the install, restore from the committed lockfile and rerun affected checks serially.
+0. Finish `npm ci` / builds before committing. Commit hooks may run package-manager commands and touch `node_modules`, so never run them alongside `git commit`. If a hook changed the install, restore from the lockfile and rerun the checks.
 1. `git status` and `git diff --stat` to review changes
 2. Stage relevant files (avoid `.env`, credentials, `.claude/settings.local.json`)
-3. Commit with conventional format (`feat:`, `fix:`, `refactor:`, etc.). If crediting more than one contributor, put every `Co-authored-by:` line together in one contiguous trailer block at the end of the message — a blank line between them causes `git interpret-trailers` (and GitHub's squash merge) to drop all but the last one. Verify with `git interpret-trailers --parse` before pushing.
-4. Re-check `git status --short` after the commit, before pushing — if a hook left behind untracked or modified files, inspect their provenance and remove only artifacts verified to be hook-created.
+3. Commit with conventional format (`feat:`, `fix:`, `refactor:`, etc.). Several `Co-authored-by:` lines must sit together at the end with no blank line between them, or squash merge keeps only the last one. Check with `git interpret-trailers --parse`.
+4. Run `git status --short` again before pushing. Remove only files a hook demonstrably created.
 5. Push: `git push` (or `git push -u origin HEAD` for new branches)
 
 ## Step 3: Create PR (only if no open PR exists)
@@ -57,4 +57,4 @@ Follow PR format from AGENTS.md:
 - 3-5 bullets max
 - Simple titles: "fix:", "feat:", "Add"
 
-After a squash merge, verify the resulting commit message actually carried every `Co-authored-by:` line — a non-contiguous trailer block can survive review in the PR description while still being dropped from the squash commit. Never rewrite a shared branch to repair credit after the fact.
+After a squash merge, check the squash commit kept every `Co-authored-by:` line. If one was dropped, never rewrite the shared branch to fix it.

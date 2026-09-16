@@ -14,20 +14,16 @@ const memoryStorage = (): StorageAdapter => {
 };
 
 describe("AppUserMenu", () => {
-    test("applies the action treatment to the logged-out trigger", () => {
+    test("renders the branded connect pill when logged out", () => {
         const html = renderToStaticMarkup(
             <PolliProvider appKey="pk_test" storage={memoryStorage()}>
-                <AppUserMenu triggerVariant="action" />
+                <AppUserMenu />
             </PolliProvider>,
         );
 
-        expect(html).toContain("polli:min-h-14");
-        expect(html).toContain("polli:rounded-xl");
-        expect(html).toContain("polli:border-r-4");
-        expect(html).toContain("polli:border-theme-text-strong/20");
-        expect(html).not.toContain("polli:border-brand-dark/20");
         expect(html).toContain("Connect with Pollinations");
         expect(html).toContain("mask:url(");
-        expect(html).not.toContain('d="M15 12H3"');
+        expect(html).toContain("polli:rounded-full");
+        expect(html).not.toContain("polli:border-r-4");
     });
 });

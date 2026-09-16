@@ -6,7 +6,6 @@ import {
 } from "@pollinations/sdk/react";
 import markUrl from "../../brand/mark.svg";
 import { AccountMenu } from "../../compositions/AccountMenu.tsx";
-import { cn } from "../../lib/cn.ts";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
 import {
     ExternalLinkIcon,
@@ -26,9 +25,9 @@ export type AppUserMenuLabels = {
 };
 
 export type AppUserMenuProps = {
+    /** Optional caller-owned dashboard destination for the linked avatar. */
+    dashboardHref?: string;
     labels?: Partial<AppUserMenuLabels>;
-    /** Logged-out CTA style. The connected account always uses a pill. */
-    triggerVariant?: "pill" | "action";
 };
 
 const defaultLabels: AppUserMenuLabels = {
@@ -39,12 +38,9 @@ const defaultLabels: AppUserMenuLabels = {
     logout: "Disconnect",
 };
 
-const actionTriggerClass =
-    "polli:min-h-14 polli:rounded-xl polli:border-r-4 polli:border-b-4 polli:border-solid polli:border-theme-text-strong/20 polli:py-2 polli:hover:border-theme-text-strong/45";
-
 export function AppUserMenu({
+    dashboardHref,
     labels: labelOverrides,
-    triggerVariant = "pill",
 }: AppUserMenuProps) {
     const labels = { ...defaultLabels, ...labelOverrides };
     const { logout, enterUrl } = useAuthActions();
@@ -71,14 +67,7 @@ export function AppUserMenu({
             className="polli:flex polli:shrink-0 polli:justify-end"
         >
             {!isLoggedIn ? (
-                <LoginButton
-                    appearance={triggerVariant === "action" ? "raised" : "pill"}
-                    className={cn(
-                        "polli:gap-1.5 polli:whitespace-nowrap",
-                        triggerVariant === "action" &&
-                            `${actionTriggerClass} polli:px-4`,
-                    )}
-                >
+                <LoginButton className="polli:gap-1.5 polli:whitespace-nowrap">
                     <span
                         aria-hidden="true"
                         className="polli:block polli:h-4 polli:w-4 polli:shrink-0 polli:bg-current"
@@ -97,6 +86,9 @@ export function AppUserMenu({
                         "Connected user"
                     }
                     avatarUrl={profile.data?.image}
+                    dashboardHref={
+                        dashboardHref ?? new URL("/pollen", enterUrl).href
+                    }
                     menuLabel={labels.appUserMenu}
                     className="polli:max-w-64"
                     secondaryContent={

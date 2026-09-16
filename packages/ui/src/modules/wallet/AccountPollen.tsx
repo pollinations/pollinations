@@ -69,7 +69,8 @@ export function AccountPollen({
         balances != null && isEmpty(balances.paid) && isEmpty(balances.quest);
     return (
         <span className="polli:inline-flex polli:items-center polli:gap-2 polli:tabular-nums">
-            {(["paid", "quest"] as const).map((kind) => {
+            {/* Quest Pollen is spent first, so it comes first. */}
+            {(["quest", "paid"] as const).map((kind) => {
                 const amount = balances?.[kind];
                 return (
                     <span

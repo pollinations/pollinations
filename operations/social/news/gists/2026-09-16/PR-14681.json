@@ -1,0 +1,34 @@
+{
+  "pr_number": 14681,
+  "title": "feat: ban accounts using Stripe fraud signals",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14681",
+  "merged_at": "2026-09-16T10:20:59Z",
+  "labels": [],
+  "pr_body_excerpt": "Adds account-level protection alongside the existing, unchanged Stripe new-card gate.\n\n- **Rules:** Hourly checks; capped score ≥ **0.75**. Weights: fraud dispute **5**, fraud report **3**, early fraud warning **2**, highest risk **1**, blocked payment **0**. Each payment counts toward its strongest signal only. Contributions grow with frequency, capped at each weight, then sum and round to two decimals. A blocked payment can still contribute through its highest-risk flag.\n- **Effect:** Bans stop sign-in, API/app-key usage, purchases and auto-top-up. Sessions are revoked, open checkouts expire, and community models/agents become unavailable.\n- **Safeguards:** No migration. Incomplete scans and email-only matches cannot trigger bans. The settled account stays excluded. Merchant fraud reports and fraudulent disputes of any outcome currently count; restored accounts need an exclusion.\n- **Backfill:** The first enabled run scans **all available history**, as do subsequent runs. A three-month simulator preview (June 4–September 4, 2026) finds **7 candidates** with dispute weight 5 or the experimental 8. This is a historical estimate, not a validated production ban list. Neither weight 8 nor a three-month cutoff is implemented here.\n- **Rollout:** Deploy, run a read-only manual check, validate candidates, then explicitly enable hourly enforcement. CI is green.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "major",
+    "headline": "The garden gets a gatekeeper",
+    "blurb": "A new account-integrity check now tends the edges of the garden alongside the existing new-card gate. Polli is keeping the shared tools available for the people building with them.",
+    "summary": "Added an hourly Stripe-signal account protection check that caps and combines dispute, report, early-warning, and highest-risk payment signals, then blocks sign-in, API/app-key use, purchases, auto-top-up, and community model access for validated accounts above a 0.75 score.",
+    "impact": "The platform gains a cautious, reviewable enforcement path: incomplete scans and email-only matches cannot act, the settled account remains excluded, and rollout begins with a read-only full-history check before hourly enforcement is enabled.",
+    "keywords": [
+      "account protection",
+      "Stripe",
+      "billing",
+      "authentication",
+      "API keys",
+      "community models"
+    ],
+    "visual_concept": "Depict Polli as a warm little garden gatekeeper with a tiny ranger hat, checking a softly glowing score gauge beside a cozy API garden. A CRT monitor robot can hold a checklist while healthy code-plants and community-model flower pots remain safely behind a lime-green garden gate; the visual should communicate careful stewardship rather than punishment.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light-blue wings, wearing a tiny ranger hat and calmly checking a rounded signal gauge beside a lime green (#ecf874) garden gate; a helpful CRT-monitor robot holds a checklist while glowing code-plants bloom safely behind the gate. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle flowers and vines, dark purple (#110518) outlines, emotionally warm and inviting."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14681.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light-blue wings, wearing a tiny ranger hat and calmly checking a rounded signal gauge beside a lime green (#ecf874) garden gate; a helpful CRT-monitor robot holds a checklist while glowing code-plants bloom safely behind the gate. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle flowers and vines, dark purple (#110518) outlines, emotionally warm and inviting."
+  },
+  "generated_at": "2026-09-16T10:22:04.371881+00:00"
+}

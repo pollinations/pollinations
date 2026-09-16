@@ -15,7 +15,7 @@ import {
     WalletIcon,
 } from "../../primitives/icons/index.tsx";
 import { LoginButton } from "../auth/sdk.ts";
-import { Balance } from "../wallet/sdk.ts";
+import { formatPollen } from "../wallet/format-pollen.ts";
 
 export type AppUserMenuLabels = {
     authorize: string;
@@ -61,8 +61,9 @@ export function AppUserMenu({
     const topUpUrl = new URL("/top-up", enterUrl);
     if (returnUrl) topUpUrl.searchParams.set("redirect", returnUrl);
     const keyId = key.data?.id;
-    const editAllowanceUrl = keyId ? new URL("/edit-key", enterUrl) : undefined;
-    if (editAllowanceUrl && keyId) {
+    let editAllowanceUrl: URL | undefined;
+    if (keyId) {
+        editAllowanceUrl = new URL("/edit-key", enterUrl);
         editAllowanceUrl.searchParams.set("id", keyId);
         if (returnUrl) editAllowanceUrl.searchParams.set("redirect", returnUrl);
     }
@@ -102,13 +103,17 @@ export function AppUserMenu({
                     className="polli:max-w-64"
                     menuClassName="polli:w-max polli:min-w-0"
                     secondaryContent={
-                        <span className="polli:inline-flex polli:items-center polli:gap-1">
-                            <KeyIcon
-                                className="polli:h-3.5 polli:w-3.5 polli:shrink-0"
-                                aria-hidden="true"
-                            />
-                            <Balance className="polli:bg-transparent polli:px-0 polli:py-0 polli:text-xs polli:text-theme-text-base" />
-                        </span>
+                        key.data ? (
+                            <span className="polli:inline-flex polli:items-center polli:gap-1 polli:text-xs polli:text-theme-text-base polli:tabular-nums">
+                                <KeyIcon
+                                    className="polli:h-3.5 polli:w-3.5 polli:shrink-0"
+                                    aria-hidden="true"
+                                />
+                                {key.data.pollenBudget == null
+                                    ? "Unlimited"
+                                    : `${formatPollen(key.data.pollenBudget)} pollen`}
+                            </span>
+                        ) : null
                     }
                 >
                     {(close) => (

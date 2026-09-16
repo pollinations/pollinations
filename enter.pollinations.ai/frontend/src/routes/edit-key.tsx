@@ -92,8 +92,8 @@ function EditKeyPage() {
             .then((wallet) => {
                 if (!canceled) {
                     setBalances({
-                        paid: wallet.packBalance ?? 0,
-                        quest: wallet.tierBalance ?? 0,
+                        paid: wallet.packBalance,
+                        quest: wallet.tierBalance,
                     });
                 }
             })

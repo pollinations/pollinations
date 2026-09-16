@@ -60,7 +60,6 @@ export function AccountMenu({
                 trigger={(open) => (
                     <button
                         type="button"
-                        data-theme="accent"
                         aria-label={menuLabel}
                         aria-describedby={
                             secondaryContent != null ? statusId : undefined

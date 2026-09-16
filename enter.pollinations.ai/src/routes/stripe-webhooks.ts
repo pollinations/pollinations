@@ -12,6 +12,10 @@ import {
     markAutoTopUpInvoiceFailed,
 } from "../utils/stripe-billing/index.ts";
 import { recordStripeCardFingerprintAttempt } from "../utils/stripe-card-gate.ts";
+import {
+    expireOpenStripeCheckoutSessions,
+    fraudBanQueries,
+} from "../utils/stripe-fraud-ban.ts";
 
 interface StripeEventData {
     eventType: string;
@@ -100,7 +104,7 @@ function readUserIdFromMetadata(
     return metadata?.userId || metadata?.pollinations_user_id || "";
 }
 
-async function recordFailedCardFingerprintFromCharge({
+async function recordCardFingerprintFromCharge({
     env,
     event,
     charge,
@@ -125,10 +129,46 @@ async function recordFailedCardFingerprintFromCharge({
         });
     } catch (err) {
         console.error(
-            `Failed to record Stripe failed-card fingerprint for event ${event.id}:`,
+            `Failed to record Stripe card fingerprint for event ${event.id}:`,
             err,
         );
     }
+}
+
+/**
+ * Issuer-confirmed fraud (a fraudulent dispute or an early fraud warning) bans
+ * the buyer the same way the hourly fraud scan does, so the stolen card can't
+ * be reused from that account. A refund is only possible while the charge is
+ * not yet formally disputed (inquiries, EFWs); it closes the case without the
+ * dispute fee.
+ */
+async function banForPaymentAbuse(
+    env: CloudflareBindings,
+    stripe: Stripe,
+    chargeRef: string | Stripe.Charge,
+    refund: boolean,
+): Promise<void> {
+    const charge = await stripe.charges.retrieve(
+        typeof chargeRef === "string" ? chargeRef : chargeRef.id,
+    );
+    const userId = readUserIdFromMetadata(charge.metadata);
+    const queries = fraudBanQueries(userId);
+    if (!userId || !queries.length) {
+        console.error(`No bannable user for Stripe charge ${charge.id}`);
+        return;
+    }
+    await env.DB.batch(
+        queries.map(({ sql, params }) => env.DB.prepare(sql).bind(...params)),
+    );
+    const customerId =
+        typeof charge.customer === "string"
+            ? charge.customer
+            : charge.customer?.id;
+    if (customerId) await expireOpenStripeCheckoutSessions(stripe, customerId);
+    if (refund && !charge.refunded) {
+        await stripe.refunds.create({ charge: charge.id });
+    }
+    console.log(`Banned user ${userId} for payment abuse on ${charge.id}`);
 }
 
 /**
@@ -420,7 +460,7 @@ function emitPaymentIntentAnalytics(
             );
             const snapshot = snapshotFromCharge(charge);
             if (recordFailedCardFingerprint) {
-                await recordFailedCardFingerprintFromCharge({
+                await recordCardFingerprintFromCharge({
                     env: c.env,
                     event,
                     charge,
@@ -604,10 +644,17 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 // The Charge IS the event payload, so we can read
                 // payment_method_details + card.country + risk_score directly
                 // without an additional Stripe API call. Pack credit still
-                // happens via checkout.session.completed; successful cards
-                // don't feed the failed-card gate ledger.
+                // happens via checkout.session.completed. The card fingerprint
+                // feeds the new-card gate ledger so a tester rotating stolen
+                // cards that happen to work locks the gate like failed ones.
                 const charge = event.data.object as Stripe.Charge;
                 const snapshot = snapshotFromCharge(charge);
+                await recordCardFingerprintFromCharge({
+                    env: c.env,
+                    event,
+                    charge,
+                    snapshot,
+                });
                 c.executionCtx.waitUntil(
                     sendStripeEventToTinybird(c.env, {
                         eventType: event.type,
@@ -819,6 +866,36 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     }).catch((err) =>
                         console.error("TinyBird Stripe send failed:", err),
                     ),
+                );
+                break;
+            }
+
+            case "charge.dispute.created": {
+                const dispute = event.data.object as Stripe.Dispute;
+                console.log(
+                    `Dispute ${dispute.id}: ${dispute.reason} (${dispute.status})`,
+                );
+                if (dispute.reason !== "fraudulent") break;
+                // `warning_*` statuses are inquiries (Discover, Amex); a
+                // refund closes them before they become fee-bearing disputes.
+                await banForPaymentAbuse(
+                    c.env,
+                    stripe,
+                    dispute.charge,
+                    dispute.status.startsWith("warning_"),
+                );
+                break;
+            }
+
+            case "radar.early_fraud_warning.created": {
+                const warning = event.data
+                    .object as Stripe.Radar.EarlyFraudWarning;
+                console.log(`Early fraud warning ${warning.id}`);
+                await banForPaymentAbuse(
+                    c.env,
+                    stripe,
+                    warning.charge,
+                    warning.actionable,
                 );
                 break;
             }

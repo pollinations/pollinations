@@ -98,7 +98,9 @@ test("eight failed cards are recorded without a webhook account ban", async ({
 import { env, SELF } from "cloudflare:test";
 import { createHmac } from "node:crypto";
 import {
+    session as sessionTable,
     stripeCardFingerprintAttempt as stripeCardFingerprintAttemptTable,
+    stripeCheckoutCredits as stripeCheckoutCreditsTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import {
@@ -463,7 +465,7 @@ test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", asyn
         ],
     ).toBe("ok");
     expect(body?.["payment_method_options[card][request_three_d_secure]"]).toBe(
-        undefined,
+        "any",
     );
 });
 
@@ -555,7 +557,7 @@ test("GET /api/stripe/checkout marks new-card gate locked after four distinct fa
         ],
     ).toBe("4");
     expect(body?.["payment_method_options[card][request_three_d_secure]"]).toBe(
-        undefined,
+        "any",
     );
 });
 
@@ -3310,7 +3312,7 @@ test("POST /api/webhooks/stripe charge.succeeded enriches Tinybird with card iss
     });
 });
 
-test("POST /api/webhooks/stripe charge.succeeded does not record failed-card gate fingerprint or credit checkout", async ({
+test("POST /api/webhooks/stripe charge.succeeded records the gate fingerprint without crediting checkout", async ({
     sessionToken,
     mocks,
 }) => {
@@ -3320,9 +3322,6 @@ test("POST /api/webhooks/stripe charge.succeeded does not record failed-card gat
 
     const creditsBefore = await env.DB.prepare(
         "SELECT COUNT(*) AS count FROM stripe_checkout_credits",
-    ).first<{ count: number }>();
-    const attemptsBefore = await env.DB.prepare(
-        "SELECT COUNT(*) AS count FROM stripe_card_fingerprint_attempt",
     ).first<{ count: number }>();
 
     const response = await postSignedStripeWebhook({
@@ -3360,10 +3359,24 @@ test("POST /api/webhooks/stripe charge.succeeded does not record failed-card gat
     ).first<{ count: number }>();
     expect(after?.count).toBe(creditsBefore?.count);
 
-    const attemptsAfter = await env.DB.prepare(
-        "SELECT COUNT(*) AS count FROM stripe_card_fingerprint_attempt",
-    ).first<{ count: number }>();
-    expect(attemptsAfter?.count).toBe(attemptsBefore?.count);
+    // Successful cards feed the new-card gate too, so a tester rotating
+    // working stolen cards locks the gate like one rotating declined cards.
+    const [attempt] = await drizzle(env.DB)
+        .select({
+            userId: stripeCardFingerprintAttemptTable.userId,
+            cardFingerprint: stripeCardFingerprintAttemptTable.cardFingerprint,
+        })
+        .from(stripeCardFingerprintAttemptTable)
+        .where(
+            eq(
+                stripeCardFingerprintAttemptTable.eventId,
+                "evt_test_charge_no_d1",
+            ),
+        );
+    expect(attempt).toEqual({
+        userId,
+        cardFingerprint: "fp_test_charge_no_d1",
+    });
 });
 
 test("POST /api/webhooks/stripe payment_intent.payment_failed records latest charge fingerprint", async ({
@@ -3598,4 +3611,185 @@ test("GET /api/stripe/checkout/p5 returns to Pollen for any other return value",
             expect(url.pathname, value).toBe("/pollen");
         }
     }
+});
+
+test("GET /api/stripe/checkout skips 3DS for a returning buyer on a pack of $10 or more", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    await drizzle(env.DB).insert(stripeCheckoutCreditsTable).values({
+        sessionId: "cs_prior_purchase",
+        eventId: "evt_prior_purchase",
+        eventType: "checkout.session.completed",
+        userId,
+        pollenCredited: 10,
+        createdAt: new Date(),
+    });
+
+    for (const [packKey, expected] of [
+        ["p10", undefined],
+        ["p5", "any"],
+    ] as const) {
+        mocks.stripe.state.requests.length = 0;
+        const response = await SELF.fetch(`${base}/checkout/${packKey}`, {
+            method: "GET",
+            headers: { cookie: `better-auth.session_token=${sessionToken}` },
+            redirect: "manual",
+        });
+        expect(response.status).toBe(302);
+        const body = mocks.stripe.state.requests.find(
+            (request) => request.path === "/v1/checkout/sessions",
+        )?.body;
+        expect(
+            body?.["payment_method_options[card][request_three_d_secure]"],
+            packKey,
+        ).toBe(expected);
+    }
+});
+
+async function seedDisputedCharge(
+    mocks: { stripe: { state: { fraudCharges: Record<string, unknown>[] } } },
+    chargeId: string,
+    userId: string,
+) {
+    mocks.stripe.state.fraudCharges.push({
+        id: chargeId,
+        object: "charge",
+        amount: 200,
+        currency: "usd",
+        status: "succeeded",
+        customer: "cus_test_abuse",
+        refunded: false,
+        metadata: { userId },
+    });
+}
+
+async function readBanState(userId: string) {
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ banned: userTable.banned, banReason: userTable.banReason })
+        .from(userTable)
+        .where(eq(userTable.id, userId));
+    const sessions = await db
+        .select({ id: sessionTable.id })
+        .from(sessionTable)
+        .where(eq(sessionTable.userId, userId));
+    return { ...user, sessionCount: sessions.length };
+}
+
+test("POST /api/webhooks/stripe charge.dispute.created inquiry bans the buyer and refunds", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    expect(sessionToken).toBeTruthy();
+    const userId = await getSeededUserId();
+    expect((await readBanState(userId)).sessionCount).toBeGreaterThan(0);
+    await seedDisputedCharge(mocks, "ch_test_inquiry", userId);
+    mocks.stripe.state.checkoutSessions.push({
+        id: "cs_test_abuse_open",
+        object: "checkout.session",
+        mode: "payment",
+        customer: "cus_test_abuse",
+        status: "open",
+        url: "https://checkout.stripe.test/abuse",
+    });
+
+    const response = await postSignedStripeWebhook({
+        id: "evt_test_inquiry",
+        type: "charge.dispute.created",
+        livemode: false,
+        data: {
+            object: {
+                id: "dp_test_inquiry",
+                object: "dispute",
+                charge: "ch_test_inquiry",
+                amount: 200,
+                currency: "usd",
+                reason: "fraudulent",
+                status: "warning_needs_response",
+            },
+        },
+    });
+    expect(response.status).toBe(200);
+
+    expect(await readBanState(userId)).toEqual({
+        banned: true,
+        banReason: "Payment abuse",
+        sessionCount: 0,
+    });
+    expect(mocks.stripe.state.checkoutSessions.at(-1)?.status).toBe("expired");
+    const refund = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/refunds",
+    );
+    expect(refund?.body.charge).toBe("ch_test_inquiry");
+});
+
+test("POST /api/webhooks/stripe charge.dispute.created formal dispute bans without a refund", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    expect(sessionToken).toBeTruthy();
+    const userId = await getSeededUserId();
+    await seedDisputedCharge(mocks, "ch_test_dispute", userId);
+
+    const response = await postSignedStripeWebhook({
+        id: "evt_test_dispute",
+        type: "charge.dispute.created",
+        livemode: false,
+        data: {
+            object: {
+                id: "dp_test_dispute",
+                object: "dispute",
+                charge: "ch_test_dispute",
+                amount: 200,
+                currency: "usd",
+                reason: "fraudulent",
+                status: "needs_response",
+            },
+        },
+    });
+    expect(response.status).toBe(200);
+
+    expect((await readBanState(userId)).banned).toBe(true);
+    expect(
+        mocks.stripe.state.requests.some(
+            (request) => request.path === "/v1/refunds",
+        ),
+    ).toBe(false);
+});
+
+test("POST /api/webhooks/stripe radar.early_fraud_warning.created bans the buyer and refunds", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    expect(sessionToken).toBeTruthy();
+    const userId = await getSeededUserId();
+    await seedDisputedCharge(mocks, "ch_test_efw", userId);
+
+    const response = await postSignedStripeWebhook({
+        id: "evt_test_efw",
+        type: "radar.early_fraud_warning.created",
+        livemode: false,
+        data: {
+            object: {
+                id: "issfr_test_efw",
+                object: "radar.early_fraud_warning",
+                charge: "ch_test_efw",
+                actionable: true,
+                fraud_type: "made_with_stolen_card",
+            },
+        },
+    });
+    expect(response.status).toBe(200);
+
+    expect((await readBanState(userId)).banned).toBe(true);
+    const refund = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/refunds",
+    );
+    expect(refund?.body.charge).toBe("ch_test_efw");
 });

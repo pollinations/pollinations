@@ -330,10 +330,12 @@ scores accounts daily on Stripe signals (`enter.pollinations.ai/src/utils/stripe
 - Scheduled and manually dispatched checks are read-only during calibration.
   The report always passes `apply: false`; bans and refunds require manual decisions.
 - One daily Discord message via `DISCORD_FRAUD_WEBHOOK_URL` covers fraud review,
-  dispute deadlines, refund/Pollen reconciliation, changes and scan health. Each
-  section shows up to three items; reruns update the same day's message. Excluded
-  and already-banned accounts are omitted from the fraud queue, not from disputes.
-  Private Enter KV stores the comparison checkpoint; no public Actions artifacts.
+  dispute deadlines, refund/Pollen reconciliation, the last 24 hours of Stripe
+  events and scan health. Polli summarizes bounded, read-only evidence; it receives
+  no Stripe/D1 credentials, emails or card data. Excluded and already-banned
+  accounts are omitted from the fraud queue, not from disputes.
+  No KV history or score-delta tracking. One post per scheduled run; manual reruns
+  post again. Polli failures send a short failure notice, not an invented report.
 - Refund reconciliation requires the `stripe_refund` ledger and webhook deployment
   from #15044. Missing or mismatched records are unverified, not proof of a failed
   deduction (historical manual adjustments may predate the ledger).

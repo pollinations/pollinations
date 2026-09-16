@@ -5,7 +5,8 @@ import { fileURLToPath } from "node:url";
 import Stripe from "stripe";
 import { FraudCheckError } from "../src/utils/stripe-fraud-score.ts";
 import {
-    buildFraudReport,
+    askPolli,
+    collectDailyEvidence,
     collectRefundReport,
     fraudCheckErrorMessage,
     postFraudReport,
@@ -78,123 +79,202 @@ test("parser, filesystem, and unknown errors never expose raw contents", () => {
 });
 
 const now = Date.UTC(2026, 8, 17, 7, 17);
-const scan = {
-    candidates: 1,
-    applied: 0,
-    charges: 350,
-    unmapped: 12,
-    warnings: ["issfr_new"],
-    disputes: [
+const modelReply = (
+    content = "**Disputes**: none. **Fraud review**: 1 warning. Review manually.",
+) => ({
+    choices: [{ message: { content }, finish_reason: "stop" }],
+    usage: { prompt_tokens: 100, completion_tokens: 20 },
+});
+const response = (body) => ({ ok: true, json: async () => body });
+
+function sources() {
+    const stripe = new Stripe("sk_test_mock", { maxNetworkRetries: 0 });
+    stripe.accounts.retrieve = async () => ({ id: "acct_1SrY3q7rcjS3l7tr" });
+    stripe.charges.list = () => [
         {
-            id: "dp_new",
-            chargeId: "ch_a",
-            status: "needs_response",
-            reason: "duplicate",
-            amount: 1500,
+            id: "ch_a",
+            livemode: true,
+            metadata: { userId: "u_1", private: "PRIVATE_CONTENT" },
+            amount: 500,
             currency: "usd",
-            due: now / 1000 + 3600,
+            amount_refunded: 0,
+            created: now / 1000,
         },
-        { id: "dp_closed", status: "won" },
-    ],
-    report: [
+    ];
+    stripe.disputes.list = () => [];
+    stripe.radar.earlyFraudWarnings.list = () => [
+        { id: "issfr_a", livemode: true, charge: "ch_a" },
+    ];
+    stripe.refunds.list = () => [];
+    stripe.events.list = (params) => {
+        assert.deepEqual(params.created, {
+            gte: now / 1000 - 86400,
+            lte: now / 1000,
+        });
+        assert.ok(params.types.includes("charge.dispute.closed"));
+        return [
+            {
+                id: "evt_a",
+                livemode: true,
+                type: "charge.dispute.closed",
+                created: now / 1000,
+                data: {
+                    object: {
+                        id: "dp_a",
+                        status: "won",
+                        email: "PRIVATE_CONTENT",
+                    },
+                },
+            },
+        ];
+    };
+    const query = async ({ sql }) => {
+        assert.match(sql, /^SELECT /);
+        return [
+            {
+                results: [
+                    {
+                        id: "u_1",
+                        stripe_customer_id: null,
+                        name: "PRIVATE_CONTENT",
+                        banned: 0,
+                        ban_expires: null,
+                    },
+                ],
+            },
+        ];
+    };
+    return { stripe, query };
+}
+
+test("collector reuses scores, supplies Stripe changes, and omits private/freeform fields", async () => {
+    const { stripe, query } = sources();
+    const evidence = await collectDailyEvidence(stripe, query, [], now);
+    assert.equal(evidence.fraudReview.shown[0].score, 0.15);
+    assert.equal(evidence.fraudReview.shown[0].breakdown[0].signal, "ew");
+    assert.equal(evidence.fraudReview.shown[0].payments[0].amount, 500);
+    assert.match(
+        evidence.fraudReview.shown[0].payments[0].url,
+        /payments\/ch_a$/,
+    );
+    assert.equal(evidence.changes.shown[0].status, "won");
+    assert.equal(evidence.health.complete, true);
+    assert.doesNotMatch(JSON.stringify(evidence), /PRIVATE_CONTENT/);
+});
+
+test("incomplete refund reconciliation preserves other evidence and marks the report incomplete", async () => {
+    const { stripe, query } = sources();
+    stripe.refunds.list = () => {
+        throw new FraudCheckError("Refund ledger unavailable");
+    };
+    const evidence = await collectDailyEvidence(stripe, query, [], now);
+    assert.equal(evidence.health.complete, false);
+    assert.equal(evidence.refunds, undefined);
+    assert.equal(evidence.changes.shown[0].status, "won");
+    assert.match(
+        evidence.errors[0],
+        /Refund reconciliation: Refund ledger unavailable/,
+    );
+});
+
+test("Polli only receives evidence and returns one bounded report without tools", async () => {
+    const evidence = await collectDailyEvidence(
+        ...Object.values(sources()),
+        [],
+        now,
+    );
+    const answer = await askPolli(evidence, "test_key", async (url, init) => {
+        assert.equal(url, "https://gen.pollinations.ai/v1/chat/completions");
+        const body = JSON.parse(init.body);
+        assert.equal(body.model, "community/pollinations-router/polli");
+        assert.deepEqual(body.tools, []);
+        assert.equal(body.tool_choice, "none");
+        assert.equal(body.messages[0].role, "system");
+        assert.match(body.messages[0].content, /No scoring-calibration report/);
+        assert.deepEqual(JSON.parse(body.messages[1].content), evidence);
+        assert.doesNotMatch(
+            body.messages[1].content,
+            /test_key|PRIVATE_CONTENT/,
+        );
+        return response(modelReply());
+    });
+    assert.match(answer, /Review manually/);
+    for (const invalid of [
+        modelReply(""),
+        modelReply("a".repeat(1801)),
+        { ...modelReply(), usage: null },
         {
-            id: "u_1",
-            name: "alice @everyone\n**spoof**",
-            score: 0.15,
-            breakdown: [{ signal: "ew", count: 1, contribution: 0.15 }],
-            payments: [
+            ...modelReply(),
+            choices: [
+                { finish_reason: "length", message: { content: "partial" } },
+            ],
+        },
+        {
+            ...modelReply(),
+            choices: [
                 {
-                    id: "ch_a",
-                    amount: 500,
-                    currency: "usd",
-                    created: now / 1000 - 3600,
-                    refunded: 0,
+                    finish_reason: "stop",
+                    message: { content: "act", tool_calls: [{}] },
                 },
             ],
         },
-    ],
-};
-const previous = {
-    at: now - 86400_000,
-    scores: { u_1: 0.08, u_gone: 0.8 },
-    warnings: [],
-    disputes: { dp_closed: "under_review" },
-    refunds: {},
-};
-const health = { requests: 7, seconds: 12, lastSuccess: now };
-
-test("one compact daily message has five sections, reasons, deadlines and real changes", () => {
-    const { payload, snapshot } = buildFraudReport(
-        scan,
-        [],
-        previous,
-        health,
-        now,
-    );
-    assert.equal(payload.embeds.length, 1);
-    assert.equal(payload.embeds[0].fields.length, 5);
-    const content = JSON.stringify(payload);
-    for (const expected of [
-        "issuer warnings (+0.15)",
-        "$5.00",
-        "needs response",
-        "due within 48h",
-        "1 increased scores",
-        "1 closed disputes",
-        "1 accounts left review queue",
-        "7 Stripe requests",
-        "No bans or refunds performed",
     ])
-        assert.ok(content.includes(expected), expected);
-    assert.doesNotMatch(content, /@everyone|\*\*spoof/);
-    assert.deepEqual(payload.allowed_mentions, { parse: [] });
-    assert.equal(snapshot.at, now);
+        await assert.rejects(
+            askPolli(evidence, "test_key", async () => response(invalid)),
+            /invalid report/,
+        );
 });
 
-test("quiet days and incomplete scans are explicit, and embeds stay within Discord limits", () => {
-    const quiet = buildFraudReport(
-        { ...scan, report: [], disputes: [], warnings: [] },
-        [],
-        null,
-        health,
+test("one daily Discord post is bounded, disables mentions, and failures never expose the webhook", async () => {
+    const calls = [];
+    const fetchImpl = async (url, init) => {
+        calls.push({ url, init });
+        return url.startsWith("https://gen.")
+            ? response(modelReply("x".repeat(1800)))
+            : response({ id: "123" });
+    };
+    assert.equal(
+        await runDailyReport({
+            ...sources(),
+            webhookUrl: "https://discord.test/SECRET",
+            apiKey: "test_key",
+            fetchImpl,
+            now,
+        }),
+        true,
+    );
+    assert.equal(calls.length, 2);
+    const sent = JSON.parse(calls[1].init.body);
+    assert.deepEqual(sent.allowed_mentions, { parse: [] });
+    assert.ok(sent.content.length <= 2000);
+    assert.match(sent.content, /No bans or refunds performed/);
+    await assert.rejects(
+        postFraudReport("https://discord.test/SECRET", "brief", async () => ({
+            ok: false,
+            status: 429,
+        })),
+        (error) => error.message === "Discord report failed: HTTP 429",
+    );
+});
+
+test("Polli failure sends one plain failure notice instead of an invented or partial report", async () => {
+    const sent = [];
+    const complete = await runDailyReport({
+        ...sources(),
+        webhookUrl: "https://discord.test/SECRET",
+        apiKey: "test_key",
         now,
-    );
-    assert.match(JSON.stringify(quiet.payload), /No accounts awaiting review/);
-    assert.match(JSON.stringify(quiet.payload), /First complete report/);
-    const failed = buildFraudReport(
-        null,
-        null,
-        previous,
-        { ...health, error: "Stripe unavailable" },
-        now,
-    );
-    assert.equal(failed.snapshot, null);
-    assert.match(JSON.stringify(failed.payload), /Unavailable/);
-    assert.doesNotMatch(
-        JSON.stringify(failed.payload),
-        /0 unverified|0 need a response/,
-    );
-    const busy = buildFraudReport(
-        { ...scan, report: Array(100).fill(scan.report[0]) },
-        [],
-        previous,
-        health,
-        now,
-    ).payload.embeds[0];
-    assert.match(JSON.stringify(busy), /more/);
-    assert.ok(
-        busy.fields.every(
-            (field) => field.value.length <= 1024 && field.name.length <= 256,
-        ),
-    );
-    assert.ok(
-        busy.fields.reduce(
-            (n, f) => n + f.name.length + f.value.length,
-            busy.title.length +
-                busy.description.length +
-                busy.footer.text.length,
-        ) <= 6000,
-    );
+        fetchImpl: async (url, init) => {
+            if (url.startsWith("https://gen."))
+                return { ok: false, status: 503 };
+            sent.push(JSON.parse(init.body));
+            return response({ id: "123" });
+        },
+    });
+    assert.equal(complete, false);
+    assert.equal(sent.length, 1);
+    assert.match(sent[0].content, /INCOMPLETE REPORT/);
+    assert.match(sent[0].content, /Polli summary failed: HTTP 503/);
 });
 
 test("refund reconciliation uses ledger amounts and distinguishes missing, pending and restored adjustments", async () => {
@@ -244,215 +324,47 @@ test("refund reconciliation uses ledger amounts and distinguishes missing, pendi
     assert.equal(result[3].pollen, null);
     assert.equal(result[3].issue, null);
     assert.equal(result[4].issue, "Pollen adjustment unverified");
-    const report = buildFraudReport(scan, [result[1]], previous, health, now);
-    assert.match(JSON.stringify(report.payload), /5 Pollen restored/);
 });
 
-test("Discord delivery is one message, edits use the same ID, and failed sends expose no webhook", async () => {
-    const calls = [];
-    const fetchImpl = async (url, init) => {
-        calls.push({ url, init });
-        return { ok: true, json: async () => ({ id: "123" }) };
-    };
-    const payload = buildFraudReport(scan, [], previous, health, now).payload;
-    assert.equal(
-        await postFraudReport(
-            "https://discord.test/api/webhooks/1/SECRET",
-            payload,
-            fetchImpl,
-        ),
-        "123",
-    );
-    await postFraudReport(
-        "https://discord.test/api/webhooks/1/SECRET",
-        payload,
-        fetchImpl,
-        "123",
-    );
-    assert.equal(calls[0].init.method, "POST");
-    assert.equal(calls[1].init.method, "PATCH");
-    assert.match(calls[1].url, /messages\/123\?wait=true$/);
-    assert.deepEqual(JSON.parse(calls[0].init.body).allowed_mentions, {
-        parse: [],
-    });
-    await assert.rejects(
-        postFraudReport("https://discord.test/SECRET", payload, async () => ({
-            ok: false,
-            status: 429,
-        })),
-        (error) => error.message === "Discord report failed: HTTP 429",
-    );
-});
-
-test("incomplete scans preserve the last good baseline and same-day retries edit the report", async () => {
-    let state = {
-        day: "2026-09-16",
-        messageId: "122",
-        latest: previous,
-        baseline: null,
-    };
-    const store = {
-        read: async () => state,
-        write: async (value) => {
-            state = value;
-        },
-    };
-    const stripe = new Stripe("sk_test_mock", { maxNetworkRetries: 0 });
-    // Fail at account validation, before any Stripe pagination or D1 writes.
-    stripe.accounts.retrieve = async () => ({ id: "wrong_account" });
-    const calls = [];
-    const fetchImpl = async (url, init) => {
-        calls.push({ url, init });
-        return { ok: true, json: async () => ({ id: "123" }) };
-    };
-    const args = {
-        stripe,
-        query: async () => {
-            throw Error("must not query");
-        },
-        store,
-        webhookUrl: "https://discord.test/hook/SECRET",
-        fetchImpl,
-        now,
-    };
-    assert.equal(await runDailyReport(args), false);
-    assert.equal(state.latest, previous);
-    assert.equal(calls[0].init.method, "POST");
-    assert.equal(await runDailyReport(args), false);
-    assert.equal(calls[1].init.method, "PATCH");
-    assert.equal(state.baseline, previous);
-    assert.match(calls[1].init.body, /Unexpected Stripe account/);
-});
-
-test("successful scans are read-only, keep yesterday for reruns, and never checkpoint failed delivery", async () => {
-    const stripe = new Stripe("sk_test_mock", { maxNetworkRetries: 0 });
-    stripe.accounts.retrieve = async () => ({ id: "acct_1SrY3q7rcjS3l7tr" });
-    stripe.charges.list = () => [
+test("a late failure of an older refund includes its restored Pollen in today's evidence", async () => {
+    const { stripe, query } = sources();
+    stripe.refunds.list = () => [
         {
-            id: "ch_a",
-            livemode: true,
-            metadata: { userId: "u_1" },
-            amount: 500,
+            id: "re_old",
+            charge: "ch_a",
+            status: "failed",
+            amount: 519,
             currency: "usd",
-            amount_refunded: 0,
+            created: now / 1000 - 7 * 86400,
+        },
+    ];
+    stripe.events.list = () => [
+        {
+            livemode: true,
+            type: "refund.failed",
             created: now / 1000,
+            data: { object: { id: "re_old", status: "failed" } },
         },
     ];
-    stripe.disputes.list = () => [];
-    stripe.radar.earlyFraudWarnings.list = () => [
-        { id: "issfr_new", livemode: true, charge: "ch_a" },
-    ];
-    stripe.refunds.list = () => [];
-    const query = async ({ sql }) => {
-        assert.match(sql, /^SELECT /);
-        return [
-            {
-                results: [
-                    {
-                        id: "u_1",
-                        stripe_customer_id: null,
-                        name: "alice",
-                        banned: 0,
-                        ban_expires: null,
-                    },
-                ],
-            },
-        ];
-    };
-    let state = {
-        day: "2026-09-16",
-        messageId: "122",
-        latest: previous,
-        baseline: null,
-    };
-    const store = {
-        read: async () => state,
-        write: async (value) => {
-            state = value;
-        },
-    };
-    const calls = [];
-    const fetchImpl = async (url, init) => {
-        calls.push({ url, init });
-        return { ok: true, json: async () => ({ id: "123" }) };
-    };
-    const args = {
-        stripe,
-        query,
-        store,
-        webhookUrl: "https://discord.test/hook/SECRET",
-        fetchImpl,
-        now,
-    };
-    assert.equal(await runDailyReport(args), true);
-    assert.equal(state.latest.scores.u_1, 0.15);
-    assert.equal(state.baseline, previous);
-    assert.equal(await runDailyReport(args), true);
-    assert.equal(state.baseline, previous);
-    assert.equal(calls[1].init.method, "PATCH");
-    assert.match(calls[1].init.body, /1 increased scores/);
-    const saved = state;
-    await assert.rejects(
-        runDailyReport({
-            ...args,
-            now: now + 86400_000,
-            fetchImpl: async () => ({ ok: false, status: 500 }),
-        }),
-        /Discord report failed/,
-    );
-    assert.equal(state, saved);
-});
-
-test("history failures are visible in the same daily message", async () => {
-    const stripe = new Stripe("sk_test_mock", { maxNetworkRetries: 0 });
-    stripe.accounts.retrieve = async () => {
-        throw Error("must not reach Stripe");
-    };
-    const sent = [];
-    const fetchImpl = async (url, init) => {
-        sent.push({ url, init });
-        return { ok: true, json: async () => ({ id: "123" }) };
-    };
-    const args = {
-        stripe,
-        query: async () => [],
-        webhookUrl: "https://discord.test/hook/SECRET",
-        fetchImpl,
-        now,
-    };
-    assert.equal(
-        await runDailyReport({
-            ...args,
-            store: {
-                read: async () => {
-                    throw new FraudCheckError(
-                        "Report history GET failed: HTTP 403",
-                    );
-                },
-                write: async () => {
-                    throw Error("must not overwrite unread history");
-                },
-            },
-        }),
-        false,
-    );
-    assert.equal(sent.length, 1);
-    assert.match(sent[0].init.body, /Report history GET failed: HTTP 403/);
-    stripe.accounts.retrieve = async () => ({ id: "wrong_account" });
-    assert.equal(
-        await runDailyReport({
-            ...args,
-            store: {
-                read: async () => null,
-                write: async () => {
-                    throw new FraudCheckError(
-                        "Report history PUT failed: HTTP 403",
-                    );
-                },
-            },
-        }),
-        false,
-    );
-    assert.equal(sent.at(-1).init.method, "PATCH");
-    assert.match(sent.at(-1).init.body, /History not saved/);
+    const ledgerQuery = async (body) =>
+        body.sql.includes("FROM stripe_refund")
+            ? [
+                  {
+                      results: [
+                          {
+                              refund_id: "re_old",
+                              charge_id: "ch_a",
+                              status: "failed",
+                              amount: 519,
+                              currency: "usd",
+                              pollen_reversed: 5,
+                          },
+                      ],
+                  },
+              ]
+            : query(body);
+    const evidence = await collectDailyEvidence(stripe, ledgerQuery, [], now);
+    assert.equal(evidence.refunds.total, 1);
+    assert.equal(evidence.refunds.shown[0].pollen, 5);
+    assert.equal(evidence.refunds.shown[0].issue, null);
 });

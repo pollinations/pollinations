@@ -25,11 +25,11 @@ describe("account Pollen", () => {
                     source={{ type: "budget", remaining: null, withUnit: true }}
                 />,
             ),
-        ).toContain("∞ pollen");
+        ).toContain("pollen");
         const unlimited = renderToStaticMarkup(
             <AccountPollen source={{ type: "budget", remaining: null }} />,
         );
-        expect(unlimited).toContain("∞");
+        expect(unlimited).toContain("M12 12c-2-2.67");
         expect(unlimited).toContain('aria-label="Unlimited app budget"');
         expect(unlimited).not.toContain(EMPTY);
         for (const remaining of [0, -1]) {

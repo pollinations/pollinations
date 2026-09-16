@@ -1,6 +1,6 @@
 import { cn } from "../../lib/cn.ts";
 import { InlineLink } from "../../primitives/InlineLink.tsx";
-import { KeyIcon } from "../../primitives/icons/index.tsx";
+import { InfinityIcon, KeyIcon } from "../../primitives/icons/index.tsx";
 import { formatPollen } from "./format-pollen.ts";
 import { WalletKindIcon } from "./wallet-display.tsx";
 
@@ -61,8 +61,12 @@ export function AccountPollen({
                     aria-hidden="true"
                     className="polli:h-3.5 polli:w-3.5 polli:shrink-0"
                 />
-                {unlimited ? "∞" : formatPollen(Math.max(0, remaining))}
-                {source.withUnit && " pollen"}
+                {unlimited ? (
+                    <InfinityIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
+                ) : (
+                    formatPollen(Math.max(0, remaining))
+                )}
+                {source.withUnit && (unlimited ? "pollen" : " pollen")}
             </span>
         );
     }

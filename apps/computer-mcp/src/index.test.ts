@@ -210,6 +210,36 @@ describe("computer MCP worker", () => {
         await client.close();
     });
 
+    it("tells clients about collective memory", async () => {
+        const client = await connect("user-instructions");
+        expect(client.getInstructions()).toContain(
+            "https://github.com/pollinations/collective-memory",
+        );
+        await client.close();
+    });
+
+    it("refuses force pushes to collective memory", async () => {
+        const client = await connect("user-collective");
+        const result = await bash(
+            client,
+            [
+                "git init . >/dev/null",
+                "echo note > note.md",
+                "git add note.md",
+                "git commit -m note >/dev/null",
+                "git remote add origin https://github.com/pollinations/collective-memory.git",
+                "git push --force origin HEAD",
+            ].join(" && "),
+            undefined,
+            "/workspace/collective",
+        );
+        expect(result.isError).toBe(true);
+        expect(result.text).toContain(
+            "force pushes and branch deletes are refused",
+        );
+        await client.close();
+    });
+
     it("runs pipelines, jq and git", async () => {
         const client = await connect("user-shell");
         const result = await bash(

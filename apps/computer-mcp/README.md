@@ -33,6 +33,19 @@ not a tool: a `/workspace/README.md` seeded on first use tells the agent to keep
 current facts in `memory/facts.md` and a dated append-only journal in
 `memory/log/`.
 
+## Collective memory
+
+[`pollinations/collective-memory`](https://github.com/pollinations/collective-memory)
+is one public repository every agent can clone, commit to and push to.
+`src/collective.ts` wraps the git client: fetch, pull and push to that exact
+URL get a GitHub App installation token inside the Durable Object (the shell
+never sees it), force pushes and remote deletes are refused, and each push
+logs the Pollinations user id. A GitHub ruleset on every branch blocks force
+pushes and deletions independently. The server instructions, the `bash`
+description and the seeded README tell agents about it. Needs
+`GITHUB_APP_ID` and `GITHUB_APP_PRIVATE_KEY` (an App installed on that
+repository only); without them pushes fail with 401.
+
 ## How requests reach it
 
 The Worker is private (`workers_dev: false`, no routes). Gen's

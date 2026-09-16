@@ -22,7 +22,7 @@ export type AppUserMenuLabels = {
     authorize: string;
     appUserMenu: string;
     thisApp: string;
-    editAppAllowance: string;
+    permissions: string;
     logout: string;
     yourAccount: string;
     topUpWallet: string;
@@ -41,7 +41,7 @@ const defaultLabels: AppUserMenuLabels = {
     authorize: "Connect Pollen",
     appUserMenu: "App user menu",
     thisApp: "This app",
-    editAppAllowance: "Edit allowance",
+    permissions: "Permissions",
     logout: "Disconnect",
     yourAccount: "Your account",
     topUpWallet: "Top up",
@@ -76,11 +76,11 @@ export function AppUserMenu({
     const topUpUrl = new URL("/top-up", enterUrl);
     if (returnUrl) topUpUrl.searchParams.set("redirect", returnUrl);
     const keyId = key.data?.id;
-    let editAllowanceUrl: URL | undefined;
+    let editKeyUrl: URL | undefined;
     if (keyId) {
-        editAllowanceUrl = new URL("/edit-key", enterUrl);
-        editAllowanceUrl.searchParams.set("id", keyId);
-        if (returnUrl) editAllowanceUrl.searchParams.set("redirect", returnUrl);
+        editKeyUrl = new URL("/edit-key", enterUrl);
+        editKeyUrl.searchParams.set("id", keyId);
+        if (returnUrl) editKeyUrl.searchParams.set("redirect", returnUrl);
     }
 
     return (
@@ -118,7 +118,7 @@ export function AppUserMenu({
                         key.data ? (
                             <AccountPollen
                                 source={{
-                                    type: "allowance",
+                                    type: "budget",
                                     remaining: key.data.pollenBudget,
                                     generationEnabled:
                                         key.data.permissions?.models?.length !==
@@ -131,10 +131,10 @@ export function AppUserMenu({
                     {(close) => (
                         <>
                             <MenuGroupLabel>{labels.thisApp}</MenuGroupLabel>
-                            {editAllowanceUrl && (
+                            {editKeyUrl && (
                                 <DropdownItem
                                     as="a"
-                                    href={editAllowanceUrl.href}
+                                    href={editKeyUrl.href}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={close}
@@ -143,7 +143,7 @@ export function AppUserMenu({
                                         className="polli:h-4 polli:w-4 polli:shrink-0"
                                         aria-hidden="true"
                                     />
-                                    {labels.editAppAllowance}
+                                    {labels.permissions}
                                     <ExternalLinkIcon
                                         className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
                                         aria-hidden="true"

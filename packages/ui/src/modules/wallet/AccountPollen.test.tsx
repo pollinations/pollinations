@@ -35,31 +35,31 @@ describe("account Pollen", () => {
         }
         for (const remaining of [undefined, NaN, Infinity, 0.01]) {
             expect(
-                getAccountPollenStatus({ type: "allowance", remaining }),
+                getAccountPollenStatus({ type: "budget", remaining }),
             ).toBeUndefined();
         }
     });
 
-    it("distinguishes an exhausted app allowance from wallet funding", () => {
+    it("distinguishes an exhausted app budget from wallet funding", () => {
         expect(
-            getAccountPollenStatus({ type: "allowance", remaining: 0 }),
+            getAccountPollenStatus({ type: "budget", remaining: 0 }),
         ).toEqual({ state: "limit-reached" });
         expect(
-            getAccountPollenStatus({ type: "allowance", remaining: -1 }),
+            getAccountPollenStatus({ type: "budget", remaining: -1 }),
         ).toEqual({ state: "limit-reached" });
         expect(
             getAccountPollenStatus({
-                type: "allowance",
+                type: "budget",
                 remaining: 0,
                 generationEnabled: false,
             }),
         ).toBeUndefined();
         expect(
-            getAccountPollenStatus({ type: "allowance", remaining: null }),
+            getAccountPollenStatus({ type: "budget", remaining: null }),
         ).toEqual({ state: "unlimited" });
         expect(
             getAccountPollenStatus({
-                type: "allowance",
+                type: "budget",
                 remaining: null,
                 generationEnabled: false,
             }),
@@ -108,24 +108,22 @@ describe("account Pollen", () => {
         expect(markup).toContain("polli-wallet-text-paid");
     });
 
-    it("shows the allowance without a recovery link, even when exhausted", () => {
+    it("shows the budget without a recovery link, even when exhausted", () => {
         expect(
             renderToStaticMarkup(
-                <AccountPollen
-                    source={{ type: "allowance", remaining: 3.25 }}
-                />,
+                <AccountPollen source={{ type: "budget", remaining: 3.25 }} />,
             ),
         ).toContain("3.25 Pollen");
         const exhausted = renderToStaticMarkup(
             <AccountPollen
-                source={{ type: "allowance", remaining: 0 }}
+                source={{ type: "budget", remaining: 0 }}
                 topUpHref="/top-up"
             />,
         );
         expect(exhausted).toContain("Limit reached");
         expect(exhausted).not.toContain("/top-up");
         const unlimited = renderToStaticMarkup(
-            <AccountPollen source={{ type: "allowance", remaining: null }} />,
+            <AccountPollen source={{ type: "budget", remaining: null }} />,
         );
         expect(unlimited).toContain("Unlimited");
         expect(unlimited).toContain("polli:bg-intent-info-bg-light");

@@ -22,9 +22,9 @@ export function PollenStatusBadge({
     showIcon = true,
     topUpHref,
 }: PollenStatus & { showIcon?: boolean; topUpHref?: string }) {
-    const allowance = state === "limit-reached" || state === "unlimited";
+    const budgetState = state === "limit-reached" || state === "unlimited";
     const kind = state === "paid-required" ? "paid" : wallet;
-    const Icon = allowance ? KeyIcon : WalletIcon;
+    const Icon = budgetState ? KeyIcon : WalletIcon;
     const label = labels[state];
     return (
         <Chip
@@ -37,13 +37,13 @@ export function PollenStatusBadge({
                       : "danger"
             }
             aria-label={
-                kind && !allowance
+                kind && !budgetState
                     ? `${kind === "tier" ? "Quest" : "Paid"}: ${label}`
                     : label
             }
         >
             {showIcon &&
-                (kind && !allowance ? (
+                (kind && !budgetState ? (
                     <WalletKindIcon kind={kind} />
                 ) : (
                     <Icon
@@ -52,7 +52,7 @@ export function PollenStatusBadge({
                     />
                 ))}
             {label}
-            {!allowance && topUpHref && (
+            {!budgetState && topUpHref && (
                 <>
                     <span aria-hidden="true">·</span>
                     <InlineLink

@@ -94,7 +94,7 @@ export function AppUserMenu({
                         dashboardHref ?? new URL("/pollen", enterUrl).href
                     }
                     menuLabel={labels.appUserMenu}
-                    className="polli:max-w-64"
+                    className="polli:max-w-80"
                     secondaryContent={
                         key.data ? (
                             <span className="polli:inline-flex polli:items-center polli:gap-2">

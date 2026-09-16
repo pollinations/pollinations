@@ -104,7 +104,7 @@ export function AccountDetails({
     secondaryId?: string;
 }) {
     return (
-        <span className="polli:flex polli:min-w-0 polli:flex-1 polli:flex-col polli:items-start polli:text-left">
+        <span className="polli:flex polli:min-w-0 polli:flex-col polli:items-start polli:text-left">
             <span
                 title={name}
                 className="polli:max-w-full polli:truncate polli:text-sm polli:font-medium polli:leading-5 polli:text-theme-text-strong"
@@ -114,7 +114,7 @@ export function AccountDetails({
             {secondaryContent != null && (
                 <span
                     id={secondaryId}
-                    className="polli:inline-flex polli:min-h-5 polli:max-w-full polli:items-center polli:truncate polli:text-xs polli:leading-4 polli:text-theme-text-base"
+                    className="polli:inline-flex polli:min-h-5 polli:items-center polli:whitespace-nowrap polli:text-xs polli:leading-4 polli:text-theme-text-base"
                 >
                     {secondaryContent}
                 </span>

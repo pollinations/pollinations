@@ -228,16 +228,6 @@ export function createMockStripe(): MockAPI<MockStripeState> {
             if (!charge) return stripeNotFound(c);
             return c.json(charge);
         })
-        .post("/v1/refunds", async (c) => {
-            const form = await parseForm(c.req.raw);
-            recordRequest(c, state, form);
-            return c.json({
-                id: `re_mock_${state.requests.length}`,
-                object: "refund",
-                charge: form.get("charge"),
-                status: "succeeded",
-            });
-        })
         .get("/v1/disputes", (c) => fraudPage(c, state.fraudDisputes))
         .get("/v1/radar/early_fraud_warnings", (c) =>
             state.failFraudWarnings

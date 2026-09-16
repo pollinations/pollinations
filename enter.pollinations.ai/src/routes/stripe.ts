@@ -119,9 +119,9 @@ export const stripeRoutes = new Hono<Env>()
                 c.env.DB,
                 userId,
             );
-            // Card testers probe the cheapest pack from fresh accounts. 3DS on
-            // those checkouts shifts fraud liability to the issuer, so a later
-            // "fraudulent" dispute carries no fee.
+            // Request 3DS on first purchases and small packs. Successful
+            // authentication can shift fraud liability; requesting it alone
+            // does not guarantee authentication or eliminate dispute fees.
             const priorCredit = await c.env.DB.prepare(
                 "SELECT 1 FROM stripe_checkout_credits WHERE user_id = ? LIMIT 1",
             )

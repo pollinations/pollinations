@@ -62,11 +62,11 @@ export async function runFraudBanCheck(
     const excluded = new Set([FRAUD_BAN_EXCLUDED_USER_ID, ...excludedUserIds]);
     // Radar's own risk prediction can reach the threshold on volume alone, so a
     // ban additionally requires a dispute, a fraud report or a fraud warning.
-    const candidates = users.filter(
-        (user) =>
-            !excluded.has(user.id) &&
-            (result.scores.get(user.id) ?? 0) >= FRAUD_BAN_THRESHOLD &&
-            result.confirmed.has(user.id),
+    const confirmedUsers = users.filter(
+        (user) => !excluded.has(user.id) && result.confirmed.has(user.id),
+    );
+    const candidates = confirmedUsers.filter(
+        (user) => (result.scores.get(user.id) ?? 0) >= FRAUD_BAN_THRESHOLD,
     );
     // Public Actions logs contain aggregate counts only.
     console.log(
@@ -97,7 +97,9 @@ export async function runFraudBanCheck(
         charges: result.charges,
         unmapped: result.unmapped,
         // Private report of accounts still needing action; never printed to public logs.
-        report: candidates
+        // Review every confirmed signal, including a first issuer warning below
+        // the threshold. Scores prioritize the queue during manual calibration.
+        report: confirmedUsers
             .filter((user) => !isActiveBan(user))
             .map(
                 (user): FraudCandidate => ({
@@ -105,7 +107,8 @@ export async function runFraudBanCheck(
                     name: user.name,
                     score: result.scores.get(user.id) ?? 0,
                 }),
-            ),
+            )
+            .sort((a, b) => b.score - a.score),
     };
 }
 

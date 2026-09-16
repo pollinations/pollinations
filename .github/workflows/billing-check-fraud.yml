@@ -18,8 +18,7 @@ concurrency:
 
 jobs:
   check:
-    # Every run scans read-only and reports new candidates to the private channel.
-    # Bans are written only on scheduled runs with FRAUD_BAN_ENABLED set.
+    # Manual review during policy calibration; no automatic enforcement.
     if: github.repository == 'pollinations/pollinations'
     runs-on: ubuntu-latest
     timeout-minutes: 55
@@ -33,12 +32,12 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: nhedger/setup-sops@v3
-      - name: Scan full Stripe history and apply the approved policy
+      - name: Report Stripe fraud signals for manual review
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
-          FRAUD_BAN_APPLY: ${{ github.event_name == 'schedule' && vars.FRAUD_BAN_ENABLED == 'true' }}
+          FRAUD_BAN_APPLY: "false"
           FRAUD_BAN_EXCLUDED_USER_IDS: ${{ vars.FRAUD_BAN_EXCLUDED_USER_IDS }}
           # Private operators' channel; candidate identities never reach public logs.
           DISCORD_FRAUD_WEBHOOK_URL: ${{ secrets.DISCORD_FRAUD_WEBHOOK_URL }}

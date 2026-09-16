@@ -3679,14 +3679,15 @@ async function readBanState(userId: string) {
     return { ...user, sessionCount: sessions.length };
 }
 
-test("POST /api/webhooks/stripe charge.dispute.created inquiry bans the buyer and refunds", async ({
+test("POST /api/webhooks/stripe charge.dispute.created inquiry leaves bans and refunds for manual review", async ({
     sessionToken,
     mocks,
 }) => {
     await mocks.enable("stripe", "tinybird");
     expect(sessionToken).toBeTruthy();
     const userId = await getSeededUserId();
-    expect((await readBanState(userId)).sessionCount).toBeGreaterThan(0);
+    const before = await readBanState(userId);
+    expect(before.sessionCount).toBeGreaterThan(0);
     await seedDisputedCharge(mocks, "ch_test_inquiry", userId);
     mocks.stripe.state.checkoutSessions.push({
         id: "cs_test_abuse_open",
@@ -3715,19 +3716,15 @@ test("POST /api/webhooks/stripe charge.dispute.created inquiry bans the buyer an
     });
     expect(response.status).toBe(200);
 
-    expect(await readBanState(userId)).toEqual({
-        banned: true,
-        banReason: "Payment abuse",
-        sessionCount: 0,
-    });
-    expect(mocks.stripe.state.checkoutSessions.at(-1)?.status).toBe("expired");
+    expect(await readBanState(userId)).toEqual(before);
+    expect(mocks.stripe.state.checkoutSessions.at(-1)?.status).toBe("open");
     const refund = mocks.stripe.state.requests.find(
         (request) => request.path === "/v1/refunds",
     );
-    expect(refund?.body.charge).toBe("ch_test_inquiry");
+    expect(refund).toBeUndefined();
 });
 
-test("POST /api/webhooks/stripe charge.dispute.created formal dispute bans without a refund", async ({
+test("POST /api/webhooks/stripe charge.dispute.created formal dispute leaves bans and refunds for manual review", async ({
     sessionToken,
     mocks,
 }) => {
@@ -3754,7 +3751,7 @@ test("POST /api/webhooks/stripe charge.dispute.created formal dispute bans witho
     });
     expect(response.status).toBe(200);
 
-    expect((await readBanState(userId)).banned).toBe(true);
+    expect((await readBanState(userId)).banned).not.toBe(true);
     expect(
         mocks.stripe.state.requests.some(
             (request) => request.path === "/v1/refunds",
@@ -3762,7 +3759,7 @@ test("POST /api/webhooks/stripe charge.dispute.created formal dispute bans witho
     ).toBe(false);
 });
 
-test("POST /api/webhooks/stripe radar.early_fraud_warning.created bans the buyer and refunds", async ({
+test("POST /api/webhooks/stripe radar.early_fraud_warning.created leaves bans and refunds for manual review", async ({
     sessionToken,
     mocks,
 }) => {
@@ -3787,9 +3784,9 @@ test("POST /api/webhooks/stripe radar.early_fraud_warning.created bans the buyer
     });
     expect(response.status).toBe(200);
 
-    expect((await readBanState(userId)).banned).toBe(true);
+    expect((await readBanState(userId)).banned).not.toBe(true);
     const refund = mocks.stripe.state.requests.find(
         (request) => request.path === "/v1/refunds",
     );
-    expect(refund?.body.charge).toBe("ch_test_efw");
+    expect(refund).toBeUndefined();
 });

@@ -327,11 +327,12 @@ Auto top-up stays off after an unban; re-enable it deliberately if the user asks
 Separate from the abuse scoring above, `.github/workflows/billing-check-fraud.yml`
 scores accounts daily on Stripe signals (`enter.pollinations.ai/src/utils/stripe-fraud-score.ts`).
 
-- Bans **only** when `FRAUD_BAN_ENABLED` is set. It is deliberately unset: the job
-  is a review queue, not an enforcer.
+- Scheduled and manually dispatched checks are read-only during calibration.
+  The workflow sets `FRAUD_BAN_APPLY=false`; bans and refunds require manual decisions.
 - Every run posts accounts still needing review to the private Discord channel via
   `DISCORD_FRAUD_WEBHOOK_URL`, as a TSV of score, user id, name. No message means
-  nothing needs action.
+  nothing needs action. All confirmed-signal accounts are included, even below
+  0.75, sorted by score. Excluded and already-banned accounts are omitted.
 - A ban needs a **confirmed** signal: a fraudulent dispute, a fraud report, or an
   early fraud warning. Radar's blocked and highest-risk flags raise the score but
   never convict alone, because repeated declines of one legitimate card escalate

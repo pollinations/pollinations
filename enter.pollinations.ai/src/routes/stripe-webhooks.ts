@@ -12,10 +12,6 @@ import {
     markAutoTopUpInvoiceFailed,
 } from "../utils/stripe-billing/index.ts";
 import { recordStripeCardFingerprintAttempt } from "../utils/stripe-card-gate.ts";
-import {
-    expireOpenStripeCheckoutSessions,
-    fraudBanQueries,
-} from "../utils/stripe-fraud-ban.ts";
 
 interface StripeEventData {
     eventType: string;
@@ -133,42 +129,6 @@ async function recordCardFingerprintFromCharge({
             err,
         );
     }
-}
-
-/**
- * Issuer-confirmed fraud (a fraudulent dispute or an early fraud warning) bans
- * the buyer the same way the hourly fraud scan does, so the stolen card can't
- * be reused from that account. A refund is only possible while the charge is
- * not yet formally disputed (inquiries, EFWs); it closes the case without the
- * dispute fee.
- */
-async function banForPaymentAbuse(
-    env: CloudflareBindings,
-    stripe: Stripe,
-    chargeRef: string | Stripe.Charge,
-    refund: boolean,
-): Promise<void> {
-    const charge = await stripe.charges.retrieve(
-        typeof chargeRef === "string" ? chargeRef : chargeRef.id,
-    );
-    const userId = readUserIdFromMetadata(charge.metadata);
-    const queries = fraudBanQueries(userId);
-    if (!userId || !queries.length) {
-        console.error(`No bannable user for Stripe charge ${charge.id}`);
-        return;
-    }
-    await env.DB.batch(
-        queries.map(({ sql, params }) => env.DB.prepare(sql).bind(...params)),
-    );
-    const customerId =
-        typeof charge.customer === "string"
-            ? charge.customer
-            : charge.customer?.id;
-    if (customerId) await expireOpenStripeCheckoutSessions(stripe, customerId);
-    if (refund && !charge.refunded) {
-        await stripe.refunds.create({ charge: charge.id });
-    }
-    console.log(`Banned user ${userId} for payment abuse on ${charge.id}`);
 }
 
 /**
@@ -875,15 +835,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 console.log(
                     `Dispute ${dispute.id}: ${dispute.reason} (${dispute.status})`,
                 );
-                if (dispute.reason !== "fraudulent") break;
-                // `warning_*` statuses are inquiries (Discover, Amex); a
-                // refund closes them before they become fee-bearing disputes.
-                await banForPaymentAbuse(
-                    c.env,
-                    stripe,
-                    dispute.charge,
-                    dispute.status.startsWith("warning_"),
-                );
+                // The daily Stripe scan reports this evidence for manual review.
                 break;
             }
 
@@ -891,12 +843,6 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 const warning = event.data
                     .object as Stripe.Radar.EarlyFraudWarning;
                 console.log(`Early fraud warning ${warning.id}`);
-                await banForPaymentAbuse(
-                    c.env,
-                    stripe,
-                    warning.charge,
-                    warning.actionable,
-                );
                 break;
             }
 

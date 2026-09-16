@@ -163,6 +163,69 @@ test("hourly scan reads every page; dry run is read-only; apply bans and expires
     expect(mocks.stripe.state.checkoutSessions[0].status).toBe("expired");
 });
 
+test("manual review includes a first warning below threshold and prioritizes higher scores", async ({
+    sessionToken,
+    mocks,
+}) => {
+    expect(sessionToken).toBeTruthy();
+    await mocks.enable("stripe");
+    const user = await env.DB.prepare("SELECT id FROM user LIMIT 1").first<{
+        id: string;
+    }>();
+    if (!user) throw Error("Missing user");
+    await env.DB.prepare(
+        "INSERT INTO user (id, name, email, created_at, updated_at) VALUES ('higher_score', 'Review account', 'review@example.test', ?, ?)",
+    )
+        .bind(Date.now(), Date.now())
+        .run();
+    mocks.stripe.state.fraudCharges.push(
+        {
+            id: "ch_first_warning",
+            livemode: true,
+            metadata: { userId: user.id },
+        },
+        ...Array.from({ length: 6 }, (_, i) => ({
+            id: `ch_review_${i}`,
+            livemode: true,
+            metadata: { userId: "higher_score" },
+        })),
+    );
+    mocks.stripe.state.fraudWarnings.push({
+        id: "issfr_first",
+        livemode: true,
+        charge: "ch_first_warning",
+    });
+    mocks.stripe.state.fraudDisputes.push(
+        ...Array.from({ length: 6 }, (_, i) => ({
+            id: `dp_review_${i}`,
+            livemode: true,
+            reason: "fraudulent",
+            charge: `ch_review_${i}`,
+        })),
+    );
+    const result = await runFraudBanCheck(client(), queryD1);
+    expect(result).toMatchObject({ candidates: 1, applied: 0 });
+    expect(result.report.map(({ id, score }) => ({ id, score }))).toEqual([
+        { id: "higher_score", score: 0.75 },
+        { id: user.id, score: 0.15 },
+    ]);
+    expect(
+        await env.DB.prepare(
+            "SELECT COUNT(*) AS n FROM user WHERE banned = 1",
+        ).first(),
+    ).toEqual({ n: 0 });
+    await env.DB.prepare(
+        "UPDATE user SET banned = 1 WHERE id = 'higher_score'",
+    ).run();
+    expect(
+        (
+            await runFraudBanCheck(client(), queryD1, {
+                excludedUserIds: [user.id],
+            })
+        ).report,
+    ).toEqual([]);
+});
+
 test("incomplete Stripe scans cannot apply any bans", async ({
     sessionToken,
     mocks,

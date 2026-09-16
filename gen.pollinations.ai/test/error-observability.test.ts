@@ -1147,7 +1147,9 @@ describe("error observability", () => {
                                 { type: "text", text: "describe this" },
                                 {
                                     type: "image_url",
-                                    image_url: { url: "not-a-valid-image" },
+                                    image_url: {
+                                        url: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+                                    },
                                 },
                             ],
                         },

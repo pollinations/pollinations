@@ -1,0 +1,34 @@
+{
+  "pr_number": 15025,
+  "title": "revert: Tinybird page view and checkout tracking (#14938)",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15025",
+  "merged_at": "2026-09-16T19:05:31Z",
+  "labels": [],
+  "pr_body_excerpt": "- Reverts 3d5be363f8 (#14938) before it reaches production so the conversion tracking ships as one reviewable change.\n- The same code, plus the pre-login auth-flow stages and the funnel pipes, is re-applied in #15024.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Tracking takes the scenic route",
+    "blurb": "The Tinybird page-view and checkout tracking patch has been neatly packed back into the seed drawer before production. It returns in the broader auth-funnel change, where all its pollination can be reviewed together.",
+    "summary": "Reverted the unshipped Tinybird page-view and checkout analytics implementation from enter.pollinations.ai so it can be reapplied alongside pre-login auth stages and funnel pipes in PR #15024.",
+    "impact": "Production behavior remains unchanged while the full conversion-tracking flow lands as one cohesive, reviewable implementation.",
+    "keywords": [
+      "tinybird",
+      "analytics",
+      "conversion-tracking",
+      "checkout",
+      "auth-funnel",
+      "revert"
+    ],
+    "visual_concept": "Depict Polli as a careful gardener returning a bundle of analytics cables and tiny receipt-shaped data sprouts to a labeled seed box, rather than planting them prematurely. A friendly CRT monitor robot helps sort the bundle beside a cozy terminal and a small garden, representing the tracking work being consolidated into one future planting.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, carefully placing glowing page-view charts and checkout receipt sprouts into a seed box labeled \"ONE PATCH\" while a cheerful CRT-monitor robot sorts cables beside a retro terminal. Lime green (#ecf874) is prominent among warm cream, mint, lavender, and peach garden tones, with code-plants and flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-15025.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, carefully placing glowing page-view charts and checkout receipt sprouts into a seed box labeled \"ONE PATCH\" while a cheerful CRT-monitor robot sorts cables beside a retro terminal. Lime green (#ecf874) is prominent among warm cream, mint, lavender, and peach garden tones, with code-plants and flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-16T19:06:29.779756+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14964,
+  "title": "docs: list MCP servers and prompt-agent tips in the agent guide",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14964",
+  "merged_at": "2026-09-16T13:10:49Z",
+  "labels": [],
+  "pr_body_excerpt": "- Lists the five MCP server IDs in the `mcpServers` row instead of two examples\n- Adds three tips quest submitters kept hitting: `/tmp` is wiped after each Computer call, use literal bash commands with `stdin`, and identical requests are served from cache during testing\n- Companion: the three code-agent example repos now point at production instead of staging (READMEs and workflow names updated directly)\n\nAddresses #14821 #14822 #14823\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Agent guide, less haunted",
+    "blurb": "The agent guide now names all five MCP servers and documents three small gotchas that have been eating quest submissions for breakfast. A few fewer mysteries in the garden shed.",
+    "summary": "Updated BUILD_YOUR_OWN_AGENT.md to list all five MCP server IDs, explain that /tmp resets after every Computer call, recommend literal bash commands via stdin, and note that identical test requests are cache-served; the companion code-agent examples now target production rather than staging.",
+    "impact": "Agent builders and Quest submitters can configure the full MCP set and avoid lost temporary files, malformed shell calls, and confusing cached test results while following production-ready examples.",
+    "keywords": [
+      "documentation",
+      "agents",
+      "mcp",
+      "quest",
+      "computer-tool",
+      "caching"
+    ],
+    "visual_concept": "Polli wears tiny guide glasses and points at a cozy retro terminal displaying five glowing MCP server badges, while a small paper note labeled '/tmp' gently dissolves between Computer-call icons. Code-plants, a stdin command scroll, and a cache jar make the practical guide tips visible without making the scene feel like a warning label.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny guide glasses, helping a CRT monitor robot read a production agent guide beside five little glowing MCP server badges; a '/tmp' note resets into a compost bin, a bash scroll feeds through a stdin tube, and a cache jar sits by sprouting code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, pixel text: 'MCP GUIDE', nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14964.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny guide glasses, helping a CRT monitor robot read a production agent guide beside five little glowing MCP server badges; a '/tmp' note resets into a compost bin, a bash scroll feeds through a stdin tube, and a cache jar sits by sprouting code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, pixel text: 'MCP GUIDE', nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-16T13:11:52.797645+00:00"
+}

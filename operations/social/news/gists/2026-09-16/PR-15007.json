@@ -1,0 +1,34 @@
+{
+  "pr_number": 15007,
+  "title": "docs: document complete bans and the unban trap",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15007",
+  "merged_at": "2026-09-16T18:50:52Z",
+  "labels": [],
+  "pr_body_excerpt": "Banning 22 card testers today surfaced three things the skill did not say.\n\n- **A ban is three statements, not one.** Setting `banned = 1` alone leaves the session live and auto top-up still charging. Documents the full set from `fraudBanQueries()`, plus expiring open Checkout sessions and what to verify after.\n- **Unbanning has a trap.** Clearing `banned` on an account the payment-fraud job can see gets it re-banned within the hour unless the id also goes into `FRAUD_BAN_EXCLUDED_USER_IDS`.\n- **Payment-fraud bans work differently** from the abuse scoring already in the skill: hourly review queue posting to Discord, enforcement off by default, a confirmed signal required, and charges before 2026-05-01 unattributable so those accounts need manual review.\n\nAlso corrects the enforcement file path (`shared/auth/api-key.ts`, not `src/middleware/auth.ts`) and adds today's action to the log.\n\nDocs only.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The Unban Snare Is Mapped",
+    "blurb": "The abuse-detection field guide now documents that a ban takes three actions, not one. It also marks the spot where an unban can quietly grow right back.",
+    "summary": "Expanded the abuse-detection skill with the complete fraud-ban procedure: set `banned = 1`, expire open Checkout sessions, stop auto top-ups, verify enforcement, and add unbanned payment-fraud accounts to `FRAUD_BAN_EXCLUDED_USER_IDS` to prevent hourly re-bans.",
+    "impact": "Moderators now have a concrete runbook for handling payment-fraud bans, including the confirmed-signal requirement, Discord review queue, manual review for charges before 2026-05-01, and the corrected `shared/auth/api-key.ts` enforcement path.",
+    "keywords": [
+      "documentation",
+      "abuse-detection",
+      "fraud",
+      "moderation",
+      "bans",
+      "payments"
+    ],
+    "visual_concept": "A cozy moderation garden where Polli uses a tiny field guide to tend a three-part safety gate: an account lock, a sleeping checkout-session lantern, and an auto-top-up watering pipe turned off. A clearly labeled exclusion-list seed packet prevents a freshly unbanned flower from being swept back into the hourly fraud-review net.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, consulting a field guide beside a three-part garden safety gate: a lock, a dimmed checkout lantern, and a closed watering pipe, while an exclusion-list seed packet protects a blooming flower from a gentle review net. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and tiny flowers, warm lighting, retro gaming vibes, with small pixel-font text: \"UNBAN CHECKLIST\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-15007.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, consulting a field guide beside a three-part garden safety gate: a lock, a dimmed checkout lantern, and a closed watering pipe, while an exclusion-list seed packet protects a blooming flower from a gentle review net. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and tiny flowers, warm lighting, retro gaming vibes, with small pixel-font text: \"UNBAN CHECKLIST\"."
+  },
+  "generated_at": "2026-09-16T18:51:55.043393+00:00"
+}

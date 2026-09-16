@@ -9,12 +9,43 @@ Last updated: 2026-09-16
 | Flux (FP4) | 1 | RTX PRO 4000 Blackwell | Vast.ai + DeepInfra fallback | $0.230000/hr Vast fixed cost | **ACTIVE — one production GPU with metered spillover** |
 | Z-Image | 1 | RTX 5090 | Vast.ai | $0.622222/hr all-in | **ACTIVE — one production with Fal spillover** |
 | Klein 4B | 1 | RTX 3090 | Vast.ai | $0.150000/hr all-in | **ACTIVE — Vast production** |
-| DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | RTX 4070 + RTX 3060 | Vast.ai | $0.169444/hr all-in | **ACTIVE — production** |
+| DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | RTX 4070 + RTX 3060 | Vast.ai | $0.151667/hr all-in | **ACTIVE — production** |
 | LTX-2 + ACE-Step | 0 active routes | GH200 (historical) | Lambda Labs | Verify provider account | **RETIRED from production** |
 
-At capture time, the five running Vast instances cost **$1.171666/hr** in total
-(**$843.60 per 30-day month**).
+At capture time, the five running Vast instances cost **$1.153889/hr** in total
+(**$830.80 per 30-day month**).
 All five are production workers; there is no isolated canary left running.
+
+### 2026-09-16 — DreamShaper RTX 3060 replacement (cost optimization)
+
+Instance `49063196` (RTX 3060, Mexico, $0.075556/hr) was healthy and not
+expiring — this was an opportunistic price swap, not an incident response.
+A live offer scan found a South Korea RTX 3060 (machine `130717`,
+reliability 0.9953) at roughly 36% less. Replacement instance `51216212`
+was rented with the correct image (`nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04`
+— using the wrong image on the first attempt stalled the container, exactly
+as this doc already warns about below; destroyed and re-rented correctly)
+and came up at **$0.057778/hr all-in**, saving **$0.017778/hr / ~$12.80 per
+30-day month** on this replica.
+
+Unlike Z-Image, each DreamShaper worker uses its own dedicated Cloudflare
+Tunnel rather than a shared one, so this replacement needed a **new** Tunnel
+(`dreamshaper-canary-51216212`, hostname `dreamshaper-canary-51216212.myceli.ai`,
+routed to `http://localhost:8766`) created via the Cloudflare API. Tunnel
+creation and connector-token retrieval worked with the available Cloudflare
+account access; the DNS CNAME to `<tunnel-id>.cfargotunnel.com` required
+`Zone.DNS:Edit`, which that access does not include, so the record was added
+manually via the dashboard. After the CNAME went live, the worker registered
+in `/register` as the third `sana` pool member and served real attributed
+production traffic (11/11 requests observed) before the old Mexico instance
+was destroyed.
+
+A same-day Z-Image cost-optimization attempt (separate from the outage
+replacement above) was abandoned: four of five candidate RTX 5090 offers
+across Asia (Japan, two mainland China hosts, Vietnam) stalled mid-setup
+with established-but-idle connections — a live host-quality problem, not a
+configuration issue. The production Z-Image instance was left as documented
+above rather than risk it on an unreliable host.
 
 ### 2026-09-16 incident — Z-Image outage and replacement
 
@@ -77,7 +108,7 @@ exists after the routing change deploys.
 
 | Worker | Vast instance | Machine / region | GPU | All-in rate | Status |
 |--------|---------------|------------------|-----|-------------|--------|
-| dreamshaper-vast-01 | 49063196 | 143507 / Mexico, MX | RTX 3060 | $0.075556/hr | ACTIVE — named tunnel `dreamshaper-canary-49063196.myceli.ai` |
+| dreamshaper-vast-01 | 51216212 | 130717 / South Korea, KR | RTX 3060 | $0.057778/hr | ACTIVE — named tunnel `dreamshaper-canary-51216212.myceli.ai` |
 | dreamshaper-vast-02 | 47789794 | 100803 / Romania, RO | RTX 4070 | $0.093889/hr | ACTIVE — named tunnel `dreamshaper-canary-47789794.myceli.ai` |
 
 Config: `Lykon/dreamshaper-8` + fused `lcm-lora-sdv1-5`, `LCMScheduler`, TAESD

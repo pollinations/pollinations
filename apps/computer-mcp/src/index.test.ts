@@ -212,6 +212,23 @@ describe("computer MCP worker", () => {
         await client.close();
     });
 
+    it("converts CSV and HTML and identifies files", async () => {
+        const client = await connect("user-data-commands");
+        const result = await bash(
+            client,
+            [
+                "printf 'a,b\\n1,2\\n' | xan select b",
+                "printf '<h1>Title</h1>' | html-to-markdown",
+                "printf '%s' '{}' > /workspace/x.json && file /workspace/x.json",
+            ].join(" && "),
+        );
+        expect(result.isError).toBe(false);
+        expect(result.text).toContain("b\n2");
+        expect(result.text).toContain("# Title");
+        expect(result.text).toContain("x.json:");
+        await client.close();
+    });
+
     it("tells clients about collective memory", async () => {
         const client = await connect("user-instructions");
         expect(client.getInstructions()).toContain(

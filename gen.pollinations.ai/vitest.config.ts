@@ -5,6 +5,7 @@ import {
     readD1Migrations,
 } from "@cloudflare/vitest-pool-workers/config";
 import { buildSync } from "esbuild";
+import { Response as MiniflareResponse, WebSocketPair } from "miniflare";
 import { loadEnv } from "vite";
 import { configDefaults, defineConfig } from "vitest/config";
 import { codeAgentSdk } from "../enter.pollinations.ai/scripts/code-agent-sdk.mjs";
@@ -364,6 +365,55 @@ export default defineConfig(async ({ mode }) => {
                                     return new Response(
                                         "Caller identity was not forwarded safely",
                                         { status: 500 },
+                                    );
+                                }
+                                const { pathname, search } = new URL(
+                                    request.url,
+                                );
+                                const receipt = (
+                                    tool: string,
+                                    rate: string,
+                                ) => ({
+                                    "x-pollinations-mcp-cost": "0.0002",
+                                    "x-pollinations-mcp-tool": tool,
+                                    "x-pollinations-mcp-status": "200",
+                                    "x-pollinations-mcp-adjustment-id": rate,
+                                    "x-pollinations-mcp-adjustment-units": "1",
+                                });
+                                if (pathname.endsWith("/ssh")) {
+                                    // Service binding mocks run in Node, so the
+                                    // WebSocket comes from Miniflare.
+                                    const [client, server] = Object.values(
+                                        new WebSocketPair(),
+                                    );
+                                    server.accept();
+                                    server.send(
+                                        `SSH-2.0-${request.headers.get("x-pollinations-user-id")}`,
+                                    );
+                                    return new MiniflareResponse(null, {
+                                        status: 101,
+                                        webSocket: client,
+                                        headers: receipt(
+                                            "ssh",
+                                            "computer.ssh_session.v1",
+                                        ),
+                                    });
+                                }
+                                if (pathname.startsWith("/workspaces/")) {
+                                    return Response.json(
+                                        {
+                                            path: pathname + search,
+                                            user: request.headers.get(
+                                                "x-pollinations-user-id",
+                                            ),
+                                            body: await request.text(),
+                                        },
+                                        {
+                                            headers: receipt(
+                                                "port",
+                                                "computer.port_request.v1",
+                                            ),
+                                        },
                                     );
                                 }
                                 const payload = (await request.json()) as {

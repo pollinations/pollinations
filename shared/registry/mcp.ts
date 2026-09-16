@@ -79,6 +79,30 @@ const COMPUTER_MCP_PRICING = {
                 unit: "call",
             },
         },
+        {
+            id: "computer.port_request.v1",
+            description: "Request to a server on a computer port",
+            kind: "tool_call",
+            unit: "request",
+            unitCost: COMPUTER_TOOL_CALL_PRICE,
+            publicPricing: {
+                label: "Port request",
+                quantity: 1,
+                unit: "request",
+            },
+        },
+        {
+            id: "computer.ssh_session.v1",
+            description: "SSH session, up to one hour",
+            kind: "tool_call",
+            unit: "session",
+            unitCost: COMPUTER_TOOL_CALL_PRICE,
+            publicPricing: {
+                label: "SSH session",
+                quantity: 1,
+                unit: "session",
+            },
+        },
     ],
 } as const;
 const COMPOSIO_MCP_PRICING = {

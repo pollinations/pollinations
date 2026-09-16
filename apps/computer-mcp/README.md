@@ -35,6 +35,23 @@ a tool: a `/workspace/README.md` seeded on first use tells the agent to keep
 current facts in `memory/facts.md` and a dated append-only journal in
 `memory/log/`.
 
+## Ports and SSH
+
+A computer is also a runtime the owner connects to. Only the owner reaches it:
+Gen picks the Durable Object from the authenticated caller, exactly as for MCP.
+
+- `/workspaces/<name>/ports/<port>/<path>` proxies HTTP to a server in the
+  container (`fetchPort`), for ports 1024–65535 except computerd's 8080 and
+  sshd's 2222. When nothing listens, the Durable Object runs
+  `/workspace/start.sh` in the background (log in `/workspace/.start.log`)
+  and retries for 20 seconds. Each request pushes back the idle shutdown and is
+  billed `computer.port_request.v1`.
+- `/workspaces/<name>/ssh` upgrades to a WebSocket piped to sshd on port 2222
+  (key auth only, keys in `/workspace/.ssh/authorized_keys`). An open session
+  keeps the container running for up to an hour and is billed once
+  (`computer.ssh_session.v1`). `wrangler containers ssh` is not used because
+  it authenticates against the Cloudflare account.
+
 ## How requests reach it
 
 The Worker is private (`workers_dev: false`, no routes). Gen's
@@ -60,10 +77,10 @@ npm run test:container # in another terminal, exercises real Linux commands
 
 `npm run dev` requires Docker because Wrangler builds the configured container
 image. The Workers pool tests run without Docker. `test:container` exercises
-Node, npm installs, stdin, errors, workspace isolation and file publishing
-against a running Worker (override its URL with `COMPUTER_MCP_URL`).
+Node, npm installs, stdin, errors, workspace isolation, file publishing,
+`start.sh` behind a port and the SSH banner over WebSocket against a running Worker (override its URL with `COMPUTER_MCP_URL`).
 Add `-- --idle` to also wait five minutes and verify container restart with
-files and installed packages restored. `COMPUTER_TEST_USER` reuses a test caller.
+files and installed packages restored and `start.sh` rerun. `COMPUTER_TEST_USER` reuses a test caller.
 
 Call it directly with the user header (the gen proxy sets it in production):
 

@@ -12,6 +12,8 @@ const BASH_DESCRIPTION = `Run a bash command in a private, persistent workspace.
 
 Commands run in a Debian container with Node.js, npm, apt, git, native binaries and outbound network. The first command starts the container; it stops after five minutes without commands. Only /workspace persists when the container restarts; install project dependencies there. Background processes stop with the container.
 
+The owner can reach a server you start on a port (1024-65535, not 8080 or 2222) at https://gen.pollinations.ai/computer/<workspace>/ports/<port>/ with their key. Put the command that starts it in /workspace/start.sh; it runs when a request finds the port closed. The owner can also SSH in once their public key is in /workspace/.ssh/authorized_keys.
+
 Write a file by passing its content in \`stdin\` and running \`cat > path\`; stdin is used as-is, no quoting.
 
 Send files out with the publish_file tool, which copies one file to media storage and returns an unlisted URL kept 30 days (tar a folder first). You can also use \`git push\` to a repository you own with a token in the remote URL.

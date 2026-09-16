@@ -113,6 +113,32 @@ describe("computer MCP worker", () => {
         await client.close();
     });
 
+    it("rejects unknown paths, reserved ports and invalid workspaces", async () => {
+        for (const path of [
+            "/other",
+            "/workspaces/default/ports/8080/",
+            "/workspaces/default/ports/2222/",
+            "/workspaces/default/ports/80/",
+            "/workspaces/default/ports/70000/",
+            "/workspaces/..%2Fescape/ports/8000/",
+            "/workspaces/default/shell",
+        ]) {
+            const response = await SELF.fetch(`https://mcp.internal${path}`, {
+                headers: { [MCP_USER_ID_HEADER]: "user-routes" },
+            });
+            expect(response.status, path).toBe(404);
+        }
+    });
+
+    it("requires a WebSocket upgrade for SSH without starting a container", async () => {
+        const response = await SELF.fetch(
+            "https://mcp.internal/workspaces/default/ssh",
+            { headers: { [MCP_USER_ID_HEADER]: "user-ssh" } },
+        );
+        expect(response.status).toBe(426);
+        expect(response.headers.has(MCP_USAGE_HEADERS.cost)).toBe(false);
+    });
+
     it("rejects invalid workspaces before executing commands", async () => {
         const client = await connect("user-invalid");
         const result = await client.callTool({

@@ -125,6 +125,24 @@ test("lists the MCP servers exposed through Gen", async () => {
                             quantity: 1,
                             unit: "call",
                         },
+                        {
+                            name: "computer.port_request.v1",
+                            label: "Port request",
+                            kind: "tool_call",
+                            price: "0.0002",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "request",
+                        },
+                        {
+                            name: "computer.ssh_session.v1",
+                            label: "SSH session",
+                            kind: "tool_call",
+                            price: "0.0002",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "session",
+                        },
                     ],
                 },
             },
@@ -335,6 +353,74 @@ test("scopes Computer to the agent in a signed delegated run", async () => {
             ],
         },
     });
+});
+
+test("routes computer port requests to the caller's own computer and bills them", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/computer/default/ports/8000/v1/responses?stream=false",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "x-pollinations-user-id": "spoofed-user",
+            },
+            body: "hello",
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        path: "/workspaces/default/ports/8000/v1/responses?stream=false",
+        user: userId,
+        body: "hello",
+    });
+    for (const header of Object.values(MCP_USAGE_HEADERS)) {
+        expect(response.headers.has(header)).toBe(false);
+    }
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 0.9998,
+        packBalance: 0,
+    });
+});
+
+test("passes the computer SSH WebSocket through and bills the session", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/computer/default/ssh",
+        {
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Upgrade: "websocket",
+            },
+        },
+    );
+
+    expect(response.status).toBe(101);
+    const socket = response.webSocket;
+    if (!socket) throw new Error("Missing WebSocket");
+    const banner = new Promise((resolve) =>
+        socket.addEventListener("message", (event) => resolve(event.data)),
+    );
+    socket.accept();
+    expect(await banner).toBe(`SSH-2.0-${userId}`);
+    socket.close();
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 0.9998,
+        packBalance: 0,
+    });
+});
+
+test("requires authentication for computer ports", async () => {
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/computer/default/ports/8000/",
+    );
+    expect(response.status).toBe(401);
 });
 
 test("rejects MCP batch requests at the proxy", async () => {

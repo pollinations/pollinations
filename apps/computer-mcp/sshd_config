@@ -1,0 +1,6 @@
+Port 2222
+PermitRootLogin prohibit-password
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+AuthorizedKeysFile /workspace/.ssh/authorized_keys
+StrictModes no

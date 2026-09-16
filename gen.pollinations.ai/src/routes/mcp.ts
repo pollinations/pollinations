@@ -34,6 +34,7 @@ function requestForMcp(
     server: McpServerDefinition,
     userId: string,
     managedAgentId?: string,
+    pathname = "/",
 ): Request {
     const headers = new Headers(request.headers);
     if (server.billing === "usage_receipt") {
@@ -52,7 +53,7 @@ function requestForMcp(
     const url = new URL(request.url);
     url.protocol = "https:";
     url.host = "mcp.internal";
-    url.pathname = "/";
+    url.pathname = pathname;
     return new Request(url, {
         method: request.method,
         headers,
@@ -155,6 +156,7 @@ async function settleUsage(
 export const mcpRoutes = new Hono<Env>()
     .use("/mcp", edgeRateLimit)
     .use("/mcp/*", edgeRateLimit)
+    .use("/computer/*", edgeRateLimit)
     .get("/mcp", (c) =>
         c.json({
             data: MCP_SERVERS.map((server) => ({
@@ -187,32 +189,54 @@ export const mcpRoutes = new Hono<Env>()
         if (!server) {
             throw new HTTPException(404, { message: "MCP server not found" });
         }
-        const binding = c.env[server.binding] as Fetcher;
-
-        const startedAt = new Date();
-        const response = await binding.fetch(
-            requestForMcp(
-                c.req.raw,
-                server,
-                user.id,
-                c.var.auth.agentRun?.managedAgentId,
-            ),
+        return forwardToServer(c, server, user.id, "/");
+    })
+    // Servers and SSH on the caller's own computer. The Computer Worker picks
+    // the computer from the Gen-set identity, so a caller only reaches theirs.
+    .use("/computer/:workspace/*", auth(), frontendKeyRateLimit)
+    .all("/computer/:workspace/*", async (c) => {
+        const user = c.var.auth.requireUser();
+        const server = getMcpServerDefinition("computer");
+        if (!server) {
+            throw new HTTPException(404, { message: "Computer not found" });
+        }
+        const pathname = new URL(c.req.url).pathname.replace(
+            /^\/computer\//,
+            "/workspaces/",
         );
-        if (server.billing === "usage_receipt") {
-            const usage = parseMcpUsageHeaders(response.headers);
-            if (usage) {
-                try {
-                    await settleUsage(c, server, usage, startedAt);
-                    await c.var.frontendKeyRateLimit?.consumePollen(usage.cost);
-                } catch (error) {
-                    c.var.log.error("MCP billing failed: {error}", {
-                        error:
-                            error instanceof Error
-                                ? error.message
-                                : String(error),
-                    });
-                }
+        return forwardToServer(c, server, user.id, pathname);
+    });
+
+async function forwardToServer(
+    c: Context<Env>,
+    server: McpServerDefinition,
+    userId: string,
+    pathname: string,
+): Promise<Response> {
+    const binding = c.env[server.binding] as Fetcher;
+    const startedAt = new Date();
+    const response = await binding.fetch(
+        requestForMcp(
+            c.req.raw,
+            server,
+            userId,
+            c.var.auth.agentRun?.managedAgentId,
+            pathname,
+        ),
+    );
+    if (server.billing === "usage_receipt") {
+        const usage = parseMcpUsageHeaders(response.headers);
+        if (usage) {
+            try {
+                await settleUsage(c, server, usage, startedAt);
+                await c.var.frontendKeyRateLimit?.consumePollen(usage.cost);
+            } catch (error) {
+                c.var.log.error("MCP billing failed: {error}", {
+                    error:
+                        error instanceof Error ? error.message : String(error),
+                });
             }
         }
-        return responseForCaller(response);
-    });
+    }
+    return responseForCaller(response);
+}

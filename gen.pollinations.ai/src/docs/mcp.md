@@ -145,6 +145,27 @@ URL with 30-day retention, refreshed on reads. Files can also leave with
 `git push` to a repository the caller owns. Every tool call costs the same flat
 rate; see the catalog.
 
+A computer can also serve HTTP and accept SSH. Only its owner can reach it,
+with the same key (a key used by a managed agent reaches that agent's
+computer). Start a server on a port from 1024 to 65535 (except 8080 and 2222)
+and call it at `https://gen.pollinations.ai/computer/<workspace>/ports/<port>/`.
+Put its start command in `/workspace/start.sh` and the first request after a
+restart runs it. Each request is billed as a port request.
+
+```bash
+curl https://gen.pollinations.ai/computer/default/ports/8000/ \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+For SSH, add your public key to `/workspace/.ssh/authorized_keys` with the
+`bash` tool, then connect through a WebSocket with
+[websocat](https://github.com/vi/websocat). A session lasts up to one hour and
+is billed once.
+
+```bash
+ssh -o ProxyCommand="websocat --binary -H 'Authorization: Bearer $POLLINATIONS_KEY' wss://gen.pollinations.ai/computer/default/ssh" root@computer
+```
+
 ### Billing and permissions
 
 Calls use the same Pollen wallet as the Pollinations API. The catalog endpoint

@@ -104,6 +104,39 @@ try {
         /^https:\/\/media\.pollinations\.ai\//,
     );
     console.log("PASS file publishing");
+    const server =
+        "require('http').createServer((q, s) => s.end(q.method + ' ' + q.url)).listen(8000)";
+    await bash(resumed, "cat > start.sh", { stdin: `node -e "${server}"\n` });
+    const portUrl = (userId, agentId = "agent-one") => {
+        const headers = { "x-pollinations-user-id": userId };
+        if (agentId) headers["x-pollinations-agent-id"] = agentId;
+        return [
+            new URL("workspaces/default/ports/8000/hi?x=1", url),
+            { headers },
+        ];
+    };
+    const served = await fetch(...portUrl(user));
+    assert.equal(await served.text(), "GET /hi?x=1");
+    assert.equal(
+        served.headers.get("x-pollinations-mcp-adjustment-id"),
+        "computer.port_request.v1",
+    );
+    const foreign = await fetch(...portUrl(`${user}-other`));
+    assert.equal(foreign.status, 502);
+    console.log("PASS start.sh on first port request, private to the owner");
+
+    const ssh = new WebSocket(new URL("workspaces/default/ssh", url), {
+        headers: portUrl(user)[1].headers,
+    });
+    ssh.binaryType = "arraybuffer";
+    const banner = await new Promise((resolve, reject) => {
+        ssh.onmessage = (event) => resolve(Buffer.from(event.data).toString());
+        ssh.onerror = reject;
+    });
+    ssh.close();
+    assert.match(banner, /^SSH-2\.0-OpenSSH/);
+    console.log("PASS SSH over WebSocket");
+
     if (process.argv.includes("--idle")) {
         await bash(resumed, "touch /tmp/computer-idle-test");
         console.log("Waiting for the five-minute idle shutdown...");
@@ -120,7 +153,13 @@ try {
             ),
             "true",
         );
-        console.log("PASS idle shutdown and restoration of files and packages");
+        assert.equal(
+            await (await fetch(...portUrl(user))).text(),
+            "GET /hi?x=1",
+        );
+        console.log(
+            "PASS idle shutdown, restoration of files and packages, start.sh rerun",
+        );
     }
     console.log(`Test caller: ${user}`);
 } finally {

@@ -13,7 +13,6 @@ type FraudReportUser = FraudUser & {
     banned: number | null;
     ban_expires: number | null;
 };
-export type FraudCandidate = { id: string; name: string | null; score: number };
 type QueryRunner = (
     body: FraudQuery | { batch: FraudQuery[] },
 ) => Promise<{ results?: unknown[] }[]>;
@@ -96,18 +95,19 @@ export async function runFraudBanCheck(
         applied: apply ? candidates.length : 0,
         charges: result.charges,
         unmapped: result.unmapped,
+        disputes: result.disputes,
+        warnings: result.warnings,
         // Private report of accounts still needing action; never printed to public logs.
         // Review every confirmed signal, including a first issuer warning below
         // the threshold. Scores prioritize the queue during manual calibration.
         report: confirmedUsers
             .filter((user) => !isActiveBan(user))
-            .map(
-                (user): FraudCandidate => ({
-                    id: user.id,
-                    name: user.name,
-                    score: result.scores.get(user.id) ?? 0,
-                }),
-            )
+            .map((user) => ({
+                id: user.id,
+                name: user.name,
+                // biome-ignore lint/style/noNonNullAssertion: Confirmed users are derived from these same collected payments.
+                ...result.details.get(user.id)!,
+            }))
             .sort((a, b) => b.score - a.score),
     };
 }

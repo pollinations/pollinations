@@ -37,6 +37,10 @@ export type FraudPayment = { chargeId: string } & Partial<
 
 /** Simulator parity: deduplicate charges, strongest signal wins, sum capped contributions. */
 export function cappedFraudScore(payments: Iterable<FraudPayment>): number {
+    return fraudScoreBreakdown(payments).score;
+}
+
+export function fraudScoreBreakdown(payments: Iterable<FraudPayment>) {
     const charges = new Map<string, Set<Signal>>();
     for (const payment of payments) {
         if (!/^(ch|py)_.+/.test(payment.chargeId))
@@ -57,18 +61,27 @@ export function cappedFraudScore(payments: Iterable<FraudPayment>): number {
         }
         if (winner) counts[winner]++;
     }
-    const score = SIGNALS.reduce(
-        (sum, signal) =>
-            sum +
-            WEIGHTS[signal] *
+    const breakdown = SIGNALS.filter((signal) => counts[signal]).map(
+        (signal) => ({
+            signal,
+            count: counts[signal],
+            contribution:
+                WEIGHTS[signal] *
                 Math.min(
                     1,
                     0.1 *
                         (counts[signal] / 2) ** (Math.log(10) / Math.log(500)),
                 ),
-        0,
+        }),
     );
-    return Number(score.toFixed(2));
+    return {
+        score: Number(
+            breakdown
+                .reduce((sum, row) => sum + row.contribution, 0)
+                .toFixed(2),
+        ),
+        breakdown,
+    };
 }
 
 export function hasConfirmedFraud(payments: Iterable<FraudPayment>): boolean {
@@ -99,6 +112,26 @@ export async function collectStripeFraudScores(
         { userId: string | null; payment: FraudPayment }
     >();
     const customers = new Map<string, Set<string>>();
+    const paymentDetails = new Map<
+        string,
+        {
+            id: string;
+            created: number;
+            amount: number;
+            currency: string;
+            refunded: number;
+        }
+    >();
+    const warnings: string[] = [];
+    const disputes: {
+        id: string;
+        chargeId: string;
+        status: string;
+        reason: string;
+        amount: number;
+        currency: string;
+        due: number | null;
+    }[] = [];
     for (const [customerId, ids] of customerUsers) {
         if (ids.size === 1) {
             const [id] = ids;
@@ -146,6 +179,13 @@ export async function collectStripeFraudScores(
                 hr: charge.outcome?.risk_level === "highest",
             },
         });
+        paymentDetails.set(charge.id, {
+            id: charge.id,
+            created: charge.created,
+            amount: charge.amount,
+            currency: charge.currency,
+            refunded: charge.amount_refunded,
+        });
     }
     /**
      * Disputes and warnings are listed by their own date, so one can point at a
@@ -180,6 +220,18 @@ export async function collectStripeFraudScores(
     })) {
         if (!dispute.livemode)
             throw new FraudCheckError("Expected live Stripe disputes");
+        disputes.push({
+            id: dispute.id,
+            chargeId:
+                typeof dispute.charge === "string"
+                    ? dispute.charge
+                    : dispute.charge.id,
+            status: dispute.status,
+            reason: dispute.reason,
+            amount: dispute.amount,
+            currency: dispute.currency,
+            due: dispute.evidence_details?.due_by ?? null,
+        });
         if (dispute.reason === "fraudulent") {
             const payment = await paymentFor(dispute.charge);
             if (payment) payment.fd = true;
@@ -191,6 +243,7 @@ export async function collectStripeFraudScores(
     })) {
         if (!warning.livemode)
             throw new FraudCheckError("Expected live Stripe warnings");
+        warnings.push(warning.id);
         const payment = await paymentFor(warning.charge);
         if (payment) payment.ew = true;
     }
@@ -214,10 +267,23 @@ export async function collectStripeFraudScores(
         list.push(payment);
         byUser.set(userId, list);
     }
+    const details = new Map(
+        [...byUser].map(([id, list]) => [
+            id,
+            {
+                ...fraudScoreBreakdown(list),
+                payments: list
+                    .filter((payment) => hasConfirmedFraud([payment]))
+                    // biome-ignore lint/style/noNonNullAssertion: Each scanned payment has details recorded in the same loop.
+                    .map((payment) => paymentDetails.get(payment.chargeId)!),
+            },
+        ]),
+    );
     return {
-        scores: new Map(
-            [...byUser].map(([id, list]) => [id, cappedFraudScore(list)]),
-        ),
+        scores: new Map([...details].map(([id, detail]) => [id, detail.score])),
+        details,
+        disputes,
+        warnings,
         confirmed: new Set(
             [...byUser]
                 .filter(([, list]) => hasConfirmedFraud(list))

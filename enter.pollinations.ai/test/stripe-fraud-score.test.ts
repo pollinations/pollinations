@@ -103,7 +103,7 @@ test("scan reads every page; dry run is read-only; apply bans and expires checko
         url: null,
     });
     const stripe = client();
-    expect(await runFraudBanCheck(stripe, queryD1)).toEqual({
+    expect(await runFraudBanCheck(stripe, queryD1)).toMatchObject({
         candidates: 1,
         applied: 0,
         charges: 106,

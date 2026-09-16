@@ -15,6 +15,7 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { withMcpUsageHeaders } from "../../../shared/mcp-usage.ts";
 import {
     COMPUTER_TOOL_CALL_PRICE,
+    MCP_USER_GITHUB_HEADER,
     MCP_USER_ID_HEADER,
 } from "../../../shared/registry/mcp.ts";
 import { createMediaAssets, type MediaService } from "./assets.ts";
@@ -72,12 +73,22 @@ README; push needs no token.
 // service proxy, so the loader loopback needs the class exported here.
 export { WorkspaceServiceProxy };
 
+type GitIdentity = { name: string; email: string };
+
 export class Computer extends withWorkspace(
-    class extends DurableObject<Env> {},
+    class extends DurableObject<Env> {
+        // Git reads this object on every commit, so fetch can fill in the
+        // caller's GitHub account after the workspace is built.
+        gitIdentity: GitIdentity = {
+            name: "Pollinations Agent",
+            email: "agent@pollinations.ai",
+        };
+    },
     (self) => {
-        const { ctx, env } = self as unknown as {
+        const { ctx, env, gitIdentity } = self as unknown as {
             ctx: DurableObjectState;
             env: Env;
+            gitIdentity: GitIdentity;
         };
         return {
             storage: ctx.storage as unknown as DurableObjectStorageLike,
@@ -86,10 +97,7 @@ export class Computer extends withWorkspace(
             // recurse through the fs overloads until it gives up.
             assets: (workspace: unknown) =>
                 createMediaAssets(workspace as WorkspaceLike, env.MEDIA),
-            defaultGitIdentity: {
-                name: "Pollinations Agent",
-                email: "agent@pollinations.ai",
-            },
+            defaultGitIdentity: gitIdentity,
             backends: [
                 new WorkerShellBackend({
                     loader: env.LOADER,
@@ -105,6 +113,13 @@ export class Computer extends withWorkspace(
     override async fetch(request: Request): Promise<Response> {
         if (request.method !== "POST") {
             return new Response("Method Not Allowed", { status: 405 });
+        }
+        // Commits are authored as the caller's GitHub account, which GitHub
+        // links to the profile; `git config user.name/email` overrides it.
+        const github = request.headers.get(MCP_USER_GITHUB_HEADER);
+        if (github) {
+            this.gitIdentity.name = github.slice(github.indexOf("+") + 1);
+            this.gitIdentity.email = `${github}@users.noreply.github.com`;
         }
         const payload = await readJsonRpc(request);
         const workspace = await getWorkspace(this);

@@ -81,7 +81,7 @@ export function AppUserMenu({
                         className="polli:flex polli:h-full polli:w-10 polli:shrink-0 polli:items-center polli:justify-center polli:bg-theme-bg-active"
                     >
                         <span
-                            className="polli:block polli:h-5 polli:w-5 polli:bg-current"
+                            className="polli:relative polli:-top-px polli:left-px polli:block polli:h-6 polli:w-6 polli:bg-current"
                             style={{
                                 mask: `url('${markUrl}') center / contain no-repeat`,
                                 WebkitMask: `url('${markUrl}') center / contain no-repeat`,

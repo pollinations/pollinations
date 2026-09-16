@@ -843,7 +843,7 @@ Text-to-speech, music generation, and audio transcription.
 | `POST /v1/audio/speech` | OpenAI-compatible TTS |
 | `POST /v1/audio/transcriptions` | Speech-to-text transcription |
 
-**Audio models:** elevenlabs/eleven-v3, elevenlabs/eleven-flash-v2.5, elevenlabs/eleven-multilingual-v2, elevenlabs/eleven-v3:dialogue, elevenlabs/eleven-multilingual-sts-v2, elevenlabs/voice-isolator, elevenlabs/music-v2, google/lyria-3-clip-preview, elevenlabs/eleven-text-to-sound-v2, openai/whisper-large-v3, openai/gpt-transcribe, elevenlabs/scribe-v2, x-ai/grok-transcribe, x-ai/grok-tts, assemblyai/universal-2, assemblyai/universal-3.5-pro, stability-ai/stable-audio-3-medium, stability-ai/stable-audio-3, fish-audio/s2.1-pro, qwen/qwen3-tts-flash, qwen/qwen3-tts-instruct-flash, sesame/csm-1b, hexgrad/kokoro-82m
+**Audio models:** elevenlabs/eleven-v3, elevenlabs/eleven-flash-v2.5, elevenlabs/eleven-multilingual-v2, elevenlabs/eleven-v3:dialogue, elevenlabs/eleven-multilingual-sts-v2, elevenlabs/voice-isolator, elevenlabs/music-v2, elevenlabs/music-v2.5, google/lyria-3-clip-preview, elevenlabs/eleven-text-to-sound-v2, openai/whisper-large-v3, openai/gpt-transcribe, elevenlabs/scribe-v2, x-ai/grok-transcribe, x-ai/grok-tts, assemblyai/universal-2, assemblyai/universal-3.5-pro, stability-ai/stable-audio-3-medium, stability-ai/stable-audio-3, fish-audio/s2.1-pro, qwen/qwen3-tts-flash, qwen/qwen3-tts-instruct-flash, sesame/csm-1b, hexgrad/kokoro-82m
 
 **Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
 
@@ -903,7 +903,7 @@ curl -X POST "https://gen.pollinations.ai/v1/audio/voice-isolator" \
 
 Generate speech, music, sound effects, or dialogue from text. Compatible with the OpenAI TTS API for JSON requests.
 
-Set `model` to `elevenlabs/music-v2`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music. Lyria returns one fixed 30-second MP3 clip. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3`, or reference-audio conditioning on `elevenlabs/music-v2`; for ElevenLabs inpainting, pass a `composition_plan`.
+Set `model` to `elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music. Lyria returns one fixed 30-second MP3 clip. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3`, or reference-audio conditioning on either ElevenLabs Music model; for ElevenLabs inpainting, pass a `composition_plan`.
 
 For multi-speaker audio, set `model` to `elevenlabs/eleven-v3:dialogue` and put one turn per line in `input` as `<voice>: <text>`. Voice labels may be preset names or ElevenLabs voice IDs; the top-level `voice` field is ignored for this model. Dialogue supports up to 10 unique voices and 2,000 total text characters.
 
@@ -1059,7 +1059,7 @@ Generate speech, dialogue, music, or sound effects from text via a simple GET re
 
 **Dialogue:** Set `model=elevenlabs/eleven-v3:dialogue`; provide one `<voice>: <text>` turn per line.
 
-**Music generation:** Set `model=elevenlabs/music-v2`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music instead of speech. `google/lyria-3-clip-preview` returns a fixed 30-second MP3 clip; `elevenlabs/music-v2` supports `duration` (3-300 seconds) and `instrumental` mode; the Stable Audio models support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.
+**Music generation:** Set `model=elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music instead of speech. `google/lyria-3-clip-preview` returns a fixed 30-second MP3 clip; the ElevenLabs Music models support `duration` (3-300 seconds) and `instrumental` mode; the Stable Audio models support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.
 
 ⚙️ **Parameters**
 
@@ -1069,11 +1069,11 @@ Generate speech, dialogue, music, or sound effects from text via a simple GET re
 | `voice` | `query` | `string` | Voice preset or custom provider voice ID. Dialogue voices come from labels in the text. · default: `"alloy"` |
 | `response_format` | `query` | enum (6) — `"mp3"`, `"opus"`, `"aac"`, … | Audio output format. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; `google/lyria-3-clip-preview` and `elevenlabs/eleven-text-to-sound-v2` support mp3 only. · default: `"mp3"` |
 | `model` | `query` | `string` | Audio model for speech, dialogue, music, or sound-effect generation |
-| `duration` | `query` | `string` | Music duration in seconds (`elevenlabs/music-v2` 3-300; `google/lyria-3-clip-preview` fixed at 30) |
+| `duration` | `query` | `string` | Music duration in seconds (`elevenlabs/music-v2` and `elevenlabs/music-v2.5` 3-300; `google/lyria-3-clip-preview` fixed at 30) |
 | `seconds` | `query` | `number` | Audio duration in seconds for Stable Audio models, 1-380 · range: `1…380` |
 | `steps` | `query` | `integer` | Sampling steps (`stability-ai/stable-audio-3-medium` 1-100, `stability-ai/stable-audio-3` 4-8) · range: `1…100` |
 | `negative_prompt` | `query` | `string` | Negative prompt for `stability-ai/stable-audio-3` |
-| `instrumental` | `query` | `"true"` \| `"false"` | If true, guarantees instrumental output (`elevenlabs/music-v2` only) · default: `"false"` |
+| `instrumental` | `query` | `"true"` \| `"false"` | If true, guarantees instrumental output (`elevenlabs/music-v2` and `elevenlabs/music-v2.5` only) · default: `"false"` |
 | `instructions` | `query` | `string` | Emotion/style instruction (`qwen/qwen3-tts-instruct-flash` only) |
 | `loop` | `query` | `"true"` \| `"false"` | Loop the generated sound effect (`elevenlabs/eleven-text-to-sound-v2` only) |
 | `prompt_influence` | `query` | `string` | How strictly to follow the prompt, 0-1 (`elevenlabs/eleven-text-to-sound-v2` only) |
@@ -2208,7 +2208,7 @@ curl "https://gen.pollinations.ai/account/agents/key_abc123" \
 
 #### `PATCH` `/account/agents/{id}` — Update Agent
 
-Update a prompt agent's configuration or a code agent's visibility and safety policy. A code agent's identity and repository are fixed after creation. API keys require `account:keys`.
+Update a prompt agent's configuration or a code agent's visibility and safety policy. Send only the fields to change; the rest keep their current values. A code agent's identity and repository are fixed after creation. API keys require `account:keys`.
 
 ⚙️ **Parameters**
 

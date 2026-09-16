@@ -107,6 +107,7 @@ export function AppUserMenu({
                                         generationEnabled:
                                             key.data.permissions?.models
                                                 ?.length !== 0,
+                                        withUnit: !wallet,
                                     }}
                                 />
                                 {wallet && (

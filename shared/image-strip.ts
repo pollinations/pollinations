@@ -29,6 +29,8 @@ export function stripImageMetadata(bytes: Uint8Array): Uint8Array {
     if (mime === "image/jpeg") return stripJpegMetadata(bytes);
     if (mime === "image/png") return stripPngMetadata(bytes);
     if (mime === "image/webp") return stripWebpMetadata(bytes);
+    if (mime === "image/gif") return stripGifMetadata(bytes);
+    if (mime === "image/bmp") return bytes;
     return bytes;
 }
 
@@ -236,6 +238,111 @@ function stripPngMetadata(data: Uint8Array): Uint8Array {
     return out;
 }
 
+// ---------------------------------------------------------------------------
+// GIF: drop Comment Extension (0xFE) and Application Extension (0xFF) blocks.
+//      These carry XMP, authorship, and free-text metadata.
+// ---------------------------------------------------------------------------
+
+const GIF_METADATA_EXTENSIONS = new Set([0xfe, 0xff]);
+
+function skipGifSubBlocks(data: Uint8Array, offset: number): number {
+    while (offset < data.length) {
+        const size = data[offset];
+        if (size === 0) return offset + 1;
+        offset += 1 + size;
+    }
+    return -1;
+}
+
+function stripGifMetadata(data: Uint8Array): Uint8Array {
+    // Minimum: header(6) + LSD(7) + trailer(1)
+    if (data.length < 14) return data;
+
+    const version = String.fromCharCode(data[3], data[4], data[5]);
+    if (version !== "89a" && version !== "87a") return data;
+
+    // Skip header (6) + Logical Screen Descriptor (7)
+    let offset = 13;
+    // Skip Global Colour Table if present
+    if (data[10] & 0x80) {
+        const gctSize = 3 * (1 << ((data[10] & 0x07) + 1));
+        offset += gctSize;
+    }
+    if (offset >= data.length) return data;
+
+    const segments: Uint8Array[] = [data.subarray(0, offset)];
+    let stripped = false;
+
+    while (offset < data.length) {
+        const introducer = data[offset];
+
+        // Trailer (0x3B)
+        if (introducer === 0x3b) {
+            segments.push(data.subarray(offset, offset + 1));
+            offset++;
+            break;
+        }
+
+        // Image Descriptor (0x2C)
+        if (introducer === 0x2c) {
+            if (offset + 10 > data.length) {
+                return malformedAfterMetadata(data, stripped, "GIF");
+            }
+            let imgOffset = offset + 10;
+            // Skip Local Colour Table if present
+            if (data[offset + 9] & 0x80) {
+                const lctSize = 3 * (1 << ((data[offset + 9] & 0x07) + 1));
+                imgOffset += lctSize;
+            }
+            if (imgOffset >= data.length) {
+                return malformedAfterMetadata(data, stripped, "GIF");
+            }
+            // Skip LZW minimum code size byte
+            imgOffset++;
+            // Skip sub-blocks (image data)
+            const afterData = skipGifSubBlocks(data, imgOffset);
+            if (afterData < 0) {
+                return malformedAfterMetadata(data, stripped, "GIF");
+            }
+            segments.push(data.subarray(offset, afterData));
+            offset = afterData;
+            continue;
+        }
+
+        // Extension block (0x21)
+        if (introducer === 0x21) {
+            if (offset + 2 > data.length) {
+                return malformedAfterMetadata(data, stripped, "GIF");
+            }
+            const label = data[offset + 1];
+            const afterExt = skipGifSubBlocks(data, offset + 2);
+            if (afterExt < 0) {
+                return malformedAfterMetadata(data, stripped, "GIF");
+            }
+            if (GIF_METADATA_EXTENSIONS.has(label)) {
+                stripped = true;
+            } else {
+                segments.push(data.subarray(offset, afterExt));
+            }
+            offset = afterExt;
+            continue;
+        }
+
+        return malformedAfterMetadata(data, stripped, "GIF");
+    }
+
+    if (!stripped) return data;
+
+    let totalSize = 0;
+    for (const seg of segments) totalSize += seg.length;
+    const out = new Uint8Array(totalSize);
+    let pos = 0;
+    for (const seg of segments) {
+        out.set(seg, pos);
+        pos += seg.length;
+    }
+    return out;
+}
 // ---------------------------------------------------------------------------
 // WebP: drop EXIF and XMP RIFF chunks, clear VP8X feature flags.
 // ---------------------------------------------------------------------------

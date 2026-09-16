@@ -403,12 +403,149 @@ describe("stripImageMetadata — WebP", () => {
     });
 });
 
+// GIF helpers
+
+// Minimal valid GIF89a: 1x1 pixel, no GCT, single transparent frame
+function gifMinimal(): Uint8Array {
+    return new Uint8Array([
+        // Header
+        0x47, 0x49, 0x46, 0x38, 0x39, 0x61,
+        // Logical Screen Descriptor: 1x1, no GCT
+        0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+        // Image Descriptor
+        0x2c, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
+        // LZW min code size + data sub-block + terminator
+        0x02, 0x02, 0x4c, 0x01, 0x00,
+        // Trailer
+        0x3b,
+    ]);
+}
+
+function gifWithComment(): Uint8Array {
+    // Comment Extension: 0x21 0xFE, sub-block "GPS:lat=51", terminator
+    const comment = [
+        0x47, 0x50, 0x53, 0x3a, 0x6c, 0x61, 0x74, 0x3d, 0x35, 0x31,
+    ];
+    return new Uint8Array([
+        0x47,
+        0x49,
+        0x46,
+        0x38,
+        0x39,
+        0x61,
+        0x01,
+        0x00,
+        0x01,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        // Comment Extension
+        0x21,
+        0xfe,
+        comment.length,
+        ...comment,
+        0x00,
+        // Image Descriptor
+        0x2c,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x01,
+        0x00,
+        0x01,
+        0x00,
+        0x00,
+        0x02,
+        0x02,
+        0x4c,
+        0x01,
+        0x00,
+        0x3b,
+    ]);
+}
+
+function gifWithAppExtension(): Uint8Array {
+    // Application Extension (0xFF): 11-byte app id + sub-block data
+    const appId = [
+        0x58, 0x4d, 0x50, 0x20, 0x44, 0x61, 0x74, 0x61, 0x58, 0x4d, 0x50,
+    ]; // "XMP DataXMP"
+    const xmpData = [0x3c, 0x78, 0x3a, 0x78]; // truncated XMP payload
+    return new Uint8Array([
+        0x47,
+        0x49,
+        0x46,
+        0x38,
+        0x39,
+        0x61,
+        0x01,
+        0x00,
+        0x01,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        // Application Extension
+        0x21,
+        0xff,
+        appId.length,
+        ...appId,
+        xmpData.length,
+        ...xmpData,
+        0x00,
+        // Image Descriptor
+        0x2c,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x01,
+        0x00,
+        0x01,
+        0x00,
+        0x00,
+        0x02,
+        0x02,
+        0x4c,
+        0x01,
+        0x00,
+        0x3b,
+    ]);
+}
+
+// GIF tests
+
+describe("stripImageMetadata - GIF", () => {
+    it("returns original reference for a clean GIF", () => {
+        const input = gifMinimal();
+        expect(stripImageMetadata(input)).toBe(input);
+    });
+
+    it("strips Comment Extension (0xFE)", () => {
+        const result = stripImageMetadata(gifWithComment());
+        expect(result).not.toBe(gifWithComment());
+        expect([...result]).toEqual([...gifMinimal()]);
+    });
+
+    it("strips Application Extension carrying XMP (0xFF)", () => {
+        const result = stripImageMetadata(gifWithAppExtension());
+        expect(result).not.toBe(gifWithAppExtension());
+        expect([...result]).toEqual([...gifMinimal()]);
+    });
+
+    it("returns a truncated GIF header unchanged", () => {
+        const stub = new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x39, 0x61]);
+        expect(stripImageMetadata(stub)).toBe(stub);
+    });
+});
+
 // ── Resilience ───────────────────────────────────────────────────────────
 
 describe("stripImageMetadata — resilience", () => {
-    it("returns unsupported formats unchanged", () => {
-        const gif = new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x39, 0x61]);
-        expect(stripImageMetadata(gif)).toBe(gif);
+    it("returns BMP unchanged (no metadata container)", () => {
+        const bmp = new Uint8Array([0x42, 0x4d, 0x36, 0x00, 0x00, 0x00]);
+        expect(stripImageMetadata(bmp)).toBe(bmp);
     });
 
     it("returns a truncated JPEG header unchanged", () => {

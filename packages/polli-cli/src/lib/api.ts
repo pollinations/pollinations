@@ -60,3 +60,23 @@ const request = async <T>(
 
 export const gen = <T>(path: string, options?: RequestOptions) =>
     request<T>(BASE_URL, path, options);
+
+/** GET that returns the raw body (e.g. format=csv exports). */
+export const genText = async (
+    path: string,
+    options?: RequestOptions,
+): Promise<string> => {
+    const key = resolveApiKey(options?.apiKey);
+    const headers: Record<string, string> = {};
+    if (key) headers.Authorization = `Bearer ${key}`;
+
+    const res = await fetch(`${BASE_URL}${path}`, { headers });
+    if (!res.ok) {
+        const text = await res.text().catch(() => "Unknown error");
+        throw new ApiError(
+            res.status,
+            `${res.status} ${res.statusText}: ${text}`,
+        );
+    }
+    return res.text();
+};

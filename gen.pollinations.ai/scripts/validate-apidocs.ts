@@ -2,9 +2,8 @@
 /**
  * Static validator for APIDOCS.md. Catches regressions before they land:
  *   - every internal anchor link resolves to a rendered heading
- *   - every curl example for a write method (POST/PUT/PATCH) carries a body
- *     (`-d`, `-F`, or `--data-binary`) — write endpoints without a body never
- *     work, even if the example "looks" valid
+ *   - curl examples for write methods (POST/PUT/PATCH) carry a body
+ *     (`-d`, `-F`, or `--data-binary`), except known bodyless operations
  *   - no `model=<image-model>` appears inside a `/video/` curl example
  *   - public read examples (media retrieval) do not include `Authorization`
  *   - media-storage examples use the media.pollinations.ai origin
@@ -131,8 +130,14 @@ function validate(md: string): Failure[] {
         // Find the nearest preceding heading to give a useful failure path.
         const heading = findEnclosingHeading(lines, block.startLine);
 
-        // 2. Write methods must include a body indicator.
-        if (["POST", "PUT", "PATCH"].includes(method)) {
+        // Sync redeploys the stored repository and accepts no request body.
+        const isBodylessSync =
+            method === "POST" &&
+            parsedUrl?.origin === "https://gen.pollinations.ai" &&
+            /^\/account\/agents\/[^/]+\/sync$/.test(parsedUrl.pathname);
+
+        // 2. Other write methods must include a body indicator.
+        if (["POST", "PUT", "PATCH"].includes(method) && !isBodylessSync) {
             const hasBody = /(-d\s|--data-binary|-F\s|-F"|--form)/.test(
                 block.body,
             );

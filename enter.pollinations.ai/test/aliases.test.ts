@@ -154,6 +154,8 @@ test("GPT-5.5 is available without paid-only gating", () => {
 test("Azure models use the approved public-price multipliers", () => {
     const azureMultiplierOverrides = new Map<string, number>([
         ["openai/gpt-5.6-sol", 1 / 3],
+        ["openai/gpt-image-2.5-flare", 1],
+        ["openai/gpt-image-2.5-sunburst", 1],
     ]);
 
     for (const model of getModels()) {
@@ -229,15 +231,18 @@ test("DeepSeek V4 models are billed at provider cost", () => {
 
     const expectedProviders = {
         "deepseek/deepseek-v4-flash": "fireworks",
+        "deepseek/deepseek-v4.1-flash": "fireworks",
         "deepseek/deepseek-v4-pro": "fireworks",
     } as const;
     const expectedPaidOnly = {
         "deepseek/deepseek-v4-flash": undefined,
+        "deepseek/deepseek-v4.1-flash": undefined,
         "deepseek/deepseek-v4-pro": undefined,
     } as const;
 
     for (const model of [
         "deepseek/deepseek-v4-flash",
+        "deepseek/deepseek-v4.1-flash",
         "deepseek/deepseek-v4-pro",
     ] as const) {
         const definition = getRegistryModelDefinition(model);
@@ -256,4 +261,11 @@ test("DeepSeek V4 models are billed at provider cost", () => {
         expect(cost.totalCost).toBeCloseTo(expectedCost, 8);
         expect(price.totalPrice).toBeCloseTo(cost.totalCost, 8);
     }
+});
+
+test("legacy DeepSeek aliases continue to resolve to V4 Flash", () => {
+    expect(resolveModelName("deepseek")).toBe("deepseek/deepseek-v4-flash");
+    expect(resolveModelName("deepseek-flash")).toBe(
+        "deepseek/deepseek-v4-flash",
+    );
 });

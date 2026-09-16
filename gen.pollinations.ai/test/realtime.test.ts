@@ -662,6 +662,7 @@ test("serves GPT Live Transcribe through Azure and bills streamed duration", asy
     expect(balances?.tierBalance).toBeCloseTo(1 - expectedPrice, 8);
     expect(balances?.packBalance).toBe(0);
     expect(telemetry.resolvedModelRequested).toBe("openai/gpt-live-transcribe");
+    expect(telemetry.modelUsed).toBe("openai/gpt-live-transcribe");
     expect(telemetry.modelProviderUsed).toBe("azure");
     expect(telemetry.tokenCountPromptAudioSeconds).toBe(60);
     expect(telemetry.totalCost).toBeCloseTo(expectedCost, 12);
@@ -1383,7 +1384,13 @@ test("does not retry a partially completed realtime deduction", async () => {
         user?.packBalance ?? 0,
         8,
     );
-    expect(session.upstream.tinybirdRequests).toHaveLength(0);
+    await waitForTinybirdRequests(session.upstream, 1);
+    expect(session.upstream.tinybirdRequests).toHaveLength(1);
+    const event = (await session.upstream.tinybirdRequests[0].json()) as Record<
+        string,
+        unknown
+    >;
+    expect(event.totalPrice).toBeCloseTo(0.003553 * 0.75, 8);
 });
 
 test.each([

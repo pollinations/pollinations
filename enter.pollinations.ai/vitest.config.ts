@@ -1,3 +1,4 @@
+import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -7,6 +8,7 @@ import {
 import { loadEnv } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { configDefaults } from "vitest/config";
+import { codeAgentSdk } from "./scripts/code-agent-sdk.mjs";
 
 const sharedSrc = fileURLToPath(new URL("../shared/", import.meta.url));
 const frontendSrc = fileURLToPath(new URL("./frontend/src/", import.meta.url));
@@ -15,10 +17,14 @@ const enterSrc = fileURLToPath(new URL("./src/", import.meta.url));
 export default defineWorkersConfig(async ({ mode }) => {
     const migrationsPath = path.join(__dirname, "drizzle");
     const migrations = await readD1Migrations(migrationsPath);
+    // wrangler.toml declares [assets] directory = "dist/client". The Workers
+    // pool refuses to start when it is missing, and backend tests do not need
+    // a frontend build, so make sure the directory exists.
+    mkdirSync(path.join(__dirname, "dist", "client"), { recursive: true });
     const env = loadEnv(mode, process.cwd(), "");
 
     return {
-        plugins: [tsconfigPaths()],
+        plugins: [tsconfigPaths(), codeAgentSdk()],
         resolve: {
             dedupe: ["zod"],
             alias: [

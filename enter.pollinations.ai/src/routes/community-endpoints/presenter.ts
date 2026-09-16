@@ -79,7 +79,7 @@ export function toCommunityEndpointResponse(
         updatedAt: row.updatedAt.toISOString(),
     };
 
-    if (row.type === "prompt_agent") {
+    if (row.type === "prompt_agent" || row.type === "code_agent") {
         return CommunityEndpointResponseSchema.parse({
             ...common,
             type: row.type,
@@ -95,6 +95,8 @@ export function toCommunityEndpointResponse(
             type: row.type,
             perUserRpm: payload.perUserRpm,
             api: payload.api,
+            inputModalities: payload.inputModalities,
+            outputModalities: payload.outputModalities,
             url: row.baseUrl,
             upstreamModel: row.upstreamModel,
         });

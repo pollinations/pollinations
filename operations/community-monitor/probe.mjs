@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
-import { parseChatStream } from "./chat-stream.mjs";
+import {
+    hasChatProbeMarker,
+    parseChatStream,
+    probeErrorDetails,
+} from "./chat-stream.mjs";
 import {
     imageProbeRequest,
     imageProbeResult,
@@ -37,12 +41,41 @@ const EST_PROMPT_TOKENS = 20;
 const EST_COMPLETION_TOKENS = 8;
 const EST_IMAGE_OUTPUT_TOKENS = 1120;
 
+// Keep the persisted image cadence key stable across the catalog rename.
+const stateModelId = (id) => id.replace(/^community\//, "");
+
 const modelArgIndex = process.argv.indexOf("--model");
-const onlyModel = modelArgIndex === -1 ? null : process.argv[modelArgIndex + 1];
+let onlyModel = modelArgIndex === -1 ? null : process.argv[modelArgIndex + 1];
 if (modelArgIndex !== -1 && !onlyModel) {
-    console.error("--model requires an owner/model id");
+    console.error("--model requires a community/owner/model id");
     process.exit(1);
 }
+// --models-file <path>: probe several exact IDs (typically monitor-hidden rows)
+// in one targeted run. JSON array of { name, category, operation? }.
+const modelsFileArgIndex = process.argv.indexOf("--models-file");
+const fileModels =
+    modelsFileArgIndex === -1
+        ? []
+        : JSON.parse(
+              fs.readFileSync(process.argv[modelsFileArgIndex + 1], "utf8"),
+          );
+if (
+    (modelsFileArgIndex !== -1 && onlyModel) ||
+    !Array.isArray(fileModels) ||
+    fileModels.some(
+        (m) =>
+            typeof m?.name !== "string" ||
+            !["text", "image"].includes(m.category) ||
+            (m.operation !== undefined &&
+                !["generate", "edit"].includes(m.operation)),
+    )
+) {
+    console.error(
+        "--models-file needs a JSON array of { name, category: text|image, operation?: generate|edit } and excludes --model",
+    );
+    process.exit(1);
+}
+const fileOperation = new Map(fileModels.map((m) => [m.name, m.operation]));
 const categoryArgIndex = process.argv.indexOf("--category");
 const onlyCategory =
     categoryArgIndex === -1 ? null : process.argv[categoryArgIndex + 1];
@@ -175,17 +208,6 @@ function imageBillingSanityFlags(usage) {
     return flags;
 }
 
-function finalCompletionContent(content) {
-    if (typeof content !== "string") return "";
-    const withoutReasoning = content
-        .replace(/<thought>[\s\S]*?<\/thought>/gi, "")
-        .replace(/<think>[\s\S]*?<\/think>/gi, "");
-    // An unclosed reasoning wrapper means the response ended before its final
-    // answer. Do not accept a copy of the marker from inside that reasoning.
-    if (/<(?:thought|think)>/i.test(withoutReasoning)) return "";
-    return withoutReasoning.trim();
-}
-
 async function probeText(model) {
     const started = Date.now();
     const requestPath = "/v1/chat/completions";
@@ -215,12 +237,30 @@ async function probeText(model) {
         const body = await res.text();
         let usage;
         let content;
+        let servedModel;
         let protocolError;
+        let errorCode;
+        let errorMessage;
+        let upstreamStatus;
         if (res.ok) {
-            ({ usage, content, protocolError } = parseChatStream(body));
+            ({
+                usage,
+                content,
+                servedModel,
+                protocolError,
+                errorCode,
+                errorMessage,
+                upstreamStatus,
+            } = parseChatStream(body));
+        } else {
+            try {
+                ({ errorCode, errorMessage, upstreamStatus } =
+                    probeErrorDetails(JSON.parse(body)?.error));
+            } catch {
+                // Do not persist raw non-JSON error bodies.
+            }
         }
-        const finalContent = finalCompletionContent(content);
-        const hasProbeMarker = finalContent.includes(marker);
+        const hasProbeMarker = hasChatProbeMarker(content, marker);
         const contentPreview =
             typeof content === "string" && content.trim()
                 ? JSON.stringify(content.trim().slice(0, 200))
@@ -231,6 +271,7 @@ async function probeText(model) {
             model: model.name,
             modelUsed,
             fallbackUsed: modelUsed ? modelUsed !== model.name : null,
+            servedModel: servedModel ?? null,
             category: model.category,
             requestPath,
             requestId: res.headers.get("x-request-id"),
@@ -246,13 +287,17 @@ async function probeText(model) {
             usage,
             probeMarker: marker,
             protocolError,
+            errorCode,
+            errorMessage,
+            upstreamStatus,
             detail: res.ok
                 ? protocolError
-                    ? protocolError
+                    ? (errorMessage ?? protocolError)
                     : hasProbeMarker
                       ? undefined
                       : `successful response did not contain the probe marker in its final completion; received ${contentPreview}`
-                : body.slice(0, 300),
+                : (errorMessage ??
+                  `text request failed with HTTP ${res.status}`),
         };
         if (res.ok && !protocolError) {
             result.billingFlags = billingSanityFlags(usage, content);
@@ -330,11 +375,15 @@ function probe(model) {
     return model.category === "image"
         ? probeImage(
               model,
-              onlyModel
-                  ? (onlyOperation ?? "generate")
+              targeted
+                  ? (onlyOperation ??
+                        fileOperation.get(model.name) ??
+                        "generate")
                   : nextImageOperation(
                         model,
-                        state.spend?.lastImageProbeOperation?.[model.name],
+                        state.spend?.lastImageProbeOperation?.[
+                            stateModelId(model.name)
+                        ],
                     ),
           )
         : probeText(model);
@@ -363,7 +412,10 @@ function actualCost(result, priceByModel) {
 }
 
 const models = await fetchCommunityModels();
-const listedTarget = models.find((model) => model.name === onlyModel);
+const listedTarget = models.find(
+    (model) => model.name === onlyModel || model.aliases?.includes(onlyModel),
+);
+if (listedTarget) onlyModel = listedTarget.name;
 if (
     onlyOperation &&
     ((listedTarget?.category ?? onlyCategory) !== "image" ||
@@ -390,6 +442,19 @@ if (onlyModel && !models.some((model) => model.name === onlyModel)) {
         flat_rate: false,
     });
 }
+for (const entry of fileModels) {
+    if (models.some((model) => model.name === entry.name)) continue;
+    models.push({
+        name: entry.name,
+        category: entry.category,
+        pricing: {},
+        flat_rate: false,
+    });
+}
+const targetNames = new Set(
+    onlyModel ? [onlyModel] : fileModels.map((m) => m.name),
+);
+const targeted = targetNames.size > 0;
 const priceByModel = new Map(
     models.map((m) => [
         m.name,
@@ -408,17 +473,19 @@ const state = readState();
 const now = Date.now();
 const lastImageProbeAt = state.spend?.lastImageProbeAt ?? {};
 const imageProbeDue = (model) => {
-    const previous = Date.parse(lastImageProbeAt[model.name] ?? "");
+    const previous = Date.parse(
+        lastImageProbeAt[stateModelId(model.name)] ?? "",
+    );
     return (
         !Number.isFinite(previous) || now - previous >= IMAGE_PROBE_INTERVAL_MS
     );
 };
-const modelsToProbe = onlyModel
-    ? models.filter((model) => model.name === onlyModel)
+const modelsToProbe = targeted
+    ? models.filter((model) => targetNames.has(model.name))
     : models.filter(
           (model) => model.category === "text" || imageProbeDue(model),
       );
-const skippedImageModels = onlyModel
+const skippedImageModels = targeted
     ? []
     : models
           .filter(
@@ -470,7 +537,10 @@ const nextState = {
             ...Object.fromEntries(
                 results
                     .filter((result) => result.category === "image")
-                    .map((result) => [result.model, result.operation]),
+                    .map((result) => [
+                        stateModelId(result.model),
+                        result.operation,
+                    ]),
             ),
         },
         lastImageProbeAt: {
@@ -478,12 +548,15 @@ const nextState = {
             ...Object.fromEntries(
                 modelsToProbe
                     .filter((model) => model.category === "image")
-                    .map((model) => [model.name, new Date(now).toISOString()]),
+                    .map((model) => [
+                        stateModelId(model.name),
+                        new Date(now).toISOString(),
+                    ]),
             ),
         },
     },
 };
-if (!onlyModel) {
+if (!targeted) {
     fs.writeFileSync(STATE_PATH, JSON.stringify(nextState, null, 2));
 }
 
@@ -506,7 +579,7 @@ const out = {
     results,
     billingFlagsByModel,
 };
-if (onlyModel) {
+if (targeted) {
     // Targeted freshness checks return their result without replacing the
     // latest complete sweep or influencing the next sweep's cadence state.
     console.log(JSON.stringify(out));
@@ -528,7 +601,7 @@ for (const r of [...byModel.values()].sort(
     (a, b) => Number(a.ok) - Number(b.ok),
 )) {
     console.log(
-        `${r.ok ? "OK  " : "FAIL"} ${String(r.status).padEnd(4)} x${r.count}  ${String(r.ms).padStart(6)}ms  ${r.model} ${r.requestPath}${r.modelUsed ? ` served by ${r.modelUsed}` : " (served model unknown)"}`,
+        `${r.ok ? "OK  " : "FAIL"} ${String(r.status).padEnd(4)} x${r.count}  ${String(r.ms).padStart(6)}ms  ${r.model} ${r.requestPath}${r.modelUsed ? ` served by ${r.modelUsed}` : " (served model unknown)"}${r.servedModel ? ` upstream=${r.servedModel}` : ""}`,
     );
 }
 console.log(

@@ -5,6 +5,21 @@ import {
 } from "@frontend/components/models/model-catalog.ts";
 import { describe, expect, it } from "vitest";
 
+it("preserves the API health summary for discovery filtering", () => {
+    const health = {
+        status: "healthy" as const,
+        stale: false,
+        success_rate: 1,
+        sample_size: 10,
+        window_minutes: 1440,
+        checked_at: "2026-09-16T00:00:00Z",
+    };
+    const [model] = getModelPricesFromCatalog([
+        { name: "example/model", category: "text", health },
+    ]);
+    expect(model.health).toEqual(health);
+});
+
 it("keeps search aliases but never transfers historical statistics to a new ID", () => {
     const catalog = [
         {
@@ -32,6 +47,30 @@ it("keeps search aliases but never transfers historical statistics to a new ID",
     });
     expect(current.realAvgCost).toBe(2);
     expect(current.users7d).toBe(2);
+});
+
+it("maps only canonical media URLs to community model brand icons", () => {
+    const iconUrl =
+        "https://media.pollinations.ai/123e4567-e89b-12d3-a456-426614174000";
+    const [model] = getModelPricesFromCatalog([
+        {
+            name: "owner/community-model",
+            category: "text",
+            community: true,
+            brand_icon_url: iconUrl,
+        },
+    ]);
+    const [unsafeModel] = getModelPricesFromCatalog([
+        {
+            name: "owner/unsafe-model",
+            category: "text",
+            community: true,
+            brand_icon_url: "https://tracker.test/icon.svg",
+        },
+    ]);
+
+    expect(model.brandIconUrl).toBe(iconUrl);
+    expect(unsafeModel.brandIconUrl).toBeUndefined();
 });
 
 describe("parseModelCatalogResponse", () => {

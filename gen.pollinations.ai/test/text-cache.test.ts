@@ -14,6 +14,25 @@ import type { LoggerVariables } from "@/middleware/logger.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { generateCacheKey } from "@/utils/text-cache.ts";
 
+it("includes arbitrary agent metadata in cache identity", async () => {
+    const request = new Request(
+        "https://gen.pollinations.ai/v1/chat/completions",
+        { method: "POST" },
+    );
+    const key = (metadata: Record<string, string>) =>
+        generateCacheKey(
+            request,
+            JSON.stringify({ model: "owner/agent", messages: [], metadata }),
+        );
+    expect(await key({ model: "one" })).not.toBe(await key({ model: "two" }));
+    expect(await key({ custom_key: "one" })).not.toBe(
+        await key({ custom_key: "two" }),
+    );
+    expect(await key({ model: "one", custom_key: "two" })).toBe(
+        await key({ custom_key: "two", model: "one" }),
+    );
+});
+
 const testLog = {
     getChild: () => testLog,
     debug() {},

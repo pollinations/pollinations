@@ -43,6 +43,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
+| Update the CLI | `polli update` (global installs only; npx/local get instructions) |
 | Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|opencode\|openclaw\|pi\|prime> on` (available adapters: `polli harness --help`) |
 | Machine-readable output | append `--json` to any command |
 
@@ -59,7 +60,7 @@ Override the stored key for a single command with `--key <key>`.
 ```bash
 polli gen image "a fox reading a book, studio ghibli style" --output fox.png
 ```
-Defaults: `zimage`, 1024x1024. Pick a different model with `--model flux` (see `polli models --type image`). For edits / img2img, pass one or more `--image <url>` flags — **must be public http(s) URLs**, local paths are rejected client-side. **Only models that list `"image"` in `input_modalities` actually consume the flag** — `flux` and `zimage` are text-only and will silently ignore `--image`. Find i2i-capable models with `polli models --type image --json | jq -r '.[] | select(.input_modalities | contains(["image"])) | .name'` (common choices: `nanobanana`, `kontext`, `p-image-edit`). To use a local file, upload it first with `polli upload` (see next recipe).
+Defaults: `zimage`, 1024x1024. Pick a different model with `--model flux` (see `polli models --type image`). For edits / img2img, pass one or more `--image <url>` flags — **must be public http(s) URLs**, local paths are rejected client-side. **Only models that list `"image"` in `input_modalities` actually consume the flag** — `flux` and `zimage` are text-only and will silently ignore `--image`. Find i2i-capable models with `polli models --type image --json | jq -r '.[] | select(.input_modalities | contains(["image"])) | .name'` (common choices: `nanobanana`, `kontext`, `p-image-edit`). To use a local file, upload it first with `polli upload` (see next recipe). **Img2img models may treat `--width`/`--height` as a hint** and keep the source aspect — check the output with `file`/`ffprobe`; if the aspect matters, pre-crop the source or crop afterwards.
 
 ### Upload a local file to get a public URL
 ```bash
@@ -188,10 +189,11 @@ Prices only apply to `--visibility public` models. A private model is owner-only
 polli agents list
 polli agents get <id>
 polli agents create --config agent.json --name my-agent --title "My Agent"
+polli agents create --config code-agent.json
 polli agents update <id> --config agent.json
 polli agents delete <id>
 ```
-The config file contains `systemPrompt`, `baseModel`, and optional `mcpServers`; create also requires `--name` and `--title` for the callable model listing. Use server IDs from the MCP catalog. Updates replace the complete agent configuration.
+Prompt-agent config contains `systemPrompt`, `baseModel`, and optional `mcpServers`; create also requires `--name` and `--title`. Code-agent config contains `type: "code_agent"` and a public GitHub `repository` with `agent.ts` at its root; its model ID, title, and description come from GitHub. Use server IDs from the MCP catalog. Prompt-agent updates replace the complete runtime configuration.
 
 Creating an agent also creates its callable model listing. Managed agents are text-only and free, with no fallbacks or per-user RPM. Deleting the agent also deletes its model listing. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md).
 
@@ -210,13 +212,13 @@ polli keys revoke <id>                                             # id comes fr
 polli harness --help                # supported harnesses
 polli harness bloom on              # create a dedicated key for Bloom CLI
 polli harness dsh on                # login if needed, mint key "polli-harness-dsh", write provider + default model
-polli harness dsh on --model kimi   # any tool-calling text model from `polli models`
+polli harness dsh on --model moonshotai/kimi-k2.6 # use the model ID from `polli models`
 polli harness dsh on --no-mcp       # configure the provider and skill without MCP tools
 polli harness dsh off               # restore the config backed up before "on"
 polli harness opencode on           # enable the Pollinations OpenCode plugin
 polli harness opencode off          # remove the plugin setup and stored key
 polli harness pi on                 # login if needed, mint key "polli-harness-pi", configure Pi with Pollinations
-polli harness pi on --model kimi    # any tool-calling text model from `polli models`
+polli harness pi on --model moonshotai/kimi-k2.6 # use the model ID from `polli models`
 polli harness pi off                # restore the Pi config backed up before "on"
 polli harness openclaw on           # login if needed, mint key "polli-harness-openclaw", add provider + Polli skill
 polli harness openclaw off          # remove the Pollinations provider, key, and skill
@@ -256,3 +258,5 @@ polli docs --open                   # open in browser
 - Running commands without auth — `polli auth status` tells you who you're logged in as and your balance in one call.
 - **`gen text` streams to a TTY, buffers when piped.** The default now auto-detects — a human at the terminal sees tokens tick in, a pipe/redirect gets the full response once. Force either mode with `--stream` or `--no-stream`. For scripts and chains like `polli gen text … | polli gen audio …`, you don't need to do anything; buffering happens automatically.
 - **Translating a `polli` workflow into a browser app.** `gen.pollinations.ai` requires a bearer token for generation requests, so a plain client-side `fetch` with no auth returns 401 unless it is served from cache. Mint a scoped key with `polli keys create` and proxy via your own backend.
+- **Backgrounded `polli gen` can fail silently** — no output file, empty log, no error (a safety rejection is an explicit 400). Run in the foreground; if backgrounded, check the `--output` file exists and retry once in the foreground before calling it failed.
+- **Content-safety 400s aren't only about violence.** Body-focused action phrasing can trip a sexual-content category on some edit models. Rephrase the benign intent neutrally (e.g. sport framing) and retry with a new seed.

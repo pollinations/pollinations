@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+from collections.abc import AsyncGenerator
 from typing import Any, cast
 
 from openai import AsyncOpenAI
@@ -13,6 +14,7 @@ from openai.types.chat import ChatCompletionMessageParam, ChatCompletionToolPara
 from floret.config import resolve_api_key, settings
 from floret.knowledge import build_system_prompt
 from floret.routing import RoutingPreferences
+from floret.tools import shell
 from floret.toolset import TOOL_SCHEMAS, dispatch, parse_args
 
 logger = logging.getLogger(__name__)
@@ -48,13 +50,13 @@ def _tool_call_fields(call: Any) -> tuple[str, str, str]:
     return call.id, call.function.name, call.function.arguments
 
 
-async def run_agent_events(
+async def _run_agent_events(
     messages: list[dict[str, Any]],
     *,
     model: str | None = None,
     max_iters: int | None = None,
     routing: RoutingPreferences | None = None,
-):
+) -> AsyncGenerator[dict[str, Any], None]:
     """Run the tool-calling loop, yielding progress events as they happen.
 
     Yields {"type": "tool_start", "id", "name", "arguments"} per tool call,
@@ -66,6 +68,7 @@ async def run_agent_events(
     max_iters = max_iters or settings.max_iters
     client = _client()
     semaphore = asyncio.Semaphore(settings.max_concurrency)
+    workspace_lock = asyncio.Lock()
     system_prompt = build_system_prompt() + routing.prompt_block()
 
     convo: list[dict[str, Any]] = [
@@ -151,11 +154,15 @@ async def run_agent_events(
                 "arguments": arguments,
             }
 
-        # Execute every tool call in this turn concurrently.
+        # Generation can run concurrently; workspace snapshots must not race.
         async def _run(call: Any) -> tuple[str, Any]:
             call_id, name, raw_args = _tool_call_fields(call)
             async with semaphore:
-                result = await dispatch(name, parse_args(raw_args), routing)
+                if name in {"bash", "fetch_media", "upload_media"}:
+                    async with workspace_lock:
+                        result = await dispatch(name, parse_args(raw_args), routing)
+                else:
+                    result = await dispatch(name, parse_args(raw_args), routing)
             return call_id, result
 
         keys = ["{}:{}".format(*_tool_call_fields(tc)[1:]) for tc in tool_calls]
@@ -209,6 +216,37 @@ async def run_agent_events(
     }
 
 
+async def run_agent_events(
+    messages: list[dict[str, Any]],
+    *,
+    model: str | None = None,
+    max_iters: int | None = None,
+    routing: RoutingPreferences | None = None,
+) -> AsyncGenerator[dict[str, Any], None]:
+    """Run one agent event stream in an isolated temporary workspace."""
+    from floret.registry import (
+        fetch_model_catalog,
+        reset_request_catalog,
+        set_request_catalog,
+        warm_registry,
+    )
+
+    workspace, token = shell.create_workspace()
+    catalog_token = None
+    try:
+        if settings.catalog_endpoint:
+            await warm_registry()
+            catalog_token = set_request_catalog(await fetch_model_catalog())
+        async for event in _run_agent_events(
+            messages, model=model, max_iters=max_iters, routing=routing
+        ):
+            yield event
+    finally:
+        if catalog_token is not None:
+            reset_request_catalog(catalog_token)
+        shell.cleanup_workspace(workspace, token)
+
+
 async def run_agent(
     messages: list[dict[str, Any]],
     *,
@@ -220,13 +258,17 @@ async def run_agent(
 
     Returns {"text", "artifacts", "iterations"}.
     """
-    async for event in run_agent_events(
+    events = run_agent_events(
         messages, model=model, max_iters=max_iters, routing=routing
-    ):
-        if event["type"] == "final":
-            return {
-                "text": event["text"],
-                "artifacts": event["artifacts"],
-                "iterations": event["iterations"],
-            }
+    )
+    try:
+        async for event in events:
+            if event["type"] == "final":
+                return {
+                    "text": event["text"],
+                    "artifacts": event["artifacts"],
+                    "iterations": event["iterations"],
+                }
+    finally:
+        await events.aclose()
     raise RuntimeError("agent event stream ended without a final event")

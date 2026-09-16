@@ -43,7 +43,7 @@ async function tbSql(query) {
 async function fetchLeaderboardData() {
     const rows = await tbSql(`
     SELECT
-      model_requested AS model,
+      replaceRegexpOne(model_requested, '^community/', '') AS model,
       count() AS requests,
       sum(token_count_prompt_text + token_count_prompt_cached + token_count_completion_text + token_count_completion_reasoning) AS total_tokens,
       round(medianIf((token_count_completion_text + token_count_completion_reasoning) / (response_time / 1000), response_status < 300 AND response_time > 0 AND token_count_completion_text + token_count_completion_reasoning >= 20), 1) AS median_tps,
@@ -60,7 +60,7 @@ async function fetchLeaderboardData() {
         await tbSql(`
     SELECT count() AS requests,
            sum(token_count_prompt_text + token_count_prompt_cached + token_count_completion_text + token_count_completion_reasoning) AS total_tokens,
-           uniq(model_requested) AS models
+           uniq(replaceRegexpOne(model_requested, '^community/', '')) AS models
     FROM generation_event_v2
     WHERE start_time > now() - INTERVAL 24 HOUR AND event_type = 'generate.text' AND model_provider_used = 'community' AND is_final
     FORMAT JSON

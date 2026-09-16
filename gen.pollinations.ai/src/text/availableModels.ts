@@ -289,6 +289,16 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
+        name: "deepseek/deepseek-v4.1-flash",
+        config: portkeyConfig["accounts/fireworks/models/deepseek-v4p1-flash"],
+        transform: fireworksThinking,
+    },
+    {
+        name: "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8",
+        config: portkeyConfig["deepseek-v41-flash-openrouter-deepinfra"],
+        transform: fireworksThinking,
+    },
+    {
         name: "deepseek/deepseek-v4-flash:deepinfra",
         config: portkeyConfig["deepseek-ai/DeepSeek-V4-Flash-0731"],
         transform: fireworksThinking,
@@ -472,6 +482,14 @@ const models: ModelDefinition[] = [
     {
         name: "google/gemini-2.5-flash-lite",
         config: portkeyConfig["google/gemini-2.5-flash-lite"],
+        transform: pipe(
+            adaptGoogleSearchToolForOpenRouter,
+            createGeminiThinkingTransform("v2.5"),
+        ),
+    },
+    {
+        name: "google/gemini-2.5-flash-lite:openrouter:vertex-global",
+        config: portkeyConfig["gemini-fast-openrouter-vertex-global"],
         transform: pipe(
             adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v2.5"),
@@ -700,13 +718,13 @@ const models: ModelDefinition[] = [
     },
     {
         name: "meta/llama-4-scout",
-        config: portkeyConfig["Llama-4-Scout-17B-16E-Instruct"],
+        config: portkeyConfig["meta/llama-4-scout"],
         // No reasoning mode.
         transform: stripReasoning,
     },
     {
-        name: "meta/llama-4-scout:openrouter:vertex-us-east5",
-        config: portkeyConfig["llama-scout-openrouter-vertex"],
+        name: "meta/llama-4-scout:openrouter:novita-bf16",
+        config: portkeyConfig["llama-scout-openrouter-novita"],
         transform: stripReasoning,
     },
     {

@@ -98,6 +98,10 @@ export function Authorize() {
     >("pending");
     const balance = useAccountBalance(Boolean(user));
     const [permissionsExpanded, setPermissionsExpanded] = useState(false);
+    const topUpHref =
+        typeof window === "undefined"
+            ? "/top-up"
+            : `/top-up?${new URLSearchParams({ redirect: window.location.href })}`;
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
@@ -558,7 +562,7 @@ export function Authorize() {
                 <AuthAccountIdentity
                     user={user}
                     balance={balance}
-                    topUpHref="/top-up"
+                    topUpHref={topUpHref}
                 />
             </AuthModalHeader>
 

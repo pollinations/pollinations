@@ -1,0 +1,34 @@
+{
+  "pr_number": 14940,
+  "title": "feat: show healthy models by default in the dashboard",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14940",
+  "merged_at": "2026-09-16T01:14:59Z",
+  "labels": [],
+  "pr_body_excerpt": "- Defaults to source:official status:healthy using the existing search dropdown and URL state. Unknown, stale, degraded and down models are excluded; status:all shows everything.\n- Renames the API filter to status=all|healthy and the header to Pollinations-Model-Status. Health states are healthy, degraded, down and unknown. Updates schemas, source docs and consumers together; no compatibility aliases.\n- Adds a small shared desktop/mobile health dot with three colours. Uses the API result without recalculating health in the browser; category counts follow the filter.\n- Caches the full catalog for 60 seconds and filters locally. No polling, per-model requests, new dependencies or Tinybird changes.\n\nValidation: 90 frontend tests, 21 API/OpenAPI tests and the OpenAI/AI SDK client integration test passed. Gen typecheck and Biome passed. Tests explicitly cover default exclusion of unknown/missing/stale health and all eight catalog endpoints.\n\nDeployment: deploy Gen with these API changes before the frontend. Not promoted to production.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The healthy hive",
+    "blurb": "The model dashboard now starts with the models that are awake, well, and ready to work. If you enjoy browsing the entire weather system, status:all still opens every drawer.",
+    "summary": "The dashboard now defaults to official healthy models, excluding unknown, stale, degraded, and down entries; the catalog API now uses status=healthy|all and the Pollinations-Model-Status header, with the full catalog cached for 60 seconds and filtered locally.",
+    "impact": "People browsing models get a reliable ready-to-use catalog first, while status:all still exposes every health state and category counts follow the selected filter.",
+    "keywords": [
+      "model catalog",
+      "dashboard",
+      "model health",
+      "api",
+      "status filter",
+      "caching"
+    ],
+    "visual_concept": "A cozy model garden where only healthy code-plants are blooming in the main bed, each marked by a simple green health dot, while a nearby little drawer labeled status:all contains every plant state. Polli acts as the observant gardener, using a tiny field guide to sort the catalog; a CRT monitor robot can proudly display the healthy list, with flowers and vines reinforcing the curated, living catalog metaphor.",
+    "image_prompt": "A cozy pixel art model garden beside a retro CRT terminal: blooming code-plants in prominent lime green (#ecf874) pots each have a small green health dot, while a small side drawer labeled \"STATUS: ALL\" holds sleepy, cloudy, and wilted plant icons; the cute pixel art bee mascot has a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, and she wears a tiny gardener scarf while checking the healthy bed with a clipboard as a friendly monitor robot displays the catalog. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14940.jpg",
+    "prompt": "A cozy pixel art model garden beside a retro CRT terminal: blooming code-plants in prominent lime green (#ecf874) pots each have a small green health dot, while a small side drawer labeled \"STATUS: ALL\" holds sleepy, cloudy, and wilted plant icons; the cute pixel art bee mascot has a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, and she wears a tiny gardener scarf while checking the healthy bed with a clipboard as a friendly monitor robot displays the catalog. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-16T01:16:00.485149+00:00"
+}

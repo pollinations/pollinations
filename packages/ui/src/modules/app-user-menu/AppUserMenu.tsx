@@ -1,4 +1,5 @@
 import {
+    useAccountBalance,
     useAccountKey,
     useAccountProfile,
     useAuthActions,
@@ -47,6 +48,9 @@ export function AppUserMenu({
     const { isLoggedIn } = useAuthState();
     const profile = useAccountProfile({ enabled: isLoggedIn });
     const key = useAccountKey({ enabled: isLoggedIn });
+    // Present only when the key may read account usage; otherwise key-only.
+    const wallet = useAccountBalance({ enabled: isLoggedIn }).data
+        ?.accountBalance;
     const returnUrl =
         typeof window === "undefined"
             ? undefined
@@ -93,15 +97,28 @@ export function AppUserMenu({
                     className="polli:max-w-64"
                     secondaryContent={
                         key.data ? (
-                            <AccountPollen
-                                source={{
-                                    type: "budget",
-                                    remaining: key.data.pollenBudget,
-                                    generationEnabled:
-                                        key.data.permissions?.models?.length !==
-                                        0,
-                                }}
-                            />
+                            <span className="polli:inline-flex polli:items-center polli:gap-2">
+                                <AccountPollen
+                                    source={{
+                                        type: "budget",
+                                        remaining: key.data.pollenBudget,
+                                        generationEnabled:
+                                            key.data.permissions?.models
+                                                ?.length !== 0,
+                                    }}
+                                />
+                                {wallet && (
+                                    <AccountPollen
+                                        source={{
+                                            type: "wallet",
+                                            balances: {
+                                                paid: wallet.paid,
+                                                quest: wallet.tier,
+                                            },
+                                        }}
+                                    />
+                                )}
+                            </span>
                         ) : undefined
                     }
                 >

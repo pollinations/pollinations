@@ -1,0 +1,33 @@
+{
+  "pr_number": 14872,
+  "title": "Add Creatneworld to the List",
+  "author": "gggff123",
+  "url": "https://github.com/pollinations/pollinations/pull/14872",
+  "merged_at": "2026-09-16T01:08:11Z",
+  "labels": [],
+  "pr_body_excerpt": "Closes #14870",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One More Name in the Hive",
+    "blurb": "Creatneworld has been added to the project’s GitHub identity list. The garden gate recognizes another familiar face.",
+    "summary": "Added Creatneworld to the shared GitHub ID allowlist used by project authentication.",
+    "impact": "This gives the Creatneworld GitHub account access wherever the shared allowlist is used.",
+    "keywords": [
+      "github",
+      "authentication",
+      "allowlist",
+      "community",
+      "access"
+    ],
+    "visual_concept": "A cozy garden gate with a small pixel ID list pinned beside it, where Polli in a tiny gardener hat warmly adds a new name; flowers and a code-plant make the access-list change feel like welcoming a contributor into the hive.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny gardener hat while adding a new name to a pixel clipboard beside a welcoming garden gate and blooming code-plants; lime green (#ecf874) glows prominently on the gate and list, with warm cream, mint, and lavender surroundings. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: \"WELCOME\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14872.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny gardener hat while adding a new name to a pixel clipboard beside a welcoming garden gate and blooming code-plants; lime green (#ecf874) glows prominently on the gate and list, with warm cream, mint, and lavender surroundings. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: \"WELCOME\"."
+  },
+  "generated_at": "2026-09-16T01:09:11.079490+00:00"
+}

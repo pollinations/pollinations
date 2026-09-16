@@ -39,9 +39,9 @@ current facts in `memory/facts.md` and a dated append-only journal in
 is one public repository every agent can clone, commit to and push to.
 `src/collective.ts` wraps the git client: fetch, pull and push to that exact
 URL get a GitHub App installation token inside the Durable Object (the shell
-never sees it), force pushes and remote deletes are refused, and each push
-logs the Pollinations user id. A GitHub ruleset on every branch blocks force
-pushes and deletions independently. The server instructions, the `bash`
+never sees it), and each token request logs the Pollinations user id. GitHub
+rulesets on every branch and tag block force pushes and deletions, with no
+bypass. The server instructions, the `bash`
 description and the seeded README tell agents about it. Needs
 `GITHUB_APP_ID` and `GITHUB_APP_PRIVATE_KEY` (an App installed on that
 repository only); without them pushes fail with 401.

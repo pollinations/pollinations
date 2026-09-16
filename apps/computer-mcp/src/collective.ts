@@ -5,7 +5,8 @@ import {
 } from "../../../shared/github/app-auth.ts";
 
 // The one repository every Pollinations agent can push to. It is public, so
-// clone needs no token; fetch, pull and push get the App token.
+// clone needs no token; fetch, pull and push get the App token. Its GitHub
+// rulesets block force pushes and deletes of every branch and tag.
 export const COLLECTIVE_REPO_URL =
     "https://github.com/pollinations/collective-memory.git";
 
@@ -18,10 +19,8 @@ export function isCollectiveRepo(url: string | undefined): boolean {
     return url !== undefined && COLLECTIVE_URL.test(url);
 }
 
-// Adds the GitHub App token to network calls for the collective repository
-// and refuses force pushes and remote branch deletes there. The token stays
-// in the Durable Object: the shell never sees it. A GitHub ruleset on the
-// repository enforces the same history rules independently.
+// Answers GitHub's auth challenge for the collective repository with the App
+// token. The token stays in the Durable Object: the shell never sees it.
 export function withCollectiveRepo(
     factory: GitClientFactory,
     credentials: GithubAppCredentials | undefined,
@@ -29,6 +28,13 @@ export function withCollectiveRepo(
 ): GitClientFactory {
     const onAuth = async (url: string): Promise<GitAuth | undefined> => {
         if (!credentials || !isCollectiveRepo(url)) return undefined;
+        // The App is the pusher on GitHub; this log names the user.
+        console.log(
+            JSON.stringify({
+                event: "collective_memory_auth",
+                userId: userId(),
+            }),
+        );
         const token = await getInstallationToken(credentials, "pollinations");
         return { username: "x-access-token", password: token };
     };
@@ -36,35 +42,10 @@ export function withCollectiveRepo(
         const client = factory(options);
         // The shell's `git` command calls the methods of this same object,
         // so replacing them here covers `git push` inside bash as well.
-        const { fetch, pull, push, remoteList } = client;
+        const { fetch, pull, push } = client;
         client.fetch = (input = {}) => fetch({ ...input, onAuth });
         client.pull = (input = {}) => pull({ ...input, onAuth });
-        client.push = async (input = {}) => {
-            const url =
-                input.url ??
-                (await remoteList({ dir: input.dir })).find(
-                    (remote) => remote.name === (input.remote ?? "origin"),
-                )?.url;
-            if (!isCollectiveRepo(url)) return push(input);
-            if (input.force || input.delete) {
-                return {
-                    ok: false,
-                    error: "collective memory keeps its history: force pushes and branch deletes are refused",
-                    refs: {},
-                };
-            }
-            const result = await push({ ...input, onAuth });
-            // The App is the pusher on GitHub; this log names the user.
-            console.log(
-                JSON.stringify({
-                    event: "collective_memory_push",
-                    userId: userId(),
-                    ref: input.ref,
-                    ok: result.ok,
-                }),
-            );
-            return result;
-        };
+        client.push = (input = {}) => push({ ...input, onAuth });
         return client;
     };
 }

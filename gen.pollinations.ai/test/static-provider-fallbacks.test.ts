@@ -95,6 +95,11 @@ const OPENROUTER_ROUTES = [
         "google-ai-studio/priority",
     ],
     [
+        "google/gemini-2.5-flash-lite:openrouter:vertex-global",
+        "google/gemini-2.5-flash-lite",
+        "google-vertex",
+    ],
+    [
         "google/gemini-2.5-flash-lite:openrouter:ai-studio",
         "google/gemini-2.5-flash-lite",
         "google-ai-studio",

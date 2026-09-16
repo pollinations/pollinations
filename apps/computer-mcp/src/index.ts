@@ -10,7 +10,10 @@ import type { WorkspaceLike } from "@cloudflare/computer/assets";
 import { WorkerShellBackend } from "@cloudflare/computer/backends/worker-shell";
 import { createGitClient } from "@cloudflare/computer/git";
 import curlModules from "@cloudflare/computer/shell/curl";
+import fileModules from "@cloudflare/computer/shell/file";
+import htmlToMarkdownModules from "@cloudflare/computer/shell/html-to-markdown";
 import jqModules from "@cloudflare/computer/shell/jq";
+import xanModules from "@cloudflare/computer/shell/xan";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { withMcpUsageHeaders } from "../../../shared/mcp-usage.ts";
 import {
@@ -51,8 +54,8 @@ in it (for example /workspace/thesis) and pass that folder as cwd.
 ## Shell
 
 The only tool is bash (no Node, no Python; coreutils, grep, sed, awk,
-jq, tar, curl and git are available). Write a file by passing its
-content as stdin to \`cat > path\`.
+jq, xan, file, html-to-markdown, tar, curl and git are available).
+Write a file by passing its content as stdin to \`cat > path\`.
 
 ## Importing and sharing
 
@@ -130,7 +133,13 @@ export class Computer extends withWorkspace(
                         // Stable, so the loaded shell isolate is reused.
                         revision: "user-agent",
                     },
-                    commands: [jqModules, curlModules],
+                    commands: [
+                        jqModules,
+                        curlModules,
+                        xanModules,
+                        htmlToMarkdownModules,
+                        fileModules,
+                    ],
                 }),
             ],
         };

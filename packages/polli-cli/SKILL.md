@@ -43,6 +43,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
+| Update the CLI | `polli update` (global installs only; npx/local get instructions) |
 | Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|opencode\|openclaw\|pi\|prime> on` (available adapters: `polli harness --help`) |
 | Machine-readable output | append `--json` to any command |
 
@@ -188,10 +189,11 @@ Prices only apply to `--visibility public` models. A private model is owner-only
 polli agents list
 polli agents get <id>
 polli agents create --config agent.json --name my-agent --title "My Agent"
+polli agents create --config code-agent.json
 polli agents update <id> --config agent.json
 polli agents delete <id>
 ```
-The config file contains `systemPrompt`, `baseModel`, and optional `mcpServers`; create also requires `--name` and `--title` for the callable model listing. Use server IDs from the MCP catalog. Updates replace the complete agent configuration.
+Prompt-agent config contains `systemPrompt`, `baseModel`, and optional `mcpServers`; create also requires `--name` and `--title`. Code-agent config contains `type: "code_agent"` and a public GitHub `repository` with `agent.ts` at its root; its model ID, title, and description come from GitHub. Use server IDs from the MCP catalog. Prompt-agent updates replace the complete runtime configuration.
 
 Creating an agent also creates its callable model listing. Managed agents are text-only and free, with no fallbacks or per-user RPM. Deleting the agent also deletes its model listing. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md).
 
@@ -210,13 +212,13 @@ polli keys revoke <id>                                             # id comes fr
 polli harness --help                # supported harnesses
 polli harness bloom on              # create a dedicated key for Bloom CLI
 polli harness dsh on                # login if needed, mint key "polli-harness-dsh", write provider + default model
-polli harness dsh on --model kimi   # any tool-calling text model from `polli models`
+polli harness dsh on --model moonshotai/kimi-k2.6 # use the model ID from `polli models`
 polli harness dsh on --no-mcp       # configure the provider and skill without MCP tools
 polli harness dsh off               # restore the config backed up before "on"
 polli harness opencode on           # enable the Pollinations OpenCode plugin
 polli harness opencode off          # remove the plugin setup and stored key
 polli harness pi on                 # login if needed, mint key "polli-harness-pi", configure Pi with Pollinations
-polli harness pi on --model kimi    # any tool-calling text model from `polli models`
+polli harness pi on --model moonshotai/kimi-k2.6 # use the model ID from `polli models`
 polli harness pi off                # restore the Pi config backed up before "on"
 polli harness openclaw on           # login if needed, mint key "polli-harness-openclaw", add provider + Polli skill
 polli harness openclaw off          # remove the Pollinations provider, key, and skill

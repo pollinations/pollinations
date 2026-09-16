@@ -6,6 +6,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
 import issueRewardMigration from "../drizzle/0058_rekey_issue_rewards.sql?raw";
 import { checkQuestsForUser } from "../src/services/quest-checker.ts";
+import * as agentUsage from "../src/services/quests/groups/agent-usage.ts";
 import * as discordCommunity from "../src/services/quests/groups/discord-community.ts";
 import * as questIndex from "../src/services/quests/index.ts";
 import type { QuestGroup } from "../src/services/quests/types.ts";
@@ -438,11 +439,11 @@ test("catalog returns quest definitions without ledger stats", async ({
     expect(byId.get("early_adopter")?.title).toBe("Early adopter");
     expectStableCatalogFields("github_established", {
         state: "available",
-        rewardAmount: 3,
+        rewardAmount: 2,
         balanceBucket: "tier",
     });
     expect(byId.get("github_established")?.goal).toEqual({
-        target: 730,
+        target: 1095,
         unit: "days",
     });
     expectStableCatalogFields("app_paid_request", {
@@ -1298,6 +1299,85 @@ test("quest check records model-usage rewards per modality", async ({
     ).toBe(true);
 });
 
+for (const { usedAgent, createdUsedAgent, expected } of [
+    { usedAgent: 0, createdUsedAgent: 0, expected: [] },
+    { usedAgent: 1, createdUsedAgent: 0, expected: ["use_agent"] },
+    { usedAgent: 0, createdUsedAgent: 1, expected: ["create_used_agent"] },
+    {
+        usedAgent: 1,
+        createdUsedAgent: 1,
+        expected: ["create_used_agent", "use_agent"],
+    },
+]) {
+    test(`agent quests award each milestone once: ${usedAgent}/${createdUsedAgent}`, async ({
+        mocks,
+        sessionToken: _sessionToken,
+    }) => {
+        const user = await getOnlyUser();
+        const db = drizzle(env.DB, { schema });
+        await mocks.enable("tinybird");
+        mocks.tinybird.state.agentUsageResponse = [
+            { userId: "another-user", usedAgent: 1, createdUsedAgent: 1 },
+            { userId: user.id, usedAgent, createdUsedAgent },
+        ];
+        const groups = [{ id: "agent-usage", ...agentUsage }];
+        const result = await checkQuestsForUser(env, user.id, groups);
+        expect(result.success).toBe(true);
+        expect(result.recorded).toBe(expected.length);
+        expect((await checkQuestsForUser(env, user.id, groups)).recorded).toBe(
+            0,
+        );
+
+        const rewards = await db
+            .select()
+            .from(schema.rewards)
+            .where(eq(schema.rewards.userId, user.id));
+        expect(rewards.map((r) => r.questId).sort()).toEqual(expected);
+        for (const reward of rewards) {
+            expect(reward.pollenAmount).toBe(
+                reward.questId === "use_agent" ? 0.25 : 2,
+            );
+            expect(reward.balanceBucket).toBe("tier");
+            expect(reward.claimedAt).toBeNull();
+        }
+        expect(mocks.tinybird.state.pipeCalls).toContainEqual({
+            url: expect.stringContaining("/v0/pipes/quest_agent_usage.json"),
+            query: {
+                user_id: user.id,
+                github_username: user.githubUsername ?? "",
+            },
+        });
+        for (const reward of rewards) {
+            const claim = { rewardId: reward.id, userId: user.id };
+            expect((await claimReward(db, claim)).claimed).toBe(true);
+            expect((await claimReward(db, claim)).claimed).toBe(false);
+        }
+        expect((await getOnlyUser()).tierBalance).toBeCloseTo(
+            (user.tierBalance ?? 0) +
+                rewards.reduce((sum, reward) => sum + reward.pollenAmount, 0),
+        );
+        expect((await checkQuestsForUser(env, user.id, groups)).recorded).toBe(
+            0,
+        );
+    });
+}
+
+test("agent quests ignore another user's milestone rows", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    const user = await getOnlyUser();
+    await mocks.enable("tinybird");
+    mocks.tinybird.state.agentUsageResponse = [
+        { userId: "another-user", usedAgent: 1, createdUsedAgent: 1 },
+    ];
+    const result = await checkQuestsForUser(env, user.id, [
+        { id: "agent-usage", ...agentUsage },
+    ]);
+    expect(result.success).toBe(true);
+    expect(result.recorded).toBe(0);
+});
+
 test("quest check ignores Tinybird rows for other users", async ({
     mocks,
     sessionToken: _sessionToken,
@@ -1388,7 +1468,7 @@ test("github established-account quest records once per GitHub identity", async 
         {
             idempotencyKey: `quest:github_established:github:${user.githubId}`,
             userId: user.id,
-            pollenAmount: 3,
+            pollenAmount: 2,
             balanceBucket: "tier",
         },
     ]);
@@ -1428,7 +1508,7 @@ test("github established-account quest waits until the threshold", async ({
     const db = drizzle(env.DB, { schema });
     const user = await getOnlyUser();
     mocks.github.state.user.created_at = new Date(
-        Date.now() - 729 * 24 * 60 * 60 * 1000,
+        Date.now() - 1094 * 24 * 60 * 60 * 1000,
     ).toISOString();
     await mocks.enable("github", "tinybird");
 
@@ -1437,8 +1517,8 @@ test("github established-account quest waits until the threshold", async ({
 
     expect(beforeThreshold.progress).toContainEqual({
         questId: "github_established",
-        current: 729,
-        target: 730,
+        current: 1094,
+        target: 1095,
         unit: "days",
     });
 
@@ -1454,7 +1534,7 @@ test("github established-account quest waits until the threshold", async ({
     ).toBe(true);
 
     mocks.github.state.user.created_at = new Date(
-        Date.now() - 730 * 24 * 60 * 60 * 1000,
+        Date.now() - 1095 * 24 * 60 * 60 * 1000,
     ).toISOString();
     await checkQuestsForUser(env, user.id);
 

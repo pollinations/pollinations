@@ -82,10 +82,17 @@ export const stripeRoutes = new Hono<Env>()
             return c.json({ error: ACCOUNT_RESTRICTED_MESSAGE }, 403);
         }
 
-        // Return checkout sessions to the Pollen page for this environment.
+        // Return the buyer to the standalone top-up page when checkout
+        // started there, else to the Pollen dashboard. Both paths are fixed
+        // here, so the return URL is always on this origin.
         const baseUrl =
             c.env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
-        const pollenUrl = new URL("/pollen", baseUrl);
+        const pollenUrl = new URL(
+            c.req.query("return") === "top-up" ? "/top-up" : "/pollen",
+            baseUrl,
+        );
+        const appRedirect = c.req.query("redirect");
+        if (appRedirect) pollenUrl.searchParams.set("redirect", appRedirect);
         pollenUrl.searchParams.set("pack", pack.packKey);
         const pollenReturnUrl = pollenUrl.toString();
 
@@ -240,8 +247,19 @@ export const stripeRoutes = new Hono<Env>()
     .post("/billing/portal", async (c) => {
         const user = await requireSessionUser(c);
 
+        const body = (await c.req.json().catch(() => null)) as {
+            return?: unknown;
+            redirect?: unknown;
+        } | null;
+
         try {
-            const session = await createBillingPortalSession(c.env, user.id);
+            const session = await createBillingPortalSession(c.env, user.id, {
+                topUp: body?.return === "top-up",
+                redirect:
+                    typeof body?.redirect === "string"
+                        ? body.redirect
+                        : undefined,
+            });
 
             if (!session.url) {
                 return c.json(

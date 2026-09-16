@@ -26,7 +26,16 @@ jobs:
         with:
           node-version: "24"
 
-      - name: Deploy apps/polli
+      - name: Deploy Polli containers
+        if: vars.POLLI_CONTAINER_DEPLOY_ENABLED == 'true'
+        env:
+          POLLI_AZURE_HOST: ${{ secrets.POLLI_AZURE_HOST }}
+          POLLI_AZURE_USER: ${{ secrets.POLLI_AZURE_USER }}
+          POLLI_AZURE_SSH_KEY: ${{ secrets.POLLI_AZURE_SSH_KEY }}
+        run: bash operations/deployment/polli-container-deploy.sh "$GITHUB_SHA"
+
+      - name: Deploy apps/polli (legacy)
+        if: vars.POLLI_CONTAINER_DEPLOY_ENABLED != 'true'
         env:
           POLLI_AZURE_HOST: ${{ secrets.POLLI_AZURE_HOST }}
           POLLI_AZURE_USER: ${{ secrets.POLLI_AZURE_USER }}

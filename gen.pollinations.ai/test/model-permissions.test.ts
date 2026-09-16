@@ -19,6 +19,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { expect } from "vitest";
 import { type AuthEnv, authFromSnapshot } from "../src/middleware/auth.ts";
+import { TEXT_BALANCE_NOTICE_ENABLED } from "../src/middleware/text-balance-notice.ts";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
     return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
@@ -394,7 +395,15 @@ test("filters OpenRouter text models by paid balance", async ({
         "/text/paid-only-check?model=mistral",
         { headers: { Authorization: `Bearer ${apiKey}` } },
     );
-    expect(generation.status).toBe(402);
+    expect(generation.status).toBe(TEXT_BALANCE_NOTICE_ENABLED ? 200 : 402);
+    if (TEXT_BALANCE_NOTICE_ENABLED) {
+        expect(await generation.text()).toContain(
+            "?ref=agent_low_balance_topup",
+        );
+        expect(generation.headers.get("cache-control")).toBe(
+            "private, no-store",
+        );
+    }
 });
 
 test("filters paid-only audio models by paid balance", async ({
@@ -480,4 +489,17 @@ test("requires paid balance for Recraft vector", async ({
         { headers: { Authorization: `Bearer ${apiKey}` } },
     );
     expect(generation.status).toBe(402);
+});
+
+test("Scout catalog exposes its enforced output capabilities", async () => {
+    const response = await fetchWorker("/models");
+    const models = (await response.json()) as Record<string, unknown>[];
+    expect(
+        models.find((model) => model.name === "meta/llama-4-scout"),
+    ).toMatchObject({
+        tools: false,
+        supports_structured_output: false,
+        max_completion_tokens: 16384,
+        context_length: 131072,
+    });
 });

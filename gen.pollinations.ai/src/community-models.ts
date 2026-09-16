@@ -46,6 +46,7 @@ export async function getCommunityModelRegistryEntries(
             ownerGithubUsername: schema.user.githubUsername,
             providerName: schema.user.communityProviderName,
             providerUrl: schema.user.communityProviderUrl,
+            providerIconUrl: schema.user.communityProviderIconUrl,
             name: schema.communityEndpoint.name,
             title: schema.communityEndpoint.title,
             description: schema.communityEndpoint.description,
@@ -107,6 +108,7 @@ export async function getCommunityModelRegistryEntries(
             description: row.description,
             providerName: row.providerName,
             providerUrl: row.providerUrl,
+            providerIconUrl: row.providerIconUrl,
             baseUrl,
             upstreamModel: row.upstreamModel,
             requiredSafetyFeatures: row.requiredSafetyFeatures,
@@ -115,9 +117,9 @@ export async function getCommunityModelRegistryEntries(
             hiddenReason: row.hiddenReason,
         };
         // An agent charges nothing of its own and fans out to nothing: the
-        // caller pays for whatever it consumes downstream. Both agent kinds
-        // share empty purchase fields; endpoint agents may override only the
-        // gateway's per-user rate limit from their payload.
+        // caller pays for whatever it consumes downstream. All agent kinds
+        // share empty purchase fields; endpoint agents declare their modalities
+        // and gateway per-user rate limit in their payload.
         const agentDefaults = {
             modality: "text" as const,
             imagePricing: "request" as const,
@@ -153,6 +155,21 @@ export async function getCommunityModelRegistryEntries(
                 };
                 break;
             }
+            case "code_agent": {
+                const payload = parseListingPayload("code_agent", row.payload);
+                if (!payload) return [];
+                // The catalog's publisher link points at the source
+                // repository: for a code agent the code is the provider.
+                communityEndpoint = {
+                    ...identity,
+                    ...agentDefaults,
+                    providerName: row.providerName ?? row.ownerGithubUsername,
+                    providerUrl: payload.repository,
+                    type: "code_agent",
+                    api: "responses",
+                };
+                break;
+            }
             case "endpoint_agent": {
                 const payload = parseListingPayload(
                     "endpoint_agent",
@@ -165,6 +182,8 @@ export async function getCommunityModelRegistryEntries(
                     perUserRpm: payload.perUserRpm,
                     type: "endpoint_agent",
                     api: payload.api,
+                    inputModalities: payload.inputModalities ?? null,
+                    outputModalities: payload.outputModalities,
                 };
                 break;
             }

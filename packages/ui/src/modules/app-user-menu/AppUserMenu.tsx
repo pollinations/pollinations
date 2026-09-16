@@ -8,6 +8,7 @@ import { AccountMenu } from "../../compositions/AccountMenu.tsx";
 import { cn } from "../../lib/cn.ts";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
 import {
+    AccountIcon,
     ExternalLinkIcon,
     KeyIcon,
     LogInIcon,
@@ -22,11 +23,12 @@ export type AppUserMenuLabels = {
     appUserMenu: string;
     editAppAllowance: string;
     topUpWallet: string;
+    dashboard: string;
     logout: string;
 };
 
 export type AppUserMenuProps = {
-    /** Optional caller-owned dashboard destination for the linked avatar. */
+    /** Optional caller-owned dashboard destination for the menu item. */
     dashboardHref?: string;
     labels?: Partial<AppUserMenuLabels>;
     /** Logged-out CTA style. The connected account always uses a pill. */
@@ -38,6 +40,7 @@ const defaultLabels: AppUserMenuLabels = {
     appUserMenu: "App user menu",
     editAppAllowance: "Edit app allowance",
     topUpWallet: "Top up wallet",
+    dashboard: "Pollinations dashboard",
     logout: "Disconnect",
 };
 
@@ -96,9 +99,6 @@ export function AppUserMenu({
                         "Connected user"
                     }
                     avatarUrl={profile.data?.image}
-                    dashboardHref={
-                        dashboardHref ?? new URL("/pollen", enterUrl).href
-                    }
                     menuLabel={labels.appUserMenu}
                     className="polli:max-w-64"
                     menuClassName="polli:w-max polli:min-w-0"
@@ -149,6 +149,26 @@ export function AppUserMenu({
                                     aria-hidden="true"
                                 />
                                 {labels.topUpWallet}
+                                <ExternalLinkIcon
+                                    className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
+                                    aria-hidden="true"
+                                />
+                            </DropdownItem>
+                            <DropdownItem
+                                as="a"
+                                href={
+                                    dashboardHref ??
+                                    new URL("/pollen", enterUrl).href
+                                }
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={close}
+                            >
+                                <AccountIcon
+                                    className="polli:h-4 polli:w-4 polli:shrink-0"
+                                    aria-hidden="true"
+                                />
+                                {labels.dashboard}
                                 <ExternalLinkIcon
                                     className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
                                     aria-hidden="true"

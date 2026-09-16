@@ -5,6 +5,7 @@ import {
     useAuthActions,
     useAuthState,
 } from "@pollinations/sdk/react";
+import { useEffect, useRef } from "react";
 import markUrl from "../../brand/mark.svg";
 import { AccountMenu } from "../../compositions/AccountMenu.tsx";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
@@ -52,8 +53,34 @@ export function AppUserMenu({
     const canReadWallet =
         key.data?.pollenBudget === null &&
         (key.data.permissions?.account?.includes("usage") ?? false);
-    const wallet = useAccountBalance({ enabled: isLoggedIn && canReadWallet })
-        .data?.accountBalance;
+    const balance = useAccountBalance({
+        enabled: isLoggedIn && canReadWallet,
+    });
+    const wallet = balance.data?.accountBalance;
+    // Permissions and Buy Pollen open Enter in a new tab. When the user comes
+    // back, re-read the key and wallet so the pill reflects what they changed.
+    const returning = useRef(false);
+    const expectReturn = () => {
+        returning.current = true;
+    };
+    useEffect(() => {
+        if (!isLoggedIn) return;
+        const onReturn = () => {
+            if (!returning.current) return;
+            returning.current = false;
+            void key.refresh();
+            void balance.refresh();
+        };
+        const onVisible = () => {
+            if (document.visibilityState === "visible") onReturn();
+        };
+        window.addEventListener("focus", onReturn);
+        document.addEventListener("visibilitychange", onVisible);
+        return () => {
+            window.removeEventListener("focus", onReturn);
+            document.removeEventListener("visibilitychange", onVisible);
+        };
+    }, [isLoggedIn, key.refresh, balance.refresh]);
     const returnUrl =
         typeof window === "undefined"
             ? undefined
@@ -140,7 +167,10 @@ export function AppUserMenu({
                                     href={editKeyUrl.href}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    onClick={close}
+                                    onClick={() => {
+                                        expectReturn();
+                                        close();
+                                    }}
                                 >
                                     <KeyIcon
                                         className="polli:h-4 polli:w-4 polli:shrink-0"
@@ -158,7 +188,10 @@ export function AppUserMenu({
                                 href={topUpUrl.href}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                onClick={close}
+                                onClick={() => {
+                                    expectReturn();
+                                    close();
+                                }}
                             >
                                 <WalletIcon
                                     className="polli:h-4 polli:w-4 polli:shrink-0"

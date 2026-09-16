@@ -1,0 +1,34 @@
+{
+  "pr_number": 15039,
+  "title": "feat: use just-git for the computer's git command",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15039",
+  "merged_at": "2026-09-16T22:03:09Z",
+  "labels": [],
+  "pr_body_excerpt": "- Answers the shell's `git` command with [just-git](https://www.npmjs.com/package/just-git) (pure TS) instead of the built-in isomorphic-git CLI: adds `mv`, `rebase`, `cherry-pick`, `a..b` ranges, `--format`\n- Hooks in via the Durable Object git client (`client.cli`), so no change to the prebundled shell\n- Collective-memory push token now comes from a just-git credential provider inside the DO; still never reaches the shell. Replaces the push wrapper\n- Without App secrets (or if minting fails) git stays anonymous, so clones keep working\n- Drops the \"push to your own repo with a token in the remote URL\" instructions: just-git keeps URL credentials in memory only (not in `.git/config`)\n- Test for mv/rebase/range/format; 17/17 pass. Bundle 6215 KiB / 1332 KiB gzip\n\nPush verified on staging (a799fef0) via staging.gen.pollinations.ai/mcp/computer: clone, push and revert of a test file in collective-memory (9ba5877, 65a5034); `git mv` works.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01RBs8TiuvtC8xLLDP9MqfaH\n",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Git grows new branches",
+    "blurb": "The computer's git command now runs on just-git, a pure TypeScript little shovel with more ways to rearrange the garden. Move files, rebase, cherry-pick, and inspect ranges without leaving credentials composting in config.",
+    "summary": "The computer MCP shell now routes git through the Durable Object's just-git client, adding mv, rebase, cherry-pick, a..b ranges, and --format while keeping collective-memory push credentials in memory.",
+    "impact": "Computer MCP users can use a broader git command set, and collective-memory clones remain anonymous when secrets are unavailable while authenticated push tokens never enter the shell or .git/config.",
+    "keywords": [
+      "computer-mcp",
+      "git",
+      "just-git",
+      "durable-objects",
+      "collective-memory",
+      "credentials"
+    ],
+    "visual_concept": "Depict Polli as a cozy gardener-developer tending a branching code-vine in a retro terminal garden, using a tiny git tool belt. A friendly CRT monitor robot presents neatly moved files and cherry-like commit icons; a locked watering can or glowing memory jar represents credentials safely held by the Durable Object rather than written into the repository.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with yellow body, dark brown stripes, black antennae, oval eyes, pink rectangular blush, smile, and light blue wings, wearing a tiny developer tool belt as she prunes and rearranges a branching code-vine beside a retro terminal; a chunky CRT monitor robot holds file cards labeled \"mv\", \"rebase\", and \"cherry-pick\", while a small glowing memory jar keeps a key safely inside. Cozy 8-bit pixel art aesthetic, prominent soft lime green (#ecf874) with mint, lavender, peach, and warm cream gradients, pixel flowers and code-plants, warm lighting, retro gaming vibes like Stardew Valley, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-15039.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with yellow body, dark brown stripes, black antennae, oval eyes, pink rectangular blush, smile, and light blue wings, wearing a tiny developer tool belt as she prunes and rearranges a branching code-vine beside a retro terminal; a chunky CRT monitor robot holds file cards labeled \"mv\", \"rebase\", and \"cherry-pick\", while a small glowing memory jar keeps a key safely inside. Cozy 8-bit pixel art aesthetic, prominent soft lime green (#ecf874) with mint, lavender, peach, and warm cream gradients, pixel flowers and code-plants, warm lighting, retro gaming vibes like Stardew Valley, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-09-16T22:04:08.694918+00:00"
+}

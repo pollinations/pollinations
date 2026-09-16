@@ -18,6 +18,10 @@ const PNG = Buffer.from(
     "base64",
 );
 const PNG_DATA_URI = `data:image/png;base64,${PNG.toString("base64")}`;
+const EXIF_JPEG_DATA_URI =
+    "data:image/jpeg;base64,/9j/4QAKRXhpZgAAEjT/wAALCAABAAEDAREA/9oAAwD/2Q==";
+const CLEAN_JPEG_DATA_URI =
+    "data:image/jpeg;base64,/9j/wAALCAABAAEDAREA/9oAAwD/2Q==";
 const WIDE_PNG = Buffer.alloc(24);
 WIDE_PNG.set([0x89, 0x50, 0x4e, 0x47]);
 WIDE_PNG.writeUInt32BE(2560, 16);
@@ -140,6 +144,29 @@ describe("OpenRouter Grok Imagine Pro", () => {
         expect(result.trackingData?.usage).toEqual({
             promptImageTokens: 1,
             completionImageTokens: 1,
+        });
+    });
+
+    it("strips metadata from metadata-bearing data URIs before forwarding", async () => {
+        syncImageEnv(
+            { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
+            ["OPENROUTER_API_KEY"],
+        );
+        const requests: Record<string, unknown>[] = [];
+        mockOpenRouterFetch(requests);
+
+        await callOpenRouterGrokImagineProAPI("edit prompt", {
+            ...baseParams,
+            image: [EXIF_JPEG_DATA_URI],
+        });
+
+        expect(requests[0]).toMatchObject({
+            input_references: [
+                {
+                    type: "image_url",
+                    image_url: { url: CLEAN_JPEG_DATA_URI },
+                },
+            ],
         });
     });
 

@@ -6,6 +6,8 @@ import type { Model3dParams } from "../../src/model3d/params.ts";
 
 const CLEAN_JPEG_DATA_URI =
     "data:image/jpeg;base64,/9j/wAALCAABAAEDAREA/9oAAwD/2Q==";
+const EXIF_JPEG_DATA_URI =
+    "data:image/jpeg;base64,/9j/4QAKRXhpZgAAEjT/wAALCAABAAEDAREA/9oAAwD/2Q==";
 const CLEAN_JPEG_BYTES = new Uint8Array([
     0xff, 0xd8, 0xff, 0xc0, 0x00, 0x0b, 0x08, 0x00, 0x01, 0x00, 0x01, 0x03,
     0x01, 0x11, 0x00, 0xff, 0xda, 0x00, 0x03, 0x00, 0xff, 0xd9,
@@ -73,6 +75,23 @@ describe("callTrellis2", () => {
         const body = JSON.parse(init.body as string);
         expect(body.model).toBe("trellis2");
         expect(body.resolution).toBe("medium");
+        expect(body.image_urls).toEqual([CLEAN_JPEG_DATA_URI]);
+    });
+
+    it("strips metadata from metadata-bearing data URIs before submitting to Trellis", async () => {
+        const fetchSpy = mockAsyncSuccess();
+
+        await callTrellis2({
+            ...params("medium"),
+            image: [EXIF_JPEG_DATA_URI],
+        });
+
+        const inferenceCall = fetchSpy.mock.calls.find(([url]) =>
+            String(url).includes("inferenceport"),
+        );
+        expect(inferenceCall).toBeDefined();
+        const [, init] = inferenceCall as [string, RequestInit];
+        const body = JSON.parse(init.body as string);
         expect(body.image_urls).toEqual([CLEAN_JPEG_DATA_URI]);
     });
 

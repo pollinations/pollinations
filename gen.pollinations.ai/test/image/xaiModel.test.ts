@@ -8,6 +8,8 @@ const XAI_EDITS_URL = "https://api.x.ai/v1/images/edits";
 const IMAGE_URL = "https://image.example.com/xai-output.png";
 const CLEAN_JPEG_DATA_URI =
     "data:image/jpeg;base64,/9j/wAALCAABAAEDAREA/9oAAwD/2Q==";
+const EXIF_JPEG_DATA_URI =
+    "data:image/jpeg;base64,/9j/4QAKRXhpZgAAEjT/wAALCAABAAEDAREA/9oAAwD/2Q==";
 const CLEAN_JPEG_BYTES = new Uint8Array([
     0xff, 0xd8, 0xff, 0xc0, 0x00, 0x0b, 0x08, 0x00, 0x01, 0x00, 0x01, 0x03,
     0x01, 0x11, 0x00, 0xff, 0xda, 0x00, 0x03, 0x00, 0xff, 0xd9,
@@ -117,6 +119,25 @@ describe("xaiModel usage accounting", () => {
         await callXaiImageAPI("edit prompt", {
             ...baseParams,
             image: ["https://example.com/input.png"],
+        });
+
+        expect(requests[0].url).toBe(XAI_EDITS_URL);
+        expect(requests[0].body.image).toEqual({
+            url: CLEAN_JPEG_DATA_URI,
+            detail: "auto",
+        });
+    });
+
+    it("strips metadata from metadata-bearing data URIs before forwarding to xAI", async () => {
+        syncImageEnv({ XAI_API_KEY: "xai-test-key" } as CloudflareBindings, [
+            "XAI_API_KEY",
+        ]);
+        const requests: XaiRequest[] = [];
+        mockXaiFetch(requests);
+
+        await callXaiImageAPI("edit prompt", {
+            ...baseParams,
+            image: [EXIF_JPEG_DATA_URI],
         });
 
         expect(requests[0].url).toBe(XAI_EDITS_URL);

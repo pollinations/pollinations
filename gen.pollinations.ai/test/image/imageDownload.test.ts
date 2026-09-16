@@ -233,34 +233,21 @@ describe("toDataUri", () => {
         });
     });
 
-    it("reuses two large uploaded images without decoding their full payloads", async () => {
-        const inputs = [9_992_143, 12_285_506].map((size) => {
-            const bytes = Buffer.alloc(size);
-            bytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-            return `data:image/png;base64,${bytes.toString("base64")}`;
-        });
-        const decode = vi.spyOn(globalThis, "atob");
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        const output = await Promise.all(inputs.map(toDataUri));
-
-        expect(output).toEqual(inputs);
-        expect(decode.mock.calls.every(([input]) => input.length <= 4)).toBe(
-            true,
+    it("strips EXIF metadata from canonical data URIs", async () => {
+        const output = await toDataUri(
+            "data:image/jpeg;base64,/9j/4QAKRXhpZgAAEjT/wAALCAABAAEDAREA/9oAAwD/2Q==",
         );
-        expect(fetchSpy).not.toHaveBeenCalled();
+        expect(output).toBe(
+            "data:image/jpeg;base64,/9j/wAALCAABAAEDAREA/9oAAwD/2Q==",
+        );
     });
 
-    it("keeps the per-image size limit without decoding an oversized upload", async () => {
+    it("keeps the per-image size limit on an oversized upload", async () => {
         const uri = `data:image/png;base64,${Buffer.alloc(MAX_IMAGE_SIZE + 1).toString("base64")}`;
-        const decode = vi.spyOn(globalThis, "atob");
         await expect(toDataUri(uri)).rejects.toMatchObject({
             status: 400,
             errorCode: "image_too_large",
         });
-        expect(decode.mock.calls.every(([input]) => input.length <= 4)).toBe(
-            true,
-        );
     });
 
     it("still downloads remote images", async () => {

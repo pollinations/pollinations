@@ -62,7 +62,7 @@ export function AccountPollen({
                     className="polli:h-3.5 polli:w-3.5 polli:shrink-0"
                 />
                 {unlimited ? "∞" : formatPollen(Math.max(0, remaining))}
-                {source.withUnit && " Pollen"}
+                {source.withUnit && " pollen"}
             </span>
         );
     }

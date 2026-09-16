@@ -10,7 +10,7 @@ describe("account Pollen", () => {
             <AccountPollen source={{ type: "budget", remaining: 3.25 }} />,
         );
         expect(some).toContain("3.25");
-        expect(some).not.toContain("Pollen<");
+        expect(some).not.toContain("pollen<");
         expect(some).not.toContain(EMPTY);
         expect(
             renderToStaticMarkup(
@@ -18,14 +18,14 @@ describe("account Pollen", () => {
                     source={{ type: "budget", remaining: 3.25, withUnit: true }}
                 />,
             ),
-        ).toContain("3.25 Pollen");
+        ).toContain("3.25 pollen");
         expect(
             renderToStaticMarkup(
                 <AccountPollen
                     source={{ type: "budget", remaining: null, withUnit: true }}
                 />,
             ),
-        ).toContain("∞ Pollen");
+        ).toContain("∞ pollen");
         const unlimited = renderToStaticMarkup(
             <AccountPollen source={{ type: "budget", remaining: null }} />,
         );

@@ -1,0 +1,34 @@
+{
+  "pr_number": 15003,
+  "title": "docs: swap DreamShaper RTX 3060 replica for a cheaper Vast host",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15003",
+  "merged_at": "2026-09-16T15:36:02Z",
+  "labels": [],
+  "pr_body_excerpt": "## What changed\n\nOpportunistic cost optimization, not an incident — instance `49063196` (RTX 3060, Mexico, $0.0756/hr) was healthy and not expiring. A live Vast offer scan found a South Korea host at roughly 36% less.\n\n- Replacement instance `51216212` (RTX 3060, South Korea, reliability 0.9953) rented and set up with the correct image (`nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04` — the docs already warn the wrong image silently stalls the container; caught and fixed on the first attempt).\n- Came up at **$0.057778/hr all-in**, saving ~$12.80/month on this replica.\n- DreamShaper doesn't share one tunnel across replicas the way Z-Image does, so this needed a **new** Cloudflare Tunnel (`dreamshaper-canary-51216212`). Tunnel creation and connector-token retrieval worked with the available Cloudflare API access; the DNS CNAME needed `Zone.DNS:Edit`, which that access doesn't include, so it was added manually via the dashboard.\n- Verified: registered as the third `sana` pool member, 11/11 real production requests returned 200, then the old Mexico instance was destroyed.\n\n## Note\n\nA same-day attempt to also find a cheaper Z-Image (RTX 5090) host was abandoned — 4 of 5 candidate offers across Asia stalled mid-setup with dead/unresponsive hosts. Left the current Z-Image production instance as-is rather than risk it.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "DreamShaper found a sunnier perch",
+    "blurb": "The DreamShaper replica packed its tiny GPU suitcase and moved to a more economical Vast host in South Korea. Same RTX 3060, fresh tunnel, eleven polite production requests through the door.",
+    "summary": "Moved the DreamShaper RTX 3060 replica from Vast instance 49063196 in Mexico ($0.0756/hr) to instance 51216212 in South Korea ($0.057778/hr), documenting its CUDA image, dedicated Cloudflare Tunnel, and successful 11/11 production-request verification.",
+    "impact": "DreamShaper keeps its third sana pool member serving production traffic while this replica runs at roughly 36% lower hourly infrastructure cost.",
+    "keywords": [
+      "DreamShaper",
+      "Vast",
+      "RTX 3060",
+      "GPU infrastructure",
+      "Cloudflare Tunnel",
+      "sana pool"
+    ],
+    "visual_concept": "Depict DreamShaper as a cozy retro dream-painting workstation being carefully relocated between two garden plots, with the South Korea plot connected by a glowing dedicated tunnel. Polli, wearing a tiny moving cap and tool belt, should guide a small RTX 3060 server crate toward a healthy blooming code-plant while a CRT monitor robot confirms the connection; use subtle route markers rather than technical clutter.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light-blue wings, a tiny moving cap and tool belt, guiding a small retro RTX 3060 server crate through a glowing lime green (#ecf874) garden tunnel toward a blooming DreamShaper code-plant; a friendly CRT-monitor robot checks a little terminal reading “11/11 OK.” Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with lavender, mint, peach and warm cream surroundings, dark purple (#110518) outlines, subtle scanlines, and an emotionally warm Stardew Valley-like atmosphere."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-15003.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light-blue wings, a tiny moving cap and tool belt, guiding a small retro RTX 3060 server crate through a glowing lime green (#ecf874) garden tunnel toward a blooming DreamShaper code-plant; a friendly CRT-monitor robot checks a little terminal reading “11/11 OK.” Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with lavender, mint, peach and warm cream surroundings, dark purple (#110518) outlines, subtle scanlines, and an emotionally warm Stardew Valley-like atmosphere."
+  },
+  "generated_at": "2026-09-16T15:37:17.075774+00:00"
+}

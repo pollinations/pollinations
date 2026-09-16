@@ -1,0 +1,34 @@
+{
+  "pr_number": 15004,
+  "title": "docs: allow immediate suspension for payment fraud",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15004",
+  "merged_at": "2026-09-16T15:57:54Z",
+  "labels": [],
+  "pr_body_excerpt": "**Needs a lawyer's review before merge.** Drafted text, not legal advice.\n\nThe fraud-ban job is live and reports accounts it would ban. Checking that list against our published terms found a gap: Section 12 only allows termination for uncured breach after 30 days' notice, and the refunds policy only authorises suspension once a chargeback is filed. Of 22 candidates, 5 have a chargeback or issuer warning; the other 17 have fraud reports with no dispute filed.\n\n- **Terms §12** — one sentence adding immediate suspension for payment fraud or abuse, unauthorized card use, or security/legal risk, and noting it is protective rather than a finding of wrongdoing.\n- **Refunds §6** — the existing sentence now also covers payments we reasonably believe were unauthorized with no chargeback filed, and notes that reversing already-spent Pollen can leave a negative balance, matching current behaviour.\n\nTwo sentences changed in total. No code change, no behaviour change, no new obligations on users. Existing clauses already cover the rest: Pollen is non-redeemable, Paid Pollen is final sale, and non-waivable statutory rights are preserved.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The garden gets a gate",
+    "blurb": "The legal garden now has clearer rules for suspicious payments. Polli added a small signpost so account protection can happen promptly when payment fraud is reasonably suspected.",
+    "summary": "Updated Terms §12 and Refunds §6 to allow immediate protective suspension for reasonably suspected payment fraud, unauthorized card use, or security/legal risk, including payments without a filed chargeback and the resulting negative Pollen balance when spent credits are reversed.",
+    "impact": "Users now have clearer published terms explaining how pollinations.ai can promptly protect accounts and payment systems during suspected unauthorized-payment cases.",
+    "keywords": [
+      "terms",
+      "refunds",
+      "payment fraud",
+      "account security",
+      "Pollen",
+      "legal"
+    ],
+    "visual_concept": "Depict a friendly account-security update as Polli tending a cozy garden gate beside a Pollen flower patch: a small card-shaped leaf with a warning mark is gently held outside the gate while healthy flowers remain safe inside. Polli should wear a tiny groundskeeper hat, with the scene emphasizing careful protection rather than punishment.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny groundskeeper hat while gently closing a garden gate around glowing Pollen flowers; a suspicious card-shaped leaf rests safely outside, and a retro terminal shows a small shield icon. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle code-plants and flowers, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-15004.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny groundskeeper hat while gently closing a garden gate around glowing Pollen flowers; a suspicious card-shaped leaf rests safely outside, and a retro terminal shows a small shield icon. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle code-plants and flowers, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-16T15:58:59.327792+00:00"
+}

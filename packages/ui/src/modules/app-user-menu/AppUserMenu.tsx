@@ -102,7 +102,13 @@ export function AppUserMenu({
                     className="polli:max-w-64"
                     menuClassName="polli:w-max polli:min-w-0"
                     secondaryContent={
-                        <Balance className="polli:bg-transparent polli:px-0 polli:py-0 polli:text-xs polli:text-theme-text-base" />
+                        <span className="polli:inline-flex polli:items-center polli:gap-1">
+                            <KeyIcon
+                                className="polli:h-3.5 polli:w-3.5 polli:shrink-0"
+                                aria-hidden="true"
+                            />
+                            <Balance className="polli:bg-transparent polli:px-0 polli:py-0 polli:text-xs polli:text-theme-text-base" />
+                        </span>
                     }
                 >
                     {(close) => (

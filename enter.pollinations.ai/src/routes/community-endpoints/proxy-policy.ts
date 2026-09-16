@@ -261,6 +261,7 @@ export function withoutProxyPricingChanges(
 export function changesProxyPayload(input: ProxyUpdateInput): boolean {
     return [
         input.bearerToken,
+        input.api,
         input.visibility,
         input.perUserRpm,
         input.paidOnly,

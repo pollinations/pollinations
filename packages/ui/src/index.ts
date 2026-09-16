@@ -1,10 +1,47 @@
+export {
+    AccountIdentity,
+    type AccountIdentityProps,
+} from "./compositions/AccountIdentity.tsx";
+export {
+    AccountMenu,
+    type AccountMenuProps,
+} from "./compositions/AccountMenu.tsx";
 export { Alert, type AlertProps } from "./compositions/Alert.tsx";
 export { AppHeader, type AppHeaderProps } from "./compositions/AppHeader.tsx";
+export { Callout, type CalloutProps } from "./compositions/Callout.tsx";
+export {
+    ChatConversation,
+    ChatConversationContent,
+    type ChatConversationContentProps,
+    type ChatConversationProps,
+} from "./compositions/ChatConversation.tsx";
+export {
+    ChatMessage,
+    ChatMessageActions,
+    type ChatMessageActionsProps,
+    ChatMessageContent,
+    type ChatMessageContentProps,
+    ChatMessageHeader,
+    type ChatMessageHeaderProps,
+    type ChatMessageProps,
+    type ChatMessageRole,
+} from "./compositions/ChatMessage.tsx";
+export {
+    ChatPromptInput,
+    ChatPromptInputFooter,
+    type ChatPromptInputFooterProps,
+    type ChatPromptInputProps,
+    ChatPromptTextarea,
+} from "./compositions/ChatPromptInput.tsx";
 export { CodeBlock, type CodeBlockProps } from "./compositions/CodeBlock.tsx";
 export {
     Collapsible,
     type CollapsibleProps,
 } from "./compositions/Collapsible.tsx";
+export {
+    ContentHeader,
+    type ContentHeaderProps,
+} from "./compositions/ContentHeader.tsx";
 export {
     CopyButton,
     type CopyButtonProps,
@@ -12,6 +49,8 @@ export {
 export {
     EditableCombobox,
     type EditableComboboxProps,
+    EditableComboboxToken,
+    type EditableComboboxTokenProps,
 } from "./compositions/EditableCombobox.tsx";
 export {
     ExternalLinkButton,
@@ -27,7 +66,7 @@ export {
 } from "./compositions/FileUpload.tsx";
 export { InfoTip } from "./compositions/InfoTip.tsx";
 export { LinkCard, type LinkCardProps } from "./compositions/LinkCard.tsx";
-export { Markdown, type MarkdownProps } from "./compositions/Markdown.tsx";
+// Markdown and Prose live at @pollinations/ui/markdown — see src/markdown.ts.
 export {
     MediaPlaceholder,
     type MediaPlaceholderProps,
@@ -41,19 +80,30 @@ export {
     PeriodPicker,
     type PeriodPickerProps,
 } from "./compositions/PeriodPicker.tsx";
-export { Prose, type ProseProps } from "./compositions/Prose.tsx";
 export { Section, type SectionProps } from "./compositions/Section.tsx";
 export { StatCard, type StatCardProps } from "./compositions/StatCard.tsx";
+export {
+    ToolCallDetails,
+    type ToolCallDetailsProps,
+    type ToolCallStatus,
+} from "./compositions/ToolCallDetails.tsx";
 export { cn } from "./lib/cn-app.ts";
 export {
     currentPeriod,
     getPeriodBucketKeys,
+    isPeriodSelectable,
     type PeriodGranularity,
     type PeriodSelection,
     periodBucketKeyToDate,
+    periodFromDate,
+    periodToWindow,
 } from "./lib/period.ts";
 export { useScrollLock } from "./lib/use-scroll-lock.ts";
-export { Button, type ButtonProps } from "./primitives/Button.tsx";
+export {
+    Button,
+    type ButtonAppearance,
+    type ButtonProps,
+} from "./primitives/Button.tsx";
 export {
     ButtonGroup,
     type ButtonGroupProps,
@@ -67,6 +117,11 @@ export {
 } from "./primitives/ColorModeToggle.tsx";
 export {
     Dialog,
+    DialogDescription,
+    DialogFooter,
+    type DialogFooterProps,
+    DialogHeader,
+    type DialogHeaderProps,
     type DialogProps,
     DialogTitle,
 } from "./primitives/Dialog.tsx";
@@ -76,18 +131,20 @@ export {
     DropdownItem,
     type DropdownItemProps,
 } from "./primitives/DropdownItem.tsx";
+export { Eyebrow, type EyebrowProps } from "./primitives/Eyebrow.tsx";
 export { Field } from "./primitives/Field.tsx";
 export {
     IconButton,
     type IconButtonIntent,
     type IconButtonProps,
+    type IconButtonVariant,
 } from "./primitives/IconButton.tsx";
 export { InlineLink, type InlineLinkProps } from "./primitives/InlineLink.tsx";
 export { Input, type InputProps } from "./primitives/Input.tsx";
 export * from "./primitives/icons/index.tsx";
 export { ScrollArea, type ScrollAreaProps } from "./primitives/ScrollArea.tsx";
 export { Slider, type SliderProps } from "./primitives/Slider.tsx";
-export { Surface } from "./primitives/Surface.tsx";
+export { Surface, type SurfaceProps } from "./primitives/Surface.tsx";
 export {
     Switch,
     type SwitchProps,

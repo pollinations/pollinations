@@ -151,7 +151,7 @@ export const ImageParamsSchema = z
                 });
             }
         }
-        if (data.model === "gpt-image-2" && data.transparent) {
+        if (data.model === "openai/gpt-image-2" && data.transparent) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ["transparent"],
@@ -187,7 +187,7 @@ export const ImageParamsSchema = z
                 });
             }
         }
-        if (data.model === "minimax-h3") {
+        if (data.model === "minimax/minimax-h3") {
             if (data.duration !== undefined && data.duration !== 5) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
@@ -207,6 +207,40 @@ export const ImageParamsSchema = z
                     code: z.ZodIssueCode.custom,
                     path: ["fps"],
                     message: "minimax-h3 outputs 24 FPS.",
+                });
+            }
+        }
+        if (data.model === "minimax/minimax-h3-max-turbo") {
+            if (
+                data.duration !== undefined &&
+                ![5, 10, 15].includes(data.duration)
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["duration"],
+                    message:
+                        "minimax/minimax-h3-max-turbo supports 5, 10, or 15 seconds.",
+                });
+            }
+            if (
+                data.aspectRatio !== undefined &&
+                !["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"].includes(
+                    data.aspectRatio,
+                )
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["aspectRatio"],
+                    message:
+                        "minimax/minimax-h3-max-turbo supports 21:9, 16:9, 4:3, 1:1, 3:4, or 9:16.",
+                });
+            }
+            if (data.fps !== undefined && data.fps !== 24) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["fps"],
+                    message:
+                        "minimax/minimax-h3-max-turbo outputs video at 24 FPS.",
                 });
             }
         }
@@ -232,7 +266,7 @@ export const ImageParamsSchema = z
             }
         }
         if (
-            data.model === "grok-imagine-image-2.0" &&
+            data.model === "x-ai/grok-imagine-image-2.0" &&
             !["low", "medium"].includes(data.quality)
         ) {
             ctx.addIssue({

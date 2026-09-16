@@ -27,6 +27,7 @@ describe("provider transform passthrough", () => {
         "glm",
         "glm-5.3",
         "z-ai/glm-5.3-flash",
+        "inception/mercury-2.5-preview",
     ])("preserves cache_control for %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);

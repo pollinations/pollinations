@@ -1,8 +1,10 @@
 import {
+    BookIcon,
     Button,
     CheckIcon,
     ChevronIcon,
     Chip,
+    ClockIcon,
     cn,
     Dropdown,
     DropdownItem,
@@ -68,22 +70,23 @@ const formatAdjustmentUnit = ({
     kind,
     quantity,
     unit,
-    suffix,
-}: Pick<
-    ModelPriceAdjustment,
-    "kind" | "quantity" | "unit" | "suffix"
->): string => {
+}: Pick<ModelPriceAdjustment, "kind" | "quantity" | "unit">): string => {
     const quantityLabel = compactNumber
         .format(quantity)
         .replace(/^1(?=[A-Z])/, "");
-    const detail = suffix ? ` · ${suffix}` : "";
-    if (kind === "search_request") return `${quantityLabel} req${detail}`;
-    if (kind === "grounded_prompt") return `${quantityLabel} prompts${detail}`;
-    if (kind === "cache_storage") {
-        return `${quantityLabel} tokens${detail}`;
+    if (kind === "search_request") {
+        return quantity === 1 ? "req" : `${quantityLabel} req`;
     }
-    if (quantity === 1 && unit === "generation") return `gen${detail}`;
-    return `${quantityLabel} ${unit}${detail}`;
+    if (kind === "grounded_prompt") return `${quantityLabel} prompts`;
+    if (kind === "cache_storage") {
+        return `${quantityLabel} tokens`;
+    }
+    if (quantity === 1) {
+        if (unit === "second") return "sec";
+        if (unit === "page") return "page";
+        if (unit === "generation") return "gen";
+    }
+    return `${quantityLabel} ${unit}`;
 };
 
 export type PriceBadgeConfig = Omit<ModelPriceLine, "direction"> & {
@@ -331,11 +334,19 @@ export const ModelPricingControls: FC<{
     );
 };
 
-const LedgerPriceValue: FC<{ value: string }> = ({ value }) => {
+const LedgerPriceValue: FC<{
+    value: string;
+    fractionDigits?: number;
+}> = ({ value, fractionDigits = 5 }) => {
     const [whole, fraction] = value.split(".", 2);
 
     return (
-        <span className="grid w-full grid-cols-[minmax(2ch,1fr)_auto_5ch] text-sm font-semibold tabular-nums text-theme-text-strong">
+        <span
+            className="grid w-full text-sm font-semibold tabular-nums text-theme-text-strong"
+            style={{
+                gridTemplateColumns: `minmax(2ch, 1fr) auto ${fractionDigits}ch`,
+            }}
+        >
             <span className="sr-only">{value}</span>
             <span aria-hidden="true" className="text-right">
                 {whole}
@@ -384,17 +395,30 @@ const LedgerLabel: FC<{
 export const UsagePriceRows: FC<{
     adjustments: ModelPriceAdjustment[];
     align: "left" | "right";
-}> = ({ adjustments, align }) =>
+    fractionDigits?: number;
+}> = ({ adjustments, align, fractionDigits }) =>
     adjustments.map((adjustment) => {
         const isSearch = RequestBasedAdjustmentKinds.has(adjustment.kind);
         const PriceIcon = isSearch
             ? SearchIcon
-            : adjustment.kind === "cache_storage"
-              ? PRICE_ICON.cached
-              : adjustment.kind in PRICE_ICON
-                ? PRICE_ICON[adjustment.kind as PriceKind]
-                : undefined;
+            : adjustment.kind === "compute"
+              ? ClockIcon
+              : adjustment.kind === "page"
+                ? BookIcon
+                : adjustment.kind === "cache_storage"
+                  ? PRICE_ICON.cached
+                  : adjustment.kind in PRICE_ICON
+                    ? PRICE_ICON[adjustment.kind as PriceKind]
+                    : undefined;
         const unit = `/${formatAdjustmentUnit(adjustment)}`;
+        const unitLabel = adjustment.suffix
+            ? `${unit} · ${adjustment.suffix}`
+            : unit;
+        const unitContent = (
+            <span className="min-w-0 truncate whitespace-nowrap text-xs font-normal text-theme-text-muted">
+                {unit}
+            </span>
+        );
         return (
             <div
                 key={adjustment.name}
@@ -411,13 +435,21 @@ export const UsagePriceRows: FC<{
                 />
                 <LedgerPriceValue
                     value={formatDisplayPrice(adjustment.price).value}
+                    fractionDigits={fractionDigits}
                 />
-                <span
-                    className="min-w-0 truncate whitespace-nowrap text-xs font-normal text-theme-text-muted"
-                    title={unit}
-                >
-                    {unit}
-                </span>
+                {adjustment.suffix ? (
+                    <Tooltip
+                        triggerAs="span"
+                        content={unitLabel}
+                        ariaLabel={`${adjustment.label}: ${unitLabel}`}
+                        tapEnabled
+                        displayContents
+                    >
+                        {unitContent}
+                    </Tooltip>
+                ) : (
+                    unitContent
+                )}
             </div>
         );
     });

@@ -10,6 +10,7 @@ import {
     Section,
     Surface,
     TokensIcon,
+    Tooltip,
 } from "@pollinations/ui";
 import {
     COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
@@ -24,16 +25,16 @@ import { CommunityEndpointDeleteConfirmation } from "./community-endpoint-delete
 import { CommunityEndpointDialog } from "./community-endpoint-dialog.tsx";
 import { CommunityEndpointToggleConfirmation } from "./community-endpoint-toggle-confirmation.tsx";
 import {
-    type AgentListingDetailsPayload,
-    type AgentPayload,
+    type AgentFormState,
     type CommunityEndpoint,
     type CommunityProviderProfile,
     type EditableEndpoint,
     type EndpointPayload,
     type FallbackModelOption,
     type ManagedAgent,
-    type PromptAgentCommunityEndpoint,
     readError,
+    toAgentPayload,
+    toAgentUpdatePayload,
 } from "./types.ts";
 
 type CommunityEndpointsProps = {
@@ -59,12 +60,18 @@ export function CommunityEndpoints({
     const [error, setError] = useState<string | null>(null);
     const [providerName, setProviderName] = useState("");
     const [providerUrl, setProviderUrl] = useState("");
+    const [providerIconUrl, setProviderIconUrl] = useState("");
     const [savedProvider, setSavedProvider] =
-        useState<CommunityProviderProfile>({ name: null, url: null });
+        useState<CommunityProviderProfile>({
+            name: null,
+            url: null,
+            iconUrl: null,
+        });
     const [isSavingProvider, setIsSavingProvider] = useState(false);
     const providerIsSaved =
         providerName === (savedProvider.name ?? "") &&
-        providerUrl === (savedProvider.url ?? "");
+        providerUrl === (savedProvider.url ?? "") &&
+        providerIconUrl === (savedProvider.iconUrl ?? "");
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState<EditableEndpoint | null>(null);
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
@@ -102,6 +109,7 @@ export function CommunityEndpoints({
         setAgents(agentBody.data);
         setProviderName(endpointBody.provider.name ?? "");
         setProviderUrl(endpointBody.provider.url ?? "");
+        setProviderIconUrl(endpointBody.provider.iconUrl ?? "");
         setSavedProvider(endpointBody.provider);
         setIsLoading(false);
     }, []);
@@ -110,26 +118,20 @@ export function CommunityEndpoints({
         void loadEndpoints();
     }, [loadEndpoints]);
 
-    async function handleCreateAgent(
-        payload: AgentPayload,
-        listing: AgentListingDetailsPayload,
-    ): Promise<void> {
+    async function handleCreateAgent(form: AgentFormState): Promise<void> {
         const response = await apiClient.account.agents.$post({
-            json: { ...payload, ...listing },
+            json: toAgentPayload(form),
         });
         if (!response.ok) throw new Error(await readError(response));
         await loadEndpoints();
         await onChange?.();
     }
 
-    async function handleUpdateAgent(
-        payload: AgentPayload,
-        listing: AgentListingDetailsPayload,
-    ): Promise<void> {
+    async function handleUpdateAgent(form: AgentFormState): Promise<void> {
         if (!editingAgent) return;
         const response = await apiClient.account.agents[":id"].$patch({
             param: { id: editingAgent.id },
-            json: { ...payload, ...listing },
+            json: toAgentUpdatePayload(form),
         });
         if (!response.ok) throw new Error(await readError(response));
         await loadEndpoints();
@@ -157,6 +159,16 @@ export function CommunityEndpoints({
         }
     }
 
+    async function handleSyncAgent(): Promise<void> {
+        if (!editingAgent) return;
+        const response = await apiClient.account.agents[":id"].sync.$post({
+            param: { id: editingAgent.id },
+        });
+        if (!response.ok) throw new Error(await readError(response));
+        await loadEndpoints();
+        await onChange?.();
+    }
+
     async function handleCreate(
         payload: EndpointPayload,
         bearerToken: string,
@@ -176,13 +188,14 @@ export function CommunityEndpoints({
         if (!editing) return;
         const { modality: _modality, ...proxyUpdate } = payload;
         const update =
-            editing.type === "endpoint_agent"
+            editing.type === "endpoint_agent" && payload.modality === "text"
                 ? {
                       name: payload.name,
                       title: payload.title,
                       description: payload.description,
                       visibility: payload.visibility,
-                      baseUrl: payload.baseUrl,
+                      api: payload.api,
+                      url: payload.url,
                       upstreamModel: payload.upstreamModel,
                       perUserRpm: payload.perUserRpm,
                   }
@@ -231,12 +244,17 @@ export function CommunityEndpoints({
             const response = await apiClient.account[
                 "my-models"
             ].provider.$post({
-                json: { name: providerName, url: providerUrl },
+                json: {
+                    name: providerName,
+                    url: providerUrl,
+                    iconUrl: providerIconUrl.trim() || null,
+                },
             });
             if (!response.ok) throw new Error(await readError(response));
             const profile = (await response.json()) as CommunityProviderProfile;
             setProviderName(profile.name ?? "");
             setProviderUrl(profile.url ?? "");
+            setProviderIconUrl(profile.iconUrl ?? "");
             setSavedProvider(profile);
             await onChange?.();
         } catch (thrown) {
@@ -248,6 +266,13 @@ export function CommunityEndpoints({
         } finally {
             setIsSavingProvider(false);
         }
+    }
+
+    function resetProviderChanges(): void {
+        setProviderName(savedProvider.name ?? "");
+        setProviderUrl(savedProvider.url ?? "");
+        setProviderIconUrl(savedProvider.iconUrl ?? "");
+        setError(null);
     }
 
     async function handleToggle(endpoint: CommunityEndpoint): Promise<void> {
@@ -303,38 +328,41 @@ export function CommunityEndpoints({
         </>
     );
 
-    const endpointByAgentId = new Map<string, PromptAgentCommunityEndpoint>();
     const modelEndpoints: CommunityEndpoint[] = [];
     const agentEndpoints: CommunityEndpoint[] = [];
     for (const endpoint of endpoints) {
-        if (endpoint.type === "prompt_agent") {
-            endpointByAgentId.set(endpoint.id, endpoint);
-            agentEndpoints.push(endpoint);
-        } else if (endpoint.type === "endpoint_agent") {
-            agentEndpoints.push(endpoint);
-        } else {
+        if (endpoint.type === "proxy") {
             modelEndpoints.push(endpoint);
+        } else {
+            agentEndpoints.push(endpoint);
         }
     }
     const agentById = new Map(agents.map((agent) => [agent.id, agent]));
 
     function renderEndpointCard(endpoint: CommunityEndpoint) {
         const agent =
-            endpoint.type === "prompt_agent"
+            endpoint.type === "prompt_agent" || endpoint.type === "code_agent"
                 ? agentById.get(endpoint.id)
                 : undefined;
         return (
             <CommunityEndpointCard
                 key={endpoint.id}
                 endpoint={endpoint}
+                agent={agent}
                 isToggling={togglingId === endpoint.id}
                 onToggle={() => setToggling(endpoint)}
-                onEdit={() => {
-                    if (agent) setEditingAgent(agent);
-                    else if (endpoint.type !== "prompt_agent") {
-                        setEditing(endpoint);
-                    }
-                }}
+                onEdit={
+                    agent
+                        ? () =>
+                              setEditingAgent({
+                                  ...agent,
+                                  visibility: endpoint.visibility,
+                              })
+                        : endpoint.type === "proxy" ||
+                            endpoint.type === "endpoint_agent"
+                          ? () => setEditing(endpoint)
+                          : undefined
+                }
                 onDelete={() => {
                     if (agent) setDeletingAgent(agent);
                     else setDeleting(endpoint);
@@ -384,6 +412,32 @@ export function CommunityEndpoints({
                                         }
                                     />
                                 </FieldStack>
+                                <FieldStack
+                                    label="Brand icon URL"
+                                    action={
+                                        <Tooltip
+                                            ariaLabel="How to upload a brand icon"
+                                            className="text-xs text-theme-text-muted"
+                                            tapEnabled
+                                            content="Upload an SVG with polli upload icon.svg or POST to https://media.pollinations.ai/upload. Paste the returned URL."
+                                        >
+                                            Upload help
+                                        </Tooltip>
+                                    }
+                                >
+                                    <Input
+                                        type="url"
+                                        name="community-provider-icon-url"
+                                        value={providerIconUrl}
+                                        placeholder="https://media.pollinations.ai/…"
+                                        autoComplete="url"
+                                        onChange={(event) =>
+                                            setProviderIconUrl(
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                </FieldStack>
                             </div>
                             <div>
                                 <Button
@@ -393,6 +447,15 @@ export function CommunityEndpoints({
                                     }
                                 >
                                     {isSavingProvider ? "Saving…" : "Save"}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    disabled={
+                                        providerIsSaved || isSavingProvider
+                                    }
+                                    onClick={resetProviderChanges}
+                                >
+                                    Cancel
                                 </Button>
                             </div>
                         </form>
@@ -440,8 +503,8 @@ export function CommunityEndpoints({
                                     Create your first agent
                                 </p>
                                 <p className="text-sm text-theme-text-muted">
-                                    Build a managed agent with a system prompt,
-                                    model, and tools.
+                                    Build from a prompt and model, or deploy
+                                    agent.ts from GitHub.
                                 </p>
                             </Surface>
                         ) : (
@@ -452,10 +515,9 @@ export function CommunityEndpoints({
                         <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                             <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                Private agents do not need approval. To publish
-                                agents for everyone in <strong>/models</strong>,
-                                submit a {publisherAccessRequestLink} for agents
-                                or both.
+                                Private agents do not need approval. Public
+                                agents require publishing access. Request it
+                                through the {publisherAccessRequestLink}.
                             </span>
                         </p>
                     )}
@@ -545,15 +607,11 @@ export function CommunityEndpoints({
             <AgentDialog
                 key={editingAgent?.id ?? "agent-edit-closed"}
                 agent={editingAgent ?? undefined}
-                endpoint={
-                    editingAgent
-                        ? endpointByAgentId.get(editingAgent.id)
-                        : undefined
-                }
                 canPublish={canPublish}
                 open={!!editingAgent}
                 onOpenChange={(open) => !open && setEditingAgent(null)}
                 onSubmit={handleUpdateAgent}
+                onSync={handleSyncAgent}
             />
 
             <AgentDeleteConfirmation

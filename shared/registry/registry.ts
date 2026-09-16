@@ -1,4 +1,5 @@
 import { roundPollenLedgerAmount } from "../billing/precision.ts";
+import type { SafetyFeature } from "../schemas/safety.ts";
 import { AUDIO_SERVICES, type AudioModelName } from "./audio";
 import type { CostVariantContext, PricingInput } from "./cost-variants";
 
@@ -149,14 +150,18 @@ export type BillingAdjustment = {
 
 export type ModelDefinition = {
     aliases: string[];
+    /** Supplier attributed to this route's cost, not its publisher or API protocol.
+     * Must resolve in the Economics vendor registry; CI checks all bundled routes.
+     */
     provider: string;
     /** Exact gateway-side request cap per Pollinations user. Null/unset means uncapped. */
     perUserRpm?: number | null;
     /** Ordered model ids to try when this model's upstream fails. */
     fallbacks?: string[];
-    /** Override the shared fallback status list for this model. Network failures always retry. */
-    fallbackOnStatusCodes?: number[];
-    brand: string;
+    /** Input safety features callers cannot disable for this model. */
+    requiredSafetyFeatures?: SafetyFeature[];
+    /** Human-readable model publisher, e.g. "OpenAI" or "Anthropic". */
+    publisher: string;
     category: Category;
     cost: CostDefinition;
     // Named alternate rate sheets, merged over `cost` when selectCostVariant
@@ -185,17 +190,17 @@ export type ModelDefinition = {
     // User-facing metadata
     title: string; // Human display name, e.g. "FLUX.1 Kontext"
     brandUrl?: string;
+    brandIconUrl?: string;
     // Backward compatibility: public descriptions currently include the title
     // prefix ("Title - description"). Prefer `title` for display names.
     description?: string;
     inputModalities?: ModelInputModality[];
     outputModalities?: ModelOutputModality[];
     tools?: boolean;
+    /** Controls honored by this model through `/v1/chat/completions`. */
+    supportedParameters?: string[];
     reasoning?: boolean;
     search?: boolean;
-    // Supported Perplexity search-context sizes; first entry is the default.
-    // A single entry is fixed and ignores request overrides.
-    searchContextSizes?: ("low" | "high")[];
     codeExecution?: boolean;
     contextLength?: number;
     voices?: string[];
@@ -208,6 +213,8 @@ export type ModelDefinition = {
     // audio (e.g. Stable Audio) from per-character TTS, which share cost fields.
     flatRate?: boolean;
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
+    /** Internal provider route: hidden from discovery and rejected when selected by a caller. */
+    fallbackOnly?: boolean;
     supportedEndpoints?: string[]; // Override the default endpoints for specialized models
     // Supported output resolutions; first entry is the default.
     resolutions?: string[];
@@ -219,6 +226,10 @@ export type ModelDefinition = {
     durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
+    /** Output-token limit enforced on public requests and fallback routes. */
+    maxCompletionTokens?: number;
+    /** False when the model rejects JSON/structured output requests. */
+    supportsStructuredOutput?: boolean;
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.
@@ -532,7 +543,7 @@ export function resolveModelName(model: string): ModelName {
 }
 
 /**
- * Get all public model names
+ * Get all bundled registry model names, including hidden provider routes.
  */
 export function getModels(): ModelName[] {
     return Object.keys(MODEL_REGISTRY) as ModelName[];
@@ -569,8 +580,14 @@ function getModel3dModels(): Model3dName[] {
 function filterVisible<TModelName extends ModelName>(
     ids: TModelName[],
 ): TModelName[] {
-    return ids.filter((id) => !MODEL_REGISTRY[id]?.hidden);
+    return ids.filter((id) =>
+        isVisibleModelDefinition(MODEL_REGISTRY[id] as ModelDefinition),
+    );
 }
+
+export const isVisibleModelDefinition = (
+    definition: ModelDefinition,
+): boolean => definition.hidden !== true && definition.fallbackOnly !== true;
 
 export const getVisibleTextModels = () => filterVisible(getTextModels());
 export const getVisibleImageModels = () => filterVisible(getImageModels());

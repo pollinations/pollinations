@@ -24,7 +24,7 @@ jobs:
     env:
       POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_AUTOPOLLY_KEY }}
     steps:
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@v3
         id: token
         with:
           app-id: ${{ secrets.POLLY_BOT_APP_ID }}
@@ -32,7 +32,7 @@ jobs:
 
       - name: Check Authorization
         id: whitelist
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{ steps.token.outputs.token }}
           script: |
@@ -88,7 +88,7 @@ jobs:
           BOT_USER_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
           echo "user-id=$BOT_USER_ID" >> "$GITHUB_OUTPUT"
           mkdir -p $HOME/.claude-code-router
-          echo '{"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"'"${POLLINATIONS_TOKEN}"'","models":["claude-large","perplexity-reasoning","glm","kimi"]}],"Router":{"default":"pollinations,glm","thinking":"pollinations,kimi","webSearch":"pollinations,perplexity-reasoning"}}' > $HOME/.claude-code-router/config.json
+          echo '{"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"'"${POLLINATIONS_TOKEN}"'","models":["pollinations-router/polli","perplexity","gpt-5.6-luna"]}],"Router":{"default":"pollinations,pollinations-router/polli","background":"pollinations,gpt-5.6-luna","webSearch":"pollinations,perplexity"}}' > $HOME/.claude-code-router/config.json
 
           # Start router with Bun
           bunx @musistudio/claude-code-router start &
@@ -96,7 +96,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         if: steps.whitelist.outputs.authorized == 'true'
         with:
           fetch-depth: 0

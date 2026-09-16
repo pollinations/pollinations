@@ -5,6 +5,7 @@ import type { ModelCapability } from "./registry/model-info.ts";
 import {
     type Category,
     MODEL_INPUT_MODALITIES,
+    MODEL_OUTPUT_MODALITIES,
     type ModelDefinition,
     type ModelInputModality,
     type ModelOutputModality,
@@ -16,15 +17,17 @@ import {
     OPENAI_EMBEDDING_USAGE_PATHS,
     type OpenAIChatUsageType,
 } from "./registry/usage-headers.ts";
+import type { SafetyFeature } from "./schemas/safety.ts";
 
-export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
+export const COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
-export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 12 * 60 * 60 * 1000;
+export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 3 * 60 * 60 * 1000;
 export const COMMUNITY_ENDPOINT_MODALITIES = [
     "text",
     "image",
     "video",
     "transcription",
+    "speech",
     "embedding",
 ] as const;
 // How a community image endpoint is billed. "request" charges the fixed
@@ -71,6 +74,12 @@ const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 export type CommunityEndpointModality =
     (typeof COMMUNITY_ENDPOINT_MODALITIES)[number];
+
+export const CommunityEndpointApiSchema = z.enum([
+    "chat_completions",
+    "responses",
+]);
+export type CommunityEndpointApi = z.infer<typeof CommunityEndpointApiSchema>;
 
 export const MAX_COMMUNITY_CONTEXT_LENGTH = 10_000_000;
 
@@ -229,7 +238,7 @@ const COMMUNITY_TRANSCRIPTION_PRICE_FIELD = {
     rawUsagePaths: ["duration"],
 } as const;
 
-// Community video endpoints are billed from the duration Pollinations sends.
+// Video bills reported generated seconds, falling back to requested duration.
 const COMMUNITY_VIDEO_PRICE_FIELD = {
     key: "completionVideoPrice",
     usageType: "completionVideoSeconds",
@@ -237,6 +246,24 @@ const COMMUNITY_VIDEO_PRICE_FIELD = {
     priceUnit: "video_second",
     rawUsagePaths: ["duration"],
 } as const;
+
+// Community speech (TTS) endpoints bill the caller's input text by character,
+// mirroring first-party TTS: the gateway stores the request's character count
+// in completionAudioTokens and charges the per-1M completionAudioPrice. The
+// upstream returns binary audio with no usage object, so there is nothing to
+// read from the upstream response — the probe reports the metered characters
+// itself under the same completionAudioTokens key.
+const COMMUNITY_SPEECH_PRICE_FIELD = {
+    key: "completionAudioPrice",
+    usageType: "completionAudioTokens",
+    label: "Generated audio",
+    priceUnit: "million",
+    rawUsagePaths: ["completionAudioTokens"],
+} as const;
+
+const COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS = [
+    COMMUNITY_SPEECH_PRICE_FIELD,
+] as const;
 
 export const COMMUNITY_ENDPOINT_PRICE_FIELDS = [
     ...COMMUNITY_TEXT_PRICE_FIELDS,
@@ -273,7 +300,8 @@ export type CommunityEndpointPriceField =
     | (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]
     | (typeof COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS)[number]
     | (typeof COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS)[number]
-    | (typeof COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS)[number];
+    | (typeof COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS)[number]
+    | (typeof COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS)[number];
 
 type CommunityModalitySpec = {
     category: Category;
@@ -331,6 +359,14 @@ export const COMMUNITY_MODALITY_SPEC = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
         restrictDefinitionEndpoints: true,
         priceFields: COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS,
+    },
+    speech: {
+        category: "audio",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        supportedEndpoints: ["/v1/audio/speech"],
+        restrictDefinitionEndpoints: true,
+        priceFields: COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS,
     },
     embedding: {
         category: "embedding",
@@ -452,6 +488,7 @@ export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
     if (value === "transcription") return "transcription";
+    if (value === "speech") return "speech";
     if (value === "video") return "video";
     if (value === "image") return "image";
     if (value === "embedding") return "embedding";
@@ -503,16 +540,18 @@ export type CommunityEndpointVisibility =
 export const LISTING_TYPES = [
     "proxy",
     "prompt_agent",
+    "code_agent",
     "endpoint_agent",
 ] as const;
 
-// Prompt agents all share one deployment-specific worker. Store this safe,
-// environment-neutral URL in the common target column, then replace it with
-// AGENT_RUNTIME_BASE_URL when a row crosses the API/runtime boundary. The
-// reserved .invalid host guarantees a missed replacement cannot call another
-// environment by accident.
+// Prompt agents execute inside Gen and have no upstream URL. The common target
+// column remains required for every listing, so store this safe sentinel and
+// replace it with Gen's public API URL only when presenting the row to callers.
+// The reserved .invalid host guarantees it can never become a real target.
 export const PROMPT_AGENT_BASE_URL_PLACEHOLDER =
     "https://agent-runtime.invalid/api/agent-runtime/v1";
+export const CODE_AGENT_BASE_URL_PLACEHOLDER =
+    "https://code-agent-runtime.invalid/v1/responses";
 
 export type ListingType = (typeof LISTING_TYPES)[number];
 
@@ -534,6 +573,8 @@ const StoredCommunityEndpointPricesSchema = z.object(
 export const ProxyListingPayloadSchema = z
     .object({
         bearerTokenCiphertext: z.string().min(1),
+        // Media listings have no text API and do not need a data migration.
+        api: CommunityEndpointApiSchema.nullable().default(null),
         // Owner-set: callers may only spend Paid Pollen on this model. Rows
         // from before paid-only support are public-spend by default.
         paidOnly: z.boolean().default(false),
@@ -547,6 +588,14 @@ export const ProxyListingPayloadSchema = z
         advertised: CommunityEndpointAdvertisedSchema.optional(),
         prices: StoredCommunityEndpointPricesSchema,
     })
+    .refine(
+        (payload) => (payload.modality === "text") === (payload.api !== null),
+        {
+            path: ["api"],
+            message:
+                "Text models require an API; other modalities do not accept one",
+        },
+    )
     .transform(({ advertised: storedAdvertised, ...payload }) => {
         const advertised = normalizeCommunityEndpointAdvertised(
             storedAdvertised,
@@ -565,8 +614,8 @@ export const ProxyListingPayloadSchema = z
 export type ProxyListingPayload = z.infer<typeof ProxyListingPayloadSchema>;
 
 /**
- * An agent Enter runs itself. Its row id is also the model sent to the shared
- * runtime, which loads this configuration from the same row.
+ * A managed prompt agent Gen runs locally. Its row id is also the model used
+ * to load this configuration from the same row.
  */
 export const BuiltinMcpServerIdSchema = z.enum(MCP_SERVER_IDS);
 export const PromptAgentConfigSchema = z.object({
@@ -585,6 +634,51 @@ export const PromptAgentInputSchema = PromptAgentConfigSchema.strict();
 
 export type PromptAgentListingPayload = z.infer<typeof PromptAgentConfigSchema>;
 
+const GitHubRepositorySchema = z
+    .string()
+    .trim()
+    .url()
+    .transform((value, context) => {
+        const url = new URL(value);
+        const parts = url.pathname
+            .replace(/\.git$/, "")
+            .split("/")
+            .filter(Boolean);
+        if (
+            url.protocol !== "https:" ||
+            url.hostname !== "github.com" ||
+            url.username ||
+            url.password ||
+            url.port ||
+            url.search ||
+            url.hash ||
+            parts.length !== 2
+        ) {
+            context.addIssue({
+                code: "custom",
+                message: "Repository must be an HTTPS GitHub repository URL",
+            });
+            return z.NEVER;
+        }
+        return `https://github.com/${parts[0]}/${parts[1]}`;
+    });
+
+/** Public GitHub source selected when a code agent is created. */
+export const CodeAgentInputSchema = z
+    .object({
+        repository: GitHubRepositorySchema.describe(
+            "Public GitHub repository containing agent.ts at its root.",
+        ),
+    })
+    .strict();
+
+/** Immutable GitHub source revision currently deployed for a code agent. */
+export const CodeAgentConfigSchema = CodeAgentInputSchema.extend({
+    deployedCommitSha: z.string().regex(/^[0-9a-f]{40}$/),
+}).strict();
+
+export type CodeAgentListingPayload = z.infer<typeof CodeAgentConfigSchema>;
+
 /**
  * An agent on the owner's own server. It is sent a run token rather than a
  * credential. The rate limit remains gateway policy, not an upstream secret.
@@ -592,6 +686,17 @@ export type PromptAgentListingPayload = z.infer<typeof PromptAgentConfigSchema>;
 export const EndpointAgentListingPayloadSchema = z
     .object({
         perUserRpm: z.number().finite().positive().nullable().default(null),
+        api: CommunityEndpointApiSchema,
+        inputModalities: z
+            .array(z.enum(MODEL_INPUT_MODALITIES))
+            .min(1)
+            .optional()
+            .describe("Input types accepted by the agent. Defaults to text."),
+        outputModalities: z
+            .array(z.enum(MODEL_OUTPUT_MODALITIES))
+            .min(1)
+            .optional()
+            .describe("Output types produced by the agent. Defaults to text."),
     })
     .strict();
 
@@ -602,12 +707,14 @@ export type EndpointAgentListingPayload = z.infer<
 export type ListingPayloadByType = {
     proxy: ProxyListingPayload;
     prompt_agent: PromptAgentListingPayload;
+    code_agent: CodeAgentListingPayload;
     endpoint_agent: EndpointAgentListingPayload;
 };
 
 const LISTING_PAYLOAD_SCHEMA_BY_TYPE = {
     proxy: ProxyListingPayloadSchema,
     prompt_agent: PromptAgentConfigSchema,
+    code_agent: CodeAgentConfigSchema,
     endpoint_agent: EndpointAgentListingPayloadSchema,
 } as const;
 
@@ -717,6 +824,7 @@ type CommunityEndpointRuntimeBase = {
     description: string | null;
     providerName?: string | null;
     providerUrl?: string | null;
+    providerIconUrl?: string | null;
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     inputModalities: ModelInputModality[] | null;
@@ -724,8 +832,10 @@ type CommunityEndpointRuntimeBase = {
     // All variants resolve these when the row is read, so routing never has
     // to know which kind it is holding.
     baseUrl: string;
+    api: CommunityEndpointApi | null;
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
+    requiredSafetyFeatures?: SafetyFeature[];
     paidOnly: boolean;
     // Exact gateway-side cap per Pollinations user. Null delegates capacity
     // limits to the upstream, whose 429 then remains a model failure.
@@ -744,29 +854,36 @@ export type ProxyCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
     advertised?: CommunityEndpointAdvertised;
 };
 
-/** An agent Enter runs on its own runtime, named by its listing id. */
+/** An agent Gen runs locally, named by its listing id. */
 export type PromptAgentCommunityEndpointRuntime =
     CommunityEndpointRuntimeBase & {
         type: "prompt_agent";
     };
 
+/** An agent whose JavaScript module runs in an isolated dispatch Worker. */
+export type CodeAgentCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
+    type: "code_agent";
+};
+
 /** An agent on the owner's own server, sent a run token instead of a key. */
 export type EndpointAgentCommunityEndpointRuntime =
     CommunityEndpointRuntimeBase & {
         type: "endpoint_agent";
+        outputModalities?: ModelOutputModality[];
     };
 
 export type CommunityEndpointRuntime =
     | ProxyCommunityEndpointRuntime
     | PromptAgentCommunityEndpointRuntime
+    | CodeAgentCommunityEndpointRuntime
     | EndpointAgentCommunityEndpointRuntime;
 
 /**
  * Whether calls to this endpoint spend the caller's balance downstream.
  *
- * Both agent kinds do — one runs here, one on the owner's server, and either
- * way the work is charged to whoever called. A proxy never does: its owner
- * pays their own upstream and charges the caller a declared price. This is the
+ * Every agent kind does: its work is charged to whoever called. A proxy never
+ * does: its owner pays their own upstream and charges the caller a declared
+ * price. This is the
  * fact that decides which credential goes on the wire, so it has one name.
  */
 export function usesAgentRunToken(endpoint: CommunityEndpointRuntime): boolean {
@@ -781,9 +898,12 @@ export type CommunityModelDefinitionInput = {
     description: string | null;
     providerName?: string | null;
     providerUrl?: string | null;
+    providerIconUrl?: string | null;
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[] | null;
+    outputModalities?: ModelOutputModality[];
+    requiredSafetyFeatures?: SafetyFeature[];
     fallbacks?: string[];
     advertised?: CommunityEndpointAdvertised | null;
     hidden?: boolean;
@@ -808,17 +928,14 @@ export function communityModelId(
     ownerGithubUsername: string,
     modelName: string,
 ): string {
-    return `${ownerGithubUsername}/${modelName}`;
+    return `${COMMUNITY_MODEL_PREFIX}${ownerGithubUsername}/${modelName}`;
 }
 
 export function legacyCommunityModelId(
     ownerGithubUsername: string,
     modelName: string,
 ): string {
-    return `${LEGACY_COMMUNITY_MODEL_PREFIX}${communityModelId(
-        ownerGithubUsername,
-        modelName,
-    )}`;
+    return `${ownerGithubUsername}/${modelName}`;
 }
 
 export function normalizeCommunityEndpointBearerToken(value: string): string {
@@ -854,8 +971,8 @@ export function isCommunityEndpointOwnerAllowed(
 export function parseCommunityModelId(
     model: string,
 ): CommunityModelParts | null {
-    const value = model.startsWith(LEGACY_COMMUNITY_MODEL_PREFIX)
-        ? model.slice(LEGACY_COMMUNITY_MODEL_PREFIX.length).trim()
+    const value = model.startsWith(COMMUNITY_MODEL_PREFIX)
+        ? model.slice(COMMUNITY_MODEL_PREFIX.length).trim()
         : model.trim();
     const separator = value.indexOf("/");
     if (separator <= 0) return null;
@@ -955,8 +1072,9 @@ export function communityModelDefinition(
         aliases,
         provider: "community",
         perUserRpm: endpoint.perUserRpm,
-        brand: providerName || "Community",
+        publisher: providerName || "Community",
         brandUrl: providerName && providerUrl ? providerUrl : undefined,
+        brandIconUrl: endpoint.providerIconUrl ?? undefined,
         category: spec.category,
         cost: communityPriceDefinition(endpoint, modality, imagePricing),
         priceMultiplier: 1,
@@ -964,7 +1082,9 @@ export function communityModelDefinition(
         title: endpoint.title,
         description: description || undefined,
         inputModalities,
-        outputModalities: [...spec.outputModalities],
+        outputModalities: endpoint.outputModalities ?? [
+            ...spec.outputModalities,
+        ],
         ...(spec.restrictDefinitionEndpoints
             ? {
                   supportedEndpoints: communityEndpointSupportedEndpoints(
@@ -973,6 +1093,7 @@ export function communityModelDefinition(
                   ),
               }
             : {}),
+        requiredSafetyFeatures: endpoint.requiredSafetyFeatures,
         hidden: endpoint.hidden,
         ...(endpoint.fallbacks?.length
             ? { fallbacks: endpoint.fallbacks }

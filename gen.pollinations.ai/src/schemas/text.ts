@@ -27,9 +27,9 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
         description:
             "Text model to use. See /v1/models or /text/models for the full list of available models.",
     }),
-    seed: z.coerce.number().int().min(-1).optional().default(0).meta({
+    seed: z.coerce.number().int().min(-1).optional().meta({
         description:
-            "Seed for reproducible results. -1 maps to the stable compatibility seed.",
+            "Optional seed for reproducible results on models that support it. Omitted by default. -1 maps to the stable compatibility seed.",
     }),
     system: z.string().optional().meta({
         description:
@@ -41,7 +41,7 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
     }),
     temperature: z.coerce.number().optional().meta({
         description:
-            "Controls randomness. Lower values (e.g. 0.2) produce more focused output, higher values (e.g. 1.5) produce more creative output. Range: 0.0 to 2.0.",
+            "Controls randomness. Lower values (e.g. 0.2) produce more focused output, higher values (e.g. 1.5) produce more creative output. Range: 0.0 to 2.0. Sampling controls are ignored for model families that do not consistently support them, regardless of reasoning mode.",
     }),
     top_p: FloatQueryParamSchema,
     presence_penalty: FloatQueryParamSchema,

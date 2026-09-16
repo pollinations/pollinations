@@ -34,7 +34,13 @@ describe("generateHeaders", () => {
 
     it("translates a Portkey config into x-portkey-* headers", async () => {
         const { options } = await generateHeaders([], {
-            modelConfig: { provider: "perplexity-ai", authKey: "test-key" },
+            modelConfig: {
+                provider: "perplexity-ai",
+                authKey: "test-key",
+                supportsMaxCompletionTokens: true,
+                supportsStreamOptions: false,
+                requiresBase64ImageUrls: true,
+            },
         });
 
         expect(options.additionalHeaders).toEqual({

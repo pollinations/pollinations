@@ -4,8 +4,8 @@ import {
     buildUrl,
     createMCPResponse,
     createTextContent,
-    fetchAndUploadMedia,
     fetchJsonWithAuth,
+    fetchMediaLink,
 } from "../utils/coreUtils.js";
 
 function publicAudioUrl(source) {
@@ -79,9 +79,8 @@ async function generateAudio(params, context) {
     requireApiKey(context);
 
     const { text, ...options } = params;
-    const { contentType, mediaUrl } = await fetchAndUploadMedia(
+    const { contentType, mediaUrl } = await fetchMediaLink(
         buildUrl(`/audio/${encodeURIComponent(text)}`, options),
-        {},
         context,
     );
     return createMCPResponse([

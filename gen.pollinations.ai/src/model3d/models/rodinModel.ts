@@ -1,6 +1,6 @@
 import { toDataUri } from "../../image/utils/imageDownload.ts";
 import type { Model3dGenerationResult } from "../createAndReturnModel3d.ts";
-import { downloadMesh, requirePrompt, toHttpError } from "../modelUtils.ts";
+import { downloadMesh, requirePrompt, toUpstreamError } from "../modelUtils.ts";
 import type { Model3dParams } from "../params.ts";
 import { extractFalModelMesh, runFalJob } from "./falClient.ts";
 
@@ -15,7 +15,7 @@ export async function callRodinFalAPI(
     params: Model3dParams,
 ): Promise<Model3dGenerationResult> {
     const hasImages = params.image.length > 0;
-    if (!hasImages) requirePrompt(prompt, "hyper3d-rodin");
+    if (!hasImages) requirePrompt(prompt, "hyper3d/rodin-2.5");
 
     try {
         const imageUrls = hasImages
@@ -50,6 +50,6 @@ export async function callRodinFalAPI(
             contentType: "model/gltf-binary",
         };
     } catch (err) {
-        throw toHttpError(err);
+        throw toUpstreamError(err);
     }
 }

@@ -13,18 +13,7 @@ export function withInlineGenerationCoordinator(
                 async startAndWait(job: GenerationJob) {
                     let execution = active.get(name);
                     if (!execution) {
-                        execution = executeGeneration(
-                            new Request(job.request.url, {
-                                method: job.request.method,
-                                headers: job.request.headers,
-                                body: job.request.body?.slice().buffer,
-                            }),
-                            job.auth,
-                            job.requestId,
-                            job.balanceCheckResult,
-                            job.apiKeyBudgetEstimate,
-                            coordinated,
-                        );
+                        execution = executeGeneration(job, coordinated);
                         active.set(name, execution);
                     }
                     try {

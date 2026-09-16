@@ -22,9 +22,11 @@ export type PricingInput = {
     hasReferenceVideo?: boolean;
     maxImageDimension?: number;
     megapixels?: number;
-    searchContextSize?: "low" | "high";
+    searchContextSize?: "low" | "medium" | "high";
     hasDiarization?: boolean;
     hasPrompt?: boolean;
+    /** Provider confirmed this response used an explicit prompt-cache entry. */
+    hasExplicitCacheHit?: boolean;
 };
 
 export type CostVariantContext = {

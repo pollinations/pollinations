@@ -1,3 +1,4 @@
+import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
 import type { ModelInfo } from "@shared/registry/model-info.ts";
 import {
     formatPrice,
@@ -76,6 +77,7 @@ export function parseModelCatalogResponse(data: unknown): ApiModelInfo[] {
 }
 
 let modelCatalogPromise: Promise<ApiModelInfo[]> | null = null;
+let modelCatalogExpiresAt = 0;
 
 export function mergeModelCatalogs(
     catalogs: readonly ApiModelInfo[][],
@@ -91,7 +93,9 @@ export function mergeModelCatalogs(
 }
 
 async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
-    const response = await fetch(url, {
+    const catalogUrl = new URL(url);
+    catalogUrl.searchParams.set("status", "all");
+    const response = await fetch(catalogUrl.toString(), {
         cache: "no-store",
         signal: AbortSignal.timeout(15_000),
     });
@@ -104,7 +108,11 @@ async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
 export async function fetchModelCatalog(
     options: { refresh?: boolean } = {},
 ): Promise<ApiModelInfo[]> {
-    if (options.refresh) modelCatalogPromise = null;
+    // Health changes over time; share requests without keeping a snapshot forever.
+    if (options.refresh || Date.now() >= modelCatalogExpiresAt) {
+        modelCatalogPromise = null;
+        modelCatalogExpiresAt = Date.now() + 60_000;
+    }
     modelCatalogPromise ??= import("../../config.ts")
         .then(async ({ config }) => {
             const catalogs = await Promise.all([
@@ -192,20 +200,28 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
 
     return {
         name,
+        aliases: model.aliases,
         type: getCatalogCategory(model),
         community: model.community,
+        health: model.health,
         agent: model.agent,
         baseModel: model.base_model,
         perUserRpm: model.per_user_rpm,
         displayName: getCatalogDisplayName(model, name),
         description: getCatalogDescriptionWithoutName(model),
-        brand: model.brand,
+        publisher: model.publisher,
         brandUrl: model.brand_url,
+        brandIconUrl: isCommunityProviderIconUrl(model.brand_icon_url)
+            ? model.brand_icon_url
+            : undefined,
         inputModalities: model.input_modalities,
         outputModalities: model.output_modalities,
+        supportedEndpoints: model.supported_endpoints,
         capabilities: model.capabilities ?? [],
         paidOnly: model.paid_only,
+        // Agents may spend Pollen downstream even when their wrapper is free.
         free:
+            !model.agent &&
             model.pricing !== undefined &&
             inputSortPrice === undefined &&
             outputSortPrice === undefined,

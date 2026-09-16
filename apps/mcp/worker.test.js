@@ -69,7 +69,7 @@ test("serves health and requires bearer auth", async () => {
     assert.equal(oldEndpoint.status, 404);
 });
 
-test("serves modern and legacy clients without sessions", async () => {
+test("serves current and 2025 Streamable HTTP without sessions", async () => {
     const modern = await connectClient({
         versionNegotiation: { mode: "auto" },
     });
@@ -200,7 +200,7 @@ test("generateText uses the non-streaming chat completion contract", async (t) =
     await client.close();
 });
 
-test("uploads generated images and returns an MCP resource link", async (t) => {
+test("returns the image API's resource link without downloading or uploading", async (t) => {
     const originalFetch = globalThis.fetch;
     let generationBody;
     t.after(() => {
@@ -219,26 +219,10 @@ test("uploads generated images and returns an MCP resource link", async (t) => {
                 created: 1,
                 data: [
                     {
-                        url: "https://gen.pollinations.ai/image/a%20bee",
+                        url: "https://media.pollinations.ai/generated-image",
+                        media_type: "image/png",
                     },
                 ],
-            });
-        }
-        if (url === "https://gen.pollinations.ai/image/a%20bee") {
-            return new Response(new Uint8Array([1, 2, 3]), {
-                headers: { "Content-Type": "image/png" },
-            });
-        }
-        if (url === "https://media.pollinations.ai/upload") {
-            const file = init.body.get("file");
-            assert.equal(file.type, "image/png");
-            assert.deepEqual(
-                new Uint8Array(await file.arrayBuffer()),
-                new Uint8Array([1, 2, 3]),
-            );
-            assert.equal(init.body.get("tags"), null);
-            return Response.json({
-                url: "https://media.pollinations.ai/generated-image",
             });
         }
         throw new Error(`Unexpected URL: ${url}`);
@@ -261,14 +245,57 @@ test("uploads generated images and returns an MCP resource link", async (t) => {
         prompt: "a bee",
         response_format: "url",
     });
+    assert.deepEqual(JSON.parse(result.content[1].text), {
+        created: 1,
+        data: [
+            {
+                url: "https://media.pollinations.ai/generated-image",
+                media_type: "image/png",
+            },
+        ],
+    });
 
     await client.close();
 });
 
-test("proxies discovery and uploads generated audio, video, and 3D", async (t) => {
+test("reports a missing media link and cancels the body without uploading", async (t) => {
+    const originalFetch = globalThis.fetch;
+    let cancelled = false;
+    let calls = 0;
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+    globalThis.fetch = async (input) => {
+        calls++;
+        assert.equal(String(input), "https://gen.pollinations.ai/3d/a%20bee");
+        return new Response(
+            new ReadableStream({
+                cancel() {
+                    cancelled = true;
+                },
+            }),
+            { headers: { "Content-Type": "model/gltf-binary" } },
+        );
+    };
+
+    const client = await connectClient({
+        versionNegotiation: { mode: "auto" },
+    });
+    const result = await client.callTool({
+        name: "generate3D",
+        arguments: { prompt: "a bee" },
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /no public file URL/);
+    assert.equal(cancelled, true);
+    assert.equal(calls, 1);
+    await client.close();
+});
+
+test("proxies discovery and reuses audio, video, and 3D links without uploads", async (t) => {
     const originalFetch = globalThis.fetch;
     const seen = [];
-    const uploadedTypes = [];
+    const cancelled = [];
     t.after(() => {
         globalThis.fetch = originalFetch;
     });
@@ -302,26 +329,49 @@ test("proxies discovery and uploads generated audio, video, and 3D", async (t) =
             });
         }
         if (url.endsWith("/3d/a%20bee")) {
-            return new Response(new Uint8Array([1, 2, 3]), {
-                headers: { "Content-Type": "model/gltf-binary" },
-            });
+            return new Response(
+                new ReadableStream({
+                    cancel() {
+                        cancelled.push("3d");
+                    },
+                }),
+                {
+                    headers: {
+                        "Content-Type": "model/gltf-binary",
+                        Link: '<https://media.pollinations.ai/1>; rel="enclosure"',
+                    },
+                },
+            );
         }
         if (url.endsWith("/video/a%20bee?model=veo")) {
-            return new Response(new Uint8Array([4, 5, 6]), {
-                headers: { "Content-Type": "video/mp4" },
-            });
+            return new Response(
+                new ReadableStream({
+                    cancel() {
+                        cancelled.push("video");
+                    },
+                }),
+                {
+                    headers: {
+                        "Content-Type": "video/mp4",
+                        Link: '<https://media.pollinations.ai/2>; rel="enclosure"',
+                    },
+                },
+            );
         }
         if (url.endsWith("/audio/hello?model=speech-test")) {
-            return new Response(new Uint8Array([7, 8, 9]), {
-                headers: { "Content-Type": "audio/mpeg" },
-            });
-        }
-        if (url === "https://media.pollinations.ai/upload") {
-            const file = init.body.get("file");
-            uploadedTypes.push(file.type);
-            return Response.json({
-                url: `https://media.pollinations.ai/${uploadedTypes.length}`,
-            });
+            return new Response(
+                new ReadableStream({
+                    cancel() {
+                        cancelled.push("audio");
+                    },
+                }),
+                {
+                    headers: {
+                        "Content-Type": "audio/mpeg",
+                        Link: '<https://media.pollinations.ai/3>; rel="enclosure"',
+                    },
+                },
+            );
         }
         throw new Error(`Unexpected URL: ${url}`);
     };
@@ -387,11 +437,7 @@ test("proxies discovery and uploads generated audio, video, and 3D", async (t) =
         name: "Generated audio",
         mimeType: "audio/mpeg",
     });
-    assert.deepEqual(uploadedTypes, [
-        "model/gltf-binary",
-        "video/mp4",
-        "audio/mpeg",
-    ]);
+    assert.deepEqual(cancelled, ["3d", "video", "audio"]);
 
     assert.ok(
         seen.every(({ authorization }) => authorization === `Bearer ${TOKEN}`),

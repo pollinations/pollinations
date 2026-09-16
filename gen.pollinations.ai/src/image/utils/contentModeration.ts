@@ -1,5 +1,5 @@
 /**
- * Content-policy detection for upstream image/video providers.
+ * Content-policy detection for upstream generation providers.
  *
  * Providers (Alibaba DashScope, Replicate, Vertex AI Gemini, Azure Content
  * Safety) reject disallowed prompts, input images, or generated outputs with
@@ -24,6 +24,7 @@ const MODERATION_PATTERNS = [
     "inappropriate", // "... may contain inappropriate content"
     "content filter",
     "content polic", // "Content policy violation ..." (Vertex AI)
+    "content_policy_violation", // OpenAI-compatible error codes
     "contentmoderation", // Replicate "ContentModerationError" (one word —
     // deliberately NOT bare "moderation", which would also match infra
     // failures like "moderation service unavailable" and hide a real 5xx)
@@ -31,6 +32,8 @@ const MODERATION_PATTERNS = [
     "illegal material",
     "unsafe content", // Azure Content Safety "contains unsafe content"
     "nsfw", // Replicate Qwen Image Edit "... contained NSFW content ..."
+    "content_safety_violation", // Azure MAI image 400 body "code":"content_safety_violation"
+    "prohibited_content", // Gemini/OpenRouter text rejection
 ];
 
 // Provider-side blocks that quote content-policy wording but are NOT about this
@@ -80,6 +83,35 @@ export function firstContentPolicyMessage(
     return messages.find((message): message is string =>
         isContentPolicyViolation(message),
     );
+}
+
+/** Inspect error fields, not echoed prompts or inputs; keep the public body untouched. */
+export function providerErrorText(
+    body: string | null | undefined,
+): string | undefined {
+    if (!body) return undefined;
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(body);
+    } catch {
+        return body;
+    }
+    function messages(value: unknown): string[] {
+        if (typeof value === "string") return [value];
+        if (Array.isArray(value)) return value.flatMap(messages);
+        if (!value || typeof value !== "object") return [];
+        const error = value as Record<string, unknown>;
+        return [
+            "error",
+            "details",
+            "detail",
+            "message",
+            "msg",
+            "code",
+            "type",
+        ].flatMap((key) => messages(error[key]));
+    }
+    return messages(parsed).join("; ") || undefined;
 }
 
 /**

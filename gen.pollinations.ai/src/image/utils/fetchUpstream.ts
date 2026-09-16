@@ -1,8 +1,8 @@
-import { HttpError } from "@shared/http-error.ts";
+import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 
 type FetchUpstreamOptions = RequestInit & {
     /**
-     * Prefix for the error message thrown on non-ok responses.
+     * Prefix for transport failure messages (HTTP errors keep the provider message).
      * Defaults to "Upstream request failed".
      */
     errorLabel?: string;
@@ -14,9 +14,8 @@ type UpstreamFetcher = (
 ) => Promise<Response>;
 
 /**
- * fetch() wrapper that throws HttpError(status, ..., upstreamUrl) on non-ok
- * responses. Use for upstream backend calls where the URL should appear in
- * error reports (handler.ts threads it through to UpstreamError.requestUrl).
+ * Adds transport diagnostics and shares HTTP error handling with the other
+ * generation clients. Provider response bodies are preserved in full.
  *
  * Returns the Response on success. Caller is responsible for `await response.json()`
  * or similar — keeping body parsing in the caller preserves typing.
@@ -35,18 +34,12 @@ export async function fetchUpstream(
         // upstream context; rethrow with the URL so error tracking records
         // the host instead of a bare TypeError.
         const message = error instanceof Error ? error.message : String(error);
-        throw new HttpError(`${errorLabel}: ${message}`, 502, undefined, url);
+        throw UpstreamError.fromProvider(502, {
+            message: `${errorLabel}: ${message}`,
+            requestUrl: URL.parse(url) ?? undefined,
+            cause: error,
+        });
     }
 
-    if (!response.ok) {
-        const body = await response.text().catch(() => "");
-        throw new HttpError(
-            body ? `${errorLabel}: ${body}` : errorLabel,
-            response.status,
-            undefined,
-            url,
-        );
-    }
-
-    return response;
+    return ensureUpstreamOk(response, url);
 }

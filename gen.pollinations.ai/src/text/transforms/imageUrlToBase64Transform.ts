@@ -35,10 +35,14 @@ async function fetchImageAsBase64(
  * metadata stripping happens before provider delivery. GCS references are
  * internal provider-native objects that this worker cannot fetch directly.
  */
-function needsSanitization(url: string | undefined): boolean {
+function needsSanitization(
+    url: string | undefined,
+    requiresBase64ImageUrls: boolean,
+): boolean {
     if (!url) return false;
     if (url.startsWith("gs://")) return false;
-    return true;
+    if (url.startsWith("data:")) return true;
+    return requiresBase64ImageUrls;
 }
 
 interface ContentPart {
@@ -52,12 +56,13 @@ type ImageConversionContext = { imageCount: number; totalBytes: number };
 async function processContentPart(
     part: ContentPart,
     context: ImageConversionContext,
+    requiresBase64ImageUrls: boolean,
 ): Promise<ContentPart> {
     if (part.type !== "image_url" || !part.image_url?.url) {
         return part;
     }
 
-    if (!needsSanitization(part.image_url.url)) {
+    if (!needsSanitization(part.image_url.url, requiresBase64ImageUrls)) {
         return part;
     }
 
@@ -84,10 +89,13 @@ async function processContentPart(
 async function processMessageContent(
     content: ContentPart[],
     context: ImageConversionContext,
+    requiresBase64ImageUrls: boolean,
 ): Promise<ContentPart[]> {
     const processed: ContentPart[] = [];
     for (const part of content) {
-        processed.push(await processContentPart(part, context));
+        processed.push(
+            await processContentPart(part, context, requiresBase64ImageUrls),
+        );
     }
     return processed;
 }
@@ -104,7 +112,10 @@ export const imageUrlToBase64Transform: TransformFn = async (
 ) => {
     const config = options?.modelConfig as Record<string, unknown> | undefined;
     const provider = config?.provider as string | undefined;
-    const providerInfo = provider ?? "unknown-provider";
+    const requiresBase64ImageUrls = config?.requiresBase64ImageUrls === true;
+    const providerInfo =
+        provider ??
+        (requiresBase64ImageUrls ? "base64-required" : "unknown-provider");
     log(`Processing messages for ${providerInfo} image URL conversion`);
 
     const context: ImageConversionContext = {
@@ -121,6 +132,7 @@ export const imageUrlToBase64Transform: TransformFn = async (
         const processedContent = await processMessageContent(
             message.content as ContentPart[],
             context,
+            requiresBase64ImageUrls,
         );
         processedMessages.push({ ...message, content: processedContent });
     }

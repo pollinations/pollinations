@@ -4,6 +4,7 @@
     "version": "0.0.1",
     "type": "module",
     "scripts": {
+        "test": "node --test src/model-data.test.js",
         "dev": "vite",
         "predev": "npm run build --prefix ../../packages/sdk && npm run build --prefix ../../packages/ui",
         "build": "vite build",

@@ -1,6 +1,6 @@
 import { Popover } from "@ark-ui/react/popover";
 import { Portal } from "@ark-ui/react/portal";
-import type { FC, ReactNode } from "react";
+import type { CSSProperties, FC, ReactNode } from "react";
 import { useState } from "react";
 import { cn } from "../lib/cn.ts";
 
@@ -13,20 +13,25 @@ export type DropdownProps = {
     children: ReactNode | ((close: () => void) => ReactNode);
     /** Panel placement relative to the trigger. */
     align?: "start" | "end";
+    side?: "top" | "bottom";
     /** Controlled open state. Omit to let the Dropdown manage its own. */
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
     /** Appended after the surface (widths, padding, max-height…). */
     className?: string;
+    /** Theme variables for portaled content that cannot inherit from its trigger. */
+    panelStyle?: CSSProperties;
 };
 
 export const Dropdown: FC<DropdownProps> = ({
     trigger,
     children,
     align = "start",
+    side = "bottom",
     open: openProp,
     onOpenChange,
     className,
+    panelStyle,
 }) => {
     const [internalOpen, setInternalOpen] = useState(false);
     const isControlled = openProp !== undefined;
@@ -42,13 +47,14 @@ export const Dropdown: FC<DropdownProps> = ({
             open={open}
             onOpenChange={(details) => setOpen(details.open)}
             positioning={{
-                placement: align === "end" ? "bottom-end" : "bottom-start",
+                placement: `${side}-${align}`,
             }}
         >
             <Popover.Trigger asChild>{trigger(open)}</Popover.Trigger>
             <Portal>
                 <Popover.Positioner>
                     <Popover.Content
+                        style={panelStyle}
                         className={cn(
                             "polli:z-[120] polli:overflow-hidden polli:focus:outline-none",
                             DEFAULT_PANEL,

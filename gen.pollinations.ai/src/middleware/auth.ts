@@ -7,6 +7,7 @@ import {
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import { canonicalizeModelPermissionIds } from "@shared/registry/visible-model-ids.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -52,7 +53,20 @@ function installAuth(
         agentRun?: AgentRunClaims;
     },
 ): void {
-    const { user, apiKey, agentRun } = authResult;
+    const { user, agentRun } = authResult;
+    // Normalize the request snapshot once for generation, catalogs, realtime
+    // and fallback filtering. Stored permissions are canonicalized on writes.
+    const apiKey = authResult.apiKey?.permissions?.models
+        ? {
+              ...authResult.apiKey,
+              permissions: {
+                  ...authResult.apiKey.permissions,
+                  models: canonicalizeModelPermissionIds(
+                      authResult.apiKey.permissions.models,
+                  ),
+              },
+          }
+        : authResult.apiKey;
 
     const requireUser = (): AuthUser => {
         if (!user) {

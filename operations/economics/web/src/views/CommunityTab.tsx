@@ -161,17 +161,13 @@ export function CommunityTab({
                                 align="center"
                                 {...headerProps("usageMix")}
                             >
-                                <HeaderHint hint="Usage mix — amber is gross Paid Pollen and green is Quest Pollen.">
-                                    Usage mix
-                                </HeaderHint>
+                                Usage mix
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
                                 {...headerProps("questPollenUsd")}
                             >
-                                <HeaderHint hint="Quest Pollen consumed. This is free usage, not revenue.">
-                                    Quest used
-                                </HeaderHint>
+                                Quest used
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>

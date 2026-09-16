@@ -4,6 +4,7 @@ import {
     CAPABILITY_ICON,
     getCommunityModelIcon,
     MODALITY_ICON,
+    ModelBrandIcon,
 } from "./model-icons.tsx";
 import {
     type DisplayCapability,
@@ -189,29 +190,10 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     return (
         <div className="rounded-xl mb-1 bg-surface-opaque shadow-sm transition-colors hover:bg-surface-opaque/90">
             <div className="flex items-center gap-2.5 p-4">
-                {CommunityModelIcon ? (
-                    <CommunityModelIcon
-                        aria-hidden="true"
-                        className="h-8 w-8 shrink-0 text-ink-900 opacity-55"
-                    />
-                ) : (
-                    brandLogoPath && (
-                        <span
-                            aria-hidden="true"
-                            className="h-8 w-8 shrink-0 bg-current opacity-55"
-                            style={{
-                                maskImage: `url(${brandLogoPath})`,
-                                WebkitMaskImage: `url(${brandLogoPath})`,
-                                maskRepeat: "no-repeat",
-                                WebkitMaskRepeat: "no-repeat",
-                                maskPosition: "center",
-                                WebkitMaskPosition: "center",
-                                maskSize: "contain",
-                                WebkitMaskSize: "contain",
-                            }}
-                        />
-                    )
-                )}
+                <ModelBrandIcon
+                    model={model}
+                    className="h-8 w-8 shrink-0 opacity-55"
+                />
                 {hasLeadingIcon && (
                     <span
                         aria-hidden="true"
@@ -240,14 +222,14 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                         )}
                     </div>
                     <ModelId name={model.name} showCopyIcon />
-                    {model.brandUrl && model.brand && (
+                    {model.brandUrl && model.publisher && (
                         <a
                             href={model.brandUrl}
                             target="_blank"
                             rel="noreferrer"
                             className="w-fit max-w-full truncate text-xs text-theme-text-muted underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
                         >
-                            {model.brand}
+                            {model.publisher}
                         </a>
                     )}
                     <div className="flex min-w-0 flex-col gap-0.5">
@@ -257,20 +239,17 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 capabilities={capabilities}
                                 modalityLabel={modalityLabel}
                                 capabilityLabel={capabilityLabel}
+                                perUserRpm={model.perUserRpm}
                             />
                             <ModelPricingControls
                                 model={model}
                                 pricing={pricing}
                             />
                         </div>
-                        {model.perUserRpm != null && (
-                            <div className="flex min-w-0 items-center">
-                                <PerUserRateLimit value={model.perUserRpm} />
-                            </div>
-                        )}
                     </div>
                     <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
                         <ModelStatusChips
+                            health={model.health}
                             showNew={showNew}
                             showAlpha={showAlpha}
                         />
@@ -316,6 +295,7 @@ type MobileMetadataBadgesProps = {
     capabilities: DisplayCapability[];
     modalityLabel: string;
     capabilityLabel: string;
+    perUserRpm?: number | null;
 };
 
 const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
@@ -323,8 +303,13 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
     capabilities,
     modalityLabel,
     capabilityLabel,
+    perUserRpm,
 }) => {
-    if (inputModalities.length === 0 && capabilities.length === 0) {
+    if (
+        inputModalities.length === 0 &&
+        capabilities.length === 0 &&
+        perUserRpm == null
+    ) {
         return null;
     }
 
@@ -376,6 +361,11 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
                     </span>
                 </Tooltip>
             )}
+            {(inputModalities.length > 0 || capabilities.length > 0) &&
+                perUserRpm != null && (
+                    <span className="h-3.5 w-px bg-current opacity-30" />
+                )}
+            <PerUserRateLimit value={perUserRpm} />
         </div>
     );
 };

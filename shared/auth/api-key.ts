@@ -1,6 +1,6 @@
+import { apiKey } from "@better-auth/api-key";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { apiKey } from "better-auth/plugins";
 import { eq, getTableColumns } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { alias } from "drizzle-orm/sqlite-core";
@@ -12,6 +12,7 @@ import {
     verifyAgentRunToken,
 } from "./agent-run-token.ts";
 import { parseMetadata } from "./api-key-metadata.ts";
+import { isUserBanned } from "./ban.ts";
 import { parseGithubIdList } from "./github-id-list.ts";
 
 const PUBLISHABLE_KEY_PREFIX = "pk";
@@ -203,8 +204,7 @@ export function assertNotBanned(user: {
     banExpires?: Date | string | null;
     banReason?: string | null;
 }): void {
-    if (user.banned !== true) return;
-    if (user.banExpires && new Date(user.banExpires) <= new Date()) return;
+    if (!isUserBanned(user)) return;
     throw new BannedAccountError(
         user.banReason ? `Account banned: ${user.banReason}` : "Account banned",
     );
@@ -289,24 +289,30 @@ async function loadActiveApiKeyAuthResult(opts: {
 }): Promise<ApiKeyAuthResult | null> {
     const db = drizzle(opts.env.DB, { schema });
     const byopClientKey = alias(schema.apikey, "byop_client_key");
+    const byopOwner = alias(schema.user, "byop_owner");
     const row = await db
         .select({
             apiKey: getTableColumns(schema.apikey),
             user: getTableColumns(schema.user),
             byopClientName: byopClientKey.name,
-            byopClientUserId: byopClientKey.userId,
+            byopOwner: {
+                banned: byopOwner.banned,
+                banExpires: byopOwner.banExpires,
+            },
+            byopClientUserId: byopClientKey.referenceId,
             byopClientPrefix: byopClientKey.prefix,
             byopClientEnabled: byopClientKey.enabled,
             byopClientExpiresAt: byopClientKey.expiresAt,
             byopClientMetadata: byopClientKey.metadata,
         })
         .from(schema.apikey)
-        .innerJoin(schema.user, eq(schema.user.id, schema.apikey.userId))
+        .innerJoin(schema.user, eq(schema.user.id, schema.apikey.referenceId))
         .leftJoin(
             byopClientKey,
             eq(byopClientKey.id, schema.apikey.byopClientKeyId),
         )
         .where(eq(schema.apikey.id, opts.apiKeyId))
+        .leftJoin(byopOwner, eq(byopOwner.id, byopClientKey.referenceId))
         .get();
 
     if (
@@ -318,6 +324,7 @@ async function loadActiveApiKeyAuthResult(opts: {
     }
 
     assertNotBanned(row.user);
+    if (row.byopOwner) assertNotBanned(row.byopOwner);
     assertStagingAccess(opts.env, row.user);
 
     return {

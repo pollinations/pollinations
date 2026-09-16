@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { isCommunityProviderIconUrl } from "../community-provider-icon.ts";
+import { SAFETY_FEATURES } from "../schemas/safety.ts";
+import { ModelHealthSchema } from "./model-health.ts";
 import { publicPriceInfo, toFixedPoint } from "./public-pricing";
 import {
     type BillingAdjustmentRule,
@@ -38,9 +41,18 @@ export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),
     category: z.enum(MODEL_CATEGORIES),
-    brand: z.string(),
+    publisher: z
+        .string()
+        .describe("Human-readable model publisher, not the inference provider"),
     brand_url: z.string().url().optional(),
-    community: z.boolean().optional(),
+    brand_icon_url: z
+        .string()
+        .refine(
+            isCommunityProviderIconUrl,
+            "Invalid community provider icon URL",
+        )
+        .optional(),
+    community: z.boolean(),
     agent: z.boolean().optional(),
     base_model: z.string().optional(),
     per_user_rpm: z.number().positive().nullable().optional(),
@@ -87,6 +99,7 @@ export const ModelInfoSchema = z.object({
     description: z.string().optional(),
     input_modalities: z.array(z.enum(MODEL_INPUT_MODALITIES)).optional(),
     output_modalities: z.array(z.enum(MODEL_OUTPUT_MODALITIES)).optional(),
+    required_safety: z.array(z.enum(SAFETY_FEATURES)).optional(),
     supported_endpoints: z.array(z.string()).optional(),
     video_capabilities: z.array(z.enum(VIDEO_CAPABILITIES)).optional(),
     min_duration: z.number().positive().optional(),
@@ -97,7 +110,27 @@ export const ModelInfoSchema = z.object({
     max_reference_images: z.number().int().positive().optional(),
     max_reference_videos: z.number().int().positive().optional(),
     capabilities: z.array(ModelCapabilitySchema),
+    supported_parameters: z
+        .array(z.string())
+        .optional()
+        .describe(
+            "Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`.",
+        ),
     tools: z.boolean().optional(),
+    supports_structured_output: z
+        .boolean()
+        .optional()
+        .describe(
+            "Whether JSON and JSON-schema output are supported; omitted when unverified.",
+        ),
+    max_completion_tokens: z
+        .number()
+        .int()
+        .positive()
+        .optional()
+        .describe(
+            "Maximum requested output tokens, including max_tokens, max_completion_tokens and max_output_tokens.",
+        ),
     reasoning: z.boolean().optional(),
     context_length: z.number().optional(),
     voices: z.array(z.string()).optional(),
@@ -115,6 +148,7 @@ export const ModelInfoSchema = z.object({
     alpha: z.boolean().optional(),
     flat_rate: z.boolean().optional(),
     added_date: z.number().optional(),
+    health: ModelHealthSchema.optional(),
 });
 
 export type ModelInfo = z.infer<typeof ModelInfoSchema>;
@@ -163,9 +197,10 @@ export function modelInfoFromDefinition(
         name,
         aliases: service.aliases,
         category: service.category,
-        brand: service.brand,
+        publisher: service.publisher,
         brand_url: service.brandUrl,
-        community: options.community || undefined,
+        brand_icon_url: service.brandIconUrl,
+        community: options.community ?? false,
         agent: options.agent || undefined,
         per_user_rpm: service.perUserRpm,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
@@ -201,6 +236,7 @@ export function modelInfoFromDefinition(
         description: service.description,
         input_modalities: service.inputModalities,
         output_modalities: service.outputModalities,
+        required_safety: service.requiredSafetyFeatures,
         supported_endpoints: service.supportedEndpoints,
         video_capabilities: service.videoCapabilities,
         min_duration: service.minDuration,
@@ -213,7 +249,10 @@ export function modelInfoFromDefinition(
         max_reference_images: service.maxReferenceImages,
         max_reference_videos: service.maxReferenceVideos,
         capabilities: getCapabilities(service),
+        supported_parameters: service.supportedParameters,
         tools: service.tools,
+        supports_structured_output: service.supportsStructuredOutput,
+        max_completion_tokens: service.maxCompletionTokens,
         reasoning: service.reasoning,
         context_length: service.contextLength,
         voices: service.voices,

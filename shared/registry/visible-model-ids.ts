@@ -1,11 +1,51 @@
 import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+import { HTTPException } from "hono/http-exception";
 import {
     communityModelId,
     effectiveCommunityEndpointVisibility,
 } from "../community-endpoints.ts";
 import * as schema from "../db/better-auth.ts";
-import { getModels, resolveModelName } from "./registry.ts";
+import {
+    getModels,
+    getRegistryModelDefinition,
+    isVisibleModelDefinition,
+    resolveModelName,
+} from "./registry.ts";
+
+/** Key writes validate canonical-ID membership without resolving names. */
+export async function validateModelPermissionIds(
+    dbBinding: D1Database,
+    modelIds: readonly string[],
+): Promise<string[]> {
+    if (modelIds.length === 0) return [];
+    const canonicalIds = new Set<string>(
+        getModels().filter(
+            (id) => getRegistryModelDefinition(id).fallbackOnly !== true,
+        ),
+    );
+    const rows = await drizzle(dbBinding)
+        .select({
+            owner: schema.user.githubUsername,
+            name: schema.communityEndpoint.name,
+        })
+        .from(schema.communityEndpoint)
+        .innerJoin(
+            schema.user,
+            eq(schema.communityEndpoint.ownerUserId, schema.user.id),
+        );
+    for (const row of rows) {
+        if (row.owner) canonicalIds.add(communityModelId(row.owner, row.name));
+    }
+    for (const id of modelIds) {
+        if (!canonicalIds.has(id)) {
+            throw new HTTPException(400, {
+                message: `Model permission '${id}' is not a canonical model ID. Use IDs from /models.`,
+            });
+        }
+    }
+    return [...new Set(modelIds)];
+}
 
 export function canonicalizeModelPermissionIds(
     modelIds: readonly string[],
@@ -31,7 +71,11 @@ export async function getVisibleModelIdsForUser(
     dbBinding: D1Database,
     userId: string,
 ): Promise<Set<string>> {
-    const modelIds = new Set<string>(getModels());
+    const modelIds = new Set<string>(
+        getModels().filter((model) =>
+            isVisibleModelDefinition(getRegistryModelDefinition(model)),
+        ),
+    );
     const db = drizzle(dbBinding, { schema });
     const communityModels = await db
         .select({
@@ -83,8 +127,8 @@ export function filterPermissionsToVisibleModels(
 
     return {
         ...permissions,
-        models: permissions.models.filter((modelId) =>
-            visibleModelIds.has(modelId),
+        models: canonicalizeModelPermissionIds(permissions.models).filter(
+            (modelId) => visibleModelIds.has(modelId),
         ),
     };
 }

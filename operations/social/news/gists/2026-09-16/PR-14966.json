@@ -1,0 +1,33 @@
+{
+  "pr_number": 14966,
+  "title": "fix: mark Discord username optional in publisher access triage",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14966",
+  "merged_at": "2026-09-16T12:41:43Z",
+  "labels": [],
+  "pr_body_excerpt": "- Renames the field label to \"Discord username (optional)\" in the Community Publisher Access template; the description already said optional, but the triage bot and a reviewer still treated it as required (#14870, #14902)\n- Adds one guideline to the new-issue triage prompt: never ask for fields the template marks optional\n\nAddresses #14902\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Optional means optional",
+    "blurb": "The publisher-access form now says the quiet part out loud: Discord usernames are optional. The triage bot has also been reminded not to go collecting fields it does not need.",
+    "summary": "Renamed the Community Publisher Access field to “Discord username (optional)” and updated new-issue triage guidance so optional template fields are never requested as required.",
+    "impact": "Publisher-access applicants can submit without a Discord username and will no longer receive triage requests for that optional detail.",
+    "keywords": [
+      "github",
+      "issue-template",
+      "triage",
+      "community-publisher-access",
+      "discord"
+    ],
+    "visual_concept": "A cozy community-access intake desk: Polli, wearing a tiny reviewer visor, stamps a form whose Discord field is clearly marked optional while a friendly CRT robot follows a small checklist. A nearby code-plant and flowers reinforce that clearer contributor workflows help the garden grow.",
+    "image_prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing a tiny reviewer visor, warmly stamping a community access form labeled “DISCORD (OPTIONAL)” beside a helpful CRT monitor robot holding a checklist; lime green (#ecf874) forms, code-plants, and small flowers fill a warm cream and pastel workspace. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14966.jpg",
+    "prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing a tiny reviewer visor, warmly stamping a community access form labeled “DISCORD (OPTIONAL)” beside a helpful CRT monitor robot holding a checklist; lime green (#ecf874) forms, code-plants, and small flowers fill a warm cream and pastel workspace. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-09-16T12:42:52.840482+00:00"
+}

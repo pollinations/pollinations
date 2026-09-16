@@ -18,7 +18,8 @@ import { withInlineGenerationCoordinator } from "../helpers/inline-generation-co
 
 type ProviderBody = Record<string, unknown>;
 
-const CLEAN_JPEG_DATA_URI = "data:image/jpeg;base64,/9j/2gADAP/Z";
+const CLEAN_JPEG_DATA_URI =
+    "data:image/jpeg;base64,/9j/wAALCAABAAEDAREA/9oAAwD/2Q==";
 const CLEAN_JPEG_BYTES = new Uint8Array([
     0xff, 0xd8, 0xff, 0xc0, 0x00, 0x0b, 0x08, 0x00, 0x01, 0x00, 0x01, 0x03,
     0x01, 0x11, 0x00, 0xff, 0xda, 0x00, 0x03, 0x00, 0xff, 0xd9,
@@ -285,7 +286,7 @@ test("POST /3d preserves authentication and rejects ignored parameters", async (
         ...env,
         INFERENCEPORT_API_KEY: "ip_test_token",
     } as CloudflareBindings);
-    await mocks.enable("tinybird", "inferenceport");
+    await mocks.enable("tinybird", "inferenceport", "media");
     const body = {
         model: "trellis-2",
         image: "https://example.com/reference.jpg",
@@ -355,7 +356,7 @@ test("GET /3d keeps query behavior and Trellis resolution", async ({
         ...env,
         INFERENCEPORT_API_KEY: "ip_test_token",
     } as CloudflareBindings);
-    await mocks.enable("tinybird", "inferenceport");
+    await mocks.enable("tinybird", "inferenceport", "media");
 
     const response = await fetch3d(
         `/3d/${crypto.randomUUID()}?model=trellis-2&image=${encodeURIComponent("https://example.com/reference.jpg")}&resolution=medium`,

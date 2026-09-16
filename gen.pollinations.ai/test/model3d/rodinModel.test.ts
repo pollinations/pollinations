@@ -8,7 +8,8 @@ import {
 } from "../../src/model3d/models/rodinModel.ts";
 import type { Model3dParams } from "../../src/model3d/params.ts";
 
-const CLEAN_JPEG_DATA_URI = "data:image/jpeg;base64,/9j/2gADAP/Z";
+const CLEAN_JPEG_DATA_URI =
+    "data:image/jpeg;base64,/9j/wAALCAABAAEDAREA/9oAAwD/2Q==";
 const CLEAN_JPEG_BYTES = new Uint8Array([
     0xff, 0xd8, 0xff, 0xc0, 0x00, 0x0b, 0x08, 0x00, 0x01, 0x00, 0x01, 0x03,
     0x01, 0x11, 0x00, 0xff, 0xda, 0x00, 0x03, 0x00, 0xff, 0xd9,

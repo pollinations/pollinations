@@ -3,7 +3,8 @@ import { syncImageEnv } from "../../src/image/env.ts";
 import { callWan3FalAPI } from "../../src/image/models/wan3FalVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
-const CLEAN_JPEG_DATA_URI = "data:image/jpeg;base64,/9j/2gADAP/Z";
+const CLEAN_JPEG_DATA_URI =
+    "data:image/jpeg;base64,/9j/wAALCAABAAEDAREA/9oAAwD/2Q==";
 const CLEAN_JPEG_BYTES = new Uint8Array([
     0xff, 0xd8, 0xff, 0xc0, 0x00, 0x0b, 0x08, 0x00, 0x01, 0x00, 0x01, 0x03,
     0x01, 0x11, 0x00, 0xff, 0xda, 0x00, 0x03, 0x00, 0xff, 0xd9,
@@ -53,6 +54,14 @@ function mockFalFetch(
         .spyOn(globalThis, "fetch")
         .mockImplementation(async (url, init) => {
             const href = typeof url === "string" ? url : url.toString();
+            if (
+                href === "https://media.pollinations.ai/start.png" ||
+                href === "https://media.pollinations.ai/end.png"
+            ) {
+                return new Response(CLEAN_JPEG_BYTES, {
+                    headers: { "Content-Type": "image/jpeg" },
+                });
+            }
             requests.push({
                 url: href,
                 body: init?.body
@@ -86,14 +95,6 @@ function mockFalFetch(
             if (href === VIDEO_URL) {
                 return new Response(VIDEO_BYTES, {
                     headers: { "Content-Type": "video/mp4" },
-                });
-            }
-            if (
-                href === "https://media.pollinations.ai/start.png" ||
-                href === "https://media.pollinations.ai/end.png"
-            ) {
-                return new Response(CLEAN_JPEG_BYTES, {
-                    headers: { "Content-Type": "image/jpeg" },
                 });
             }
             return new Response("unexpected URL", { status: 404 });

@@ -104,6 +104,9 @@ test("hourly scan reads every page; dry run is read-only; apply bans and expires
     expect(await runFraudBanCheck(stripe, queryD1)).toEqual({
         candidates: 1,
         applied: 0,
+        charges: 106,
+        unmapped: 0,
+        report: [{ id: user.id, name: expect.any(String), score: 0.75 }],
     });
     expect(
         mocks.stripe.state.requests.filter(
@@ -129,12 +132,11 @@ test("hourly scan reads every page; dry run is read-only; apply bans and expires
             apply: true,
             excludedUserIds: [user.id],
         }),
-    ).toEqual({ candidates: 0, applied: 0 });
+    ).toMatchObject({ candidates: 0, applied: 0, report: [] });
     expect(mocks.stripe.state.checkoutSessions[0].status).toBe("open");
-    expect(await runFraudBanCheck(stripe, queryD1, { apply: true })).toEqual({
-        candidates: 1,
-        applied: 1,
-    });
+    expect(
+        await runFraudBanCheck(stripe, queryD1, { apply: true }),
+    ).toMatchObject({ candidates: 1, applied: 1 });
     expect(
         await env.DB.prepare(
             "SELECT banned, auto_top_up_enabled FROM user WHERE id = ?",

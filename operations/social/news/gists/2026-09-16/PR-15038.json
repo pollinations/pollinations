@@ -1,0 +1,35 @@
+{
+  "pr_number": 15038,
+  "title": "feat: add xan, html-to-markdown and file to the computer shell",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15038",
+  "merged_at": "2026-09-16T22:00:07Z",
+  "labels": [],
+  "pr_body_excerpt": "- Enables the optional `xan` (CSV), `html-to-markdown` and `file` command groups from `@cloudflare/computer`\n- Tells agents the shell is emulated and to check flags with `<command> --help`\n- Leaves out `yq`: it needs `node:process`, which the shell's Dynamic Worker lacks (also with `enable_nodejs_process_v2`)\n- Leaves out `sqlite3`, `python`, `js-exec`: they need `node:worker_threads` (sqlite fix pending upstream, cloudflare/computer#144)\n- Test runs each new command in workerd (17/17 pass)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01RBs8TiuvtC8xLLDP9MqfaH",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A Bigger Shell Garden",
+    "blurb": "The computer shell grew three useful little tools: CSV wrangling with xan, HTML-to-Markdown conversion, and file inspection. Agents also get a polite reminder that this is an emulated shell: ask the tools what flags they speak before getting ambitious.",
+    "summary": "The computer MCP shell now enables @cloudflare/computer's optional xan CSV, html-to-markdown, and file command groups, with agent guidance to inspect supported flags via <command> --help in the emulated workerd environment.",
+    "impact": "Agents using computer MCP can now inspect files, transform HTML into Markdown, and work with CSV data directly in the shell; all 17 command tests pass in workerd.",
+    "keywords": [
+      "computer-mcp",
+      "shell",
+      "xan",
+      "csv",
+      "html-to-markdown",
+      "file",
+      "workerd"
+    ],
+    "visual_concept": "Depict the computer MCP as a cozy retro terminal garden: Polli, wearing a tiny mechanic tool belt, helps a cheerful CRT monitor robot sort a CSV spreadsheet, turn an HTML page into a Markdown scroll, and inspect a glowing file folder. Use small command labels such as “xan --help”, “html-to-markdown --help”, and “file --help” to convey that the emulated shell reveals its available flags; surround the workstation with code-plants and flowers.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny mechanic tool belt and helps a chunky CRT-monitor robot organize a CSV grid, a Markdown scroll, and a glowing file folder beside a terminal showing “xan --help”. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and pixel flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-15038.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny mechanic tool belt and helps a chunky CRT-monitor robot organize a CSV grid, a Markdown scroll, and a glowing file folder beside a terminal showing “xan --help”. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and pixel flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-16T22:01:09.707336+00:00"
+}

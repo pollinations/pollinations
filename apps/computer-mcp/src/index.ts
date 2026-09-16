@@ -54,8 +54,8 @@ in it (for example /workspace/thesis) and pass that folder as cwd.
 ## Shell
 
 The only tool is bash (no Node, no Python; coreutils, grep, sed, awk,
-jq, xan, file, html-to-markdown, tar, curl and git are available). Write a file by passing its
-content as stdin to \`cat > path\`.
+jq, xan, file, html-to-markdown, tar, curl and git are available).
+Write a file by passing its content as stdin to \`cat > path\`.
 
 ## Importing and sharing
 

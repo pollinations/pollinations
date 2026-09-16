@@ -110,7 +110,10 @@ const EndpointFieldsSchema = {
     description: z
         .string()
         .trim()
-        .max(COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH)
+        .max(
+            COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
+            `Description must be at most ${COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH} characters`,
+        )
         .optional(),
     baseUrl: z
         .string()

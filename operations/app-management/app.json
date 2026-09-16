@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "💬",
+    "name": "Moko - The Remembering Fox",
+    "url": "https://heard-was-lessons-altered.trycloudflare.com",
+    "description": "A web chat with Moko, a desert fox NPC that remembers facts you ask it to keep between conversations. Each user's facts are stored in a per-user memory file (Pollinations Computer MCP), recalled acros",
+    "language": "en",
+    "category": "chat",
+    "platform": "web",
+    "githubUsername": "mhmdrizzzki",
+    "githubUserId": "82577674",
+    "repositoryUrl": "https://github.com/mhmdrizzzki/moko-npc",
+    "repositoryStars": null,
+    "discordUsername": "(mhmdrizzzki)",
+    "other": null,
+    "submittedDate": "2026-09-16",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14941",
+    "approvedDate": "2026-09-16",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "📚",
     "name": "AI Flashcards",
     "url": "https://chibbit-99.github.io/flashcardgen",

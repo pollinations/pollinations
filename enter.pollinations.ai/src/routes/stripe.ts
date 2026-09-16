@@ -325,6 +325,14 @@ export const stripeRoutes = new Hono<Env>()
         if (!result.ok) {
             return c.json({ error: result.error }, result.status);
         }
+        c.executionCtx.waitUntil(
+            captureProductEvent(
+                c.env,
+                body.enabled ? "auto_top_up_enabled" : "auto_top_up_disabled",
+                user.id,
+                { amount_usd: body.packAmountUsd },
+            ),
+        );
 
         return c.json(result.overview);
     })

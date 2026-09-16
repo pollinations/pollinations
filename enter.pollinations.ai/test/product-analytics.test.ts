@@ -4,10 +4,7 @@ import {
     SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import {
-    authFlowViewSchema,
-    productPageViewSchema,
-} from "@shared/product-analytics.ts";
+import { productPageViewSchema } from "@shared/product-analytics.ts";
 import { afterEach, expect, vi } from "vitest";
 import { productAnalyticsRoutes } from "../src/routes/product-analytics.ts";
 import { captureProductEvent } from "../src/utils/product-analytics.ts";
@@ -22,12 +19,11 @@ async function pageView(
     overrides: Record<string, string> = {},
     enabled = "true",
     body?: string,
-    path = "page-view",
 ) {
     const ctx = createExecutionContext();
     const response = await productAnalyticsRoutes.fetch(
         new Request(
-            `http://localhost:3000/${path}?${new URLSearchParams(query)}`,
+            `http://localhost:3000/page-view?${new URLSearchParams(query)}`,
             {
                 method: "POST",
                 headers: {
@@ -45,64 +41,97 @@ async function pageView(
     return response;
 }
 
-test("disabled tracking does no network IO or session lookup", async () => {
+test("disabled tracking does no network IO", async () => {
     const fetch = vi.spyOn(globalThis, "fetch");
     await captureProductEvent(
         { ...env, TINYBIRD_ANALYTICS_ENABLED: "false" },
         "checkout_started",
         "user-1",
     );
-    const response = await pageView({ page: "/top-up" }, "", {}, "false");
+    const response = await pageView(VIEW, "", {}, "false");
     expect(response.status).toBe(204);
     expect(fetch).not.toHaveBeenCalled();
 });
 
-test("page schema accepts only fixed labels, never URLs or identity/event overrides", () => {
-    expect(productPageViewSchema.safeParse({ page: "/top-up" }).success).toBe(
-        true,
-    );
+const FLOW_ID = "0f4b2a6e-1c3d-4e5f-8a9b-0c1d2e3f4a5b";
+const VIEW = { page: "/top-up", flow_id: FLOW_ID };
+
+test("page schema accepts only fixed labels, a tab id and length-capped attribution", () => {
+    expect(productPageViewSchema.safeParse(VIEW).success).toBe(true);
+    expect(
+        productPageViewSchema.safeParse({
+            ...VIEW,
+            referrer_host: "github.com",
+            utm_source: "readme",
+            client_id: "pk_abc",
+        }).success,
+    ).toBe(true);
     for (const body of [
-        { page: "/top-up?key=secret" },
-        { page: "/top-up#secret" },
-        { page: "https://example.com" },
-        { page: "/private-user-id" },
-        { page: "/top-up", user_id: "someone-else" },
-        { page: "/top-up", event: "payment_completed" },
+        { page: "/top-up" },
+        { ...VIEW, page: "/top-up?key=secret" },
+        { ...VIEW, page: "https://example.com" },
+        { ...VIEW, flow_id: "not-a-uuid" },
+        { ...VIEW, user_id: "someone-else" },
+        { ...VIEW, event: "payment_completed" },
+        { ...VIEW, utm_source: "x".repeat(101) },
     ])
         expect(productPageViewSchema.safeParse(body).success).toBe(false);
 });
 
 test("browser cannot submit server events, cross-origin traffic, or request bodies", async () => {
     expect(
-        (await pageView({ page: "/top-up", event: "payment_completed" }))
-            .status,
+        (await pageView({ ...VIEW, event: "payment_completed" })).status,
     ).toBe(400);
     expect(
         (
-            await pageView({ page: "/top-up" }, "", {
+            await pageView(VIEW, "", {
                 Origin: "https://untrusted.example",
             })
         ).status,
     ).toBe(403);
     expect(
-        (await pageView({ page: "/top-up" }, "", {}, "true", "x".repeat(2000)))
-            .status,
+        (await pageView(VIEW, "", {}, "true", "x".repeat(2000))).status,
     ).toBe(415);
     expect((await pageView({ page: "x".repeat(2000) })).status).toBe(400);
-    expect((await pageView({ page: "/top-up" }, "", { DNT: "1" })).status).toBe(
-        204,
-    );
+    expect((await pageView(VIEW, "", { DNT: "1" })).status).toBe(204);
 });
 
-test("page views require a session, not an API key", async ({ apiKey }) => {
-    expect((await pageView({ page: "/top-up" })).status).toBe(401);
+test("signed-out views are recorded without a user and pass attribution through", async ({
+    apiKey,
+}) => {
+    const originalFetch = globalThis.fetch;
+    const rows: Record<string, unknown>[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        if (
+            new URL(String(input)).searchParams.get("name") === "product_event"
+        ) {
+            rows.push(JSON.parse(String(init?.body)));
+            return new Response(null, { status: 202 });
+        }
+        return originalFetch(input, init);
+    });
+    const view = {
+        page: "/_dashboard/news",
+        flow_id: FLOW_ID,
+        referrer_host: "github.com",
+        utm_source: "readme",
+        utm_campaign: "launch",
+        client_id: "pk_app",
+    };
+    expect((await pageView(view)).status).toBe(204);
     expect(
-        (
-            await pageView({ page: "/top-up" }, "", {
-                Authorization: `Bearer ${apiKey}`,
-            })
-        ).status,
-    ).toBe(401);
+        (await pageView(view, "", { Authorization: `Bearer ${apiKey}` }))
+            .status,
+    ).toBe(204);
+    expect(rows).toEqual([
+        expect.objectContaining({
+            ...view,
+            event: "page_viewed",
+            user_id: "",
+            event_id: `view:${FLOW_ID}:/_dashboard/news`,
+        }),
+        expect.objectContaining({ user_id: "" }),
+    ]);
 });
 
 test("page views derive the user from the authenticated session", async ({
@@ -124,19 +153,16 @@ test("page views derive the user from the authenticated session", async ({
     ).first<{ user_id: string }>();
     expect(user).toBeTruthy();
     expect(
-        (
-            await pageView(
-                { page: "/top-up" },
-                `better-auth.session_token=${sessionToken}`,
-            )
-        ).status,
+        (await pageView(VIEW, `better-auth.session_token=${sessionToken}`))
+            .status,
     ).toBe(204);
     expect(rows).toEqual([
         {
             event: "page_viewed",
             page: "/top-up",
+            flow_id: FLOW_ID,
             user_id: user?.user_id,
-            event_id: expect.any(String),
+            event_id: `view:${FLOW_ID}:/top-up`,
             timestamp: expect.any(String),
             environment: "test",
         },
@@ -183,48 +209,6 @@ test("delivery failure never fails the caller and is not retried", async () => {
         captureProductEvent(bindings, "checkout_started", "user-1"),
     ).resolves.toBeUndefined();
     expect(fetch).toHaveBeenCalledTimes(2);
-});
-
-const FLOW_ID = "0f4b2a6e-1c3d-4e5f-8a9b-0c1d2e3f4a5b";
-
-test("signed-out sign-in page views need a flow id and one of the sign-in pages", async () => {
-    const originalFetch = globalThis.fetch;
-    const rows: Record<string, unknown>[] = [];
-    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
-        if (
-            new URL(String(input)).searchParams.get("name") === "product_event"
-        ) {
-            rows.push(JSON.parse(String(init?.body)));
-            return new Response(null, { status: 202 });
-        }
-        return originalFetch(input, init);
-    });
-    const authFlow = (query: Record<string, string>) =>
-        pageView(query, "", {}, "true", undefined, "auth-flow");
-    for (const query of [
-        { page: "/top-up", flow_id: FLOW_ID },
-        { page: "/sign-in", flow_id: "not-a-uuid" },
-        { page: "/sign-in" },
-        { page: "/sign-in", flow_id: FLOW_ID, user_id: "someone" },
-    ]) {
-        expect(authFlowViewSchema.safeParse(query).success).toBe(false);
-        expect((await authFlow(query)).status).toBe(400);
-    }
-    expect(rows).toEqual([]);
-    expect(
-        (await authFlow({ page: "/sign-in", flow_id: FLOW_ID })).status,
-    ).toBe(204);
-    expect(rows).toEqual([
-        {
-            event: "sign_in_viewed",
-            page: "/sign-in",
-            flow_id: FLOW_ID,
-            user_id: "",
-            event_id: `view:${FLOW_ID}:/sign-in`,
-            timestamp: expect.any(String),
-            environment: "test",
-        },
-    ]);
 });
 
 test("GitHub sign-in records started and completed stages under the auth_flow cookie", async ({

@@ -1,0 +1,78 @@
+DESCRIPTION >
+    Where tabs come from and what they turn into, by week: source is the
+    landing utm_source (or ref), else the external referrer hostname, else
+    'direct'; landing_page is the first page the tab viewed. Visitors are
+    per-tab ids from product_event, signed_in tabs had a user at any view,
+    logins and signups are sessions created through the GitHub callback in
+    the same tab (a signup is a user created within an hour of it), paid is
+    any fulfilled Stripe checkout by that user. No history before tracking.
+
+TOKEN tinybird_read READ
+
+NODE tabs
+SQL >
+    %
+    SELECT
+        flow_id,
+        min(timestamp) AS first_seen,
+        argMin(page, timestamp) AS landing_page,
+        argMin(referrer_host, timestamp) AS referrer_host,
+        argMin(utm_source, timestamp) AS utm_source,
+        argMin(utm_medium, timestamp) AS utm_medium,
+        argMin(utm_campaign, timestamp) AS utm_campaign,
+        anyIf(user_id, user_id != '') AS seen_user_id
+    FROM product_event
+    WHERE environment = {{String(environment, 'production')}}
+        AND event = 'page_viewed'
+        AND flow_id != ''
+        AND timestamp >= now() - toIntervalDay(least(greatest({{Int32(days, 30)}}, 1), 366))
+    GROUP BY flow_id
+
+NODE completions
+SQL >
+    %
+    SELECT flow_id, anyIf(user_id, user_id != '') AS user_id, min(timestamp) AS completed_at
+    FROM product_event
+    WHERE environment = {{String(environment, 'production')}}
+        AND event = 'sign_in_completed'
+        AND flow_id != ''
+        AND timestamp >= now() - toIntervalDay(least(greatest({{Int32(days, 30)}}, 1), 366))
+    GROUP BY flow_id
+
+NODE users
+SQL >
+    SELECT id AS user_id, fromUnixTimestamp(assumeNotNull(created_at)) AS created_at
+    FROM d1_user
+    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)
+        AND created_at IS NOT NULL
+
+NODE payers
+SQL >
+    SELECT user_id
+    FROM stripe_event
+    WHERE payment_status = 'paid'
+        AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')
+        AND user_id != ''
+    GROUP BY user_id
+
+NODE sources
+SQL >
+    SELECT
+        formatDateTime(toStartOfWeek(t.first_seen, 1), '%Y-%m-%d') AS week,
+        multiIf(t.utm_source != '', t.utm_source, t.referrer_host != '', t.referrer_host, 'direct') AS source,
+        t.utm_medium AS medium,
+        t.utm_campaign AS campaign,
+        t.landing_page AS landing_page,
+        uniq(t.flow_id) AS visitors,
+        uniqIf(t.flow_id, t.seen_user_id != '' OR c.user_id != '') AS signed_in,
+        uniqIf(c.user_id, c.user_id != '') AS logins,
+        uniqIf(c.user_id, c.user_id != '' AND u.user_id != '' AND dateDiff('minute', u.created_at, c.completed_at) BETWEEN -5 AND 60) AS signups,
+        uniqIf(c.user_id, c.user_id != '' AND p.user_id != '') AS paid
+    FROM tabs t
+    LEFT JOIN completions c ON t.flow_id = c.flow_id
+    LEFT JOIN users u ON c.user_id = u.user_id
+    LEFT JOIN payers p ON c.user_id = p.user_id
+    GROUP BY week, source, medium, campaign, landing_page
+    ORDER BY week ASC, visitors DESC
+
+TYPE endpoint

@@ -3,8 +3,10 @@ import { getTinybirdDatasourceIngestUrl } from "@shared/events.ts";
 export type ProductEvent =
     | "page_viewed"
     | "checkout_started"
-    // Pre-login stages. flow_id is a random browser cookie value (sign-in) or
-    // the device_code row id (device flow), never a code, token or email.
+    | "auto_top_up_enabled"
+    | "auto_top_up_disabled"
+    // Pre-login stages. flow_id is the random per-tab id (sign-in) or the
+    // device_code row id (device flow), never a code, token or email.
     | "sign_in_viewed"
     | "sign_in_started"
     | "sign_in_completed"
@@ -33,6 +35,11 @@ export async function captureProductEvent(
         pack_key?: string;
         flow_id?: string;
         client_id?: string;
+        referrer_host?: string;
+        utm_source?: string;
+        utm_medium?: string;
+        utm_campaign?: string;
+        amount_usd?: number;
     } = {},
     eventId: string = crypto.randomUUID(),
 ): Promise<void> {

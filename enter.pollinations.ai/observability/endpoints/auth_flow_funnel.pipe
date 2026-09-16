@@ -1,7 +1,8 @@
 DESCRIPTION >
-    Daily pre-login funnel from product_event. Sign-in: signed-out views of a
-    sign-in page, /sign-in/social calls and completed sessions, linked by the
-    auth_flow cookie id. Device: codes issued to CLIs, approved or denied in
+    Daily pre-login funnel from product_event. Sign-in: signed-out tabs that
+    saw a page with a sign-in button, /sign-in/social calls and completed
+    sessions (each counted per event, since clients without the auth_flow
+    cookie share an empty flow_id). Device: codes issued to CLIs, approved or denied in
     the browser, and tokens collected. authorize_granted counts PKCE consents,
     link_* Discord account linking. Each pct column is relative to the
     previous stage; client_id narrows device and consent counts to one app.
@@ -13,8 +14,8 @@ SQL >
     %
     SELECT
         toDate(timestamp) AS date,
-        uniqIf(flow_id, event = 'sign_in_viewed') AS sign_in_viewed,
-        uniqIf(flow_id, event = 'sign_in_started') AS sign_in_started,
+        uniqIf(flow_id, event = 'page_viewed' AND user_id = '') AS sign_in_viewed,
+        uniqIf(event_id, event = 'sign_in_started') AS sign_in_started,
         uniqIf(event_id, event = 'sign_in_completed') AS sign_in_completed,
         if(sign_in_viewed = 0, 0, round(100 * sign_in_started / sign_in_viewed, 1)) AS pct_sign_in_started,
         if(sign_in_started = 0, 0, round(100 * sign_in_completed / sign_in_started, 1)) AS pct_sign_in_completed,
@@ -32,7 +33,7 @@ SQL >
         AND timestamp >= now() - toIntervalDay(least(greatest({{Int32(days, 30)}}, 1), 366))
         AND timestamp <= now()
         {% if defined(client_id) %}
-        AND (client_id = {{String(client_id)}} OR event LIKE 'sign_in_%')
+        AND (client_id = {{String(client_id)}} OR event IN ('page_viewed', 'sign_in_started', 'sign_in_completed', 'link_started', 'link_completed'))
         {% end %}
     GROUP BY date
     ORDER BY date

@@ -27,6 +27,7 @@ SQL >
         AND event = 'page_viewed'
         AND page IN ('/_dashboard/pollen', '/top-up')
         AND user_id != ''
+        AND timestamp >= toStartOfWeek(now() - toIntervalWeek(least(greatest({{Int32(weeks_back, 12)}}, 1), 52)), 1)
     GROUP BY user_id
 
 NODE checkouts
@@ -37,15 +38,18 @@ SQL >
     WHERE environment = {{String(environment, 'production')}}
         AND event = 'checkout_started'
         AND user_id != ''
+        AND timestamp >= toStartOfWeek(now() - toIntervalWeek(least(greatest({{Int32(weeks_back, 12)}}, 1), 52)), 1)
     GROUP BY user_id
 
 NODE payments
 SQL >
+    %
     SELECT user_id
     FROM stripe_event
     WHERE payment_status = 'paid'
         AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')
         AND user_id != ''
+        AND timestamp >= toStartOfWeek(now() - toIntervalWeek(least(greatest({{Int32(weeks_back, 12)}}, 1), 52)), 1)
     GROUP BY user_id
 
 NODE funnel

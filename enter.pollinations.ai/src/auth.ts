@@ -362,12 +362,14 @@ function onAfterSessionCreate(
         session: { userId: string },
         ctx?: GenericEndpointContext | null,
     ) => {
-        // Sessions are only created by a completed GitHub sign-in here.
-        executionCtx?.waitUntil(
-            captureProductEvent(env, "sign_in_completed", session.userId, {
-                flow_id: ctx?.getCookie(AUTH_FLOW_COOKIE) ?? "",
-            }),
-        );
+        // The admin plugin also creates sessions (impersonation); only the
+        // OAuth callback is a sign-in.
+        if (ctx?.path.startsWith("/callback"))
+            executionCtx?.waitUntil(
+                captureProductEvent(env, "sign_in_completed", session.userId, {
+                    flow_id: ctx.getCookie(AUTH_FLOW_COOKIE) ?? "",
+                }),
+            );
         executionCtx?.waitUntil(
             (async () => {
                 try {

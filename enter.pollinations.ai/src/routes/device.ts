@@ -113,7 +113,10 @@ export const deviceRoutes = new Hono<Env>()
                 c.env,
                 "device_code_issued",
                 "",
-                { flow_id: id, client_id: body.client_id || "" },
+                {
+                    flow_id: id,
+                    client_id: (body.client_id ?? "").slice(0, 100),
+                },
                 `device:${id}:issued`,
             ),
         );
@@ -219,7 +222,6 @@ export const deviceRoutes = new Hono<Env>()
         "/deny",
         auth({ allowApiKey: false, allowSessionCookie: true }),
         async (c) => {
-            const user = c.var.auth.requireUser();
             const body = await c.req.json<{ userCode: string }>();
 
             if (!body.userCode) {
@@ -239,7 +241,7 @@ export const deviceRoutes = new Hono<Env>()
                 captureProductEvent(
                     c.env,
                     "device_denied",
-                    user.id,
+                    c.var.auth.user?.id ?? "",
                     { flow_id: device.id, client_id: device.clientId ?? "" },
                     `device:${device.id}:denied`,
                 ),
@@ -338,7 +340,13 @@ export async function exchangeDeviceCode(
                 return c.json({ error: "authorization_pending" }, 400);
             }
 
-            // The row goes away below, so record the outcome first.
+            // Delete device code row and KV entry concurrently
+            await Promise.all([
+                db
+                    .delete(schema.deviceCode)
+                    .where(eq(schema.deviceCode.id, device.id)),
+                c.env.KV.delete(`device-key:${device.deviceCode}`),
+            ]);
             c.executionCtx.waitUntil(
                 captureProductEvent(
                     c.env,
@@ -348,13 +356,6 @@ export async function exchangeDeviceCode(
                     `device:${device.id}:token`,
                 ),
             );
-            // Delete device code row and KV entry concurrently
-            await Promise.all([
-                db
-                    .delete(schema.deviceCode)
-                    .where(eq(schema.deviceCode.id, device.id)),
-                c.env.KV.delete(`device-key:${device.deviceCode}`),
-            ]);
 
             return c.json({
                 access_token: stored.key,

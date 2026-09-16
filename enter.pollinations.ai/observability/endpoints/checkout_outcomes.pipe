@@ -1,0 +1,25 @@
+DESCRIPTION >
+    Stripe checkout sessions by week and pack amount: fulfilled, expired
+    (abandoned) and failed async payments, with the share fulfilled.
+    Single pass over stripe_event, live mode only.
+
+TOKEN tinybird_read READ
+
+NODE outcomes
+SQL >
+    %
+    SELECT
+        formatDateTime(toStartOfWeek(timestamp, 1), '%Y-%m-%d') AS week,
+        amount_cents,
+        uniqIf(session_id, event_type = 'checkout.session.completed' AND payment_status = 'paid') AS completed,
+        uniqIf(session_id, event_type = 'checkout.session.expired') AS expired,
+        uniqIf(session_id, event_type = 'checkout.session.async_payment_failed') AS failed,
+        if(completed + expired + failed = 0, 0, round(100 * completed / (completed + expired + failed), 1)) AS pct_completed
+    FROM stripe_event
+    WHERE livemode = 1
+        AND event_type IN ('checkout.session.completed', 'checkout.session.expired', 'checkout.session.async_payment_failed')
+        AND timestamp >= now() - toIntervalDay(least(greatest({{Int32(days, 90)}}, 1), 366))
+    GROUP BY week, amount_cents
+    ORDER BY week ASC, amount_cents ASC
+
+TYPE endpoint

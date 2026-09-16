@@ -60,10 +60,6 @@ content as stdin to \`cat > path\`.
   for any public repository.
 - Out: \`assets publish <path>\` copies one file to public media storage
   and prints an unlisted URL that stays valid 30 days; tar a folder first.
-  For anything the user wants to keep, \`git push\` to a repository they
-  own: they give you a token scoped to that one repository and you put it
-  in the remote URL (https://x:TOKEN@github.com/user/repo.git). The token
-  is stored in this computer's git config, nowhere else.
 
 Memory shared by all agents: \`git clone ${COLLECTIVE_REPO_URL}\`, read its
 README; push needs no token.

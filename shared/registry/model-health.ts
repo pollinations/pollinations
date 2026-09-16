@@ -1,0 +1,65 @@
+import { z } from "zod";
+
+export const ModelHealthSchema = z
+    .object({
+        status: z.enum(["healthy", "degraded", "down", "unknown"]).meta({
+            description:
+                "Based on the reported window: healthy above 95% success, degraded above 80% through 95%, down at 80% or below, unknown below 10 measured requests. Check stale before relying on this status.",
+        }),
+        success_rate: z.number().min(0).max(1).nullable().meta({
+            description:
+                "Successful requests / measured requests (0–1); null with no samples.",
+        }),
+        sample_size: z.number().int().nonnegative(),
+        window_minutes: z.number().int().positive(),
+        checked_at: z.string().datetime().nullable().meta({
+            description:
+                "UTC snapshot-fetch time, not the last model request; null if unavailable.",
+        }),
+        stale: z.boolean().meta({
+            description:
+                "Refresh failed: data is older or unavailable. Excluded by status=healthy.",
+        }),
+    })
+    .meta({
+        description:
+            "Recent gateway final-response reliability. Final 4xx responses are excluded; successful fallback rescues count as successes. Not individual upstream health.",
+    });
+
+export type ModelHealth = z.infer<typeof ModelHealthSchema>;
+
+const MIN_SAMPLE_SIZE = 10;
+const DEGRADED_FAILURE_RATE = 0.05;
+const DOWN_FAILURE_RATE = 0.2;
+
+export function modelHealthFromCounts(
+    successes: number,
+    failures: number,
+    windowMinutes: number,
+    checkedAt: number | null,
+    stale: boolean,
+): ModelHealth {
+    const sampleSize = successes + failures;
+    const successRate = sampleSize ? successes / sampleSize : null;
+    const failureRate = sampleSize ? failures / sampleSize : null;
+    let status: ModelHealth["status"] = "unknown";
+
+    if (sampleSize >= MIN_SAMPLE_SIZE && failureRate !== null) {
+        status =
+            failureRate >= DOWN_FAILURE_RATE
+                ? "down"
+                : failureRate >= DEGRADED_FAILURE_RATE
+                  ? "degraded"
+                  : "healthy";
+    }
+
+    return {
+        status,
+        success_rate: successRate,
+        sample_size: sampleSize,
+        window_minutes: windowMinutes,
+        checked_at:
+            checkedAt === null ? null : new Date(checkedAt).toISOString(),
+        stale,
+    };
+}

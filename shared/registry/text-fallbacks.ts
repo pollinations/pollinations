@@ -386,28 +386,16 @@ export const TEXT_FALLBACKS = {
         },
     },
     "meta/llama-4-scout": {
-        "meta/llama-4-scout:openrouter:vertex-us-east5": {
-            supportedParameters: CHAT_PARAMETERS.openRouterLlamaScout,
+        "meta/llama-4-scout:openrouter:novita-bf16": {
             provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
-            // The caller still pays the public DeepInfra quote ($0.10/M input
-            // and image, $0.30/M output). Vertex costs $0.25/M input/image and
-            // $0.70/M output, so Pollinations absorbs $0.15/M input/image and
-            // $0.40/M output whenever this fallback serves the request.
+            addedDate: new Date("2026-09-15").getTime(),
+            // OpenRouter Novita BF16, verified 2026-09-15. Callers retain the
+            // DeepInfra quote; Pollinations absorbs the higher fallback cost.
             cost: {
-                promptTextTokens: perMillion(0.25) * 1.055,
-                promptImageTokens: perMillion(0.25) * 1.055,
-                completionTextTokens: perMillion(0.7) * 1.055,
+                promptTextTokens: perMillion(0.18) * 1.055,
+                promptImageTokens: perMillion(0.18) * 1.055,
+                completionTextTokens: perMillion(0.59) * 1.055,
             },
-            // Vertex supports automatic tools but rejects required/named tool
-            // selection for this checkpoint; those calls stay on the primary.
-            supportsForcedToolChoice: false,
-            // Live probes accept up to five images; OpenRouter reports an
-            // 8,192-token output cap. Explicitly larger requests stay on the
-            // primary. If no limit is supplied, a rescued response may finish
-            // at Vertex's lower cap with the provider's `length` finish reason.
-            maxReferenceImages: 5,
-            maxCompletionTokens: 8192,
         },
     },
     "x-ai/grok-4.20": {

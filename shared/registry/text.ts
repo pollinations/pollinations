@@ -1999,14 +1999,14 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
     },
     "meta/llama-4-scout": {
-        supportedParameters: CHAT_PARAMETERS.openRouterMistralSmall32,
+        supportedParameters: CHAT_PARAMETERS.llamaScout,
         aliases: [
             "llama-4-scout",
             "llama-scout-17b",
             "llama-4-scout-17b-16e-instruct",
             "llama-scout",
         ],
-        provider: "openrouter",
+        provider: "vercel",
         publisher: "Meta",
         category: "text",
         addedDate: new Date("2026-05-04").getTime(),
@@ -2014,19 +2014,21 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         perUserRpm: 60,
         cost: {
-            // OpenRouter DeepInfra FP8 endpoint, verified 2026-08-22.
-            promptTextTokens: perMillion(0.1) * 1.055,
-            promptImageTokens: perMillion(0.1) * 1.055,
-            completionTextTokens: perMillion(0.3) * 1.055,
+            // Vercel AI Gateway pinned to DeepInfra, verified 2026-09-15.
+            promptTextTokens: perMillion(0.1),
+            promptImageTokens: perMillion(0.1),
+            completionTextTokens: perMillion(0.3),
         },
         title: "Meta Llama 4 Scout",
         description:
-            "Open-source long-context specialist for digging through big documents",
+            "Text and image understanding with a 128K context window; no tool calling or structured output",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 10, // Verified on the pinned DeepInfra FP8 route; Pollinations cap.
-        tools: true,
-        contextLength: 327680,
+        maxReferenceImages: 10, // Verified on both routes; Pollinations cap.
+        tools: false,
+        supportsStructuredOutput: false,
+        maxCompletionTokens: 16384,
+        contextLength: 131072,
         isSpecialized: false,
     },
     "minimax/minimax-m2.7": {

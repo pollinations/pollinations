@@ -456,3 +456,16 @@ test("requires paid balance for Recraft vector", async ({
     );
     expect(generation.status).toBe(402);
 });
+
+test("Scout catalog exposes its enforced output capabilities", async () => {
+    const response = await fetchWorker("/models");
+    const models = (await response.json()) as Record<string, unknown>[];
+    expect(
+        models.find((model) => model.name === "meta/llama-4-scout"),
+    ).toMatchObject({
+        tools: false,
+        supports_structured_output: false,
+        max_completion_tokens: 16384,
+        context_length: 131072,
+    });
+});

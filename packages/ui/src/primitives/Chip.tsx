@@ -3,7 +3,6 @@ import { cn } from "../lib/cn.ts";
 
 /** Semantic chip labels for status and metadata badges. */
 type ChipIntent =
-    | "info"
     | "news"
     | "new"
     | "free"
@@ -11,6 +10,7 @@ type ChipIntent =
     | "neutral"
     | "success"
     | "warning"
+    | "info"
     | "danger";
 
 const chipSizes = {
@@ -21,7 +21,6 @@ const chipSizes = {
 } as const;
 
 const intentClasses: Record<ChipIntent, string> = {
-    info: "polli:bg-intent-info-bg-light polli:text-intent-info-text",
     news: "polli:bg-intent-news-bg-light polli:text-intent-news-text",
     new: "polli:bg-intent-new-bg-light polli:text-intent-new-text",
     free: "polli:bg-intent-free-bg-light polli:text-intent-free-text",
@@ -30,6 +29,7 @@ const intentClasses: Record<ChipIntent, string> = {
     success:
         "polli:bg-intent-success-bg-bright/15 polli:text-intent-success-text",
     warning: "polli:bg-intent-warning-bg-light polli:text-intent-warning-text",
+    info: "polli:bg-intent-info-bg-light polli:text-intent-info-text",
     danger: "polli:bg-intent-danger-bg-light polli:text-intent-danger-text",
 };
 

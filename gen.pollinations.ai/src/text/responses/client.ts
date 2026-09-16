@@ -48,6 +48,9 @@ export function responsesTargetFromConfig(
             ...(chatDefaults.provider === undefined
                 ? {}
                 : { provider: chatDefaults.provider }),
+            ...(chatDefaults.providerOptions === undefined
+                ? {}
+                : { providerOptions: chatDefaults.providerOptions }),
             ...(chatDefaults.max_tokens === undefined
                 ? {}
                 : { max_output_tokens: chatDefaults.max_tokens }),

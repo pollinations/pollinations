@@ -27,10 +27,6 @@ on:
           - gen
           - media
         default: all
-      sync_discord_secrets:
-        description: 'Sync the approved Discord secrets to Enter'
-        type: boolean
-        default: false
       finalize_canonical_permissions:
         description: 'Repeat canonical allowlist cleanup after both Enter and Gen deploy (use service=all)'
         type: boolean
@@ -219,25 +215,23 @@ jobs:
       - name: Install root dependencies
         run: npm ci
 
-      - name: Setup SOPS
-        if: github.event_name == 'workflow_dispatch' && inputs.sync_discord_secrets
-        uses: nhedger/setup-sops@v3
-
       - name: Build and deploy to Cloudflare
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
         run: npm run deploy:production --workspace pollinations-enter
 
-      - name: Push Discord secrets
-        if: github.event_name == 'workflow_dispatch' && inputs.sync_discord_secrets
+      - name: Setup SOPS
+        uses: nhedger/setup-sops@v3
+
+      # Same ordering as deploy-gen below: deploy first so the secret push
+      # edits the deployed version. Re-applies secrets/prod.vars.json; a new
+      # or changed value goes through the Secret Mutation Safety gate before
+      # it is merged.
+      - name: Push enter secrets
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
-        run: >-
-          sops exec-file --no-fifo enter.pollinations.ai/secrets/prod.vars.json
-          'jq "{DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_BOT_TOKEN}" {}
-          | npx wrangler secret bulk - --env production
-          --config enter.pollinations.ai/wrangler.toml'
+        run: npm run push-secrets:production --workspace pollinations-enter
 
   deploy-gen:
     needs: [changes, migrate, deploy-media, deploy-mcp-apps]

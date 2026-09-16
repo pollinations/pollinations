@@ -9,11 +9,13 @@ Deploy observability pipes and datasources to Tinybird Cloud.
 
 ## Requirements
 
+- **Preflight:** `which -a tb && tb --version`. If `tb` is missing or resolves to a pyenv/pip shim instead of `~/.local/bin/tb`, PATH is wrong or the Forward CLI isn't installed — fix PATH or point the user at the install docs; don't curl-pipe an installer.
 - Use the **Tinybird Forward CLI** as `tb`. On this machine it should resolve to `~/.local/bin/tb` and support `tb --cloud deployment create --check`.
 - Do **not** install or update this workflow with `pip install tinybird-cli`; that can put the Classic CLI first on PATH.
 - If `tb --cloud` is missing, or Tinybird says this is a Forward workspace but the CLI is Classic, fix PATH so `~/.local/bin` wins. The Classic CLI is kept only as `tb-classic`.
 - Run commands from `enter.pollinations.ai/observability`.
 - Set `TB_TOKEN` explicitly to a token with `WORKSPACE:DEPLOY` for the target workspace, and pass `--host` on every deploy command. Do not rely on `.tinyb` or `tb workspace use` for workspace selection.
+- `SELECT 1` succeeding doesn't mean a token can read datasources (`PIPES:READ` vs `DATASOURCES:READ` vs `WORKSPACE:DEPLOY`). Probe with a SELECT on a known datasource before relying on a token for a new path.
 
 ## Workspaces
 
@@ -94,6 +96,8 @@ tb --cloud --host "$TB_HOST" deployment create --wait --no-allow-destructive-ope
 Never pass `--auto` or run `deployment promote` unless the user explicitly asks for promotion.
 
 Prod deploys use the same command shape after explicitly replacing `TB_TOKEN` with the `tinybird-prod-deploy` Keychain token, but only after staging validation and verification. Deploying to both workspaces is still manual until #11127 is resolved.
+
+Staging and prod are separate approvals — don't batch them into one command, since the user may want to look at staging first. But if the instruction already names both ("deploy to staging and prod"), that is both approvals; don't re-ask in between.
 
 ## Step 3: Verify
 

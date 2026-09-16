@@ -1,6 +1,7 @@
 import { env, SELF } from "cloudflare:test";
 import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
+    COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     parseListingPayload,
 } from "@shared/community-endpoints.ts";
@@ -279,6 +280,41 @@ describe("community endpoint configuration policy", () => {
             visibility: "public",
         });
         expect(publicAgent.status).toBe(403);
+    });
+
+    test("accepts descriptions up to the limit and names it when rejecting", async ({
+        sessionToken,
+    }) => {
+        const request = (description: string) =>
+            SELF.fetch("http://localhost:3000/api/account/agents", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({
+                    name: "long-description-agent",
+                    title: "Long description",
+                    description,
+                    systemPrompt: "Answer briefly.",
+                    baseModel: "openai",
+                }),
+            });
+
+        const maxDescription = "d".repeat(
+            COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
+        );
+        const created = await request(maxDescription);
+        expect(created.status, await created.clone().text()).toBe(200);
+        expect(await created.json<{ description: string }>()).toMatchObject({
+            description: maxDescription,
+        });
+
+        const rejected = await request(`${maxDescription}d`);
+        expect(rejected.status).toBe(400);
+        expect(await rejected.text()).toContain(
+            `Description must be at most ${COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH} characters`,
+        );
     });
 
     test("preserves validation error precedence", () => {

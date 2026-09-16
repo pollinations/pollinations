@@ -1,0 +1,8 @@
+{
+  "platform": "discord",
+  "scope": "models_weekly",
+  "date": "2026-09-16",
+  "previous_date": "2026-09-09",
+  "generated_at": "2026-09-16T14:13:39.254934+00:00",
+  "text": "<@&1424461167883194418> Model updates — 2026-09-16\n\n### 🆕 New\n- 🧠 **DeepSeek V4.1 Flash** (DeepSeek) — image input, tool calling, and reasoning\n- 🎨 **Flux 2 Klein 4B** (My Github) — image generation and editing\n- 🎨 **Flux 2 Klein 9B** (My Github) — image generation and editing\n- 🎬 **Failure Reel V1** (Failure AI) — text-to-video\n- 🔊 **nova-3** (Visit TalkAiCompanion.com For Support Me) — transcription/STT\n- 🔊 **FISH-S2.1-PRO** (Visit TalkAiCompanion.com For Support Me) — TTS\n- 🔢 **Embedding Gemma 300m** (Openrouter) — text embeddings\n\n### 🗑️ Removed\n- `MarcosFRG/north-mini-code` (text)\n- `AkshayCoder48/transcriber` (text)\n- `vendouple/qwen-image-3.0-pro` (image)\n- `JustScriptzz/phoenix-1.0` (image)\n\n### ⬆️ Price increases (~5% more)\n- 🎨 Image: Grok Imagine Image 2.0 · Recraft V4.1 Vector · Nano Banana · Nano Banana 2 · Nano Banana 2 Lite · Nano Banana Pro · Seedream 4.5\n- 🎬 Video: Grok Imagine Video 1.5 · HappyHorse 1.1\n- 🧠 Text: Qwen3.8 Flash · Qwen3.8 27B · Qwen3.8 Max · Qwen3.7 Flash · Qwen3.7 Max · Qwen3.7 Plus · Gemini 3.8 Flash · Gemini 3.7 Flash · Gemini 3.5 Flash Lite · Gemini 3.1 Pro Preview · Gemini 2.5 Flash Lite · MiMo V2.5 · LongCat 2.0 · Laguna S 2.1\n- 🔊 Audio: Fish Audio S2.1 Pro\n\n### ✨ Capability updates\n- `meta/llama-4-scout` — removed tool calling and reasoning; context length reduced to 131,072\n- `minimax/minimax-h3-max-turbo` — added 1080p video output option\n\nExplore at https://gen.pollinations.ai/docs"
+}

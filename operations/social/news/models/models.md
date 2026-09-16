@@ -1,5 +1,77 @@
 # Pollinations Model Changelog
 
+## 2026-09-16
+
+### Added
+- `deepseek/deepseek-v4.1-flash` (DeepSeek, text) — text and image input; tool calling and reasoning.
+- `community/sharktide/3D-agent` (InferencePort AI, InferencePort LLC., text) — text and image input; tool calling and reasoning.
+- `community/sharktide/inferenceport-ai-kimi-k2.7-code-deep-logician` (InferencePort AI, InferencePort LLC., text) — tool calling, reasoning, and web search.
+- `community/pollinations-router/midijourney` (Pollinations, text) — text and image input; tool calling and reasoning.
+- `community/CloudCompile/flux-2-klein-4b` (My Github, image) — text/image generation and editing.
+- `community/CloudCompile/flux-2-klein-9b` (My Github, image) — text/image generation and editing.
+- `community/CloudCompile/sdxl-lightning` (My Github, image) — text/image generation and editing.
+- `community/ZapGaming/failure-reel-v1` (Failure AI, video) — text-to-video.
+- `community/NamanSoni78/Seedance-2.5` (Visit TalkAiCompanion.com For Support Me, video) — text-to-video.
+- `community/NamanSoni78/FISH-AUDIO-S2.1-PRO` (Visit TalkAiCompanion.com For Support Me, audio) — TTS.
+- `community/NamanSoni78/nova-3` (Visit TalkAiCompanion.com For Support Me, audio) — transcription/STT.
+- `community/NamanSoni78/whisper-large-v3` (Visit TalkAiCompanion.com For Support Me, audio) — transcription/STT.
+- `community/NamanSoni78/whisper-large-v3-turbo` (Visit TalkAiCompanion.com For Support Me, audio) — transcription/STT.
+- `community/NamanSoni78/llama-nemotron-embed-vl-1b-v2` (Visit TalkAiCompanion.com For Support Me, embeddings) — text embeddings.
+- `community/pegalink/embedding-gemma-300m` (Openrouter, embeddings) — text embeddings.
+
+### Changed
+- `meta/llama-4-scout` — removed tool calling and reasoning capabilities; context length changed from 327,680 to 131,072.
+- `qwen/qwen3.8-flash` — price +5%.
+- `qwen/qwen3.8-max-0902` — price +5%.
+- `google/gemini-3.8-flash` — price +5%.
+- `inception/mercury-2.5-preview` — price +5%.
+- `qwen/qwen3.8-27b` — price +5%.
+- `qwen/qwen3.8-max` — price +5%.
+- `thinkingmachines/inkling-small` — price +5%.
+- `meituan/longcat-2.0` — price +5%.
+- `poolside/laguna-s-2.1` — price +5%.
+- `google/gemma-4-31b-it` — price +5%.
+- `qwen/qwen3.7-max` — price +5%.
+- `xiaomi/mimo-v2.5` — price +5%.
+- `xiaomi/mimo-v2.5-pro` — price +5%.
+- `stepfun/step-3.5-flash` — price +5%.
+- `google/gemini-3.7-flash` — price +5%.
+- `mistralai/mistral-small-4` — price +5%.
+- `qwen/qwen3.7-plus` — price +5%.
+- `google/gemini-3.5-flash-lite` — price +5%.
+- `google/gemini-2.5-flash-lite` — price +5%.
+- `google/gemini-3.1-pro-preview` — price +5%.
+- `google/gemini-3-flash-preview` — price +5%.
+- `mistralai/mistral-small-3.2` — price +5%.
+- `qwen/qwen3-coder-next` — price +5%.
+- `qwen/qwen3-vl-30b-a3b-instruct` — price +5%.
+- `google/gemma-4-26b-a4b-it` — price +5%.
+- `minimax/minimax-m2.7` — price +5%.
+- `qwen/qwen3.7-flash` — price +5%.
+- `x-ai/grok-imagine-image-2.0` — price +5%.
+- `recraft/recraft-v4.1-vector` — price +5%.
+- `google/gemini-3.1-flash-lite-image` — price +5%.
+- `x-ai/grok-imagine-image-quality` — price +5%.
+- `google/gemini-3.1-flash-image` — price +5%.
+- `bytedance/seedream-4.5` — price +5%.
+- `google/gemini-3-pro-image` — price +5%.
+- `google/gemini-2.5-flash-image` — price +5%.
+- `x-ai/grok-imagine-video-1.5` — price +5%.
+- `alibaba/happyhorse-1.1` — price +5%.
+- `fish-audio/s2.1-pro` — price +5%.
+- `minimax/minimax-h3-max-turbo` — added 1080p resolution and pricing variant.
+
+### Removed
+- `NamanSoni78/gpt-6-astra-pro` (was: text)
+- `MarcosFRG/north-mini-code` (was: text)
+- `AkshayCoder48/transcriber` (was: text)
+- `vendouple/qwen-image-3.0-pro` (was: image)
+- `MarcosFRG/sdxl-lightning` (was: image)
+- `JustScriptzz/phoenix-1.0` (was: image)
+- `NamanSoni78/Seedance-2.5` (was: video)
+- `NamanSoni78/FISH-AUDIO-S2.1-PRO` (was: audio)
+- `NamanSoni78/llama-nemotron-embed-vl-1b-v2` (was: embeddings)
+
 ## 2026-09-09
 
 ### Added

@@ -184,15 +184,11 @@ export function parseApiError(status, errorText) {
             return `Bad request: ${errorMessage}`;
         case 401:
             return `Authentication failed. Send a valid API key as an Authorization bearer token. Get your key at https://enter.pollinations.ai/keys`;
-        case 403: {
-            const detail =
+        case 403:
+            return (
                 errorMessage ||
-                "Your API key may not have permission for this operation.";
-            const messageWithLink = detail.includes("Manage key permissions")
-                ? detail
-                : `${detail.replace(/\.?$/, "")}. Manage key permissions at https://enter.pollinations.ai/keys`;
-            return `Access forbidden. ${messageWithLink}`;
-        }
+                "Access forbidden. Your API key may not have permission for this operation."
+            );
         case 404:
             return `Resource not found. The requested endpoint or model may not exist.`;
         case 429:

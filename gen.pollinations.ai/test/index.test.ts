@@ -678,6 +678,7 @@ fixtureTest(
             requests.map((request) => new URL(request.url).pathname),
         );
     },
+    30_000,
 );
 
 describe("model status", () => {

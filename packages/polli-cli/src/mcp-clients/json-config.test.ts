@@ -73,6 +73,32 @@ describe("fileAdapter", () => {
         await adapter.install(ctx, [server], "sk_test");
         expect((await adapter.status(ctx)).servers).toEqual(["pollinations"]);
     });
+
+    it("supports flat dotted container keys like Amp's amp.mcpServers", async () => {
+        const home = mkdtempSync(join(tmpdir(), "mcp-test-"));
+        const amp = fileAdapter({
+            id: "amp-test",
+            label: "Amp",
+            description: "flat key adapter",
+            configPath: (ctx: McpContext) => join(ctx.home, "settings.json"),
+            container: ["amp.mcpServers"],
+            buildEntry: (server, key) => ({
+                url: server.url,
+                headers: { Authorization: `Bearer ${key}` },
+            }),
+        });
+        await amp.install({ home, env: {} }, [server], "sk_test");
+        const data = JSON.parse(
+            readFileSync(join(home, "settings.json"), "utf-8"),
+        ) as { "amp.mcpServers": Record<string, unknown> };
+        expect(Object.keys(data["amp.mcpServers"])).toEqual(["pollinations"]);
+        const result = await amp.remove({ home, env: {} });
+        expect(result.servers).toEqual(["pollinations"]);
+        const after = JSON.parse(
+            readFileSync(join(home, "settings.json"), "utf-8"),
+        ) as { "amp.mcpServers": Record<string, unknown> };
+        expect(Object.keys(after["amp.mcpServers"])).toHaveLength(0);
+    });
 });
 
 describe("isPollinationsEntry", () => {

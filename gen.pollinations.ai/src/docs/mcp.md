@@ -76,8 +76,9 @@ with another endpoint from the table to use FFmpeg or Exa Search.
 #### Automated install with the polli CLI
 
 `polli mcp install` configures supported clients from the live catalog in one
-step — Claude Code, Codex, VS Code, Cursor, OpenCode, Gemini CLI, Claude
-Desktop, Windsurf, Cline, and Kiro:
+step — Claude Code, Codex, VS Code/Copilot, Cursor, OpenCode, Gemini CLI,
+Copilot CLI, Windsurf, Cline, Amp, Kiro, Zed, and Claude Desktop (the Warp app
+auto-discovers `~/.claude.json`, so it is covered by the Claude Code entry):
 
 ```bash
 polli mcp install             # detected clients, all catalog servers

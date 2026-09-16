@@ -2,7 +2,6 @@ import {
     Alert,
     Button,
     Collapsible,
-    cn,
     ExternalLinkIcon,
     InlineLink,
     MailIcon,
@@ -18,7 +17,6 @@ import {
     ErrorBanner,
 } from "@pollinations/ui/auth";
 import { ModalityChip } from "@pollinations/ui/gen";
-import { formatPollen } from "@pollinations/ui/wallet";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
@@ -41,6 +39,10 @@ import { computeCategoryModalities } from "../models/model-categories.ts";
 import { useModelCategories } from "../models/use-model-categories.ts";
 import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
 import { AppAttribution } from "./app-attribution.tsx";
+import {
+    type AuthAccountBalances,
+    AuthAccountIdentity,
+} from "./auth-account-identity.tsx";
 
 type Attribution = {
     found: boolean;
@@ -100,7 +102,9 @@ export function Authorize() {
     const [deviceOutcome, setDeviceOutcome] = useState<
         "pending" | "approved" | "denied"
     >("pending");
-    const [totalBalance, setTotalBalance] = useState<number | null>(null);
+    const [balances, setBalances] = useState<
+        AuthAccountBalances | null | undefined
+    >(undefined);
     const [permissionsExpanded, setPermissionsExpanded] = useState(false);
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
@@ -331,12 +335,13 @@ export function Authorize() {
             .$get()
             .then((response) => (response.ok ? response.json() : null))
             .then((data) => {
-                if (!data) return;
-                setTotalBalance(
-                    (data.tierBalance ?? 0) + (data.packBalance ?? 0),
+                setBalances(
+                    data
+                        ? { quest: data.tierBalance, paid: data.packBalance }
+                        : null,
                 );
             })
-            .catch(() => {});
+            .catch(() => setBalances(null));
     }, [user]);
 
     async function handleAuthorize(): Promise<void> {
@@ -574,44 +579,11 @@ export function Authorize() {
             contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
         >
             <AuthModalHeader>
-                <div className="flex items-center gap-3 min-w-0">
-                    <a
-                        href={config.baseUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 min-w-0"
-                    >
-                        {user.image && (
-                            <img
-                                src={user.image}
-                                alt=""
-                                className="w-6 h-6 rounded-full shrink-0"
-                            />
-                        )}
-                        <span className="text-sm font-medium text-theme-text-strong truncate">
-                            {user.name || user.githubUsername || user.email}
-                        </span>
-                    </a>
-                    <div className="inline-flex items-stretch rounded-full bg-theme-bg-pale border border-theme-border text-sm overflow-hidden shrink-0">
-                        {totalBalance !== null && (
-                            <span className="flex items-center px-3 text-theme-text-base whitespace-nowrap">
-                                {formatPollen(totalBalance)} pollen
-                            </span>
-                        )}
-                        <a
-                            href={`${config.baseUrl}/pollen#buy-pollen`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={cn(
-                                "flex items-center px-3 py-1 font-medium text-theme-text-base bg-theme-bg-active hover:bg-theme-bg-hover transition-colors cursor-pointer",
-                                totalBalance !== null &&
-                                    "border-l border-theme-border",
-                            )}
-                        >
-                            Top up
-                        </a>
-                    </div>
-                </div>
+                <AuthAccountIdentity
+                    user={user}
+                    balances={balances}
+                    topUpHref="/top-up"
+                />
             </AuthModalHeader>
 
             <ScrollArea className="min-h-0 px-6 py-2 space-y-4 overscroll-contain">
@@ -619,7 +591,7 @@ export function Authorize() {
                     <ErrorBanner>{error}</ErrorBanner>
                 ) : (
                     <div>
-                        {totalBalance !== null && totalBalance <= 0 && (
+                        {balances && balances.quest + balances.paid <= 0 && (
                             <div className="py-4">
                                 <Alert
                                     intent="info"

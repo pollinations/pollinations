@@ -21,9 +21,7 @@ export function createJustGitClient(
         client.cli = ({ argv, cwd = "/", env = {}, stdin = "" }) =>
             createGit({
                 // Read on every call: the Durable Object fills it in per request.
-                identity: options.defaultIdentity && {
-                    ...options.defaultIdentity,
-                },
+                identity: options.defaultIdentity,
                 credentials,
             }).execute(argv, {
                 fs,
@@ -36,17 +34,9 @@ export function createJustGitClient(
 }
 
 function justGitFs(fs: WorkspaceFilesystem): FileSystem {
-    const toStat = async (stat: ReturnType<WorkspaceFilesystem["stat"]>) => {
-        const s = await stat;
-        return {
-            isFile: s.isFile,
-            isDirectory: s.isDirectory,
-            isSymbolicLink: s.isSymbolicLink,
-            mode: s.mode,
-            size: s.size,
-            mtime: new Date(s.mtime),
-        };
-    };
+    const withDate = (
+        stat: Awaited<ReturnType<WorkspaceFilesystem["stat"]>>,
+    ) => ({ ...stat, mtime: new Date(stat.mtime) });
     return {
         readFile: (path) => fs.readFile(path, "utf8"),
         readFileBuffer: async (path) =>
@@ -59,8 +49,8 @@ function justGitFs(fs: WorkspaceFilesystem): FileSystem {
                 () => true,
                 () => false,
             ),
-        stat: (path) => toStat(fs.stat(path)),
-        lstat: (path) => toStat(fs.lstat(path)),
+        stat: async (path) => withDate(await fs.stat(path)),
+        lstat: async (path) => withDate(await fs.lstat(path)),
         mkdir: (path, options) => fs.mkdir(path, options),
         readdir: async (path) =>
             (await fs.readdir(path)).map((entry) => entry.name),

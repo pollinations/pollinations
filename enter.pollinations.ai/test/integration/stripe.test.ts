@@ -1,9 +1,4 @@
-import {
-    createExecutionContext,
-    env,
-    SELF,
-    waitOnExecutionContext,
-} from "cloudflare:test";
+import { env, SELF } from "cloudflare:test";
 import { createHmac } from "node:crypto";
 import {
     stripeCardFingerprintAttempt as stripeCardFingerprintAttemptTable,
@@ -21,8 +16,7 @@ import {
 } from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { expect, vi } from "vitest";
-import { stripeWebhooksRoutes } from "../../src/routes/stripe-webhooks.ts";
+import { expect } from "vitest";
 import { STRIPE_NEW_CARD_GATE_METADATA } from "../../src/utils/stripe-card-gate.ts";
 import { test } from "../fixtures.ts";
 import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
@@ -31,92 +25,6 @@ const base = "http://localhost:3000/api/stripe";
 const stripeWebhookUrl = "http://localhost:3000/api/webhooks/stripe";
 const stripePmcId = "pmc_1SrYT96O03AauPe8ijLy6sZU";
 const checkoutAmounts = POLLEN_PACKS.map((pack) => `/checkout/${pack.packKey}`);
-
-for (const type of [
-    "checkout.session.completed",
-    "checkout.session.async_payment_succeeded",
-]) {
-    test(`Product analytics records ${type} once, after fulfillment`, async ({
-        sessionToken,
-        mocks,
-    }) => {
-        void sessionToken;
-        await mocks.enable("tinybird");
-        const userId = await getSeededUserId();
-        const pack = POLLEN_PACKS[0];
-        const event = {
-            id: "evt_product_analytics",
-            type,
-            livemode: false,
-            data: {
-                object: {
-                    id: "cs_product_analytics",
-                    object: "checkout.session",
-                    metadata: { userId, packKey: pack.packKey },
-                    payment_status: "paid",
-                    amount_subtotal: pack.amountUsd * 100,
-                    amount_total: pack.amountUsd * 100 + 123,
-                    currency: "eur",
-                    customer_email: "private@example.com",
-                },
-            },
-        };
-        const originalFetch = globalThis.fetch;
-        const rows: unknown[] = [];
-        const fetch = vi
-            .spyOn(globalThis, "fetch")
-            .mockImplementation(async (input, init) => {
-                if (
-                    new URL(String(input)).searchParams.get("name") ===
-                    "product_event"
-                ) {
-                    rows.push(JSON.parse(String(init?.body)));
-                    return new Response(null, { status: 202 });
-                }
-                return originalFetch(input, init);
-            });
-        try {
-            const unpaid = {
-                ...event,
-                type: "checkout.session.completed",
-                data: {
-                    object: { ...event.data.object, payment_status: "unpaid" },
-                },
-            };
-            for (const delivery of [unpaid, event, event]) {
-                const payload = JSON.stringify(delivery);
-                const ctx = createExecutionContext();
-                const response = await stripeWebhooksRoutes.fetch(
-                    new Request("http://localhost/stripe", {
-                        method: "POST",
-                        body: payload,
-                        headers: {
-                            "stripe-signature":
-                                signStripeWebhookPayload(payload),
-                        },
-                    }),
-                    { ...env, TINYBIRD_ANALYTICS_ENABLED: "true" },
-                    ctx,
-                );
-                expect(response.status).toBe(200);
-                await waitOnExecutionContext(ctx);
-            }
-            expect(rows).toHaveLength(1);
-            expect(rows[0]).toMatchObject({
-                event: "payment_completed",
-                event_id: "payment:cs_product_analytics",
-                user_id: userId,
-                payment_source: "checkout",
-                pack_key: pack.packKey,
-                amount_total_minor: pack.amountUsd * 100 + 123,
-                currency: "eur",
-            });
-            expect(JSON.stringify(rows)).not.toContain("private@example.com");
-        } finally {
-            fetch.mockRestore();
-        }
-    });
-}
 
 function signStripeWebhookPayload(payload: string): string {
     const timestamp = Math.floor(Date.now() / 1000);

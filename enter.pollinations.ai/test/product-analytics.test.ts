@@ -42,7 +42,7 @@ async function pageView(
 
 test("disabled tracking does no network IO or session lookup", async () => {
     const fetch = vi.spyOn(globalThis, "fetch");
-    await captureProductEvent(env, "signup_completed", "user-1");
+    await captureProductEvent(env, "checkout_started", "user-1");
     const response = await pageView({ page: "/top-up" }, "", {}, "false");
     expect(response.status).toBe(204);
     expect(fetch).not.toHaveBeenCalled();
@@ -134,20 +134,16 @@ test("page views derive the user from the authenticated session", async ({
     ]);
 });
 
-test("capture reuses Tinybird ingestion, preserving amount/currency and event ID", async () => {
+test("capture reuses Tinybird ingestion, preserving pack key and event ID", async () => {
     const fetch = vi
         .spyOn(globalThis, "fetch")
         .mockResolvedValue(new Response(null, { status: 202 }));
     await captureProductEvent(
         bindings,
-        "payment_completed",
+        "checkout_started",
         "user-1",
-        {
-            amount_total_minor: 1123,
-            currency: "eur",
-            payment_source: "checkout",
-        },
-        "payment:cs-1",
+        { pack_key: "pack-1" },
+        "checkout:cs-1",
     );
     expect(fetch).toHaveBeenCalledTimes(1);
     const [url, init] = fetch.mock.calls[0];
@@ -156,12 +152,10 @@ test("capture reuses Tinybird ingestion, preserving amount/currency and event ID
         `Bearer ${env.TINYBIRD_INGEST_TOKEN}`,
     );
     expect(JSON.parse(String(init?.body))).toMatchObject({
-        event: "payment_completed",
+        event: "checkout_started",
         user_id: "user-1",
-        event_id: "payment:cs-1",
-        amount_total_minor: 1123,
-        currency: "eur",
-        payment_source: "checkout",
+        event_id: "checkout:cs-1",
+        pack_key: "pack-1",
         environment: "test",
     });
 });
@@ -172,12 +166,12 @@ test("delivery failure never fails the caller and is not retried", async () => {
         .mockRejectedValue(new Error("offline"));
     vi.spyOn(console, "warn").mockImplementation(() => {});
     await expect(
-        captureProductEvent(bindings, "signup_completed", "user-1"),
+        captureProductEvent(bindings, "checkout_started", "user-1"),
     ).resolves.toBeUndefined();
     expect(fetch).toHaveBeenCalledTimes(1);
     fetch.mockResolvedValue(new Response(null, { status: 503 }));
     await expect(
-        captureProductEvent(bindings, "signup_completed", "user-1"),
+        captureProductEvent(bindings, "checkout_started", "user-1"),
     ).resolves.toBeUndefined();
     expect(fetch).toHaveBeenCalledTimes(2);
 });

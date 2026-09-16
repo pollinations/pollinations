@@ -1,26 +1,17 @@
 import { getTinybirdDatasourceIngestUrl } from "@shared/events.ts";
 
-// Deploy the datasource and verify the existing ingest token's APPEND scope
-// before enabling TINYBIRD_ANALYTICS_ENABLED and VITE_TINYBIRD_ANALYTICS_ENABLED.
+// Signups and fulfilled payments are not recorded here: join d1_user and
+// stripe_event instead. Deploy the datasource and verify the existing ingest
+// token's APPEND scope before enabling TINYBIRD_ANALYTICS_ENABLED and
+// VITE_TINYBIRD_ANALYTICS_ENABLED.
 export async function captureProductEvent(
     env: Pick<
         CloudflareBindings,
         "ENVIRONMENT" | "TINYBIRD_INGEST_URL" | "TINYBIRD_INGEST_TOKEN"
     > & { TINYBIRD_ANALYTICS_ENABLED?: string },
-    event:
-        | "signup_completed"
-        | "page_viewed"
-        | "checkout_started"
-        | "payment_completed",
+    event: "page_viewed" | "checkout_started",
     userId: string,
-    properties: {
-        page?: string;
-        pack_key?: string;
-        amount_total_minor?: number | null;
-        currency?: string | null;
-        payment_source?: "checkout";
-        livemode?: boolean;
-    } = {},
+    properties: { page?: string; pack_key?: string } = {},
     eventId: string = crypto.randomUUID(),
 ): Promise<void> {
     if (env.TINYBIRD_ANALYTICS_ENABLED !== "true") return;

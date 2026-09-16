@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 // Route templates only: never accept a URL, arbitrary properties or a user ID
-// from the browser. Keep this list explicit as the dashboard grows.
+// from the browser. This list is not derived from routeTree.gen.ts: a new
+// route drops its page views silently until it is added here.
 export const productPageViewSchema = z.strictObject({
     page: z.enum([
         "/",

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14406,
+  "title": "Add Pollen Craft to app catalog",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/14406",
+  "merged_at": "2026-09-16T13:21:24Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #10973\r\n\r\n- Lists the live HTML5 game at https://tomdacat.itch.io/pollen-craft.\r\n- Links the public standalone source at https://github.com/tomdacatto/pollen-craft.\r\n- Marks the app as BYOP; itch uses Pollinations device authorization and keeps the delegated key in the game tab only.\r\n- Keeps the monorepo change to one 20-line catalog entry rather than adding the full game source under `apps/`.\r\n- Validated the catalog JSON and all four focused app-management tests on current `main`.\r\n",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A New Craft in the Garden",
+    "blurb": "Pollen Craft has landed in the app catalog: a live HTML5 game where the hive gets a little more hands-on. It brings its own delegated key, keeps it in the game tab, and leaves the source out in the open.",
+    "summary": "Added a 20-line app-catalog entry for Pollen Craft, linking its live itch.io HTML5 game and public standalone GitHub source while marking it as a BYOP app using Pollinations device authorization.",
+    "impact": "People can now discover and launch Pollen Craft from the catalog, with its delegated Pollinations key kept inside the active game tab.",
+    "keywords": [
+      "community-app",
+      "app-catalog",
+      "pollen-craft",
+      "HTML5-game",
+      "BYOP",
+      "device-authorization"
+    ],
+    "visual_concept": "Depict Pollen Craft as a cozy little browser game garden: Polli is actively placing pixel flower-and-hive craft pieces on a tiny game board beside a retro CRT showing the game. A small open-source booklet and a key-shaped pollen token represent the public source and delegated in-tab authorization, with code-plants and flowers making the catalog addition feel like a new garden plot.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener apron as she arranges flower-and-hive craft tiles in a small HTML5 game garden beside a glowing retro CRT; an open source-code booklet and a pollen-shaped key token sit nearby among code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: 'POLLEN CRAFT', emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14406.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener apron as she arranges flower-and-hive craft tiles in a small HTML5 game garden beside a glowing retro CRT; an open source-code booklet and a pollen-shaped key token sit nearby among code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: 'POLLEN CRAFT', emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-16T13:22:22.273289+00:00"
+}

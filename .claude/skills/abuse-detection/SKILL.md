@@ -316,8 +316,8 @@ npx wrangler d1 execute production-pollinations-enter-db --remote \
 ## Unbanning: the trap
 
 If the account was banned by the payment-fraud policy, **clearing `banned` is not
-enough**. The hourly job rescores all history, so it will re-ban the same account
-on its next run. You must also add the user id to the repository variable
+enough**. The daily job rescores all attributable history, so it will re-ban the
+same account on its next run. You must also add the user id to the repository variable
 `FRAUD_BAN_EXCLUDED_USER_IDS` (comma separated), or the unban lasts under an hour.
 
 Auto top-up stays off after an unban; re-enable it deliberately if the user asks.
@@ -325,7 +325,7 @@ Auto top-up stays off after an unban; re-enable it deliberately if the user asks
 ## Payment-fraud bans
 
 Separate from the abuse scoring above, `.github/workflows/billing-check-fraud.yml`
-scores accounts hourly on Stripe signals (`enter.pollinations.ai/src/utils/stripe-fraud-score.ts`).
+scores accounts daily on Stripe signals (`enter.pollinations.ai/src/utils/stripe-fraud-score.ts`).
 
 - Bans **only** when `FRAUD_BAN_ENABLED` is set. It is deliberately unset: the job
   is a review queue, not an enforcer.
@@ -387,7 +387,7 @@ refuses it.
 | 2026-03-06 | Banned bot farm | 277 | IP cluster ≥100, 95%+ errors, $0 pack spend |
 | 2026-03-06 | Rate-limited bot farm | 42 | Same bot farm, no pack spend |
 | 2026-03-06 | Rate-limited bot farm | 59 | Multi-signal: IP clusters, gibberish suffixes, disposable emails, hammering |
-| 2026-09-16 | Banned card testers | 22 | Stripe fraud signals; 9 found by the hourly job, 13 by hand (pre-May charges). 176 card fingerprints added to the Radar block list |
+| 2026-09-16 | Banned card testers | 22 | Stripe fraud signals; 9 found by the scan, 13 by hand (pre-May charges). 176 card fingerprints added to the Radar block list |
 
 ---
 

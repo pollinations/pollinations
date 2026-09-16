@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🛠️",
+    "name": "GitMuse",
+    "url": "https://fadyabohamza-netizen.github.io/gitmuse",
+    "description": "AI-powered git workflow assistant: generates Conventional Commits messages from any diff, explains error messages / stack traces with specific fixes, and writes pull request descriptions. It uses the ",
+    "language": "en",
+    "category": "build",
+    "platform": "web",
+    "githubUsername": "fadyabohamza-netizen",
+    "githubUserId": "243879765",
+    "repositoryUrl": "https://github.com/fadyabohamza-netizen/gitmuse",
+    "repositoryStars": null,
+    "discordUsername": "fadyabohamza-netizen",
+    "other": null,
+    "submittedDate": "2026-09-16",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14971",
+    "approvedDate": "2026-09-16",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "✍️",
     "name": "cogitor",
     "url": "https://github.com/SkalaSkalolaz/cogitor",

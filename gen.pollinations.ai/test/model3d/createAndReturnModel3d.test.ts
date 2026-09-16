@@ -6,6 +6,7 @@ const CLEAN_JPEG_BYTES = new Uint8Array([
     0xff, 0xd8, 0xff, 0xc0, 0x00, 0x0b, 0x08, 0x00, 0x01, 0x00, 0x01, 0x03,
     0x01, 0x11, 0x00, 0xff, 0xda, 0x00, 0x03, 0x00, 0xff, 0xd9,
 ]);
+const REF_IMAGE_URL = "https://example.com/ref.jpg";
 
 import { test as workerTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -43,7 +44,7 @@ function baseParams(
     return {
         model,
         resolution,
-        image: ["https://example.com/ref.jpg"],
+        image: [REF_IMAGE_URL],
         safe: false,
     };
 }
@@ -65,7 +66,7 @@ describe("createAndReturnModel3d dispatch", () => {
                         : input instanceof Request
                           ? input.url
                           : input.toString();
-                if (url.includes("example.com")) {
+                if (url === REF_IMAGE_URL) {
                     return new Response(CLEAN_JPEG_BYTES, {
                         headers: { "content-type": "image/jpeg" },
                     });
@@ -105,7 +106,7 @@ workerTest("uses the shared fallback loop for 3D", async ({ paidApiKey }) => {
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
                 const request = new Request(input, init);
-                if (request.url.includes("example.com")) {
+                if (request.url === REF_IMAGE_URL) {
                     return new Response(CLEAN_JPEG_BYTES, {
                         headers: { "content-type": "image/jpeg" },
                     });
@@ -170,7 +171,7 @@ workerTest(
             vi.spyOn(globalThis, "fetch").mockImplementation(
                 async (input, init) => {
                     const request = new Request(input, init);
-                    if (request.url.includes("example.com")) {
+                    if (request.url === REF_IMAGE_URL) {
                         return new Response(CLEAN_JPEG_BYTES, {
                             headers: { "content-type": "image/jpeg" },
                         });

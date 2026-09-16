@@ -19,7 +19,7 @@ const MAX_MINUTES = 7 * 24 * 60;
 const DATA_TIMESTAMP_HEADER = "X-Model-Status-Timestamp";
 const STALE_HEADER = "X-Model-Status-Stale";
 
-const ModelHealthRowSchema = z.object({
+export const ModelHealthRowSchema = z.object({
     model: z.string(),
     event_type: z.string(),
     provider: z.string(),
@@ -160,7 +160,9 @@ function createTinybirdPipeFetcher<T>(pipeName: string) {
         }
         log("Fetching %s from Tinybird: %s", pipeName, url.toString());
 
-        const response = await fetch(url.toString());
+        const response = await fetch(url.toString(), {
+            signal: AbortSignal.timeout(5_000),
+        });
         if (!response.ok) {
             throw new Error(`Tinybird responded with ${response.status}`);
         }
@@ -234,6 +236,10 @@ function tinybirdOverrides(c: Context<Env>): TinybirdOverrides {
         token: env.TINYBIRD_QUERY_TOKEN,
         deployment: env.TINYBIRD_QUERY_DEPLOYMENT,
     };
+}
+
+export function getModelHealthSnapshot(c: Context<Env>, minutes: number) {
+    return fetchModelHealth(minutes, tinybirdOverrides(c));
 }
 
 function parseMinutesOrRespond(c: Context<Env>) {

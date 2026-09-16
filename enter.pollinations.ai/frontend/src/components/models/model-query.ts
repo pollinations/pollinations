@@ -3,10 +3,12 @@ import type { ModelPrice } from "./types.ts";
 
 export type ModelAccess = "paid" | "quest" | "free";
 export type ModelSource = "official" | "community";
+export type ModelStatus = "all" | "healthy";
 
 export type ModelQueryFilter =
     | { key: "access"; value: ModelAccess }
     | { key: "source"; value: ModelSource }
+    | { key: "status"; value: ModelStatus }
     | {
           key: "publisher" | "id" | "type" | "capability";
           value: string;
@@ -31,9 +33,11 @@ export type ModelQueryDraftFilter = {
 
 const ACCESS_VALUES: readonly ModelAccess[] = ["paid", "quest", "free"];
 const SOURCE_VALUES: readonly ModelSource[] = ["official", "community"];
+const STATUS_VALUES: readonly ModelStatus[] = ["all", "healthy"];
 export const MODEL_QUERY_FILTER_KEYS = [
     "access",
     "source",
+    "status",
     "publisher",
     "id",
     "type",
@@ -62,6 +66,10 @@ function parseModelQueryFilter(
             return isModelAccess(value) ? { key, value } : undefined;
         case "source":
             return isModelSource(value) ? { key, value } : undefined;
+        case "status":
+            return value === "all" || value === "healthy"
+                ? { key, value }
+                : undefined;
         case "publisher":
         case "id":
         case "type":
@@ -105,15 +113,22 @@ export function getExplicitModelQuerySource(
     return query.filters.find((filter) => filter.key === "source")?.value;
 }
 
-/** Ensure model catalog queries always show their selected source scope. */
-export function ensureModelQuerySource(query: string): string {
+/** Make default catalog filters visible and editable in the search bar. */
+export function ensureModelQueryDefaults(query: string): string {
     const normalizedQuery = query.trim();
-    const hasSourceToken = normalizedQuery
+    const keys = normalizedQuery
+        .toLowerCase()
         .split(/\s+/)
-        .some((token) => token.toLowerCase().startsWith("source:"));
-    return hasSourceToken
-        ? normalizedQuery
-        : ["source:official", normalizedQuery].filter(Boolean).join(" ");
+        .filter((token) => token.includes(":"))
+        .map((token) => token.split(":")[0]);
+    return [
+        ...["source:official", "status:healthy"].filter(
+            (token) => !keys.includes(token.split(":")[0]),
+        ),
+        normalizedQuery,
+    ]
+        .filter(Boolean)
+        .join(" ");
 }
 
 export function getModelQueryFilterTokens(
@@ -230,6 +245,8 @@ function getFilterValues(key: string, models: ModelPrice[]): string[] {
             return [...ACCESS_VALUES];
         case "source":
             return [...SOURCE_VALUES];
+        case "status":
+            return [...STATUS_VALUES];
         case "publisher":
             return models
                 .map(getModelPublisher)
@@ -285,6 +302,11 @@ function matchesFilter(model: ModelPrice, filter: ModelQueryFilter): boolean {
             return getModelAccess(model) === filter.value;
         case "source":
             return Boolean(model.community) === (filter.value === "community");
+        case "status":
+            return (
+                filter.value === "all" ||
+                (model.health?.status === "healthy" && !model.health.stale)
+            );
         case "publisher": {
             return getModelPublisher(model) === filter.value;
         }

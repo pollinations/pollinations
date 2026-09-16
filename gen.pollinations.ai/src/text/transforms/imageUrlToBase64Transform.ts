@@ -91,13 +91,20 @@ async function processMessageContent(
     context: ImageConversionContext,
     requiresBase64ImageUrls: boolean,
 ): Promise<ContentPart[]> {
+    let modified = false;
     const processed: ContentPart[] = [];
     for (const part of content) {
-        processed.push(
-            await processContentPart(part, context, requiresBase64ImageUrls),
+        const nextPart = await processContentPart(
+            part,
+            context,
+            requiresBase64ImageUrls,
         );
+        if (nextPart !== part) {
+            modified = true;
+        }
+        processed.push(nextPart);
     }
-    return processed;
+    return modified ? processed : content;
 }
 
 /**
@@ -122,6 +129,7 @@ export const imageUrlToBase64Transform: TransformFn = async (
         imageCount: 0,
         totalBytes: 0,
     };
+    let modified = false;
     const processedMessages = [];
     for (const message of messages) {
         if (!message.content || typeof message.content === "string") {
@@ -134,9 +142,14 @@ export const imageUrlToBase64Transform: TransformFn = async (
             context,
             requiresBase64ImageUrls,
         );
-        processedMessages.push({ ...message, content: processedContent });
+        if (processedContent !== message.content) {
+            modified = true;
+            processedMessages.push({ ...message, content: processedContent });
+        } else {
+            processedMessages.push(message);
+        }
     }
 
     log("Image URL conversion complete");
-    return { messages: processedMessages, options };
+    return { messages: modified ? processedMessages : messages, options };
 };

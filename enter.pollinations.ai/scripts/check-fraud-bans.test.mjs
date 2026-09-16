@@ -90,7 +90,7 @@ test("report summarises counts and lists candidates only in the attached file", 
     const readOnly = buildFraudReport(scan, false);
     assert.equal(
         readOnly.content,
-        "Fraud ban check · read-only · 2 candidates · 350 charges scanned, 12 unmapped",
+        "Fraud ban check · read-only · 2 candidates · 2 awaiting review · 350 charges scanned, 12 unmapped",
     );
     assert.match(
         readOnly.file.name,

@@ -8,7 +8,11 @@ import {
 } from "./stripe-fraud-score.ts";
 
 type FraudQuery = { sql: string; params: string[] };
-type FraudReportUser = FraudUser & { name: string | null };
+type FraudReportUser = FraudUser & {
+    name: string | null;
+    banned: number | null;
+    ban_expires: number | null;
+};
 export type FraudCandidate = { id: string; name: string | null; score: number };
 type QueryRunner = (
     body: FraudQuery | { batch: FraudQuery[] },
@@ -30,7 +34,7 @@ export async function runFraudBanCheck(
     let cursor = "";
     for (;;) {
         const [page] = await query({
-            sql: "SELECT id, stripe_customer_id, name FROM user WHERE id > ? ORDER BY id LIMIT 5000",
+            sql: "SELECT id, stripe_customer_id, name, banned, ban_expires FROM user WHERE id > ? ORDER BY id LIMIT 5000",
             params: [cursor],
         });
         if (!Array.isArray(page?.results))
@@ -89,15 +93,24 @@ export async function runFraudBanCheck(
         applied: apply ? candidates.length : 0,
         charges: result.charges,
         unmapped: result.unmapped,
-        // Private report for the operators' channel; never printed to public logs.
-        report: candidates.map(
-            (user): FraudCandidate => ({
-                id: user.id,
-                name: user.name,
-                score: result.scores.get(user.id) ?? 0,
-            }),
-        ),
+        // Private report of accounts still needing action; never printed to public logs.
+        report: candidates
+            .filter((user) => !isActiveBan(user))
+            .map(
+                (user): FraudCandidate => ({
+                    id: user.id,
+                    name: user.name,
+                    score: result.scores.get(user.id) ?? 0,
+                }),
+            ),
     };
+}
+
+function isActiveBan(user: FraudReportUser) {
+    return (
+        user.banned === 1 &&
+        (user.ban_expires === null || user.ban_expires > Date.now() / 1000)
+    );
 }
 
 export function fraudBanQueries(userId: string) {

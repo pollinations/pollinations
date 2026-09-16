@@ -26,7 +26,7 @@ export function buildFraudReport(result, apply) {
     const mode = apply
         ? `bans applied: ${result.applied}`
         : `read-only · ${result.candidates} candidate${result.candidates === 1 ? "" : "s"}`;
-    const content = `Fraud ban check · ${mode} · ${result.charges} charges scanned, ${result.unmapped} unmapped`;
+    const content = `Fraud ban check · ${mode} · ${result.report.length} awaiting review · ${result.charges} charges scanned, ${result.unmapped} unmapped`;
     if (!result.report.length) return { content, file: null };
     const lines = result.report.map(
         (user) => `${user.score.toFixed(2)}\t${user.id}\t${user.name ?? ""}`,
@@ -40,19 +40,20 @@ export function buildFraudReport(result, apply) {
     };
 }
 
+/** Posts only when an account still needs action, so a message means review. */
 export async function postFraudReport(webhookUrl, result, apply, fetchImpl) {
     const { content, file } = buildFraudReport(result, apply);
+    if (!file) return false;
     const form = new FormData();
     form.set(
         "payload_json",
         JSON.stringify({ content, allowed_mentions: { parse: [] } }),
     );
-    if (file)
-        form.set(
-            "files[0]",
-            new Blob([file.body], { type: "text/tab-separated-values" }),
-            file.name,
-        );
+    form.set(
+        "files[0]",
+        new Blob([file.body], { type: "text/tab-separated-values" }),
+        file.name,
+    );
     const response = await fetchImpl(webhookUrl, {
         method: "POST",
         body: form,
@@ -62,6 +63,7 @@ export async function postFraudReport(webhookUrl, result, apply, fetchImpl) {
         throw new FraudCheckError(
             `Discord report failed: HTTP ${response.status}`,
         );
+    return true;
 }
 
 // Production-only job. These identities match Enter's production bindings.

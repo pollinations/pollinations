@@ -136,7 +136,12 @@ test("hourly scan reads every page; dry run is read-only; apply bans and expires
     expect(mocks.stripe.state.checkoutSessions[0].status).toBe("open");
     expect(
         await runFraudBanCheck(stripe, queryD1, { apply: true }),
-    ).toMatchObject({ candidates: 1, applied: 1 });
+    ).toMatchObject({ candidates: 1, applied: 1, report: [{ id: user.id }] });
+    // Already-banned accounts stay candidates but no longer need review.
+    expect(await runFraudBanCheck(stripe, queryD1)).toMatchObject({
+        candidates: 1,
+        report: [],
+    });
     expect(
         await env.DB.prepare(
             "SELECT banned, auto_top_up_enabled FROM user WHERE id = ?",

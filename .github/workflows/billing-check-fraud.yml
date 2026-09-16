@@ -14,9 +14,9 @@ concurrency:
 
 jobs:
   check:
-    # Enable this repository variable only after the ban guards are deployed.
-    # Manual runs are always read-only. No activation as a side effect of merging.
-    if: github.repository == 'pollinations/pollinations' && (github.event_name == 'workflow_dispatch' || vars.FRAUD_BAN_ENABLED == 'true')
+    # Every run scans read-only and reports new candidates to the private channel.
+    # Bans are written only on scheduled runs with FRAUD_BAN_ENABLED set.
+    if: github.repository == 'pollinations/pollinations'
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:

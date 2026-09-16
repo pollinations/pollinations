@@ -1,4 +1,4 @@
-import { AccountIdentity, Button } from "@pollinations/ui";
+import { Button } from "@pollinations/ui";
 import {
     AuthInfoCard,
     AuthModal,
@@ -10,6 +10,10 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
+import {
+    type AuthAccountBalances,
+    AuthAccountIdentity,
+} from "../components/auth/auth-account-identity.tsx";
 import type { ApiKey } from "../components/keys";
 import { EditApiKeyDialog } from "../components/keys/edit-api-key-dialog.tsx";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
@@ -47,6 +51,9 @@ function EditKeyPage() {
     const user = session?.user;
     const { isSigningIn, error: signInError, signIn } = useGitHubSignIn();
     const [apiKey, setApiKey] = useState<ApiKey | null | undefined>(undefined);
+    const [balances, setBalances] = useState<
+        AuthAccountBalances | null | undefined
+    >(undefined);
     const [outcome, setOutcome] = useState<Outcome>("editing");
     const returnUrl = redirect ?? null;
 
@@ -71,6 +78,32 @@ function EditKeyPage() {
             })
             .catch(() => setApiKey(null));
     }, [user, id]);
+
+    useEffect(() => {
+        if (!user) return;
+        let canceled = false;
+        setBalances(undefined);
+        apiClient.customer.balance
+            .$get()
+            .then((response) => {
+                if (!response.ok) throw new Error("Failed to load wallet");
+                return response.json();
+            })
+            .then((wallet) => {
+                if (!canceled) {
+                    setBalances({
+                        paid: wallet.packBalance ?? 0,
+                        quest: wallet.tierBalance ?? 0,
+                    });
+                }
+            })
+            .catch(() => {
+                if (!canceled) setBalances(null);
+            });
+        return () => {
+            canceled = true;
+        };
+    }, [user]);
 
     if (isPending) return <AuthModalLoading />;
 
@@ -109,11 +142,7 @@ function EditKeyPage() {
 
     const accountHeader = (
         <AuthModalHeader>
-            <AccountIdentity
-                name={user.githubUsername || user.name}
-                avatarUrl={user.image}
-                dashboardHref="/pollen"
-            />
+            <AuthAccountIdentity user={user} balances={balances} />
         </AuthModalHeader>
     );
 

@@ -1,4 +1,4 @@
-import { AccountIdentity, Button, Section } from "@pollinations/ui";
+import { Button, Section } from "@pollinations/ui";
 import {
     AuthInfoCard,
     AuthModal,
@@ -15,6 +15,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
+import { AuthAccountIdentity } from "../components/auth/auth-account-identity.tsx";
 import { BuyPollenPanel, PollenBalance } from "../components/pollen";
 import type { BillingState } from "../components/pollen/auto-top-up-panel.tsx";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
@@ -161,10 +162,13 @@ function TopUpPage() {
     }
 
     const accountIdentity = (
-        <AccountIdentity
-            name={user.githubUsername || user.name}
-            avatarUrl={user.image}
-            dashboardHref="/pollen"
+        <AuthAccountIdentity
+            user={user}
+            balances={
+                wallet
+                    ? { paid: wallet.packBalance, quest: wallet.tierBalance }
+                    : undefined
+            }
         />
     );
 

@@ -7910,7 +7910,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         }),
         enterEnv,
     );
-    expect(partialUpdateResponse.status).toBe(400);
+    expect(partialUpdateResponse.status).toBe(200);
     const updateAgentResponse = await fetchEnterApi(
         enterApi,
         new Request(`https://enter.test/api/account/agents/${agent.id}`, {

@@ -1,0 +1,34 @@
+{
+  "pr_number": 15010,
+  "title": "fix: run the code agent redeploy after the enter secret push",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15010",
+  "merged_at": "2026-09-16T17:04:32Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the duplicate `Setup SOPS` step added in #15008; the second setup-sops fails with `EEXIST` on the tool symlink and failed the enter job of production run 35124478906 (agents were already redeployed 5/5 before that step)\n- Moves `Redeploy code agents` after `Push enter secrets`, reusing the existing SOPS setup\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Secrets Before the Swarm",
+    "blurb": "The deployment garden now packs its enter secrets before sending the code agents back to work. One duplicate SOPS setup step has also stopped trying to install itself twice.",
+    "summary": "The production Cloudflare deployment workflow now pushes enter secrets before redeploying code agents, while removing a duplicate Setup SOPS step that failed on an existing tool symlink.",
+    "impact": "Production deploys can complete the enter-secret update and code-agent redeploy sequence reliably without the duplicate SOPS installation interrupting the job.",
+    "keywords": [
+      "deployment",
+      "cloudflare",
+      "code-agents",
+      "secrets",
+      "sops",
+      "github-actions"
+    ],
+    "visual_concept": "A cozy deployment garden: Polli, wearing a tiny tool belt, carefully places a glowing secret packet into an enter gateway before a small group of eager code-agent sprites walk down a garden path to their freshly prepared workstations. A single SOPS toolbox sits neatly nearby, representing the reused setup step and orderly deployment sequence.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing a tiny tool belt as she delivers a glowing secret packet to a retro garden gateway before a small friendly swarm of code-agent robots redeploys to lime-green terminals; one tidy toolbox rests beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-15010.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing a tiny tool belt as she delivers a glowing secret packet to a retro garden gateway before a small friendly swarm of code-agent robots redeploys to lime-green terminals; one tidy toolbox rests beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
+  },
+  "generated_at": "2026-09-16T17:05:34.895680+00:00"
+}

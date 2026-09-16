@@ -1,0 +1,34 @@
+{
+  "pr_number": 14952,
+  "title": "docs: apply task-observer skill review to agent skills and commands",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14952",
+  "merged_at": "2026-09-16T11:22:09Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n- Adds 60 reviewed observations to 12 `.claude/skills` and 3 `.claude/commands` (weekly task-observer review, 2026-09-16), rewritten in plain short sentences\n- Turns the rules that were workarounds into code, and removes them from the skills:\n  - `biome.jsonc` ignores `**/secrets/**` (sops files never reformatted)\n  - `.github/actions/failure-issue`: the 4 `news-*` workflows and the README workflow open/comment a `Workflow failing: <name>` issue on failure\n  - New `Deploy / Cloudflare staging` workflow (`workflow_dispatch`: service, optional `push_secrets`)\n  - `Deploy / Cloudflare production` pushes enter SOPS secrets after the enter deploy (gen already did); this replaces the Discord-only push and its `sync_discord_secrets` input\n  - `vitest.config.ts` creates `dist/client`; enter `npm run check-tokens`; `observability/scripts/tb-prod.sh`\n- model-debugging, spending-analysis, abuse-detection: duplicate Tinybird token sections and raw curl blocks replaced by `tb-prod.sh` one-liners; the model-debugging helper scripts query prod through it instead of `.tinyb`\n- review, commit-push-pr, test-enter: methodology additions that stay as prose\n\nPer-skill diff report: https://claude.ai/artifact/3EFdbFNeaVKW1svv39XvVu\n\n## Before first run\n- Production enter secret push runs `wrangler secret bulk` on `secrets/prod.vars.json`: it only writes the names in that file. Keys on the Worker that are not in the file are left alone.\n- The failure-issue step uses `github.token` with `issues: write` (no webhook secret exists).\n\n## Test plan\n- [x] All touched YAML parses; biome 2.3.10 clean on changed JS/TS\n- [x] `npm run check-tokens`: remote 200, staging 401 (token is dead today)\n- [x] Secret names: all 21 keys in `secrets/prod.vars.json` already exist on the production Worker; 3 Worker-only keys are untouched by `secret bulk`\n- [x] `find-403-users.sh` returns prod rows through `tb-prod.sh`\n- [ ] Dispatch `Deploy / Cloudflare staging` once from this branch\n- [ ] Watch the nex",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The deployment garden got labels",
+    "blurb": "The hive wrote down what it learned, then taught the machinery to do the repetitive bits itself. Staging has its own Cloudflare dispatch, production secrets travel with the enter deploy, and failed news jobs now leave a note instead of disappearing into the compost.",
+    "summary": "Added a manually dispatched Cloudflare staging deployment workflow, moved enter production SOPS secret pushes into the production deploy, introduced reusable failure-issue reporting for the README and four news workflows, and added tb-prod.sh plus token checks for enter operations.",
+    "impact": "Maintainers get a repeatable staging deploy path, production enter secrets are synchronized alongside deployment without the old Discord-only step, failed automation opens a named GitHub issue, and Tinybird production queries use a shared helper.",
+    "keywords": [
+      "cloudflare",
+      "deployments",
+      "secrets",
+      "github-actions",
+      "tinybird",
+      "agent-skills"
+    ],
+    "visual_concept": "Depict Polli as a careful release gardener in a cozy garden-shed operations room: she dispatches a small staging parcel toward a Cloudflare-shaped pixel cloud while labeled secret seed packets move into a production planter. A CRT monitor robot watches workflow sprouts, including one gently pinned failure note, with a Tinybird-shaped terminal helper and code-plants representing the cleaned-up operational instructions.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed deployment room: Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears a tiny gardener tool belt while carefully sending labeled secret seed packets from a lime green (#ecf874) staging planter toward a fluffy pixel cloud; a cute CRT monitor robot tends code-plants and holds a small note reading \"WORKFLOW FAILING\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, warm cream and lavender background, dark purple (#110518) outlines, with pixel flowers and vines throughout."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14952.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed deployment room: Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears a tiny gardener tool belt while carefully sending labeled secret seed packets from a lime green (#ecf874) staging planter toward a fluffy pixel cloud; a cute CRT monitor robot tends code-plants and holds a small note reading \"WORKFLOW FAILING\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, warm cream and lavender background, dark purple (#110518) outlines, with pixel flowers and vines throughout."
+  },
+  "generated_at": "2026-09-16T11:23:09.000076+00:00"
+}

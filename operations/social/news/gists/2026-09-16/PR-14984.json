@@ -1,0 +1,34 @@
+{
+  "pr_number": 14984,
+  "title": "feat: add a dashboard selector to the observability header",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14984",
+  "merged_at": "2026-09-16T13:18:40Z",
+  "labels": [],
+  "pr_body_excerpt": "Grafana is embedded in kiosk mode, so its own navigation is hidden and only the default dashboard was reachable. The other four current dashboards had no entry point.\n\n- Adds a dashboard picker to the header, next to the theme toggle\n- Builds the list from Grafana's search API, filtered to dashboards provisioned at the top level, so the `legacy/` folder stays out of the menu and there is no second catalogue to maintain\n- Mirrors the selection into `?d=<uid>` so a dashboard link is shareable and survives a refresh\n- Keys the iframe so switching adds one browser history entry instead of two\n- Falls back to the current default dashboard if the list cannot be loaded\n\nNo Worker, provisioning or auth changes. Verified against a local Grafana: switching, deep links, back navigation, light mode and the accessible name.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Five dashboards, one door",
+    "blurb": "The observability nook grew a proper dashboard picker. Polli can now hop between Grafana views without memorizing secret kiosk-mode routes.",
+    "summary": "Added a Grafana dashboard selector to the observability header that loads top-level provisioned dashboards from Grafana search, stores the selected dashboard UID in ?d=<uid>, and falls back to the default dashboard if loading fails.",
+    "impact": "Observability operators can switch among all current top-level dashboards, share deep links, refresh safely, and use browser back navigation without Grafana's hidden kiosk navigation.",
+    "keywords": [
+      "observability",
+      "grafana",
+      "dashboards",
+      "frontend",
+      "navigation",
+      "deep-links"
+    ],
+    "visual_concept": "A cozy observability control room: Polli, wearing tiny operator headphones, chooses among five labeled dashboard cards on a lime-green CRT terminal while a small garden of code-plants grows beside it. The selector represents the newly accessible dashboard catalogue and the linked map pin represents shareable ?d=<uid> deep links.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny operator headphones, selecting one of five small dashboard cards on a chunky CRT monitor glowing prominently lime green (#ecf874); code-plants and soft flowers grow around the observability desk, with a tiny link icon beside the chosen dashboard. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, optional pixel text: \"DASHBOARDS\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14984.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny operator headphones, selecting one of five small dashboard cards on a chunky CRT monitor glowing prominently lime green (#ecf874); code-plants and soft flowers grow around the observability desk, with a tiny link icon beside the chosen dashboard. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, optional pixel text: \"DASHBOARDS\"."
+  },
+  "generated_at": "2026-09-16T13:19:44.146767+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 15018,
+  "title": "fix: keep agent 4xx statuses instead of remapping them to 502",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15018",
+  "merged_at": "2026-09-16T18:35:30Z",
+  "labels": [],
+  "pr_body_excerpt": "- Agents call their base model with the caller's key on this gateway; a key that does not allow the inner model gets a 403 that the Responses client remapped to 502 (27 agent requests in the last 24h showed \"Model 'X' is not allowed for this API key\" as BAD_GATEWAY)\n- Adds `callerFacingStatus` on the prompt and code agent targets so `callDirectResponses` keeps the agent's status; foreign Responses providers are still remapped\n- Inner calls keep following the caller's model list; only the status changes\n- Test: 403 from a caller-facing target stays 403 with its message\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The 403 stays home",
+    "blurb": "Agent requests now keep their own 403s instead of putting on a confusing 502 costume. The hive reports the actual locked door, not a mysterious weather event.",
+    "summary": "Responses gateway agent targets now preserve caller-facing 4xx statuses—such as a 403 when an API key cannot use an inner model—instead of remapping them to 502, while foreign Responses providers retain their existing remapping behavior.",
+    "impact": "Developers whose keys are not allowed to use an agent's inner model now receive the original 403 and its “Model 'X' is not allowed for this API key” message, making permissions issues directly actionable.",
+    "keywords": [
+      "agents",
+      "responses-api",
+      "http-status",
+      "403",
+      "api-keys",
+      "error-handling"
+    ],
+    "visual_concept": "A cozy API gateway scene with Polli acting as a tiny mail carrier: she delivers a clearly labeled 403 permission note through the correct door instead of a misleading 502 detour sign. A retro terminal and a small code-plant represent the Responses gateway and agent inner-model calls; a simple key-and-lock symbol makes the authorization context legible.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing a tiny mail carrier cap as she carries a glowing “403” permission letter to a key-and-lock gate beside a retro terminal; a crossed-out “502” detour sign sits harmlessly nearby, with code-plants and small flowers growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: “403”, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-15018.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing a tiny mail carrier cap as she carries a glowing “403” permission letter to a key-and-lock gate beside a retro terminal; a crossed-out “502” detour sign sits harmlessly nearby, with code-plants and small flowers growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: “403”, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-16T18:36:35.927739+00:00"
+}

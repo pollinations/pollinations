@@ -51,7 +51,7 @@ export const ActivityPeriodNavigation: FC<{
             <div className="flex min-w-0 items-center gap-0.5">
                 <Button
                     type="button"
-                    size="icon"
+                    size="icon-sm"
                     className="shrink-0"
                     aria-label={`Previous ${value.granularity}`}
                     disabled={!isActivitySelectable(previous, now)}
@@ -111,9 +111,9 @@ export const ActivityPeriodNavigation: FC<{
                     trigger={() => (
                         <Button
                             type="button"
-                            size="lg"
+                            size="md"
                             aria-label={`Choose ${label.toLowerCase()} ${value.granularity}`}
-                            className="w-24 whitespace-nowrap text-center tabular-nums sm:w-40"
+                            className="w-24 whitespace-nowrap text-center tabular-nums sm:w-36"
                             style={{ paddingInline: 0 }}
                         >
                             <span aria-live="polite">
@@ -129,7 +129,7 @@ export const ActivityPeriodNavigation: FC<{
                 />
                 <Button
                     type="button"
-                    size="icon"
+                    size="icon-sm"
                     className="shrink-0"
                     aria-label={`Next ${value.granularity}`}
                     disabled={!isActivitySelectable(next, now)}

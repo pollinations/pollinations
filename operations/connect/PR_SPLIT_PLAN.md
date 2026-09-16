@@ -159,7 +159,7 @@ The source inventory below is refreshed against the recorded main parent. Read c
 
 **Outcome:** Reusable controls gain the accepted focus, layout, and accessibility changes, in independently justified slices.
 
-**Next proposed slice — tooltip behavior inside dialogs:** reproduce the current behavior using Enter’s existing API-key dialog and its budget/expiry help. Current main portals Tooltip to document.body; the source branch places it inside the nearest dialog. Verify visibility, accessible description, positioning and keyboard dismissal before choosing the patch. Extract only the demonstrated fix and focused regression coverage. Preserve main’s DialogHeader/DialogFooter and existing tooltip styling except any layering change required by the reproduction. This is a candidate defect, not a browser-reproduced finding yet.
+**Completed slice — tooltip behavior inside dialogs:** [PR #14949](https://github.com/pollinations/pollinations/pull/14949) merged at `3c5d8bf787` on 16 September. The real Enter API-key dialog reproduced the backdrop covering budget/expiry tooltips. The patch portals to the nearest dialog, retaining body portals outside dialogs. Browser checks covered both themes and mobile/desktop sizes; 48 UI tests, typecheck and build passed. Connect integrated this main commit in `69d6354c56`; the merge changed only the Tooltip comment, and UI typecheck/Biome passed. Its code delta is now 230 files, +27,693 / −4,061 lines against that main commit (excluding this plan). The larger inventory above remains the explicitly dated earlier snapshot.
 
 Keep button sizing, surface styling and other accepted visual changes for a separate slice. New Dialog, Dropdown, CopyButton and EditableCombobox options should travel with their first real consumer when they are required; do not bulk-publish options solely because the source branch contains them. The source accessibility test file mixes auth and controls tests: extract only tests relevant to each PR. Tests for the rejected startup retry API have been removed.
 
@@ -175,6 +175,8 @@ Keep button sizing, surface styling and other accepted visual changes for a sepa
 **Suggested commits:** focus/interaction fixes; accepted visual/token changes and matching exports.
 
 ### P03 — Account, authentication, and wallet presentation
+
+**First delivery (P03a):** shared account avatar/dashboard link and menu trigger, with existing AppUserMenu and Enter identity consumers. Keep destinations caller-owned, preserve menus without a dashboard link, and omit unused layout/portal options. Authentication, funding and error behavior remain separate follow-ups within P03; this first PR does not complete the whole group.
 
 **Outcome:** Product consumers share one set of account, permission, sign-in, error, result, and funding components.
 

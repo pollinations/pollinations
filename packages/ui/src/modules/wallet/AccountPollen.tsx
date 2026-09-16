@@ -1,14 +1,14 @@
+import { cn } from "../../lib/cn.ts";
+import { InlineLink } from "../../primitives/InlineLink.tsx";
 import { KeyIcon } from "../../primitives/icons/index.tsx";
 import { formatPollen } from "./format-pollen.ts";
-import { type PollenStatus, PollenStatusBadge } from "./PollenStatusBadge.tsx";
 import { WalletKindIcon } from "./wallet-display.tsx";
 
 export type AccountPollenSource =
     | {
           type: "wallet";
+          /** undefined = not loaded yet, null = failed to load. */
           balances?: { paid: number; quest: number } | null;
-          /** None covers disabled generation and a selection of free models. */
-          requirement?: "any" | "paid" | "none";
       }
     | {
           type: "budget";
@@ -17,38 +17,21 @@ export type AccountPollenSource =
           generationEnabled?: boolean;
       };
 
-/** Only confirmed values can replace amounts with a warning. */
-export function getAccountPollenStatus(
-    source: AccountPollenSource,
-): PollenStatus | undefined {
-    if (source.type === "budget") {
-        if (source.generationEnabled === false) return undefined;
-        return source.remaining != null &&
-            Number.isFinite(source.remaining) &&
-            source.remaining <= 0
-            ? { state: "limit-reached" }
-            : undefined;
-    }
-    const { balances, requirement = "any" } = source;
-    if (!balances || requirement === "none") return undefined;
-    if (!Number.isFinite(balances.paid) || balances.paid > 0) return undefined;
-    if (requirement === "paid") return { state: "paid-required" };
-    return Number.isFinite(balances.quest) && balances.quest <= 0
-        ? { state: "no-pollen" }
-        : undefined;
+const emptyClass = "polli:text-intent-danger-text";
+
+function isEmpty(amount: number | null | undefined): boolean {
+    return amount != null && Number.isFinite(amount) && amount <= 0;
 }
 
-/** Shared secondary line for a static identity or a menu trigger. */
+/** Icon + amount; the amount turns red at zero. */
 export function AccountPollen({
     source,
     topUpHref,
 }: {
     source: AccountPollenSource;
-    /** Static identity only. A menu keeps recovery links in its dropdown. */
+    /** Shown after an empty wallet. A menu keeps recovery links in its dropdown. */
     topUpHref?: string;
 }) {
-    const status = getAccountPollenStatus(source);
-    if (status) return <PollenStatusBadge {...status} topUpHref={topUpHref} />;
     if (source.type === "budget") {
         if (source.generationEnabled === false) return null;
         // null is the API's explicit "no budget"; undefined is not loaded yet.
@@ -58,33 +41,43 @@ export function AccountPollen({
             (source.remaining == null || !Number.isFinite(source.remaining))
         )
             return null;
+        const remaining = source.remaining as number;
         return (
             <span
                 title={unlimited ? "Unlimited app budget" : "App budget left"}
                 aria-label={
                     unlimited
                         ? "Unlimited app budget"
-                        : `App budget left: ${formatPollen(source.remaining as number)}`
+                        : `App budget left: ${formatPollen(remaining)}`
                 }
-                className="polli:inline-flex polli:items-center polli:gap-1 polli:tabular-nums"
+                className={cn(
+                    "polli:inline-flex polli:items-center polli:gap-1 polli:tabular-nums",
+                    !unlimited && isEmpty(remaining) && emptyClass,
+                )}
             >
                 <KeyIcon
                     aria-hidden="true"
                     className="polli:h-3.5 polli:w-3.5 polli:shrink-0"
                 />
-                {unlimited ? "∞" : formatPollen(source.remaining as number)}
+                {unlimited ? "∞" : formatPollen(Math.max(0, remaining))}
             </span>
         );
     }
     if (source.balances === undefined) return null;
+    const { balances } = source;
+    const walletEmpty =
+        balances != null && isEmpty(balances.paid) && isEmpty(balances.quest);
     return (
         <span className="polli:inline-flex polli:items-center polli:gap-2 polli:tabular-nums">
             {(["paid", "quest"] as const).map((kind) => {
-                const amount = source.balances?.[kind];
+                const amount = balances?.[kind];
                 return (
                     <span
                         key={kind}
-                        className="polli:inline-flex polli:items-center polli:gap-1"
+                        className={cn(
+                            "polli:inline-flex polli:items-center polli:gap-1",
+                            isEmpty(amount) && emptyClass,
+                        )}
                     >
                         <WalletKindIcon
                             kind={kind === "paid" ? "paid" : "tier"}
@@ -98,6 +91,20 @@ export function AccountPollen({
                     </span>
                 );
             })}
+            {walletEmpty && topUpHref && (
+                <>
+                    <span aria-hidden="true">·</span>
+                    <InlineLink
+                        href={topUpHref}
+                        external
+                        showIcon={false}
+                        data-pollinations-action="fund-account"
+                        aria-label="No Pollen. Top up (opens in a new tab)"
+                    >
+                        Top up
+                    </InlineLink>
+                </>
+            )}
         </span>
     );
 }

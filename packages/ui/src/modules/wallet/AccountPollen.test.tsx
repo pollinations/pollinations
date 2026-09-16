@@ -1,136 +1,101 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { AccountPollen, getAccountPollenStatus } from "./AccountPollen.tsx";
+import { AccountPollen } from "./AccountPollen.tsx";
+
+const EMPTY = "polli:text-intent-danger-text";
 
 describe("account Pollen", () => {
-    it.each([
-        [10, 5, "any", undefined],
-        [0, 5, "any", undefined],
-        [0, 0, "any", "no-pollen"],
-        [-1, -2, "any", "no-pollen"],
-        [0, 5, "paid", "paid-required"],
-        [0, 0, "paid", "paid-required"],
-        [0.01, 0, "paid", undefined],
-        [0, 0, "none", undefined],
-    ] as const)("resolves wallet %s/%s with requirement %s", (paid, quest, requirement, expected) => {
-        expect(
-            getAccountPollenStatus({
-                type: "wallet",
-                balances: { paid, quest },
-                requirement,
-            })?.state,
-        ).toBe(expected);
-    });
-
-    it("does not turn unavailable or invalid data into an empty wallet or limit", () => {
-        for (const balances of [
-            undefined,
-            null,
-            { paid: NaN, quest: 0 },
-            { paid: 0, quest: Infinity },
-        ]) {
-            expect(
-                getAccountPollenStatus({ type: "wallet", balances }),
-            ).toBeUndefined();
-        }
-        for (const remaining of [undefined, NaN, Infinity, 0.01]) {
-            expect(
-                getAccountPollenStatus({ type: "budget", remaining }),
-            ).toBeUndefined();
+    it("shows the app budget as an amount, an infinity sign, or a red zero", () => {
+        const some = renderToStaticMarkup(
+            <AccountPollen source={{ type: "budget", remaining: 3.25 }} />,
+        );
+        expect(some).toContain("3.25");
+        expect(some).not.toContain(EMPTY);
+        const unlimited = renderToStaticMarkup(
+            <AccountPollen source={{ type: "budget", remaining: null }} />,
+        );
+        expect(unlimited).toContain("∞");
+        expect(unlimited).toContain('aria-label="Unlimited app budget"');
+        expect(unlimited).not.toContain(EMPTY);
+        for (const remaining of [0, -1]) {
+            const zero = renderToStaticMarkup(
+                <AccountPollen source={{ type: "budget", remaining }} />,
+            );
+            expect(zero).toContain(EMPTY);
+            expect(zero).toContain(">0<");
         }
     });
 
-    it("distinguishes an exhausted app budget from wallet funding", () => {
+    it("renders nothing for a budget that is unknown or cannot generate", () => {
+        for (const remaining of [undefined, NaN, Infinity]) {
+            expect(
+                renderToStaticMarkup(
+                    <AccountPollen source={{ type: "budget", remaining }} />,
+                ),
+            ).toBe("");
+        }
         expect(
-            getAccountPollenStatus({ type: "budget", remaining: 0 }),
-        ).toEqual({ state: "limit-reached" });
-        expect(
-            getAccountPollenStatus({ type: "budget", remaining: -1 }),
-        ).toEqual({ state: "limit-reached" });
-        expect(
-            getAccountPollenStatus({
-                type: "budget",
-                remaining: 0,
-                generationEnabled: false,
-            }),
-        ).toBeUndefined();
-        expect(
-            getAccountPollenStatus({ type: "budget", remaining: null }),
-        ).toBeUndefined();
+            renderToStaticMarkup(
+                <AccountPollen
+                    source={{
+                        type: "budget",
+                        remaining: 0,
+                        generationEnabled: false,
+                    }}
+                />,
+            ),
+        ).toBe("");
     });
 
-    it("replaces both wallet amounts with one actionable badge", () => {
-        const normal = renderToStaticMarkup(
+    it("reds out only the wallet amounts that are empty", () => {
+        const mixed = renderToStaticMarkup(
             <AccountPollen
                 source={{ type: "wallet", balances: { paid: 0, quest: 5 } }}
+                topUpHref="/top-up"
             />,
         );
-        expect(normal).toContain("Paid Pollen:");
-        expect(normal).toContain("Quest Pollen:");
-        expect(normal).toContain("polli-wallet-text-paid");
+        expect(mixed).toContain("Paid Pollen:");
+        expect(mixed).toContain("Quest Pollen:");
+        expect(mixed.split(EMPTY).length - 1).toBe(1);
+        expect(mixed).not.toContain("/top-up");
+        expect(
+            renderToStaticMarkup(
+                <AccountPollen
+                    source={{
+                        type: "wallet",
+                        balances: { paid: 10, quest: 5 },
+                    }}
+                />,
+            ),
+        ).not.toContain(EMPTY);
+    });
+
+    it("adds the top-up link only when the whole wallet is empty and a link is given", () => {
         const empty = renderToStaticMarkup(
             <AccountPollen
                 source={{ type: "wallet", balances: { paid: 0, quest: 0 } }}
                 topUpHref="/top-up"
             />,
         );
-        expect(empty).toContain("No Pollen");
+        expect(empty.split(EMPTY).length - 1).toBe(2);
         expect(empty).toContain('href="/top-up"');
-        expect(empty).not.toContain("Paid Pollen:");
-        expect(empty).not.toContain("Quest Pollen:");
-        expect(
-            renderToStaticMarkup(
-                <AccountPollen
-                    source={{ type: "wallet", balances: { paid: 0, quest: 0 } }}
-                />,
-            ),
-        ).not.toContain("<a ");
-    });
-
-    it("preserves the paid icon color in the paid-required badge", () => {
-        const markup = renderToStaticMarkup(
+        expect(empty).toContain("Top up");
+        const menu = renderToStaticMarkup(
             <AccountPollen
-                source={{
-                    type: "wallet",
-                    balances: { paid: 0, quest: 5 },
-                    requirement: "paid",
-                }}
+                source={{ type: "wallet", balances: { paid: 0, quest: 0 } }}
             />,
         );
-        expect(markup).toContain("Paid required");
-        expect(markup).toContain("polli-wallet-text-paid");
+        expect(menu).not.toContain("<a ");
     });
 
-    it("shows the budget without a recovery link, even when exhausted", () => {
+    it("keeps placeholders for a wallet that failed to load and nothing while loading", () => {
         expect(
             renderToStaticMarkup(
-                <AccountPollen source={{ type: "budget", remaining: 3.25 }} />,
+                <AccountPollen source={{ type: "wallet", balances: null }} />,
             ),
-        ).toContain("3.25");
-        const exhausted = renderToStaticMarkup(
-            <AccountPollen
-                source={{ type: "budget", remaining: 0 }}
-                topUpHref="/top-up"
-            />,
-        );
-        expect(exhausted).toContain("Limit reached");
-        expect(exhausted).not.toContain("/top-up");
-        const unlimited = renderToStaticMarkup(
-            <AccountPollen source={{ type: "budget", remaining: null }} />,
-        );
-        expect(unlimited).toContain("∞");
-        expect(unlimited).toContain('aria-label="Unlimited app budget"');
-        expect(unlimited).not.toContain("polli:bg-intent-info-bg-light");
+        ).toContain("…");
         expect(
-            renderToStaticMarkup(
-                <AccountPollen
-                    source={{
-                        type: "budget",
-                        remaining: null,
-                        generationEnabled: false,
-                    }}
-                />,
-            ),
+            renderToStaticMarkup(<AccountPollen source={{ type: "wallet" }} />),
         ).toBe("");
     });
 });

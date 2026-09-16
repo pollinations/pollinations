@@ -14,6 +14,7 @@ import { HTTPException } from "hono/http-exception";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { getCohortFromCountry } from "../utils/currency-router.ts";
+import { captureProductEvent } from "../utils/product-analytics.ts";
 import { createStripeClient } from "../utils/stripe.ts";
 import { getUserStripeBillingRow } from "../utils/stripe-billing/customer.ts";
 import {
@@ -204,6 +205,15 @@ export const stripeRoutes = new Hono<Env>()
                 return c.json({ error: ACCOUNT_RESTRICTED_MESSAGE }, 403);
             }
             if (checkoutSession.url) {
+                c.executionCtx.waitUntil(
+                    captureProductEvent(
+                        c.env,
+                        "checkout_started",
+                        userId,
+                        { pack_key: pack.packKey },
+                        `checkout:${checkoutSession.id}`,
+                    ),
+                );
                 return c.redirect(checkoutSession.url);
             }
 

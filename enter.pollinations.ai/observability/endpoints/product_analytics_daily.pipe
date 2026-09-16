@@ -1,0 +1,24 @@
+DESCRIPTION >
+    Daily observed event and user counts, optionally split by page. This is
+    activity, not a signup-cohort conversion rate: users can enter at any stage.
+    Event IDs deduplicate repeated ingestion. No history before tracking starts.
+
+TOKEN tinybird_read READ
+
+NODE daily
+SQL >
+    %
+    SELECT
+        toDate(timestamp) AS date,
+        event,
+        page,
+        uniq(event_id) AS events,
+        uniq(user_id) AS users
+    FROM product_event
+    WHERE environment = {{String(environment, 'production')}}
+        AND timestamp >= now() - toIntervalDay(least(greatest({{Int32(days, 30)}}, 1), 366))
+        AND timestamp <= now()
+    GROUP BY date, event, page
+    ORDER BY date, event, page
+
+TYPE endpoint

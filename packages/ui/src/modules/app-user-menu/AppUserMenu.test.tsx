@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { AppUserMenu } from "./AppUserMenu.tsx";
@@ -32,30 +31,6 @@ vi.mock("@pollinations/sdk/react", () => ({
     useAccountKey: () => sdk.key,
     useAccountBalance: () => sdk.balance,
     useAuthActions: () => sdk.actions,
-}));
-
-vi.mock("../../compositions/AccountMenu.tsx", () => ({
-    AccountMenu: ({
-        name,
-        secondaryContent,
-        children,
-    }: {
-        name: string;
-        secondaryContent?: ReactNode;
-        children: ReactNode | ((close: () => void) => ReactNode);
-    }) => (
-        <div>
-            <span>{name}</span>
-            {secondaryContent}
-            {typeof children === "function" ? children(() => {}) : children}
-        </div>
-    ),
-}));
-
-vi.mock("../auth/sdk.ts", () => ({
-    LoginButton: ({ children }: { children: ReactNode }) => (
-        <button type="button">{children}</button>
-    ),
 }));
 
 function renderMenu() {

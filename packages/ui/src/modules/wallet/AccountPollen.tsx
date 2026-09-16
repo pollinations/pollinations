@@ -56,7 +56,6 @@ function PollenStatusBadge({
                         href={topUpHref}
                         external
                         showIcon={false}
-                        data-pollinations-action="fund-account"
                         aria-label={`${label}. Top up (opens in a new tab)`}
                         className="polli:text-current polli:hover:text-current"
                     >

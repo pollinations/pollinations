@@ -10,7 +10,7 @@ import {
     closestRatioLogSpace,
 } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
-import { toDataUri } from "../utils/imageDownload.ts";
+import { sanitizeDataUri } from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:openrouter-video:ops");
 const logError = debug("pollinations:openrouter-video:error");
@@ -90,7 +90,7 @@ export async function callHappyHorseAPI(
     };
 
     const firstFrame = safeParams.image?.[0]
-        ? await toDataUri(safeParams.image[0])
+        ? await sanitizeDataUri(safeParams.image[0])
         : undefined;
     if (firstFrame) {
         requestBody.frame_images = [
@@ -166,7 +166,7 @@ export async function callOpenRouterGrokVideoAPI(
     if (aspectRatio) requestBody.aspect_ratio = aspectRatio;
 
     const firstFrame = safeParams.image?.[0]
-        ? await toDataUri(safeParams.image[0])
+        ? await sanitizeDataUri(safeParams.image[0])
         : undefined;
     if (firstFrame) {
         requestBody.frame_images = [

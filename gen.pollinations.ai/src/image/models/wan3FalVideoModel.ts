@@ -5,7 +5,7 @@ import type { ImageParams } from "../params.ts";
 import { sleep } from "../util.ts";
 import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
-import { toDataUri } from "../utils/imageDownload.ts";
+import { sanitizeDataUri } from "../utils/imageDownload.ts";
 
 const WAN_3_TEXT_ENDPOINT =
     "https://queue.fal.run/alibaba/wan-3.0-prime/text-to-video";
@@ -110,9 +110,9 @@ export async function callWan3FalAPI(
         seed: safeParams.seed,
         ...(hasFrames
             ? {
-                  start_image_url: await toDataUri(images[0]),
+                  start_image_url: await sanitizeDataUri(images[0]),
                   ...(images[1]
-                      ? { end_image_url: await toDataUri(images[1]) }
+                      ? { end_image_url: await sanitizeDataUri(images[1]) }
                       : {}),
               }
             : {}),

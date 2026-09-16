@@ -1,4 +1,4 @@
-import { toDataUri } from "../../image/utils/imageDownload.ts";
+import { sanitizeDataUri } from "../../image/utils/imageDownload.ts";
 import type { Model3dGenerationResult } from "../createAndReturnModel3d.ts";
 import { downloadMesh, requirePrompt, toUpstreamError } from "../modelUtils.ts";
 import type { Model3dParams } from "../params.ts";
@@ -19,7 +19,7 @@ export async function callRodinFalAPI(
 
     try {
         const imageUrls = hasImages
-            ? await Promise.all(params.image.map(toDataUri))
+            ? await Promise.all(params.image.map(sanitizeDataUri))
             : [];
         const seedInput =
             params.seed !== undefined ? { seed: params.seed } : {};

@@ -162,3 +162,14 @@ export async function toDataUri(url: string): Promise<string> {
     const { buffer, mimeType } = await downloadUserImage(url);
     return `data:${mimeType};base64,${buffer.toString("base64")}`;
 }
+
+/**
+ * Strip metadata from caller-provided data URIs while leaving remote URLs
+ * untouched for providers that fetch upstream references directly.
+ */
+export async function sanitizeDataUri(url: string): Promise<string> {
+    if (url.startsWith("data:")) {
+        return toDataUri(url);
+    }
+    return url;
+}

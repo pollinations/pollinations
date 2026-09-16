@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     downloadUserImage,
     readImageDimensions,
+    sanitizeDataUri,
     toDataUri,
 } from "../../src/image/utils/imageDownload.ts";
 import { MAX_IMAGE_SIZE } from "../../src/userImage.ts";
@@ -271,6 +272,25 @@ describe("toDataUri", () => {
         );
         expect(await toDataUri("https://example.com/input.png")).toBe(
             "data:image/png;base64,AQID",
+        );
+    });
+});
+
+describe("sanitizeDataUri", () => {
+    it("leaves remote URLs untouched without initiating network requests", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        const url = "https://example.com/input.png";
+
+        expect(await sanitizeDataUri(url)).toBe(url);
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("sanitizes caller-supplied data URIs", async () => {
+        const uri = "data:image/png;base64,iVBORw0KGgo=";
+        const { buffer, mimeType } = await downloadUserImage(uri);
+
+        expect(await sanitizeDataUri(uri)).toBe(
+            `data:${mimeType};base64,${buffer.toString("base64")}`,
         );
     });
 });

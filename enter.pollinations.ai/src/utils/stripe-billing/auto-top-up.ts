@@ -377,6 +377,8 @@ export async function creditAutoTopUpInvoice(
                 SET status = ?,
                     completed_at = ?,
                     updated_at = ?,
+                    stripe_amount_paid = ?,
+                    stripe_currency = ?,
                     failure_reason = NULL
                 WHERE stripe_invoice_id = ?
                     AND status IN (?, ?)`,
@@ -384,6 +386,8 @@ export async function creditAutoTopUpInvoice(
             AUTO_TOP_UP_ATTEMPT_STATUS.PAID,
             now,
             now,
+            invoice.amount_paid,
+            invoice.currency,
             invoice.id,
             AUTO_TOP_UP_ATTEMPT_STATUS.PENDING,
             AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,

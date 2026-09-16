@@ -1633,6 +1633,22 @@ test("POST /api/stripe/auto-top-up/trigger followed by webhook credits once", as
         .first<{ packBalance: number | null }>();
     expect(afterWebhook?.packBalance).toBe(11);
 
+    const paidAttempt = await env.DB.prepare(
+        `SELECT stripe_amount_paid AS stripeAmountPaid,
+                stripe_currency AS stripeCurrency
+        FROM stripe_auto_top_up_attempt
+        WHERE stripe_invoice_id = ?`,
+    )
+        .bind("in_mock_1")
+        .first<{
+            stripeAmountPaid: number | null;
+            stripeCurrency: string | null;
+        }>();
+    expect(paidAttempt?.stripeAmountPaid).toBe(
+        1000 + calculateServiceFeeCents(1000),
+    );
+    expect(paidAttempt?.stripeCurrency).toBe("usd");
+
     const duplicateResponse = await postSignedStripeWebhook(
         createAutoTopUpInvoiceEvent("invoice.paid", "in_mock_1", user.id),
     );

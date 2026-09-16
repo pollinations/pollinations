@@ -9,6 +9,8 @@ import {
     cappedFraudScore,
     collectStripeFraudScores,
     FRAUD_BAN_EXCLUDED_USER_ID,
+    FRAUD_SCAN_START_SECONDS,
+    hasConfirmedFraud,
 } from "../src/utils/stripe-fraud-score.ts";
 import { test } from "./fixtures.ts";
 
@@ -104,6 +106,9 @@ test("hourly scan reads every page; dry run is read-only; apply bans and expires
     expect(await runFraudBanCheck(stripe, queryD1)).toEqual({
         candidates: 1,
         applied: 0,
+        charges: 106,
+        unmapped: 0,
+        report: [{ id: user.id, name: expect.any(String), score: 0.75 }],
     });
     expect(
         mocks.stripe.state.requests.filter(
@@ -129,11 +134,15 @@ test("hourly scan reads every page; dry run is read-only; apply bans and expires
             apply: true,
             excludedUserIds: [user.id],
         }),
-    ).toEqual({ candidates: 0, applied: 0 });
+    ).toMatchObject({ candidates: 0, applied: 0, report: [] });
     expect(mocks.stripe.state.checkoutSessions[0].status).toBe("open");
-    expect(await runFraudBanCheck(stripe, queryD1, { apply: true })).toEqual({
+    expect(
+        await runFraudBanCheck(stripe, queryD1, { apply: true }),
+    ).toMatchObject({ candidates: 1, applied: 1, report: [{ id: user.id }] });
+    // Already-banned accounts stay candidates but no longer need review.
+    expect(await runFraudBanCheck(stripe, queryD1)).toMatchObject({
         candidates: 1,
-        applied: 1,
+        report: [],
     });
     expect(
         await env.DB.prepare(
@@ -256,4 +265,98 @@ test("shared customer checkouts are not expired for another account", async ({
     expect(result.scores.size).toBe(2);
     expect(result.customers.get("a")?.size).toBe(0);
     expect(result.customers.get("b")?.size).toBe(0);
+});
+
+test("radar predictions alone never ban, however many there are", async ({
+    sessionToken,
+    mocks,
+}) => {
+    expect(sessionToken).toBeTruthy();
+    await mocks.enable("stripe");
+    const user = await env.DB.prepare("SELECT id FROM user LIMIT 1").first<{
+        id: string;
+    }>();
+    if (!user) throw Error("Missing user");
+    // One legitimate card retried after a decline: Radar escalates every
+    // attempt, which is exactly how a paying customer used to score a ban.
+    mocks.stripe.state.fraudCharges.push(
+        ...Array.from({ length: 600 }, (_, i) => ({
+            id: `ch_retry_${i}`,
+            object: "charge",
+            livemode: true,
+            customer: "cus_retry",
+            metadata: { userId: user.id },
+            outcome: { type: "blocked", risk_level: "highest" },
+        })),
+    );
+    const stripe = client();
+    expect(
+        await runFraudBanCheck(stripe, queryD1, { apply: true }),
+    ).toMatchObject({ candidates: 0, applied: 0 });
+    expect(
+        (
+            await env.DB.prepare("SELECT banned FROM user WHERE id = ?")
+                .bind(user.id)
+                .first()
+        )?.banned,
+    ).not.toBe(1);
+    // A single confirmed signal on top of the same history does ban.
+    mocks.stripe.state.fraudWarnings.push({
+        id: "issfr_confirmed",
+        livemode: true,
+        charge: "ch_retry_0",
+    });
+    expect(
+        await runFraudBanCheck(stripe, queryD1, { apply: true }),
+    ).toMatchObject({ candidates: 1, applied: 1 });
+});
+
+test("confirmed signals are disputes, warnings and fraud reports only", () => {
+    expect(hasConfirmedFraud([{ chargeId: "ch_a", hr: true, rb: true }])).toBe(
+        false,
+    );
+    expect(hasConfirmedFraud([{ chargeId: "ch_a", fd: true }])).toBe(true);
+    expect(hasConfirmedFraud([{ chargeId: "ch_a", ew: true }])).toBe(true);
+    expect(hasConfirmedFraud([{ chargeId: "ch_a", fraud: true }])).toBe(true);
+    expect(hasConfirmedFraud([])).toBe(false);
+});
+
+test("charges before the attribution window are skipped, not treated as a gap", async ({
+    sessionToken,
+    mocks,
+}) => {
+    expect(sessionToken).toBeTruthy();
+    await mocks.enable("stripe");
+    const user = await env.DB.prepare("SELECT id FROM user LIMIT 1").first<{
+        id: string;
+    }>();
+    if (!user) throw Error("Missing user");
+    mocks.stripe.state.fraudCharges.push({
+        id: "ch_inside",
+        object: "charge",
+        livemode: true,
+        customer: "cus_window",
+        metadata: { userId: user.id },
+        created: FRAUD_SCAN_START_SECONDS + 1,
+    });
+    // Raised recently, but against a charge from the unattributable era. The
+    // scan never lists that charge, so it must be skipped rather than failing.
+    mocks.stripe.state.fraudDisputes.push({
+        id: "dp_old",
+        object: "dispute",
+        livemode: true,
+        reason: "fraudulent",
+        charge: "ch_before_window",
+    });
+    mocks.stripe.state.archivedCharges.push({
+        id: "ch_before_window",
+        object: "charge",
+        livemode: true,
+        created: FRAUD_SCAN_START_SECONDS - 1,
+    });
+    const result = await collectStripeFraudScores(client(), [
+        { id: user.id, stripe_customer_id: "cus_window" },
+    ]);
+    expect(result.charges).toBe(1);
+    expect(result.confirmed.has(user.id)).toBe(false);
 });

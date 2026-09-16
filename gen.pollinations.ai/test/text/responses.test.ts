@@ -83,6 +83,33 @@ describe("direct Responses transport", () => {
         });
     });
 
+    it("keeps a managed agent's caller-facing status instead of remapping it", async () => {
+        const directRequest = request();
+        const body = JSON.stringify({
+            error: {
+                message:
+                    "Model 'openai/gpt-5-nano' is not allowed for this API key",
+                code: "agent_error",
+            },
+        });
+        const fetcher = vi.fn(async () => new Response(body, { status: 403 }));
+        await expect(
+            callDirectResponses(
+                directRequest,
+                {
+                    ...authorizedTarget(directRequest),
+                    callerFacingStatus: true,
+                },
+                fetcher,
+            ),
+        ).rejects.toMatchObject({
+            status: 403,
+            upstreamStatus: 403,
+            message:
+                "Model 'openai/gpt-5-nano' is not allowed for this API key",
+        });
+    });
+
     it.each([
         ["store", { store: true }],
         ["previous_response_id", { previous_response_id: "resp_previous" }],

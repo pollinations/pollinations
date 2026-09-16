@@ -168,6 +168,8 @@ export type MockStripeState = {
     invoicePayments: StripeInvoicePayment[];
     paymentIntents: StripePaymentIntent[];
     fraudCharges: Record<string, unknown>[];
+    // Charges retrievable by id but outside the listed scan window.
+    archivedCharges: Record<string, unknown>[];
     fraudDisputes: Record<string, unknown>[];
     fraudWarnings: Record<string, unknown>[];
     failFraudWarnings: boolean;
@@ -217,6 +219,24 @@ export function createMockStripe(): MockAPI<MockStripeState> {
             c.json({ id: "acct_1SrY3q7rcjS3l7tr", object: "account" }),
         )
         .get("/v1/charges", (c) => fraudPage(c, state.fraudCharges))
+        .get("/v1/charges/:id", (c) => {
+            const id = c.req.param("id");
+            const charge = [
+                ...state.fraudCharges,
+                ...state.archivedCharges,
+            ].find((entry) => entry.id === id);
+            return charge
+                ? c.json(charge)
+                : c.json(
+                      {
+                          error: {
+                              type: "invalid_request_error",
+                              message: "No such charge",
+                          },
+                      },
+                      404,
+                  );
+        })
         .get("/v1/disputes", (c) => fraudPage(c, state.fraudDisputes))
         .get("/v1/radar/early_fraud_warnings", (c) =>
             state.failFraudWarnings
@@ -622,6 +642,7 @@ function createInitialState(): MockStripeState {
         invoicePayments: [],
         paymentIntents: [],
         fraudCharges: [],
+        archivedCharges: [],
         fraudDisputes: [],
         fraudWarnings: [],
         failFraudWarnings: false,

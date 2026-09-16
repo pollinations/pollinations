@@ -2,7 +2,11 @@ name: Billing / Check fraud bans
 
 on:
   schedule:
-    - cron: "17 * * * *"
+    # Daily, not hourly. The confirmed signals this job needs arrive a median of
+    # 99 days (disputes) and 121 days (early fraud warnings) after the charge,
+    # so scanning every hour re-reads the whole history for evidence that has
+    # not moved. Webhooks are the route to faster detection, not polling.
+    - cron: "17 7 * * *"
   workflow_dispatch:
 
 permissions:
@@ -14,9 +18,9 @@ concurrency:
 
 jobs:
   check:
-    # Enable this repository variable only after the ban guards are deployed.
-    # Manual runs are always read-only. No activation as a side effect of merging.
-    if: github.repository == 'pollinations/pollinations' && (github.event_name == 'workflow_dispatch' || vars.FRAUD_BAN_ENABLED == 'true')
+    # Every run scans read-only and reports new candidates to the private channel.
+    # Bans are written only on scheduled runs with FRAUD_BAN_ENABLED set.
+    if: github.repository == 'pollinations/pollinations'
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
@@ -36,6 +40,8 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
           FRAUD_BAN_APPLY: ${{ github.event_name == 'schedule' && vars.FRAUD_BAN_ENABLED == 'true' }}
           FRAUD_BAN_EXCLUDED_USER_IDS: ${{ vars.FRAUD_BAN_EXCLUDED_USER_IDS }}
+          # Private operators' channel; candidate identities never reach public logs.
+          DISCORD_FRAUD_WEBHOOK_URL: ${{ secrets.DISCORD_FRAUD_WEBHOOK_URL }}
         run: >-
           sops exec-file --no-fifo enter.pollinations.ai/secrets/prod.vars.json
           'node enter.pollinations.ai/scripts/check-fraud-bans.mjs --secrets-file {}'

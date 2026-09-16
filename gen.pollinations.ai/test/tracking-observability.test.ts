@@ -63,8 +63,8 @@ import { requireChatStreamUsage } from "../src/text/chat/usage.ts";
 import { summarizeStreamForLog } from "../src/text/streamSummary.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
-afterEach(() => {
-    resetGenerationModelRegistryCache();
+afterEach(async () => {
+    await resetGenerationModelRegistryCache(env);
     vi.restoreAllMocks();
 });
 
@@ -3101,6 +3101,38 @@ describe("trackResponse modelUsed", () => {
                 errorMessage: error.message,
             },
             errorOutput: { streamEvents: events },
+        });
+    });
+
+    it("keeps the code and message of any terminal stream error", async () => {
+        const error = {
+            message: "Agent reused a tool call ID",
+            type: "upstream_error",
+            code: "agent_error",
+        };
+        const body = `data: ${JSON.stringify({
+            choices: [],
+            usage: {
+                prompt_tokens: 10,
+                completion_tokens: 20,
+                total_tokens: 30,
+            },
+        })}\n\ndata: ${JSON.stringify({ error })}\n\ndata: [DONE]\n\n`;
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            new Response(body, {
+                headers: { "content-type": "text/event-stream" },
+            }),
+            candidateFixture(),
+        );
+        expect(tracking).toMatchObject({
+            responseStatus: 502,
+            isBilledUsage: false,
+            errorTracking: {
+                errorResponseCode: "agent_error",
+                errorMessage: error.message,
+            },
         });
     });
 

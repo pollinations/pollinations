@@ -5,6 +5,7 @@ import { communityEndpoint } from "@shared/db/better-auth.ts";
 import { createTestUser } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { adminRoutes } from "../src/routes/admin.ts";
 import { publicAgentSyncRoutes } from "../src/routes/agents.ts";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -96,5 +97,70 @@ describe("code agent sync", () => {
         );
         expect(throttled.status).toBe(429);
         expect(calls).toHaveLength(4);
+    });
+});
+
+describe("admin code agent redeploy", () => {
+    it("re-uploads every code agent at its pinned commit and reports failures", async () => {
+        const commit = "b".repeat(40);
+        const ids = [crypto.randomUUID(), crypto.randomUUID()];
+        const ownerUserId = await createTestUser();
+        await drizzle(env.DB)
+            .insert(communityEndpoint)
+            .values(
+                ids.map((id, index) => ({
+                    id,
+                    ownerUserId,
+                    name: `redeploy-${index}`,
+                    title: "agent",
+                    type: "code_agent" as const,
+                    baseUrl: CODE_AGENT_BASE_URL_PLACEHOLDER,
+                    upstreamModel: id,
+                    payload: JSON.stringify({
+                        repository: `https://github.com/example/agent-${index}`,
+                        deployedCommitSha: commit,
+                    }),
+                })),
+            );
+
+        const uploads: string[] = [];
+        vi.stubGlobal("fetch", async (input, init) => {
+            const url = String(input);
+            if (url.startsWith("https://raw.githubusercontent.com/")) {
+                expect(url).toContain(`/${commit}/agent.ts`);
+                return url.includes("/agent-1/")
+                    ? new Response(null, { status: 404 })
+                    : new Response("export default () => new Response('a');");
+            }
+            expect(init.method).toBe("PUT");
+            uploads.push(url);
+            return Response.json({ success: true });
+        });
+
+        const response = await adminRoutes.request(
+            "/code-agents/redeploy",
+            {
+                method: "POST",
+                headers: { Authorization: `Bearer ${env.PLN_ENTER_TOKEN}` },
+            },
+            {
+                ...env,
+                CLOUDFLARE_ACCOUNT_ID: "test-account",
+                CODE_AGENT_DEPLOY_API_TOKEN: "test-deploy-token",
+                CODE_AGENT_DISPATCH_NAMESPACE: "test-code-agents",
+            },
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({
+            redeployed: 1,
+            failed: [
+                {
+                    id: ids[1],
+                    error: "agent.ts was not found at the repository root",
+                },
+            ],
+        });
+        expect(uploads).toHaveLength(1);
+        expect(uploads[0]).toContain(`/scripts/${ids[0]}`);
     });
 });

@@ -8,6 +8,12 @@ import {
 } from "./stripe-fraud-score.ts";
 
 type FraudQuery = { sql: string; params: string[] };
+type FraudReportUser = FraudUser & {
+    name: string | null;
+    banned: number | null;
+    ban_expires: number | null;
+};
+export type FraudCandidate = { id: string; name: string | null; score: number };
 type QueryRunner = (
     body: FraudQuery | { batch: FraudQuery[] },
 ) => Promise<{ results?: unknown[] }[]>;
@@ -24,16 +30,16 @@ export async function runFraudBanCheck(
     const account = await stripe.accounts.retrieve();
     if (account.id !== "acct_1SrY3q7rcjS3l7tr")
         throw new FraudCheckError("Unexpected Stripe account");
-    const users: FraudUser[] = [];
+    const users: FraudReportUser[] = [];
     let cursor = "";
     for (;;) {
         const [page] = await query({
-            sql: "SELECT id, stripe_customer_id FROM user WHERE id > ? ORDER BY id LIMIT 5000",
+            sql: "SELECT id, stripe_customer_id, name, banned, ban_expires FROM user WHERE id > ? ORDER BY id LIMIT 5000",
             params: [cursor],
         });
         if (!Array.isArray(page?.results))
             throw new FraudCheckError("Invalid D1 user page");
-        const rows = page.results as FraudUser[];
+        const rows = page.results as FraudReportUser[];
         if (
             rows.some(
                 (user) =>
@@ -54,10 +60,13 @@ export async function runFraudBanCheck(
         throw new FraudCheckError("No D1 users; refusing to continue");
     const result = await collectStripeFraudScores(stripe, users);
     const excluded = new Set([FRAUD_BAN_EXCLUDED_USER_ID, ...excludedUserIds]);
+    // Radar's own risk prediction can reach the threshold on volume alone, so a
+    // ban additionally requires a dispute, a fraud report or a fraud warning.
     const candidates = users.filter(
         (user) =>
             !excluded.has(user.id) &&
-            (result.scores.get(user.id) ?? 0) >= FRAUD_BAN_THRESHOLD,
+            (result.scores.get(user.id) ?? 0) >= FRAUD_BAN_THRESHOLD &&
+            result.confirmed.has(user.id),
     );
     // Public Actions logs contain aggregate counts only.
     console.log(
@@ -85,7 +94,26 @@ export async function runFraudBanCheck(
     return {
         candidates: candidates.length,
         applied: apply ? candidates.length : 0,
+        charges: result.charges,
+        unmapped: result.unmapped,
+        // Private report of accounts still needing action; never printed to public logs.
+        report: candidates
+            .filter((user) => !isActiveBan(user))
+            .map(
+                (user): FraudCandidate => ({
+                    id: user.id,
+                    name: user.name,
+                    score: result.scores.get(user.id) ?? 0,
+                }),
+            ),
     };
+}
+
+function isActiveBan(user: FraudReportUser) {
+    return (
+        user.banned === 1 &&
+        (user.ban_expires === null || user.ban_expires > Date.now() / 1000)
+    );
 }
 
 export function fraudBanQueries(userId: string) {

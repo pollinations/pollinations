@@ -1,7 +1,6 @@
-import { cn } from "../../lib/cn.ts";
-import { InlineLink } from "../../primitives/InlineLink.tsx";
 import { InfinityIcon, KeyIcon } from "../../primitives/icons/index.tsx";
 import { formatPollen } from "./format-pollen.ts";
+import { PollenStatusBadge } from "./PollenStatusBadge.tsx";
 import { WalletKindIcon } from "./wallet-display.tsx";
 
 export type AccountPollenSource =
@@ -17,19 +16,17 @@ export type AccountPollenSource =
           generationEnabled?: boolean;
       };
 
-const emptyClass = "polli:text-intent-danger-text";
-
 function isEmpty(amount: number | null | undefined): boolean {
     return amount != null && Number.isFinite(amount) && amount <= 0;
 }
 
-/** Icon + amount; the amount turns red at zero. */
+/** Icon + amount; an exhausted budget or empty wallet becomes a red badge. */
 export function AccountPollen({
     source,
     topUpHref,
 }: {
     source: AccountPollenSource;
-    /** Shown after an empty wallet. A menu keeps recovery links in its dropdown. */
+    /** Shown in the empty-wallet badge. A menu keeps recovery links in its dropdown. */
     topUpHref?: string;
 }) {
     if (source.type === "budget") {
@@ -42,13 +39,12 @@ export function AccountPollen({
         )
             return null;
         const remaining = source.remaining as number;
+        if (!unlimited && isEmpty(remaining))
+            return <PollenStatusBadge state="limit-reached" />;
         return (
             <span
                 title={unlimited ? "Unlimited app budget" : "App budget left"}
-                className={cn(
-                    "polli:inline-flex polli:items-center polli:gap-1 polli:tabular-nums",
-                    !unlimited && isEmpty(remaining) && emptyClass,
-                )}
+                className="polli:inline-flex polli:items-center polli:gap-1 polli:tabular-nums"
             >
                 <KeyIcon
                     aria-hidden="true"
@@ -61,7 +57,7 @@ export function AccountPollen({
                         <span className="polli:sr-only">unlimited</span>
                     </>
                 ) : (
-                    formatPollen(Math.max(0, remaining))
+                    formatPollen(remaining)
                 )}
                 {unlimited ? "pollen" : " pollen"}
             </span>
@@ -69,8 +65,8 @@ export function AccountPollen({
     }
     if (source.balances === undefined) return null;
     const { balances } = source;
-    const walletEmpty =
-        balances != null && isEmpty(balances.paid) && isEmpty(balances.quest);
+    if (balances && isEmpty(balances.paid) && isEmpty(balances.quest))
+        return <PollenStatusBadge state="no-pollen" topUpHref={topUpHref} />;
     return (
         <span className="polli:inline-flex polli:items-center polli:gap-2 polli:tabular-nums">
             {/* Quest Pollen is spent first, so it comes first. */}
@@ -79,10 +75,7 @@ export function AccountPollen({
                 return (
                     <span
                         key={kind}
-                        className={cn(
-                            "polli:inline-flex polli:items-center polli:gap-1",
-                            isEmpty(amount) && emptyClass,
-                        )}
+                        className="polli:inline-flex polli:items-center polli:gap-1"
                     >
                         <WalletKindIcon
                             kind={kind === "paid" ? "paid" : "tier"}
@@ -96,20 +89,6 @@ export function AccountPollen({
                     </span>
                 );
             })}
-            {walletEmpty && topUpHref && (
-                <>
-                    <span aria-hidden="true">·</span>
-                    <InlineLink
-                        href={topUpHref}
-                        external
-                        showIcon={false}
-                        data-pollinations-action="fund-account"
-                        aria-label="No Pollen. Top up (opens in a new tab)"
-                    >
-                        Top up
-                    </InlineLink>
-                </>
-            )}
         </span>
     );
 }

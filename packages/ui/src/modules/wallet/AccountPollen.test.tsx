@@ -2,29 +2,32 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { AccountPollen } from "./AccountPollen.tsx";
 
-const EMPTY = "polli:text-intent-danger-text";
-
 describe("account Pollen", () => {
-    it("shows the app budget as an amount, an infinity sign, or a red zero", () => {
+    it("shows the app budget as an amount or an infinity sign", () => {
         const some = renderToStaticMarkup(
             <AccountPollen source={{ type: "budget", remaining: 3.25 }} />,
         );
         expect(some).toContain("3.25 pollen");
-        expect(some).not.toContain(EMPTY);
+        expect(some).not.toContain("Limit reached");
         const unlimited = renderToStaticMarkup(
             <AccountPollen source={{ type: "budget", remaining: null }} />,
         );
         expect(unlimited).toContain("M12 12c-2-2.67");
-        expect(unlimited).toContain("pollen");
-        expect(unlimited).toContain("App budget: ");
         expect(unlimited).toContain(">unlimited<");
-        expect(unlimited).not.toContain(EMPTY);
+        expect(unlimited).toContain("pollen");
+    });
+
+    it("turns an exhausted app budget into a badge without a link", () => {
         for (const remaining of [0, -1]) {
-            const zero = renderToStaticMarkup(
-                <AccountPollen source={{ type: "budget", remaining }} />,
+            const badge = renderToStaticMarkup(
+                <AccountPollen
+                    source={{ type: "budget", remaining }}
+                    topUpHref="/top-up"
+                />,
             );
-            expect(zero).toContain(EMPTY);
-            expect(zero).toMatch(/>0(<!-- -->)? pollen</);
+            expect(badge).toContain("Limit reached");
+            expect(badge).toContain("polli:bg-intent-danger-bg-light");
+            expect(badge).not.toContain("<a ");
         }
     });
 
@@ -49,44 +52,36 @@ describe("account Pollen", () => {
         ).toBe("");
     });
 
-    it("reds out only the wallet amounts that are empty", () => {
+    it("keeps the amounts while any Pollen is left", () => {
         const mixed = renderToStaticMarkup(
             <AccountPollen
                 source={{ type: "wallet", balances: { paid: 0, quest: 5 } }}
                 topUpHref="/top-up"
             />,
         );
-        expect(mixed).toContain("Paid Pollen:");
         expect(mixed).toContain("Quest Pollen:");
-        expect(mixed.split(EMPTY).length - 1).toBe(1);
+        expect(mixed).toContain("Paid Pollen:");
+        expect(mixed).not.toContain("No Pollen");
         expect(mixed).not.toContain("/top-up");
-        expect(
-            renderToStaticMarkup(
-                <AccountPollen
-                    source={{
-                        type: "wallet",
-                        balances: { paid: 10, quest: 5 },
-                    }}
-                />,
-            ),
-        ).not.toContain(EMPTY);
+        expect(mixed.indexOf("Quest")).toBeLessThan(mixed.indexOf("Paid"));
     });
 
-    it("adds the top-up link only when the whole wallet is empty and a link is given", () => {
-        const empty = renderToStaticMarkup(
+    it("turns an empty wallet into a badge, linked only when a link is given", () => {
+        const linked = renderToStaticMarkup(
             <AccountPollen
                 source={{ type: "wallet", balances: { paid: 0, quest: 0 } }}
                 topUpHref="/top-up"
             />,
         );
-        expect(empty.split(EMPTY).length - 1).toBe(2);
-        expect(empty).toContain('href="/top-up"');
-        expect(empty).toContain("Top up");
+        expect(linked).toContain("No Pollen");
+        expect(linked).toContain('href="/top-up"');
+        expect(linked).not.toContain("Quest Pollen:");
         const menu = renderToStaticMarkup(
             <AccountPollen
                 source={{ type: "wallet", balances: { paid: 0, quest: 0 } }}
             />,
         );
+        expect(menu).toContain("No Pollen");
         expect(menu).not.toContain("<a ");
     });
 

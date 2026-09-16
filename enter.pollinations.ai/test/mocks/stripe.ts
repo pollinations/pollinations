@@ -55,7 +55,8 @@ type StripeCheckoutSession = {
     object: "checkout.session";
     mode: string;
     customer: string | null;
-    url: string;
+    url: string | null;
+    status?: "open" | "complete" | "expired";
 };
 
 type StripePortalSession = {
@@ -166,7 +167,12 @@ export type MockStripeState = {
     invoiceItems: StripeInvoiceLineItem[];
     invoicePayments: StripeInvoicePayment[];
     paymentIntents: StripePaymentIntent[];
+    fraudCharges: Record<string, unknown>[];
+    fraudDisputes: Record<string, unknown>[];
+    fraudWarnings: Record<string, unknown>[];
+    failFraudWarnings: boolean;
     requests: StripeRequest[];
+    onCheckoutSessionCreated: (() => Promise<void>) | null;
     customerCreateByIdempotencyKey: Record<string, string>;
     /**
      * Per-invoice override for the `/v1/invoices/:id/pay` mock response.
@@ -191,7 +197,40 @@ export type MockStripeState = {
 export function createMockStripe(): MockAPI<MockStripeState> {
     const state: MockStripeState = createInitialState();
 
+    function fraudPage(c: Context, rows: Record<string, unknown>[]) {
+        recordRequest(c, state);
+        const cursor = c.req.query("starting_after");
+        const start = cursor
+            ? rows.findIndex((row) => row.id === cursor) + 1
+            : 0;
+        const limit = Number(c.req.query("limit") ?? 100);
+        const data = rows.slice(start, start + limit);
+        return c.json({
+            object: "list",
+            data,
+            has_more: start + limit < rows.length,
+            url: c.req.path,
+        });
+    }
     const stripeAPI = new Hono()
+        .get("/v1/account", (c) =>
+            c.json({ id: "acct_1SrY3q7rcjS3l7tr", object: "account" }),
+        )
+        .get("/v1/charges", (c) => fraudPage(c, state.fraudCharges))
+        .get("/v1/disputes", (c) => fraudPage(c, state.fraudDisputes))
+        .get("/v1/radar/early_fraud_warnings", (c) =>
+            state.failFraudWarnings
+                ? c.json(
+                      {
+                          error: {
+                              type: "invalid_request_error",
+                              message: "Unavailable",
+                          },
+                      },
+                      403,
+                  )
+                : fraudPage(c, state.fraudWarnings),
+        )
         .post("/v1/customers", async (c) => {
             const form = await parseForm(c.req.raw);
             recordRequest(c, state, form);
@@ -264,8 +303,36 @@ export function createMockStripe(): MockAPI<MockStripeState> {
                 mode: form.get("mode") ?? "payment",
                 customer: form.get("customer"),
                 url: `https://checkout.stripe.test/${state.checkoutSessions.length + 1}`,
+                status: "open",
             };
             state.checkoutSessions.push(session);
+            await state.onCheckoutSessionCreated?.();
+            return c.json(session);
+        })
+        .get("/v1/checkout/sessions", (c) => {
+            recordRequest(c, state);
+            const customer = c.req.query("customer");
+            const status = c.req.query("status");
+            const data = state.checkoutSessions.filter(
+                (session) =>
+                    (!customer || session.customer === customer) &&
+                    (!status || session.status === status),
+            );
+            return c.json({
+                object: "list",
+                url: "/v1/checkout/sessions",
+                has_more: false,
+                data,
+            });
+        })
+        .post("/v1/checkout/sessions/:id/expire", (c) => {
+            recordRequest(c, state);
+            const session = state.checkoutSessions.find(
+                (item) => item.id === c.req.param("id"),
+            );
+            if (!session) return stripeNotFound(c);
+            session.status = "expired";
+            session.url = null;
             return c.json(session);
         })
         .post("/v1/billing_portal/sessions", async (c) => {
@@ -554,7 +621,12 @@ function createInitialState(): MockStripeState {
         invoiceItems: [],
         invoicePayments: [],
         paymentIntents: [],
+        fraudCharges: [],
+        fraudDisputes: [],
+        fraudWarnings: [],
+        failFraudWarnings: false,
         requests: [],
+        onCheckoutSessionCreated: null,
         customerCreateByIdempotencyKey: {},
         payBehavior: {},
     };

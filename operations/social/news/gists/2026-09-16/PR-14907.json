@@ -1,0 +1,34 @@
+{
+  "pr_number": 14907,
+  "title": "feat: add Barnaby the Crow, an NPC agent who remembers (#14821)",
+  "author": "Guest453",
+  "url": "https://github.com/pollinations/pollinations/pull/14907",
+  "merged_at": "2026-09-16T15:01:20Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #14821\n\n## 🐦‍⬛ Barnaby the Crow — an NPC who remembers you\n\nBarnaby is a cheeky crow shopkeeper at the edge of the Whispering Market. He hoards \"shinies\" — the little facts you tell him about yourself — in a battered tin box under his counter. Crows genuinely remember faces, so memory is the character, not a bolt-on.\n\n### What this PR adds\n- `apps/barnaby-the-crow/agent.json` — the **entire** agent. A prompt agent: one system prompt + `baseModel: \"openai\"` + `mcpServers: [\"computer\"]`. No code, no new service, no vector DB, no frontend.\n- `apps/barnaby-the-crow/README.md` — the deploy line, a demo, and how to re-theme / rename it.\n\n### How the memory works\n- One file in a dedicated folder: `/workspace/barnaby-the-crow/memories.md`, via the existing **Computer MCP** `bash` tool.\n- Every turn opens the box (`cat`). `remember` appends one line — the fact is passed in the tool's `stdin`, the MCP-documented way, so there are no shell-quoting bugs. `forget <x>` deletes matching lines (`sed -i`). `forget everything` truncates. Nothing outside the folder is read or written.\n- Isolation is free: each caller gets their own Computer Durable Object, so two users never share a box.\n\n### Verified\n\n**A) Local harness against the real Computer MCP** — the agent's system prompt + the real `bash` tool, every turn a *fresh* chat with no history → 7/7:\n\n```\nUSER: remember that I like mint tea\n  bash> cat /workspace/barnaby-the-crow/memories.md 2>/dev/null\n  bash> cat >> /workspace/barnaby-the-crow/memories.md   [stdin: '- likes mint tea']\n  BARNABY: Kaa! ... I've tucked that shiny away: you like mint tea.\nUSER: what do you remember?\n  bash> cat /workspace/barnaby-the-crow/memories.md   -> '- likes mint tea'\n  BARNABY: ... just one shiny: **you like mint tea.**\nUSER: please forget that I like mint tea\n  bash> sed -i '/likes mint tea/d' /workspace/barnaby-the-crow/memories.md\n  BARNABY: Consider it forgotten.\nbox after forget:  ''\n\n[PASS] fact saved to the tin box\n[PASS] recall wor",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A crow with a tin box",
+    "blurb": "Barnaby the Crow has opened a stall at the Whispering Market. Tell him a small fact, and he tucks the shiny into his tin box until you ask for it back.",
+    "summary": "Added Barnaby the Crow, a deployable prompt agent that uses Computer MCP to persist each caller's remembered facts in an isolated `/workspace/barnaby-the-crow/memories.md` file.",
+    "impact": "People can deploy a cheeky NPC shopkeeper that remembers, recalls, and forgets personal details across fresh chats, while each user gets a separate Durable Object-backed memory box.",
+    "keywords": [
+      "community",
+      "agent",
+      "memory",
+      "computer-mcp",
+      "npc",
+      "durable-objects"
+    ],
+    "visual_concept": "A cozy Whispering Market stall run by Barnaby, a friendly pixel crow shopkeeper, with a battered tin box full of labeled memory-shinies beneath the counter. Polli, wearing a tiny market scarf, offers Barnaby a glowing note while flowers and code-vines grow around the stall; the scene makes persistent, private memory feel like carefully storing small treasures.",
+    "image_prompt": "Cozy pixel art scene at a warm Whispering Market stall where a cheeky black crow shopkeeper carefully places a glowing note labeled \"MINT TEA\" into a battered tin memory box beneath his counter, while Polli the cute yellow-and-brown striped bee mascot wears a tiny market scarf and hands him another shiny note. Lime green (#ecf874) code-plants, pastel flowers, a softly glowing retro terminal, and a small pixel-font sign reading \"BARNABY'S SHINIES\" fill the scene; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-16/PR-14907.jpg",
+    "prompt": "Cozy pixel art scene at a warm Whispering Market stall where a cheeky black crow shopkeeper carefully places a glowing note labeled \"MINT TEA\" into a battered tin memory box beneath his counter, while Polli the cute yellow-and-brown striped bee mascot wears a tiny market scarf and hands him another shiny note. Lime green (#ecf874) code-plants, pastel flowers, a softly glowing retro terminal, and a small pixel-font sign reading \"BARNABY'S SHINIES\" fill the scene; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-16T15:02:22.694061+00:00"
+}

@@ -1997,7 +1997,7 @@ Update a community model owned by the authenticated account. Code-agent names, t
 |---|---|---|
 | `name` | `string` | length: `1…120` |
 | `title` | `string` | Display name shown in the model catalog. · length: `1…42` |
-| `description` | `string` | max length: `160` |
+| `description` | `string` | max length: `1000` |
 | `visibility` | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. |
 | `requiredSafetyFeatures` | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. |
 | `hidden` | `boolean` | — |
@@ -2224,7 +2224,7 @@ Update a prompt agent's configuration or a code agent's visibility and safety po
 |---|---|---|
 | `name` | `string` | length: `1…120` |
 | `title` | `string` | length: `1…42` |
-| `description` | `string` | max length: `160` |
+| `description` | `string` | max length: `1000` |
 | `visibility` | `"private"` \| `"public"` | — |
 | `requiredSafetyFeatures` | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. |
 | `systemPrompt` | `any` | — |
@@ -2299,7 +2299,7 @@ Register an agent running on an external OpenAI-compatible endpoint. Pollination
 | `outputModalities` | enum (6) — `"text"`, `"image"`, `"audio"`, …[] | Output types produced by the agent. Defaults to text. |
 | `name` * | `string` | length: `1…120` |
 | `title` * | `string` | Display name shown in the model catalog. · length: `1…42` |
-| `description` | `string` | max length: `160` |
+| `description` | `string` | max length: `1000` |
 | `visibility` | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. · default: `"private"` |
 | `api` * | `"chat_completions"` \| `"responses"` | — |
 | `url` * | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. |

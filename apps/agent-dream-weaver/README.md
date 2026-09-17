@@ -12,7 +12,7 @@ A **prompt agent** that walks the dream-shore of collective memory: each run, it
 | Piece | Value |
 | --- | --- |
 | Target space | `lore/dreams/` in the collective-memory repo |
-| Tool | the `computer` MCP server's `bash` tool |
+| Tool | the `pollinations` MCP server (media/model tools only; no shell) |
 | Memory | the collective-memory repo itself (public, permanent) |
 
 Each run:

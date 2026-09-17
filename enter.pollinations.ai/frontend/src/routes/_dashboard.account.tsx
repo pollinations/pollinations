@@ -3,7 +3,10 @@ import {
     Button,
     CopyButton,
     Dialog,
+    DialogBody,
+    DialogFooter,
     DiscordIcon,
+    Field,
     FieldStack,
     GitHubIcon,
     Heading,
@@ -338,7 +341,7 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
             title="Delete Pollinations account?"
             size="sm"
         >
-            <div className="mt-4 flex flex-1 flex-col gap-5 px-6 pb-6">
+            <DialogBody>
                 <Alert intent="danger" title="This cannot be undone">
                     <div className="flex flex-col gap-3">
                         <p>Deleting your Pollinations account removes:</p>
@@ -379,37 +382,39 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
                     }
                     error={error}
                 >
-                    <Input
-                        value={confirmation}
-                        onChange={(event) =>
-                            setConfirmation(event.currentTarget.value)
-                        }
-                        autoComplete="off"
-                        spellCheck={false}
-                        disabled={isDeleting}
-                    />
+                    <Field.Input asChild>
+                        <Input
+                            value={confirmation}
+                            onChange={(event) =>
+                                setConfirmation(event.currentTarget.value)
+                            }
+                            autoComplete="off"
+                            spellCheck={false}
+                            disabled={isDeleting}
+                        />
+                    </Field.Input>
                 </FieldStack>
-
-                <div className="mt-auto flex justify-end gap-2">
-                    <Button
-                        type="button"
-                        onClick={() => handleOpenChange(false)}
-                        disabled={isDeleting}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        type="button"
-                        intent="danger"
-                        onClick={() => void handleDelete()}
-                        disabled={
-                            confirmation !== DELETE_CONFIRMATION || isDeleting
-                        }
-                    >
-                        {isDeleting ? "Deleting..." : "Delete account"}
-                    </Button>
-                </div>
-            </div>
+            </DialogBody>
+            <DialogFooter>
+                <Button
+                    type="button"
+                    intent="neutral"
+                    onClick={() => handleOpenChange(false)}
+                    disabled={isDeleting}
+                >
+                    Cancel
+                </Button>
+                <Button
+                    type="button"
+                    intent="danger"
+                    onClick={() => void handleDelete()}
+                    disabled={
+                        confirmation !== DELETE_CONFIRMATION || isDeleting
+                    }
+                >
+                    {isDeleting ? "Deleting…" : "Delete account"}
+                </Button>
+            </DialogFooter>
         </Dialog>
     );
 }

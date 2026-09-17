@@ -4,9 +4,10 @@ import {
     ButtonGroup,
     CheckIcon,
     Dialog,
-    DialogTitle,
+    DialogBody,
+    DialogFooter,
+    DialogHeader,
     FieldStack,
-    ScrollArea,
     TabButton,
 } from "@pollinations/ui";
 import type { FormEvent, ReactNode } from "react";
@@ -103,10 +104,10 @@ export function AgentDialog({
             (form.name.trim() !== "" && form.title.trim() !== "")) &&
         hasRuntimeConfiguration;
     const submitLabel = agent
-        ? "Save Agent"
+        ? "Save changes"
         : form.visibility === "public"
-          ? "Publish Agent"
-          : "Add Private Agent";
+          ? "Publish agent"
+          : "Add private agent";
 
     return (
         <Dialog
@@ -116,24 +117,16 @@ export function AgentDialog({
             trigger={trigger}
             triggerAsChild
         >
-            <div className="shrink-0 p-6 pb-4">
-                <DialogTitle className="text-lg font-semibold">
-                    {agent ? "Edit Agent" : "Add Agent"}
-                </DialogTitle>
-                <p className="mt-1 text-sm text-theme-text-muted">
-                    Configure and list an agent as a{" "}
-                    <code>
-                        {"{username}"}/{"{model-id}"}
-                    </code>{" "}
-                    model.
-                </p>
-            </div>
+            <DialogHeader
+                title={agent ? "Edit agent" : "Add agent"}
+                description="Create an agent with a prompt and model, or deploy code from GitHub."
+            />
             <form
                 onSubmit={handleSubmit}
                 className="flex min-h-0 flex-1 flex-col"
                 autoComplete="off"
             >
-                <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2">
+                <DialogBody>
                     {error && <Alert intent="danger">{error}</Alert>}
 
                     {!agent && (
@@ -257,11 +250,11 @@ export function AgentDialog({
                             }))
                         }
                     />
-                </ScrollArea>
-                <div className="flex shrink-0 justify-end gap-2 border-t border-divider p-6 pt-4">
+                </DialogBody>
+                <DialogFooter>
                     <Button
                         type="button"
-                        intent="danger"
+                        intent="neutral"
                         onClick={() => onOpenChange(false)}
                     >
                         Cancel
@@ -269,7 +262,7 @@ export function AgentDialog({
                     <Button type="submit" disabled={!canSubmit}>
                         {isSubmitting ? "Saving…" : submitLabel}
                     </Button>
-                </div>
+                </DialogFooter>
             </form>
         </Dialog>
     );

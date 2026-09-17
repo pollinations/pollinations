@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogFooter } from "@pollinations/ui";
+import { Button, Dialog, DialogBody, DialogFooter } from "@pollinations/ui";
 import type { FC } from "react";
 
 interface DeleteConfirmationProps {
@@ -15,15 +15,17 @@ export const DeleteConfirmation: FC<DeleteConfirmationProps> = ({
     <Dialog
         open={!!deleteId}
         onOpenChange={(open) => !open && onCancel()}
-        title="Delete API Key"
+        title="Delete API key?"
         size="sm"
     >
-        <p className="flex-1 px-6 py-4">
-            Are you sure you want to delete this API key? This action cannot be
-            undone.
-        </p>
+        <DialogBody>
+            <p className="text-sm leading-relaxed">
+                Apps using this key will lose access. Deleting it cannot be
+                undone.
+            </p>
+        </DialogBody>
         <DialogFooter>
-            <Button type="button" onClick={onCancel}>
+            <Button type="button" intent="neutral" onClick={onCancel}>
                 Cancel
             </Button>
             <Button type="button" intent="danger" onClick={onConfirm}>

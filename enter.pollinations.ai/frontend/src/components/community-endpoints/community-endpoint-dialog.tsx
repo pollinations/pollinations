@@ -5,11 +5,13 @@ import {
     CheckIcon,
     ChevronIcon,
     Dialog,
+    DialogBody,
     DialogFooter,
     DialogHeader,
     Dropdown,
     DropdownItem,
     EditableCombobox,
+    Field,
     FieldStack,
     Input,
     ScrollArea,
@@ -398,10 +400,10 @@ export function CommunityEndpointDialog({
             <DialogHeader
                 title={
                     isEndpointAgent
-                        ? "Edit Endpoint Agent"
+                        ? "Edit endpoint agent"
                         : isEdit
-                          ? "Edit Model"
-                          : "Add Model"
+                          ? "Edit model"
+                          : "Add model"
                 }
                 description={
                     isEndpointAgent ? (
@@ -424,7 +426,7 @@ export function CommunityEndpointDialog({
                 autoComplete="off"
                 data-form-type="other"
             >
-                <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2">
+                <DialogBody>
                     {error && <Alert intent="danger">{error}</Alert>}
 
                     {endpoint?.pending && (
@@ -563,26 +565,28 @@ export function CommunityEndpointDialog({
                             }
                             alignLabelRow
                         >
-                            <Input
-                                name="community-endpoint-url"
-                                type="url"
-                                inputMode="url"
-                                value={form.url}
-                                placeholder={
-                                    form.modality === "text"
-                                        ? `https://api.example.com/v1/${form.api === "responses" ? "responses" : "chat/completions"}`
-                                        : form.modality === "video"
-                                          ? "https://api.example.com/generate-video"
-                                          : "https://api.example.com/v1"
-                                }
-                                autoComplete="off"
-                                autoCapitalize="none"
-                                spellCheck={false}
-                                required
-                                onChange={(e) =>
-                                    updateForm("url", e.target.value)
-                                }
-                            />
+                            <Field.Input asChild>
+                                <Input
+                                    name="community-endpoint-url"
+                                    type="url"
+                                    inputMode="url"
+                                    value={form.url}
+                                    placeholder={
+                                        form.modality === "text"
+                                            ? `https://api.example.com/v1/${form.api === "responses" ? "responses" : "chat/completions"}`
+                                            : form.modality === "video"
+                                              ? "https://api.example.com/generate-video"
+                                              : "https://api.example.com/v1"
+                                    }
+                                    autoComplete="off"
+                                    autoCapitalize="none"
+                                    spellCheck={false}
+                                    required
+                                    onChange={(e) =>
+                                        updateForm("url", e.target.value)
+                                    }
+                                />
+                            </Field.Input>
                         </FieldStack>
                         {isEndpointAgent && (
                             <FieldStack
@@ -590,20 +594,22 @@ export function CommunityEndpointDialog({
                                 helper="Model ID sent to the endpoint with each request."
                                 alignLabelRow
                             >
-                                <Input
-                                    name="community-upstream-id"
-                                    value={form.upstreamModel}
-                                    autoComplete="off"
-                                    autoCapitalize="none"
-                                    spellCheck={false}
-                                    required
-                                    onChange={(event) =>
-                                        updateForm(
-                                            "upstreamModel",
-                                            event.target.value,
-                                        )
-                                    }
-                                />
+                                <Field.Input asChild>
+                                    <Input
+                                        name="community-upstream-id"
+                                        value={form.upstreamModel}
+                                        autoComplete="off"
+                                        autoCapitalize="none"
+                                        spellCheck={false}
+                                        required
+                                        onChange={(event) =>
+                                            updateForm(
+                                                "upstreamModel",
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                </Field.Input>
                             </FieldStack>
                         )}
                         {!isEndpointAgent && form.modality !== "video" && (
@@ -685,23 +691,28 @@ export function CommunityEndpointDialog({
                             }
                             alignLabelRow
                         >
-                            <Input
-                                name="community-api-bearer-token"
-                                type="password"
-                                value={form.bearerToken}
-                                placeholder={
-                                    isEdit ? "Re-enter token" : undefined
-                                }
-                                autoComplete="new-password"
-                                autoCapitalize="none"
-                                data-lpignore="true"
-                                data-1p-ignore="true"
-                                data-bwignore="true"
-                                required={!isEdit}
-                                onChange={(e) =>
-                                    updateForm("bearerToken", e.target.value)
-                                }
-                            />
+                            <Field.Input asChild>
+                                <Input
+                                    name="community-api-bearer-token"
+                                    type="password"
+                                    value={form.bearerToken}
+                                    placeholder={
+                                        isEdit ? "Re-enter token" : undefined
+                                    }
+                                    autoComplete="new-password"
+                                    autoCapitalize="none"
+                                    data-lpignore="true"
+                                    data-1p-ignore="true"
+                                    data-bwignore="true"
+                                    required={!isEdit}
+                                    onChange={(e) =>
+                                        updateForm(
+                                            "bearerToken",
+                                            e.target.value,
+                                        )
+                                    }
+                                />
+                            </Field.Input>
                         </FieldStack>
                     )}
 
@@ -887,9 +898,6 @@ export function CommunityEndpointDialog({
                             </div>
                         </FieldStack>
                     )}
-                </ScrollArea>
-
-                <DialogFooter>
                     {testableModelId && (
                         <div className="mr-auto">
                             <OpenWebUiLink
@@ -898,9 +906,11 @@ export function CommunityEndpointDialog({
                             />
                         </div>
                     )}
+                </DialogBody>
+                <DialogFooter>
                     <Button
                         type="button"
-                        intent="danger"
+                        intent="neutral"
                         className="disabled:opacity-50"
                         onClick={() => onOpenChange(false)}
                         disabled={isSubmitting}
@@ -915,10 +925,10 @@ export function CommunityEndpointDialog({
                         {isSubmitting
                             ? "Saving…"
                             : isEdit
-                              ? "Save Model"
+                              ? "Save changes"
                               : isShared
-                                ? "Publish Model"
-                                : "Add Private Model"}
+                                ? "Publish model"
+                                : "Add private model"}
                     </Button>
                 </DialogFooter>
             </form>

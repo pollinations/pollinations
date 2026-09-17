@@ -1,3 +1,4 @@
+import { Surface } from "@pollinations/ui";
 import type { FC } from "react";
 import { useState } from "react";
 import { useModelCategories } from "../models/use-model-categories.ts";
@@ -69,29 +70,31 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
 
     return (
         <div className="space-y-6">
-            <hr className="border-divider" />
-            <PollenBudgetInput
-                value={permissions.pollenBudget}
-                onChange={setPollenBudget}
-                disabled={disabled}
-                inline={inline}
-            />
-            <ExpiryDaysInput
-                value={permissions.expiryDays}
-                onChange={setExpiryDays}
-                disabled={disabled}
-                inline={inline}
-            />
-            <hr className="border-divider" />
-            <AccountPermissionsInput
-                value={permissions.accountPermissions}
-                onChange={setAccountPermissions}
-                disabled={disabled}
-                allowedModels={permissions.allowedModels}
-                onModelsChange={setAllowedModels}
-                modelsInitiallyExpanded={modelsInitiallyExpanded}
-                modelCategories={modelCategories}
-            />
+            <Surface className="space-y-4">
+                <PollenBudgetInput
+                    value={permissions.pollenBudget}
+                    onChange={setPollenBudget}
+                    disabled={disabled}
+                    inline={inline}
+                />
+                <ExpiryDaysInput
+                    value={permissions.expiryDays}
+                    onChange={setExpiryDays}
+                    disabled={disabled}
+                    inline={inline}
+                />
+            </Surface>
+            <Surface>
+                <AccountPermissionsInput
+                    value={permissions.accountPermissions}
+                    onChange={setAccountPermissions}
+                    disabled={disabled}
+                    allowedModels={permissions.allowedModels}
+                    onModelsChange={setAllowedModels}
+                    modelsInitiallyExpanded={modelsInitiallyExpanded}
+                    modelCategories={modelCategories}
+                />
+            </Surface>
         </div>
     );
 };

@@ -5,14 +5,15 @@ import {
     Chip,
     CopyButton,
     cn,
-    DialogTitle,
+    DialogBody,
+    DialogFooter,
+    DialogHeader,
     Field,
     GlobeIcon,
     Input,
     LockIcon,
-    ScrollArea,
 } from "@pollinations/ui";
-import { AuthModal } from "@pollinations/ui/auth";
+import { AuthModal, ErrorBanner } from "@pollinations/ui/auth";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
@@ -126,12 +127,15 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     return (
         <AuthModal onClose={onClose}>
             {header}
-            <div className="shrink-0 p-6 pb-4">
-                <DialogTitle className="text-xl font-bold mb-4">
-                    {appKey ? "Edit App Key" : "Edit API Key"}
-                </DialogTitle>
-
-                <div className="flex items-center gap-3">
+            <DialogHeader
+                title={appKey ? "Edit app key" : "Edit key permissions"}
+                description={
+                    appKey
+                        ? "Update your app’s name, callback URLs and earnings settings."
+                        : "Choose what this key can access and how much it can spend."
+                }
+            >
+                <div className="mt-3 flex min-w-0 flex-wrap items-center gap-3">
                     <Chip>
                         {appKey ? (
                             <>
@@ -157,7 +161,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                             aria-label="Copy publishable API key"
                             className={(copied) =>
                                 cn(
-                                    "font-mono text-sm cursor-pointer transition-all",
+                                    "break-all text-left font-mono text-sm cursor-pointer transition-all",
                                     copied
                                         ? "text-intent-success-text font-semibold"
                                         : "text-theme-text-soft hover:text-theme-text-strong hover:underline",
@@ -172,28 +176,26 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         </span>
                     )}
                 </div>
-            </div>
+            </DialogHeader>
 
-            <ScrollArea className="min-h-0 flex-1 overscroll-contain p-6 py-4 touch-pan-y [-webkit-overflow-scrolling:touch]">
-                {error && (
-                    <div className="mb-4 rounded-xl bg-intent-danger-bg-light p-4 text-intent-danger-text">
-                        {error}
-                    </div>
-                )}
+            <DialogBody>
+                {error && <ErrorBanner>{error}</ErrorBanner>}
 
                 <div className="space-y-4">
                     <Field.Root className="flex flex-col gap-2">
                         <Field.Label className="text-sm font-semibold">
                             Name
                         </Field.Label>
-                        <Input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            className="w-full"
-                            placeholder="Enter API key name"
-                            disabled={isSubmitting}
-                        />
+                        <Field.Input asChild>
+                            <Input
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                className="w-full"
+                                placeholder="Enter API key name"
+                                disabled={isSubmitting}
+                            />
+                        </Field.Input>
                     </Field.Root>
 
                     {isPublishable && (
@@ -214,12 +216,12 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         />
                     )}
                 </div>
-            </ScrollArea>
+            </DialogBody>
 
-            <div className="flex gap-2 justify-end p-6 pt-4 shrink-0">
+            <DialogFooter>
                 <Button
                     type="button"
-                    intent="danger"
+                    intent="neutral"
                     onClick={onClose}
                     disabled={isSubmitting}
                 >
@@ -230,9 +232,9 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     onClick={handleSave}
                     disabled={isSubmitting}
                 >
-                    {isSubmitting ? "Saving..." : "Save"}
+                    {isSubmitting ? "Saving…" : "Save changes"}
                 </Button>
-            </div>
+            </DialogFooter>
         </AuthModal>
     );
 };

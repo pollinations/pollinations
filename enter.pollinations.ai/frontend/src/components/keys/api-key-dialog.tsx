@@ -3,13 +3,14 @@ import {
     CopyButton,
     cn,
     Dialog,
-    DialogTitle,
+    DialogBody,
+    DialogFooter,
+    DialogHeader,
     Field,
     InlineLink,
     Input,
-    ScrollArea,
-    Tooltip,
 } from "@pollinations/ui";
+import { ErrorBanner } from "@pollinations/ui/auth";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import {
@@ -125,30 +126,20 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         allowedModels.length === 0;
     const isCreateDisabled =
         !createdKey && (!name.trim() || isSubmitting || noModelsSelected);
-    function getButtonText(): string {
-        if (isSubmitting) return "Creating...";
-        return "Create";
-    }
-
-    const createDisabledReason =
-        !createdKey && noModelsSelected
-            ? "Select at least one model"
-            : undefined;
-
     const submitButton = createdKey ? (
         <CopyButton
             value={createdKey.key}
             copiedTimeoutMs={500}
-            tooltip="Copy key"
-            copiedTooltip="Copied! Closing..."
+            tooltip={null}
             onCopied={closeAfterCopy}
-            onCopyError={() => {
-                onComplete();
-                setIsOpen(false);
-            }}
+            onCopyError={() =>
+                setError(
+                    "Couldn’t copy the key. Select it and copy it manually before closing.",
+                )
+            }
             className="inline-flex items-center justify-center self-center rounded-full bg-theme-bg-active px-4 pb-2 pt-1.5 font-medium leading-normal text-theme-text-strong transition-colors hover:bg-theme-bg-hover hover:brightness-105"
         >
-            {(copied) => (copied ? "Copied! Closing..." : "Copy and Close")}
+            {(copied) => (copied ? "Copied" : "Copy and close")}
         </CopyButton>
     ) : (
         <Button
@@ -156,7 +147,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             className="disabled:opacity-50"
             disabled={isCreateDisabled}
         >
-            {getButtonText()}
+            {isSubmitting ? "Creating…" : "Create key"}
         </Button>
     );
 
@@ -195,103 +186,76 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             }
             triggerAsChild
         >
-            <div className="shrink-0 p-6 pb-4">
-                <DialogTitle className="text-lg font-semibold">
-                    {simplified ? "Create App Key" : "Create API Key"}
-                </DialogTitle>
-                <div className="mt-1 text-sm text-theme-text-muted">
-                    {simplified ? (
-                        <ul className="list-disc space-y-1 pl-5">
-                            <li>
-                                For web apps, add the callback URL your app will
-                                use after consent.
-                            </li>
-                            <li>
-                                We return a scoped API key in the URL fragment.
-                            </li>
-                            <li>
-                                Use that key for API requests paid with the
-                                user&apos;s Pollen.{" "}
-                                <InlineLink
-                                    href={genDocsUrl(
-                                        "#tag/connect-user-wallets",
-                                    )}
-                                >
-                                    Read the guide
-                                </InlineLink>
-                            </li>
-                        </ul>
-                    ) : (
-                        <p>
-                            Access AI models for text, image, audio, video, and
-                            embeddings.
-                        </p>
-                    )}
-                </div>
-            </div>
+            <DialogHeader
+                title={
+                    createdKey
+                        ? simplified
+                            ? "App key created"
+                            : "API key created"
+                        : simplified
+                          ? "Create app key"
+                          : "Create API key"
+                }
+                description={
+                    createdKey
+                        ? simplified
+                            ? "Use this app key to connect your app to Pollinations."
+                            : "Copy your secret key now. You won’t be able to see it again."
+                        : simplified
+                          ? "Let users connect their Pollinations accounts and spend their own Pollen in your app."
+                          : "Create a secret key for API requests from your backend."
+                }
+            />
 
             <form
                 onSubmit={handleSubmit}
                 className="flex min-h-0 flex-1 flex-col"
             >
-                <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2 touch-pan-y [-webkit-overflow-scrolling:touch]">
-                    {error && (
-                        <div className="pb-2">
-                            <p className="text-sm text-intent-danger-text bg-intent-danger-bg-light px-3 py-2 rounded-lg">
-                                {error}
-                            </p>
-                        </div>
-                    )}
-
-                    <hr className="border-divider" />
+                <DialogBody>
+                    {error && <ErrorBanner>{error}</ErrorBanner>}
                     <Field.Root className="flex flex-col gap-2">
                         <Field.Label className="text-sm font-semibold">
                             {createdKey
                                 ? simplified
-                                    ? "Your App Key"
-                                    : "Your API Key"
+                                    ? "App key"
+                                    : "Secret key"
                                 : "Name"}
                         </Field.Label>
-                        <Input
-                            type="text"
-                            value={createdKey ? createdKey.key : name}
-                            onChange={(e) => setName(e.target.value)}
-                            className={cn(
-                                "w-full",
-                                createdKey && "font-mono text-xs",
-                            )}
-                            placeholder={createdKey ? "" : "Enter API key name"}
-                            required={!createdKey}
-                            disabled={isSubmitting || !!createdKey}
-                            readOnly={!!createdKey}
-                        />
+                        <Field.Input asChild>
+                            <Input
+                                type="text"
+                                value={createdKey ? createdKey.key : name}
+                                onChange={(e) => setName(e.target.value)}
+                                className={cn(
+                                    "w-full",
+                                    createdKey && "font-mono text-xs",
+                                )}
+                                placeholder="Key name"
+                                required={!createdKey}
+                                disabled={isSubmitting}
+                                readOnly={!!createdKey}
+                            />
+                        </Field.Input>
                     </Field.Root>
 
-                    {!simplified && !createdKey && (
-                        <p className="text-xs text-theme-text-muted">
-                            Raw publishable keys (<code>pk_</code>) are legacy.
-                            For browsers, create an App Key on this dashboard
-                            and use{" "}
+                    {!createdKey && (
+                        <p className="text-sm text-theme-text-muted">
+                            {simplified
+                                ? "Add your app’s callback URLs below, then integrate Pollinations Connect with the SDK. "
+                                : "Keep this key private. For a browser app, create an app key and use Pollinations Connect. "}
                             <InlineLink
                                 href={genDocsUrl("#tag/connect-user-wallets")}
                             >
-                                Connect User Wallets
+                                Read the guide
                             </InlineLink>
-                            — do not mint a raw <code>pk_</code> via the CLI.
                         </p>
                     )}
-
                     {!simplified && createdKey && (
-                        <ul className="text-xs text-ink-700 space-y-1 list-disc pl-5">
-                            <li className="text-intent-warning-text font-medium">
-                                Only shown once – copy it now.
-                            </li>
-                            <li>
-                                Never expose publicly – keep it in your backend.
-                            </li>
-                        </ul>
+                        <p className="text-sm text-theme-text-muted">
+                            Keep this key in your backend. Don’t share it or
+                            include it in public code.
+                        </p>
                     )}
-
                     {simplified && !createdKey && (
                         <PublishableKeySettings
                             redirectUris={redirectUris}
@@ -309,32 +273,28 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                             inline
                         />
                     )}
-                </ScrollArea>
+                    {!createdKey && noModelsSelected && (
+                        <output className="block text-sm text-theme-text-muted">
+                            Select at least one model to create this key.
+                        </output>
+                    )}
+                </DialogBody>
 
-                <div className="flex gap-2 justify-end p-6 pt-4 shrink-0">
-                    {!createdKey && (
-                        <Button
-                            type="button"
-                            intent="danger"
-                            onClick={() => setIsOpen(false)}
-                            className="disabled:opacity-50"
-                            disabled={isSubmitting}
-                        >
-                            Cancel
-                        </Button>
-                    )}
-                    {createDisabledReason ? (
-                        <Tooltip
-                            triggerAs="span"
-                            content={createDisabledReason}
-                            className="inline-flex"
-                        >
-                            {submitButton}
-                        </Tooltip>
-                    ) : (
-                        submitButton
-                    )}
-                </div>
+                <DialogFooter>
+                    <Button
+                        type="button"
+                        intent="neutral"
+                        onClick={() => {
+                            if (createdKey) onComplete();
+                            setIsOpen(false);
+                        }}
+                        className="disabled:opacity-50"
+                        disabled={isSubmitting}
+                    >
+                        {createdKey ? "Done" : "Cancel"}
+                    </Button>
+                    {submitButton}
+                </DialogFooter>
             </form>
         </Dialog>
     );

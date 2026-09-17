@@ -1,6 +1,7 @@
 import {
     Alert,
     Chip,
+    Field,
     FieldStack,
     InlineLink,
     Switch,
@@ -30,15 +31,19 @@ export function PromptAgentFields({
                 helper="The agent's instructions, sent as the system message on every call."
                 alignLabelRow
             >
-                <Textarea
-                    name="prompt-agent-system-prompt"
-                    value={form.systemPrompt}
-                    placeholder="You are a helpful assistant that…"
-                    rows={6}
-                    maxLength={8000}
-                    disabled={disabled}
-                    onChange={(e) => onChange("systemPrompt", e.target.value)}
-                />
+                <Field.Textarea asChild>
+                    <Textarea
+                        name="prompt-agent-system-prompt"
+                        value={form.systemPrompt}
+                        placeholder="You are a helpful assistant that…"
+                        rows={6}
+                        maxLength={8000}
+                        disabled={disabled}
+                        onChange={(e) =>
+                            onChange("systemPrompt", e.target.value)
+                        }
+                    />
+                </Field.Textarea>
             </FieldStack>
 
             <Alert intent="warning" title="Public instructions are not secret">

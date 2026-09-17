@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogFooter } from "@pollinations/ui";
+import { Button, Dialog, DialogBody, DialogFooter } from "@pollinations/ui";
 import type { CommunityEndpoint } from "./types.ts";
 
 type CommunityEndpointToggleConfirmationProps = {
@@ -16,18 +16,23 @@ export function CommunityEndpointToggleConfirmation({
         <Dialog
             open={!!endpoint}
             onOpenChange={(open) => !open && onCancel()}
-            title={endpoint?.hidden ? "Relist Model" : "Hide Model"}
+            title={endpoint?.hidden ? "Relist model?" : "Hide model?"}
             size="sm"
         >
-            <p className="flex-1 px-6 py-4">
-                {endpoint?.hidden ? "Relist" : "Hide"}{" "}
-                <span className="font-mono text-sm">{endpoint?.modelId}</span>?{" "}
-                {endpoint?.hidden
-                    ? "It will appear in model listings again."
-                    : "It will be removed from model listings but remain callable by its exact model ID."}
-            </p>
+            <DialogBody>
+                <p className="text-sm leading-relaxed">
+                    {endpoint?.hidden ? "Relist" : "Hide"}{" "}
+                    <span className="font-mono text-sm">
+                        {endpoint?.modelId}
+                    </span>
+                    ?{" "}
+                    {endpoint?.hidden
+                        ? "It will appear in model listings again."
+                        : "It will be removed from model listings but remain callable by its exact model ID."}
+                </p>
+            </DialogBody>
             <DialogFooter>
-                <Button type="button" onClick={onCancel}>
+                <Button type="button" intent="neutral" onClick={onCancel}>
                     Cancel
                 </Button>
                 <Button

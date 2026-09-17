@@ -43,13 +43,12 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
             <Field.Root className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                     <Field.Label className="text-sm font-semibold">
-                        Redirect URIs
+                        Callback URLs
                     </Field.Label>
                 </div>
                 <p className="text-xs text-theme-text-soft">
-                    A localhost callback is pre-filled for local development —
-                    edit the path to match your dev server, and remove it before
-                    going to production.
+                    Where users return after connecting. Match your app’s
+                    callback path and remove localhost URLs before publishing.
                 </p>
                 {redirectUris.map((uri, index) => (
                     <div
@@ -58,10 +57,11 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                         className="flex items-center gap-2"
                     >
                         <Input
+                            aria-label={`Callback URL ${index + 1}`}
                             type="text"
                             value={uri}
                             onChange={(e) => update(index, e.target.value)}
-                            className="flex-1 focus:outline-none focus:ring-2 focus:ring-theme-border"
+                            className="min-w-0 flex-1 focus:outline-none focus:ring-2 focus:ring-theme-border"
                             placeholder="https://myapp.com/auth/callback"
                             disabled={disabled}
                         />
@@ -76,7 +76,7 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                 ))}
                 <div>
                     <Button type="button" onClick={add} disabled={disabled}>
-                        + Add
+                        Add URL
                     </Button>
                 </div>
             </Field.Root>

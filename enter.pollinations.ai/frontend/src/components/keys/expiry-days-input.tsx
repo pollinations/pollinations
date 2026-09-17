@@ -20,7 +20,9 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
     inline = false,
 }) => {
     return (
-        <Field.Root className={inline ? "flex items-center gap-3" : ""}>
+        <Field.Root
+            className={inline ? "flex flex-wrap items-center gap-3" : ""}
+        >
             <Field.Label
                 className={`flex items-center gap-1.5 text-sm font-semibold ${inline ? "mb-0 shrink-0 w-20" : "mb-2"}`}
             >
@@ -31,22 +33,23 @@ export const ExpiryDaysInput: FC<ExpiryDaysInputProps> = ({
                 />
             </Field.Label>
             <div className="flex items-center gap-2">
-                <Input
-                    id="expiry-days-input"
-                    name="expiry-days"
-                    type="number"
-                    min={0}
-                    step="any"
-                    value={value ?? ""}
-                    onChange={(e) => {
-                        const val = e.target.value;
-                        onChange(val === "" ? null : Number(val));
-                    }}
-                    className="w-[116px]"
-                    hideNumberSteppers
-                    placeholder="Never"
-                    disabled={disabled}
-                />
+                <Field.Input asChild>
+                    <Input
+                        name="expiry-days"
+                        type="number"
+                        min={0}
+                        step="any"
+                        value={value ?? ""}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            onChange(val === "" ? null : Number(val));
+                        }}
+                        className="w-[116px]"
+                        hideNumberSteppers
+                        placeholder="Never"
+                        disabled={disabled}
+                    />
+                </Field.Input>
                 <span className="text-sm text-theme-text-muted w-12">days</span>
             </div>
         </Field.Root>

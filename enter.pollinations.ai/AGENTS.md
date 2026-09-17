@@ -544,7 +544,7 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 - **Image models**: NO tier requirements, only pollen balance matters for paid models
 - **Text models**: May have tier requirements, check model details
 - Default image model: `flux` (`black-forest-labs/flux.1-schnell`, **0.002 Pollen per image**, 1024x1024)
-- Default text model: `openai` (GPT-4o)
+- Default text model: `openai` (`openai/gpt-5.4-nano`)
 - **Seedream**: Requires minimum 960x960 pixels (921600 total pixels)
 
 ---

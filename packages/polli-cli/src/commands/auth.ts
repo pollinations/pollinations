@@ -292,4 +292,3 @@ export const authCommand = new Command("auth")
 export const whoamiCommand = new Command("whoami")
     .description("Show current auth status and balance (alias of auth status)")
     .action(showAuthStatus);
-

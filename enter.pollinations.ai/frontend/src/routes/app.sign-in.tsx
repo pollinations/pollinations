@@ -63,6 +63,7 @@ function AppSignIn() {
                 error="Couldn’t check this sign-in link."
                 actions={
                     <Button
+                        intent="neutral"
                         icon={<RefreshIcon />}
                         onClick={() =>
                             setLookupAttempt((attempt) => attempt + 1)
@@ -113,7 +114,12 @@ function AppSignIn() {
                 subject={appCard}
                 description={`as ${user.name || user.githubUsername || user.email}.`}
                 actions={
-                    <Button as="a" href={callbackURL} icon={<ArrowRightIcon />}>
+                    <Button
+                        as="a"
+                        href={callbackURL}
+                        intent="neutral"
+                        icon={<ArrowRightIcon />}
+                    >
                         Continue
                     </Button>
                 }

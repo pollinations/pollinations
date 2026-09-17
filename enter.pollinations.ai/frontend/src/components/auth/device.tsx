@@ -116,6 +116,7 @@ export function Device({ prefilledCode }: DeviceProps) {
                 <Button
                     type="submit"
                     form="device-code-form"
+                    intent="neutral"
                     icon={<ArrowRightIcon />}
                     disabled={checking}
                 >

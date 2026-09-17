@@ -61,6 +61,7 @@ export const ReturnToApp: FC<{ returnUrl: string | null }> = ({
             <Button
                 as="a"
                 href={returnUrl}
+                intent="neutral"
                 icon={<ExternalLinkIcon />}
                 className="min-h-11 w-full"
             >

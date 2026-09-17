@@ -145,6 +145,7 @@ function TopUpPage() {
                 topUpHref={null}
                 actions={
                     <Button
+                        intent="neutral"
                         icon={<RefreshIcon />}
                         onClick={() => setLoadAttempt((attempt) => attempt + 1)}
                     >

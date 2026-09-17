@@ -538,8 +538,8 @@ export function Authorize() {
             >
                 {appCard}
                 <Text size="sm" tone="muted">
-                    Access to your pollinations.ai account, choose what it can
-                    use, you can revoke it any time.
+                    Access to your pollinations.ai account, you can revoke it
+                    any time.
                 </Text>
                 <KeyPermissionsInputs
                     value={keyPermissions}

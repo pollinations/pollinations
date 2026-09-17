@@ -14,9 +14,10 @@ export function ProviderSignInButton({
         <Button
             {...props}
             type={type}
+            intent="brand"
             data-theme="accent"
             className={cn(
-                "polli-control polli:inline-flex polli:min-h-11 polli:grow polli:shrink-0 polli:self-stretch polli:items-center polli:justify-center polli:gap-3 polli:whitespace-nowrap polli:rounded-md polli:border polli:border-theme-text-soft polli:bg-surface-white polli:px-4 polli:py-2 polli:text-sm polli:font-medium polli:text-theme-text-strong polli:transition-colors polli:hover:bg-theme-text-soft/10 polli:disabled:cursor-not-allowed polli:disabled:opacity-50 polli:[.dark_&]:bg-transparent",
+                "polli-control polli:inline-flex polli:min-h-11 polli:grow polli:shrink-0 polli:self-stretch polli:items-center polli:justify-center polli:gap-3 polli:whitespace-nowrap polli:rounded-md polli:px-4 polli:py-2 polli:text-sm polli:font-medium polli:disabled:cursor-not-allowed polli:disabled:opacity-50",
                 className,
             )}
         >

@@ -7,7 +7,7 @@ import { createContext, useContext } from "react";
 import { cn } from "../lib/cn.ts";
 
 /** Semantic soft-fill roles. Label recipes live on Chip. */
-type ButtonIntent = "danger" | "info" | "neutral";
+type ButtonIntent = "danger" | "info" | "neutral" | "brand";
 export type ButtonAppearance = "pill" | "raised" | "block";
 
 const pillSizes = {
@@ -49,8 +49,12 @@ const themeClasses =
     "polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover polli:transition-colors";
 
 // Soft intent recipes — light tile + deep text, slightly deeper bg on hover.
-// No filled CTAs anywhere.
+// No filled CTAs anywhere: the commit action is `brand`, the outlined
+// authorization look shared with the provider sign-in buttons.
 const intentClasses: Record<ButtonIntent, string> = {
+    brand:
+        "polli:border polli:border-theme-text-soft polli:bg-surface-white polli:text-theme-text-strong " +
+        "polli:hover:bg-theme-text-soft/10 polli:transition-colors polli:[.dark_&]:bg-transparent",
     danger:
         "polli:bg-intent-danger-bg-light polli:text-intent-danger-text " +
         "polli:hover:bg-intent-danger-bg-hover polli:transition-colors",

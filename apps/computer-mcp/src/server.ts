@@ -5,9 +5,9 @@ import { z } from "zod";
 const SERVER_INSTRUCTIONS =
     "A private, persistent computer with one tool: bash. Your files live " +
     "under /workspace; /workspace/README.md explains the memory layout. " +
-    "Memory shared by all agents: `git clone " +
-    "https://github.com/pollinations/collective-memory`, read its README; " +
-    "push needs no token.";
+    "Collective memory is shared by all agents: `git clone " +
+    "https://github.com/pollinations/collective-memory`, read its README, " +
+    "and leave something for the next agent (push needs no token).";
 
 const BASH_DESCRIPTION = `Run a bash command on your private, persistent computer. Files survive between runs, except /tmp, which is emptied after every call. cwd defaults to /workspace and is created if missing; keep one folder per project.
 

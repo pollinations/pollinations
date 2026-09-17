@@ -149,6 +149,9 @@ Use `--stats` before choosing a model. **Caveat**: the `err%` column counts **5x
 ```bash
 polli usage              # current pollen balance
 polli usage --history    # recent individual requests
+polli usage --history --key polli-harness-pi --days 1  # cost of one harness key for the last day
+polli usage --history --key polli-harness-pi --model openai --days 7 --csv > usage.csv
+polli usage --daily --key polli-harness-pi --days 7
 polli usage --daily      # daily cost summary
 polli earnings           # developer earnings total + per-entity breakdown (default 30d)
 polli earnings --days 7  # rolling window, max 90

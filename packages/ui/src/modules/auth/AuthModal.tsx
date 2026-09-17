@@ -134,7 +134,7 @@ export function AuthModalHeader({ children }: AuthModalHeaderProps) {
             href="https://pollinations.ai"
             target="_blank"
             rel="noopener noreferrer"
-            className="polli:block polli:shrink-0 polli:text-theme-text-strong polli:focus-visible:outline-2 polli:focus-visible:outline-offset-4"
+            className="polli:block polli:shrink-0 polli:text-theme-text-muted polli:transition-colors polli:hover:text-theme-text-strong polli:focus-visible:outline-2 polli:focus-visible:outline-offset-4"
             aria-label="pollinations.ai"
         >
             <span className="polli:sr-only">pollinations.ai</span>

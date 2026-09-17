@@ -1,4 +1,4 @@
-import type { ComponentPropsWithoutRef, FC, PropsWithChildren } from "react";
+import type { ComponentPropsWithoutRef, ElementType } from "react";
 import { cn } from "../lib/cn.ts";
 
 type SurfaceVariant = "panel" | "card" | "card-themed";
@@ -21,21 +21,30 @@ type SurfaceOwnProps = {
     className?: string;
 };
 
-type SurfaceProps = PropsWithChildren<
-    SurfaceOwnProps &
-        Omit<ComponentPropsWithoutRef<"div">, keyof SurfaceOwnProps | "color">
->;
+/**
+ * Polymorphic like Button, TabButton and LinkCard, so a card that is itself a
+ * link renders one element instead of an anchor wrapping a div. Defaults to
+ * <div>, so existing call sites are unchanged.
+ */
+export type SurfaceProps<T extends ElementType = "div"> = SurfaceOwnProps & {
+    as?: T;
+} & Omit<ComponentPropsWithoutRef<T>, keyof SurfaceOwnProps | "as" | "color">;
 
-export const Surface: FC<SurfaceProps> = ({
+export function Surface<T extends ElementType = "div">({
+    as,
     variant = "card",
     className,
     children,
     ...rest
-}) => (
-    <div
-        {...rest}
-        className={cn("polli:min-w-0", variantClasses[variant], className)}
-    >
-        {children}
-    </div>
-);
+}: SurfaceProps<T>) {
+    const Component: ElementType = as || "div";
+
+    return (
+        <Component
+            {...rest}
+            className={cn("polli:min-w-0", variantClasses[variant], className)}
+        >
+            {children}
+        </Component>
+    );
+}

@@ -18,12 +18,7 @@ import {
 } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import { useEffect, useRef, useState } from "react";
-import {
-    DEFAULT_MODEL,
-    ENTER_URL,
-    WEB_SIM_MODELS,
-    type WebsimModelId,
-} from "./config";
+import { DEFAULT_MODEL, WEB_SIM_MODELS, type WebsimModelId } from "./config";
 
 const INITIAL_PROMPT =
     "A tiny interactive museum for impossible plants, with a collection wall, specimen cards, and a night mode.";
@@ -218,7 +213,7 @@ export function App() {
         >
             <div className="fixed top-4 right-4 z-40 flex items-center gap-2">
                 <ColorModeToggle />
-                <AppUserMenu dashboardHref={ENTER_URL} />
+                <AppUserMenu />
             </div>
 
             <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 px-4 pt-16 pb-5 sm:px-6">

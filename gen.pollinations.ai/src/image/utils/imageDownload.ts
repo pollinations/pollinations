@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
-import { fetchUserImage } from "@/userImage.ts";
+import { fetchUserImage, MAX_IMAGE_SIZE, UserImageError } from "@/userImage.ts";
 
 export function bufferToUint8Array(buffer: Buffer): Uint8Array<ArrayBuffer> {
     return new Uint8Array(buffer);
@@ -13,7 +13,9 @@ export function base64ToBuffer(base64: string): Buffer {
         .replace(/\s/g, "")
         .replace(/=+$/, "");
     if (!/^[A-Za-z0-9+/_-]*$/.test(input)) {
-        throw new HttpError("Invalid base64 image response", 502);
+        throw UpstreamError.fromProvider(502, {
+            message: "Invalid base64 image response",
+        });
     }
     return Buffer.from(input, "base64");
 }
@@ -133,6 +135,30 @@ export async function downloadImageAsBase64(
  * passing data URIs avoids that.
  */
 export async function toDataUri(url: string): Promise<string> {
+    // Multipart uploads are already canonical data URIs. Validate without
+    // allocating another full decoded image and then encoding it again.
+    const inline = /^data:([^;,\s]+);base64,([A-Za-z0-9+/]*={0,2})$/.exec(url);
+    if (inline && inline[0] === url && inline[2].length % 4 === 0) {
+        const [, mimeType, base64] = inline;
+        const tail = base64.slice(-4);
+        // Check padding bits too; other accepted encodings still normalize
+        // through the existing decoder below.
+        if (mimeType === mimeType.toLowerCase() && btoa(atob(tail)) === tail) {
+            const padding = base64.endsWith("==")
+                ? 2
+                : base64.endsWith("=")
+                  ? 1
+                  : 0;
+            const size = (base64.length / 4) * 3 - padding;
+            if (size > MAX_IMAGE_SIZE) {
+                throw new UserImageError(
+                    `Image too large: ${size} bytes (max ${MAX_IMAGE_SIZE} bytes remaining). Please use a smaller image.`,
+                    "image_too_large",
+                );
+            }
+            return url;
+        }
+    }
     const { buffer, mimeType } = await downloadUserImage(url);
     return `data:${mimeType};base64,${buffer.toString("base64")}`;
 }

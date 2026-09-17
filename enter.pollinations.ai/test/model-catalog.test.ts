@@ -2,12 +2,102 @@ import {
     getModelPricesFromCatalog,
     mergeModelCatalogs,
     parseModelCatalogResponse,
+    withModelHealth,
 } from "@frontend/components/models/model-catalog.ts";
 import { describe, expect, it } from "vitest";
 
+it("derives health from the model's rollup row and keeps it for filtering", () => {
+    const row = (model: string, status_2xx: number, errors_5xx: number) => ({
+        model,
+        event_type: "generate.text",
+        is_rollup: 1,
+        status_2xx,
+        errors_5xx,
+    });
+    const rows = [
+        { ...row("healthy/model", 0, 100), is_rollup: 0 },
+        row("healthy/model", 96, 4),
+        row("degraded/model", 95, 5),
+        row("down/model", 80, 20),
+    ];
+    const models = getModelPricesFromCatalog(
+        withModelHealth(
+            [
+                { name: "healthy/model", category: "text" },
+                { name: "degraded/model", category: "text" },
+                { name: "down/model", category: "text" },
+                { name: "quiet/model", category: "image" },
+            ],
+            rows,
+        ),
+    );
+    expect(models.map((model) => model.health)).toEqual([
+        { status: "healthy", requests: 100, successRate: 96 },
+        { status: "degraded", requests: 100, successRate: 95 },
+        { status: "down", requests: 100, successRate: 80 },
+        { status: "unknown", requests: 0, successRate: null },
+    ]);
+});
+
+it("keeps search aliases but never transfers historical statistics to a new ID", () => {
+    const catalog = [
+        {
+            name: "anthropic/claude-opus-5",
+            category: "text" as const,
+            aliases: ["claude-large", "claude-opus-4.8"],
+        },
+    ];
+    const oldStats = { avgCost: 4, requestCount: 10, userCount: 3 };
+    const [waiting] = getModelPricesFromCatalog(catalog, {
+        "claude-large": oldStats,
+    });
+    expect(waiting.name).toBe(catalog[0].name);
+    expect(waiting.aliases).toEqual(catalog[0].aliases);
+    expect(waiting.realAvgCost).toBeUndefined();
+    expect(waiting.users7d).toBeUndefined();
+
+    const [current] = getModelPricesFromCatalog(catalog, {
+        "claude-large": oldStats,
+        "anthropic/claude-opus-5": {
+            avgCost: 2,
+            requestCount: 5,
+            userCount: 2,
+        },
+    });
+    expect(current.realAvgCost).toBe(2);
+    expect(current.users7d).toBe(2);
+});
+
+it("maps only canonical media URLs to community model brand icons", () => {
+    const iconUrl =
+        "https://media.pollinations.ai/123e4567-e89b-12d3-a456-426614174000";
+    const [model] = getModelPricesFromCatalog([
+        {
+            name: "owner/community-model",
+            category: "text",
+            community: true,
+            brand_icon_url: iconUrl,
+        },
+    ]);
+    const [unsafeModel] = getModelPricesFromCatalog([
+        {
+            name: "owner/unsafe-model",
+            category: "text",
+            community: true,
+            brand_icon_url: "https://tracker.test/icon.svg",
+        },
+    ]);
+
+    expect(model.brandIconUrl).toBe(iconUrl);
+    expect(unsafeModel.brandIconUrl).toBeUndefined();
+});
+
 describe("parseModelCatalogResponse", () => {
     it("returns the array when entries have identifiable models", () => {
-        const data = [{ name: "openai" }, { id: "flux" }];
+        const data = [
+            { name: "openai/gpt-5.4-nano" },
+            { id: "black-forest-labs/flux.1-schnell" },
+        ];
 
         expect(parseModelCatalogResponse(data)).toEqual(data);
     });
@@ -119,4 +209,23 @@ it("carries arbitrary public pricing variants and adjustments into the UI", () =
             },
         ],
     });
+});
+
+it("adds rolling user counts from public model stats", () => {
+    const [model] = getModelPricesFromCatalog(
+        [{ name: "popular-model", category: "text" }],
+        {
+            "popular-model": {
+                avgCost: 0,
+                requestCount: 100,
+                userCount: 12,
+            },
+        },
+    );
+
+    expect(model).toMatchObject({
+        name: "popular-model",
+        users7d: 12,
+    });
+    expect(model.realAvgCost).toBeUndefined();
 });

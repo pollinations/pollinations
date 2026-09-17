@@ -3,13 +3,10 @@ import {
     createMcpHandler,
 } from "../../packages/mcp/src/server.js";
 
-const mcpHandler = createMcpHandler(
-    () => buildServer({ includeAuthTools: false }),
-    {
-        legacy: "stateless",
-        onerror: (error) => console.error(error),
-    },
-);
+const mcpHandler = createMcpHandler(() => buildServer(), {
+    legacy: "stateless",
+    onerror: (error) => console.error(error),
+});
 
 function readBearerToken(request) {
     const authorization = request.headers.get("authorization");

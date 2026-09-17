@@ -1,3 +1,4 @@
+import { ACCOUNT_RESTRICTED_MESSAGE, isUserBanned } from "@shared/auth/ban.ts";
 import {
     AUTO_TOP_UP_PACK_MAX_USD,
     AUTO_TOP_UP_PACK_MIN_USD,
@@ -8,7 +9,6 @@ import {
     calculateServiceFeeCents,
     getPollenPackByAmount,
     POLLEN_PACK_LINE_TYPE,
-    type PollenPack,
     SERVICE_FEE_LINE_TYPE,
     SERVICE_FEE_NAME,
     SERVICE_FEE_TAX_CODE,
@@ -38,36 +38,7 @@ import type {
     AutoTopUpProcessResult,
     BillingOverview,
     PendingAutoTopUpAttempt,
-    UserStripeBillingRow,
 } from "./types.ts";
-
-type AutoTopUpEligibilityInput = Pick<
-    UserStripeBillingRow,
-    "autoTopUpEnabled" | "packBalance" | "autoTopUpAmountUsd"
->;
-
-type AutoTopUpEligibility =
-    | { eligible: false; reason: "auto top-up disabled" }
-    | { eligible: false; reason: "paid balance above threshold" }
-    | { eligible: false; reason: "auto top-up pack invalid" }
-    | { eligible: true; pack: PollenPack };
-
-function getAutoTopUpEligibility(
-    user: AutoTopUpEligibilityInput,
-): AutoTopUpEligibility {
-    if (!user.autoTopUpEnabled) {
-        return { eligible: false, reason: "auto top-up disabled" };
-    }
-
-    if ((user.packBalance ?? 0) > AUTO_TOP_UP_THRESHOLD_POLLEN) {
-        return { eligible: false, reason: "paid balance above threshold" };
-    }
-
-    const pack = getPollenPackByAmount(user.autoTopUpAmountUsd);
-    return pack
-        ? { eligible: true, pack }
-        : { eligible: false, reason: "auto top-up pack invalid" };
-}
 
 export async function updateAutoTopUpSettings(
     env: CloudflareBindings,
@@ -75,7 +46,7 @@ export async function updateAutoTopUpSettings(
     input: AutoTopUpInput,
 ): Promise<
     | { ok: true; overview: BillingOverview }
-    | { ok: false; status: 400; error: string }
+    | { ok: false; status: 400 | 403; error: string }
 > {
     if (!input.enabled) {
         await env.DB.prepare(
@@ -87,6 +58,10 @@ export async function updateAutoTopUpSettings(
             .run();
 
         return { ok: true, overview: await getBillingOverview(env, userId) };
+    }
+
+    if (isUserBanned(await getUserStripeBillingRow(env.DB, userId))) {
+        return { ok: false, status: 403, error: ACCOUNT_RESTRICTED_MESSAGE };
     }
 
     const pack =
@@ -135,14 +110,18 @@ export async function updateAutoTopUpSettings(
         };
     }
 
-    await env.DB.prepare(
+    const updated = await env.DB.prepare(
         `UPDATE user
             SET auto_top_up_enabled = 1,
                 auto_top_up_amount_usd = ?
-            WHERE id = ?`,
+            WHERE id = ? AND (COALESCE(banned, 0) = 0 OR ban_expires <= unixepoch())`,
     )
         .bind(packAmountUsd, userId)
         .run();
+
+    if (!updated.meta.changes) {
+        return { ok: false, status: 403, error: ACCOUNT_RESTRICTED_MESSAGE };
+    }
 
     return { ok: true, overview: await getBillingOverview(env, userId) };
 }
@@ -153,12 +132,22 @@ export async function processAutoTopUpForUser(
 ): Promise<AutoTopUpProcessResult> {
     const user = await getUserStripeBillingRow(env.DB, userId);
 
-    const eligibility = getAutoTopUpEligibility(user);
-    if (!eligibility.eligible) {
-        return { status: "skipped", reason: eligibility.reason };
+    if (isUserBanned(user)) {
+        return { status: "skipped", reason: "account restricted" };
     }
 
-    const { pack } = eligibility;
+    if (!user.autoTopUpEnabled) {
+        return { status: "skipped", reason: "auto top-up disabled" };
+    }
+
+    if ((user.packBalance ?? 0) > AUTO_TOP_UP_THRESHOLD_POLLEN) {
+        return { status: "skipped", reason: "paid balance above threshold" };
+    }
+
+    const pack = getPollenPackByAmount(user.autoTopUpAmountUsd);
+    if (!pack) {
+        return { status: "skipped", reason: "auto top-up pack invalid" };
+    }
 
     await expireStaleClaimedAttempts(env.DB, userId);
 
@@ -605,6 +594,7 @@ async function claimAutoTopUpAttempt(
                 FROM user
                 WHERE id = ?
                     AND auto_top_up_enabled = 1
+                    AND (COALESCE(banned, 0) = 0 OR ban_expires <= unixepoch())
                     AND auto_top_up_amount_usd IS NOT NULL
                     AND COALESCE(pack_balance, 0) <= ?
             )

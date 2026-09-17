@@ -27,7 +27,7 @@ curl https://gen.pollinations.ai/v1/models \
 
 **3. Pick an endpoint** from the [📑 Contents](#-contents) below.
 
-**Integration guides:** [Connect User Wallets](https://gen.pollinations.ai/docs#tag/connect-user-wallets) · [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) · [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) · [MCP Server](https://gen.pollinations.ai/docs#tag/mcp-server) · [CLI](https://gen.pollinations.ai/docs#tag/cli)
+**Integration guides:** [Connect User Wallets](https://gen.pollinations.ai/docs#tag/connect-user-wallets) · [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) · [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) · [MCP Servers](https://gen.pollinations.ai/docs#tag/mcp-servers) · [CLI](https://gen.pollinations.ai/docs#tag/cli)
 
 ## 📑 Contents
 
@@ -51,6 +51,7 @@ curl https://gen.pollinations.ai/v1/models \
   - [Community Agents](#community-agents)
   - [Media Storage](#media-storage)
   - [Account](#account)
+  - [🔗 Account](#-account)
   - [Quests](#quests)
   - [📊 Monitor](#-monitor)
   - [3D](#3d)
@@ -116,7 +117,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="openai",
+    model="openai/gpt-5.4-nano",
     messages=[{"role": "user", "content": "Summarise the theory of relativity in one sentence."}],
 )
 print(response.choices[0].message.content)
@@ -133,13 +134,13 @@ const client = new OpenAI({
 });
 
 const response = await client.chat.completions.create({
-    model: "openai",
+    model: "openai/gpt-5.4-nano",
     messages: [{ role: "user", content: "Summarise the theory of relativity in one sentence." }],
 });
 console.log(response.choices[0].message.content);
 ```
 
-Model IDs come from `GET /v1/models`. Anything `openai`, `claude`, `mistral`, `deepseek`, etc. routes to the corresponding provider on our side — you don't need separate keys per provider.
+Model IDs come from `GET /v1/models`. IDs such as `openai/gpt-5.4-nano`, `anthropic/claude-sonnet-4.6`, `mistralai/mistral-small-4`, and `deepseek/deepseek-v4-flash` route to the corresponding provider on our side — you don't need separate keys per provider.
 
 ## 🌊 Streaming chat completions
 
@@ -151,7 +152,7 @@ Set `stream: true` to receive Server-Sent Events (SSE) deltas as the model write
 curl -N "https://gen.pollinations.ai/v1/chat/completions" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"model":"openai","stream":true,"messages":[{"role":"user","content":"Count to five, one word per line."}]}'
+  -d '{"model":"openai/gpt-5.4-nano","stream":true,"messages":[{"role":"user","content":"Count to five, one word per line."}]}'
 ```
 
 `-N` disables curl's output buffering so deltas appear as they arrive. Each event is a line of the form `data: {…}` terminated by `data: [DONE]`.
@@ -160,7 +161,7 @@ curl -N "https://gen.pollinations.ai/v1/chat/completions" \
 
 ```python
 stream = client.chat.completions.create(
-    model="openai",
+    model="openai/gpt-5.4-nano",
     stream=True,
     messages=[{"role": "user", "content": "Count to five, one word per line."}],
 )
@@ -174,14 +175,14 @@ When `stream: true` is set, usage info still arrives on the final chunk (`stream
 
 ## 🖼️ Vision: passing images into chat
 
-Models that accept image input (`openai`, `claude`, `gemini`, …) use the standard OpenAI multimodal `content` shape — an array of typed parts instead of a plain string.
+Models that accept image input (`openai/gpt-5.4-nano`, `anthropic/claude-sonnet-4.6`, `google/gemini-3.7-flash`, …) use the standard OpenAI multimodal `content` shape — an array of typed parts instead of a plain string.
 
 ```bash
 curl "https://gen.pollinations.ai/v1/chat/completions" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "openai",
+    "model": "openai/gpt-5.4-nano",
     "messages": [{
       "role": "user",
       "content": [
@@ -206,7 +207,7 @@ Three endpoints accept `multipart/form-data` request bodies. Each has its own fi
 curl -X POST "https://gen.pollinations.ai/v1/audio/transcriptions" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -F "file=@./recording.mp3" \
-  -F "model=openai-audio" \
+  -F "model=openai/gpt-audio-mini" \
   -F "response_format=verbose_json" \
   -F "temperature=0"
 ```
@@ -224,7 +225,7 @@ curl -X POST "https://gen.pollinations.ai/v1/images/edits" \
   -F "size=1024x1024"
 ```
 
-Repeat `-F "image=@…"` to pass multiple reference images on models that accept them (`seedream`, `nanobanana`, `klein`).
+Repeat `-F "image=@…"` to pass multiple reference images on models that accept them (`bytedance/seedream-4.0`, `google/gemini-2.5-flash-image`, `black-forest-labs/flux.2-klein-4b`).
 
 **Upload arbitrary media** to the media store (a separate host: `media.pollinations.ai`). Returns a `https://media.pollinations.ai/<id>` URL you can pass anywhere a remote image, audio, or video URL is accepted.
 
@@ -247,14 +248,96 @@ Each upload gets its own unique id — re-uploading the same bytes yields a new 
 
 ### Text
 
-Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by changing the base URL.
+Generate text using OpenAI-compatible Chat Completions and stateless Responses APIs — use an OpenAI SDK by changing the base URL.
 
 | Endpoint | Best for |
 |----------|----------|
 | `POST /v1/chat/completions` | Full OpenAI compatibility — streaming, tools, vision, structured outputs |
+| `POST /v1/responses` | Stateless Responses input/output items, semantic streaming events, and function tools |
 | `GET /text/{prompt}` | Quick prototyping — simple GET, returns plain text |
 
-**Available models:** openai, openai-fast, gpt-oss, gpt-5.4, gpt-5.4-mini, openai-large, gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna, mercury, command-a-plus, qwen-coder, mistral-small-3.2, mistral, openai-audio, openai-audio-large, gemini-3-flash, gemini, gemini-flash-lite-3.5, gemini-fast, deepseek, gemma, gemma-4-31b, deepseek-pro, grok, grok-large, grok-4.6, gemini-search, midijourney, midijourney-large, claude-fast, claude, claude-sonnet-5, claude-opus-4.6, claude-opus-4.7, claude-large, claude-fable-5, perplexity-fast, perplexity, perplexity-reasoning, kimi, kimi-code, kimi-k3, laguna, longcat, inkling, nemotron, nemotron-3.5-lightning, mimo-v2.5, mimo-v2.5-pro, gemini-large, nova-fast, nova, glm, glm-5.3, llama, llama-maverick, llama-scout, minimax-m2.7, minimax, muse-glimmer, muse-spark-1.2, mistral-large, qwen-coder-large, qwen-large, qwen3.7-max, qwen3.8-2.4t-a95b, qwen3.8-27b, qwen3.8-max, qwen3.7-flash, qwen-vision, qwen-vision-pro, step-flash, step-3.5-flash, qwen-safety
+**Available models:** openai/gpt-5.4-nano, openai/gpt-5-nano, openai/gpt-oss-20b, openai/gpt-5.4, openai/gpt-5.4-mini, openai/gpt-5.5, openai/gpt-5.6-sol, openai/gpt-5.6-terra, openai/gpt-5.6-luna, openai/gpt-6-astra, inception/mercury-2, inception/mercury-2.5-preview, cohere/command-a-plus, qwen/qwen3-coder-30b-a3b-instruct, mistralai/mistral-small-3.2, mistralai/mistral-small-4, openai/gpt-audio-mini, openai/gpt-audio-1.5, google/gemini-3-flash-preview, google/gemini-3.7-flash, google/gemini-3.8-flash, google/gemini-3.5-flash-lite, google/gemini-2.5-flash-lite, deepseek/deepseek-v4-flash, deepseek/deepseek-v4.1-flash, deepseek/deepseek-v4-flash-vision-exp, google/gemma-4-26b-a4b-it, google/gemma-4-31b-it, deepseek/deepseek-v4-pro, x-ai/grok-4.20, x-ai/grok-4.3, x-ai/grok-4.6, google/gemini-2.5-flash-lite:search, pollinations/midijourney, pollinations/midijourney-large, anthropic/claude-haiku-4.5, anthropic/claude-sonnet-4.6, anthropic/claude-sonnet-5, anthropic/claude-opus-4.6, anthropic/claude-opus-4.7, anthropic/claude-opus-5, anthropic/claude-fable-5, anthropic/claude-fable-5.1, perplexity/sonar, perplexity/sonar-pro, perplexity/sonar-reasoning-pro, moonshotai/kimi-k2.6, moonshotai/kimi-k2.7-code, moonshotai/kimi-k3, poolside/laguna-s-2.1, meituan/longcat-2.0, thinkingmachines/inkling-small, thinkingmachines/inkling, nvidia/nemotron-3-ultra, nvidia/nemotron-3.5-lightning, xiaomi/mimo-v2.5, xiaomi/mimo-v2.5-pro, google/gemini-3.1-pro-preview, amazon/nova-micro-v1, amazon/nova-2-lite-v1, z-ai/glm-5.2, z-ai/glm-5.3, z-ai/glm-5.3-flash, meta/llama-3.3-70b-instruct, meta/llama-4-maverick, meta/llama-4-scout, minimax/minimax-m2.7, minimax/minimax-m3, meta/muse-glimmer-30b, meta/muse-spark-1.2, mistralai/mistral-large-3, qwen/qwen3-coder-next, qwen/qwen3.7-plus, qwen/qwen3.7-max, qwen/qwen3.8-2.4t-a95b, qwen/qwen3.8-27b, qwen/qwen3.8-max, qwen/qwen3.8-max-0902, qwen/qwen3.8-flash, qwen/qwen3.7-flash, qwen/qwen3-vl-30b-a3b-instruct, qwen/qwen3-vl-235b-a22b-thinking, stepfun/step-3.7-flash, stepfun/step-3.5-flash, qwen/qwen3guard-gen-8b
+
+### Responses API
+
+Use `supported_endpoints` from [`GET /v1/models`](/v1/models) or [`GET /text/models`](/text/models) to find models that advertise `/v1/responses`. This includes configured built-in providers, community text models with an exact Responses URL, external endpoint agents with an exact Responses URL, and managed prompt agents.
+
+```bash
+curl https://gen.pollinations.ai/v1/responses \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
+  -d '{
+    "model": "openai",
+    "input": "Explain why the sky is blue in two sentences.",
+    "store": false
+  }'
+```
+
+The endpoint is deliberately stateless. `store` must be `false`; `previous_response_id`, `conversation`, and `prompt` must be null or omitted; `background` must be false or omitted; and encrypted content or reusable item references are rejected. Streaming uses Responses event names and terminal usage events. Direct models preserve the provider's terminal marker; managed-agent streams add one `data: [DONE]` marker. For text models, missing or malformed usage on a completed or incomplete response fails the request. Failed responses may report null usage. These failed requests are not billed, but completed child model calls and charged MCP operations within an agent run remain billable; the outer agent request adds no charge.
+
+The stateless surface follows the OpenAI Responses API and OpenResponses item/event vocabulary. It does not claim full OpenResponses conformance: persisted continuation, conversations, compaction, background jobs, Responses WebSocket transport, and normalization of every direct provider stream are outside this subset.
+
+Community text models and endpoint agents declare one upstream API and one exact URL. A Responses registration accepts both public APIs: Responses requests use the selected endpoint directly, while Chat Completions requests use the shared stateless adapter. A Chat Completions registration accepts Chat Completions only. Built-in models can have separate routes for the two public APIs; advertising Responses does not mean their Chat requests use the adapter.
+
+Managed prompt agents run configured MCP tools on the server. Send previous response items back to continue a conversation; completed tools are not run again.
+
+Managed prompt agents accept `reasoning.effort` (Responses) and `reasoning_effort` (Chat Completions). Reasoning summaries are not supported: a non-null `reasoning.summary` returns HTTP 400.
+
+### Media models in conversations
+
+Image, video, audio and 3D models that advertise these endpoints in [`/models`](/models) accept a text prompt. Only the last user message is used; history, instructions and text-generation settings are ignored. Its text parts (or a string Responses `input`) form the prompt. Image parts (`image_url` in Chat, `input_image` in Responses, as URLs or data URIs) are the source images of image models and the start frame of video models that list `image` under `input_modalities`, exactly as `/v1/images/edits` does; other models, including 3D, return HTTP 400 for them, and any other attachment type returns HTTP 400. Use the native media endpoints for generation settings.
+
+Empty prompts, malformed Unicode and prompts consisting only of `.` or `..` return HTTP 400. Reference-required models return their normal missing-input error.
+
+Dialogue models expect one `<voice>: <text>` turn per line, just like `/audio`. Community speech models available only through `/v1/audio/speech` are not included.
+
+```bash
+curl https://gen.pollinations.ai/v1/responses \
+  -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"flux","input":"A lighthouse at dawn"}'
+
+curl https://gen.pollinations.ai/v1/chat/completions \
+  -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"flux","messages":[{"role":"user","content":"A lighthouse at dawn"}]}'
+```
+
+Both return assistant text: a Markdown image embed for images, or a Markdown link for audio, video and 3D, followed by the plain public file URL. The URL is also in the `Link` header. With `stream: true`, events arrive after generation finishes.
+
+Media uses its normal billing units, not text tokens: Responses returns `usage: null`; Chat JSON omits `usage`. Chat streaming chunks contain `usage: null`, with no final usage chunk. Video uses the native model or provider's default duration.
+
+### Reasoning
+
+Use `reasoning_effort` to control reasoning on models that advertise reasoning support.
+
+```bash
+# POST /v1/chat/completions — OpenAI-compatible response
+curl https://gen.pollinations.ai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
+  -d '{
+    "model": "openai",
+    "reasoning_effort": "high",
+    "messages": [
+      { "role": "user", "content": "Prove that there are infinitely many prime numbers." }
+    ]
+  }'
+```
+
+```bash
+# POST /text — plain-text response
+curl https://gen.pollinations.ai/text \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
+  -d '{
+    "model": "openai",
+    "reasoning_effort": "medium",
+    "messages": [
+      { "role": "user", "content": "Design a URL shortener. Outline the key tradeoffs." }
+    ]
+  }'
+```
 
 ### Prompt caching
 
@@ -262,7 +345,7 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 
 ```json
 {
-  "model": "gemini-fast",
+  "model": "google/gemini-2.5-flash-lite",
   "messages": [
     {
       "role": "system",
@@ -279,11 +362,13 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 }
 ```
 
-**Gemini** — the prefix must be at least ~2,048 tokens (~4,096 on Gemini 3 models). Requests with tools are not cached — including built-in tools, so `gemini`, `gemini-3-flash`, `gemini-large`, and the search variants only cache when tools are disabled (`"tools": []`) or a JSON `response_format` is set; `gemini-fast` and `gemini-flash-lite-3.5` cache by default. Cache creates bill at the standard input rate plus a storage fee for the 1-hour TTL ($1 per 1M cached tokens on Flash models, $4.50 on Pro); hits bill at ~10% of input. The storage fee means caching pays off only when the prefix is reused often — roughly a dozen reuses per hour on the cheapest models.
+**Gemini** — the prefix must be at least ~2,048 tokens (~4,096 on Gemini 3 models). Requests with tools are not cached — including built-in tools, so `google/gemini-3.7-flash`, `google/gemini-3-flash-preview`, `google/gemini-3.1-pro-preview`, and the search variants only cache when tools are disabled (`"tools": []`) or a JSON `response_format` is set; `google/gemini-2.5-flash-lite` and `google/gemini-3.5-flash-lite` cache by default. Cache creates bill at the standard input rate plus a storage fee for the 1-hour TTL ($1 per 1M cached tokens on Flash models, $4.50 on Pro); hits bill at ~10% of input. The storage fee means caching pays off only when the prefix is reused often — roughly a dozen reuses per hour on the cheapest models.
 
-**Claude** — all Claude models cache. The prefix must be at least 4,096 tokens (1,024 on `claude` and `claude-fable-5`); tools are fine. Cache creates bill at 1.25× the input rate (no storage fee); hits bill at 10% of input. The cache lives ~5 minutes, refreshed on each hit.
+**Claude** — all Claude models cache. The prefix minimum varies by model: 512 tokens on `anthropic/claude-fable-5`, `anthropic/claude-fable-5.1`, and `anthropic/claude-opus-5`, and 1,024 on `anthropic/claude-sonnet-4.6`; other models have higher minimums. Tool definitions are cacheable. `anthropic/claude-fable-5.1` accepts only automatic or disabled tool choice; forcing any or a named tool returns a 400. Cache creates bill at 1.25× the input rate (no storage fee); hits bill at 10% of input, or 2.5% on `anthropic/claude-fable-5.1`. The cache lives ~5 minutes, refreshed on each hit.
 
 **Nova** — `nova` and `nova-fast` cache. The prefix must be at least ~1,000 tokens (up to 20K tokens cacheable). Cache creates are free; hits bill at 25% of input. ~5-minute TTL.
+
+Models that advertise `/v1/responses` also accept OpenAI's cache controls. Set `prompt_cache_options.mode` to `explicit` and place `prompt_cache_breakpoint: { "mode": "explicit" }` on the content block ending each stable prefix (up to four). Chat requests adapted to Responses preserve these markers; the existing `cache_control: { "type": "ephemeral" }` marker is translated to the same explicit breakpoint. Managed prompt agents apply an explicit request without caller markers to their configured static prompt.
 
 #### `POST` `/v1/chat/completions` — Chat Completions
 
@@ -291,38 +376,48 @@ Generate text responses using AI models. Fully compatible with the OpenAI Chat C
 
 Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.
 
+Successful text JSON responses contain usage. Text streams contain a usage chunk before `[DONE]`; missing text-provider usage fails the response.
+
+Metadata is passed unchanged to endpoint agents; see the agent’s documentation for supported keys.
+
+Media models that advertise this endpoint in `/models` also accept text prompts. Only the last user message's text is used (or a string `input` on Responses); history, instructions and text-generation settings are ignored. Empty prompts, malformed Unicode and prompts consisting only of `.` or `..` return HTTP 400. Attachments are not supported; reference-required models return their normal missing-input error. Dialogue models expect one `<voice>: <text>` turn per line. Images return a Markdown image embed; audio, video and 3D return a Markdown link. Both include the plain public URL. With `stream: true`, events are emitted after generation finishes. Media is billed normally, without text-token usage: Responses returns `usage: null`; Chat JSON omits `usage`, while Chat streaming chunks contain `usage: null` and have no final usage chunk. Use the native media endpoints for generation settings.
+
 📥 **Request body** · `application/json`
 
 | Field | Type | Description |
 |---|---|---|
 | `messages` * | `object`[] | — |
-| `model` | `string` | AI model for text generation. See /v1/models for full list. · default: `"openai"` |
+| `model` | `string` | AI model for text generation. See /v1/models for full list. · default: `"openai/gpt-5.4-nano"` |
+| `metadata` | `object` \| `null` | Passed unchanged to endpoint agents. Each agent documents the metadata keys it accepts. |
 | `modalities` | `"text"` \| `"audio"`[] | — |
 | `audio` | `object` | — |
 | `audio.voice` * | enum (13) — `"alloy"`, `"echo"`, `"fable"`, … | — |
 | `audio.format` * | `"wav"` \| `"mp3"` \| `"flac"` \| `"opus"` \| `"pcm16"` | — |
-| `frequency_penalty` | `number` \| `null` | default: `0` |
+| `frequency_penalty` | `number` \| `null` | — |
 | `repetition_penalty` | `number` \| `null` | — |
 | `logit_bias` | `object` \| `null` | default: `null` |
-| `logprobs` | `boolean` \| `null` | default: `false` |
+| `logprobs` | `any` | — |
 | `top_logprobs` | `integer` \| `null` | — |
 | `max_tokens` | `integer` \| `null` | — |
-| `presence_penalty` | `number` \| `null` | default: `0` |
+| `presence_penalty` | `number` \| `null` | — |
 | `response_format` | `object` | — |
 | `seed` | `integer` \| `null` | — |
-| `stop` | `string` \| `null` \| `string`[] | — |
-| `stream` | `boolean` \| `null` | default: `false` |
+| `stop` | `any` \| `string`[] | — |
+| `stream` | `any` | default: `false` |
 | `stream_options` | `object` \| `null` | — |
-| `safe` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
+| `safe` | `any` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
 | `reasoning_effort` | enum (7) — `"none"`, `"minimal"`, `"low"`, … | Requests reasoning depth for models that support adjustable reasoning. "none" requests no reasoning. |
-| `web_search_options` | `object` | Controls Perplexity Sonar search context. Pollinations currently supports low and high. |
+| `web_search_options` | `object` | Perplexity Sonar search context size, forwarded as-is. Low is the default and the request fee rises with the size. |
 | `web_search_options.search_context_size` * | `"low"` \| `"medium"` \| `"high"` | — |
-| `temperature` | `number` \| `null` | — |
+| `temperature` | `number` \| `null` | Sampling controls are ignored for model families that do not consistently support them, regardless of reasoning mode. |
 | `top_p` | `number` \| `null` | — |
 | `tools` | `object`[] | — |
 | `tool_choice` | `"none"` \| `"auto"` \| `"required"` \| `object` | — |
-| `parallel_tool_calls` | `boolean` | default: `true` |
+| `parallel_tool_calls` | `boolean` | — |
 | `user` | `string` | — |
+| `prompt_cache_key` | `string` | — |
+| `prompt_cache_options` | [`PromptCacheOptions`](#promptcacheoptions) | — |
+| `prompt_cache_retention` | `"in_memory"` \| `"24h"` | — |
 | `function_call` | `"none"` \| `"auto"` \| `object` | — |
 | `functions` | `object`[] | — |
 | `functions[].description` | `string` | — |
@@ -331,26 +426,7 @@ Supports streaming, function calling, vision (image input), structured outputs, 
 
 <sub>`*` = required field</sub>
 
-📤 **Response** · `200` · `application/json` — Success
-
-| Field | Type | Description |
-|---|---|---|
-| `id` * | `string` | — |
-| `choices` * | `object`[] | — |
-| `choices[].finish_reason` | `string` \| `null` | — |
-| `choices[].index` | `integer` | — |
-| `choices[].message` | `object` | — |
-| `choices[].logprobs` | `object` \| `null` | — |
-| `choices[].content_filter_results` | [`ContentFilterResult`](#contentfilterresult) \| `null` | — |
-| `prompt_filter_results` | `object`[] \| `null` | — |
-| `created` * | `integer` | — |
-| `model` | `string` | — |
-| `system_fingerprint` | `string` \| `null` | — |
-| `object` * | `"chat.completion"` | — |
-| `usage` | [`CompletionUsage`](#completionusage) | — |
-| `citations` | `string`[] | — |
-
-<sub>`*` = required field</sub>
+📤 **Response** · `200` · `application/json`, `text/event-stream` — Chat completion JSON or SSE stream
 
 💻 **Example**
 
@@ -358,7 +434,7 @@ Supports streaming, function calling, vision (image input), structured outputs, 
 curl -X POST "https://gen.pollinations.ai/v1/chat/completions" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"model":"openai","messages":[{"role":"user","content":"Hello!"}]}'
+  -d '{"model":"openai/gpt-5.4-nano","messages":[{"role":"user","content":"Hello!"}]}'
 ```
 
 ```json
@@ -366,7 +442,7 @@ curl -X POST "https://gen.pollinations.ai/v1/chat/completions" \
   "id": "chatcmpl-abc123",
   "object": "chat.completion",
   "created": 1700000000,
-  "model": "openai",
+  "model": "openai/gpt-5.4-nano",
   "choices": [
     {
       "index": 0,
@@ -387,6 +463,80 @@ curl -X POST "https://gen.pollinations.ai/v1/chat/completions" \
 
 ---
 
+#### `POST` `/v1/responses` — Create Response
+
+Generate a stateless OpenAI-compatible Response through a model that advertises `/v1/responses` in `supported_endpoints`.
+
+Built-in models use their configured Responses URL. Community text models and endpoint agents registered with the Responses API use their selected URL for both Responses and adapted Chat requests. Managed prompt agents serialize Responses JSON and SSE around their configured prompt and MCP tool loop. Built-in Chat routes may use a separate upstream API.
+
+OpenAI prompt_cache_options and prompt_cache_breakpoint controls pass through direct Responses requests and Chat requests adapted to Responses. Managed prompt agents preserve caller breakpoints or apply an explicit breakpoint after their configured static prompt.
+
+Response storage, previous response IDs, conversations, background execution, and encrypted or referenced state are not supported. Direct providers may accept caller-supplied function tools; managed prompt agents ignore these definitions and use only their configured MCP tools. Completed MCP output items can be replayed as history without executing them again.
+
+Successful text JSON responses and terminal streaming events contain usage; missing text-provider usage fails the response.
+
+Metadata is passed unchanged to endpoint agents; see the agent’s documentation for supported keys.
+
+Media models that advertise this endpoint in `/models` also accept text prompts. Only the last user message's text is used (or a string `input` on Responses); history, instructions and text-generation settings are ignored. Empty prompts, malformed Unicode and prompts consisting only of `.` or `..` return HTTP 400. Attachments are not supported; reference-required models return their normal missing-input error. Dialogue models expect one `<voice>: <text>` turn per line. Images return a Markdown image embed; audio, video and 3D return a Markdown link. Both include the plain public URL. With `stream: true`, events are emitted after generation finishes. Media is billed normally, without text-token usage: Responses returns `usage: null`; Chat JSON omits `usage`, while Chat streaming chunks contain `usage: null` and have no final usage chunk. Use the native media endpoints for generation settings.
+
+📥 **Request body** · `application/json`
+
+| Field | Type | Description |
+|---|---|---|
+| `model` | `string` | default: `"openai/gpt-5.4-nano"` |
+| `input` * | `string` \| `any`[] | — |
+| `instructions` | `any` | — |
+| `reasoning` | `object` \| `null` | — |
+| `max_output_tokens` | `integer` \| `null` | — |
+| `max_tool_calls` | `integer` \| `null` | — |
+| `stream` | `boolean` | default: `false` |
+| `stream_options` | `object` \| `null` | — |
+| `store` | `"false"` | default: `false` |
+| `previous_response_id` | `null` | — |
+| `conversation` | `null` | — |
+| `background` | `"false"` \| `null` | — |
+| `include` | enum (6) — `"web_search_call.action.sources"`, `"code_interpreter_call.outputs"`, `"computer_call_output.output.image_url"`, …[] \| `null` | — |
+| `context_management` | `any`[] \| `null` | — |
+| `prompt` | `null` | — |
+| `text` | `object` | — |
+| `tools` | `object`[] | — |
+| `tools[].type` * | `"function"` | — |
+| `tools[].name` * | `string` | — |
+| `tools[].description` | `string` | — |
+| `tools[].parameters` | `object` | — |
+| `tools[].strict` | `any` | — |
+| `tool_choice` | `any` | — |
+| `parallel_tool_calls` | `boolean` | — |
+| `metadata` | `object` \| `null` | — |
+| `user` | `string` | — |
+| `safety_identifier` | `string` | max length: `64` |
+| `prompt_cache_key` | `string` | — |
+| `prompt_cache_options` | [`PromptCacheOptions`](#promptcacheoptions) | — |
+| `prompt_cache_retention` | `"in_memory"` \| `"24h"` | — |
+| `service_tier` | `string` | — |
+| `temperature` | `number` \| `null` | — |
+| `top_p` | `number` \| `null` | — |
+| `top_logprobs` | `integer` \| `null` | — |
+| `frequency_penalty` | `number` \| `null` | — |
+| `presence_penalty` | `number` \| `null` | — |
+| `truncation` | `"auto"` \| `"disabled"` \| `null` | — |
+| `safe` | `any` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
+
+<sub>`*` = required field</sub>
+
+📤 **Response** · `200` · `application/json`, `text/event-stream` — Responses JSON or semantic Responses SSE
+
+💻 **Example**
+
+```bash
+curl -X POST "https://gen.pollinations.ai/v1/responses" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"openai","input":"Hello!"}'
+```
+
+---
+
 #### `POST` `/text` — Text Generation With Messages
 
 Generate text from an OpenAI-style messages array and return the assistant content directly.
@@ -398,33 +548,37 @@ Use `/v1/chat/completions` when you need the full OpenAI-compatible JSON respons
 | Field | Type | Description |
 |---|---|---|
 | `messages` * | `object`[] | — |
-| `model` | `string` | AI model for text generation. See /v1/models for full list. · default: `"openai"` |
+| `model` | `string` | AI model for text generation. See /v1/models for full list. · default: `"openai/gpt-5.4-nano"` |
+| `metadata` | `object` \| `null` | Passed unchanged to endpoint agents. Each agent documents the metadata keys it accepts. |
 | `modalities` | `"text"` \| `"audio"`[] | — |
 | `audio` | `object` | — |
 | `audio.voice` * | enum (13) — `"alloy"`, `"echo"`, `"fable"`, … | — |
 | `audio.format` * | `"wav"` \| `"mp3"` \| `"flac"` \| `"opus"` \| `"pcm16"` | — |
-| `frequency_penalty` | `number` \| `null` | default: `0` |
+| `frequency_penalty` | `number` \| `null` | — |
 | `repetition_penalty` | `number` \| `null` | — |
 | `logit_bias` | `object` \| `null` | default: `null` |
-| `logprobs` | `boolean` \| `null` | default: `false` |
+| `logprobs` | `any` | — |
 | `top_logprobs` | `integer` \| `null` | — |
 | `max_tokens` | `integer` \| `null` | — |
-| `presence_penalty` | `number` \| `null` | default: `0` |
+| `presence_penalty` | `number` \| `null` | — |
 | `response_format` | `object` | — |
 | `seed` | `integer` \| `null` | — |
-| `stop` | `string` \| `null` \| `string`[] | — |
-| `stream` | `boolean` \| `null` | default: `false` |
+| `stop` | `any` \| `string`[] | — |
+| `stream` | `any` | default: `false` |
 | `stream_options` | `object` \| `null` | — |
-| `safe` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
+| `safe` | `any` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
 | `reasoning_effort` | enum (7) — `"none"`, `"minimal"`, `"low"`, … | Requests reasoning depth for models that support adjustable reasoning. "none" requests no reasoning. |
-| `web_search_options` | `object` | Controls Perplexity Sonar search context. Pollinations currently supports low and high. |
+| `web_search_options` | `object` | Perplexity Sonar search context size, forwarded as-is. Low is the default and the request fee rises with the size. |
 | `web_search_options.search_context_size` * | `"low"` \| `"medium"` \| `"high"` | — |
-| `temperature` | `number` \| `null` | — |
+| `temperature` | `number` \| `null` | Sampling controls are ignored for model families that do not consistently support them, regardless of reasoning mode. |
 | `top_p` | `number` \| `null` | — |
 | `tools` | `object`[] | — |
 | `tool_choice` | `"none"` \| `"auto"` \| `"required"` \| `object` | — |
-| `parallel_tool_calls` | `boolean` | default: `true` |
+| `parallel_tool_calls` | `boolean` | — |
 | `user` | `string` | — |
+| `prompt_cache_key` | `string` | — |
+| `prompt_cache_options` | [`PromptCacheOptions`](#promptcacheoptions) | — |
+| `prompt_cache_retention` | `"in_memory"` \| `"24h"` | — |
 | `function_call` | `"none"` \| `"auto"` \| `object` | — |
 | `functions` | `object`[] | — |
 | `functions[].description` | `string` | — |
@@ -441,7 +595,7 @@ Use `/v1/chat/completions` when you need the full OpenAI-compatible JSON respons
 curl -X POST "https://gen.pollinations.ai/text" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"messages":[{"role":"user","content":"Hello!"}],"model":"openai"}'
+  -d '{"messages":[{"role":"user","content":"Hello!"}],"model":"openai/gpt-5.4-nano"}'
 ```
 
 ---
@@ -457,13 +611,21 @@ This is a simplified alternative to the OpenAI-compatible `/v1/chat/completions`
 | Param | In | Type | Description |
 |---|---|---|---|
 | `prompt` * | `path` | `string` | Text prompt for generation |
-| `model` | `query` | `string` | Text model to use. See /v1/models or /text/models for the full list of available models. · default: `"openai"` |
-| `seed` | `query` | `integer` | Seed for reproducible results. · default: `0` · min: `-1` |
+| `model` | `query` | `string` | Text model to use. See /v1/models or /text/models for the full list of available models. · default: `"openai/gpt-5.4-nano"` |
+| `seed` | `query` | `integer` | Optional seed for reproducible results on models that support it. Omitted by default. -1 maps to the stable compatibility seed. · min: `-1` |
 | `system` | `query` | `string` | System prompt to set the model's behavior and context. Acts as initial instructions before the user prompt. |
 | `json` | `query` | `boolean` | When true, the model returns valid JSON. Useful for structured data extraction. |
-| `temperature` | `query` | `number` | Controls randomness. Lower values (e.g. 0.2) produce more focused output, higher values (e.g. 1.5) produce more creative output. Range: 0.0 to 2.0. |
+| `temperature` | `query` | `number` | Controls randomness. Lower values (e.g. 0.2) produce more focused output, higher values (e.g. 1.5) produce more creative output. Range: 0.0 to 2.0. Sampling controls are ignored for model families that do not consistently support them, regardless of reasoning mode. |
+| `top_p` | `query` | `number` | — |
+| `presence_penalty` | `query` | `number` | — |
+| `frequency_penalty` | `query` | `number` | — |
+| `repetition_penalty` | `query` | `number` | — |
+| `max_tokens` | `query` | `integer` | — |
+| `max_completion_tokens` | `query` | `integer` | — |
+| `reasoning_effort` | `query` | `string` | — |
+| `voice` | `query` | `string` | — |
 | `stream` | `query` | `boolean` | Stream the response as it's generated, using Server-Sent Events (SSE). Each chunk contains partial text. |
-| `safe` | `query` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
+| `safe` | `query` | `any` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
 
 <sub>`*` = required parameter</sub>
 
@@ -472,7 +634,7 @@ This is a simplified alternative to the OpenAI-compatible `/v1/chat/completions`
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/text/Write%20a%20haiku%20about%20coding?model=openai&seed=0" \
+curl "https://gen.pollinations.ai/text/Write%20a%20haiku%20about%20coding?model=openai%2Fgpt-5.4-nano&seed=:seed" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -484,17 +646,17 @@ Generate images from text prompts via a simple GET request. Returns JPEG, PNG, o
 https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux
 ```
 
-**Available models:** krea, dreamshaper, kontext, nanobanana, nanobanana-2, nanobanana-2-lite, nanobanana-pro, seedream5, seedream5-pro, seedream, seedream-pro, ideogram-v4-turbo, ideogram-v4-balanced, ideogram-v4-quality, gptimage, gptimage-large, gpt-image-2, flux, zimage, zimage-fal, wan-image, wan-image-pro, qwen-image, qwen-image-3, grok-imagine, grok-imagine-pro, grok-imagine-image-2.0, recraft-v4.1-vector, klein, p-image, p-image-edit, nova-canvas
+**Available models:** krea/krea-2-medium, lykon/dreamshaper-8-lcm, black-forest-labs/flux.1-kontext-pro, black-forest-labs/flux.2-pro, black-forest-labs/flux.2-flex, microsoft/mai-image-2.5-flash, google/gemini-2.5-flash-image, google/gemini-3.1-flash-image, google/gemini-3.1-flash-lite-image, google/gemini-3-pro-image, bytedance/seedream-5.0-lite, bytedance/seedream-5.0-pro, bytedance/seedream-4.0, bytedance/seedream-4.5, ideogram-ai/ideogram-v4-turbo, ideogram-ai/ideogram-v4-balanced, ideogram-ai/ideogram-v4-quality, openai/gpt-image-1-mini, openai/gpt-image-1.5, openai/gpt-image-2, openai/gpt-image-2.5-flare, openai/gpt-image-2.5-sunburst, black-forest-labs/flux.1-schnell, tongyi-mai/z-image-turbo, alibaba/wan-2.7-image, alibaba/wan-2.7-image-pro, qwen/qwen-image, qwen/qwen-image-3, x-ai/grok-imagine-image, x-ai/grok-imagine-image-quality, x-ai/grok-imagine-image-2.0, recraft/recraft-v4.1-vector, black-forest-labs/flux.2-klein-4b, prunaai/p-image, prunaai/p-image-edit, amazon/nova-canvas-v1
 
 ### Community image models
 
-Community image models use an owner/model id and support generation through `/image/{prompt}` and `/v1/images/generations`. The registration test adds image input and `/v1/images/edits` metadata when the registrant's edit endpoint succeeds. OpenAI-compatible responses use `b64_json`; URL responses are not supported for community models. See `/image/models` for the live model list and supported endpoints.
+Community image models use a `community/owner/model` id and support generation through `/image/{prompt}` and `/v1/images/generations`. The registration test adds image input and `/v1/images/edits` metadata when the registrant's edit endpoint succeeds. OpenAI-compatible responses default to `b64_json`; set `response_format: "url"` for a stored media URL. See `/image/models` for the live model list and supported endpoints.
 
 #### `GET` `/image/{prompt}` — Generate Image
 
 Generate an image from a text prompt. Returns JPEG, PNG, or SVG depending on the selected model.
 
-**Available models:** `krea`, `dreamshaper`, `kontext`, `nanobanana`, `nanobanana-2`, `nanobanana-2-lite`, `nanobanana-pro`, `seedream5`, `seedream5-pro`, `seedream`, `seedream-pro`, `ideogram-v4-turbo`, `ideogram-v4-balanced`, `ideogram-v4-quality`, `gptimage`, `gptimage-large`, `gpt-image-2`, `flux`, `zimage`, `zimage-fal`, `wan-image`, `wan-image-pro`, `qwen-image`, `qwen-image-3`, `grok-imagine`, `grok-imagine-pro`, `grok-imagine-image-2.0`, `recraft-v4.1-vector`, `klein`, `p-image`, `p-image-edit`, `nova-canvas`. `zimage` is the default.
+**Available models:** `krea/krea-2-medium`, `krea/krea-2-medium:replicate`, `lykon/dreamshaper-8-lcm`, `black-forest-labs/flux.1-kontext-pro`, `black-forest-labs/flux.1-kontext-pro:replicate`, `black-forest-labs/flux.2-pro`, `black-forest-labs/flux.2-pro:replicate`, `black-forest-labs/flux.2-flex`, `microsoft/mai-image-2.5-flash`, `google/gemini-2.5-flash-image`, `google/gemini-3.1-flash-image`, `google/gemini-3.1-flash-image:openrouter:ai-studio`, `google/gemini-3.1-flash-lite-image`, `google/gemini-3-pro-image`, `google/gemini-3-pro-image:openrouter:vertex-global`, `bytedance/seedream-5.0-lite`, `bytedance/seedream-5.0-lite:fal`, `bytedance/seedream-5.0-pro`, `bytedance/seedream-4.0`, `bytedance/seedream-4.5`, `ideogram-ai/ideogram-v4-turbo`, `ideogram-ai/ideogram-v4-balanced`, `ideogram-ai/ideogram-v4-quality`, `openai/gpt-image-1-mini`, `openai/gpt-image-1-mini:openai`, `openai/gpt-image-1.5`, `openai/gpt-image-1.5:openai`, `openai/gpt-image-2`, `openai/gpt-image-2:openai`, `openai/gpt-image-2.5-flare`, `openai/gpt-image-2.5-flare:openai`, `openai/gpt-image-2.5-sunburst`, `openai/gpt-image-2.5-sunburst:openai`, `black-forest-labs/flux.1-schnell`, `black-forest-labs/flux.1-schnell:deepinfra`, `tongyi-mai/z-image-turbo`, `tongyi-mai/z-image-turbo:fal`, `alibaba/wan-2.7-image`, `alibaba/wan-2.7-image-pro`, `qwen/qwen-image`, `qwen/qwen-image-3`, `qwen/qwen-image-3:replicate`, `x-ai/grok-imagine-image`, `x-ai/grok-imagine-image-quality`, `x-ai/grok-imagine-image-2.0`, `recraft/recraft-v4.1-vector`, `black-forest-labs/flux.2-klein-4b`, `prunaai/p-image`, `prunaai/p-image-edit`, `prunaai/p-image-edit:replicate`, `amazon/nova-canvas-v1`. `tongyi-mai/z-image-turbo` is the default.
 
 Browse all available models and their capabilities at [`/image/models`](https://gen.pollinations.ai/image/models).
 
@@ -503,15 +665,18 @@ Browse all available models and their capabilities at [`/image/models`](https://
 | Param | In | Type | Description |
 |---|---|---|---|
 | `prompt` * | `path` | `string` | Text description of the image to generate |
-| `model` * | `query` | `string` | Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, seedream5-pro, nanobanana, nanobanana-pro, klein. **Video:** veo, seedance-pro, wan, wan-pro, p-video, nova-reel. See /image/models for full list. · default: `"zimage"` |
-| `width` | `query` | `integer` | Width in pixels. For images, exact pixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
-| `height` | `query` | `integer` | Height in pixels. For images, exact pixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
-| `seed` | `query` | `integer` | Seed for reproducible results. Supported by: flux, zimage, seedream, klein, seedance, nova-reel. Other models ignore this parameter. · default: `0` · range: `-1…2147483647` |
-| `safe` | `query` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
+| `model` | `query` | `string` | Model to use. See /image/models for the current canonical IDs and aliases. · default: `"tongyi-mai/z-image-turbo"` |
+| `width` | `query` | `integer` | Width in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.5-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 1,048,576 total pixels). For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
+| `height` | `query` | `integer` | Height in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.5-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 1,048,576 total pixels). For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
+| `seed` | `query` | `integer` | Seed for reproducible results. Use -1 for random. Supported by: black-forest-labs/flux.1-schnell, tongyi-mai/z-image-turbo, bytedance/seedream-4.0, black-forest-labs/flux.2-klein-4b, bytedance/seedance-2.0, amazon/nova-reel-v1. Other models ignore this parameter. · default: `0` · range: `-1…2147483647` |
+| `safe` | `query` | `any` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
 | `quality` | `query` | `"low"` \| `"medium"` \| `"high"` \| `"hd"` | Image quality level. Supported by `gptimage`, `gptimage-large`, `gpt-image-2`, and `grok-imagine-image-2.0`. · default: `"medium"` |
-| `image` | `query` | `string` | Reference image URL(s) for image editing or video generation. Separate multiple URLs with `\|` or `,`. **Image models:** Used for editing/style reference (kontext, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, the `seedance-2.0` family, `seedance-2.5`, `wan-fast`, and `wan-pro`; other video models silently drop `image[1]`. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
+| `image` | `query` | `string` | Reference image URL(s) for image editing or video generation. Separate multiple URLs with `\|` or `,`. **Image models:** Used for editing or style reference. **Video models:** `image[0]` is the starting frame; `image[1]` is the optional ending frame. See `video_capabilities` and `max_reference_images` on `/image/models` or `/models` for per-model support. |
+| `reference_images` | `query` | `string` | Video models only: public HTTP(S) image URLs for visual guidance, separate from first/last-frame controls. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
+| `reference_videos` | `query` | `string` | Video models only: public HTTP(S) video URLs for motion or style guidance. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
+| `reference_audios` | `query` | `string` | Video models only: public HTTP(S) audio URLs for audio-driven generation. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
 | `transparent` | `query` | `boolean` | Generate image with transparent background. Only supported by `gptimage` and `gptimage-large`. · default: `false` |
-| `resolution` | `query` | enum (6) — `"1k"`, `"2k"`, `"480p"`, … | Output resolution for image and video models that advertise `resolutions` in `/models`. The first advertised resolution is the default; requested tiers bill at their listed rate. |
+| `resolution` | `query` | enum (8) — `"1k"`, `"2k"`, `"360p"`, … | Output resolution for image and video models that advertise `resolutions` in `/models`. The first advertised resolution is the default; requested tiers bill at their listed rate. |
 
 <sub>`*` = required parameter</sub>
 
@@ -520,7 +685,7 @@ Browse all available models and their capabilities at [`/image/models`](https://
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/image/a%20beautiful%20sunset%20over%20mountains?model=zimage&width=1024" \
+curl "https://gen.pollinations.ai/image/a%20beautiful%20sunset%20over%20mountains?model=tongyi-mai%2Fz-image-turbo&width=1024" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -530,7 +695,7 @@ curl "https://gen.pollinations.ai/image/a%20beautiful%20sunset%20over%20mountain
 
 OpenAI-compatible image generation endpoint.
 
-Generate images from text prompts. Supports `response_format: "url"` (returns a pollinations.ai URL) or `"b64_json"` (returns base64-encoded image data, default).
+Generate images from text prompts. Supports `response_format: "url"` (returns the stored media URL; fetching it never generates an image) or `"b64_json"` (returns base64-encoded image data, default).
 
 **Authentication:** Include your API key as `Authorization: Bearer YOUR_API_KEY`.
 
@@ -539,15 +704,18 @@ Generate images from text prompts. Supports `response_format: "url"` (returns a 
 | Field | Type | Description |
 |---|---|---|
 | `prompt` * | `string` | A text description of the desired image(s) · length: `1…32000` |
-| `model` | `string` | The model to use for image generation · default: `"flux"` |
+| `model` | `string` | The model to use for image generation · default: `"black-forest-labs/flux.1-schnell"` |
 | `n` | `integer` | Number of images to generate (currently max 1) · default: `1` · range: `1…1` |
 | `size` | `string` | Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512) · default: `"1024x1024"` |
 | `quality` | `"standard"` \| `"hd"` \| `"low"` \| `"medium"` \| `"high"` | Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents · default: `"medium"` |
-| `response_format` | `"url"` \| `"b64_json"` | Return format. "url" returns a pollinations.ai URL, "b64_json" returns base64-encoded image data · default: `"b64_json"` |
+| `response_format` | `"url"` \| `"b64_json"` | Return format. "url" returns a stored media.pollinations.ai URL, "b64_json" returns base64-encoded image data · default: `"b64_json"` |
 | `user` | `string` | End-user identifier for abuse tracking |
 | `image` | `string` \| `string`[] | Reference image URL(s) for image-to-image generation (Pollinations extension) |
-| `resolution` | enum (6) — `"1k"`, `"2k"`, `"480p"`, … | Output resolution for resolution-priced image and video models (Pollinations extension) |
-| `safe` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
+| `reference_images` | `any` | — |
+| `reference_videos` | `any` | — |
+| `reference_audios` | `any` | — |
+| `resolution` | enum (8) — `"1k"`, `"2k"`, `"360p"`, … | Output resolution for resolution-priced image and video models (Pollinations extension) |
+| `safe` | `any` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
 
 <sub>`*` = required field</sub>
 
@@ -561,7 +729,7 @@ Returns [`CreateImageResponse`](#createimageresponse).
 curl -X POST "https://gen.pollinations.ai/v1/images/generations" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"prompt":"a serene mountain landscape at sunset","model":"flux","size":"1024x1024"}'
+  -d '{"prompt":"a serene mountain landscape at sunset","model":"black-forest-labs/flux.1-schnell","size":"1024x1024"}'
 ```
 
 ---
@@ -572,9 +740,26 @@ OpenAI-compatible image editing endpoint.
 
 Edit images using a text prompt and one or more source images.
 Accepts JSON with image URLs or multipart/form-data with file uploads.
+Set response_format to "url" for a stored media URL, or "b64_json" for base64 image data (default).
 Community image models forward edits to the registrant's OpenAI-compatible endpoint as multipart form data.
 
 **Authentication:** Include your API key as `Authorization: Bearer YOUR_API_KEY`.
+
+📥 **Request body** · `application/json`
+
+| Field | Type | Description |
+|---|---|---|
+| `prompt` * | `string` | A text description of the desired edit · length: `1…32000` |
+| `image` * | `string` \| `object`[] | Source image(s). A URL string, or an array of {image_url} objects (OpenAI format) |
+| `model` | `string` | The model to use for image generation · default: `"black-forest-labs/flux.1-schnell"` |
+| `n` | `integer` | Number of images to generate (currently max 1) · default: `1` · range: `1…1` |
+| `size` | `string` | Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512) |
+| `quality` | `"standard"` \| `"hd"` \| `"low"` \| `"medium"` \| `"high"` | Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents · default: `"medium"` |
+| `response_format` | `"url"` \| `"b64_json"` | Return format. "url" returns a stored media.pollinations.ai URL, "b64_json" returns base64-encoded image data · default: `"b64_json"` |
+| `resolution` | enum (8) — `"1k"`, `"2k"`, `"360p"`, … | Output resolution for resolution-priced image and video models (Pollinations extension) |
+| `safe` | `any` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
+
+<sub>`*` = required field</sub>
 
 📤 **Response** · `200` · `application/json` — Success
 
@@ -587,7 +772,7 @@ curl -X POST "https://gen.pollinations.ai/v1/images/edits" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -F "image=@./input.png" \
   -F "prompt=make the sky a vivid sunset" \
-  -F "model=kontext"
+  -F "model=black-forest-labs/flux.1-kontext-pro"
 ```
 
 ### Video
@@ -598,17 +783,23 @@ Generate videos from text prompts or reference images. Returns MP4.
 https://gen.pollinations.ai/video/sunset%20timelapse?model=veo&duration=4
 ```
 
-**Available models:** veo, seedance-pro, seedance-2.0, seedance-2.0-mini, seedance-2.0-fast, wan, wan-fast, wan-pro, grok-video-pro, grok-imagine-video-1.5, seedance-2.5, happyhorse-1.1, minimax-h3, p-video, nova-reel
+**Available models:** google/veo-3.1-fast, google/gemini-omni-1.1-flash, bytedance/seedance-1-pro-fast, bytedance/seedance-2.0, bytedance/seedance-2.0-mini, bytedance/seedance-2.0-fast, alibaba/wan-2.6, alibaba/wan-2.2-fast, alibaba/wan-2.7, alibaba/wan-3.0, x-ai/grok-imagine-video, x-ai/grok-imagine-video-1.5, bytedance/seedance-2.5, alibaba/happyhorse-1.1, minimax/minimax-h3, minimax/minimax-h3-max-turbo, prunaai/p-video, amazon/nova-reel-v1
+
+### Community video models
+
+Community video models use a `community/owner/model` id and work on `/video/{prompt}`, `/image/{prompt}`, and `/v1/images/generations`. See `/video/models` for the live catalog and [Publish a Model](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_MODEL.md) for the synchronous publisher contract.
 
 #### `GET` `/video/{prompt}` — Generate Video
 
 Generate a video from a text prompt. Returns MP4.
 
-**Available models:** `veo`, `seedance-pro`, `seedance-2.0`, `seedance-2.0-mini`, `seedance-2.0-fast`, `wan`, `wan-fast`, `wan-pro`, `grok-video-pro`, `grok-imagine-video-1.5`, `seedance-2.5`, `happyhorse-1.1`, `minimax-h3`, `p-video`, `nova-reel`.
+**Available models:** `google/veo-3.1-fast`, `google/veo-3.1-fast:replicate`, `google/gemini-omni-1.1-flash`, `bytedance/seedance-1-pro-fast`, `bytedance/seedance-1-pro-fast:fal`, `bytedance/seedance-2.0`, `bytedance/seedance-2.0-mini`, `bytedance/seedance-2.0-fast`, `alibaba/wan-2.6`, `alibaba/wan-2.6:fal`, `alibaba/wan-2.2-fast`, `alibaba/wan-2.2-fast:fal`, `alibaba/wan-2.7`, `alibaba/wan-3.0`, `x-ai/grok-imagine-video`, `x-ai/grok-imagine-video:openrouter`, `x-ai/grok-imagine-video-1.5`, `x-ai/grok-imagine-video-1.5:fal`, `bytedance/seedance-2.5`, `alibaba/happyhorse-1.1`, `minimax/minimax-h3`, `minimax/minimax-h3-max-turbo`, `prunaai/p-video`, `amazon/nova-reel-v1`.
 
 Use `duration` to set video length, `aspectRatio` for orientation, and `audio` where the selected model supports audio output.
 
 You can pass reference images via the `image` parameter: `image[0]` is the start frame, and `image[1]` is the end frame for models with `end_frame` in `video_capabilities`.
+
+Seedance 2.0 and 2.5 also accept `reference_images`, `reference_videos`, and `reference_audios` for guidance distinct from frame controls. Separate URLs with `|`; commas inside URLs are preserved.
 
 Browse all available models and their `video_capabilities` at [`/image/models`](https://gen.pollinations.ai/image/models).
 
@@ -617,16 +808,19 @@ Browse all available models and their `video_capabilities` at [`/image/models`](
 | Param | In | Type | Description |
 |---|---|---|---|
 | `prompt` * | `path` | `string` | Text description of the video to generate |
-| `model` * | `query` | `string` | Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, seedream5-pro, nanobanana, nanobanana-pro, klein. **Video:** veo, seedance-pro, wan, wan-pro, p-video, nova-reel. See /image/models for full list. · default: `"veo"` |
-| `width` | `query` | `integer` | Width in pixels. For images, exact pixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
-| `height` | `query` | `integer` | Height in pixels. For images, exact pixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
-| `seed` | `query` | `integer` | Seed for reproducible results. Supported by: flux, zimage, seedream, klein, seedance, nova-reel. Other models ignore this parameter. · default: `0` · range: `-1…2147483647` |
-| `safe` | `query` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
-| `image` | `query` | `string` | Reference image URL(s) for image editing or video generation. Separate multiple URLs with `\|` or `,`. **Image models:** Used for editing/style reference (kontext, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, the `seedance-2.0` family, `seedance-2.5`, `wan-fast`, and `wan-pro`; other video models silently drop `image[1]`. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
-| `resolution` | `query` | enum (6) — `"1k"`, `"2k"`, `"480p"`, … | Output resolution for image and video models that advertise `resolutions` in `/models`. The first advertised resolution is the default; requested tiers bill at their listed rate. |
-| `duration` | `query` | `integer` | Video duration in seconds. Only applies to video models. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `wan`: 2-15s. `nova-reel`: 6-120s (multiples of 6). · range: `1…120` |
-| `aspectRatio` | `query` | `string` | Video aspect ratio (`16:9` or `9:16`). Only applies to video models. If not set, determined by explicit width/height; `seedance-2.5` otherwise defaults to `16:9`. `minimax-h3` supports only `16:9`. |
-| `audio` | `query` | `boolean` | Generate audio for the video. Only applies to video models. `wan` and `minimax-h3` always generate audio regardless of this flag. For `veo`, set to `true` to enable audio. · default: `false` |
+| `model` | `query` | `string` | Model to use. See /image/models for the current canonical IDs and aliases. · default: `"google/veo-3.1-fast"` |
+| `width` | `query` | `integer` | Width in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.5-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 1,048,576 total pixels). For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
+| `height` | `query` | `integer` | Height in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.5-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 1,048,576 total pixels). For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
+| `seed` | `query` | `integer` | Seed for reproducible results. Use -1 for random. Supported by: black-forest-labs/flux.1-schnell, tongyi-mai/z-image-turbo, bytedance/seedream-4.0, black-forest-labs/flux.2-klein-4b, bytedance/seedance-2.0, amazon/nova-reel-v1. Other models ignore this parameter. · default: `0` · range: `-1…2147483647` |
+| `safe` | `query` | `any` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
+| `image` | `query` | `string` | Reference image URL(s) for image editing or video generation. Separate multiple URLs with `\|` or `,`. **Image models:** Used for editing or style reference. **Video models:** `image[0]` is the starting frame; `image[1]` is the optional ending frame. See `video_capabilities` and `max_reference_images` on `/image/models` or `/models` for per-model support. |
+| `reference_images` | `query` | `string` | Video models only: public HTTP(S) image URLs for visual guidance, separate from first/last-frame controls. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
+| `reference_videos` | `query` | `string` | Video models only: public HTTP(S) video URLs for motion or style guidance. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
+| `reference_audios` | `query` | `string` | Video models only: public HTTP(S) audio URLs for audio-driven generation. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
+| `resolution` | `query` | enum (8) — `"1k"`, `"2k"`, `"360p"`, … | Output resolution for image and video models that advertise `resolutions` in `/models`. The first advertised resolution is the default; requested tiers bill at their listed rate. |
+| `duration` | `query` | `integer` | Video duration in seconds. Only applies to video models. Community models may omit this if the provider reports generated seconds; billing prefers reported duration and otherwise uses this value. `google/gemini-omni-1.1-flash`: 3-10s. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `minimax/minimax-h3-max-turbo`: 5, 10, or 15s. `wan`: 2-15s. `wan-3.0`: exactly 5s. `nova-reel`: 6-120s (multiples of 6). · range: `1…120` |
+| `aspectRatio` | `query` | `string` | Video aspect ratio. Only applies to video models. If not set, determined by explicit width/height; `google/gemini-omni-1.1-flash`, `seedance-2.5`, and `minimax/minimax-h3-max-turbo` otherwise default to `16:9`. Most models support `16:9` or `9:16`; `minimax-h3` supports only `16:9`, while `minimax/minimax-h3-max-turbo` also supports `21:9`, `4:3`, `1:1`, and `3:4`. |
+| `audio` | `query` | `boolean` | Generate audio for the video. Only applies to video models. `google/gemini-omni-1.1-flash`, `wan`, `minimax-h3`, and `minimax/minimax-h3-max-turbo` always generate audio regardless of this flag. For `veo` and `wan-3.0`, set to `true` to enable audio. · default: `false` |
 
 <sub>`*` = required parameter</sub>
 
@@ -635,7 +829,7 @@ Browse all available models and their `video_capabilities` at [`/image/models`](
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/video/a%20sunset%20timelapse%20over%20the%20ocean?model=veo&width=1024" \
+curl "https://gen.pollinations.ai/video/a%20sunset%20timelapse%20over%20the%20ocean?model=google%2Fveo-3.1-fast&width=1024" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -649,7 +843,7 @@ Text-to-speech, music generation, and audio transcription.
 | `POST /v1/audio/speech` | OpenAI-compatible TTS |
 | `POST /v1/audio/transcriptions` | Speech-to-text transcription |
 
-**Audio models:** elevenlabs, elevenflash, eleven-multilingual-v2, eleven-dialogue, eleven-voice-changer, eleven-voice-isolator, elevenmusic, lyria-3-clip, eleven-sfx, whisper, gpt-transcribe, scribe, grok-transcribe, grok-tts, universal-2, universal-3.5-pro, stable-audio-3-medium, stable-audio-3-large, fish-audio-s2.1-pro, qwen-tts, qwen-tts-instruct, csm-1b, kokoro
+**Audio models:** elevenlabs/eleven-v3, elevenlabs/eleven-flash-v2.5, elevenlabs/eleven-multilingual-v2, elevenlabs/eleven-v3:dialogue, elevenlabs/eleven-multilingual-sts-v2, elevenlabs/voice-isolator, elevenlabs/music-v2, elevenlabs/music-v2.5, google/lyria-3-clip-preview, elevenlabs/eleven-text-to-sound-v2, openai/whisper-large-v3, openai/gpt-transcribe, elevenlabs/scribe-v2, x-ai/grok-transcribe, x-ai/grok-tts, assemblyai/universal-2, assemblyai/universal-3.5-pro, stability-ai/stable-audio-3-medium, stability-ai/stable-audio-3, fish-audio/s2.1-pro, qwen/qwen3-tts-flash, qwen/qwen3-tts-instruct-flash, sesame/csm-1b, hexgrad/kokoro-82m
 
 **Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
 
@@ -661,7 +855,7 @@ Transform the speaker identity in an audio file while preserving its words, timi
 
 | Field | Type | Description |
 |---|---|---|
-| `model` | `string` | default: `"eleven-voice-changer"` |
+| `model` | `string` | default: `"elevenlabs/eleven-multilingual-sts-v2"` |
 | `audio` * | `string · binary` | Source audio, up to 50 MB. ElevenLabs supports clips up to five minutes. |
 | `voice` | `string` | Target preset voice name or custom ElevenLabs voice ID. · default: `"alloy"` |
 | `response_format` | `"mp3"` \| `"opus"` \| `"aac"` \| `"wav"` \| `"pcm"` | default: `"mp3"` |
@@ -688,7 +882,7 @@ Remove music, ambient sound, and other background noise from an audio or video f
 
 | Field | Type | Description |
 |---|---|---|
-| `model` | `string` | default: `"eleven-voice-isolator"` |
+| `model` | `string` | default: `"elevenlabs/voice-isolator"` |
 | `audio` * | `string · binary` | Source audio or video, up to 50 MB and at least 4.6 seconds long. |
 
 <sub>`*` = required field</sub>
@@ -709,9 +903,9 @@ curl -X POST "https://gen.pollinations.ai/v1/audio/voice-isolator" \
 
 Generate speech, music, sound effects, or dialogue from text. Compatible with the OpenAI TTS API for JSON requests.
 
-Set `model` to `elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music. Lyria returns one fixed 30-second MP3 clip. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stable-audio-3-medium` or `stable-audio-3-large`, or reference-audio conditioning on `elevenmusic`; for ElevenLabs inpainting, pass a `composition_plan`.
+Set `model` to `elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music. Lyria returns one fixed 30-second MP3 clip. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3`, or reference-audio conditioning on either ElevenLabs Music model; for ElevenLabs inpainting, pass a `composition_plan`.
 
-For multi-speaker audio, set `model` to `eleven-dialogue` and put one turn per line in `input` as `<voice>: <text>`. Voice labels may be preset names or ElevenLabs voice IDs; the top-level `voice` field is ignored for this model. Dialogue supports up to 10 unique voices and 2,000 total text characters.
+For multi-speaker audio, set `model` to `elevenlabs/eleven-v3:dialogue` and put one turn per line in `input` as `<voice>: <text>`. Voice labels may be preset names or ElevenLabs voice IDs; the top-level `voice` field is ignored for this model. Dialogue supports up to 10 unique voices and 2,000 total text characters.
 
 **Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill, conversational_a, conversational_b, read_speech_a, read_speech_b, read_speech_c, read_speech_d, af_alloy, af_aoede, af_bella, af_heart, af_jessica, af_kore, af_nicole, af_nova, af_river, af_sarah, af_sky, am_adam, am_echo, am_eric, am_fenrir, am_liam, am_michael, am_onyx, am_puck, am_santa, bf_alice, bf_emma, bf_isabella, bf_lily, bm_daniel, bm_fable, bm_george, bm_lewis, ef_dora, em_alex, em_santa, ff_siwis, hf_alpha, hf_beta, hm_omega, hm_psi, if_sara, im_nicola, jf_alpha, jf_gongitsune, jf_nezumi, jf_tebukuro, jm_kumo, pf_dora, pm_alex, pm_santa, zf_xiaobei, zf_xiaoni, zf_xiaoxiao, zf_xiaoyi, zm_yunjian, zm_yunxi, zm_yunxia, zm_yunyang, altair, ara, atlas, aurora, carina, castor, celeste, cosmo, eve, helios, helix, iris, kepler, leo, liora, lumen, luna, lux, naksh, orion, perseus, rex, rigel, sal, sirius, ursa, zagan, zenith
 
@@ -722,7 +916,7 @@ For multi-speaker audio, set `model` to `eleven-dialogue` and put one turn per l
 | Field | Type | Description |
 |---|---|---|
 | `model` | `string` | — |
-| `input` * | `string` | Text or prompt to generate. The `eleven-dialogue` model expects one `voice: text` turn per line. · length: `1…10000` |
+| `input` * | `string` | Text or prompt to generate. The `elevenlabs/eleven-v3:dialogue` model expects one `voice: text` turn per line. · length: `1…10000` |
 | `safe` | `string` \| `boolean` | Optional safety features; accepts a comma-separated string or boolean shorthand. |
 | `voice` | `string` | default: `"alloy"` |
 | `response_format` | enum (6) — `"mp3"`, `"opus"`, `"aac"`, … | default: `"mp3"` |
@@ -757,13 +951,13 @@ curl -X POST "https://gen.pollinations.ai/v1/audio/speech" \
 
 #### `POST` `/v1/audio/speech/with-timestamps` — Generate Speech with Timestamps
 
-Generate base64-encoded speech with character-level timing for the original and normalized text. Supports the elevenlabs, elevenflash, and eleven-multilingual-v2 models.
+Generate base64-encoded speech with character-level timing for the original and normalized text. Supports `elevenlabs/eleven-v3`, `elevenlabs/eleven-flash-v2.5`, and `elevenlabs/eleven-multilingual-v2`.
 
 📥 **Request body** · `application/json`
 
 | Field | Type | Description |
 |---|---|---|
-| `model` | `"elevenlabs"` \| `"elevenflash"` \| `"eleven-multilingual-v2"` | default: `"elevenlabs"` |
+| `model` | `"elevenlabs/eleven-v3"` \| `"elevenlabs/eleven-flash-v2.5"` \| `"elevenlabs/eleven-multilingual-v2"` | default: `"elevenlabs/eleven-v3"` |
 | `input` * | `string` | Text to synthesize and align. · max length: `10000` |
 | `voice` | `string` | Preset voice name or custom ElevenLabs voice ID. · default: `"alloy"` |
 | `response_format` | `"mp3"` \| `"opus"` \| `"aac"` \| `"wav"` \| `"pcm"` | Encoding used for audio_base64. · default: `"mp3"` |
@@ -805,20 +999,20 @@ Transcribe audio files to text. Compatible with the OpenAI Whisper API.
 **Supported audio formats:** mp3, mp4, mpeg, mpga, m4a, wav, webm
 
 **Models:**
-- `whisper-large-v3` (default) — OpenAI Whisper via OVHcloud
-- `whisper-1` — Alias for whisper-large-v3
-- `gpt-transcribe` — Fast multilingual speech recognition with prompt context
-- `scribe` — ElevenLabs Scribe (90+ languages, word-level timestamps)
-- `grok-transcribe` — xAI speech recognition with word timestamps, speaker labels, and text formatting
-- `universal-2` — AssemblyAI Universal-2 (99 languages)
-- `universal-3.5-pro` — AssemblyAI Universal-3.5 Pro (18 languages, code switching, prompting)
+- `openai/whisper-large-v3` (default) — OpenAI Whisper via OVHcloud
+- `whisper-1` — Alias for `openai/whisper-large-v3`
+- `openai/gpt-transcribe` — Fast multilingual speech recognition with prompt context
+- `elevenlabs/scribe-v2` — ElevenLabs Scribe (90+ languages, word-level timestamps)
+- `x-ai/grok-transcribe` — xAI speech recognition with word timestamps, speaker labels, and text formatting
+- `assemblyai/universal-2` — AssemblyAI Universal-2 (99 languages)
+- `assemblyai/universal-3.5-pro` — AssemblyAI Universal-3.5 Pro (18 languages, code switching, prompting)
 
 📥 **Request body** · `multipart/form-data`
 
 | Field | Type | Description |
 |---|---|---|
 | `file` * | `string · binary` | The audio file to transcribe. Supported formats: mp3, mp4, mpeg, mpga, m4a, wav, webm. |
-| `model` | `string` | The model to use. Options: `whisper-large-v3`, `whisper-1`, `gpt-transcribe`, `scribe`, `grok-transcribe`, `universal-2`, `universal-3.5-pro`. · default: `"whisper-large-v3"` |
+| `model` | `string` | The model to use. Options: `openai/whisper-large-v3`, `whisper-1`, `openai/gpt-transcribe`, `elevenlabs/scribe-v2`, `x-ai/grok-transcribe`, `assemblyai/universal-2`, `assemblyai/universal-3.5-pro`. · default: `"openai/whisper-large-v3"` |
 | `language` | `string` | Language of the audio in ISO-639-1 format (e.g. `en`, `fr`). Improves accuracy. |
 | `prompt` | `string` | Optional text to guide the model's style or continue a previous segment. |
 | `response_format` | enum (6) — `"json"`, `"text"`, `"srt"`, … | The format of the transcript output. Support is model-dependent: `srt` and `vtt` require a model that renders subtitles, and `diarized_json` a diarization-capable one. Unsupported combinations return 400 naming the formats that model accepts. · default: `"json"` |
@@ -848,7 +1042,7 @@ Transcribe audio files to text. Compatible with the OpenAI Whisper API.
 curl -X POST "https://gen.pollinations.ai/v1/audio/transcriptions" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -F "file=@./audio.mp3" \
-  -F "model=whisper-large-v3"
+  -F "model=openai/whisper-large-v3"
 ```
 
 ---
@@ -863,29 +1057,29 @@ Generate speech, dialogue, music, or sound effects from text via a simple GET re
 
 **Output formats:** mp3 (default), opus, aac, flac, wav, pcm
 
-**Dialogue:** The `eleven-dialogue` model expects one `<voice>: <text>` turn per line.
+**Dialogue:** Set `model=elevenlabs/eleven-v3:dialogue`; provide one `<voice>: <text>` turn per line.
 
-**Music generation:** Set `model=elevenmusic`, `lyria-3-clip`, `stable-audio-3-medium`, or `stable-audio-3-large` to generate music instead of speech. `lyria-3-clip` returns a fixed 30-second MP3 clip; `elevenmusic` supports `duration` (3-300 seconds) and `instrumental` mode; `stable-audio-3-medium`/`stable-audio-3-large` support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.
+**Music generation:** Set `model=elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music instead of speech. `google/lyria-3-clip-preview` returns a fixed 30-second MP3 clip; the ElevenLabs Music models support `duration` (3-300 seconds) and `instrumental` mode; the Stable Audio models support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.
 
 ⚙️ **Parameters**
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `text` * | `path` | `string` | Text or prompt to generate. The `eleven-dialogue` model expects one `voice: text` turn per line. |
+| `text` * | `path` | `string` | Text or prompt to generate. Dialogue operation expects one `voice: text` turn per line. |
 | `voice` | `query` | `string` | Voice preset or custom provider voice ID. Dialogue voices come from labels in the text. · default: `"alloy"` |
-| `response_format` | `query` | enum (6) — `"mp3"`, `"opus"`, `"aac"`, … | Audio output format. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only. · default: `"mp3"` |
+| `response_format` | `query` | enum (6) — `"mp3"`, `"opus"`, `"aac"`, … | Audio output format. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; `google/lyria-3-clip-preview` and `elevenlabs/eleven-text-to-sound-v2` support mp3 only. · default: `"mp3"` |
 | `model` | `query` | `string` | Audio model for speech, dialogue, music, or sound-effect generation |
-| `duration` | `query` | `string` | Music duration in seconds (elevenmusic 3-300; lyria-3-clip fixed at 30) |
-| `seconds` | `query` | `number` | Audio duration in seconds for stable-audio-3-medium/large, 1-380 · range: `1…380` |
-| `steps` | `query` | `integer` | Sampling steps (stable-audio-3-medium 1-100, stable-audio-3-large 4-8) · range: `1…100` |
-| `negative_prompt` | `query` | `string` | Negative prompt for stable-audio-3-large |
-| `instrumental` | `query` | `"true"` \| `"false"` | If true, guarantees instrumental output (elevenmusic only) · default: `"false"` |
-| `instructions` | `query` | `string` | Emotion/style instruction (qwen-tts-instruct only) |
-| `loop` | `query` | `"true"` \| `"false"` | Loop the generated sound effect (eleven-sfx only) |
-| `prompt_influence` | `query` | `string` | How strictly to follow the prompt, 0-1 (eleven-sfx only) |
+| `duration` | `query` | `string` | Music duration in seconds (`elevenlabs/music-v2` and `elevenlabs/music-v2.5` 3-300; `google/lyria-3-clip-preview` fixed at 30) |
+| `seconds` | `query` | `number` | Audio duration in seconds for Stable Audio models, 1-380 · range: `1…380` |
+| `steps` | `query` | `integer` | Sampling steps (`stability-ai/stable-audio-3-medium` 1-100, `stability-ai/stable-audio-3` 4-8) · range: `1…100` |
+| `negative_prompt` | `query` | `string` | Negative prompt for `stability-ai/stable-audio-3` |
+| `instrumental` | `query` | `"true"` \| `"false"` | If true, guarantees instrumental output (`elevenlabs/music-v2` and `elevenlabs/music-v2.5` only) · default: `"false"` |
+| `instructions` | `query` | `string` | Emotion/style instruction (`qwen/qwen3-tts-instruct-flash` only) |
+| `loop` | `query` | `"true"` \| `"false"` | Loop the generated sound effect (`elevenlabs/eleven-text-to-sound-v2` only) |
+| `prompt_influence` | `query` | `string` | How strictly to follow the prompt, 0-1 (`elevenlabs/eleven-text-to-sound-v2` only) |
 | `seed` | `query` | `integer` | Seed passed to the model. Same seed + parameters return the same cached result while available. · range: `-1…4294967295` |
 | `key` | `query` | `string` | API key (alternative to Authorization header) |
-| `safe` | `query` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
+| `safe` | `query` | `any` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
 
 <sub>`*` = required parameter</sub>
 
@@ -904,12 +1098,12 @@ OpenAI-compatible Realtime WebSocket for voice, multimodal, and transcription se
 
 | Endpoint | Description |
 |----------|-------------|
-| `GET /realtime` | Pollinations Realtime session (`model=gpt-realtime-2.1`) |
-| `GET /v1/realtime` | WebSocket Realtime session (`model=gpt-realtime-2.1`) |
+| `GET /realtime` | Pollinations Realtime session (`model=openai/gpt-realtime-2.1`) |
+| `GET /v1/realtime` | WebSocket Realtime session (`model=openai/gpt-realtime-2.1`) |
 
 Requires an API key with positive balance. Server clients can use `Authorization: Bearer <key>`; browser WebSocket clients can use `?key=pk_...`.
 
-The WebSocket settles one billing event when the session closes. Selecting `scribe-realtime` creates a transcription session automatically; other realtime models create voice and multimodal sessions.
+The WebSocket settles one billing event when the session closes. Selecting `elevenlabs/scribe-v2-realtime` creates a transcription session automatically; other realtime models create voice and multimodal sessions.
 
 Events sent and received over both routes use the OpenAI Realtime protocol. See OpenAI's [Realtime WebSocket events guide](https://developers.openai.com/api/docs/guides/realtime-websocket#sending-and-receiving-events).
 
@@ -918,7 +1112,7 @@ import WebSocket from "ws";
 
 // Server: Bearer auth. Browser: append `&key=pk_...` instead (headers aren't settable).
 const ws = new WebSocket(
-    "wss://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2.1",
+    "wss://gen.pollinations.ai/v1/realtime?model=openai/gpt-realtime-2.1",
     { headers: { Authorization: `Bearer ${process.env.POLLINATIONS_API_KEY}` } },
 );
 
@@ -931,16 +1125,16 @@ ws.on("message", (m) => console.log(JSON.parse(m.toString())));
 
 **Browser audio:** play the model's audio through an `<audio>` element (e.g. a Web Audio `MediaStreamDestination` set as the element's `srcObject`), not straight to the Web Audio output. The browser only uses audio-element output as the echo-cancellation reference, so without it the mic re-captures the model's voice and it starts replying to itself. The WebRTC transport handles this automatically; on the WebSocket transport it's the client's responsibility.
 
-**Realtime models:** gpt-realtime-2.1, gpt-realtime-2.1-mini, gpt-realtime-2, scribe-realtime, gpt-live-transcribe
+**Realtime models:** openai/gpt-realtime-2.1, openai/gpt-realtime-2.1-mini, elevenlabs/scribe-v2-realtime, openai/gpt-live-transcribe
 
 #### `GET` `/realtime` — Realtime WebSocket
 
 OpenAI-compatible Realtime WebSocket for voice, multimodal, and transcription sessions.
 
-Connect with `wss://gen.pollinations.ai/realtime?model=gpt-realtime-2.1` and send/receive OpenAI Realtime JSON events over the socket. Selecting `scribe-realtime` creates a transcription session automatically.
+Connect with `wss://gen.pollinations.ai/realtime?model=openai/gpt-realtime-2.1` and send/receive OpenAI Realtime JSON events over the socket. Selecting `elevenlabs/scribe-v2-realtime` creates a transcription session automatically.
 Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients can use `?key=pk_...` because they cannot set custom authorization headers.
 
-**Models:** `gpt-realtime-2.1`, `gpt-realtime-2.1-mini`, `gpt-realtime-2`, `scribe-realtime`, `gpt-live-transcribe`.
+**Models:** `openai/gpt-realtime-2.1`, `openai/gpt-realtime-2.1-mini`, `elevenlabs/scribe-v2-realtime`, `openai/gpt-live-transcribe`.
 
 **Billing:** requires a positive balance and settles one session total when the socket closes.
 
@@ -948,7 +1142,7 @@ Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebS
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `model` | `query` | `"gpt-realtime-2.1"` \| `"gpt-realtime-2.1-mini"` \| `"gpt-realtime-2"` \| `"scribe-realtime"` \| `"gpt-live-transcribe"` | Realtime model to use. Supported models: gpt-realtime-2.1, gpt-realtime-2.1-mini, gpt-realtime-2, scribe-realtime, gpt-live-transcribe. · default: `"gpt-realtime-2.1"` |
+| `model` | `query` | enum (9) — `"openai/gpt-realtime-2.1"`, `"gpt-realtime-2.1"`, `"gpt-realtime-2"`, … | Realtime model to use. Supported models: openai/gpt-realtime-2.1, openai/gpt-realtime-2.1-mini, elevenlabs/scribe-v2-realtime, openai/gpt-live-transcribe. |
 | `key` | `query` | `string` | Pollinations API key. Useful for browser WebSocket clients that cannot set custom Authorization headers. |
 
 <sub>`*` = required parameter</sub>
@@ -956,7 +1150,7 @@ Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebS
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/realtime?model=gpt-realtime-2.1&key=:key" \
+curl "https://gen.pollinations.ai/realtime?model=openai%2Fgpt-realtime-2.1&key=:key" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -966,10 +1160,10 @@ curl "https://gen.pollinations.ai/realtime?model=gpt-realtime-2.1&key=:key" \
 
 OpenAI-compatible Realtime WebSocket for voice, multimodal, and transcription sessions.
 
-Connect with `wss://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2.1` and send/receive OpenAI Realtime JSON events over the socket. Selecting `scribe-realtime` creates a transcription session automatically.
+Connect with `wss://gen.pollinations.ai/v1/realtime?model=openai/gpt-realtime-2.1` and send/receive OpenAI Realtime JSON events over the socket. Selecting `elevenlabs/scribe-v2-realtime` creates a transcription session automatically.
 Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients can use `?key=pk_...` because they cannot set custom authorization headers.
 
-**Models:** `gpt-realtime-2.1`, `gpt-realtime-2.1-mini`, `gpt-realtime-2`, `scribe-realtime`, `gpt-live-transcribe`.
+**Models:** `openai/gpt-realtime-2.1`, `openai/gpt-realtime-2.1-mini`, `elevenlabs/scribe-v2-realtime`, `openai/gpt-live-transcribe`.
 
 **Billing:** requires a positive balance and settles one session total when the socket closes.
 
@@ -977,7 +1171,7 @@ Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebS
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `model` | `query` | `"gpt-realtime-2.1"` \| `"gpt-realtime-2.1-mini"` \| `"gpt-realtime-2"` \| `"scribe-realtime"` \| `"gpt-live-transcribe"` | Realtime model to use. Supported models: gpt-realtime-2.1, gpt-realtime-2.1-mini, gpt-realtime-2, scribe-realtime, gpt-live-transcribe. · default: `"gpt-realtime-2.1"` |
+| `model` | `query` | enum (9) — `"openai/gpt-realtime-2.1"`, `"gpt-realtime-2.1"`, `"gpt-realtime-2"`, … | Realtime model to use. Supported models: openai/gpt-realtime-2.1, openai/gpt-realtime-2.1-mini, elevenlabs/scribe-v2-realtime, openai/gpt-live-transcribe. |
 | `key` | `query` | `string` | Pollinations API key. Useful for browser WebSocket clients that cannot set custom Authorization headers. |
 
 <sub>`*` = required parameter</sub>
@@ -985,7 +1179,7 @@ Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebS
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2.1&key=:key" \
+curl "https://gen.pollinations.ai/v1/realtime?model=openai%2Fgpt-realtime-2.1&key=:key" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -998,15 +1192,23 @@ Generate vector embeddings with an OpenAI-compatible response format.
 | `POST /v1/embeddings` | OpenAI-compatible embeddings endpoint |
 | `GET /embeddings/models` | Embedding models with pricing and modalities |
 
-`gemini-2` supports text, image, audio, and video inputs. `cohere-embed-v4` supports text and one image per input. The OpenAI and Qwen embedding models are text-only.
+`google/gemini-embedding-2` supports text, image, audio, and video inputs. `cohere/embed-v4.0` supports text and one image per input. The OpenAI and Qwen embedding models are text-only.
 
-String batch input supports up to 32 items. For retrieval, use `task_type` with Gemini text input (it is converted to the recommended prompt instruction) or `input_type` (`query` or `document`) with Cohere. Dimensions are model-specific: Cohere supports 256, 512, 1024, or 1536; `openai-3-small` supports up to 1536; `gemini-2` and `openai-3-large` support up to 3072; `qwen3-embedding-8b` supports up to 4096.
+String batch input supports up to 32 items. For retrieval, use `task_type` with Gemini text input (it is converted to the recommended prompt instruction) or `input_type` (`query` or `document`) with Cohere. Dimensions are model-specific: Cohere supports 256, 512, 1024, or 1536; `openai/text-embedding-3-small` supports up to 1536; `google/gemini-embedding-2` and `openai/text-embedding-3-large` support up to 3072; `qwen/qwen3-embedding-8b` supports up to 4096.
 
 Gemini task instructions count toward prompt token usage. Cohere requests containing an image expose one combined usage count, so any accompanying text is billed at the image-input rate.
 
-**Gemini GA migration:** `gemini-2` now uses the GA embedding space. Do not mix preview-era and GA vectors; re-embed stored `gemini-2` data before comparing it with new results.
+**Gemini GA migration:** `google/gemini-embedding-2` now uses the GA embedding space. Do not mix preview-era and GA vectors; re-embed stored `google/gemini-embedding-2` data before comparing it with new results.
 
-**Embedding models:** gemini-2, openai-3-small, openai-3-large, cohere-embed-v4, qwen3-embedding-8b
+**Embedding models:** google/gemini-embedding-2, openai/text-embedding-3-small, openai/text-embedding-3-large, cohere/embed-v4.0, cohere/embed-v4.0:azure:sweden, qwen/qwen3-embedding-8b
+
+## Community embedding endpoints
+
+Owners can publish their own embedding backend as a community endpoint. A community embedding endpoint proxies `POST /v1/embeddings` to the owner's OpenAI-compatible upstream (`/embeddings` appended to the endpoint base URL) and is listed alongside the hosted models in `/embeddings/models` and `/v1/models`.
+
+- **Input:** text (`input` as a string or array of strings, up to the embedding batch limit), with optional dimensions and float or base64 output encoding.
+- **Billing:** community embedding models are token-only. `promptTextPrice` sets the price per input token, displayed as Pollen per 1M tokens, and billing uses the upstream `usage.prompt_tokens`. Usage is emitted through the standard `x-usage-*` headers.
+- **Response:** the upstream returns an OpenAI embeddings object with positive `usage.prompt_tokens` and matching `total_tokens`.
 
 #### `GET` `/embeddings/models` — List Embedding Models
 
@@ -1016,7 +1218,9 @@ Returns available embedding models with pricing, capabilities, and supported inp
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+| `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1025,8 +1229,19 @@ Returns available embedding models with pricing, capabilities, and supported inp
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/embeddings/models?community=0" \
+curl "https://gen.pollinations.ai/embeddings/models?source=official&community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+```json
+[
+  {
+    "category": "text",
+    "capabilities": [
+      "tool_calling"
+    ]
+  }
+]
 ```
 
 ---
@@ -1035,7 +1250,7 @@ curl "https://gen.pollinations.ai/embeddings/models?community=0" \
 
 Generate vector embeddings with an OpenAI-compatible response format.
 
-**Models:** `gemini-2` supports text, image, audio, and video. `cohere-embed-v4` supports text and one image. OpenAI and Qwen embedding models are text-only.
+**Models:** `google/gemini-embedding-2` supports text, image, audio, and video. `cohere/embed-v4.0` supports text and one image. OpenAI and Qwen embedding models are text-only.
 
 **Input:** Pass a string, an array of up to 32 strings, or supported multimodal content parts (`text`, `image_url`, `input_audio`, `video_url`) in the `input` field.
 
@@ -1043,7 +1258,7 @@ Generate vector embeddings with an OpenAI-compatible response format.
 
 **Billing:** Gemini task instructions count toward prompt token usage. Cohere image requests expose one combined usage count, so text accompanying an image is billed at the image-input rate.
 
-**Gemini migration:** `gemini-2` uses the GA embedding space. Do not mix preview-era and GA vectors; re-embed stored `gemini-2` data before comparing it with new results.
+**Gemini migration:** `google/gemini-embedding-2` uses the GA embedding space. Do not mix preview-era and GA vectors; re-embed stored `google/gemini-embedding-2` data before comparing it with new results.
 
 **Dimensions:** Defaults are model-specific. Qwen supports up to 4096; Gemini and OpenAI large up to 3072; OpenAI small up to 1536; Cohere supports 256, 512, 1024, or 1536.
 
@@ -1051,7 +1266,7 @@ Generate vector embeddings with an OpenAI-compatible response format.
 
 | Field | Type | Description |
 |---|---|---|
-| `model` | `string` | Embedding model to use · default: `"openai-3-small"` |
+| `model` | `string` | Embedding model to use · default: `"openai/text-embedding-3-small"` |
 | `input` * | `string` \| `string`[] \| `object` \| `object`[] | Input text or content parts to embed. Supports strings, arrays of strings (max 32 inputs), or multimodal content parts (text, image_url, input_audio, video_url). Gemini supports every listed modality; Cohere Embed v4 supports text and one image per input. |
 | `dimensions` | `integer` | Output embedding dimensions (128-4096). Model-specific limits apply; Cohere supports 256, 512, 1024, or 1536. · range: `128…4096` |
 | `task_type` | enum (8) — `"SEMANTIC_SIMILARITY"`, `"CLASSIFICATION"`, `"CLUSTERING"`, … | Gemini text-specific task hint, converted to the model's recommended prompt instruction |
@@ -1088,28 +1303,76 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 | `GET /embeddings/models` | Embedding models with supported modalities |
 | `GET /3d/models` | 3D Generation models with supported modalities |
 
-### Query Parameters
+### Filters
 
-All model discovery endpoints accept an optional `community` query parameter:
+All model list endpoints above accept the same optional `source` filter:
+`official` or `community`. Omit it for both. `community=true|false|1|0`
+remains available as a legacy source filter. The query overrides the
+connection-wide header; `source` overrides `community`. Invalid values return
+**400 Bad Request**. The filter combines with the caller's access restrictions;
+it does not change generation permissions.
 
-| Parameter | Values | Behaviour |
-|-----------|--------|-----------|
-| *(omitted)* | | Returns all models (default, backward-compatible) |
-| `community=false` | `false`, `0` | Excludes community models — returns official models only |
-| `community=true` | `true`, `1` | Returns community models only |
+```bash
+curl 'https://gen.pollinations.ai/v1/models?source=official'
+```
 
-Any other value (e.g. `tru`, `yes`, `2`) returns **400 Bad Request**.
+OpenAI-compatible clients that append `/models` to their base URL can use the
+equivalent header instead of the query parameter:
 
-Example: `GET /models?community=false`
+```text
+Pollinations-Model-Source: official
+```
+
+This header works with Open WebUI and Cline custom OpenAI connections.
+LibreChat administrators can set it in the custom endpoint's `headers` map.
+The client can use any returned model ID for generation without forwarding the
+catalog header.
+
+Model lists carry no health data. Recent request counts, error rates, latency
+and fallback breakdowns per model are served separately by
+`/models/status`, described in [Public Stats](/docs#tag/public-stats).
 
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.
 Modalities, video frame controls, voices, and context length remain separate
 structured fields.
 
+Use `supported_endpoints` to discover which public API routes accept each
+model. `/v1/responses` identifies built-in models with a configured native
+Responses route, community text models and endpoint agents whose owner supplied
+the Responses API and one exact URL, and managed prompt agents. These community
+models and agents also accept `/v1/chat/completions` through the shared adapter.
+Built-in models may use separate upstream routes for Chat and Responses.
+Supported media models also advertise both endpoints and return generated-file
+links as assistant text. Reference-required models return their normal missing-input
+error; use their native endpoint until attachments are supported here.
+
+### Chat parameters
+
+Official Chat models include `supported_parameters`: verified generation
+controls honored through `/v1/chat/completions` on the model's primary route.
+
+This field describes Pollinations' Chat behavior, not the native
+`/v1/responses` API. Unverified controls are omitted; inclusion does not mean
+every value or combination is supported. Provider fallback routes can have
+different controls. Community models omit this field.
+For example,
+`openai/gpt-5.4` omits sampling controls because its Chat transform removes
+them, while `openai/gpt-oss-20b` forwards `temperature` and `top_p`.
+On `anthropic/claude-sonnet-4.6`, those two controls are mutually exclusive
+(`temperature` wins), and both are disabled when `reasoning_effort` is enabled.
+Newer Claude and Gemini models may omit sampling controls entirely. On
+Sonnet 4.6, `response_format` supports `json_schema`, not `json_object`.
+Reasoning effort levels and forced-tool restrictions remain model-specific.
+
 ## Community Models
 
-Community models use an `owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `community=true` to return only community models or `community=false` to exclude them.
+Community models and agents use a canonical `community/owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `community=true` to return only community models or `community=false` to exclude them.
+
+The old `owner/model` IDs remain generation aliases in each model's `aliases` array. Key creation and updates accept only canonical model IDs. Existing stored permissions are migrated with the rename.
+
+The `source=community` and `source=official` filters are equivalent source filters
+for discovery. Source, access, and status filters combine with AND semantics.
 
 For registration, publishing, pricing, fallbacks, and health monitoring, see [Publish a Model](/docs#tag/publish-a-model). For ownership endpoints and schemas, see [Community Models](/docs#tag/community-models) under Resources.
 
@@ -1121,7 +1384,9 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+| `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1134,6 +1399,12 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `data[].id` * | `string` | — |
 | `data[].object` * | `"model"` | — |
 | `data[].created` * | `number` | — |
+| `data[].owned_by` * | `string` | — |
+| `data[].aliases` * | `string`[] | — |
+| `data[].category` * | enum (7) — `"text"`, `"image"`, `"audio"`, … | — |
+| `data[].community` * | `boolean` | — |
+| `data[].title` * | `string` | — |
+| `data[].description` | `string` | — |
 | `data[].input_modalities` | `string`[] | — |
 | `data[].output_modalities` | `string`[] | — |
 | `data[].supported_endpoints` | `string`[] | — |
@@ -1141,6 +1412,7 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `data[].base_model` | `string` | — |
 | `data[].pricing` | `object` | — |
 | `data[].capabilities` | `string`[] | — |
+| `data[].supported_parameters` | `string`[] | Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`. |
 | `data[].tools` | `boolean` | — |
 | `data[].reasoning` | `boolean` | — |
 | `data[].context_length` | `number` | — |
@@ -1151,7 +1423,7 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/v1/models?community=0" \
+curl "https://gen.pollinations.ai/v1/models?source=official&community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1160,25 +1432,86 @@ curl "https://gen.pollinations.ai/v1/models?community=0" \
   "object": "list",
   "data": [
     {
-      "id": "openai",
+      "id": "openai/gpt-5.4-nano",
       "object": "model",
       "created": 1700000000,
-      "owned_by": "pollinations"
+      "owned_by": "pollinations",
+      "aliases": [],
+      "category": "text",
+      "community": false,
+      "title": "OpenAI"
     },
     {
-      "id": "claude",
+      "id": "anthropic/claude-sonnet-4.6",
       "object": "model",
       "created": 1700000000,
-      "owned_by": "pollinations"
+      "owned_by": "pollinations",
+      "aliases": [],
+      "category": "text",
+      "community": false,
+      "title": "Claude"
     },
     {
-      "id": "gemini",
+      "id": "google/gemini-3.7-flash",
       "object": "model",
       "created": 1700000000,
-      "owned_by": "pollinations"
+      "owned_by": "pollinations",
+      "aliases": [],
+      "category": "text",
+      "community": false,
+      "title": "Gemini"
     }
   ]
 }
+```
+
+---
+
+#### `GET` `/v1/models/{model}` — Retrieve Model (OpenAI-compatible)
+
+Returns a single model by ID or alias in the OpenAI-compatible format, resolved to its canonical ID with stable created timestamps and Pollinations pricing and capability extensions. Visibility, API-key model permissions, and paid-only rules match the list endpoint. Returns 404 when the model does not exist or is not accessible to the caller.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `model` * | `path` | `string` | — |
+
+<sub>`*` = required parameter</sub>
+
+📤 **Response** · `200` · `application/json` — Success
+
+| Field | Type | Description |
+|---|---|---|
+| `id` * | `string` | — |
+| `object` * | `"model"` | — |
+| `created` * | `number` | — |
+| `owned_by` * | `string` | — |
+| `aliases` * | `string`[] | — |
+| `category` * | enum (7) — `"text"`, `"image"`, `"audio"`, … | — |
+| `community` * | `boolean` | — |
+| `title` * | `string` | — |
+| `description` | `string` | — |
+| `input_modalities` | `string`[] | — |
+| `output_modalities` | `string`[] | — |
+| `supported_endpoints` | `string`[] | — |
+| `agent` | `boolean` | — |
+| `base_model` | `string` | — |
+| `pricing` | `object` | — |
+| `capabilities` | `string`[] | — |
+| `supported_parameters` | `string`[] | Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`. |
+| `tools` | `boolean` | — |
+| `reasoning` | `boolean` | — |
+| `context_length` | `number` | — |
+| `per_user_rpm` | `number` \| `null` | — |
+
+<sub>`*` = required field</sub>
+
+💻 **Example**
+
+```bash
+curl "https://gen.pollinations.ai/v1/models/:model" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
 ---
@@ -1191,7 +1524,9 @@ Returns all available models with pricing, capabilities, and metadata. Official 
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+| `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1200,8 +1535,19 @@ Returns all available models with pricing, capabilities, and metadata. Official 
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/models?community=0" \
+curl "https://gen.pollinations.ai/models?source=official&community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+```json
+[
+  {
+    "category": "text",
+    "capabilities": [
+      "tool_calling"
+    ]
+  }
+]
 ```
 
 ---
@@ -1214,7 +1560,9 @@ Returns all available 3D model generation models with pricing, capabilities, and
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+| `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1223,21 +1571,34 @@ Returns all available 3D model generation models with pricing, capabilities, and
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/3d/models?community=0" \
+curl "https://gen.pollinations.ai/3d/models?source=official&community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+```json
+[
+  {
+    "category": "text",
+    "capabilities": [
+      "tool_calling"
+    ]
+  }
+]
 ```
 
 ---
 
 #### `GET` `/image/models` — List Image & Video Models
 
-Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `outputModalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
+Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `output_modalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.
 
 ⚙️ **Parameters**
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+| `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1246,8 +1607,19 @@ Returns all available image and video generation models with pricing, capabiliti
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/image/models?community=0" \
+curl "https://gen.pollinations.ai/image/models?source=official&community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+```json
+[
+  {
+    "category": "text",
+    "capabilities": [
+      "tool_calling"
+    ]
+  }
+]
 ```
 
 ---
@@ -1260,7 +1632,9 @@ Returns all available video generation models with pricing, capabilities, and me
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+| `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1269,8 +1643,19 @@ Returns all available video generation models with pricing, capabilities, and me
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/video/models?community=0" \
+curl "https://gen.pollinations.ai/video/models?source=official&community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+```json
+[
+  {
+    "category": "text",
+    "capabilities": [
+      "tool_calling"
+    ]
+  }
+]
 ```
 
 ---
@@ -1283,7 +1668,9 @@ Returns all available text generation and community text models with pricing, ca
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+| `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1292,8 +1679,19 @@ Returns all available text generation and community text models with pricing, ca
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/text/models?community=0" \
+curl "https://gen.pollinations.ai/text/models?source=official&community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+```json
+[
+  {
+    "category": "text",
+    "capabilities": [
+      "tool_calling"
+    ]
+  }
+]
 ```
 
 ---
@@ -1306,7 +1704,9 @@ Returns all available audio models (text-to-speech, music generation, and transc
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+| `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1315,8 +1715,19 @@ Returns all available audio models (text-to-speech, music generation, and transc
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/audio/models?community=0" \
+curl "https://gen.pollinations.ai/audio/models?source=official&community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+```json
+[
+  {
+    "category": "text",
+    "capabilities": [
+      "tool_calling"
+    ]
+  }
+]
 ```
 
 ### Community Models
@@ -1333,8 +1744,9 @@ List private and public community models owned by the authenticated account. API
 |---|---|---|
 | `data` * | `object`[] | — |
 | `provider` * | `object` | — |
-| `provider.name` * | `string` \| `null` | — |
+| `provider.name` * | `any` | — |
 | `provider.url` * | `string · uri` \| `null` | — |
+| `provider.iconUrl` * | `any` | — |
 
 <sub>`*` = required field</sub>
 
@@ -1349,39 +1761,9 @@ curl "https://gen.pollinations.ai/account/my-models" \
 
 #### `POST` `/account/my-models` — Create My Model
 
-Register a private or public community text, image, or transcription model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.
+Register a private or public community text, image, video, transcription, speech, or embedding model. Private is the default. Public models require an allowlisted account and become public after 3 hours. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.
 
 📥 **Request body** · `application/json`
-
-| Field | Type | Description |
-|---|---|---|
-| `name` * | `string` | length: `1…120` |
-| `title` * | `string` | Display name shown in the model catalog. · length: `1…42` |
-| `description` | `string` | max length: `160` |
-| `visibility` | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. · default: `"private"` |
-| `baseUrl` * | `string · uri` | OpenAI-compatible `/v1` base URL or full chat, image generation, or image edit URL. |
-| `bearerToken` * | `string` | — |
-| `upstreamModel` | `string` | length: `1…253` |
-| `modality` | `"text"` \| `"image"` \| `"transcription"` | Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits` when the endpoint test succeeds; "transcription" uses `/v1/audio/transcriptions`. · default: `"text"` |
-| `imagePricing` | `"request"` \| `"tokens"` | Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test. · default: `"request"` |
-| `inputModalities` | `"text"` \| `"image"` \| `"audio"`[] | Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately. |
-| `advertised` | `object` | Owner-declared catalog metadata for text models. |
-| `advertised.capabilities` | `"tool_calling"` \| `"reasoning"`[] | — |
-| `advertised.contextLength` | `integer` | max: `10000000` |
-| `perUserRpm` | `number` \| `null` | Maximum requests per minute for each Pollinations user. Decimals are supported; 0.5 means one request every two minutes. Null means no Pollinations-side limit. |
-| `paidOnly` | `boolean` | Restrict callers to spending Paid Pollen on this model. Use it when the upstream bills per use, so Quest Pollen cannot cover the price and leave you paying the inference cost. · default: `false` |
-| `fallbacks` | `string`[] | Community model ids ("<owner>/<name>") tried in order when this model's upstream fails, or an empty array to clear them. Each must be another listed community model of the same modality, public or owned by you, and priced at or below this model on every price field. |
-| `promptTextPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request". |
-| `promptCachedPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request". |
-| `promptCacheWritePrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request". |
-| `promptAudioPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request". |
-| `promptImagePrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request". |
-| `completionTextPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request". |
-| `completionReasoningPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request". |
-| `completionAudioPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request". |
-| `completionImagePrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request". |
-
-<sub>`*` = required field</sub>
 
 📤 **Response** · `200` · `application/json` — Created community model
 
@@ -1397,11 +1779,17 @@ curl -X POST "https://gen.pollinations.ai/account/my-models" \
 ```json
 {
   "visibility": "private",
-  "modality": "text",
+  "requiredSafetyFeatures": [
+    "privacy"
+  ],
+  "pending": {
+    "effectiveAt": "2026-01-01T00:00:00Z"
+  },
   "imagePricing": "request",
   "inputModalities": [
     "text"
-  ]
+  ],
+  "api": "chat_completions"
 }
 ```
 
@@ -1409,7 +1797,7 @@ curl -X POST "https://gen.pollinations.ai/account/my-models" \
 
 #### `POST` `/account/my-models/provider` — Update Community Provider Profile
 
-Set the public provider name and HTTPS service link shared by all community models owned by the authenticated account. Send both fields empty to clear the profile. Publishing approval and `account:keys` are required.
+Set the public provider name, HTTPS service link, and optional media.pollinations.ai icon URL shared by all community models owned by the authenticated account. Publishing approval and `account:keys` are required.
 
 📥 **Request body** · `application/json`
 
@@ -1417,6 +1805,7 @@ Set the public provider name and HTTPS service link shared by all community mode
 |---|---|---|
 | `name` * | `string` | max length: `42` |
 | `url` * | `string` | max length: `2048` |
+| `iconUrl` | `any` | — |
 
 <sub>`*` = required field</sub>
 
@@ -1424,8 +1813,9 @@ Set the public provider name and HTTPS service link shared by all community mode
 
 | Field | Type | Description |
 |---|---|---|
-| `name` * | `string` \| `null` | — |
+| `name` * | `any` | — |
 | `url` * | `string · uri` \| `null` | — |
+| `iconUrl` * | `any` | — |
 
 <sub>`*` = required field</sub>
 
@@ -1503,18 +1893,9 @@ curl -X POST "https://gen.pollinations.ai/account/my-models/models" \
 
 #### `POST` `/account/my-models/test` — Test My Model Endpoint
 
-Test an OpenAI-compatible upstream model before registering it. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint. Limited to one probe every 30 seconds per account. API keys require `account:keys`.
+Test an upstream model before registering it. Text tests call the selected Chat Completions or Responses URL in JSON and streaming modes; both must return valid token usage. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint; video tests call the exact configured URL and validate completed MP4 data; speech tests send a short sample and accept a valid binary audio response. Limited to one probe every 30 seconds per account. API keys require `account:keys`.
 
 📥 **Request body** · `application/json`
-
-| Field | Type | Description |
-|---|---|---|
-| `baseUrl` * | `string · uri` | — |
-| `bearerToken` * | `string` | — |
-| `model` * | `string` | length: `1…253` |
-| `modality` | `"text"` \| `"image"` \| `"transcription"` | Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits` when the endpoint test succeeds; "transcription" uses `/v1/audio/transcriptions`. · default: `"text"` |
-
-<sub>`*` = required field</sub>
 
 📤 **Response** · `200` · `application/json` — Endpoint test result
 
@@ -1525,7 +1906,8 @@ Test an OpenAI-compatible upstream model before registering it. Image tests dete
 | `usage` * | `object` | Raw provider usage, or `{ images: 1 }` when an image provider returns no token usage. |
 | `billableUsage` * | `object` | Normalized billable usage fields used to reveal applicable prices. |
 | `imagePricing` | `"request"` \| `"tokens"` | Image tests only: pricing mode detected from the provider response. |
-| `inputModalities` | `"text"` \| `"image"` \| `"audio"`[] | Image tests only: input types detected from generation and edit probes. |
+| `imageEditError` | `string` | Image tests only: edit-test failure details. Generation succeeded; this does not establish that editing is unsupported. |
+| `inputModalities` | `"text"` \| `"image"` \| `"audio"` \| `"video"`[] | Image tests only: input types detected from generation and edit probes. |
 
 <sub>`*` = required field</sub>
 
@@ -1542,7 +1924,7 @@ curl -X POST "https://gen.pollinations.ai/account/my-models/test" \
 
 #### `POST` `/account/my-models/{id}/update` — Update My Model
 
-Update a community model owned by the authenticated account. Changing visibility to public publishes it and requires an allowlisted account; public models may be free or priced. API keys require `account:keys`.
+Update a community model owned by the authenticated account. Code-agent names, titles, and descriptions come from GitHub; an empty description is ignored. Changing visibility to public requires an allowlisted account and takes effect after 3 hours; public models may be free or priced. API keys require `account:keys`.
 
 ⚙️ **Parameters**
 
@@ -1558,29 +1940,34 @@ Update a community model owned by the authenticated account. Changing visibility
 |---|---|---|
 | `name` | `string` | length: `1…120` |
 | `title` | `string` | Display name shown in the model catalog. · length: `1…42` |
-| `description` | `string` | max length: `160` |
+| `description` | `string` | max length: `1000` |
 | `visibility` | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. |
+| `requiredSafetyFeatures` | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. |
 | `hidden` | `boolean` | — |
-| `baseUrl` | `string · uri` | OpenAI-compatible `/v1` base URL or full chat, image generation, or image edit URL. |
+| `baseUrl` | `string · uri` | Media API base URL or full endpoint URL. For video, the exact generation URL. |
+| `api` | `"chat_completions"` \| `"responses"` | — |
+| `url` | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. |
 | `upstreamModel` | `string` | length: `1…253` |
 | `bearerToken` | `string` | — |
 | `perUserRpm` | `number` \| `null` | Maximum requests per minute for each Pollinations user. Decimals are supported; 0.5 means one request every two minutes. Null means no Pollinations-side limit. |
 | `paidOnly` | `boolean` | Restrict callers to spending Paid Pollen on this model. Use it when the upstream bills per use, so Quest Pollen cannot cover the price and leave you paying the inference cost. |
 | `imagePricing` | `"request"` \| `"tokens"` | Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test. |
-| `inputModalities` | `"text"` \| `"image"` \| `"audio"`[] | Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately. |
+| `inputModalities` | `"text"` \| `"image"` \| `"audio"` \| `"video"`[] | Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately. |
 | `advertised` | `object` | Owner-declared catalog metadata for text models. |
 | `advertised.capabilities` | `"tool_calling"` \| `"reasoning"`[] | — |
 | `advertised.contextLength` | `integer` | max: `10000000` |
 | `fallbacks` | `string`[] | Community model ids ("<owner>/<name>") tried in order when this model's upstream fails, or an empty array to clear them. Each must be another listed community model of the same modality, public or owned by you, and priced at or below this model on every price field. |
-| `promptTextPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request". |
-| `promptCachedPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request". |
-| `promptCacheWritePrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request". |
-| `promptAudioPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request". |
-| `promptImagePrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request". |
-| `completionTextPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request". |
-| `completionReasoningPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request". |
-| `completionAudioPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request". |
-| `completionImagePrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request". |
+| `promptTextPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionVideoPrice` is per generated second. |
+| `promptCachedPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionVideoPrice` is per generated second. |
+| `promptCacheWritePrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionVideoPrice` is per generated second. |
+| `promptAudioPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionVideoPrice` is per generated second. |
+| `promptImagePrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionVideoPrice` is per generated second. |
+| `completionTextPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionVideoPrice` is per generated second. |
+| `completionReasoningPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionVideoPrice` is per generated second. |
+| `completionAudioPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionVideoPrice` is per generated second. |
+| `completionImagePrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionVideoPrice` is per generated second. |
+| `completionVideoPrice` | `number` | Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionVideoPrice` is per generated second. |
+| `outputModalities` | enum (6) — `"text"`, `"image"`, `"audio"`, …[] | Output types produced by the agent. Defaults to text. |
 
 <sub>`*` = required field</sub>
 
@@ -1598,11 +1985,17 @@ curl -X POST "https://gen.pollinations.ai/account/my-models/key_abc123/update" \
 ```json
 {
   "visibility": "private",
-  "modality": "text",
+  "requiredSafetyFeatures": [
+    "privacy"
+  ],
+  "pending": {
+    "effectiveAt": "2026-01-01T00:00:00Z"
+  },
   "imagePricing": "request",
   "inputModalities": [
     "text"
-  ]
+  ],
+  "api": "chat_completions"
 }
 ```
 
@@ -1639,27 +2032,45 @@ curl -X DELETE "https://gen.pollinations.ai/account/my-models/key_abc123" \
 
 Create, inspect, update, and remove managed agents owned by the authenticated account.
 
+#### `POST` `/account/agents/{id}/sync` — Sync Code Agent
+
+Deploy the latest `agent.ts` revision and refresh the bundled runtime, even when the source commit is unchanged. The repository binding cannot be changed through this unauthenticated trigger, which is limited to once every 30 seconds.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `id` * | `path` | `string` | — |
+
+<sub>`*` = required parameter</sub>
+
+📤 **Response** · `200` · `application/json` — Agent synchronized
+
+| Field | Type | Description |
+|---|---|---|
+| `updated` * | `boolean` | — |
+| `deployedCommitSha` * | `string` | — |
+
+<sub>`*` = required field</sub>
+
+💻 **Example**
+
+```bash
+curl -X POST "https://gen.pollinations.ai/account/agents/key_abc123/sync" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+---
+
 #### `GET` `/account/agents` — List Agents
 
-List prompt agents owned by the authenticated account. API keys require `account:keys`.
+List managed agents owned by the authenticated account. API keys require `account:keys`.
 
 📤 **Response** · `200` · `application/json` — Owned agents
 
 | Field | Type | Description |
 |---|---|---|
 | `data` * | `object`[] | — |
-| `data[].id` * | `string` | — |
-| `data[].name` * | `string` | — |
-| `data[].title` * | `string` | — |
-| `data[].description` * | `string` \| `null` | — |
-| `data[].visibility` * | `"private"` \| `"public"` | — |
-| `data[].baseUrl` * | `string · uri` | — |
-| `data[].upstreamModel` * | `string` | — |
-| `data[].systemPrompt` * | `string` | — |
-| `data[].baseModel` * | `string` | — |
-| `data[].mcpServers` * | `"pollinations"`[] | — |
-| `data[].createdAt` * | `string` | — |
-| `data[].updatedAt` * | `string` | — |
 
 <sub>`*` = required field</sub>
 
@@ -1674,40 +2085,11 @@ curl "https://gen.pollinations.ai/account/agents" \
 
 #### `POST` `/account/agents` — Create Agent
 
-Create and list a prompt agent in one operation. API keys require `account:keys`.
+Create a prompt agent or deploy `agent.ts` from a public GitHub repository. Code-agent identity comes from the repository, and public visibility requires community publisher access. Code agents export a default function accepting `{ request, pollinations, mcp }` and return an OpenAI Responses-compatible Response. API keys require `account:keys`.
 
 📥 **Request body** · `application/json`
 
-| Field | Type | Description |
-|---|---|---|
-| `systemPrompt` * | `string` | length: `1…8000` |
-| `baseModel` * | `string` | length: `1…253` |
-| `mcpServers` | `"pollinations"`[] | default: `[]` |
-| `name` * | `string` | length: `1…120` |
-| `title` * | `string` | length: `1…42` |
-| `description` | `string` | default: `""` · max length: `160` |
-| `visibility` | `"private"` \| `"public"` | default: `"private"` |
-
-<sub>`*` = required field</sub>
-
 📤 **Response** · `200` · `application/json` — Created agent
-
-| Field | Type | Description |
-|---|---|---|
-| `id` * | `string` | — |
-| `name` * | `string` | — |
-| `title` * | `string` | — |
-| `description` * | `string` \| `null` | — |
-| `visibility` * | `"private"` \| `"public"` | — |
-| `baseUrl` * | `string · uri` | — |
-| `upstreamModel` * | `string` | — |
-| `systemPrompt` * | `string` | — |
-| `baseModel` * | `string` | — |
-| `mcpServers` * | `"pollinations"`[] | — |
-| `createdAt` * | `string` | — |
-| `updatedAt` * | `string` | — |
-
-<sub>`*` = required field</sub>
 
 💻 **Example**
 
@@ -1716,6 +2098,18 @@ curl -X POST "https://gen.pollinations.ai/account/agents" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -H "Content-Type: application/json" \
   -d '{"name":"my-agent","title":"My Agent","systemPrompt":"You are a helpful assistant.","baseModel":"openai","mcpServers":["pollinations"]}'
+```
+
+```json
+{
+  "visibility": "private",
+  "requiredSafetyFeatures": [
+    "privacy"
+  ],
+  "mcpServers": [
+    "pollinations"
+  ]
+}
 ```
 
 ---
@@ -1734,23 +2128,6 @@ Get an agent owned by the authenticated account. API keys require `account:keys`
 
 📤 **Response** · `200` · `application/json` — Owned agent
 
-| Field | Type | Description |
-|---|---|---|
-| `id` * | `string` | — |
-| `name` * | `string` | — |
-| `title` * | `string` | — |
-| `description` * | `string` \| `null` | — |
-| `visibility` * | `"private"` \| `"public"` | — |
-| `baseUrl` * | `string · uri` | — |
-| `upstreamModel` * | `string` | — |
-| `systemPrompt` * | `string` | — |
-| `baseModel` * | `string` | — |
-| `mcpServers` * | `"pollinations"`[] | — |
-| `createdAt` * | `string` | — |
-| `updatedAt` * | `string` | — |
-
-<sub>`*` = required field</sub>
-
 💻 **Example**
 
 ```bash
@@ -1758,11 +2135,23 @@ curl "https://gen.pollinations.ai/account/agents/key_abc123" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
+```json
+{
+  "visibility": "private",
+  "requiredSafetyFeatures": [
+    "privacy"
+  ],
+  "mcpServers": [
+    "pollinations"
+  ]
+}
+```
+
 ---
 
 #### `PATCH` `/account/agents/{id}` — Update Agent
 
-Replace an agent configuration and listing in one operation. API keys require `account:keys`.
+Update a prompt agent's configuration or a code agent's visibility and safety policy. Send only the fields to change; the rest keep their current values. A code agent's identity and repository are fixed after creation. API keys require `account:keys`.
 
 ⚙️ **Parameters**
 
@@ -1776,34 +2165,18 @@ Replace an agent configuration and listing in one operation. API keys require `a
 
 | Field | Type | Description |
 |---|---|---|
-| `systemPrompt` * | `string` | length: `1…8000` |
-| `baseModel` * | `string` | length: `1…253` |
-| `mcpServers` | `"pollinations"`[] | default: `[]` |
 | `name` | `string` | length: `1…120` |
 | `title` | `string` | length: `1…42` |
-| `description` | `string` | max length: `160` |
+| `description` | `string` | max length: `1000` |
 | `visibility` | `"private"` \| `"public"` | — |
+| `requiredSafetyFeatures` | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. |
+| `systemPrompt` | `any` | — |
+| `baseModel` | `any` | — |
+| `mcpServers` | `any` | — |
 
 <sub>`*` = required field</sub>
 
 📤 **Response** · `200` · `application/json` — Updated agent
-
-| Field | Type | Description |
-|---|---|---|
-| `id` * | `string` | — |
-| `name` * | `string` | — |
-| `title` * | `string` | — |
-| `description` * | `string` \| `null` | — |
-| `visibility` * | `"private"` \| `"public"` | — |
-| `baseUrl` * | `string · uri` | — |
-| `upstreamModel` * | `string` | — |
-| `systemPrompt` * | `string` | — |
-| `baseModel` * | `string` | — |
-| `mcpServers` * | `"pollinations"`[] | — |
-| `createdAt` * | `string` | — |
-| `updatedAt` * | `string` | — |
-
-<sub>`*` = required field</sub>
 
 💻 **Example**
 
@@ -1812,6 +2185,18 @@ curl -X PATCH "https://gen.pollinations.ai/account/agents/key_abc123" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -H "Content-Type: application/json" \
   -d '{"systemPrompt":"You are a concise assistant.","baseModel":"openai","mcpServers":["pollinations"]}'
+```
+
+```json
+{
+  "visibility": "private",
+  "requiredSafetyFeatures": [
+    "privacy"
+  ],
+  "mcpServers": [
+    "pollinations"
+  ]
+}
 ```
 
 ---
@@ -1843,11 +2228,86 @@ curl -X DELETE "https://gen.pollinations.ai/account/agents/key_abc123" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
+---
+
+#### `POST` `/account/my-models/endpoint-agents` — Create Endpoint Agent
+
+Register an agent running on an external OpenAI-compatible endpoint. Pollinations sends a short-lived agent run token instead of a stored bearer credential. Private is the default; public agents require an allowlisted account and become public after 3 hours. API keys require `account:keys`.
+
+📥 **Request body** · `application/json`
+
+| Field | Type | Description |
+|---|---|---|
+| `inputModalities` | `"text"` \| `"image"` \| `"audio"` \| `"video"`[] | Input types accepted by the agent. Defaults to text. |
+| `outputModalities` | enum (6) — `"text"`, `"image"`, `"audio"`, …[] | Output types produced by the agent. Defaults to text. |
+| `name` * | `string` | length: `1…120` |
+| `title` * | `string` | Display name shown in the model catalog. · length: `1…42` |
+| `description` | `string` | max length: `1000` |
+| `visibility` | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. · default: `"private"` |
+| `api` * | `"chat_completions"` \| `"responses"` | — |
+| `url` * | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. |
+| `upstreamModel` | `string` | length: `1…253` |
+| `requiredSafetyFeatures` | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. · default: `[]` |
+| `perUserRpm` | `number` \| `null` | Maximum requests per minute for each Pollinations user. Decimals are supported; 0.5 means one request every two minutes. Null means no Pollinations-side limit. · default: `null` |
+
+<sub>`*` = required field</sub>
+
+📤 **Response** · `200` · `application/json` — Created endpoint agent
+
+| Field | Type | Description |
+|---|---|---|
+| `id` * | `string` | — |
+| `modelId` * | `string` | — |
+| `name` * | `string` | — |
+| `title` * | `string` | — |
+| `description` * | `any` | — |
+| `visibility` * | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. |
+| `requiredSafetyFeatures` * | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. |
+| `pending` * | `object` \| `null` | — |
+| `hidden` * | `boolean` | — |
+| `hiddenReason` * | `any` | — |
+| `hiddenAt` * | `any` | — |
+| `createdAt` * | `string` | — |
+| `updatedAt` * | `string` | — |
+| `inputModalities` | `"text"` \| `"image"` \| `"audio"` \| `"video"`[] | Input types accepted by the agent. Defaults to text. |
+| `outputModalities` | enum (6) — `"text"`, `"image"`, `"audio"`, …[] | Output types produced by the agent. Defaults to text. |
+| `type` * | `"endpoint_agent"` | — |
+| `api` * | `"chat_completions"` \| `"responses"` | — |
+| `url` * | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. |
+| `upstreamModel` * | `string` | — |
+| `perUserRpm` * | `number` \| `null` | Maximum requests per minute for each Pollinations user. Decimals are supported; 0.5 means one request every two minutes. Null means no Pollinations-side limit. |
+
+<sub>`*` = required field</sub>
+
+💻 **Example**
+
+```bash
+curl -X POST "https://gen.pollinations.ai/account/my-models/endpoint-agents" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"my-agent","title":"My Agent","baseUrl":"https://agent.example.com/v1"}'
+```
+
+```json
+{
+  "visibility": "private",
+  "requiredSafetyFeatures": [
+    "privacy"
+  ],
+  "pending": {
+    "effectiveAt": "2026-01-01T00:00:00Z"
+  },
+  "api": "chat_completions"
+}
+```
+
 ### Media Storage
 
-Upload images, audio, and video and get back a unique id and URL. Each upload gets its own id (re-uploading the same bytes yields a new one).
+Upload images, audio, and video and get back an id and URL. By default, each upload gets a new random id.
 
 Base URL: https://media.pollinations.ai
+
+Stored image, video, audio, and 3D files are linked through `Link: <https://media.pollinations.ai/{id}>; rel="enclosure"`. Image generation and editing preserve this header in both URL and base64 JSON responses; `response_format: "url"` also returns the URL in `data[].url`. Audio JSON responses, such as transcripts and timestamped speech, do not have a stored-file link. Fetching media URLs never triggers generation; missing files return 404. A generated file's ID identifies its request, so a new generation after expiry may replace the file at the same URL. Clients may continue using an older cached result after regeneration.
 
 | Endpoint | Description |
 |----------|-------------|
@@ -1876,18 +2336,23 @@ curl -X POST "https://media.pollinations.ai/upload" \
   -d '{"data": "<base64-or-data-uri>", "contentType": "image/png", "name": "image.png"}'
 ```
 
-**Tags publish (alpha).** An optional `tags` field (comma-separated string, or a JSON array in the JSON format) publishes the upload into each tag's public gallery, where anyone can list it via `GET /media?tag={tag}`. Untagged uploads stay unlisted — reachable only by their unguessable id URL. Full endpoint reference: https://media.pollinations.ai/openapi.json
+**Custom IDs.** Add `id` to either format (for example, `-F id=cover.png` or `"id": "cover.png"`). IDs are case-sensitive, start with a letter or digit, and contain up to 128 letters, digits, dots, underscores, or hyphens. A user-owned API key is required. The returned id includes an opaque account prefix; use the returned URL for retrieval. The same ID works independently for different accounts. Existing files or gallery entries return `409` without replacement, including on retries.
+
+Untagged files cannot be deleted. They expire after 30 days, but reads refresh retention once a file is at least 15 days old. An ID can be reused only once its file and any gallery entry are gone. A failed upload can still leave its ID occupied, so a retry may return `409`. Custom-ID files are served with `Cache-Control: no-store`.
+
+**Tags publish (alpha).** An optional `tags` field (comma-separated string, or a JSON array in the JSON format) publishes the upload into each tag's public gallery, where anyone can list it via `GET /media?tag={tag}`. Untagged uploads stay unlisted; all retrieval URLs are public, not access-controlled. Knowing one custom URL makes other predictable names in that account guessable. Full endpoint reference: https://media.pollinations.ai/openapi.json
 
 #### `POST` `/upload` — Upload media
 
-Upload an image, audio, or video file via multipart/form-data (field `file`) or application/json (base64 `data`). Returns a unique id and its retrieval URL; each upload gets its own id (re-uploading the same bytes yields a new one). Files are retained for 30 days.
+Upload an image, audio, or video file via multipart/form-data (field `file`) or application/json (base64 `data`). Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.
 
-**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted: reachable only by their unguessable id URL, never listed anywhere. **Alpha:** the publish tagging is new and may still change.
+**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.
 
 📥 **Request body** · `application/json`
 
 | Field | Type | Description |
 |---|---|---|
+| `id` | `string` | Optional case-sensitive ID, scoped to your account. The returned id includes an opaque account prefix. Existing IDs return 409; omit for a random ID. |
 | `data` * | `string` | Base64-encoded file bytes (with or without a data: prefix). |
 | `contentType` | `string` | MIME type; defaults to application/octet-stream. |
 | `name` | `string` | Filename; used for the download Content-Disposition. |
@@ -1989,7 +2454,7 @@ curl -X DELETE "https://media.pollinations.ai/media/550e8400-e29b-41d4-a716-4466
 
 #### `GET` `/{id}` — Retrieve media
 
-Get a file by its id. Access keeps files from expiring.
+Get a file by its id. Retrieving the body refreshes its 30-day retention once the file is at least 15 days old. HEAD requests do not refresh retention.
 
 ⚙️ **Parameters**
 
@@ -2009,9 +2474,9 @@ curl "https://media.pollinations.ai/550e8400-e29b-41d4-a716-446655440000"
 
 ---
 
-#### `HEAD` `/{id}` — Check if media exists
+#### `HEAD` `/{id}` — Retrieve media
 
-Check existence and metadata without downloading the file.
+Get a file by its id. Retrieving the body refreshes its 30-day retention once the file is at least 15 days old. HEAD requests do not refresh retention.
 
 ⚙️ **Parameters**
 
@@ -2021,7 +2486,7 @@ Check existence and metadata without downloading the file.
 
 <sub>`*` = required parameter</sub>
 
-📤 **Response** · `200` — File exists (headers include Content-Type, Content-Length, X-Content-Id)
+📤 **Response** · `200` — File content with appropriate Content-Type
 
 💻 **Example**
 
@@ -2062,7 +2527,7 @@ curl "https://media.pollinations.ai/550e8400-e29b-41d4-a716-446655440000/metadat
 
 ### Account
 
-Self-service endpoints for the authenticated user. All endpoints require authentication (API key or session). API keys need the relevant `account:<scope>` permission. Base path: `/account`.
+Self-service endpoints for the authenticated user. Endpoints require authentication (API key or session) unless their schema says otherwise. API keys need the relevant `account:<scope>` permission. Base path: `/account`.
 
 `account:usage` is the read-only account-state scope for balances, usage, quests, and earnings. `account:keys` manages keys and, where enabled, my-models. These permissions are independent; request both when a client needs both. Newly created child keys cannot receive `account:keys` through this API.
 
@@ -2074,7 +2539,7 @@ Self-service endpoints for the authenticated user. All endpoints require authent
 | `GET /account/usage` | Per-request usage history with costs (account-wide) |
 | `GET /account/usage/daily` | Daily aggregated usage for dashboards |
 | `GET /account/key/usage` | Usage history for the calling API key only |
-| `/account/agents` | Managed prompt-agent configuration |
+| `/account/agents` | Managed agent configuration |
 | `/account/my-models` | Private community model registration and allowlisted public publishing |
 | `GET /account/key` | API key validity, type, and permissions |
 
@@ -2113,15 +2578,26 @@ Returns the current API key's validity, type, and permissions.
 
 ### /account/agents
 
-Create and manage prompt agents and their callable `owner/name` model listings in one operation. `POST /account/agents` requires `name`, `title`, `systemPrompt`, and `baseModel`; `description`, `visibility`, and `mcpServers` are optional. `PATCH /account/agents/{id}` replaces the runtime configuration and can update listing fields. Managed agents are text-only and free, with no owner-set prices, fallbacks, or per-user request limit. Calls still consume Pollen for the base model and tool generations. API keys require `account:keys`.
+Create and manage managed agents and their callable `community/owner/name` model listings. Private agents are available to any account with linked GitHub; public listing requires community publisher access. Managed agents are text-only and free at the outer layer; their model and tool calls consume the caller's Pollen.
 
-See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for dashboard, CLI, and API examples.
+- **Prompt agent**: instructions, a base model, and optional MCP servers.
+- **Code agent**: a public GitHub repository with `agent.ts` at its root. Pollinations deploys the current default-branch revision; the repository name becomes the model ID and title. The bundled Vercel AI SDK (`ai`, `@ai-sdk/openai-compatible`) is importable; other dependencies are not installed. The callback receives `model(id)`, `mcp.tools(server)`, `respond(config)`, `pollinations(path, init)`, `mcp.listTools(server)`, and `mcp(server, tool, arguments)`.
+
+`POST /account/agents/{id}/sync` redeploys a code agent's latest revision and bundled runtime. It needs no authentication, is limited to once every 30 seconds, and cannot change the stored repository. To deploy after every push, add a GitHub Action step (replace `AGENT_ID`):
+
+```yaml
+- run: curl --fail --retry 2 --retry-delay 30 -X POST https://gen.pollinations.ai/account/agents/AGENT_ID/sync
+```
+
+See [Publish an Agent](/docs#tag/publish-an-agent) for dashboard, CLI, and API examples, or [fork a code agent example](https://github.com/orgs/pollinations/repositories?q=topic%3Apollinations-code-agent-example) to get started.
 
 ### /account/my-models
 
-Community text, image, and speech-to-text model management. Any authenticated account can list, create, update, delete, and call its private owner-only models. Text providers expose `/v1/chat/completions`; image providers expose `/v1/images/generations` and may also expose `/v1/images/edits`; transcription providers expose `/v1/audio/transcriptions`. Image responses use `b64_json`. The endpoint test detects image-edit support and selects image pricing: valid OpenAI image token usage enables per-1M-token pricing, otherwise a fixed Pollen price is charged once per successful generated image.
+Community text, image, video, speech-to-text, and text-to-speech model management. Any authenticated account can list, create, update, delete, and call its private owner-only models. Text providers and endpoint agents declare one `api` (`chat_completions` or `responses`) and its exact `url`. Responses listings support both public text APIs through Gen; Chat Completions listings support Chat Completions only. Managed prompt agents use the local Responses runtime and require no endpoint URL. The text endpoint test checks JSON and streaming usage for the selected API; `/models` discovery is optional.
 
-Public publishing requires `communityEndpointsAllowed: true`; [request account-level publisher access](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml) with the allowlist form. Inspecting and testing an upstream endpoint is open to every account, limited to one probe every 30 seconds. The form does not register individual models. API keys require `account:keys`. The dashboard, Account API, and `polli my-models` support text, image, and transcription registration. See [Publish a Model](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_MODEL.md) for setup, publishing, pricing, fallbacks, and health monitoring.
+Other model families retain `baseUrl`. Image providers expose `/v1/images/generations` and may also expose `/v1/images/edits`; transcription providers expose `/v1/audio/transcriptions`; speech providers expose `/v1/audio/speech` and must return binary audio, which is billed by input character count. Video providers enter an exact endpoint URL that accepts `prompt`, optional `duration`, and optional `image` and `reference_*` URL arrays. Omitted duration uses the provider's default. Return completed MP4 media as `data[].b64_json` or `data[].url`, plus `usage.duration` in generated seconds. Billing uses reported duration, falling back to requested duration when usage is missing; at least one is required. The endpoint test detects image-edit support and selects image pricing: valid OpenAI image token usage enables per-1M-token pricing, otherwise a fixed Pollen price is charged once per successful generated image.
+
+Public publishing requires `communityEndpointsAllowed: true`; [request account-level publisher access](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml) with the allowlist form. Inspecting and testing an upstream endpoint is open to every account, limited to one probe every 30 seconds. The form does not register individual models. API keys require `account:keys`. The dashboard, Account API, and `polli my-models` support text, image, video, transcription, and speech registration. See [Publish a Model](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_MODEL.md) for setup, publishing, pricing, fallbacks, and health monitoring.
 
 #### `GET` `/account/profile` — Get Profile
 
@@ -2131,10 +2607,11 @@ Returns your account profile. GitHub username, profile image, and community mode
 
 | Field | Type | Description |
 |---|---|---|
-| `githubUsername` * | `string` \| `null` | GitHub username if linked |
-| `image` * | `string` \| `null` | Profile picture URL (e.g. GitHub avatar) |
+| `githubUsername` * | `any` | GitHub username if linked |
+| `image` * | `any` | Profile picture URL (e.g. GitHub avatar) |
 | `communityEndpointsAllowed` * | `boolean` | Whether the account is allowed to manage community endpoints. |
-| `name` | `string` \| `null` | User's display name (only returned when the key has `account:profile` or `account:keys`) |
+| `discordAvailable` * | `boolean` | Whether Discord account connections are available. |
+| `name` | `any` | User's display name (only returned when the key has `account:profile` or `account:keys`) |
 | `email` | `string · email` \| `null` | User's email address (only returned when the key has `account:profile` or `account:keys`) |
 
 <sub>`*` = required field</sub>
@@ -2175,7 +2652,7 @@ Returns the quest catalog with the authenticated account's read-only status. Glo
 | `quests[].status` * | `"open"` \| `"completed"` \| `"coming_soon"` | — |
 | `quests[].rewardAmount` * | `number` | — |
 | `quests[].balanceBucket` * | `"tier"` \| `"pack"` | — |
-| `quests[].url` * | `string` \| `null` | — |
+| `quests[].url` * | `any` | — |
 | `quests[].reward` * | `object` \| `null` | — |
 
 <sub>`*` = required field</sub>
@@ -2242,11 +2719,11 @@ Returns your request history with per-request details: model used, token counts,
 | `usage[].timestamp` * | `string` | Request timestamp (YYYY-MM-DD HH:mm:ss format) |
 | `usage[].cursor_event_id` * | `string` | Event id used with `before_event_id` for stable pagination |
 | `usage[].type` * | `string` | Request type (e.g., 'generate.image', 'generate.text') |
-| `usage[].model` * | `string` \| `null` | Model used for generation |
-| `usage[].api_key_id` * | `string` \| `null` | API key id used for generation |
-| `usage[].api_key` * | `string` \| `null` | API key display name |
-| `usage[].api_key_type` * | `string` \| `null` | Type of API key ('secret', 'publishable') |
-| `usage[].meter_source` * | `string` \| `null` | Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance |
+| `usage[].model` * | `any` | Model used for generation |
+| `usage[].api_key_id` * | `any` | API key id used for generation |
+| `usage[].api_key` * | `any` | API key display name |
+| `usage[].api_key_type` * | `any` | Type of API key ('secret', 'publishable') |
+| `usage[].meter_source` * | `any` | Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance |
 | `usage[].input_text_tokens` * | `number` | Number of input text tokens |
 | `usage[].input_cached_tokens` * | `number` | Number of cached input tokens |
 | `usage[].input_audio_tokens` * | `number` | Number of input audio tokens |
@@ -2259,7 +2736,7 @@ Returns your request history with per-request details: model used, token counts,
 | `usage[].output_image_tokens` * | `number` | Number of output image tokens (1 per image) |
 | `usage[].output_video_seconds` * | `number` | Duration of output video in seconds |
 | `usage[].cost_usd` * | `number` | Cost in USD for this request |
-| `usage[].response_time_ms` * | `number` \| `null` | Response time in milliseconds |
+| `usage[].response_time_ms` * | `any` | Response time in milliseconds |
 | `count` * | `number` | Number of records returned |
 
 <sub>`*` = required field</sub>
@@ -2296,9 +2773,9 @@ Returns aggregated usage for the requested time window, grouped by date, API key
 | `usage` * | `object`[] | Array of daily usage records |
 | `usage[].date` * | `string` | Date (YYYY-MM-DD format) |
 | `usage[].api_key_id` * | `string` | API key id used for these requests |
-| `usage[].api_key` * | `string` \| `null` | API key name used for these requests |
-| `usage[].model` * | `string` \| `null` | Model used |
-| `usage[].meter_source` * | `string` \| `null` | Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance |
+| `usage[].api_key` * | `any` | API key name used for these requests |
+| `usage[].model` * | `any` | Model used |
+| `usage[].meter_source` * | `any` | Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance |
 | `usage[].requests` * | `number` | Number of requests |
 | `usage[].cost_usd` * | `number` | Total cost in USD |
 | `count` * | `number` | Number of records returned |
@@ -2337,8 +2814,8 @@ Returns recent per-request earnings transactions, newest first. Requires `accoun
 | `transactions[].timestamp` * | `string` | Request timestamp (YYYY-MM-DD HH:mm:ss format) |
 | `transactions[].cursor_event_id` * | `string` | Stable event id |
 | `transactions[].entity_name` * | `string` | Earning entity display name |
-| `transactions[].model` * | `string` \| `null` | Model used for generation |
-| `transactions[].meter_source` * | `string` \| `null` | Billing source: 'tier' = tier balance, 'pack' = paid balance |
+| `transactions[].model` * | `any` | Model used for generation |
+| `transactions[].meter_source` * | `any` | Billing source: 'tier' = tier balance, 'pack' = paid balance |
 | `transactions[].pollen_earned` * | `number` | Developer credit earned |
 | `count` * | `number` | Number of records returned |
 
@@ -2454,7 +2931,7 @@ Create a new API key. To create an app key, use `type: "publishable"` with `redi
 | `type` | `"secret"` \| `"publishable"` | Key type: secret (sk_) or publishable app key (pk_). Use publishable to create an app key. · default: `"secret"` |
 | `expiresIn` | `integer` | Expiry in seconds from now (max 365 days) · max: `31536000` |
 | `allowedModels` | `string`[] \| `null` | Model IDs this key can access. null = all models |
-| `pollenBudget` | `number` \| `null` | Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited |
+| `pollenBudget` | `any` | Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited |
 | `accountPermissions` | `string`[] \| `null` | Account permissions (e.g. ["usage"]). "keys" is auto-stripped. |
 | `redirectUris` | `string`[] | Allowed OAuth redirect URIs for publishable app keys. Required for OAuth app flows. Must be https:// except http:// loopback URIs for local apps. Matching pins scheme, host, port, and path; one trailing slash is ignored. If the registered URI has no query, incoming query params are allowed; if it has a query, the query must match exactly. Loopback ports are matched port-agnostically. |
 | `earningsEnabled` | `boolean` | Enable developer earnings for publishable app keys. Defaults to false; send true to opt in. |
@@ -2469,7 +2946,7 @@ Create a new API key. To create an app key, use `type: "publishable"` with `redi
 curl -X POST "https://gen.pollinations.ai/account/keys" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"name":"my-app-backend","type":"secret","allowedModels":["openai","flux"],"pollenBudget":100}'
+  -d '{"name":"my-app-backend","type":"secret","allowedModels":["openai/gpt-5.4-nano","black-forest-labs/flux.1-schnell"],"pollenBudget":100}'
 ```
 
 ---
@@ -2505,17 +2982,18 @@ Returns information about the API key used in the request: validity, type (secre
 
 | Field | Type | Description |
 |---|---|---|
+| `id` * | `string` | Opaque ID for editing this key in the owner’s account |
 | `valid` * | `boolean` | Whether the API key is valid and active |
 | `type` * | `"publishable"` \| `"secret"` | Type of API key |
-| `name` * | `string` \| `null` | Display name of the API key |
-| `expiresAt` * | `string` \| `null` | Expiry timestamp in ISO 8601 format, null if never expires |
-| `expiresIn` * | `number` \| `null` | Seconds until expiry, null if never expires |
+| `name` * | `any` | Display name of the API key |
+| `expiresAt` * | `any` | Expiry timestamp in ISO 8601 format, null if never expires |
+| `expiresIn` * | `any` | Seconds until expiry, null if never expires |
 | `permissions` * | `object` | API key permissions |
 | `permissions.models` * | `string`[] \| `null` | List of allowed model IDs, null = all models allowed |
 | `permissions.account` * | `string`[] \| `null` | List of account permissions, null = no account access |
-| `pollenBudget` * | `number` \| `null` | Remaining pollen budget for this key, null = unlimited (uses user balance) |
+| `pollenBudget` * | `any` | Remaining pollen budget for this key, null = unlimited (uses user balance) |
 | `rateLimitEnabled` * | `boolean` | Whether rate limiting is enabled for this key |
-| `userId` * | `string` \| `null` | Stable id of the user that owns this key — server-attested. |
+| `userId` * | `any` | Stable id of the user that owns this key — server-attested. |
 | `byopApp` * | `object` \| `null` | BYOP app attribution for keys minted through the BYOP authorize flow. Server-attested; null for non-BYOP keys. |
 
 <sub>`*` = required field</sub>
@@ -2575,11 +3053,11 @@ Returns usage history for the API key used in the request. No scope required —
 | `usage[].timestamp` * | `string` | Request timestamp (YYYY-MM-DD HH:mm:ss format) |
 | `usage[].cursor_event_id` * | `string` | Event id used with `before_event_id` for stable pagination |
 | `usage[].type` * | `string` | Request type (e.g., 'generate.image', 'generate.text') |
-| `usage[].model` * | `string` \| `null` | Model used for generation |
-| `usage[].api_key_id` * | `string` \| `null` | API key id used for generation |
-| `usage[].api_key` * | `string` \| `null` | API key display name |
-| `usage[].api_key_type` * | `string` \| `null` | Type of API key ('secret', 'publishable') |
-| `usage[].meter_source` * | `string` \| `null` | Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance |
+| `usage[].model` * | `any` | Model used for generation |
+| `usage[].api_key_id` * | `any` | API key id used for generation |
+| `usage[].api_key` * | `any` | API key display name |
+| `usage[].api_key_type` * | `any` | Type of API key ('secret', 'publishable') |
+| `usage[].meter_source` * | `any` | Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance |
 | `usage[].input_text_tokens` * | `number` | Number of input text tokens |
 | `usage[].input_cached_tokens` * | `number` | Number of cached input tokens |
 | `usage[].input_audio_tokens` * | `number` | Number of input audio tokens |
@@ -2592,7 +3070,7 @@ Returns usage history for the API key used in the request. No scope required —
 | `usage[].output_image_tokens` * | `number` | Number of output image tokens (1 per image) |
 | `usage[].output_video_seconds` * | `number` | Duration of output video in seconds |
 | `usage[].cost_usd` * | `number` | Cost in USD for this request |
-| `usage[].response_time_ms` * | `number` \| `null` | Response time in milliseconds |
+| `usage[].response_time_ms` * | `any` | Response time in milliseconds |
 | `count` * | `number` | Number of records returned |
 
 <sub>`*` = required field</sub>
@@ -2601,6 +3079,106 @@ Returns usage history for the API key used in the request. No scope required —
 
 ```bash
 curl "https://gen.pollinations.ai/account/key/usage?format=json&limit=100" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+### 🔗 Account
+
+#### `GET` `/account/integrations` — List Connected Apps
+
+📤 **Response** · `200` · `application/json` — Connected app accounts
+
+| Field | Type | Description |
+|---|---|---|
+| `data` * | `object`[] | — |
+| `data[].id` * | `string` | — |
+| `data[].toolkit` * | `string` | — |
+| `data[].name` * | `any` | — |
+| `data[].logo` * | `any` | — |
+| `data[].alias` * | `any` | — |
+| `data[].status` * | `string` | — |
+
+<sub>`*` = required field</sub>
+
+💻 **Example**
+
+```bash
+curl "https://gen.pollinations.ai/account/integrations" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+---
+
+#### `POST` `/account/integrations` — Connect App
+
+📥 **Request body** · `application/json`
+
+| Field | Type | Description |
+|---|---|---|
+| `toolkit` * | `string` | length: `1…100` |
+
+<sub>`*` = required field</sub>
+
+📤 **Response** · `200` — Hosted authentication URL
+
+💻 **Example**
+
+```bash
+curl -X POST "https://gen.pollinations.ai/account/integrations" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"toolkit":"github"}'
+```
+
+---
+
+#### `GET` `/account/integrations/toolkits` — Search Connectable Apps
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `search` | `query` | `string` | max length: `100` |
+
+<sub>`*` = required parameter</sub>
+
+📤 **Response** · `200` · `application/json` — Connectable apps
+
+| Field | Type | Description |
+|---|---|---|
+| `data` * | `object`[] | — |
+| `data[].slug` * | `string` | — |
+| `data[].name` * | `string` | — |
+| `data[].description` * | `string` | — |
+| `data[].logo` * | `any` | — |
+
+<sub>`*` = required field</sub>
+
+💻 **Example**
+
+```bash
+curl "https://gen.pollinations.ai/account/integrations/toolkits?search=:search" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+---
+
+#### `DELETE` `/account/integrations/{id}` — Disconnect App
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `id` * | `path` | `string` | — |
+
+<sub>`*` = required parameter</sub>
+
+📤 **Response** · `204` — App disconnected
+
+💻 **Example**
+
+```bash
+curl -X DELETE "https://gen.pollinations.ai/account/integrations/key_abc123" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -2625,7 +3203,7 @@ Returns product quests and GitHub issue quest instances in one list.
 | `quests[].rewardAmount` * | `number` | — |
 | `quests[].balanceBucket` * | `"tier"` \| `"pack"` | — |
 | `quests[].goal` | `object` | — |
-| `quests[].url` * | `string` \| `null` | — |
+| `quests[].url` * | `any` | — |
 
 <sub>`*` = required field</sub>
 
@@ -2637,43 +3215,59 @@ curl "https://gen.pollinations.ai/quests/catalog"
 
 ### 📊 Monitor
 
-#### `GET` `/v1/models/status` — Model Health Status
+#### `GET` `/models/status` — Model Health Status
 
-Returns raw model health rows from the public Tinybird `model_health` pipe.
+Pollinations-specific diagnostics, not part of the OpenAI-compatible surface. Returns the raw response of the public Tinybird `model_route_health` pipe: a `data` array of rows plus a `meta` array typing each column.
 
-The optional `minutes` query parameter controls the rolling window and must be an integer between 1 and 10080.
-The X-Model-Status-Timestamp response header reports when the data was fetched from Tinybird; X-Model-Status-Stale is set when stale data is returned during an upstream failure.
+Each model has one rollup row (`is_rollup` 1) counting the final outcome of every request, plus one row per execution route (`is_rollup` 0): the model's own primary and every fallback it fell through to, counting every attempt so a primary rescued by fallbacks cannot read as healthy. Routes that never fired have no row.
 
-📤 **Response** · `200` · `application/json` — Success
+Cached for 60 seconds per window.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `minutes` | `query` | `integer` | Rolling window in minutes (default 60, maximum 10080). · default: `60` · range: `1…10080` |
+
+<sub>`*` = required parameter</sub>
+
+📤 **Response** · `200` — Raw Tinybird pipe response; upstream errors pass through with their status.
 
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/v1/models/status" \
+curl "https://gen.pollinations.ai/models/status?minutes=60" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
 ### 3D
 
 Generate 3D models from text prompts and images via a simple GET request.
-Returns glTF Binary in GLB format. Depending on the model, certain models
-ignore text inputs — any text prompt passed to the Trellis 2 family will be
-ignored; only the image URL is used.
+Returns glTF Binary in GLB format by default. Depending on the model, certain
+models ignore text inputs — any text prompt passed to the Trellis 2/Asset Harvester family will
+be ignored; only the image URL is used.
 
-https://gen.pollinations.ai/3d/no_prompt_for_trellis_needed?model=trellis-2&resolution=low&key=YOUR_KEY_HERE&image=IMAGE_URL_HERE
+https://gen.pollinations.ai/3d/no_prompt_for_trellis_needed?model=microsoft%2Ftrellis-2&resolution=low&key=YOUR_KEY_HERE&image=IMAGE_URL_HERE
 
-**Available models:** trellis-2, hyper3d-rodin
+**Available models:** microsoft/trellis-2, nvidia/asset-harvester, hyper3d/rodin-2.5
 
-> **Note:** `hyper3d-rodin` requires Paid Pollen. `trellis-2` (the default)
+> **Note:** `hyper3d/rodin-2.5` and `nvidia/asset-harvester` require Paid Pollen. `microsoft/trellis-2` (the default)
 > supports `low`, `medium`, and `high` resolution and works with Quest Pollen.
+
+### NVIDIA Asset Harvester
+
+`nvidia/asset-harvester` generates 3D Gaussian Splat
+models in PLY format. Unlike other 3D models that return GLB, Asset Harvester
+returns raw PLY binary suitable for real-time rendering in Gaussian Splat
+viewers (e.g. SuperSplat, Three.js with Gaussian PLY loader).
 
 #### `GET` `/3d/{prompt}` — Generate 3D Model
 
-Generate a 3D model from a text prompt or reference image(s). Returns GLB by default.
+Generate a 3D model from a text prompt or reference image(s). Returns GLB by default. `nvidia/asset-harvester` returns PLY.
 
-**Available models:** `trellis-2`, `hyper3d-rodin`. `trellis-2` is the default.
+**Available models:** `microsoft/trellis-2`, `microsoft/trellis-2:fal`, `nvidia/asset-harvester`, `hyper3d/rodin-2.5`. `microsoft/trellis-2` is the default.
 
-Pass reference image URL(s) via the `image` parameter for image-to-3D models (`trellis-2`). Separate multiple URLs with `|` or `,`. `hyper3d-rodin` accepts both images and a text prompt.
+Pass reference image URL(s) via the `image` parameter for image-to-3D models (`microsoft/trellis-2`, `nvidia/asset-harvester`). Separate multiple URLs with `|` or `,`. `hyper3d/rodin-2.5` accepts both images and a text prompt.
 
 Browse all available models and their input requirements at [`/3d/models`](https://gen.pollinations.ai/3d/models).
 
@@ -2682,11 +3276,11 @@ Browse all available models and their input requirements at [`/3d/models`](https
 | Param | In | Type | Description |
 |---|---|---|---|
 | `prompt` * | `path` | `string` | Text description of the 3D model to generate (required for text-to-3D models such as Hyper3D Rodin; ignored by image-only models such as Trellis 2) |
-| `model` * | `query` | enum (6) — `"trellis-2"`, `"hyper3d-rodin"`, `"trellis-2-low"`, … | Model to use. See /3d/models for the full list and per-model input requirements. · default: `"trellis-2"` |
-| `resolution` | `query` | `"low"` \| `"medium"` \| `"high"` | Output detail for `trellis-2`. Defaults to `low`. |
+| `model` | `query` | enum (10) — `"microsoft/trellis-2"`, `"microsoft/trellis-2:fal"`, `"nvidia/asset-harvester"`, … | Model to use. See /3d/models for the full list and per-model input requirements. · default: `"microsoft/trellis-2"` |
+| `resolution` | `query` | `"low"` \| `"medium"` \| `"high"` | Output detail for `microsoft/trellis-2`. Defaults to `low`. |
 | `image` | `query` | `string` | Reference image URL(s) for image-to-3D generation. Separate multiple URLs with `\|` or `,`. Required for image-only models (e.g. `trellis`, `triposr`, `sf3d`). |
-| `seed` | `query` | `integer` | Seed for varied generations. Passed through to models that support it (`hyper3d-rodin`); otherwise only affects the media-cache key, so a new seed forces a fresh generation for the same prompt/image. |
-| `safe` | `query` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
+| `seed` | `query` | `integer` | Seed for varied generations. Passed through to models that support it (`hyper3d/rodin-2.5`); otherwise only affects the media-cache key, so a new seed forces a fresh generation for the same prompt/image. |
+| `safe` | `query` | `any` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
 
 <sub>`*` = required parameter</sub>
 
@@ -2695,7 +3289,7 @@ Browse all available models and their input requirements at [`/3d/models`](https
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/3d/a%20low-poly%20treasure%20chest?model=trellis-2&resolution=low" \
+curl "https://gen.pollinations.ai/3d/a%20low-poly%20treasure%20chest?model=microsoft%2Ftrellis-2&resolution=low" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -2703,7 +3297,7 @@ curl "https://gen.pollinations.ai/3d/a%20low-poly%20treasure%20chest?model=trell
 
 #### `POST` `/3d/{prompt}` — Generate 3D Model With JSON
 
-Generate a 3D model from a text prompt or reference image using JSON parameters. `trellis-2` supports `low`, `medium`, and `high` resolution with variable pricing.
+Generate a 3D model from a text prompt or reference image using JSON parameters. `microsoft/trellis-2` supports `low`, `medium`, and `high` resolution with variable pricing. `nvidia/asset-harvester` returns PLY.
 
 ⚙️ **Parameters**
 
@@ -2711,7 +3305,7 @@ Generate a 3D model from a text prompt or reference image using JSON parameters.
 |---|---|---|---|
 | `prompt` * | `path` | `string` | Text description of the 3D model to generate (required for text-to-3D models; ignored by image-only models) |
 | `key` | `query` | `string` | API key (alternative to Authorization header) |
-| `safe` | `query` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
+| `safe` | `query` | `any` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
 
 <sub>`*` = required parameter</sub>
 
@@ -2719,9 +3313,9 @@ Generate a 3D model from a text prompt or reference image using JSON parameters.
 
 | Field | Type | Description |
 |---|---|---|
-| `model` | enum (6) — `"trellis-2"`, `"hyper3d-rodin"`, `"trellis-2-low"`, … | Model to use for 3D generation. See /3d/models for the full list and per-model input requirements. · default: `"trellis-2"` |
+| `model` | enum (10) — `"microsoft/trellis-2"`, `"microsoft/trellis-2:fal"`, `"nvidia/asset-harvester"`, … | Model to use for 3D generation. See /3d/models for the full list and per-model input requirements. · default: `"microsoft/trellis-2"` |
 | `image` | `string` \| `string`[] | Reference image URL or array of URLs for image-to-3D generation, optionally guided by the path prompt on supported models. A string is treated as one complete URL. |
-| `resolution` | `"low"` \| `"medium"` \| `"high"` | Output voxel-grid resolution for `trellis-2`: `low` (512³), `medium` (1024³), or `high` (1536³). Higher resolutions add detail, take longer, and cost more. · default: `"low"` |
+| `resolution` | `"low"` \| `"medium"` \| `"high"` | Output voxel-grid resolution for `microsoft/trellis-2`: `low` (512³), `medium` (1024³), or `high` (1536³). Higher resolutions add detail, take longer, and cost more. · default: `"low"` |
 | `seed` | `integer` | Seed for varied generations. Passed to models that support it. |
 
 <sub>`*` = required field</sub>
@@ -2841,7 +3435,7 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 
 | Field | Type | Description |
 |---|---|---|
-| `model` | `string` | Embedding model to use · default: `"openai-3-small"` |
+| `model` | `string` | Embedding model to use · default: `"openai/text-embedding-3-small"` |
 | `input` * | `string` \| `string`[] \| `object` \| `object`[] | Input text or content parts to embed. Supports strings, arrays of strings (max 32 inputs), or multimodal content parts (text, image_url, input_audio, video_url). Gemini supports every listed modality; Cohere Embed v4 supports text and one image per input. |
 | `dimensions` | `integer` | Output embedding dimensions (128-4096). Model-specific limits apply; Cohere supports 256, 512, 1024, or 1536. · range: `128…4096` |
 | `task_type` | enum (8) — `"SEMANTIC_SIMILARITY"`, `"CLASSIFICATION"`, `"CLUSTERING"`, … | Gemini text-specific task hint, converted to the model's recommended prompt instruction |
@@ -2871,15 +3465,18 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 | Field | Type | Description |
 |---|---|---|
 | `prompt` * | `string` | A text description of the desired image(s) · length: `1…32000` |
-| `model` | `string` | The model to use for image generation · default: `"flux"` |
+| `model` | `string` | The model to use for image generation · default: `"black-forest-labs/flux.1-schnell"` |
 | `n` | `integer` | Number of images to generate (currently max 1) · default: `1` · range: `1…1` |
 | `size` | `string` | Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512) · default: `"1024x1024"` |
 | `quality` | `"standard"` \| `"hd"` \| `"low"` \| `"medium"` \| `"high"` | Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents · default: `"medium"` |
-| `response_format` | `"url"` \| `"b64_json"` | Return format. "url" returns a pollinations.ai URL, "b64_json" returns base64-encoded image data · default: `"b64_json"` |
+| `response_format` | `"url"` \| `"b64_json"` | Return format. "url" returns a stored media.pollinations.ai URL, "b64_json" returns base64-encoded image data · default: `"b64_json"` |
 | `user` | `string` | End-user identifier for abuse tracking |
 | `image` | `string` \| `string`[] | Reference image URL(s) for image-to-image generation (Pollinations extension) |
-| `resolution` | enum (6) — `"1k"`, `"2k"`, `"480p"`, … | Output resolution for resolution-priced image and video models (Pollinations extension) |
-| `safe` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
+| `reference_images` | `any` | — |
+| `reference_videos` | `any` | — |
+| `reference_audios` | `any` | — |
+| `resolution` | enum (8) — `"1k"`, `"2k"`, `"360p"`, … | Output resolution for resolution-priced image and video models (Pollinations extension) |
+| `safe` | `any` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
 
 <sub>`*` = required field</sub>
 
@@ -2891,13 +3488,28 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 | `data` * | `object`[] | — |
 | `data[].url` | `string` | — |
 | `data[].b64_json` | `string` | — |
-| `data[].media_type` | `string` | MIME type for non-raster output such as image/svg+xml |
+| `data[].media_type` | `string` | MIME type, included for URL responses and non-raster output |
 | `data[].revised_prompt` | `string` | — |
 | `usage` * | `object` | — |
 | `usage.input_tokens` * | `integer` | — |
 | `usage.output_tokens` * | `integer` | — |
 | `usage.total_tokens` * | `integer` | — |
 | `usage.input_tokens_details` * | `object` | — |
+
+<sub>`*` = required field</sub>
+
+### `CreateResponseResponse`
+
+| Field | Type | Description |
+|---|---|---|
+| `id` * | `string` | — |
+| `object` * | `"response"` | — |
+| `created_at` | `integer` | — |
+| `model` * | `string` | — |
+| `status` * | enum (6) — `"completed"`, `"failed"`, `"in_progress"`, … | — |
+| `output` * | `object`[] | — |
+| `output[].type` * | `string` | — |
+| `usage` * | `object` \| `null` | — |
 
 <sub>`*` = required field</sub>
 
@@ -2908,7 +3520,42 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 | `name` * | `string` | — |
 | `upstreamStatus` | `integer` | — |
 | `upstreamHost` | `string` | — |
-| `upstreamBody` | `string` | — |
+| `upstreamBody` | `string` | Original provider response body, without redaction or truncation. |
+
+<sub>`*` = required field</sub>
+
+### `MediaChatCompletion`
+
+| Field | Type | Description |
+|---|---|---|
+| `id` * | `string` | — |
+| `choices` * | `object`[] | — |
+| `choices[].finish_reason` | `any` | — |
+| `choices[].index` | `integer` | — |
+| `choices[].message` | `object` | — |
+| `choices[].logprobs` | `object` \| `null` | — |
+| `choices[].content_filter_results` | [`ContentFilterResult`](#contentfilterresult) \| `null` | — |
+| `prompt_filter_results` | `object`[] \| `null` | — |
+| `created` * | `integer` | — |
+| `model` | `string` | — |
+| `system_fingerprint` | `any` | — |
+| `object` * | `"chat.completion"` | — |
+| `citations` | `string`[] | — |
+
+<sub>`*` = required field</sub>
+
+### `MediaResponse`
+
+| Field | Type | Description |
+|---|---|---|
+| `id` * | `string` | — |
+| `object` * | `"response"` | — |
+| `created_at` | `integer` | — |
+| `model` * | `string` | — |
+| `status` * | enum (6) — `"completed"`, `"failed"`, `"in_progress"`, … | — |
+| `output` * | `object`[] | — |
+| `output[].type` * | `string` | — |
+| `usage` * | `null` | — |
 
 <sub>`*` = required field</sub>
 
@@ -2916,12 +3563,31 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 
 **Union type.** One of:
 
-- `type: "text"` — fields: `text`, `cache_control`
-- `type: "image_url"` — fields: `image_url`
+- `type: "text"` — fields: `text`, `cache_control`, `prompt_cache_breakpoint`
+- `type: "image_url"` — fields: `image_url`, `prompt_cache_breakpoint`
 - `type: "video_url"` — fields: `video_url`
-- `type: "input_audio"` — fields: `input_audio`, `cache_control`
-- `type: "file"` — fields: `file`, `cache_control`
+- `type: "input_audio"` — fields: `input_audio`, `cache_control`, `prompt_cache_breakpoint`
+- `type: "file"` — fields: `file`, `cache_control`, `prompt_cache_breakpoint`
 - `object`
+
+### `PromptCacheBreakpoint`
+
+Marks the end of a static prompt prefix when prompt_cache_options.mode is explicit.
+
+| Field | Type | Description |
+|---|---|---|
+| `mode` * | `"explicit"` | — |
+
+<sub>`*` = required field</sub>
+
+### `PromptCacheOptions`
+
+| Field | Type | Description |
+|---|---|---|
+| `mode` | `"implicit"` \| `"explicit"` | — |
+| `ttl` | `"30m"` | — |
+
+<sub>`*` = required field</sub>
 
 ### `ValidationErrorDetails`
 

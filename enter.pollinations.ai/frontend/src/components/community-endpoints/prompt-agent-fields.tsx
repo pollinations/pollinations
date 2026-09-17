@@ -1,5 +1,13 @@
-import { Alert, Chip, FieldStack, Switch, Textarea } from "@pollinations/ui";
+import {
+    Alert,
+    Chip,
+    FieldStack,
+    InlineLink,
+    Switch,
+    Textarea,
+} from "@pollinations/ui";
 import { MCP_SERVERS } from "@shared/registry/mcp.ts";
+import { config } from "../../config.ts";
 import { BaseModelInput } from "./base-model-input.tsx";
 import type { AgentFormState } from "./types.ts";
 
@@ -68,7 +76,14 @@ export function PromptAgentFields({
                                     </Chip>
                                 </div>
                                 <p className="text-xs text-theme-text-muted">
-                                    {server.description}
+                                    {server.description}{" "}
+                                    {"accountPath" in server && (
+                                        <InlineLink
+                                            href={`${config.baseUrl}${server.accountPath}`}
+                                        >
+                                            Manage connectors
+                                        </InlineLink>
+                                    )}
                                 </p>
                             </div>
                             <Switch
@@ -92,7 +107,7 @@ export function PromptAgentFields({
                 <p className="text-xs text-theme-text-muted">
                     Uses the caller's Pollinations API access. See the{" "}
                     <a
-                        href="https://gen.pollinations.ai/docs#tag/mcp-server"
+                        href="https://gen.pollinations.ai/docs#tag/mcp-servers"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"

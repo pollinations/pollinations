@@ -2,9 +2,10 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
 import * as schema from "../db/better-auth.ts";
-import { canonicalizeModelPermissionIds } from "../registry/visible-model-ids.ts";
+import { validateModelPermissionIds } from "../registry/visible-model-ids.ts";
 import { getRedirectUris, parseMetadata } from "./api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "./authorize-config.ts";
+import { isUserBanned } from "./ban.ts";
 import {
     isAllowedRedirectUrl,
     redirectUriMatchesAllowlist,
@@ -162,6 +163,10 @@ async function validateClientRedirectBinding(
     if (!clientKey || clientKey.prefix !== "pk") {
         rejectInvalidClientId();
     }
+    const owner = await db.query.user.findFirst({
+        where: eq(schema.user.id, clientKey.referenceId),
+    });
+    if (!owner || isUserBanned(owner)) rejectInvalidClientId();
     const attribution = {
         clientId: clientKey.id,
     };
@@ -247,7 +252,10 @@ export async function createApiKeyForUser({
 
     const permissions: Record<string, string[]> = {};
     if (allowedModels) {
-        permissions.models = canonicalizeModelPermissionIds(allowedModels);
+        permissions.models = await validateModelPermissionIds(
+            dbBinding,
+            allowedModels,
+        );
     }
     if (safeAccountPerms && safeAccountPerms.length > 0) {
         permissions.account = safeAccountPerms;

@@ -2,19 +2,23 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
+import os
+import sys
 
 import pytest
 
-from floret import toolset
-from floret.routing import RoutingPreferences
-from floret.tools import media
+from floret import registry, routing, toolset
+from floret.routing import RoutingInput, RoutingPreferences, validate_routing
+from floret.tools import gen, media
 
 
 class _FakeResponse:
-    def __init__(self, json_data=None, content=b""):
+    def __init__(self, json_data=None, content=b"", headers=None):
         self._json = json_data or {}
         self.content = content
+        self.headers = headers or {}
 
     def raise_for_status(self):
         return None
@@ -49,6 +53,38 @@ async def test_upload_media_data_uri(monkeypatch):
     assert sent_mime == "image/jpeg"
 
 
+async def test_upload_rejects_oversized_data_uri_before_decode(monkeypatch):
+    monkeypatch.setattr(media, "MAX_UPLOAD_BYTES", 3)
+
+    with pytest.raises(ValueError, match="upload limit"):
+        await media._read_source("data:image/png;base64," + "A" * 9, None)
+
+
+async def test_upload_rejects_oversized_workspace_file(monkeypatch, tmp_path):
+    monkeypatch.setattr(media.settings, "temp_dir", str(tmp_path))
+    monkeypatch.setattr(media, "MAX_UPLOAD_BYTES", 3)
+    workdir = tmp_path / "workspace"
+    workdir.mkdir()
+    (workdir / "large.bin").write_bytes(b"1234")
+
+    with pytest.raises(ValueError, match="upload limit"):
+        await media._read_source("large.bin", None)
+
+
+async def test_upload_remote_source_passes_service_limit(monkeypatch):
+    seen = []
+
+    async def fake_fetch(url, attempts=3, max_bytes=None):
+        seen.append(max_bytes)
+        return b"ok"
+
+    monkeypatch.setattr(media, "_fetch_bytes", fake_fetch)
+
+    await media._read_source("https://example.test/file.png", None)
+
+    assert seen == [media.MAX_UPLOAD_BYTES]
+
+
 async def test_upload_media_workspace_file(monkeypatch, tmp_path):
     monkeypatch.setattr(media.settings, "temp_dir", str(tmp_path))
     workdir = tmp_path / "workspace"
@@ -62,6 +98,39 @@ async def test_upload_media_workspace_file(monkeypatch, tmp_path):
 
     assert url == "https://media.pollinations.ai/f1"
     assert fake.calls[0]["files"]["file"][1] == b"png bytes"
+
+
+@pytest.mark.parametrize(
+    ("payload", "extension"),
+    [
+        (b"<svg></svg>", ".svg"),
+        (b"\x89PNG\r\n\x1a\n", ".png"),
+        (b"\xff\xd8\xff", ".jpg"),
+    ],
+)
+def test_generated_media_filename_uses_actual_bytes(payload, extension):
+    assert media._name_for_bytes(payload).endswith(extension)
+
+
+async def test_cancelled_bash_terminates_and_reaps_child(monkeypatch, tmp_path):
+    from floret.tools import shell
+
+    if os.name != "posix":
+        pytest.skip("deployed process-group behavior is Linux-specific")
+    monkeypatch.setattr(shell.settings, "temp_dir", str(tmp_path))
+    marker = tmp_path / "workspace" / "child-finished"
+    command = (
+        f'{sys.executable} -c "import time, pathlib; time.sleep(2); '
+        f"pathlib.Path('{marker}').write_text('done')\""
+    )
+    task = asyncio.create_task(shell.bash(command))
+    await asyncio.sleep(0.1)
+    task.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    await asyncio.sleep(2.1)
+    assert not marker.exists()
 
 
 async def test_upload_media_rejects_path_escape(monkeypatch, tmp_path):
@@ -84,6 +153,75 @@ async def test_fetch_media_saves_into_workspace(monkeypatch, tmp_path):
     assert (tmp_path / "workspace" / "clip1.mp4").read_bytes() == b"video bytes"
 
 
+async def test_generate_audio_uses_standard_speech_endpoint(monkeypatch):
+    fake = _FakeClient(
+        _FakeResponse(content=b"audio", headers={"content-type": "audio/mpeg"})
+    )
+    monkeypatch.setattr(gen, "_http_client", lambda: fake)
+    monkeypatch.setattr(gen, "_key", lambda: "test-key")
+
+    result = await gen.generate_audio(
+        "ocean ambience", model="stable-audio-3-medium", duration=12, seed=7
+    )
+
+    call = fake.calls[0]
+    assert call["url"].endswith("/v1/audio/speech")
+    assert call["json"] == {
+        "model": "stable-audio-3-medium",
+        "input": "ocean ambience",
+        "response_format": "mp3",
+        "duration": 12,
+        "seed": 7,
+    }
+    assert base64.b64decode(result["b64"]) == b"audio"
+
+
+async def test_transcribe_uses_standard_multipart_endpoint(monkeypatch):
+    fake = _FakeClient(_FakeResponse({"text": "hello"}))
+    monkeypatch.setattr(gen, "_http_client", lambda: fake)
+    monkeypatch.setattr(gen, "_key", lambda: "test-key")
+
+    async def fake_fetch(url):
+        return b"speech"
+
+    monkeypatch.setattr(gen, "_fetch_bytes", fake_fetch)
+    result = await gen.transcribe("https://media.test/speech.mp3", model="whisper")
+
+    call = fake.calls[0]
+    assert call["url"].endswith("/v1/audio/transcriptions")
+    assert call["data"]["model"] == "whisper"
+    assert call["files"]["file"][1] == b"speech"
+    assert result == "hello"
+
+
+async def test_generate_text_delegates_without_requiring_tool_support(monkeypatch):
+    fake = _FakeClient(
+        _FakeResponse({"choices": [{"message": {"content": "worker result"}}]})
+    )
+    monkeypatch.setattr(gen, "_http_client", lambda: fake)
+    monkeypatch.setattr(gen, "_key", lambda: "test-key")
+
+    assert await gen.generate_text("task", model="perplexity") == "worker result"
+    assert fake.calls[0]["json"]["model"] == "perplexity"
+
+
+async def test_video_uses_registry_default_duration(monkeypatch):
+    from floret import registry
+
+    monkeypatch.setattr(
+        registry,
+        "_registry_cache",
+        {
+            "models": {"veo": {"params": {"default_duration": 4}}},
+            "by_modality": {},
+        },
+    )
+
+    url = await gen.generate_video("cat", model="veo")
+
+    assert "duration=4" in url
+
+
 async def test_toolset_dispatches_media_tools(monkeypatch):
     names = {t["function"]["name"] for t in toolset.TOOL_SCHEMAS}
     assert {"upload_media", "fetch_media"} <= names
@@ -104,6 +242,33 @@ async def test_toolset_dispatches_media_tools(monkeypatch):
         "fetch_media", {"url": "https://gen.pollinations.ai/video/x"}
     )
     assert "clip1.mp4" in down.brain
+
+
+async def test_generated_images_are_published_before_becoming_artifacts(monkeypatch):
+    generated = [
+        "https://gen.pollinations.ai/image/cat?model=flux&seed=1",
+        "https://gen.pollinations.ai/image/cat?model=flux&seed=2",
+    ]
+    uploads = []
+
+    async def fake_generate_image(**kwargs):
+        return generated
+
+    async def fake_upload(source, filename=None):
+        uploads.append((source, filename))
+        return f"https://media.pollinations.ai/image-{len(uploads)}.jpg"
+
+    monkeypatch.setattr(toolset.gen, "generate_image", fake_generate_image)
+    monkeypatch.setattr(toolset.media, "upload_media", fake_upload)
+
+    result = await toolset.dispatch("generate_image", {"prompt": "cat", "n": 2})
+
+    assert uploads == [(generated[0], None), (generated[1], None)]
+    assert result.artifacts == [
+        {"type": "image", "url": "https://media.pollinations.ai/image-1.jpg"},
+        {"type": "image", "url": "https://media.pollinations.ai/image-2.jpg"},
+    ]
+    assert "gen.pollinations.ai" not in result.brain
 
 
 async def test_uploaded_video_and_audio_become_artifacts(monkeypatch):
@@ -185,6 +350,11 @@ async def test_dispatch_routing_override_wins_without_mutating_args(
         return "https://x/media"
 
     monkeypatch.setattr(toolset.gen, tool_name, spy)
+
+    async def passthrough_upload(source, filename=None):
+        return source
+
+    monkeypatch.setattr(toolset.media, "upload_media", passthrough_upload)
     routing = RoutingPreferences(**{field: selected})
 
     await toolset.dispatch(tool_name, args, routing)
@@ -202,6 +372,11 @@ async def test_dispatch_without_override_preserves_brain_model(monkeypatch):
 
     monkeypatch.setattr(toolset.gen, "generate_image", spy)
 
+    async def passthrough_upload(source, filename=None):
+        return source
+
+    monkeypatch.setattr(toolset.media, "upload_media", passthrough_upload)
+
     await toolset.dispatch(
         "generate_image",
         {"prompt": "x", "model": "brain-image"},
@@ -209,6 +384,182 @@ async def test_dispatch_without_override_preserves_brain_model(monkeypatch):
     )
 
     assert calls[0]["model"] == "brain-image"
+
+
+@pytest.mark.parametrize("model", ["openai-audio", "openai/gpt-audio-mini"])
+async def test_dispatch_uses_catalog_chat_audio_endpoint(monkeypatch, model):
+    cache = registry._normalize(
+        {
+            "data": [
+                {
+                    "id": "openai/gpt-audio-mini",
+                    "aliases": ["openai-audio"],
+                    "category": "text",
+                    "input_modalities": ["text"],
+                    "output_modalities": ["audio", "text"],
+                    "supported_endpoints": ["/v1/chat/completions"],
+                }
+            ]
+        }
+    )
+    monkeypatch.setattr(registry, "_registry_cache", cache)
+    calls = []
+
+    async def chat_audio(**kwargs):
+        calls.append(("chat", kwargs))
+        return {
+            "data_uri": "data:audio/mp3;base64,eA==",
+            "b64": "eA==",
+            "format": "mp3",
+            "transcript": "x",
+        }
+
+    async def speech_audio(**kwargs):
+        calls.append(("speech", kwargs))
+        raise AssertionError("chat-audio model must not use the speech endpoint")
+
+    monkeypatch.setattr(toolset.gen, "text_to_speech", chat_audio)
+    monkeypatch.setattr(toolset.gen, "generate_audio", speech_audio)
+
+    await toolset.dispatch("text_to_speech", {"text": "x", "model": model})
+
+    assert calls == [("chat", {"text": "x", "model": model})]
+
+
+async def test_validated_canonical_chat_audio_dispatches_with_cold_registry(
+    monkeypatch,
+):
+    catalog = {
+        "openai/gpt-audio-mini": {
+            "aliases": ["openai-audio"],
+            "category": "text",
+            "input_modalities": ["text"],
+            "output_modalities": ["audio", "text"],
+            "supported_endpoints": ["/v1/chat/completions"],
+        }
+    }
+
+    async def fetch_model_catalog():
+        return catalog
+
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"choices": [{"message": {"audio": {"data": "eA=="}}}]}
+
+    class Client:
+        def __init__(self):
+            self.calls = []
+
+        async def post(self, url, **kwargs):
+            self.calls.append((url, kwargs))
+            return Response()
+
+    client = Client()
+    monkeypatch.setattr(routing, "fetch_model_catalog", fetch_model_catalog)
+    monkeypatch.setattr(registry, "_registry_cache", None)
+    monkeypatch.setattr(gen, "_http_client", lambda: client)
+    monkeypatch.setattr(gen, "_key", lambda: "test-key")
+    preferences = await validate_routing(RoutingInput(audio="openai/gpt-audio-mini"))
+
+    await toolset.dispatch("text_to_speech", {"text": "x"}, preferences)
+
+    assert client.calls[0][0].endswith("/v1/chat/completions")
+    assert client.calls[0][1]["json"]["model"] == "openai/gpt-audio-mini"
+
+
+@pytest.mark.parametrize(
+    ("validated_endpoint", "cached_endpoint"),
+    [
+        ("/v1/audio/speech", "/v1/chat/completions"),
+        ("/v1/chat/completions", "/v1/audio/speech"),
+    ],
+)
+async def test_validated_audio_transport_overrides_stale_cache(
+    monkeypatch, validated_endpoint, cached_endpoint
+):
+    import httpx
+
+    from floret.config import _api_key_override
+
+    monkeypatch.setattr(
+        registry,
+        "_registry_cache",
+        registry._normalize(
+            {"data": [{"id": "audio-model", "supported_endpoints": [cached_endpoint]}]}
+        ),
+    )
+    paths = []
+
+    def transport(request):
+        paths.append(request.url.path)
+        if request.url.path == "/v1/chat/completions":
+            return httpx.Response(
+                200,
+                json={"choices": [{"message": {"audio": {"data": "eA=="}}}]},
+            )
+        return httpx.Response(
+            200, content=b"audio", headers={"Content-Type": "audio/mpeg"}
+        )
+
+    token = _api_key_override.set("test-key")
+    try:
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(transport)
+        ) as client:
+            monkeypatch.setattr(gen, "_http_client", lambda: client)
+            result = await toolset.dispatch(
+                "text_to_speech",
+                {"text": "Hello"},
+                RoutingPreferences(
+                    audio="audio-model", audio_endpoint=validated_endpoint
+                ),
+            )
+    finally:
+        _api_key_override.reset(token)
+
+    assert not result.brain.startswith("ERROR")
+    assert paths == [validated_endpoint]
+
+
+async def test_dispatch_uses_catalog_speech_audio_endpoint(monkeypatch):
+    cache = registry._normalize(
+        {
+            "data": [
+                {
+                    "id": "elevenlabs",
+                    "category": "audio",
+                    "input_modalities": ["text"],
+                    "output_modalities": ["audio"],
+                    "supported_endpoints": ["/v1/audio/speech"],
+                }
+            ]
+        }
+    )
+    monkeypatch.setattr(registry, "_registry_cache", cache)
+    calls = []
+
+    async def chat_audio(**kwargs):
+        calls.append(("chat", kwargs))
+        raise AssertionError("speech model must not use chat completions")
+
+    async def speech_audio(**kwargs):
+        calls.append(("speech", kwargs))
+        return {
+            "data_uri": "data:audio/mp3;base64,eA==",
+            "b64": "eA==",
+            "format": "mp3",
+            "transcript": "x",
+        }
+
+    monkeypatch.setattr(toolset.gen, "text_to_speech", chat_audio)
+    monkeypatch.setattr(toolset.gen, "generate_audio", speech_audio)
+
+    await toolset.dispatch("text_to_speech", {"text": "x", "model": "elevenlabs"})
+
+    assert calls == [("speech", {"text": "x", "model": "elevenlabs"})]
 
 
 async def test_pinned_video_model_rejects_unsupported_end_frame(monkeypatch):

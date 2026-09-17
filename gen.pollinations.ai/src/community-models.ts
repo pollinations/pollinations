@@ -1,9 +1,13 @@
+import { isUserBanned } from "@shared/auth/ban.ts";
+import { communityResponsesUrl } from "@shared/community-endpoint-urls.ts";
 import {
     type CommunityEndpointRuntime,
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
+    effectiveCommunityEndpointVisibility,
     parseListingPayload,
+    resolveEffectiveProxyListing,
     usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -11,36 +15,10 @@ import {
     type ModelInfo,
     modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
-import type {
-    ModelDefinition,
-    ModelInputModality,
-} from "@shared/registry/registry.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { eq, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { AgentCatalogConfig } from "./agent-catalog.ts";
-
-const COMMUNITY_TEXT_ENDPOINTS = [
-    "/v1/chat/completions",
-    "/text",
-    "/text/{prompt}",
-];
-export function communityTextSupportedEndpoints(): string[] {
-    return COMMUNITY_TEXT_ENDPOINTS;
-}
-
-export function communityTranscriptionSupportedEndpoints(): string[] {
-    return ["/v1/audio/transcriptions"];
-}
-
-export function communityImageSupportedEndpoints(
-    inputModalities: readonly ModelInputModality[] = ["text"],
-): string[] {
-    return [
-        "/v1/images/generations",
-        ...(inputModalities.includes("image") ? ["/v1/images/edits"] : []),
-        "/image/{prompt}",
-    ];
-}
 
 export type CommunityModelRegistryEntry = {
     id: string;
@@ -51,31 +29,62 @@ export type CommunityModelRegistryEntry = {
     agentConfig?: AgentCatalogConfig;
 };
 
-export type CommunityModelEnv = Pick<
-    CloudflareBindings,
-    "DB" | "AGENT_RUNTIME_BASE_URL"
->;
+export type CommunityModelEnv = Pick<CloudflareBindings, "DB" | "KV">;
+
+// One shared copy of the catalog for every gen isolate: each isolate running
+// the full-table query on its own 60s expiry was most of the D1 load. Bump
+// the version when the entry shape changes, or Workers mid-deploy serve each
+// other's entries.
+const COMMUNITY_CATALOG_CACHE_KEY = "community-catalog:v1";
+const COMMUNITY_CATALOG_CACHE_TTL_SECONDS = 60;
 
 export async function getCommunityModelRegistryEntries(
     env: CommunityModelEnv,
 ): Promise<CommunityModelRegistryEntry[]> {
-    const dbBinding = env.DB;
-    if (!dbBinding) return [];
+    const cached = await env.KV.get<CommunityModelRegistryEntry[]>(
+        COMMUNITY_CATALOG_CACHE_KEY,
+        "json",
+    ).catch(() => null);
+    if (cached) return cached;
+    const entries = await queryCommunityModelRegistryEntries(env.DB);
+    await env.KV.put(COMMUNITY_CATALOG_CACHE_KEY, JSON.stringify(entries), {
+        expirationTtl: COMMUNITY_CATALOG_CACHE_TTL_SECONDS,
+    }).catch(() => {});
+    return entries;
+}
+
+export async function resetCommunityModelRegistryCache(
+    env: CommunityModelEnv,
+): Promise<void> {
+    await env.KV.delete(COMMUNITY_CATALOG_CACHE_KEY);
+}
+
+async function queryCommunityModelRegistryEntries(
+    dbBinding: CloudflareBindings["DB"],
+): Promise<CommunityModelRegistryEntry[]> {
     const db = drizzle(dbBinding, { schema });
     const rows = await db
         .select({
             id: schema.communityEndpoint.id,
             ownerUserId: schema.communityEndpoint.ownerUserId,
+            banned: schema.user.banned,
+            banExpires: schema.user.banExpires,
             ownerGithubUsername: schema.user.githubUsername,
             providerName: schema.user.communityProviderName,
             providerUrl: schema.user.communityProviderUrl,
+            providerIconUrl: schema.user.communityProviderIconUrl,
             name: schema.communityEndpoint.name,
             title: schema.communityEndpoint.title,
             description: schema.communityEndpoint.description,
             type: schema.communityEndpoint.type,
             baseUrl: schema.communityEndpoint.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
+            requiredSafetyFeatures:
+                schema.communityEndpoint.requiredSafetyFeatures,
             payload: schema.communityEndpoint.payload,
+            pendingPayload: schema.communityEndpoint.pendingPayload,
+            pendingVisibility: schema.communityEndpoint.pendingVisibility,
+            pendingAt: schema.communityEndpoint.pendingAt,
             visibility: schema.communityEndpoint.visibility,
             hiddenAt: schema.communityEndpoint.hiddenAt,
             hiddenReason: schema.communityEndpoint.hiddenReason,
@@ -87,15 +96,34 @@ export async function getCommunityModelRegistryEntries(
             eq(schema.communityEndpoint.ownerUserId, schema.user.id),
         )
         .where(isNotNull(schema.user.githubUsername));
-
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
-        if (!row.ownerGithubUsername) return [];
-        const baseUrl =
-            row.type === "prompt_agent"
-                ? env.AGENT_RUNTIME_BASE_URL
-                : row.baseUrl;
+        if (!row.ownerGithubUsername || isUserBanned(row)) return [];
+        const baseUrl = row.baseUrl;
         if (!baseUrl || !row.upstreamModel) return [];
         const modelId = communityModelId(row.ownerGithubUsername, row.name);
+        let proxyState: ReturnType<typeof resolveEffectiveProxyListing> | null =
+            null;
+        if (row.type === "proxy") {
+            const currentPayload = parseListingPayload("proxy", row.payload);
+            if (!currentPayload) return [];
+            proxyState = resolveEffectiveProxyListing({
+                visibility: row.visibility,
+                payload: currentPayload,
+                pendingVisibility: row.pendingVisibility,
+                pendingPayload: parseListingPayload(
+                    "proxy",
+                    row.pendingPayload,
+                ),
+                pendingAt: row.pendingAt,
+            });
+        }
+        const effectiveVisibility =
+            proxyState?.visibility ??
+            effectiveCommunityEndpointVisibility(
+                row.visibility,
+                row.pendingVisibility,
+                row.pendingAt,
+            );
         const identity = {
             id: row.id,
             ownerUserId: row.ownerUserId,
@@ -105,16 +133,18 @@ export async function getCommunityModelRegistryEntries(
             description: row.description,
             providerName: row.providerName,
             providerUrl: row.providerUrl,
+            providerIconUrl: row.providerIconUrl,
             baseUrl,
             upstreamModel: row.upstreamModel,
-            visibility: row.visibility,
+            requiredSafetyFeatures: row.requiredSafetyFeatures,
+            visibility: effectiveVisibility,
             hiddenAt: row.hiddenAt ? row.hiddenAt.getTime() : null,
             hiddenReason: row.hiddenReason,
         };
         // An agent charges nothing of its own and fans out to nothing: the
-        // caller pays for whatever it consumes downstream. Both agent kinds
-        // share empty purchase fields; endpoint agents may override only the
-        // gateway's per-user rate limit from their payload.
+        // caller pays for whatever it consumes downstream. All agent kinds
+        // share empty purchase fields; endpoint agents declare their modalities
+        // and gateway per-user rate limit in their payload.
         const agentDefaults = {
             modality: "text" as const,
             imagePricing: "request" as const,
@@ -145,6 +175,23 @@ export async function getCommunityModelRegistryEntries(
                     ...identity,
                     ...agentDefaults,
                     type: "prompt_agent",
+                    baseUrl: communityResponsesUrl(baseUrl),
+                    api: "responses",
+                };
+                break;
+            }
+            case "code_agent": {
+                const payload = parseListingPayload("code_agent", row.payload);
+                if (!payload) return [];
+                // The catalog's publisher link points at the source
+                // repository: for a code agent the code is the provider.
+                communityEndpoint = {
+                    ...identity,
+                    ...agentDefaults,
+                    providerName: row.providerName ?? row.ownerGithubUsername,
+                    providerUrl: payload.repository,
+                    type: "code_agent",
+                    api: "responses",
                 };
                 break;
             }
@@ -159,12 +206,15 @@ export async function getCommunityModelRegistryEntries(
                     ...agentDefaults,
                     perUserRpm: payload.perUserRpm,
                     type: "endpoint_agent",
+                    api: payload.api,
+                    inputModalities: payload.inputModalities ?? null,
+                    outputModalities: payload.outputModalities,
                 };
                 break;
             }
             case "proxy": {
-                const payload = parseListingPayload("proxy", row.payload);
-                if (!payload) return [];
+                if (!proxyState) return [];
+                const payload = proxyState.payload;
                 communityEndpoint = {
                     ...identity,
                     type: "proxy",
@@ -176,6 +226,7 @@ export async function getCommunityModelRegistryEntries(
                     perUserRpm: payload.perUserRpm,
                     fallbacks: payload.fallbacks,
                     advertised: payload.advertised,
+                    api: payload.api,
                     ...payload.prices,
                 };
             }
@@ -185,14 +236,34 @@ export async function getCommunityModelRegistryEntries(
             addedDate: row.createdAt.getTime(),
             hidden: communityEndpoint.hiddenAt !== null,
         });
+        const info = modelInfoFromDefinition(modelId, definition, {
+            community: true,
+            agent: usesAgentRunToken(communityEndpoint),
+        });
+        const pendingPayload = proxyState?.pending?.payload ?? null;
+        if (
+            proxyState?.pending &&
+            row.visibility === "public" &&
+            pendingPayload
+        ) {
+            const pendingDefinition = communityModelDefinition({
+                ...communityEndpoint,
+                paidOnly: pendingPayload.paidOnly,
+                imagePricing: pendingPayload.imagePricing,
+                ...pendingPayload.prices,
+            });
+            info.pending_change = {
+                effective_at: proxyState.pending.effectiveAt.toISOString(),
+                paid_only: pendingPayload.paidOnly,
+                pricing: modelInfoFromDefinition(modelId, pendingDefinition)
+                    .pricing,
+            };
+        }
         return [
             {
                 id: modelId,
                 aliases: definition.aliases,
-                info: modelInfoFromDefinition(modelId, definition, {
-                    community: true,
-                    agent: usesAgentRunToken(communityEndpoint),
-                }),
+                info,
                 definition,
                 communityEndpoint,
                 agentConfig,

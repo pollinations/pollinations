@@ -16,9 +16,31 @@ describe("generateHeaders", () => {
         });
     });
 
+    it("sends Azure API-key auth for a direct Azure endpoint", async () => {
+        const { options } = await generateHeaders([], {
+            modelConfig: {
+                provider: "openai",
+                directEndpoint:
+                    "https://example.cognitiveservices.azure.com/openai/deployments/model/chat/completions",
+                directAuthHeader: "api-key",
+                authKey: "test-azure-key",
+            },
+        });
+
+        expect(options.additionalHeaders).toEqual({
+            "api-key": "test-azure-key",
+        });
+    });
+
     it("translates a Portkey config into x-portkey-* headers", async () => {
         const { options } = await generateHeaders([], {
-            modelConfig: { provider: "perplexity-ai", authKey: "test-key" },
+            modelConfig: {
+                provider: "perplexity-ai",
+                authKey: "test-key",
+                supportsMaxCompletionTokens: true,
+                supportsStreamOptions: false,
+                requiresBase64ImageUrls: true,
+            },
         });
 
         expect(options.additionalHeaders).toEqual({

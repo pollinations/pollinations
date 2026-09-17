@@ -1,5 +1,5 @@
 # Pollinations AI - Auto-fix issues labeled "POLLI"
-# Trigger: Add "POLLI" label | Authorized by immutable GitHub user ID
+# Trigger: Add "POLLI" label | Authorized by immutable GitHub user ID (humans only, never bots)
 
 name: Repo / Auto-fix Polli issues
 
@@ -24,7 +24,7 @@ jobs:
     env:
       POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_AUTOPOLLY_KEY }}
     steps:
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@v3
         id: token
         with:
           app-id: ${{ secrets.POLLY_BOT_APP_ID }}
@@ -32,17 +32,28 @@ jobs:
 
       - name: Check Authorization
         id: whitelist
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{ steps.token.outputs.token }}
           script: |
-            const authorizedUserIds = new Set([5099901, 36901823, 74301576, 158852059]);
-            const authorizedBotId = 247793354;
+            const authorizedUserIds = new Set([
+              5099901, // voodoohop
+              36901823, // ElliotEtag
+              158852059, // Itachi-1824
+              74301576, // Circuit-Overtime
+              204561696, // tomdacatto
+              182555207, // YoannDev90
+              34513273, // fisventurous
+              189873015, // sharktide
+            ]);
             const labeledBy = context.payload.sender.login;
             const labeledById = context.payload.sender.id;
 
-            // The bot may add this label from project-manager; usernames are display-only.
-            const isAuthorized = authorizedUserIds.has(labeledById) || labeledById === authorizedBotId;
+            // Only humans on the allowlist may trigger the write-capable agent.
+            // Bots (including our own app) are never authorized: the triage bot
+            // labels from LLM output over untrusted issue text.
+            const isBot = context.payload.sender.type === 'Bot';
+            const isAuthorized = !isBot && authorizedUserIds.has(labeledById);
 
             if (!isAuthorized) {
               await github.rest.issues.removeLabel({
@@ -51,12 +62,14 @@ jobs:
                 issue_number: context.issue.number,
                 name: 'POLLI'
               });
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: `Sorry @${labeledBy}, only maintainers can trigger Polli auto-fix by adding the \`POLLI\` label.`
-              });
+              if (!isBot) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: `Sorry @${labeledBy}, only maintainers can trigger Polli auto-fix by adding the \`POLLI\` label.`
+                });
+              }
               core.setOutput('authorized', 'false');
             } else {
               core.setOutput('authorized', 'true');
@@ -79,7 +92,7 @@ jobs:
           BOT_USER_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
           echo "user-id=$BOT_USER_ID" >> "$GITHUB_OUTPUT"
           mkdir -p $HOME/.claude-code-router
-          echo '{"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"'"${POLLINATIONS_TOKEN}"'","models":["claude-large","perplexity-reasoning","glm","kimi"]}],"Router":{"default":"pollinations,glm","thinking":"pollinations,kimi","webSearch":"pollinations,perplexity-reasoning"}}' > $HOME/.claude-code-router/config.json
+          echo '{"LOG":false,"NON_INTERACTIVE_MODE":true,"API_TIMEOUT_MS":600000,"Providers":[{"name":"pollinations","api_base_url":"https://gen.pollinations.ai/v1/chat/completions","api_key":"'"${POLLINATIONS_TOKEN}"'","models":["pollinations-router/polli","perplexity","gpt-5.6-luna"]}],"Router":{"default":"pollinations,pollinations-router/polli","background":"pollinations,gpt-5.6-luna","webSearch":"pollinations,perplexity"}}' > $HOME/.claude-code-router/config.json
 
           # Start router with Bun
           bunx @musistudio/claude-code-router start &
@@ -87,7 +100,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         if: steps.whitelist.outputs.authorized == 'true'
         with:
           fetch-depth: 0

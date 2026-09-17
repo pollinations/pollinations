@@ -1,6 +1,10 @@
 interface CloudflareBindings {
     ENTER: Fetcher;
     POLLINATIONS_MCP: Fetcher;
+    FFMPEG_MCP: Fetcher;
+    EXA_MCP: Fetcher;
+    COMPOSIO_MCP: Fetcher;
+    COMPUTER_MCP: Fetcher;
     PORTKEY?: Fetcher;
     KLEIN_VPC?: Fetcher;
     BETTER_AUTH_SECRET: string;
@@ -16,7 +20,7 @@ interface CloudflareBindings {
     INFERENCEPORT_API_KEY?: string;
     STABILITY_API_KEY?: string;
     KV: KVNamespace;
-    IMAGE_BUCKET: R2Bucket;
+    MEDIA: Service<import("../media.pollinations.ai/src/media-upload.ts").MediaUpload>;
     TEXT_BUCKET: R2Bucket;
     GENERATION_COORDINATOR: DurableObjectNamespace<
         import("./src/durable-objects/GenerationCoordinator.ts").GenerationCoordinator
@@ -29,7 +33,6 @@ interface CloudflareBindings {
         | "dev"
         | "test"
         | "development";
-    AGENT_RUNTIME_BASE_URL: string;
     STAGING_ALLOWED_GITHUB_IDS?: string;
     STAGING_ALLOWED_EMAILS?: string;
     LOG_LEVEL?: "trace" | "debug";
@@ -52,6 +55,8 @@ interface CloudflareBindings {
     AZURE_MYCELI_PROD_IMG_15_WESTUS3_API_KEY: string;
     AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY: string;
     AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY: string;
+    AZURE_MYCELI_PROD_IMG_25_FLARE_SWEDEN_API_KEY: string;
+    AZURE_MYCELI_PROD_IMG_25_SUNBURST_SWEDEN_API_KEY: string;
     AZURE_MYCELI_PROD_IMG_MINI_SWEDEN_API_KEY: string;
     AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY: string;
     AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY: string;

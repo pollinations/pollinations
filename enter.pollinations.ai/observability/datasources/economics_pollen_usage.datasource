@@ -1,0 +1,24 @@
+DESCRIPTION >
+    Canonical Pollen economics per month, vendor, and model. Stores paid and
+    Quest cost, retained price, request, BYOP, and community-model payout
+    aggregates materialized directly from generation_event_v2.
+
+TOKEN "tinybird_read" READ
+
+SCHEMA >
+    `month` LowCardinality(String),
+    `vendor` LowCardinality(String),
+    `model` LowCardinality(String),
+    `cost_paid` AggregateFunction(sum, Float64),
+    `cost_quests` AggregateFunction(sum, Float64),
+    `price_paid` AggregateFunction(sum, Float64),
+    `price_quests` AggregateFunction(sum, Float64),
+    `requests_paid` AggregateFunction(sum, UInt64),
+    `requests_quests` AggregateFunction(sum, UInt64),
+    `byop_paid` AggregateFunction(sum, Float64),
+    `byop_quests` AggregateFunction(sum, Float64),
+    `model_paid` AggregateFunction(sum, Float64),
+    `model_quests` AggregateFunction(sum, Float64)
+
+ENGINE AggregatingMergeTree
+ENGINE_SORTING_KEY month, vendor, model

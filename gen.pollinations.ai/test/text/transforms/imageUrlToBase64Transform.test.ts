@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createBedrockNativeConfig } from "../../../src/text/configs/providerConfigs.js";
 import { imageUrlToBase64Transform } from "../../../src/text/transforms/imageUrlToBase64Transform.js";
 
 const transform = imageUrlToBase64Transform;
-const bedrockOptions = { modelConfig: { provider: "bedrock" } };
+const bedrockOptions = { modelConfig: createBedrockNativeConfig() };
+const vertexOptions = { modelConfig: { provider: "vertex-ai" } };
 
 /** PNG signature — enough for the media type to be read off the bytes. */
 const PNG_BYTES = new Uint8Array([
@@ -26,6 +28,35 @@ function imageMessage(urls: string[]) {
 }
 
 describe("imageUrlToBase64Transform", () => {
+    it("uses the declared flag rather than the provider name", async () => {
+        const input = imageMessage(["not-a-url"]);
+        const result = await transform(input, {
+            modelConfig: { provider: "bedrock" },
+        });
+        expect(result.messages).toBe(input);
+        await expect(
+            transform(input, {
+                modelConfig: {
+                    provider: "custom-provider",
+                    requiresBase64ImageUrls: true,
+                },
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "invalid_image_url",
+        });
+    });
+
+    it("leaves remote image URLs unchanged for Vertex", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        const input = imageMessage(["https://example.com/image.png"]);
+
+        const result = await transform(input, vertexOptions);
+
+        expect(result.messages).toBe(input);
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
     it("rejects malformed image URLs before they reach the provider", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
 

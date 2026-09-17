@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { authClient } from "../auth.ts";
 
-export function useGitHubSignIn() {
+export function useGitHubSignIn(callbackURL?: string) {
     const [isSigningIn, setIsSigningIn] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -10,7 +10,7 @@ export function useGitHubSignIn() {
         setError(null);
         const { error } = await authClient.signIn.social({
             provider: "github",
-            callbackURL: window.location.href,
+            callbackURL: callbackURL ?? window.location.href,
         });
         if (error) {
             setIsSigningIn(false);

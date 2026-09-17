@@ -1,38 +1,17 @@
 /**
- * Pure OAuth callback parser. Extracted from PolliProvider so it can be
- * unit-tested without React.
- *
- * Reads `window.location.hash` for the `api_key` / `error` / `state`
- * fragment params that `enter.pollinations.ai/authorize` redirects back
- * with. Validates the `state` parameter against the value the client
- * persisted at login() time (CSRF protection), then signals to the caller
- * what to do.
- *
- * Validate-then-clear semantics: state is only cleared from storage when
- * the callback genuinely matches a pending login. A spoofed callback with
- * a wrong state must NOT clear stored state — otherwise an attacker could
- * DoS the real callback by planting a bad URL.
+ * Parse the OAuth authorization-code callback and validate its state.
+ * PolliProvider performs the PKCE token exchange after this succeeds.
  */
 
 export interface OAuthCallbackResult {
-    /**
-     * If auth params were present in the hash, the URL to replace
-     * `window.location` with via `history.replaceState`. Strips the auth
-     * params but preserves the route prefix (`#/dashboard`), any non-auth
-     * hash params, pathname, and search.
-     *
-     * `null` when no auth params were present (no rewrite needed).
-     */
+    /** URL with OAuth callback parameters removed. */
     cleanedUrl: string | null;
-    /** Valid api_key from a callback whose `state` matched. */
-    apiKey: string | null;
-    /** OAuth error code, if the callback was an error response. */
+    /** Single-use authorization code from a valid callback. */
+    code: string | null;
+    /** OAuth error from a valid callback. */
     error: string | null;
     errorDescription: string | null;
-    /**
-     * `true` when an `api_key` was present but `state` did not match.
-     * Callers should warn but otherwise ignore (do NOT clear stored state).
-     */
+    /** Whether callback state was absent or did not match the pending login. */
     invalidState: boolean;
 }
 
@@ -49,7 +28,7 @@ interface OAuthStorage {
 
 const EMPTY: OAuthCallbackResult = {
     cleanedUrl: null,
-    apiKey: null,
+    code: null,
     error: null,
     errorDescription: null,
     invalidState: false,
@@ -60,51 +39,30 @@ export function consumeOAuthCallback(
     storage: OAuthStorage,
     stateStorageKey: string,
 ): OAuthCallbackResult {
-    const rawHash = location.hash.startsWith("#")
-        ? location.hash.slice(1)
-        : location.hash;
-    if (!rawHash) return EMPTY;
-
-    // Hash-router apps use `#/route?param=…` — the route prefix sits before
-    // the `?`, params after. Treating the whole hash as params would
-    // mis-parse the route and the cleanup step below would strip it.
-    const queryIdx = rawHash.indexOf("?");
-    const routePrefix = queryIdx === -1 ? "" : rawHash.slice(0, queryIdx);
-    const paramString = queryIdx === -1 ? rawHash : rawHash.slice(queryIdx + 1);
-    const params = new URLSearchParams(paramString);
-
-    const key = params.get("api_key");
+    const params = new URLSearchParams(location.search);
+    const code = params.get("code");
     const error = params.get("error");
+    if (!code && !error) return EMPTY;
+
     const receivedState = params.get("state");
     const errorDescription = params.get("error_description");
-
-    if (!key && !error) return EMPTY;
-
-    for (const p of ["api_key", "state", "error", "error_description"]) {
-        params.delete(p);
+    for (const key of ["code", "state", "error", "error_description"]) {
+        params.delete(key);
     }
     const remaining = params.toString();
-    const newHash = remaining
-        ? routePrefix
-            ? `${routePrefix}?${remaining}`
-            : remaining
-        : routePrefix;
-    const cleanedUrl =
-        location.pathname + location.search + (newHash ? `#${newHash}` : "");
+    const cleanedUrl = `${location.pathname}${remaining ? `?${remaining}` : ""}${location.hash}`;
 
-    if (key) {
-        const expectedState = storage.getItem(stateStorageKey);
-        if (!expectedState || receivedState !== expectedState) {
-            return { ...EMPTY, cleanedUrl, invalidState: true };
-        }
-        storage.removeItem(stateStorageKey);
-        return { ...EMPTY, cleanedUrl, apiKey: key };
-    }
-
-    // error branch
     const expectedState = storage.getItem(stateStorageKey);
-    if (expectedState && receivedState === expectedState) {
-        storage.removeItem(stateStorageKey);
+    if (!expectedState || receivedState !== expectedState) {
+        return { ...EMPTY, cleanedUrl, invalidState: true };
     }
-    return { ...EMPTY, cleanedUrl, error, errorDescription };
+
+    storage.removeItem(stateStorageKey);
+    return {
+        ...EMPTY,
+        cleanedUrl,
+        code,
+        error,
+        errorDescription,
+    };
 }

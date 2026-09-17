@@ -3,6 +3,7 @@ import { DEFAULT_3D_MODEL } from "@shared/registry/model3d.ts";
 import {
     CreateChatCompletionRequestSchema,
     CreateImageRequestSchema,
+    CreateResponseRequestSchema,
 } from "@shared/schemas/openai.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { Hono } from "hono";
@@ -28,6 +29,7 @@ import {
     Generate3dRequestQueryParamsSchema,
 } from "@/schemas/model3d.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
+import { generateCreateResponse } from "@/text/responses/handler.ts";
 import { apiKeyBudgetReservation } from "@/utils/generation-access.ts";
 import {
     handleSimpleAudio,
@@ -48,9 +50,8 @@ import {
     textBodyLimit,
 } from "./generation-handlers.ts";
 import {
-    formatOpenAIImageGeneration,
-    handleImageEdit,
     handleImageGeneration,
+    prepareOpenAIImageEditReplay,
     prepareOpenAIImageGeneration,
 } from "./images.ts";
 
@@ -82,6 +83,17 @@ generationExecutorRoutes.post(
     textExecutionCache,
     apiKeyBudgetReservation,
     generateChatCompletion,
+);
+
+generationExecutorRoutes.post(
+    "/v1/responses",
+    textBodyLimit,
+    validator("json", CreateResponseRequestSchema),
+    resolveModel("generate.text"),
+    track("generate.text"),
+    textExecutionCache,
+    apiKeyBudgetReservation,
+    generateCreateResponse,
 );
 
 generationExecutorRoutes.post(
@@ -176,7 +188,6 @@ generationExecutorRoutes.post(
     resolveModel("generate.image"),
     track("generate.image"),
     prepareOpenAIImageGeneration,
-    formatOpenAIImageGeneration,
     prepareGenerationRequest,
     imageExecutionCache,
     apiKeyBudgetReservation,
@@ -187,16 +198,17 @@ generationExecutorRoutes.post(
     "/v1/images/edits",
     resolveModel("generate.image", { defaultModel: "flux" }),
     track("generate.image"),
+    prepareOpenAIImageEditReplay,
     prepareGenerationRequest,
-    textExecutionCache,
+    imageExecutionCache,
     apiKeyBudgetReservation,
-    handleImageEdit,
+    handleImageGeneration,
 );
 
 generationExecutorRoutes.post(
     "/v1/audio/voice-changer",
     resolveModel("generate.audio", {
-        defaultModel: "eleven-voice-changer",
+        defaultModel: "elevenlabs/eleven-multilingual-sts-v2",
         supportedEndpoint: "/v1/audio/voice-changer",
     }),
     track("generate.audio"),
@@ -209,7 +221,7 @@ generationExecutorRoutes.post(
 generationExecutorRoutes.post(
     "/v1/audio/voice-isolator",
     resolveModel("generate.audio", {
-        defaultModel: "eleven-voice-isolator",
+        defaultModel: "elevenlabs/voice-isolator",
         supportedEndpoint: "/v1/audio/voice-isolator",
     }),
     track("generate.audio"),

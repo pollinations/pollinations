@@ -1,3 +1,4 @@
+import { ACCOUNT_RESTRICTED_MESSAGE, isUserBanned } from "@shared/auth/ban.ts";
 import {
     calculateServiceFeeCents,
     describePollenPack,
@@ -14,6 +15,7 @@ import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { getCohortFromCountry } from "../utils/currency-router.ts";
 import { createStripeClient } from "../utils/stripe.ts";
+import { getUserStripeBillingRow } from "../utils/stripe-billing/customer.ts";
 import {
     createBillingPortalSession,
     getBillingOverview,
@@ -25,6 +27,7 @@ import {
     getStripeNewCardGateStatus,
     stripeNewCardGateMetadata,
 } from "../utils/stripe-card-gate.ts";
+import { expireOpenStripeCheckoutSessions } from "../utils/stripe-fraud-ban.ts";
 
 /**
  * Stripe pack configuration
@@ -69,10 +72,27 @@ export const stripeRoutes = new Hono<Env>()
         // Create Stripe client
         const stripe = createStripeClient(c.env);
 
-        // Return checkout sessions to the Pollen page for this environment.
+        const buyer = await getUserStripeBillingRow(c.env.DB, userId);
+        if (isUserBanned(buyer)) {
+            if (buyer.stripeCustomerId)
+                await expireOpenStripeCheckoutSessions(
+                    stripe,
+                    buyer.stripeCustomerId,
+                );
+            return c.json({ error: ACCOUNT_RESTRICTED_MESSAGE }, 403);
+        }
+
+        // Return the buyer to the standalone top-up page when checkout
+        // started there, else to the Pollen dashboard. Both paths are fixed
+        // here, so the return URL is always on this origin.
         const baseUrl =
             c.env.STRIPE_SUCCESS_URL || PUBLIC_URLS.enter.production;
-        const pollenUrl = new URL("/pollen", baseUrl);
+        const pollenUrl = new URL(
+            c.req.query("return") === "top-up" ? "/top-up" : "/pollen",
+            baseUrl,
+        );
+        const appRedirect = c.req.query("redirect");
+        if (appRedirect) pollenUrl.searchParams.set("redirect", appRedirect);
         pollenUrl.searchParams.set("pack", pack.packKey);
         const pollenReturnUrl = pollenUrl.toString();
 
@@ -99,6 +119,15 @@ export const stripeRoutes = new Hono<Env>()
                 c.env.DB,
                 userId,
             );
+            // Request 3DS on first purchases and small packs. Successful
+            // authentication can shift fraud liability; requesting it alone
+            // does not guarantee authentication or eliminate dispute fees.
+            const priorCredit = await c.env.DB.prepare(
+                "SELECT 1 FROM stripe_checkout_credits WHERE user_id = ? LIMIT 1",
+            )
+                .bind(userId)
+                .first();
+            const requestThreeDSecure = !priorCredit || pack.amountUsd < 10;
 
             // packKey identifies the pack; the webhook looks up its fixed USD
             // amount to credit, independent of how Adaptive Pricing localized
@@ -145,6 +174,11 @@ export const stripeRoutes = new Hono<Env>()
                     },
                 ],
                 adaptive_pricing: { enabled: true },
+                ...(requestThreeDSecure && {
+                    payment_method_options: {
+                        card: { request_three_d_secure: "any" },
+                    },
+                }),
                 // Enable discount/promotion codes
                 allow_promotion_codes: true,
                 // Automatic tax & VAT
@@ -176,6 +210,13 @@ export const stripeRoutes = new Hono<Env>()
             });
 
             // Redirect to Stripe Checkout (will use checkout.pollinations.ai custom domain)
+            if (isUserBanned(await getUserStripeBillingRow(c.env.DB, userId))) {
+                await expireOpenStripeCheckoutSessions(
+                    stripe,
+                    stripeCustomerId,
+                );
+                return c.json({ error: ACCOUNT_RESTRICTED_MESSAGE }, 403);
+            }
             if (checkoutSession.url) {
                 return c.redirect(checkoutSession.url);
             }
@@ -220,8 +261,19 @@ export const stripeRoutes = new Hono<Env>()
     .post("/billing/portal", async (c) => {
         const user = await requireSessionUser(c);
 
+        const body = (await c.req.json().catch(() => null)) as {
+            return?: unknown;
+            redirect?: unknown;
+        } | null;
+
         try {
-            const session = await createBillingPortalSession(c.env, user.id);
+            const session = await createBillingPortalSession(c.env, user.id, {
+                topUp: body?.return === "top-up",
+                redirect:
+                    typeof body?.redirect === "string"
+                        ? body.redirect
+                        : undefined,
+            });
 
             if (!session.url) {
                 return c.json(

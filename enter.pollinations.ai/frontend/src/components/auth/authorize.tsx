@@ -1,7 +1,6 @@
 import {
     Button,
     Collapsible,
-    cn,
     ExternalLinkIcon,
     MailIcon,
     ScrollArea,
@@ -15,7 +14,6 @@ import {
     ErrorBanner,
 } from "@pollinations/ui/auth";
 import { ModalityChip } from "@pollinations/ui/gen";
-import { formatPollen } from "@pollinations/ui/wallet";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
@@ -27,7 +25,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
-import { config } from "../../config.ts";
+import { useAccountBalance } from "../../hooks/use-account-balance.ts";
 import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
 import { AccountPermissionsInput } from "../keys/account-permissions-input.tsx";
@@ -38,6 +36,7 @@ import { computeCategoryModalities } from "../models/model-categories.ts";
 import { useModelCategories } from "../models/use-model-categories.ts";
 import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
 import { AppAttribution } from "./app-attribution.tsx";
+import { AuthAccountIdentity } from "./auth-account-identity.tsx";
 
 type Attribution = {
     found: boolean;
@@ -97,8 +96,12 @@ export function Authorize() {
     const [deviceOutcome, setDeviceOutcome] = useState<
         "pending" | "approved" | "denied"
     >("pending");
-    const [totalBalance, setTotalBalance] = useState<number | null>(null);
+    const balance = useAccountBalance(Boolean(user));
     const [permissionsExpanded, setPermissionsExpanded] = useState(false);
+    const topUpHref =
+        typeof window === "undefined"
+            ? "/top-up"
+            : `/top-up?${new URLSearchParams({ redirect: window.location.href })}`;
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
@@ -320,21 +323,6 @@ export function Authorize() {
         code_challenge_method,
         setAccountPermissions,
     ]);
-
-    useEffect(() => {
-        if (!user) return;
-
-        apiClient.customer.balance
-            .$get()
-            .then((response) => (response.ok ? response.json() : null))
-            .then((data) => {
-                if (!data) return;
-                setTotalBalance(
-                    (data.tierBalance ?? 0) + (data.packBalance ?? 0),
-                );
-            })
-            .catch(() => {});
-    }, [user]);
 
     async function handleAuthorize(): Promise<void> {
         if (!canAuthorize || isAuthorizing) return;
@@ -571,44 +559,11 @@ export function Authorize() {
             contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
         >
             <AuthModalHeader>
-                <div className="flex items-center gap-3 min-w-0">
-                    <a
-                        href={config.baseUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 min-w-0"
-                    >
-                        {user.image && (
-                            <img
-                                src={user.image}
-                                alt=""
-                                className="w-6 h-6 rounded-full shrink-0"
-                            />
-                        )}
-                        <span className="text-sm font-medium text-theme-text-strong truncate">
-                            {user.githubUsername || user.email}
-                        </span>
-                    </a>
-                    <div className="inline-flex items-stretch rounded-full bg-theme-bg-pale border border-theme-border text-sm overflow-hidden shrink-0">
-                        {totalBalance !== null && (
-                            <span className="flex items-center px-3 text-theme-text-base whitespace-nowrap">
-                                {formatPollen(totalBalance)} pollen
-                            </span>
-                        )}
-                        <a
-                            href={`${config.baseUrl}/pollen#buy-pollen`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={cn(
-                                "flex items-center px-3 py-1 font-medium text-theme-text-base bg-theme-bg-active hover:bg-theme-bg-hover transition-colors cursor-pointer",
-                                totalBalance !== null &&
-                                    "border-l border-theme-border",
-                            )}
-                        >
-                            Top up
-                        </a>
-                    </div>
-                </div>
+                <AuthAccountIdentity
+                    user={user}
+                    balance={balance}
+                    topUpHref={topUpHref}
+                />
             </AuthModalHeader>
 
             <ScrollArea className="min-h-0 px-6 py-2 space-y-4 overscroll-contain">

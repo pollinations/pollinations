@@ -14,6 +14,7 @@ const BRAND_LOGOS: Record<string, string> = {
     "Fish Audio": "fish-audio",
     Google: "google",
     Hexgrad: "hexgrad",
+    Hyper3D: "deemos",
     Ideogram: "ideogram",
     Inception: "inception",
     Krea: "krea",
@@ -58,8 +59,10 @@ export const getModelDescriptionWithoutName = (
 export const getModelBrandLogoPath = (
     model: ModelPrice,
 ): string | undefined => {
-    if (model.community) return undefined;
-    const logoName = model.brand ? BRAND_LOGOS[model.brand] : undefined;
+    if (model.community) {
+        return model.brandIconUrl;
+    }
+    const logoName = model.publisher ? BRAND_LOGOS[model.publisher] : undefined;
     return logoName ? `/brand-logos/${logoName}.svg` : undefined;
 };
 
@@ -84,9 +87,11 @@ export const getModelModalityLabel = (model: ModelPrice): string => {
 
 export type DisplayCapability =
     | "agent"
+    | "tool_calling"
     | "reasoning"
     | "web_search"
-    | "code_execution";
+    | "code_execution"
+    | "pollinations_models";
 
 export const getModelCapabilities = (
     model: ModelPrice,
@@ -94,9 +99,11 @@ export const getModelCapabilities = (
     const keys: DisplayCapability[] = [];
 
     if (model.agent) keys.push("agent");
+    if (hasToolCalling(model)) keys.push("tool_calling");
     if (hasReasoning(model)) keys.push("reasoning");
     if (hasSearch(model)) keys.push("web_search");
     if (hasCodeExecution(model)) keys.push("code_execution");
+    if (hasPollinationsTools(model)) keys.push("pollinations_models");
 
     return keys;
 };
@@ -105,9 +112,11 @@ export const getModelCapabilityLabel = (model: ModelPrice): string => {
     const labels: string[] = [];
 
     if (model.agent) labels.push("Agent");
+    if (hasToolCalling(model)) labels.push("Tool calling");
     if (hasReasoning(model)) labels.push("Reasoning");
     if (hasSearch(model)) labels.push("Web search");
     if (hasCodeExecution(model)) labels.push("Code execution");
+    if (hasPollinationsTools(model)) labels.push("Pollinations models");
 
     return labels.join(", ");
 };
@@ -116,6 +125,9 @@ const hasCapability = (
     model: ModelPrice,
     capability: ModelCapability,
 ): boolean => model.capabilities.includes(capability);
+
+const hasToolCalling = (model: ModelPrice): boolean =>
+    hasCapability(model, "tool_calling");
 
 const hasReasoning = (model: ModelPrice): boolean =>
     hasCapability(model, "reasoning");

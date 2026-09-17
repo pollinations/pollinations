@@ -3,7 +3,7 @@ import {
     githubAppCredentialsFromEnv,
 } from "@shared/github/app-auth.ts";
 import { graphql } from "@shared/github/client.ts";
-import type { QuestDefinition, QuestState } from "../definitions.ts";
+import type { QuestDefinition } from "../definitions.ts";
 import {
     type QuestCard,
     type QuestEvaluation,
@@ -44,7 +44,7 @@ const solveGithubIssueQuest: QuestDefinition = {
     id: "solve_github_issue",
     title: "Solve a quest issue in GitHub",
     description:
-        "Pick an open POLLEN-QUEST issue, get assigned, and ship a PR. Claim your reward after merge.",
+        "Pick an open POLLEN-QUEST issue and submit a focused PR. Each author of a merged PR that closes the issue earns the reward.",
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
     rewardAmount: 0,
@@ -59,15 +59,13 @@ type DerivedQuestIssue = {
     description: string;
     url: string;
     rewardAmount: number | null;
-    // "available" = open bounty; "completed" = closed by a merged PR.
+    // "completed" issues stay off the open board once assigned or merged.
     state: "available" | "completed";
-    assigneeGithubId: number | null;
-    completedByPrNumber: number | null;
+    completedByGithubIds: number[];
 };
 
 type GitHubUser = {
-    login?: string;
-    databaseId?: number;
+    databaseId?: number | null;
 };
 
 type GitHubIssueNode = {
@@ -76,10 +74,14 @@ type GitHubIssueNode = {
     title: string;
     url: string;
     body: string | null;
-    assignees: { nodes: GitHubUser[] };
     labels: { nodes: { name: string }[] };
+    assignees: { nodes: GitHubUser[] };
     closedByPullRequestsReferences: {
-        nodes: { number: number; mergedAt: string | null }[];
+        nodes: {
+            number: number;
+            mergedAt: string | null;
+            author: GitHubUser | null;
+        }[];
     };
 };
 
@@ -100,9 +102,11 @@ query($query:String!){
     nodes{
       ... on Issue{
         number state title url body
-        assignees(first:10){ nodes{ login ... on User{ databaseId } } }
         labels(first:100){ nodes{ name } }
-        closedByPullRequestsReferences(first:10){ nodes{ number mergedAt } }
+        assignees(first:1){ nodes{ databaseId } }
+        closedByPullRequestsReferences(first:10){
+          nodes{ number mergedAt author{ ... on User{ databaseId } } }
+        }
       }
     }
   }
@@ -165,20 +169,19 @@ function hasQuestLabel(labels: { name: string }[]): boolean {
     return labels.some((label) => label.name === QUEST_LABEL);
 }
 
-function firstMergedCloser(issue: GitHubIssueNode): number | null {
-    const merged = issue.closedByPullRequestsReferences.nodes
-        .filter((pr) => pr.mergedAt !== null)
-        .map((pr) => pr.number)
-        .sort((a, b) => a - b);
-    return merged[0] ?? null;
+function mergedClosers(issue: GitHubIssueNode) {
+    return issue.closedByPullRequestsReferences.nodes.filter(
+        (pr) => pr.mergedAt !== null,
+    );
 }
 
 function toDerivedQuestIssue(issue: GitHubIssueNode): DerivedQuestIssue {
     const body = issue.body ?? "";
-    const completedByPrNumber = firstMergedCloser(issue);
+    const closers = mergedClosers(issue);
     const state: DerivedQuestIssue["state"] =
-        completedByPrNumber !== null ? "completed" : "available";
-    const firstAssignee = issue.assignees.nodes[0];
+        closers.length > 0 || issue.assignees.nodes.length > 0
+            ? "completed"
+            : "available";
     return {
         issueNumber: issue.number,
         title: issue.title,
@@ -186,8 +189,11 @@ function toDerivedQuestIssue(issue: GitHubIssueNode): DerivedQuestIssue {
         url: issue.url,
         rewardAmount: parseReward(body),
         state,
-        assigneeGithubId: firstAssignee?.databaseId ?? null,
-        completedByPrNumber,
+        completedByGithubIds: closers.flatMap((pr) =>
+            typeof pr.author?.databaseId === "number"
+                ? [pr.author.databaseId]
+                : [],
+        ),
     };
 }
 
@@ -202,38 +208,25 @@ async function loadQuestIssues(token: string): Promise<DerivedQuestIssue[]> {
         .filter((issue) => hasQuestLabel(issue.labels.nodes))
         .filter(
             (issue) =>
-                issue.state === "OPEN" || firstMergedCloser(issue) !== null,
+                issue.state === "OPEN" || mergedClosers(issue).length > 0,
         )
         .map(toDerivedQuestIssue)
         .filter((issue) => issue.rewardAmount !== null);
 }
 
-// State is a two-state BOARD concept: "available" = an open bounty
-// anyone can take; "completed" = off the open board. Only a genuinely open
-// issue (not completed, nobody assigned) is shown; the moment it's claimed
-// (someone's working it) or completed it leaves the board — it reappears only
-// for the user who earned it, via their reward (see the frontend). So both
-// claimed and completed map to "completed" (off-board).
-function issueState(issue: DerivedQuestIssue): QuestState {
-    const open = issue.state === "available" && issue.assigneeGithubId === null;
-    return open ? "available" : "completed";
-}
-
 function toIssueQuestDefinition(issue: DerivedQuestIssue): QuestDefinition {
     return {
-        // Per-issue idempotency identity. The reward key for a scope:"once" quest
-        // is `quest:${id}` (no userId), so `id` MUST be unique per issue or every
-        // community bounty collapses to one key and only the first ever records.
-        // Derive the id from issueNumber so the key remains stable across runs.
+        // Keep the issue-derived id stable; per-user reward keys add the
+        // immutable GitHub id so each merged PR author can earn it once.
         id: `github:issue:${issue.issueNumber}`,
         title: `Ship bounty #${issue.issueNumber}: ${issue.title}`,
         description: `Help close this POLLEN-QUEST issue. ${issue.description}`,
         category: CONTRIBUTION_CATEGORY,
-        scope: "once",
+        scope: "perUser",
         rewardAmount: issue.rewardAmount ?? 0,
         balanceBucket: "tier",
         url: issue.url,
-        state: issueState(issue),
+        state: issue.state,
     };
 }
 
@@ -264,7 +257,8 @@ export async function evaluateUser(
     ctx: QuestEvaluationContext,
     user: QuestUser,
 ): Promise<QuestEvaluation> {
-    if (user.githubId === null) return { proposals: [] };
+    const githubId = user.githubId;
+    if (githubId === null) return { proposals: [] };
 
     const token = await githubToken(ctx.env);
     const [issues, mergedPr] = await Promise.all([
@@ -272,14 +266,12 @@ export async function evaluateUser(
         hasMergedPr(token, user),
     ]);
 
-    // Payable issue bounties: completed by a merged PR, with a positive reward
-    // and assigned to the current user's linked GitHub account.
+    // Payable issue bounties: completed by a merged PR authored by the current
+    // user's linked GitHub account, with a positive reward.
     const issueProposals = issues
         .filter(
             (issue) =>
-                issue.state === "completed" &&
-                issue.completedByPrNumber !== null &&
-                issue.assigneeGithubId === user.githubId &&
+                issue.completedByGithubIds.includes(githubId) &&
                 (issue.rewardAmount ?? 0) > 0,
         )
         .map((issue) => ({

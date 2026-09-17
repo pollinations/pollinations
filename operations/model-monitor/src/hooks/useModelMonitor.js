@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+    attachRouteHealth,
+    mergeModelHealth,
+    normalizeCatalogModel,
+    rollupRows,
+} from "../model-data.js";
 
-const MODEL_HEALTH_URL = "https://gen.pollinations.ai/v1/models/status";
+const MODEL_ROUTE_HEALTH_URL = "https://gen.pollinations.ai/models/status";
 const MODEL_CATALOG_URL = "https://gen.pollinations.ai/models";
 
-// Minutes parameter for the parameterized model_health pipe
+// Minutes parameter for the parameterized model_route_health pipe
 const WINDOW_MINUTES = {
     "7d": 10080,
     "24h": 1440,
@@ -21,42 +27,11 @@ const POLL_INTERVALS = {
     "5m": 60000, // Match the model status gateway cache
 };
 
-function resolveDisplayType(model) {
-    if (model.category) return model.category;
-    const out = model.output_modalities;
-    if (out?.includes("video")) return "video";
-    if (out?.includes("embedding")) return "embedding";
-    if (out?.includes("audio")) return "audio";
-    if (out?.includes("image")) return "image";
-    if (out?.includes("text")) return "text";
-    return "unknown";
-}
-
-const IMAGE_EVENT_TYPES = ["video", "3d"];
-function eventTypeForDisplayType(type) {
-    return IMAGE_EVENT_TYPES.includes(type) ? "image" : type;
-}
-
-function normalizeCatalogModel(model) {
-    const name = model.name || model.id;
-    if (!name) return null;
-    const type = resolveDisplayType(model);
-    return {
-        ...model,
-        name,
-        aliases: model.aliases || [],
-        community: model.community === true,
-        type,
-        endpointType: eventTypeForDisplayType(type),
-        catalogStatus: "visible",
-    };
-}
-
 export function useModelMonitor(aggregationWindow = "60m") {
     const pollInterval =
         POLL_INTERVALS[aggregationWindow] || POLL_INTERVALS["60m"];
     const [models, setModels] = useState([]);
-    const [healthStats, setHealthStats] = useState([]);
+    const [routeStats, setRouteStats] = useState([]);
     const [lastUpdated, setLastUpdated] = useState(null);
     const [catalogError, setCatalogError] = useState(null);
     const [healthError, setHealthError] = useState(null);
@@ -92,131 +67,46 @@ export function useModelMonitor(aggregationWindow = "60m") {
         }
     }, []);
 
-    // Fetch health stats through gen.pollinations.ai, which caches Tinybird.
-    const fetchHealthStats = useCallback(async () => {
+    // One request covers the whole page: model_route_health returns a rollup
+    // row per model alongside the routes that make it up, so the headline and
+    // its breakdown can never disagree about the same window.
+    const fetchRouteStats = useCallback(async () => {
         try {
             const minutes =
                 WINDOW_MINUTES[aggregationWindow] || WINDOW_MINUTES["60m"];
-            const url = `${MODEL_HEALTH_URL}?minutes=${minutes}`;
+            const url = `${MODEL_ROUTE_HEALTH_URL}?minutes=${minutes}`;
             const response = await fetch(url);
 
             if (!response.ok) {
                 throw new Error(`Model status API error: ${response.status}`);
             }
 
-            const sourceTimestamp = response.headers.get(
-                "X-Model-Status-Timestamp",
-            );
-            if (!sourceTimestamp) {
-                throw new Error("Model status API omitted its data timestamp");
-            }
-
             const data = await response.json();
-            setHealthStats(data.data || []);
-            setLastUpdated(new Date(sourceTimestamp));
-            setHealthError(
-                response.headers.get("X-Model-Status-Stale") === "true"
-                    ? "Live health data unavailable; showing cached data"
-                    : null,
-            );
+            setRouteStats(data.data || []);
+            setLastUpdated(new Date());
+            setHealthError(null);
         } catch (err) {
-            console.error("Failed to fetch health stats:", err);
+            console.error("Failed to fetch model health stats:", err);
             setHealthError("Failed to fetch health stats");
         }
     }, [aggregationWindow]);
 
-    const modelStats = healthStats.filter((s) => s.model !== "undefined");
-
-    const catalogModelsByName = useMemo(
-        () =>
-            models.reduce((acc, model) => {
-                if (!acc[model.name]) acc[model.name] = [];
-                acc[model.name].push(model);
-                return acc;
-            }, {}),
-        [models],
-    );
-
-    // Merge models with health stats.
-    // Use endpointType (original API endpoint) for Tinybird matching since
-    // Tinybird reports e.g. generate.image for video models served from /image/models.
-    const mergedModels = models.map((model) => {
-        const statsType = model.endpointType || model.type;
-        const stats =
-            modelStats.find(
-                (s) =>
-                    s.model === model.name &&
-                    s.event_type === `generate.${statsType}`,
-            ) ?? null;
-        return {
-            ...model,
-            provider: model.provider || stats?.provider,
-            stats,
-        };
-    });
-
-    // Add models from health stats that aren't in the visible model list (but not "undefined")
-    const unmatchedStats = modelStats.filter(
-        (s) =>
-            !models.some(
-                (m) =>
-                    m.name === s.model &&
-                    `generate.${m.endpointType || m.type}` === s.event_type,
-            ),
-    );
-    const extraModels = unmatchedStats.map((s) => {
-        const statsType = s.event_type?.replace("generate.", "") || "unknown";
-        const stats = s;
-        const sameNameMatches = catalogModelsByName[s.model] || [];
-
-        let modelMeta;
-        if (endpointStatus.catalog === false) {
-            modelMeta = {
-                name: s.model || "(unknown)",
-                community: s.model?.includes("/") || false,
-                type: statsType,
-                endpointType: statsType,
-                provider: s.provider,
-                description: "Unknown model while live catalog is unavailable",
-                catalogStatus: "catalog-unavailable",
-            };
-        } else if (sameNameMatches.length > 0) {
-            const registeredTypes = [
-                ...new Set(sameNameMatches.map((m) => m.type)),
-            ].sort();
-            modelMeta = {
-                name: s.model || "(unknown)",
-                community: sameNameMatches.some((m) => m.community),
-                type: statsType,
-                endpointType: statsType,
-                provider: s.provider,
-                description: `Unexpected ${statsType} traffic; registered as ${registeredTypes.join("/")}`,
-                catalogStatus: "anomaly",
-            };
-        } else {
-            modelMeta = {
-                name: s.model || "(unknown)",
-                community: s.model?.includes("/") || false,
-                type: statsType,
-                endpointType: statsType,
-                provider: s.provider,
-                description: "Unregistered model",
-                catalogStatus: "unregistered",
-            };
-        }
-
-        return {
-            ...modelMeta,
-            stats,
-        };
-    });
-
-    const allModels = [...mergedModels, ...extraModels];
+    const allModels = useMemo(() => {
+        // The rollup rows carry the same shape model_health used to, so the
+        // identity and catalog-anomaly rules are unchanged; only the arithmetic
+        // behind each headline moved into the pipe.
+        const withHealth = mergeModelHealth(
+            models,
+            rollupRows(routeStats),
+            endpointStatus.catalog,
+        );
+        return attachRouteHealth(withHealth, routeStats);
+    }, [models, routeStats, endpointStatus.catalog]);
 
     const refresh = useCallback(() => {
         fetchModels();
-        fetchHealthStats();
-    }, [fetchModels, fetchHealthStats]);
+        fetchRouteStats();
+    }, [fetchModels, fetchRouteStats]);
 
     useEffect(() => {
         refresh();

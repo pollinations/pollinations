@@ -8,19 +8,23 @@ import {
     COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
     COMMUNITY_PROVIDER_URL_MAX_LENGTH,
     CommunityEndpointAdvertisedSchema,
+    CommunityEndpointApiSchema,
     type CommunityEndpointPriceKey,
+    EndpointAgentListingPayloadSchema,
     MAX_FALLBACK_TARGETS,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
 } from "@shared/community-endpoints.ts";
+import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
 import { ValidationError } from "@shared/http/validation-error.ts";
 import { MODEL_INPUT_MODALITIES } from "@shared/registry/registry.ts";
+import { SAFETY_FEATURES } from "@shared/schemas/safety.ts";
 import { z } from "zod";
 
 const ModalitySchema = z
     .enum(COMMUNITY_ENDPOINT_MODALITIES)
     .describe(
-        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits` when the endpoint test succeeds; "transcription" uses `/v1/audio/transcriptions`.',
+        'Upstream API family. Text models select one Chat Completions or Responses endpoint. "image" uses `/v1/images/generations` and optionally `/v1/images/edits`; "video" calls the exact configured URL; "transcription" uses `/v1/audio/transcriptions`; "speech" uses `/v1/audio/speech`.',
     );
 const ImagePricingSchema = z
     .enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)
@@ -34,6 +38,12 @@ const InputModalitiesSchema = z
     .describe(
         "Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately.",
     );
+export const RequiredSafetyFeaturesSchema = z
+    .array(z.enum(SAFETY_FEATURES))
+    .max(SAFETY_FEATURES.length)
+    .describe(
+        "Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider.",
+    );
 const AdvertisedSchema = z
     .object(CommunityEndpointAdvertisedSchema.shape)
     .strict()
@@ -46,7 +56,7 @@ const PriceSchema = z
         message: `Price must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_TOKEN} per token (${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens)`,
     })
     .describe(
-        'Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request".',
+        'Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionVideoPrice` is per generated second.',
     );
 const UpdatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
@@ -100,48 +110,97 @@ const EndpointFieldsSchema = {
     description: z
         .string()
         .trim()
-        .max(COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH)
+        .max(
+            COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
+            `Description must be at most ${COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH} characters`,
+        )
         .optional(),
     baseUrl: z
         .string()
         .url()
         .describe(
-            "OpenAI-compatible `/v1` base URL or full chat, image generation, or image edit URL.",
+            "Media API base URL or full endpoint URL. For video, the exact generation URL.",
+        ),
+    url: z
+        .string()
+        .url()
+        .describe(
+            "Exact upstream endpoint URL for the selected text API, including its path and query parameters.",
         ),
     upstreamModel: z.string().trim().min(1).max(253).optional(),
     bearerToken: z.string().min(1),
 } as const;
 
-const ProxyCreateSchema = z
-    .object({
-        name: EndpointFieldsSchema.name,
-        title: EndpointFieldsSchema.title,
-        description: EndpointFieldsSchema.description,
-        visibility: VisibilitySchema.optional().default("private"),
-        baseUrl: EndpointFieldsSchema.baseUrl,
-        bearerToken: EndpointFieldsSchema.bearerToken,
-        upstreamModel: EndpointFieldsSchema.upstreamModel,
-        modality: ModalitySchema.optional().default("text"),
-        imagePricing: ImagePricingSchema.optional().default("request"),
-        inputModalities: InputModalitiesSchema.optional(),
-        advertised: AdvertisedSchema.optional(),
-        perUserRpm: PerUserRpmSchema.optional(),
-        paidOnly: PaidOnlySchema.optional().default(false),
-        fallbacks: FallbacksSchema.optional(),
-        ...UpdatePriceFieldsSchema,
-    })
-    .strict();
+function validateEndpointUpdate(
+    input: { api?: string; url?: string; baseUrl?: string },
+    ctx: z.RefinementCtx,
+): void {
+    if (
+        (input.api === undefined) !== (input.url === undefined) ||
+        (input.api !== undefined && input.baseUrl !== undefined)
+    ) {
+        ctx.addIssue({
+            code: "custom",
+            path: ["url"],
+            message: "Supply api and url together, without baseUrl",
+        });
+    }
+}
+
+const ProxyCreateFieldsSchema = {
+    name: EndpointFieldsSchema.name,
+    title: EndpointFieldsSchema.title,
+    description: EndpointFieldsSchema.description,
+    visibility: VisibilitySchema.optional().default("private"),
+    bearerToken: EndpointFieldsSchema.bearerToken,
+    upstreamModel: EndpointFieldsSchema.upstreamModel,
+    imagePricing: ImagePricingSchema.optional().default("request"),
+    inputModalities: InputModalitiesSchema.optional(),
+    requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional().default([]),
+    advertised: AdvertisedSchema.optional(),
+    perUserRpm: PerUserRpmSchema.optional(),
+    paidOnly: PaidOnlySchema.optional().default(false),
+    fallbacks: FallbacksSchema.optional(),
+    ...UpdatePriceFieldsSchema,
+};
+const ProxyCreateSchema = z.union([
+    z
+        .object({
+            ...ProxyCreateFieldsSchema,
+            modality: z.literal("text").default("text"),
+            api: CommunityEndpointApiSchema,
+            url: EndpointFieldsSchema.url,
+        })
+        .strict(),
+    z
+        .object({
+            ...ProxyCreateFieldsSchema,
+            modality: ModalitySchema.exclude(["text"]),
+            baseUrl: EndpointFieldsSchema.baseUrl,
+        })
+        .strict(),
+]);
 export const CreateEndpointSchema = ProxyCreateSchema;
 export type ProxyCreateInput = z.infer<typeof ProxyCreateSchema>;
 
+const EndpointAgentModalityFields = EndpointAgentListingPayloadSchema.pick({
+    inputModalities: true,
+    outputModalities: true,
+}).shape;
+
 export const CreateEndpointAgentSchema = z
     .object({
+        ...EndpointAgentModalityFields,
         name: EndpointFieldsSchema.name,
         title: EndpointFieldsSchema.title,
         description: EndpointFieldsSchema.description,
         visibility: VisibilitySchema.optional().default("private"),
-        baseUrl: EndpointFieldsSchema.baseUrl,
+        api: CommunityEndpointApiSchema,
+        url: EndpointFieldsSchema.url,
         upstreamModel: EndpointFieldsSchema.upstreamModel,
+        requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional().default(
+            [],
+        ),
         perUserRpm: PerUserRpmSchema.optional().default(null),
     })
     .strict();
@@ -151,12 +210,15 @@ const CommonUpdateFieldsSchema = {
     title: EndpointFieldsSchema.title.optional(),
     description: EndpointFieldsSchema.description,
     visibility: VisibilitySchema.optional(),
+    requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional(),
     hidden: z.boolean().optional(),
 } as const;
 const ProxyUpdateSchema = z
     .object({
         ...CommonUpdateFieldsSchema,
         baseUrl: EndpointFieldsSchema.baseUrl.optional(),
+        api: CommunityEndpointApiSchema.optional(),
+        url: EndpointFieldsSchema.url.optional(),
         upstreamModel: EndpointFieldsSchema.upstreamModel,
         bearerToken: EndpointFieldsSchema.bearerToken.optional(),
         perUserRpm: PerUserRpmSchema.optional(),
@@ -167,23 +229,44 @@ const ProxyUpdateSchema = z
         fallbacks: FallbacksSchema.optional(),
         ...UpdatePriceFieldsSchema,
     })
-    .strict();
+    .strict()
+    .superRefine(validateEndpointUpdate);
 export type ProxyUpdateInput = z.infer<typeof ProxyUpdateSchema>;
 const PromptAgentUpdateSchema = z.object(CommonUpdateFieldsSchema).strict();
+export const CodeAgentUpdateSchema = z
+    .object({
+        description: z
+            .literal("")
+            .optional()
+            .describe(
+                "An empty value is ignored; the description comes from GitHub.",
+            ),
+        visibility: VisibilitySchema.optional(),
+        requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional(),
+    })
+    .strict();
 const EndpointAgentUpdateSchema = z
     .object({
         ...CommonUpdateFieldsSchema,
-        baseUrl: EndpointFieldsSchema.baseUrl.optional(),
+        ...EndpointAgentModalityFields,
+        api: CommunityEndpointApiSchema.optional(),
+        url: EndpointFieldsSchema.url.optional(),
         upstreamModel: EndpointFieldsSchema.upstreamModel,
         perUserRpm: PerUserRpmSchema.optional(),
     })
-    .strict();
+    .strict()
+    .superRefine(validateEndpointUpdate);
 
-export const UpdateEndpointSchema = ProxyUpdateSchema;
+export const UpdateEndpointSchema = ProxyUpdateSchema.safeExtend({
+    outputModalities: EndpointAgentModalityFields.outputModalities,
+});
 
 const UPDATE_SCHEMA_BY_TYPE = {
     proxy: ProxyUpdateSchema,
     prompt_agent: PromptAgentUpdateSchema,
+    code_agent: CodeAgentUpdateSchema.extend({
+        hidden: CommonUpdateFieldsSchema.hidden,
+    }),
     endpoint_agent: EndpointAgentUpdateSchema,
 } as const;
 
@@ -205,61 +288,123 @@ export const ModelListSchema = z
     })
     .strict();
 export const TestEndpointSchema = z
-    .object({
-        baseUrl: z.string().url(),
-        bearerToken: z.string().min(1),
-        model: z.string().trim().min(1).max(253),
-        modality: ModalitySchema.optional().default("text"),
-    })
-    .strict();
+    .union([
+        z
+            .object({
+                api: CommunityEndpointApiSchema,
+                url: EndpointFieldsSchema.url,
+                bearerToken: EndpointFieldsSchema.bearerToken,
+                model: EndpointFieldsSchema.upstreamModel.unwrap(),
+                modality: z.literal("text").default("text"),
+            })
+            .strict(),
+        z
+            .object({
+                baseUrl: EndpointFieldsSchema.baseUrl,
+                bearerToken: EndpointFieldsSchema.bearerToken,
+                model: EndpointFieldsSchema.upstreamModel,
+                modality: ModalitySchema.exclude(["text"]),
+            })
+            .strict(),
+    ])
+    .superRefine((input, ctx) => {
+        if (input.modality !== "video" && !input.model) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["model"],
+                message: "model is required unless modality is video",
+            });
+        }
+    });
 const ResponsePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [field.key, z.number()]),
 ) as unknown as Record<CommunityEndpointPriceKey, z.ZodType<number>>;
+const PendingCommunityEndpointChangeSchema = z
+    .object({
+        effectiveAt: z.string().datetime(),
+        visibility: z.literal("public").optional(),
+        paidOnly: z.boolean().optional(),
+        imagePricing: ImagePricingSchema.optional(),
+        ...Object.fromEntries(
+            COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
+                field.key,
+                z.number().optional(),
+            ]),
+        ),
+    })
+    .strict()
+    .nullable();
 const CommunityEndpointResponseFieldsSchema = {
     id: z.string(),
     modelId: z.string(),
     name: z.string(),
     title: z.string(),
     description: z.string().nullable(),
-    baseUrl: z.string().url(),
-    upstreamModel: z.string().min(1),
     visibility: VisibilitySchema,
+    requiredSafetyFeatures: RequiredSafetyFeaturesSchema,
+    pending: PendingCommunityEndpointChangeSchema,
     hidden: z.boolean(),
     hiddenReason: z.string().nullable(),
     hiddenAt: z.string().nullable(),
     createdAt: z.string(),
     updatedAt: z.string(),
 } as const;
-const ProxyEndpointResponseSchema = z
-    .object({
-        ...CommunityEndpointResponseFieldsSchema,
-        type: z.literal("proxy"),
-        modality: ModalitySchema,
-        imagePricing: ImagePricingSchema,
-        inputModalities: z.array(InputModalitySchema),
-        advertised: AdvertisedSchema,
-        perUserRpm: PerUserRpmSchema,
-        paidOnly: z.boolean(),
-        fallbacks: z.array(z.string()),
-        ...ResponsePriceFieldsSchema,
-    })
-    .strict();
+const ProxyEndpointResponseFieldsSchema = {
+    ...CommunityEndpointResponseFieldsSchema,
+    type: z.literal("proxy"),
+    upstreamModel: z.string().min(1),
+    imagePricing: ImagePricingSchema,
+    inputModalities: z.array(InputModalitySchema),
+    advertised: AdvertisedSchema,
+    perUserRpm: PerUserRpmSchema,
+    paidOnly: z.boolean(),
+    fallbacks: z.array(z.string()),
+    ...ResponsePriceFieldsSchema,
+};
+const ProxyEndpointResponseSchema = z.union([
+    z
+        .object({
+            ...ProxyEndpointResponseFieldsSchema,
+            modality: z.literal("text"),
+            api: CommunityEndpointApiSchema,
+            url: EndpointFieldsSchema.url,
+        })
+        .strict(),
+    z
+        .object({
+            ...ProxyEndpointResponseFieldsSchema,
+            modality: ModalitySchema.exclude(["text"]),
+            baseUrl: EndpointFieldsSchema.baseUrl,
+        })
+        .strict(),
+]);
 const PromptAgentEndpointResponseSchema = z
     .object({
         ...CommunityEndpointResponseFieldsSchema,
         type: z.literal("prompt_agent"),
     })
     .strict();
+const CodeAgentEndpointResponseSchema = z
+    .object({
+        ...CommunityEndpointResponseFieldsSchema,
+        type: z.literal("code_agent"),
+    })
+    .strict();
 export const EndpointAgentResponseSchema = z
     .object({
         ...CommunityEndpointResponseFieldsSchema,
+        ...EndpointAgentModalityFields,
         type: z.literal("endpoint_agent"),
+        api: CommunityEndpointApiSchema,
+        url: EndpointFieldsSchema.url,
+        upstreamModel: z.string().min(1),
         perUserRpm: PerUserRpmSchema,
     })
     .strict();
-export const CommunityEndpointResponseSchema = z.discriminatedUnion("type", [
+export const CommunityEndpointResponseSchema = z.union([
     ProxyEndpointResponseSchema,
     PromptAgentEndpointResponseSchema,
+    CodeAgentEndpointResponseSchema,
     EndpointAgentResponseSchema,
 ]);
 export type CommunityEndpointResponse = z.infer<
@@ -270,17 +415,25 @@ export const CommunityEndpointListResponseSchema = z.object({
     provider: z.object({
         name: z.string().nullable(),
         url: z.string().url().nullable(),
+        iconUrl: z.string().refine(isCommunityProviderIconUrl).nullable(),
     }),
 });
 export const CommunityProviderProfileInputSchema = z
     .object({
         name: z.string().trim().max(COMMUNITY_PROVIDER_NAME_MAX_LENGTH),
         url: z.string().trim().max(COMMUNITY_PROVIDER_URL_MAX_LENGTH),
+        iconUrl: z
+            .string()
+            .trim()
+            .refine(isCommunityProviderIconUrl, "Invalid media icon URL")
+            .nullable()
+            .optional(),
     })
     .strict();
 export const CommunityProviderProfileResponseSchema = z.object({
     name: z.string().nullable(),
     url: z.string().url().nullable(),
+    iconUrl: z.string().refine(isCommunityProviderIconUrl).nullable(),
 });
 export const CommunityEndpointModelsResponseSchema = z.object({
     data: z.array(z.string()),
@@ -302,6 +455,12 @@ export const CommunityEndpointTestResponseSchema = z
         imagePricing: ImagePricingSchema.optional().describe(
             "Image tests only: pricing mode detected from the provider response.",
         ),
+        imageEditError: z
+            .string()
+            .optional()
+            .describe(
+                "Image tests only: edit-test failure details. Generation succeeded; this does not establish that editing is unsupported.",
+            ),
         inputModalities: z
             .array(InputModalitySchema)
             .optional()

@@ -121,7 +121,7 @@ export function AppHeader({
                     <nav
                         aria-label={navLabel}
                         className={cn(
-                            "polli:flex polli:min-w-0 polli:flex-wrap polli:gap-2",
+                            "polli:flex polli:min-w-0 polli:flex-wrap polli:items-center polli:gap-2",
                             navClassName,
                         )}
                     >

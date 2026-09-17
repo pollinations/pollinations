@@ -1,7 +1,6 @@
 import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import {
     type CommunityEndpointRuntime,
-    communityOpenAIBaseUrl,
     isFreeCommunityEndpoint,
     normalizeCommunityEndpointBearerToken,
     usesAgentRunToken,
@@ -24,7 +23,7 @@ import type { RequestData, TransformOptions } from "./types.js";
  * secret it replaces: the endpoint can verify it against `/account/key`, which
  * a shared string cannot do.
  *
- * Both agent kinds delegate and a proxy never does — the listing's type says
+ * Every agent kind delegates and a proxy never does — the listing's type says
  * so, and no flag can make a proxy delegate. The other two conditions are
  * invariants, so they throw: the endpoint must be free, since charging a
  * wrapper price on top of the generation it bills the caller for is double
@@ -61,7 +60,9 @@ async function mintDelegatedToken({
         // The managed runtime uses the listing id (also its upstream model) to
         // select the prompt config. An external agent only needs spend scope.
         managedAgentId:
-            endpoint.type === "prompt_agent" ? endpoint.id : undefined,
+            endpoint.type === "prompt_agent" || endpoint.type === "code_agent"
+                ? endpoint.id
+                : undefined,
     });
 }
 
@@ -85,6 +86,33 @@ export async function communityEndpointGatewayContext({
     parentApiKeyId?: string;
 }): Promise<TransformOptions> {
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
+    const modelConfig = await communityEndpointModelConfig({
+        endpoint,
+        secret,
+        parentRequestId,
+        parentApiKeyId,
+    });
+    return {
+        ...requestDataWithoutMessages,
+        modelConfig,
+        modelDef: modelDefinition,
+        requestedModel: endpoint.modelId,
+        portkeyGatewayUrl,
+        userApiKey,
+    };
+}
+
+export async function communityEndpointModelConfig({
+    endpoint,
+    secret,
+    parentRequestId,
+    parentApiKeyId,
+}: {
+    endpoint: CommunityEndpointRuntime;
+    secret: string;
+    parentRequestId: string;
+    parentApiKeyId?: string;
+}): Promise<Record<string, unknown>> {
     const runToken = await mintDelegatedToken({
         endpoint,
         parentApiKeyId,
@@ -104,16 +132,11 @@ export async function communityEndpointGatewayContext({
     if (!authKey) throw new Error("Agent request has no agent run token");
 
     return {
-        ...requestDataWithoutMessages,
-        modelConfig: {
-            provider: "openai",
-            "custom-host": communityOpenAIBaseUrl(endpoint.baseUrl),
-            authKey,
-            model: endpoint.upstreamModel,
-        },
-        modelDef: modelDefinition,
-        requestedModel: endpoint.modelId,
-        portkeyGatewayUrl,
-        userApiKey,
+        provider: "openai",
+        authKey,
+        model: endpoint.upstreamModel,
+        ...(endpoint.api === "responses"
+            ? { responsesEndpoint: endpoint.baseUrl }
+            : { directEndpoint: endpoint.baseUrl }),
     };
 }

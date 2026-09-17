@@ -4,15 +4,18 @@ import {
     ClipboardIcon,
     CopyButton,
     cn,
+    RocketIcon,
     Surface,
     Tooltip,
 } from "@pollinations/ui";
+import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { FC, ReactNode } from "react";
 import { calculatePerPollen } from "./calculations.ts";
 import {
     CAPABILITY_ICON,
     getCommunityModelIcon,
     MODALITY_ICON,
+    ModelBrandIcon,
 } from "./model-icons.tsx";
 import {
     getModelBrandLogoPath,
@@ -34,12 +37,29 @@ import {
     ModelStatusChips,
     PerUserRateLimit,
 } from "./model-status-chips.tsx";
+import { isOpenWebUiChattable, OpenWebUiLink } from "./open-webui-link.tsx";
 import {
     ModelPricingControls,
     ModelPricingLedger,
     useModelPricingSelection,
 } from "./price-badge.tsx";
 import type { ModelPrice } from "./types.ts";
+
+function formatVideoDuration(model: ModelPrice): string | null {
+    if (model.allowedDurations?.length) {
+        const ds = [...model.allowedDurations].sort((a, b) => a - b);
+        if (ds.length === 1) return `${ds[0]}s`;
+        return `${ds[0]}–${ds[ds.length - 1]}s`;
+    }
+    if (model.minDuration != null && model.maxDuration != null) {
+        return model.minDuration === model.maxDuration
+            ? `${model.minDuration}s`
+            : `${model.minDuration}–${model.maxDuration}s`;
+    }
+    if (model.minDuration != null) return `${model.minDuration}s+`;
+    if (model.maxDuration != null) return `≤${model.maxDuration}s`;
+    return null;
+}
 
 type ModelRowProps = {
     model: ModelPrice;
@@ -57,13 +77,8 @@ export const ModelId: FC<ModelIdProps> = ({ name, showCopyIcon = false }) => (
         value={name}
         tooltip={
             showCopyIcon ? null : (
-                <span className="flex min-w-0 max-w-full flex-col items-start gap-1.5 text-left">
-                    <span className="font-sans text-xs font-semibold text-theme-text-strong">
-                        Click to copy
-                    </span>
-                    <span className="max-w-full break-all font-mono text-xs text-theme-text-muted">
-                        {name}
-                    </span>
+                <span className="font-sans text-xs font-semibold text-theme-text-strong">
+                    Click to copy
                 </span>
             )
         }
@@ -169,18 +184,44 @@ export const PerPollenEstimate: FC<{
 
 export function getModelTitleTooltipContent(model: ModelPrice): ReactNode {
     const modelDescription = getModelDescriptionWithoutName(model);
+    const videoDuration = formatVideoDuration(model);
 
-    if (!model.agent || !model.baseModel) return modelDescription;
+    if (
+        !modelDescription &&
+        (!model.agent || !model.baseModel) &&
+        model.contextLength == null &&
+        !videoDuration
+    ) {
+        return null;
+    }
 
     return (
         <span className="flex max-w-sm flex-col gap-1.5 text-left">
             {modelDescription && <span>{modelDescription}</span>}
-            <span className="text-xs text-theme-text-muted">
-                <strong className="font-semibold text-theme-text-base">
-                    Base model:
-                </strong>{" "}
-                <span className="font-mono">{model.baseModel}</span>
-            </span>
+            {model.agent && model.baseModel && (
+                <span className="text-xs text-theme-text-muted">
+                    <strong className="font-semibold text-theme-text-base">
+                        Base model:
+                    </strong>{" "}
+                    <span className="font-mono">{model.baseModel}</span>
+                </span>
+            )}
+            {model.contextLength != null && (
+                <span className="text-xs text-theme-text-muted">
+                    <strong className="font-semibold text-theme-text-base">
+                        Context window:
+                    </strong>{" "}
+                    {model.contextLength.toLocaleString()} tokens
+                </span>
+            )}
+            {videoDuration && (
+                <span className="text-xs text-theme-text-muted">
+                    <strong className="font-semibold text-theme-text-base">
+                        Video duration:
+                    </strong>{" "}
+                    {videoDuration}
+                </span>
+            )}
         </span>
     );
 }
@@ -200,6 +241,14 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showNew = isNewModel(model);
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
+    // One launcher per row: anything you can chat with opens in Open WebUI,
+    // everything else keeps the Play playground.
+    const openWebUiSupported = isOpenWebUiChattable(model);
+    const playSupported =
+        !openWebUiSupported &&
+        model.type !== "3d" &&
+        model.type !== "embedding" &&
+        model.type !== "realtime";
     const balanceAccess: BalanceAccess = model.free
         ? "free"
         : showPaidOnly
@@ -211,29 +260,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
         <Surface className="flex items-center transition-colors hover:bg-surface-opaque/90">
             {/* Brand logo — fixed width column */}
             <div className="w-10 shrink-0 flex items-center justify-center">
-                {CommunityModelIcon ? (
-                    <CommunityModelIcon
-                        aria-hidden="true"
-                        className="h-8 w-8 text-ink-900 opacity-55"
-                    />
-                ) : (
-                    brandLogoPath && (
-                        <span
-                            aria-hidden="true"
-                            className="h-8 w-8 bg-current opacity-55 text-ink-900"
-                            style={{
-                                maskImage: `url(${brandLogoPath})`,
-                                WebkitMaskImage: `url(${brandLogoPath})`,
-                                maskRepeat: "no-repeat",
-                                WebkitMaskRepeat: "no-repeat",
-                                maskPosition: "center",
-                                WebkitMaskPosition: "center",
-                                maskSize: "contain",
-                                WebkitMaskSize: "contain",
-                            }}
-                        />
-                    )
-                )}
+                <ModelBrandIcon model={model} />
             </div>
 
             {/* Hairline separating the brand logo from the model info —
@@ -274,25 +301,47 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 {publicModelName}
                             </span>
                         )}
+                        {playSupported && (
+                            <Tooltip
+                                content="Try in Play"
+                                ariaLabel={`Try ${publicModelName} in Play`}
+                                tapEnabled
+                                displayContents
+                            >
+                                <a
+                                    href={`${PUBLIC_URLS.root}/play?model=${encodeURIComponent(model.name)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex shrink-0 text-theme-text-muted transition-colors hover:text-theme-text-soft"
+                                >
+                                    <RocketIcon className="h-4 w-4" />
+                                </a>
+                            </Tooltip>
+                        )}
+                        {openWebUiSupported && (
+                            <OpenWebUiLink modelId={model.name} />
+                        )}
                     </div>
                     <ModelId name={model.name} />
-                    {model.brandUrl && model.brand && (
+                    {model.brandUrl && model.publisher && (
                         <a
                             href={model.brandUrl}
                             target="_blank"
                             rel="noreferrer"
                             className="w-fit max-w-full truncate text-xs text-theme-text-muted underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
                         >
-                            {model.brand}
+                            {model.publisher}
                         </a>
                     )}
                     <div className="flex min-w-0 flex-col gap-0.5">
                         {(inputModalities.length > 0 ||
                             capabilities.length > 0 ||
+                            model.perUserRpm != null ||
                             pricing.dropdowns.length > 0) && (
                             <div className="flex min-w-0 flex-wrap items-center gap-2">
                                 {(inputModalities.length > 0 ||
-                                    capabilities.length > 0) && (
+                                    capabilities.length > 0 ||
+                                    model.perUserRpm != null) && (
                                     <div className="inline-flex items-center gap-2.5 text-theme-text-muted">
                                         {inputModalities.length > 0 && (
                                             <Tooltip
@@ -359,6 +408,14 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                                 </span>
                                             </Tooltip>
                                         )}
+                                        {(inputModalities.length > 0 ||
+                                            capabilities.length > 0) &&
+                                            model.perUserRpm != null && (
+                                                <span className="h-3.5 w-px bg-current opacity-30" />
+                                            )}
+                                        <PerUserRateLimit
+                                            value={model.perUserRpm}
+                                        />
                                     </div>
                                 )}
                                 <ModelPricingControls
@@ -367,14 +424,10 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 />
                             </div>
                         )}
-                        {model.perUserRpm != null && (
-                            <div className="flex min-w-0 items-center">
-                                <PerUserRateLimit value={model.perUserRpm} />
-                            </div>
-                        )}
                     </div>
                     <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
                         <ModelStatusChips
+                            health={model.health}
                             showNew={showNew}
                             showAlpha={showAlpha}
                         />
@@ -386,7 +439,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 </div>
             </div>
 
-            <div className="w-[clamp(312px,calc(32%_-_8px),352px)] shrink-0 py-3 pl-3 pr-1">
+            <div className="w-[clamp(312px,calc(32%_-_8px),352px)] min-w-0 shrink-0 overflow-hidden py-3 pl-3 pr-1">
                 <ModelPricingLedger
                     pricing={pricing}
                     hasTools={pollinationsTools}

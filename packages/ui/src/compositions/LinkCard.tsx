@@ -33,33 +33,28 @@ export function LinkCard<T extends React.ElementType = "a">({
         external ?? isExternalHref((linkProps as { href?: unknown }).href);
 
     return (
-        <Component
+        <Surface
+            as={Component}
+            variant="card"
             target={isExternal ? "_blank" : undefined}
             rel={isExternal ? "noopener noreferrer" : undefined}
-            className={cn(
-                "polli:group polli:block polli:h-full polli:rounded-xl polli:outline-none",
-                className,
-            )}
             {...linkProps}
+            className={cn(
+                "polli:relative polli:flex polli:h-full polli:flex-col polli:gap-2 polli:bg-surface-opaque/80 polli:p-5 polli:outline-none",
+                showIcon && isExternal && "polli:pr-10",
+                "polli:transition-colors polli:hover:bg-surface-opaque/95",
+                "polli:focus-visible:ring-2 polli:focus-visible:ring-theme-border",
+                className,
+                surfaceClassName,
+            )}
         >
-            <Surface
-                variant="card"
-                className={cn(
-                    "polli:relative polli:flex polli:h-full polli:flex-col polli:gap-2 polli:bg-surface-opaque/80 polli:p-5",
-                    showIcon && isExternal && "polli:pr-10",
-                    "polli:transition polli:group-hover:-translate-y-0.5 polli:group-hover:bg-surface-opaque/95",
-                    "polli:group-focus-visible:ring-2 polli:group-focus-visible:ring-theme-border",
-                    surfaceClassName,
-                )}
-            >
-                {showIcon && isExternal && (
-                    <ExternalLinkIcon
-                        aria-hidden="true"
-                        className="polli:absolute polli:top-4 polli:right-4 polli:h-3.5 polli:w-3.5 polli:text-theme-text-soft"
-                    />
-                )}
-                {children}
-            </Surface>
-        </Component>
+            {showIcon && isExternal && (
+                <ExternalLinkIcon
+                    aria-hidden="true"
+                    className="polli:absolute polli:top-4 polli:right-4 polli:h-3.5 polli:w-3.5 polli:text-theme-text-soft"
+                />
+            )}
+            {children}
+        </Surface>
     );
 }

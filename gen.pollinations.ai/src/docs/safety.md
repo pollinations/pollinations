@@ -4,6 +4,8 @@ Optional safety checking runs on text input before generation. Omitted, `false`,
 
 For community models, enabled checks run before text is sent to the provider or a configured fallback.
 
+Models may require specific checks. Required checks are listed as `required_safety` in the model catalog and cannot be disabled by callers.
+
 Use `safe` as a query parameter or JSON body field, or send the same value in the `Pollinations-Safe` header.
 
 Values: `privacy` redacts personal information like names, email, phone, address, IP, URLs, and usernames. `secrets` redacts keys and passwords. `sexual`, `violence`, and `shield` block matching requests. Aliases: `true` = `privacy,secrets`, `nsfw` = `sexual,violence`.
@@ -16,7 +18,7 @@ curl https://gen.pollinations.ai/v1/chat/completions \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -H "Pollinations-Safe: privacy" \
-  -d '{"model":"openai","messages":[{"role":"user","content":"email me at a@example.com"}]}'
+  -d '{"model":"openai/gpt-5.4-nano","messages":[{"role":"user","content":"email me at a@example.com"}]}'
 ```
 
 Large requests check the latest 50,000 text characters, across up to 25 text parts, in one safety call.

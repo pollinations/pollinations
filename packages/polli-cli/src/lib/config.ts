@@ -51,6 +51,16 @@ export const setKeyOverride = (key: string) => {
     _keyOverride = key;
 };
 
+export const clearKeyOverride = () => {
+    _keyOverride = undefined;
+};
+
+export const getKeyOverride = (): string | undefined => _keyOverride;
+
+/** True for Pollinations API keys (auth), not usage --key name filters. */
+export const isApiKeyValue = (value: string): boolean =>
+    value.startsWith("pk_") || value.startsWith("sk_");
+
 export const resolveApiKey = (flagKey?: string): string | undefined =>
     flagKey ?? _keyOverride ?? loadCredentials().apiKey;
 

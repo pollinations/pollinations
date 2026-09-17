@@ -112,7 +112,7 @@ function TopUpPage() {
     if (!user) {
         return (
             <SignInScreen
-                title="Top up your wallet"
+                title="Top up"
                 description="Sign in to buy Pollen for your Pollinations account."
             />
         );
@@ -161,7 +161,7 @@ function TopUpPage() {
 
     return (
         <AuthFlowScreen
-            title="Top up your wallet"
+            title="Top up"
             description="Add Pollen to your account."
             size="lg"
             balance={wallet}

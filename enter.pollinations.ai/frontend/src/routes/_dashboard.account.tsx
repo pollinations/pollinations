@@ -1,10 +1,8 @@
 import {
     Alert,
     Button,
+    ConfirmationDialog,
     CopyButton,
-    Dialog,
-    DialogBody,
-    DialogFooter,
     DiscordIcon,
     Field,
     FieldStack,
@@ -335,86 +333,65 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
     }
 
     return (
-        <Dialog
+        <ConfirmationDialog
             open={open}
-            onOpenChange={handleOpenChange}
+            onCancel={() => handleOpenChange(false)}
+            onConfirm={() => void handleDelete()}
             title="Delete Pollinations account?"
-            size="sm"
+            confirmLabel={isDeleting ? "Deleting…" : "Delete account"}
+            confirmDisabled={confirmation !== DELETE_CONFIRMATION || isDeleting}
+            cancelDisabled={isDeleting}
         >
-            <DialogBody>
-                <Alert intent="danger" title="This cannot be undone">
-                    <div className="flex flex-col gap-3">
-                        <p>Deleting your Pollinations account removes:</p>
-                        <ul className="list-disc space-y-1 pl-5">
-                            <li>
-                                Profile, sessions, GitHub connection, and API
-                                keys
-                            </li>
-                            <li>
-                                Pollen balances, access to reward history,
-                                agents, and community models
-                            </li>
-                            <li>Published media listings and tags</li>
-                        </ul>
-                        <p>
-                            We retain only your immutable GitHub user ID with
-                            records of rewards already issued to prevent
-                            duplicate quest payouts.
-                        </p>
-                        <p>
-                            Cached copies of uploaded and generated media may
-                            remain temporarily until their retention period
-                            ends. Required billing and usage records may also be
-                            retained.
-                        </p>
-                    </div>
-                </Alert>
+            <Alert intent="danger" title="This cannot be undone">
+                <div className="flex flex-col gap-3">
+                    <p>Deleting your Pollinations account removes:</p>
+                    <ul className="list-disc space-y-1 pl-5">
+                        <li>
+                            Profile, sessions, GitHub connection, and API keys
+                        </li>
+                        <li>
+                            Pollen balances, access to reward history, agents,
+                            and community models
+                        </li>
+                        <li>Published media listings and tags</li>
+                    </ul>
+                    <p>
+                        We retain only your immutable GitHub user ID with
+                        records of rewards already issued to prevent duplicate
+                        quest payouts.
+                    </p>
+                    <p>
+                        Cached copies of uploaded and generated media may remain
+                        temporarily until their retention period ends. Required
+                        billing and usage records may also be retained.
+                    </p>
+                </div>
+            </Alert>
 
-                <FieldStack
-                    label={
-                        <>
-                            Type{" "}
-                            <span className="font-mono font-semibold text-intent-danger-text">
-                                {DELETE_CONFIRMATION}
-                            </span>{" "}
-                            to confirm
-                        </>
-                    }
-                    error={error}
-                >
-                    <Field.Input asChild>
-                        <Input
-                            value={confirmation}
-                            onChange={(event) =>
-                                setConfirmation(event.currentTarget.value)
-                            }
-                            autoComplete="off"
-                            spellCheck={false}
-                            disabled={isDeleting}
-                        />
-                    </Field.Input>
-                </FieldStack>
-            </DialogBody>
-            <DialogFooter>
-                <Button
-                    type="button"
-                    intent="neutral"
-                    onClick={() => handleOpenChange(false)}
-                    disabled={isDeleting}
-                >
-                    Cancel
-                </Button>
-                <Button
-                    type="button"
-                    intent="danger"
-                    onClick={() => void handleDelete()}
-                    disabled={
-                        confirmation !== DELETE_CONFIRMATION || isDeleting
-                    }
-                >
-                    {isDeleting ? "Deleting…" : "Delete account"}
-                </Button>
-            </DialogFooter>
-        </Dialog>
+            <FieldStack
+                label={
+                    <>
+                        Type{" "}
+                        <span className="font-mono font-semibold text-intent-danger-text">
+                            {DELETE_CONFIRMATION}
+                        </span>{" "}
+                        to confirm
+                    </>
+                }
+                error={error}
+            >
+                <Field.Input asChild>
+                    <Input
+                        value={confirmation}
+                        onChange={(event) =>
+                            setConfirmation(event.currentTarget.value)
+                        }
+                        autoComplete="off"
+                        spellCheck={false}
+                        disabled={isDeleting}
+                    />
+                </Field.Input>
+            </FieldStack>
+        </ConfirmationDialog>
     );
 }

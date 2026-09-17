@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogBody, DialogFooter } from "@pollinations/ui";
+import { ConfirmationDialog } from "@pollinations/ui";
 import type { CommunityEndpoint } from "./types.ts";
 
 type CommunityEndpointDeleteConfirmationProps = {
@@ -12,36 +12,23 @@ export function CommunityEndpointDeleteConfirmation({
     onConfirm,
     onCancel,
 }: CommunityEndpointDeleteConfirmationProps) {
+    const kind = endpoint?.type === "endpoint_agent" ? "agent" : "model";
     return (
-        <Dialog
+        <ConfirmationDialog
             open={!!endpoint}
-            onOpenChange={(open) => !open && onCancel()}
-            title={
-                endpoint?.type === "endpoint_agent"
-                    ? "Delete agent?"
-                    : "Delete model?"
-            }
-            size="sm"
-        >
-            <DialogBody>
-                <p className="text-sm leading-relaxed">
+            title={`Delete ${kind}?`}
+            description={
+                <>
                     Delete{" "}
                     <span className="font-mono text-sm">
                         {endpoint?.modelId}
                     </span>
-                    ? This removes the{" "}
-                    {endpoint?.type === "endpoint_agent" ? "agent" : "model"}{" "}
-                    and cannot be undone.
-                </p>
-            </DialogBody>
-            <DialogFooter>
-                <Button type="button" intent="neutral" onClick={onCancel}>
-                    Cancel
-                </Button>
-                <Button type="button" intent="danger" onClick={onConfirm}>
-                    Delete
-                </Button>
-            </DialogFooter>
-        </Dialog>
+                    ? This removes the {kind} and cannot be undone.
+                </>
+            }
+            confirmLabel="Delete"
+            onConfirm={onConfirm}
+            onCancel={onCancel}
+        />
     );
 }

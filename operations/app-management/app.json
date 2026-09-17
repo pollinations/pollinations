@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🛠️",
+    "name": "Codeverter",
+    "url": "https://fadyabohamza-netizen.github.io/codeverter",
+    "description": "Convert code between 9+ programming languages with AI. BYOP Pollinations-powered.",
+    "language": "en",
+    "category": "build",
+    "platform": "web",
+    "githubUsername": "fadyabohamza-netizen",
+    "githubUserId": "243879765",
+    "repositoryUrl": "https://github.com/fadyabohamza-netizen/codeverter",
+    "repositoryStars": null,
+    "discordUsername": "fadyabohamza-netizen",
+    "other": null,
+    "submittedDate": "2026-09-16",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14988",
+    "approvedDate": "2026-09-17",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🛠️",
     "name": "Regexly",
     "url": "https://fadyabohamza-netizen.github.io/regexly",
     "description": "Describe a regex pattern in plain English, get the regular expression with flavor-specific explanation (JavaScript/Python/PCRE). BYOP Pollinations-powered.",

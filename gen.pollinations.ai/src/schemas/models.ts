@@ -5,10 +5,6 @@ export const ModelListQueryParamsSchema = z.object({
         description:
             "Filter by source. Omit for both official and community models.",
     }),
-    status: z.enum(["all", "healthy"]).optional().meta({
-        description:
-            "Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup.",
-    }),
     community: z.enum(["true", "false", "1", "0"]).optional().meta({
         description:
             "Legacy source filter: `true`/`1` for community, `false`/`0` for official.",
@@ -17,9 +13,8 @@ export const ModelListQueryParamsSchema = z.object({
 
 export type ModelListQueryParams = z.infer<typeof ModelListQueryParamsSchema>;
 
-// Reuse the query enums for header validation and OpenAPI documentation.
+// Reuse the query enum for header validation and OpenAPI documentation.
 export const ModelListHeadersSchema = z.object({
     "pollinations-model-source": ModelListQueryParamsSchema.shape.source,
-    "pollinations-model-status": ModelListQueryParamsSchema.shape.status,
 });
 export type ModelListHeaders = z.infer<typeof ModelListHeadersSchema>;

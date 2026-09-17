@@ -1,5 +1,5 @@
 import { Button, RefreshIcon } from "@pollinations/ui";
-import { AuthModalLoading, ErrorBanner } from "@pollinations/ui/auth";
+import { AuthModalLoading } from "@pollinations/ui/auth";
 import {
     getPollenPackByAmount,
     getPollenPackByKey,
@@ -113,7 +113,7 @@ function TopUpPage() {
         return (
             <SignInScreen
                 title="Top up"
-                description="Sign in to add Pollen to your pollinations.ai account."
+                description="your Pollen. Sign in to continue."
             />
         );
     }
@@ -122,8 +122,8 @@ function TopUpPage() {
         return (
             <AuthFlowScreen
                 footnote="back"
-                title="Checkout complete"
-                description="Your wallet updates after Stripe confirms the payment."
+                title="Top up"
+                description="your Pollen. Done, your wallet updates when Stripe confirms the payment."
                 balance={wallet}
                 topUpHref={null}
                 actions={
@@ -139,7 +139,9 @@ function TopUpPage() {
         return (
             <AuthFlowScreen
                 footnote="help"
-                title="Couldn’t load your wallet"
+                title="Top up"
+                description="your Pollen."
+                error="Couldn’t load your wallet."
                 balance={wallet}
                 topUpHref={null}
                 actions={
@@ -150,11 +152,7 @@ function TopUpPage() {
                         Try again
                     </Button>
                 }
-            >
-                <ErrorBanner>
-                    We couldn’t load your wallet. Please try again.
-                </ErrorBanner>
-            </AuthFlowScreen>
+            />
         );
     }
 
@@ -164,7 +162,12 @@ function TopUpPage() {
     return (
         <AuthFlowScreen
             title="Top up"
-            description="Add Pollen to your account."
+            description="your Pollen. Paid Pollen never expires."
+            error={
+                search.stripe_canceled
+                    ? "Checkout was cancelled, choose an amount to try again."
+                    : undefined
+            }
             size="lg"
             balance={wallet}
             topUpHref={null}
@@ -172,9 +175,6 @@ function TopUpPage() {
                 returnUrl ? <ReturnToApp returnUrl={returnUrl} /> : undefined
             }
         >
-            {search.stripe_canceled && (
-                <ErrorBanner>Checkout was cancelled.</ErrorBanner>
-            )}
             <BuyPollenPanel
                 initialBillingState={billing}
                 selectedPackAmount={selectedPack?.amountUsd ?? 5}

@@ -1,0 +1,37 @@
+{
+  "pr_number": 15107,
+  "title": "Add ApiScribe to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15107",
+  "merged_at": "2026-09-17T17:04:14Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [ApiScribe](https://fadyabohamza-netizen.github.io/apiscribe) to build\n- Describe an API in plain English, get organized REST or GraphQL endpoint blueprints with params and responses. BYOP Pollinations-powered.\n\nFixes #14991",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Blueprints from plain English",
+    "blurb": "ApiScribe joined the garden: describe an API in ordinary words and get a tidy REST or GraphQL blueprint back. The paperwork has learned to photosynthesize.",
+    "summary": "Added ApiScribe to the app build catalog, giving builders a Pollinations-powered tool that turns plain-English API descriptions into organized REST or GraphQL endpoint blueprints with parameters and responses.",
+    "impact": "Builders can now discover and use ApiScribe to sketch concrete REST or GraphQL API contracts from an idea before the endpoints become a small forest of implementation details.",
+    "keywords": [
+      "ApiScribe",
+      "community app",
+      "API design",
+      "REST",
+      "GraphQL",
+      "BYOP",
+      "app catalog"
+    ],
+    "visual_concept": "Depict ApiScribe as a cozy API blueprint workshop: plain-English notes transform into neatly labeled REST and GraphQL endpoint diagrams on a glowing retro monitor. Polli, wearing tiny architect glasses and holding a pencil, helps arrange the blueprints while code-plants and small flowers grow from the desk, representing an API idea becoming an organized build plan.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny architect glasses and arranging API blueprints beside a glowing retro monitor; plain-English notes bloom into tidy REST and GraphQL endpoint cards, with code-plants and flowers growing around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"API SCRIBE\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-17/PR-15107.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny architect glasses and arranging API blueprints beside a glowing retro monitor; plain-English notes bloom into tidy REST and GraphQL endpoint cards, with code-plants and flowers growing around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"API SCRIBE\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-17T17:05:11.653710+00:00",
+  "app_name": "ApiScribe",
+  "app_url": "https://fadyabohamza-netizen.github.io/apiscribe"
+}

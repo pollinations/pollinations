@@ -165,7 +165,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         <CopyButton
             value={createdKey.key}
             variant="button"
-            intent="brand"
+            intent="commit"
             copiedTimeoutMs={500}
             tooltip={null}
             onCopied={closeAfterCopy}
@@ -191,7 +191,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         <Button
             icon={simplified ? <AppIcon /> : <KeyIcon />}
             type="submit"
-            intent="brand"
+            intent="commit"
             className="disabled:opacity-50"
             disabled={isCreateDisabled}
         >

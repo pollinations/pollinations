@@ -197,7 +197,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     <Button
                         icon={appKey ? <AppIcon /> : <KeyIcon />}
                         type="submit"
-                        intent="brand"
+                        intent="commit"
                         disabled={isSubmitting}
                     >
                         {isSubmitting ? "Saving…" : "Save changes"}

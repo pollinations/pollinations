@@ -465,7 +465,7 @@ export function CommunityEndpoints({
                             <div>
                                 <Button
                                     type="submit"
-                                    intent="brand"
+                                    intent="commit"
                                     disabled={
                                         isSavingProvider || providerIsSaved
                                     }

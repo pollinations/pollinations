@@ -969,7 +969,7 @@ export function CommunityEndpointDialog({
                     <Button
                         icon={<BeakerIcon />}
                         type="submit"
-                        intent="brand"
+                        intent="commit"
                         className="disabled:opacity-50"
                         disabled={!canSubmit}
                     >

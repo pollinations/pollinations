@@ -263,7 +263,7 @@ export function AgentDialog({
                     <Button
                         icon={<BotIcon />}
                         type="submit"
-                        intent="brand"
+                        intent="commit"
                         disabled={!canSubmit}
                     >
                         {isSubmitting ? "Saving…" : submitLabel}

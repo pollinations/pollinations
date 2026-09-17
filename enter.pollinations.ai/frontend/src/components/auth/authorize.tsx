@@ -532,7 +532,7 @@ export function Authorize() {
                     <Button
                         type="submit"
                         form="authorize-permissions"
-                        intent="brand"
+                        intent="commit"
                         icon={<KeyIcon />}
                         disabled={!canAuthorize || isAuthorizing}
                     >

@@ -135,6 +135,7 @@ function EvidenceListDialog({
                 if (!open) onClose();
             }}
             title={`Vendor source · ${selection.vendor} · ${monthName(selection.month)}`}
+            size="md"
         >
             <div className="flex min-h-0 flex-1 flex-col px-6 pb-6 pt-3">
                 <p className="shrink-0 pb-3 text-sm text-theme-text-soft">

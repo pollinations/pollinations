@@ -402,6 +402,7 @@ export function CommunityEndpointDialog({
         <Dialog
             open={open}
             onOpenChange={onOpenChange}
+            size="md"
             trigger={trigger}
             triggerAsChild
         >

@@ -80,7 +80,7 @@ export function EvidencePreview({
                 if (!open) onClose();
             }}
             labelledBy="document-preview-title"
-            contentClassName="polli:sm:max-w-6xl"
+            size="xl"
         >
             <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-theme-text-strong/10 px-4 py-3">
                 <DialogTitle

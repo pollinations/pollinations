@@ -3,7 +3,12 @@ import { useId } from "react";
 import lockupUrl from "../../brand/lockup-horizontal.svg";
 import logoUrl from "../../brand/mark.svg";
 import { cn } from "../../lib/cn.ts";
-import { Dialog, DialogBody, DialogFooter } from "../../primitives/Dialog.tsx";
+import {
+    Dialog,
+    DialogBody,
+    DialogFooter,
+    type DialogProps,
+} from "../../primitives/Dialog.tsx";
 import { InlineLink } from "../../primitives/InlineLink.tsx";
 import { CheckIcon } from "../../primitives/icons/index.tsx";
 import { Surface } from "../../primitives/Surface.tsx";
@@ -25,6 +30,7 @@ const authLockupMask = brandMask(lockupUrl);
 
 export type AuthModalProps = {
     children: ReactNode;
+    size?: DialogProps["size"];
     onClose?: () => void;
     dialog?: {
         label?: string;
@@ -32,7 +38,7 @@ export type AuthModalProps = {
     };
 };
 
-export function AuthModal({ children, dialog, onClose }: AuthModalProps) {
+export function AuthModal({ children, size, dialog, onClose }: AuthModalProps) {
     return (
         <Dialog
             open
@@ -41,6 +47,7 @@ export function AuthModal({ children, dialog, onClose }: AuthModalProps) {
             ariaLabel={dialog?.label}
             labelledBy={dialog?.labelledBy}
             positionerClassName="polli:bg-app-bg"
+            size={size}
         >
             {children}
         </Dialog>
@@ -61,6 +68,7 @@ export type AuthFlowLayoutProps = {
     headerAction?: ReactNode;
     actions?: ReactNode;
     dialog?: AuthModalProps["dialog"];
+    size?: DialogProps["size"];
 };
 
 /** Shared sign-in chrome with stable scrolling content and actions. */
@@ -72,12 +80,14 @@ export function AuthFlowLayout({
     headerAction,
     actions,
     dialog,
+    size,
 }: AuthFlowLayoutProps) {
     const generatedId = useId();
     const headingId = titleId ?? generatedId;
     return (
         <AuthModal
             dialog={dialog ?? (title ? { labelledBy: headingId } : undefined)}
+            size={size}
         >
             <AuthModalHeader>{headerAction}</AuthModalHeader>
             <DialogBody>

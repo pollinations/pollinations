@@ -1,6 +1,6 @@
 import { Button, Field, Input, Text } from "@pollinations/ui";
 import { AuthAccessItem, AuthInfoCard } from "@pollinations/ui/auth";
-import type { FC } from "react";
+import type { FC, ReactNode } from "react";
 
 type PublishableKeySettingsProps = {
     redirectUris: string[];
@@ -8,6 +8,8 @@ type PublishableKeySettingsProps = {
     earningsEnabled?: boolean;
     onEarningsEnabledChange?: (enabled: boolean) => void;
     disabled?: boolean;
+    /** First row of the "always" card: the app name field. */
+    lead?: ReactNode;
 };
 
 /**
@@ -23,6 +25,7 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
     earningsEnabled = false,
     onEarningsEnabledChange,
     disabled = false,
+    lead,
 }) => {
     function update(index: number, value: string) {
         const next = [...redirectUris];
@@ -41,6 +44,30 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
 
     return (
         <div className="space-y-4">
+            {/* What the app always has: its name, and whether it earns. */}
+            {(lead || onEarningsEnabledChange) && (
+                <AuthInfoCard title={null}>
+                    <ul className="space-y-3 text-sm text-theme-text-base">
+                        {lead}
+                        {onEarningsEnabledChange && (
+                            <AuthAccessItem
+                                checked={earningsEnabled}
+                                onChange={onEarningsEnabledChange}
+                                disabled={disabled}
+                                ariaLabel="App earnings"
+                                details={
+                                    <Text size="xs" tone="muted">
+                                        Users pay 25% over base rates. Markup
+                                        credits to your balance.
+                                    </Text>
+                                }
+                            >
+                                App earnings
+                            </AuthAccessItem>
+                        )}
+                    </ul>
+                </AuthInfoCard>
+            )}
             <AuthInfoCard title={null}>
                 <div className="space-y-3">
                     <div>
@@ -108,26 +135,6 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
                     </Text>
                 </div>
             </AuthInfoCard>
-            {onEarningsEnabledChange && (
-                <AuthInfoCard title={null}>
-                    <ul className="text-sm text-theme-text-base">
-                        <AuthAccessItem
-                            checked={earningsEnabled}
-                            onChange={onEarningsEnabledChange}
-                            disabled={disabled}
-                            ariaLabel="App earnings"
-                            details={
-                                <Text size="xs" tone="muted">
-                                    Users pay 25% over base rates. Markup
-                                    credits to your balance.
-                                </Text>
-                            }
-                        >
-                            App earnings
-                        </AuthAccessItem>
-                    </ul>
-                </AuthInfoCard>
-            )}
         </div>
     );
 };

@@ -277,12 +277,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                         </AuthInfoCard>
                     )}
                     {simplified && !createdKey && (
-                        <AuthInfoCard>
-                            <ul className="space-y-3 text-sm">{nameField}</ul>
-                        </AuthInfoCard>
-                    )}
-                    {simplified && !createdKey && (
                         <PublishableKeySettings
+                            lead={nameField}
                             redirectUris={redirectUris}
                             onRedirectUrisChange={setRedirectUris}
                             earningsEnabled={earningsEnabled}

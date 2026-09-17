@@ -10,7 +10,7 @@ import {
     KeyIcon,
     XIcon,
 } from "@pollinations/ui";
-import { AuthInfoCard, AuthModal, ErrorBanner } from "@pollinations/ui/auth";
+import { AuthModal, ErrorBanner } from "@pollinations/ui/auth";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import { KeyNameField } from "./key-name-field.tsx";
@@ -166,14 +166,8 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
 
                     <div className="space-y-4">
                         {isPublishable && (
-                            <AuthInfoCard>
-                                <ul className="space-y-3 text-sm">
-                                    {nameField}
-                                </ul>
-                            </AuthInfoCard>
-                        )}
-                        {isPublishable && (
                             <PublishableKeySettings
+                                lead={nameField}
                                 redirectUris={redirectUris}
                                 onRedirectUrisChange={setRedirectUris}
                                 earningsEnabled={earningsEnabled}

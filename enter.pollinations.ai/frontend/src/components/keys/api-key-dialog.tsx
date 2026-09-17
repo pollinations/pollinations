@@ -2,14 +2,14 @@ import {
     AppIcon,
     Button,
     CheckIcon,
+    ClipboardIcon,
     CopyButton,
+    CopyField,
     Dialog,
     DialogBody,
     DialogFooter,
     DialogHeader,
-    Field,
     FieldStack,
-    Input,
     KeyIcon,
     XIcon,
 } from "@pollinations/ui";
@@ -174,7 +174,17 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 )
             }
         >
-            {(copied) => (copied ? "Copied" : "Copy and close")}
+            {(copied) => (
+                <span className="inline-flex items-center gap-2">
+                    <span
+                        aria-hidden="true"
+                        className="flex size-4 shrink-0 [&>svg]:size-full"
+                    >
+                        {copied ? <CheckIcon /> : <ClipboardIcon />}
+                    </span>
+                    {copied ? "Copied" : "Copy and close"}
+                </span>
+            )}
         </CopyButton>
     ) : (
         <Button
@@ -231,14 +241,14 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                         : undefined
                                 }
                             >
-                                <Field.Input asChild>
-                                    <Input
-                                        type="text"
-                                        value={createdKey.key}
-                                        className="font-mono text-xs"
-                                        readOnly
-                                    />
-                                </Field.Input>
+                                <CopyField
+                                    value={createdKey.key}
+                                    label={
+                                        simplified
+                                            ? "Copy app key"
+                                            : "Copy secret key"
+                                    }
+                                />
                             </FieldStack>
                         ) : (
                             <KeyNameField
@@ -269,7 +279,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
 
                 <DialogFooter>
                     <Button
-                        icon={createdKey ? <CheckIcon /> : <XIcon />}
+                        icon={<XIcon />}
                         type="button"
                         intent="neutral"
                         onClick={() => {
@@ -279,7 +289,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                         className="disabled:opacity-50"
                         disabled={isSubmitting}
                     >
-                        {createdKey ? "Done" : "Cancel"}
+                        {createdKey ? "Close" : "Cancel"}
                     </Button>
                     {submitButton}
                 </DialogFooter>

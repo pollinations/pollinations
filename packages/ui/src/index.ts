@@ -50,6 +50,7 @@ export {
     CopyButton,
     type CopyButtonProps,
 } from "./compositions/CopyButton.tsx";
+export { CopyField, type CopyFieldProps } from "./compositions/CopyField.tsx";
 export {
     EditableCombobox,
     type EditableComboboxProps,

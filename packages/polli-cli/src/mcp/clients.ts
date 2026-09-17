@@ -11,6 +11,7 @@ import {
     upsertEnvFile,
     writeJsonObject,
 } from "./config.js";
+import { keysFilePath } from "./keys.js";
 
 export interface McpContext {
     home: string;
@@ -302,9 +303,50 @@ const jsonClients: McpClientAdapter[] = [
                 }
                 config.inputs = inputs;
             },
-            notes: (key) => [
-                `VS Code stores the key in secret storage. Paste ${key} when prompted for "Pollinations API key" on first connect.`,
+            notes: () => [
+                `VS Code stores the key in secret storage. When prompted for "Pollinations API key" on first connect, paste the key saved in ${keysFilePath()}.`,
             ],
+        },
+    }),
+    jsonClient({
+        id: "claude-code",
+        label: "Claude Code",
+        description: "Claude Code (~/.claude.json)",
+        target: {
+            file: (ctx) => join(ctx.home, ".claude.json"),
+            table: "mcpServers",
+            entry: (server, key) => ({
+                type: "http",
+                url: server.url,
+                headers: bearerHeader(key),
+            }),
+        },
+    }),
+    jsonClient({
+        id: "gemini",
+        label: "Gemini CLI",
+        description: "Gemini CLI (~/.gemini/settings.json)",
+        target: {
+            // Gemini maps Streamable HTTP endpoints to `httpUrl` (SSE uses `url`).
+            file: (ctx) => join(ctx.home, ".gemini", "settings.json"),
+            table: "mcpServers",
+            entry: (server, key) => ({
+                httpUrl: server.url,
+                headers: bearerHeader(key),
+            }),
+        },
+    }),
+    jsonClient({
+        id: "amp",
+        label: "Amp",
+        description: "Amp (settings.json amp.mcpServers)",
+        target: {
+            file: (ctx) => join(xdgConfigHome(ctx), "amp", "settings.json"),
+            table: "amp.mcpServers",
+            entry: (server, key) => ({
+                url: server.url,
+                headers: bearerHeader(key),
+            }),
         },
     }),
 ];
@@ -405,14 +447,19 @@ const cliClient = (adapter: {
     };
 };
 
-const jsonTableIds =
-    (file: (ctx: McpContext) => string, table: string) =>
-    (ctx: McpContext): string[] => {
-        const config = readJsonObject(file(ctx));
-        return ownedEntryNames(config[table]);
-    };
-
 const CODEX_KEY_ENV = "POLLI_MCP_CODEX_KEY";
+
+// Codex reads the bearer key from an env var name, so the minted secret never
+// appears in process arguments.
+export const codexAddArgs = (server: McpServer): string[] => [
+    "mcp",
+    "add",
+    server.id,
+    "--url",
+    server.url,
+    "--bearer-token-env-var",
+    CODEX_KEY_ENV,
+];
 
 const codexHome = (ctx: McpContext) =>
     ctx.env.CODEX_HOME ?? join(ctx.home, ".codex");
@@ -449,49 +496,11 @@ export const codexInstalledIds = (
 
 const cliClients: McpClientAdapter[] = [
     cliClient({
-        id: "claude-code",
-        label: "Claude Code",
-        description: "Claude Code (claude mcp add)",
-        command: "claude",
-        addArgs: (server, key) => [
-            "mcp",
-            "add",
-            "--scope",
-            "user",
-            "--transport",
-            "http",
-            server.id,
-            server.url,
-            "--header",
-            `Authorization: Bearer ${key}`,
-        ],
-        removeArgs: (serverId) => [
-            "mcp",
-            "remove",
-            "--scope",
-            "user",
-            serverId,
-        ],
-        installHint: "Install: https://claude.com/claude-code",
-        installedIds: jsonTableIds(
-            (ctx) => join(ctx.home, ".claude.json"),
-            "mcpServers",
-        ),
-    }),
-    cliClient({
         id: "codex",
         label: "Codex CLI",
         description: "Codex CLI (codex mcp add)",
         command: "codex",
-        addArgs: (server) => [
-            "mcp",
-            "add",
-            server.id,
-            "--url",
-            server.url,
-            "--bearer-token-env-var",
-            CODEX_KEY_ENV,
-        ],
+        addArgs: (server) => codexAddArgs(server),
         removeArgs: (serverId) => ["mcp", "remove", serverId],
         installHint: "Install: https://github.com/openai/codex",
         installedIds: (ctx) =>
@@ -505,56 +514,6 @@ const cliClients: McpClientAdapter[] = [
                     `Codex reads ${CODEX_KEY_ENV} from ${envFile}. Export it in your shell if running Codex elsewhere.`,
                 ],
             };
-        },
-    }),
-    cliClient({
-        id: "gemini",
-        label: "Gemini CLI",
-        description: "Gemini CLI (gemini mcp add)",
-        command: "gemini",
-        addArgs: (server, key) => [
-            "mcp",
-            "add",
-            "--scope",
-            "user",
-            "--transport",
-            "http",
-            server.id,
-            server.url,
-            "--header",
-            `Authorization: Bearer ${key}`,
-        ],
-        removeArgs: (serverId) => ["mcp", "remove", serverId],
-        installHint: "Install: https://github.com/google-gemini/gemini-cli",
-        installedIds: jsonTableIds(
-            (ctx) => join(ctx.home, ".gemini", "settings.json"),
-            "mcpServers",
-        ),
-    }),
-    cliClient({
-        id: "amp",
-        label: "Amp",
-        description: "Amp (amp mcp add)",
-        command: "amp",
-        addArgs: (server, key) => [
-            "mcp",
-            "add",
-            server.id,
-            server.url,
-            "--header",
-            `Authorization=Bearer ${key}`,
-        ],
-        removeArgs: (serverId) => ["mcp", "remove", serverId],
-        installHint: "Install: https://ampcode.com",
-        installedIds: (ctx) => {
-            const config = readJsonObject(
-                join(xdgConfigHome(ctx), "amp", "settings.json"),
-            );
-            const ampTable = config.amp;
-            if (ampTable && typeof ampTable === "object") {
-                return ownedEntryNames((ampTable as JsonObject).mcpServers);
-            }
-            return [];
         },
     }),
 ];

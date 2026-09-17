@@ -26,6 +26,8 @@ const saveKeys = (store: KeyStore) => {
     writeTextAtomic(KEYS_FILE, `${JSON.stringify(store, null, 2)}\n`, 0o600);
 };
 
+export const keysFilePath = (): string => KEYS_FILE;
+
 export const getStoredKey = (clientId: string): string | null =>
     loadKeys()[clientId] ?? null;
 

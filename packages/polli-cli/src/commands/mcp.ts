@@ -37,6 +37,7 @@ const runInstall = async (
                     'No API key available. Run "polli auth login" or pass --key.',
                 );
             }
+            // biome-ignore lint/style/noNonNullAssertion: already narrowed by fail() above
             key = await mintKey(client.id, client.label, accountKey!);
             storeKey(client.id, key);
         }
@@ -69,7 +70,12 @@ const runRemove = async (
         } else {
             printInfo(`${client.label}: no owned servers to remove.`);
         }
-        removeStoredKey(client.id);
+        // The dedicated key backs every owned entry for this client. Keep it
+        // when a partial removal leaves other Pollinations MCP servers
+        // installed; drop it only once none remain.
+        if (result.installed.length === 0) {
+            removeStoredKey(client.id);
+        }
         printResult(result);
     } catch (error) {
         fail(`Failed to remove MCP servers for ${client.label}`, error);

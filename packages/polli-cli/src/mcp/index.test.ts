@@ -9,7 +9,12 @@ import {
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { resolveServers } from "./catalog.js";
-import { codexInstalledIds } from "./clients.js";
+import {
+    codexAddArgs,
+    codexInstalledIds,
+    findClient,
+    MCP_CLIENTS,
+} from "./clients.js";
 import {
     isOwnedEntry,
     readJsonObject,
@@ -172,6 +177,30 @@ describe("catalog", () => {
 });
 
 describe("clients", () => {
+    const tmpDir = join(process.cwd(), ".tmp-test-mcp-clients");
+    const ctx = { home: tmpDir, env: {} as NodeJS.ProcessEnv };
+    const key = "sk-test-secret";
+    const servers = [
+        {
+            id: "pollinations",
+            name: "Pollinations",
+            url: "https://gen.pollinations.ai/mcp/pollinations",
+        },
+        {
+            id: "ffmpeg",
+            name: "FFmpeg",
+            url: "https://gen.pollinations.ai/mcp/ffmpeg",
+        },
+    ];
+
+    beforeEach(() => {
+        mkdirSync(tmpDir, { recursive: true });
+    });
+
+    afterEach(() => {
+        rmSync(tmpDir, { recursive: true, force: true });
+    });
+
     it("parses codex TOML to find owned servers", () => {
         const toml = `
 [mcp_servers.flux]
@@ -189,5 +218,100 @@ url = "https://example.com/mcp"
 url = "https://example.com/mcp"
 `;
         expect(codexInstalledIds(toml)).toEqual([]);
+    });
+
+    it("codex addArgs reference an env var name, never the secret", () => {
+        const args = codexAddArgs(servers[0]);
+        expect(args).toContain("POLLI_MCP_CODEX_KEY");
+        expect(args.join(" ")).not.toContain(key);
+    });
+
+    it("prioritizes clients in the quest order", () => {
+        expect(MCP_CLIENTS.map((c) => c.id)).toEqual([
+            "claude-code",
+            "codex",
+            "vscode",
+            "cursor",
+            "opencode",
+            "gemini",
+            "copilot",
+            "windsurf",
+            "cline",
+            "amp",
+            "kiro",
+            "zed",
+            "warp",
+        ]);
+    });
+
+    describe("json clients keep the secret out of process arguments", () => {
+        const cases = [
+            {
+                clientId: "claude-code",
+                file: ".claude.json",
+                entryPath: ["mcpServers", "pollinations", "headers"],
+            },
+            {
+                clientId: "gemini",
+                file: join(".gemini", "settings.json"),
+                entryPath: ["mcpServers", "pollinations", "headers"],
+            },
+            {
+                clientId: "amp",
+                file: join(".config", "amp", "settings.json"),
+                entryPath: ["amp.mcpServers", "pollinations", "headers"],
+            },
+        ];
+
+        it.each(
+            cases,
+        )("$clientId install writes the bearer header into its config file", ({
+            clientId,
+            file,
+            entryPath,
+        }) => {
+            // biome-ignore lint/style/noNonNullAssertion: test fixture guarantees this client exists
+            const result = findClient(clientId)!.install(
+                ctx,
+                [servers[0]],
+                key,
+            );
+            expect(result.installed).toEqual(["pollinations"]);
+            const config = readJsonObject(join(tmpDir, file));
+            let node: unknown = config;
+            for (const part of entryPath) {
+                node = (node as Record<string, unknown>)[part];
+            }
+            expect(node).toEqual({ Authorization: `Bearer ${key}` });
+        });
+
+        it("partial remove keeps other owned entries and reports them as installed", () => {
+            // biome-ignore lint/style/noNonNullAssertion: test fixture guarantees this client exists
+            const client = findClient("claude-code")!;
+            client.install(ctx, servers, key);
+            const result = client.remove(ctx, ["pollinations"]);
+            expect(result.removed).toEqual(["pollinations"]);
+            expect(result.installed).toEqual(["ffmpeg"]);
+            const config = readJsonObject(join(tmpDir, ".claude.json"));
+            const remaining = (config.mcpServers as Record<string, unknown>)
+                .ffmpeg as Record<string, unknown>;
+            expect(remaining.url).toBe(servers[1].url);
+        });
+
+        it("full remove clears all owned entries", () => {
+            // biome-ignore lint/style/noNonNullAssertion: test fixture guarantees this client exists
+            const client = findClient("gemini")!;
+            client.install(ctx, servers, key);
+            const result = client.remove(ctx);
+            expect(result.removed).toEqual(["pollinations", "ffmpeg"]);
+            expect(result.installed).toEqual([]);
+        });
+
+        it("VS Code install notes never print the secret", () => {
+            // biome-ignore lint/style/noNonNullAssertion: test fixture guarantees this client exists
+            const client = findClient("vscode")!;
+            const result = client.install(ctx, [servers[0]], key);
+            expect(result.notes.join("\n")).not.toContain(key);
+        });
     });
 });

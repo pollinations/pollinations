@@ -7,41 +7,36 @@ import {
 import { describe, expect, it } from "vitest";
 
 it("derives health from the model's rollup row and keeps it for filtering", () => {
+    const row = (model: string, status_2xx: number, errors_5xx: number) => ({
+        model,
+        event_type: "generate.text",
+        is_rollup: 1,
+        status_2xx,
+        errors_5xx,
+    });
     const rows = [
-        {
-            model: "example/model",
-            event_type: "generate.text",
-            is_rollup: 0,
-            status_2xx: 0,
-            errors_5xx: 100,
-        },
-        {
-            model: "example/model",
-            event_type: "generate.text",
-            is_rollup: 1,
-            status_2xx: 96,
-            errors_5xx: 4,
-        },
+        { ...row("healthy/model", 0, 100), is_rollup: 0 },
+        row("healthy/model", 96, 4),
+        row("degraded/model", 95, 5),
+        row("down/model", 80, 20),
     ];
-    const [model, quiet] = getModelPricesFromCatalog(
+    const models = getModelPricesFromCatalog(
         withModelHealth(
             [
-                { name: "example/model", category: "text" },
+                { name: "healthy/model", category: "text" },
+                { name: "degraded/model", category: "text" },
+                { name: "down/model", category: "text" },
                 { name: "quiet/model", category: "image" },
             ],
             rows,
         ),
     );
-    expect(model.health).toEqual({
-        status: "healthy",
-        requests: 100,
-        successRate: 96,
-    });
-    expect(quiet.health).toEqual({
-        status: "unknown",
-        requests: 0,
-        successRate: null,
-    });
+    expect(models.map((model) => model.health)).toEqual([
+        { status: "healthy", requests: 100, successRate: 96 },
+        { status: "degraded", requests: 100, successRate: 95 },
+        { status: "down", requests: 100, successRate: 80 },
+        { status: "unknown", requests: 0, successRate: null },
+    ]);
 });
 
 it("keeps search aliases but never transfers historical statistics to a new ID", () => {

@@ -1,11 +1,9 @@
 import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
 import {
-    MODEL_HEALTH_WINDOW_MINUTES,
+    fetchModelHealthRows,
     type ModelHealth,
     type ModelHealthRow,
-    modelHealthFromRow,
-    modelHealthKey,
-    modelHealthRollups,
+    modelHealthLookup,
 } from "@shared/model-health.ts";
 import type { ModelInfo } from "@shared/registry/model-info.ts";
 import {
@@ -112,38 +110,14 @@ async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
     return parseModelCatalogResponse(await response.json());
 }
 
-// Health is optional decoration: when the feed is down every dot reads unknown.
-async function fetchModelHealthRows(
-    genBaseUrl: string,
-): Promise<ModelHealthRow[]> {
-    try {
-        const response = await fetch(
-            `${genBaseUrl}/models/status?minutes=${MODEL_HEALTH_WINDOW_MINUTES}`,
-            { signal: AbortSignal.timeout(15_000) },
-        );
-        if (!response.ok) return [];
-        const body = (await response.json()) as { data?: ModelHealthRow[] };
-        return body.data ?? [];
-    } catch {
-        return [];
-    }
-}
-
 export function withModelHealth(
     models: ApiModelInfo[],
     rows: ModelHealthRow[],
 ): ApiModelInfo[] {
-    const rollups = modelHealthRollups(rows);
+    const lookup = modelHealthLookup(rows);
     return models.map((model) => ({
         ...model,
-        health: modelHealthFromRow(
-            rollups.get(
-                modelHealthKey(
-                    getCatalogModelId(model),
-                    `generate.${getCatalogCategory(model)}`,
-                ),
-            ),
-        ),
+        health: lookup(getCatalogModelId(model), getCatalogCategory(model)),
     }));
 }
 
@@ -158,7 +132,8 @@ export async function fetchModelCatalog(
     modelCatalogPromise ??= import("../../config.ts")
         .then(async ({ config }) => {
             const [rows, ...catalogs] = await Promise.all([
-                fetchModelHealthRows(config.genBaseUrl),
+                // Health is decoration: without the feed every dot reads unknown.
+                fetchModelHealthRows(config.genBaseUrl).catch(() => []),
                 fetchCatalog(`${config.genBaseUrl}/models`),
                 ...(config.communityCatalogUrl
                     ? [fetchCatalog(config.communityCatalogUrl)]

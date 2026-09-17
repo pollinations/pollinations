@@ -50,12 +50,7 @@ export function DashboardSignIn({
     return (
         <AuthFlowLayout
             headerAction={<ColorModeToggle />}
-            title={!isPending && error ? error.title : appName}
-            description={
-                !isPending && error
-                    ? undefined
-                    : "Sign in with a Pollinations admin account."
-            }
+            title={!isPending && error ? error.title : "Sign in"}
             actions={
                 isPending ? (
                     <output>Checking sign-in…</output>
@@ -74,16 +69,17 @@ export function DashboardSignIn({
                 )
             }
         >
-            {!isPending && error ? (
-                <>
-                    <ErrorBanner>{error.message}</ErrorBanner>
-                    <Surface variant="card-subtle">
-                        <Text size="sm" weight="semibold" tone="strong">
-                            {appName}
-                        </Text>
-                    </Surface>
-                </>
-            ) : null}
+            {!isPending && error && <ErrorBanner>{error.message}</ErrorBanner>}
+            <Surface variant="card-subtle">
+                <Text size="sm" weight="semibold" tone="strong">
+                    {appName}
+                </Text>
+            </Surface>
+            {!(!isPending && error) && (
+                <Text size="sm" tone="muted">
+                    Sign in with your pollinations.ai admin account.
+                </Text>
+            )}
         </AuthFlowLayout>
     );
 }

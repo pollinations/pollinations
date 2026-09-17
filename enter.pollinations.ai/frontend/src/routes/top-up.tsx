@@ -113,7 +113,7 @@ function TopUpPage() {
         return (
             <SignInScreen
                 title="Top up"
-                description="Sign in to buy Pollen for your Pollinations account."
+                description="Sign in to add Pollen to your pollinations.ai account."
             />
         );
     }

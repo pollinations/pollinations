@@ -97,7 +97,7 @@ export function Device({ prefilledCode }: DeviceProps) {
         return (
             <SignInScreen
                 title="Allow device"
-                description="Access to your pollinations.ai account, sign in to enter the code shown on your device."
+                description="Sign in, then enter the code shown on your device."
             />
         );
     }
@@ -105,7 +105,7 @@ export function Device({ prefilledCode }: DeviceProps) {
     return (
         <AuthFlowScreen
             title="Allow device"
-            description="Access to your pollinations.ai account, enter the code shown on your device."
+            description="Enter the code shown on your device."
             actions={
                 <Button
                     type="submit"

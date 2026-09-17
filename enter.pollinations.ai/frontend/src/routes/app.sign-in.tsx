@@ -71,7 +71,7 @@ function AppSignIn() {
         <SignInScreen title="Sign in" callbackURL={callbackURL}>
             {appCard}
             <Text size="sm" tone="muted">
-                Sign in with your Pollinations admin account.
+                Sign in with your pollinations.ai admin account.
             </Text>
         </SignInScreen>
     );

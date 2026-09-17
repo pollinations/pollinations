@@ -1,0 +1,35 @@
+{
+  "pr_number": 15052,
+  "title": "refactor: one thin model status proxy at /models/status",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15052",
+  "merged_at": "2026-09-17T00:18:29Z",
+  "labels": [],
+  "pr_body_excerpt": "Follow-up to the model status review: keep only what consumers use.\n\n- Moves the health feed to `GET /models/status` (outside `/v1`) as a raw pass-through of the public Tinybird `model_route_health` pipe, cached 60 s at the edge via `cf.cacheTtl`; deletes the in-memory cache, retries and reshaping (~230 lines → ~60)\n- Removes `?status=`, the `Pollinations-Model-Status` header and the `health` field from all model lists; like OpenRouter, `/models` carries no health\n- Deletes `shared/registry/model-health.ts`; adds `shared/model-health.ts`, one client-side status helper shared by the website uptime dots and the enter dashboard (previously two copies with different thresholds)\n- Enter dashboard fetches `/models/status?minutes=1440` alongside the catalog; website, model monitor, polli-cli and MCP `getModelStatus` point at the new path\n- Pipe clamps `minutes` to 1..10080 (staging deployment 148, prod deploy pending)\n\nWhy the proxy stays: Tinybird runs the query on every call (24 h window reads ~38 MB in ~0.5 s) and has no result cache, so the edge cache is the only thing keeping browser traffic from hitting it directly.\n\nBreaking: `/v1/models/status` → `/models/status`; `?status=all` health objects gone. Quest #15017 text needs updating after the production deploy.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One status pipe, no pollen",
+    "blurb": "Model uptime now travels through one thin, edge-cached pipe instead of a small thicket of reshaping and duplicate helpers. The catalog stays a catalog; status gets its own tidy doorstep.",
+    "summary": "Moved model health to a raw, 60-second edge-cached GET /models/status proxy for Tinybird’s model_route_health pipe, removed health data and ?status= from /models, and consolidated website and Enter dashboard uptime logic into shared/model-health.ts.",
+    "impact": "Developers and built-in clients now use /models/status?minutes=1440 (with minutes clamped to 1–10080), while model catalogs stay lighter and browser status checks avoid repeatedly running Tinybird’s 24-hour query.",
+    "keywords": [
+      "models",
+      "status",
+      "uptime",
+      "Tinybird",
+      "API",
+      "edge-cache",
+      "MCP"
+    ],
+    "visual_concept": "A cozy garden observatory represents the newly separated model-status feed: Polli tends a single clear lime-green status pipe leading from a tiny data greenhouse to a retro monitor, while a neat model catalog book sits separately without health badges. The monitor robot can happily inspect the unified uptime dots, with code-plants and flowers showing that one shared helper now feeds both the website and Enter dashboard.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing a tiny plumber tool belt as she carefully connects one glowing lime green (#ecf874) status pipe from a flower-filled data greenhouse to a retro CRT monitor showing simple pixel text “/models/status”; a cute chunky monitor robot with eager square eyes watches tidy uptime dots beside a separate catalog book, with code-plants and vines around them. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-17/PR-15052.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing a tiny plumber tool belt as she carefully connects one glowing lime green (#ecf874) status pipe from a flower-filled data greenhouse to a retro CRT monitor showing simple pixel text “/models/status”; a cute chunky monitor robot with eager square eyes watches tidy uptime dots beside a separate catalog book, with code-plants and vines around them. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-17T00:19:31.780277+00:00"
+}

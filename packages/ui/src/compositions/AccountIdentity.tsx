@@ -80,8 +80,7 @@ export function AccountIdentity({
     return (
         <span
             className={cn(
-                // Same hairline as the color mode toggle, so the static pill reads on the container in both modes.
-                "polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:border polli:border-theme-text-strong/10 polli:bg-surface-opaque polli:p-1 polli:pr-3",
+                "polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:bg-surface-opaque polli:p-1 polli:pr-3",
                 className,
             )}
         >

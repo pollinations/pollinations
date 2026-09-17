@@ -2,11 +2,10 @@ import { apiClient } from "@frontend/api.ts";
 import {
     AppIcon,
     Button,
-    CopyButton,
-    cn,
     DialogBody,
     DialogFooter,
     DialogHeader,
+    KeyChip,
     KeyIcon,
     XIcon,
 } from "@pollinations/ui";
@@ -133,28 +132,13 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         : "Choose what this key can access and how much it can spend."
                 }
             >
-                <div className="mt-3 flex min-w-0 flex-wrap items-center gap-3">
-                    {isPublishable && plaintextKey ? (
-                        <CopyButton
-                            value={plaintextKey}
-                            tooltipClassName="inline-flex min-w-0"
-                            aria-label="Copy publishable API key"
-                            className={(copied) =>
-                                cn(
-                                    "break-all text-left font-mono text-sm cursor-pointer transition-all",
-                                    copied
-                                        ? "text-intent-success-text font-semibold"
-                                        : "text-theme-text-soft hover:text-theme-text-strong hover:underline",
-                                )
-                            }
-                        >
-                            {(copied) => (copied ? "Copied!" : plaintextKey)}
-                        </CopyButton>
-                    ) : (
-                        <span className="font-mono text-sm text-theme-text-muted">
-                            {apiKey.start}...
-                        </span>
-                    )}
+                <div className="mt-3">
+                    <KeyChip
+                        prefix={apiKey.start ?? ""}
+                        kind={isPublishable ? "app" : "secret"}
+                        value={isPublishable ? plaintextKey : undefined}
+                        label="Copy app key"
+                    />
                 </div>
             </DialogHeader>
 

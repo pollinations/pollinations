@@ -1,4 +1,4 @@
-import { Surface, Text } from "@pollinations/ui";
+import { KeyChip, Surface, Text } from "@pollinations/ui";
 import { AuthModalHeader, AuthModalLoading } from "@pollinations/ui/auth";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -81,9 +81,9 @@ function EditKeyPage() {
                 {apiKey.name ?? apiKey.id}
             </Text>
             {apiKey.start && (
-                <Text size="xs" className="mt-1 font-mono">
-                    {apiKey.start}…
-                </Text>
+                <div className="mt-1.5">
+                    <KeyChip prefix={apiKey.start} />
+                </div>
             )}
         </Surface>
     ) : undefined;

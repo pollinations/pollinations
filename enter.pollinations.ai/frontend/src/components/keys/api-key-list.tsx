@@ -5,6 +5,7 @@ import {
     GlobeIcon,
     IconButton,
     InlineLink,
+    KeyChip,
     KeyIcon,
     PencilIcon,
     Section,
@@ -21,7 +22,6 @@ import { genDocsUrl } from "../../config.ts";
 import { ApiKeyDialog } from "./api-key-dialog.tsx";
 import { EditApiKeyDialog } from "./edit-api-key-dialog.tsx";
 import { DeleteConfirmation } from "./key-delete-confirmation.tsx";
-import { KeyDisplay } from "./key-display.tsx";
 import { isAppKey, isPublishableKey, readRedirectUris } from "./key-type.ts";
 import { LimitsBadge, shortLocale } from "./limits-badge.tsx";
 import { ModelsBadge } from "./models-badge.tsx";
@@ -119,16 +119,12 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         </IconButton>
                     </div>
                     <div className="col-span-2 min-w-0">
-                        {isPublishable && plaintextKey ? (
-                            <KeyDisplay
-                                fullKey={plaintextKey}
-                                start={apiKey.start ?? ""}
-                            />
-                        ) : (
-                            <span className="font-mono text-xs text-theme-text-muted">
-                                {apiKey.start}...
-                            </span>
-                        )}
+                        <KeyChip
+                            prefix={apiKey.start ?? ""}
+                            kind={isPublishable ? "app" : "secret"}
+                            value={isPublishable ? plaintextKey : undefined}
+                            label="Copy app key"
+                        />
                     </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">

@@ -165,6 +165,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         <CopyButton
             value={createdKey.key}
             variant="button"
+            intent="brand"
             copiedTimeoutMs={500}
             tooltip={null}
             onCopied={closeAfterCopy}
@@ -234,7 +235,22 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     <AuthInfoCard>
                         {createdKey ? (
                             <FieldStack
-                                label={simplified ? "App key" : "Secret key"}
+                                label={
+                                    <span className="inline-flex items-center gap-1.5">
+                                        {simplified ? (
+                                            <AppIcon
+                                                aria-hidden="true"
+                                                className="h-4 w-4"
+                                            />
+                                        ) : (
+                                            <KeyIcon
+                                                aria-hidden="true"
+                                                className="h-4 w-4"
+                                            />
+                                        )}
+                                        {simplified ? "App key" : "Secret key"}
+                                    </span>
+                                }
                                 helper={
                                     !simplified
                                         ? "Keep this key in your backend. Don’t share it or include it in public code."

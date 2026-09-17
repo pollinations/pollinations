@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🛠️ TestMine](https://fadyabohamza-netizen.github.io/testmine) | Paste source code, pick a framework, get unit tests covering happy path and edge cases. BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
 | [🛠️ SQLCraft](https://fadyabohamza-netizen.github.io/sqlcraft) | Describe a database query in plain English, get clean SQL in your dialect (SQLite/PostgreSQL/MySQL/SQL Server). BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
 | [🛠️ Codeverter](https://fadyabohamza-netizen.github.io/codeverter) | Convert code between 9+ programming languages with AI. BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
 | [🛠️ Regexly](https://fadyabohamza-netizen.github.io/regexly) | Describe a regex pattern in plain English, get the regular expression with flavor-specific explanation (JavaScript/Python/PCRE). BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
@@ -37,7 +38,6 @@
 | [🖼️ Comicstyles](https://comicstyles.com) | ComicStyles turns a one-line idea into a comic story, with no install, no account and no API key required. Type your premise, let the platform write the story and its split into panels, then watch eac | [@wannerdev](https://github.com/wannerdev) |
 | [💬 Moko - The Remembering Fox](https://heard-was-lessons-altered.trycloudflare.com) | A web chat with Moko, a desert fox NPC that remembers facts you ask it to keep between conversations. Each user's facts are stored in a per-user memory file (Pollinations Computer MCP), recalled acros | [@mhmdrizzzki](https://github.com/mhmdrizzzki) |
 | [🌻 Pollen Craft](https://tomdacat.itch.io/pollen-craft) | Infinite crafting game where Pollinations names and illustrates every discovery. | [@tomdacatto](https://github.com/tomdacatto) |
-| [📚 AI Flashcards](https://chibbit-99.github.io/flashcardgen) | Create AI flashcards. Helps turn content into study cards for review. | [@Chibbit-99](https://github.com/Chibbit-99) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

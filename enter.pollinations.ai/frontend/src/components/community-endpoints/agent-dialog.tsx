@@ -10,6 +10,7 @@ import {
     FieldStack,
     TabButton,
 } from "@pollinations/ui";
+import { AuthInfoCard } from "@pollinations/ui/auth";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { CodeAgentFields } from "./code-agent-fields.tsx";
@@ -113,13 +114,13 @@ export function AgentDialog({
         <Dialog
             open={open}
             onOpenChange={onOpenChange}
-            size="lg"
+            size="md"
             trigger={trigger}
             triggerAsChild
         >
             <DialogHeader
                 title={agent ? "Edit agent" : "Add agent"}
-                description="Create an agent with a prompt and model, or deploy code from GitHub."
+                description="Choose a prompt and model, or deploy code from GitHub."
             />
             <form
                 onSubmit={handleSubmit}
@@ -130,13 +131,7 @@ export function AgentDialog({
                     {error && <Alert intent="danger">{error}</Alert>}
 
                     {!agent && (
-                        <FieldStack
-                            label="Agent type"
-                            helper={
-                                "Use a prompt and model, or deploy code from GitHub."
-                            }
-                            alignLabelRow
-                        >
+                        <FieldStack label="Agent type" alignLabelRow>
                             <ButtonGroup aria-label="Agent type">
                                 <TabButton
                                     active={form.type === "prompt_agent"}
@@ -176,22 +171,23 @@ export function AgentDialog({
                         </FieldStack>
                     )}
 
-                    <ModelListingFields
-                        form={form}
-                        modality="text"
-                        canPublish={canPublish}
-                        isAgent
-                        allowPerUserRpm={false}
-                        hideIdentity={form.type === "code_agent"}
-                        required
-                        onChange={(key, value) =>
-                            setForm((current) => ({
-                                ...current,
-                                [key]: value,
-                            }))
-                        }
-                    />
-
+                    <AuthInfoCard>
+                        <ModelListingFields
+                            form={form}
+                            modality="text"
+                            canPublish={canPublish}
+                            isAgent
+                            allowPerUserRpm={false}
+                            hideIdentity={form.type === "code_agent"}
+                            required
+                            onChange={(key, value) =>
+                                setForm((current) => ({
+                                    ...current,
+                                    [key]: value,
+                                }))
+                            }
+                        />
+                    </AuthInfoCard>
                     {form.type === "code_agent" && (
                         <p className="text-sm text-theme-text-muted">
                             The repository name becomes the model ID and title.
@@ -199,18 +195,20 @@ export function AgentDialog({
                         </p>
                     )}
 
-                    <div className="space-y-4 border-t border-divider pt-4">
+                    <div className="space-y-3">
                         {form.type === "code_agent" ? (
-                            <CodeAgentFields
-                                form={form}
-                                disabled={isSubmitting || !!agent}
-                                onChange={(field, value) =>
-                                    setForm((current) => ({
-                                        ...current,
-                                        [field]: value,
-                                    }))
-                                }
-                            />
+                            <AuthInfoCard>
+                                <CodeAgentFields
+                                    form={form}
+                                    disabled={isSubmitting || !!agent}
+                                    onChange={(field, value) =>
+                                        setForm((current) => ({
+                                            ...current,
+                                            [field]: value,
+                                        }))
+                                    }
+                                />
+                            </AuthInfoCard>
                         ) : (
                             <PromptAgentFields
                                 form={form}
@@ -240,16 +238,18 @@ export function AgentDialog({
                             </div>
                         )}
                     </div>
-                    <SafetyFeatureSelector
-                        value={form.requiredSafetyFeatures}
-                        disabled={isSubmitting}
-                        onChange={(requiredSafetyFeatures) =>
-                            setForm((current) => ({
-                                ...current,
-                                requiredSafetyFeatures,
-                            }))
-                        }
-                    />
+                    <AuthInfoCard>
+                        <SafetyFeatureSelector
+                            value={form.requiredSafetyFeatures}
+                            disabled={isSubmitting}
+                            onChange={(requiredSafetyFeatures) =>
+                                setForm((current) => ({
+                                    ...current,
+                                    requiredSafetyFeatures,
+                                }))
+                            }
+                        />
+                    </AuthInfoCard>
                 </DialogBody>
                 <DialogFooter>
                     <Button

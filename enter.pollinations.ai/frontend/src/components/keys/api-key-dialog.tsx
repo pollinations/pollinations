@@ -10,7 +10,7 @@ import {
     InlineLink,
     Input,
 } from "@pollinations/ui";
-import { ErrorBanner } from "@pollinations/ui/auth";
+import { AuthInfoCard, ErrorBanner } from "@pollinations/ui/auth";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import {
@@ -129,6 +129,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     const submitButton = createdKey ? (
         <CopyButton
             value={createdKey.key}
+            variant="button"
             copiedTimeoutMs={500}
             tooltip={null}
             onCopied={closeAfterCopy}
@@ -137,7 +138,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     "Couldn’t copy the key. Select it and copy it manually before closing.",
                 )
             }
-            className="inline-flex items-center justify-center self-center rounded-full bg-theme-bg-active px-4 pb-2 pt-1.5 font-medium leading-normal text-theme-text-strong transition-colors hover:bg-theme-bg-hover hover:brightness-105"
         >
             {(copied) => (copied ? "Copied" : "Copy and close")}
         </CopyButton>
@@ -172,7 +172,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 }
                 setIsOpen(open);
             }}
-            size="lg"
+            size="md"
             trigger={
                 <Button
                     type="button"
@@ -213,49 +213,53 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             >
                 <DialogBody>
                     {error && <ErrorBanner>{error}</ErrorBanner>}
-                    <Field.Root className="flex flex-col gap-2">
-                        <Field.Label className="text-sm font-semibold">
-                            {createdKey
-                                ? simplified
-                                    ? "App key"
-                                    : "Secret key"
-                                : "Name"}
-                        </Field.Label>
-                        <Field.Input asChild>
-                            <Input
-                                type="text"
-                                value={createdKey ? createdKey.key : name}
-                                onChange={(e) => setName(e.target.value)}
-                                className={cn(
-                                    "w-full",
-                                    createdKey && "font-mono text-xs",
-                                )}
-                                placeholder="Key name"
-                                required={!createdKey}
-                                disabled={isSubmitting}
-                                readOnly={!!createdKey}
-                            />
-                        </Field.Input>
-                    </Field.Root>
+                    <AuthInfoCard>
+                        <Field.Root className="flex flex-col gap-2">
+                            <Field.Label className="text-sm font-semibold">
+                                {createdKey
+                                    ? simplified
+                                        ? "App key"
+                                        : "Secret key"
+                                    : "Name"}
+                            </Field.Label>
+                            <Field.Input asChild>
+                                <Input
+                                    type="text"
+                                    value={createdKey ? createdKey.key : name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    className={cn(
+                                        "w-full",
+                                        createdKey && "font-mono text-xs",
+                                    )}
+                                    placeholder="Key name"
+                                    required={!createdKey}
+                                    disabled={isSubmitting}
+                                    readOnly={!!createdKey}
+                                />
+                            </Field.Input>
+                        </Field.Root>
 
-                    {!createdKey && (
-                        <p className="text-sm text-theme-text-muted">
-                            {simplified
-                                ? "Add your app’s callback URLs below, then integrate Pollinations Connect with the SDK. "
-                                : "Keep this key private. For a browser app, create an app key and use Pollinations Connect. "}
-                            <InlineLink
-                                href={genDocsUrl("#tag/connect-user-wallets")}
-                            >
-                                Read the guide
-                            </InlineLink>
-                        </p>
-                    )}
-                    {!simplified && createdKey && (
-                        <p className="text-sm text-theme-text-muted">
-                            Keep this key in your backend. Don’t share it or
-                            include it in public code.
-                        </p>
-                    )}
+                        {!createdKey && (
+                            <p className="text-sm text-theme-text-muted">
+                                {simplified
+                                    ? "Add your app’s callback URLs below, then integrate Pollinations Connect with the SDK. "
+                                    : "Keep this key private. For a browser app, create an app key and use Pollinations Connect. "}
+                                <InlineLink
+                                    href={genDocsUrl(
+                                        "#tag/connect-user-wallets",
+                                    )}
+                                >
+                                    Read the guide
+                                </InlineLink>
+                            </p>
+                        )}
+                        {!simplified && createdKey && (
+                            <p className="text-sm text-theme-text-muted">
+                                Keep this key in your backend. Don’t share it or
+                                include it in public code.
+                            </p>
+                        )}
+                    </AuthInfoCard>
                     {simplified && !createdKey && (
                         <PublishableKeySettings
                             redirectUris={redirectUris}

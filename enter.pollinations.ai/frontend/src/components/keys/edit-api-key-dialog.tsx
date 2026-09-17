@@ -13,7 +13,7 @@ import {
     Input,
     LockIcon,
 } from "@pollinations/ui";
-import { AuthModal, ErrorBanner } from "@pollinations/ui/auth";
+import { AuthInfoCard, AuthModal, ErrorBanner } from "@pollinations/ui/auth";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
@@ -182,22 +182,23 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                 {error && <ErrorBanner>{error}</ErrorBanner>}
 
                 <div className="space-y-4">
-                    <Field.Root className="flex flex-col gap-2">
-                        <Field.Label className="text-sm font-semibold">
-                            Name
-                        </Field.Label>
-                        <Field.Input asChild>
-                            <Input
-                                type="text"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                className="w-full"
-                                placeholder="Enter API key name"
-                                disabled={isSubmitting}
-                            />
-                        </Field.Input>
-                    </Field.Root>
-
+                    <AuthInfoCard>
+                        <Field.Root className="flex flex-col gap-2">
+                            <Field.Label className="text-sm font-semibold">
+                                Name
+                            </Field.Label>
+                            <Field.Input asChild>
+                                <Input
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    className="w-full"
+                                    placeholder="Enter API key name"
+                                    disabled={isSubmitting}
+                                />
+                            </Field.Input>
+                        </Field.Root>
+                    </AuthInfoCard>
                     {isPublishable && (
                         <PublishableKeySettings
                             redirectUris={redirectUris}

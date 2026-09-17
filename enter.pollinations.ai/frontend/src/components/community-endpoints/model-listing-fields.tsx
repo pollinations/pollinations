@@ -80,11 +80,11 @@ export function ModelListingFields({
     const canAdvertise = modality === "text";
 
     return (
-        <>
+        <div className="space-y-3">
             {!isAgent && (
                 <FieldStack
                     label="Accepted inputs"
-                    helper="Select every input type supported by this model. At least one is required."
+                    helper="Select supported inputs. At least one is required."
                     alignLabelRow
                 >
                     <ButtonGroup aria-label="Accepted input modalities">
@@ -156,11 +156,7 @@ export function ModelListingFields({
                                 />
                             </Field.Input>
                         </FieldStack>
-                        <FieldStack
-                            label="Title"
-                            helper="Display name shown in the Models list."
-                            alignLabelRow
-                        >
+                        <FieldStack label="Title" alignLabelRow>
                             <Field.Input asChild>
                                 <Input
                                     name="community-model-title"
@@ -183,7 +179,11 @@ export function ModelListingFields({
 
                     <FieldStack
                         label="Description"
-                        helper="Optional. What the model is good at."
+                        helper={
+                            isAgent
+                                ? "Optional. What the agent does."
+                                : "Optional. What the model does."
+                        }
                         alignLabelRow
                     >
                         <Field.Input asChild>
@@ -213,11 +213,11 @@ export function ModelListingFields({
                 helper={
                     isPublic
                         ? isAgent
-                            ? "Public: listed in /models and callable by anyone. Calls use the caller's Pollinations balance and API-key permissions."
-                            : "Public: listed in /models and callable by anyone. Set optional prices below, or leave them at 0 for free."
+                            ? "Listed in /models. Calls use the caller's Pollen and API permissions."
+                            : "Listed in /models. Set prices below, or leave them at 0 for free."
                         : canPublish
-                          ? "Private: callable only by you and shown only in model lists authenticated with your API key."
-                          : "Private: callable only by you. Publishing publicly requires approval."
+                          ? "Only you can use it."
+                          : "Only you can use it. Public publishing requires approval."
                 }
                 alignLabelRow
             >
@@ -314,6 +314,6 @@ export function ModelListingFields({
                     </Field.Input>
                 </FieldStack>
             )}
-        </>
+        </div>
     );
 }

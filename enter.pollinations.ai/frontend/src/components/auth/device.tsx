@@ -64,7 +64,7 @@ export function Device({ prefilledCode }: DeviceProps) {
                     },
                 });
             } catch {
-                setError("Failed to verify code");
+                setError("Couldn’t check this code. Please try again.");
             } finally {
                 setChecking(false);
             }

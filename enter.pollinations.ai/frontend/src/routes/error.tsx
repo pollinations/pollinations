@@ -19,12 +19,12 @@ function ErrorPage() {
         ? "Account suspended"
         : isStagingInviteOnly
           ? "Staging is invite-only"
-          : "Something went wrong";
+          : "Couldn’t sign in";
     const message = isBanned
-        ? "Your account has been suspended. If you think this is a mistake, contact billing."
+        ? "Your pollinations.ai account is suspended. If you think this is a mistake, contact billing."
         : isStagingInviteOnly
-          ? "This is the staging environment and access is limited to the Pollinations team. Head to pollinations.ai to use the production app."
-          : "An unexpected error occurred. Please try again or open a GitHub issue if this keeps happening.";
+          ? "Your pollinations.ai account doesn’t have access to staging. Use pollinations.ai to continue."
+          : "We couldn’t sign you in to your pollinations.ai account. Please try again.";
 
     return (
         <AuthFlowLayout

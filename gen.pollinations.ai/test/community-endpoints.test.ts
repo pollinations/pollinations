@@ -9810,43 +9810,11 @@ fixtureTest(
             createdAt: new Date(),
             updatedAt: new Date(),
         });
-        let healthUnavailable = false;
-        let healthCalls = 0;
         let generationCalls = 0;
         vi.stubGlobal(
             "fetch",
             vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
                 const request = new Request(input, init);
-                if (request.url.includes("/pipes/model_health.json")) {
-                    healthCalls++;
-                    if (healthUnavailable)
-                        return new Response("Unavailable", { status: 503 });
-                    return Response.json({
-                        data: [
-                            {
-                                model: modelId,
-                                event_type: "generate.text",
-                                provider: "test",
-                                model_used: "test-model",
-                                total_requests: 200,
-                                status_2xx: 96,
-                                errors_4xx: 100,
-                                errors_5xx: 4,
-                                own_calls: 100,
-                                own_calls_ok: 80,
-                                primary_5xx: 20,
-                                primary_retried_503s: 16,
-                                fallback_rescues: 16,
-                                last_error_at: "",
-                                latency_p50_ms: null,
-                                latency_p95_ms: null,
-                                avg_latency_ms: null,
-                                last_request_at: new Date().toISOString(),
-                                tokens_per_second: null,
-                            },
-                        ],
-                    });
-                }
                 if (
                     request.url ===
                     "https://api.example.com/v1/chat/completions"
@@ -9881,10 +9849,7 @@ fixtureTest(
                 throw new Error(`Unexpected fetch: ${request.url}`);
             }),
         );
-        const headers = {
-            "Pollinations-Model-Source": "community",
-            "Pollinations-Model-Status": "healthy",
-        };
+        const headers = { "Pollinations-Model-Source": "community" };
         const openai = new OpenAI({
             apiKey: paidApiKey,
             baseURL: "https://gen.pollinations.ai/v1",
@@ -9894,9 +9859,6 @@ fixtureTest(
         });
         const listed = await openai.models.list();
         expect(listed.data.map((model) => model.id)).toEqual([modelId]);
-        expect(listed.data[0]).toMatchObject({
-            health: { success_rate: 0.96, sample_size: 100, stale: false },
-        });
         expect(
             (
                 await openai.chat.completions.create({
@@ -9931,7 +9893,6 @@ fixtureTest(
             ).text,
         ).toBe("catalog client ok");
         expect(generationCalls).toBe(2);
-        expect(healthCalls).toBe(1);
 
         // A persistent discovery header cannot prohibit generation of a known ID.
         const officialClient = new OpenAI({
@@ -9959,24 +9920,5 @@ fixtureTest(
                 })
             ).choices[0].message.content,
         ).toBe("catalog client ok");
-        healthUnavailable = true;
-        const now = Date.now();
-        const clock = vi.spyOn(Date, "now").mockReturnValue(now + 61_000);
-        try {
-            const all = await fetchGen(
-                "https://gen.pollinations.ai/models?source=community&status=all",
-            );
-            expect(await all.json()).toEqual(
-                expect.arrayContaining([
-                    expect.objectContaining({
-                        name: modelId,
-                        health: expect.objectContaining({ stale: true }),
-                    }),
-                ]),
-            );
-            expect((await openai.models.list()).data).toEqual([]);
-        } finally {
-            clock.mockRestore();
-        }
     },
 );

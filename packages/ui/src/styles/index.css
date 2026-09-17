@@ -90,15 +90,23 @@
     box-shadow: none;
 }
 
+/* `data-error` is set by the primitive; `data-invalid` by an invalid Field.Root
+   (Ark), so a field with an error text also paints its control red. */
 .polli-input[data-error="true"],
-.polli-textarea[data-error="true"] {
+.polli-input[data-invalid],
+.polli-textarea[data-error="true"],
+.polli-textarea[data-invalid] {
     border-color: var(--polli-color-danger-border);
 }
 
 .polli-input[data-error="true"]:focus,
 .polli-input[data-error="true"]:focus-visible,
+.polli-input[data-invalid]:focus,
+.polli-input[data-invalid]:focus-visible,
 .polli-textarea[data-error="true"]:focus,
-.polli-textarea[data-error="true"]:focus-visible {
+.polli-textarea[data-error="true"]:focus-visible,
+.polli-textarea[data-invalid]:focus,
+.polli-textarea[data-invalid]:focus-visible {
     border-color: var(--polli-color-danger-border);
     box-shadow: 0 0 0 1px var(--polli-color-danger-border);
 }

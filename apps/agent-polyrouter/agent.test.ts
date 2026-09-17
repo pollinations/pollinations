@@ -1,14 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import agent, { classify, pickModel } from "./agent.ts";
+import agent, { aggregateHealth, classify, pickModel } from "./agent.ts";
 
 type CatalogEntry = {
     id: string;
     price: number;
-    health?: string;
     capabilities?: string[];
     images?: boolean;
-    successRate?: number;
 };
 
 const catalogOf = (entries: CatalogEntry[]) =>
@@ -22,11 +20,28 @@ const catalogOf = (entries: CatalogEntry[]) =>
             promptTextTokens: String(entry.price / 2),
             completionTextTokens: String(entry.price / 2),
         },
-        health: {
-            status: entry.health ?? "healthy",
-            success_rate: entry.successRate ?? 0.99,
-        },
     }));
+
+const NO_HEALTH = new Map();
+
+/** Rollup rows for a model: nReq total, n5xx of them 5xx, optional p95. */
+const rollupRows = (
+    model: string,
+    nReq: number,
+    n5xx: number,
+    p95?: number,
+) => [
+    {
+        model,
+        event_type: "generate.text",
+        is_rollup: 1,
+        total_requests: nReq,
+        status_2xx: nReq - n5xx,
+        errors_4xx: 0,
+        errors_5xx: n5xx,
+        latency_p95_ms: p95 ?? null,
+    },
+];
 
 const FAST_FEATURES = classify({ input: "hi" });
 
@@ -67,27 +82,65 @@ test("classify: images and tools lift the tier to balanced", () => {
     assert.equal(withTools.needsTools, true);
 });
 
-test("pickModel: fast tier takes the cheapest healthy model", () => {
+test("aggregateHealth: sums rollup rows and ignores non-rollup ones", () => {
+    const rows = [
+        ...rollupRows("m", 6, 1, 800),
+        ...rollupRows("m", 4, 1, 1200),
+        { model: "m", is_rollup: 0, total_requests: 999, errors_5xx: 999 },
+    ];
+    const health = aggregateHealth(rows);
+    const m = health.get("m");
+    assert.equal(m?.requests, 10);
+    assert.equal(m?.successRate, 0.8);
+    assert.equal(m?.p95, 1200);
+    assert.equal(m?.broken, false);
+});
+
+test("aggregateHealth: marks a model broken on a 5xx majority, ignoring 4xx", () => {
+    const broken = aggregateHealth(rollupRows("bad", 10, 6));
+    assert.equal(broken.get("bad")?.broken, true);
+    // Mostly 4xx (client faults): not broken.
+    const clientFaults = aggregateHealth([
+        {
+            model: "ok",
+            event_type: "generate.text",
+            is_rollup: 1,
+            total_requests: 10,
+            status_2xx: 1,
+            errors_4xx: 9,
+            errors_5xx: 0,
+        },
+    ]);
+    assert.equal(clientFaults.get("ok")?.broken, false);
+    // Low traffic gets the benefit of the doubt even when all calls 5xx.
+    const lowTraffic = aggregateHealth(rollupRows("new", 2, 2));
+    assert.equal(lowTraffic.get("new")?.broken, false);
+});
+
+test("pickModel: fast tier takes the cheapest eligible model", () => {
     const catalog = catalogOf([
         { id: "cheap", price: 0 },
         { id: "mid", price: 0.00001 },
         { id: "pricey", price: 0.0001, capabilities: ["reasoning"] },
     ]);
-    const pick = pickModel(catalog, [], FAST_FEATURES);
+    const pick = pickModel(catalog, NO_HEALTH, FAST_FEATURES);
     assert.equal(pick.id, "cheap");
-    assert.match(pick.why, /cheapest healthy of 3/);
+    assert.match(pick.why, /cheapest eligible of 3/);
 });
 
-test("pickModel: unhealthy models are skipped with reasons in the trace", () => {
+test("pickModel: broken models are skipped with reasons in the trace", () => {
     const catalog = catalogOf([
-        { id: "cheap-down", price: 0, health: "down" },
-        { id: "cheap-degraded", price: 0, health: "degraded" },
+        { id: "cheap-down", price: 0 },
+        { id: "cheap-also-down", price: 0 },
         { id: "cheap-ok", price: 0.000001 },
     ]);
-    const pick = pickModel(catalog, [], FAST_FEATURES);
+    const health = aggregateHealth([
+        ...rollupRows("cheap-down", 8, 8),
+        ...rollupRows("cheap-also-down", 20, 12),
+    ]);
+    const pick = pickModel(catalog, health, FAST_FEATURES);
     assert.equal(pick.id, "cheap-ok");
-    assert.match(pick.why, /1 health down/);
-    assert.match(pick.why, /1 health degraded/);
+    assert.match(pick.why, /2 unhealthy \(5xx\)/);
 });
 
 test("pickModel: balanced takes the median-priced candidate, deep the priciest reasoning one", () => {
@@ -103,10 +156,10 @@ test("pickModel: balanced takes the median-priced candidate, deep the priciest r
         () =>
             pickModel(
                 catalog,
-                [],
+                NO_HEALTH,
                 classify({ input: "hi", tools: [{ type: "function" }] }),
             ),
-        /No healthy/,
+        /No eligible/,
     );
 
     const toolCatalog = catalogOf([
@@ -134,14 +187,14 @@ test("pickModel: balanced takes the median-priced candidate, deep the priciest r
     ]);
     const medianPick = pickModel(
         toolCatalog,
-        [],
+        NO_HEALTH,
         classify({ input: "hi", tools: [{ type: "function" }] }),
     );
     assert.equal(medianPick.id, "c");
 
     const deepPick = pickModel(
         toolCatalog,
-        [],
+        NO_HEALTH,
         classify({
             input: "analyze and debug ```js\nclass A {}\n``` step by step, compare trade-offs",
         }),
@@ -152,15 +205,16 @@ test("pickModel: balanced takes the median-priced candidate, deep the priciest r
 test("pickModel: empty band escalates upward and records it", () => {
     const catalog = catalogOf([
         { id: "only-reasoner", price: 0.00005, capabilities: ["reasoning"] },
-        { id: "down", price: 0, health: "down" },
+        { id: "down", price: 0 },
     ]);
+    const health = aggregateHealth(rollupRows("down", 9, 9));
     const deepFeatures = {
         tier: "deep" as const,
         needsTools: false,
         needsImage: false,
         summary: "score 5",
     };
-    const pick = pickModel(catalog, [], deepFeatures);
+    const pick = pickModel(catalog, health, deepFeatures);
     assert.equal(pick.id, "only-reasoner");
     assert.doesNotMatch(pick.why, /escalated/);
 });
@@ -170,17 +224,21 @@ test("pickModel: latency breaks price ties", () => {
         { id: "slow", price: 0.00001 },
         { id: "fast", price: 0.00001 },
     ]);
-    const rows = [
-        { model: "slow", event_type: "generate.text", latency_p95_ms: 9000 },
-        { model: "fast", event_type: "generate.text", latency_p95_ms: 900 },
-    ];
-    const pick = pickModel(catalog, rows, FAST_FEATURES);
+    const health = aggregateHealth([
+        ...rollupRows("slow", 10, 0, 9000),
+        ...rollupRows("fast", 10, 0, 900),
+    ]);
+    const pick = pickModel(catalog, health, FAST_FEATURES);
     assert.equal(pick.id, "fast");
 });
 
-test("pickModel: throws when nothing healthy exists", () => {
-    const catalog = catalogOf([{ id: "down", price: 0, health: "down" }]);
-    assert.throws(() => pickModel(catalog, [], FAST_FEATURES), /No healthy/);
+test("pickModel: throws when everything is broken", () => {
+    const catalog = catalogOf([{ id: "down", price: 0 }]);
+    const health = aggregateHealth(rollupRows("down", 7, 7));
+    assert.throws(
+        () => pickModel(catalog, health, FAST_FEATURES),
+        /No eligible/,
+    );
 });
 
 test("agent: forwards the original body with the chosen model and trace headers", async () => {
@@ -205,8 +263,8 @@ test("agent: forwards the original body with the chosen model and trace headers"
                     ]),
                 });
             }
-            if (path === "/v1/models/status?minutes=30") {
-                return Response.json({ data: [] });
+            if (path === "/models/status?minutes=30") {
+                return Response.json({ data: rollupRows("pricey", 10, 9) });
             }
             forwarded.push(JSON.parse(init?.body as string));
             return downstream;
@@ -220,4 +278,36 @@ test("agent: forwards the original body with the chosen model and trace headers"
     assert.match(result.headers.get("x-polyrouter-why") ?? "", /simple prompt/);
     assert.equal(result.status, 200);
     assert.equal(await result.text(), "stream-body");
+});
+
+test("agent: routes by price alone when the status feed is down", async () => {
+    const forwarded: Record<string, unknown>[] = [];
+    const downstream = new Response("ok", { status: 200 });
+    const result = await agent({
+        request: new Request("https://example.com/v1/responses", {
+            method: "POST",
+            body: JSON.stringify({
+                model: "afanasevmylife/polyrouter",
+                input: "hi",
+            }),
+        }),
+        pollinations: async (path, init) => {
+            if (path === "/v1/models?status=all") {
+                return Response.json({
+                    data: catalogOf([
+                        { id: "pricey", price: 0.0001 },
+                        { id: "cheap", price: 0 },
+                    ]),
+                });
+            }
+            if (path === "/models/status?minutes=30") {
+                return new Response("not found", { status: 404 });
+            }
+            forwarded.push(JSON.parse(init?.body as string));
+            return downstream;
+        },
+    });
+    assert.equal(forwarded.length, 1);
+    assert.equal(forwarded[0].model, "cheap");
+    assert.equal(result.status, 200);
 });

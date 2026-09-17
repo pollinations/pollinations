@@ -1,1 +1,69 @@
-{"id":"resp_9f2b235ed2354ccf8e858ace6efc8407","object":"response","created_at":1789594339,"status":"completed","model":"accounts/fireworks/models/muse-glimmer-30b","output":[{"id":"rs_534eddaa2270492da091a9ea4fc0f5a7","type":"reasoning","summary":[{"type":"summary_text","text":"What is the weather like in Lisbon right now? Use the tool if needed. (demo E5)\n\nWe need weather like in Lisbon right now. Use tool if needed. So call get_weather with city Lisbon.\n\nWe should call get_weather."}]},{"id":"fc_162ae6d3a03948c89611eb9938984c1f","type":"function_call","call_id":"chatcmpl-tool-b53e3f27c3771310","name":"get_weather","arguments":"{\"city\": \"Lisbon\"}","status":"completed"}],"previous_response_id":null,"usage":{"input_tokens":416,"output_tokens":99,"total_tokens":515,"input_tokens_details":{"cached_tokens":176}},"error":null,"incomplete_details":null,"instructions":null,"max_output_tokens":null,"max_tool_calls":null,"parallel_tool_calls":true,"reasoning":null,"store":false,"temperature":1,"text":{"format":{"type":"text"}},"tool_choice":"auto","tools":[{"type":"function","name":"get_weather","description":"Get current weather for a city","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"]}}],"top_p":1,"top_logprobs":null,"truncation":"disabled","user":null,"background":null,"metadata":{},"polyrouter_trace":{"model":"meta/muse-glimmer-30b","tier":"balanced","why":"score 0; simple prompt; has tools; picked median-priced healthy of 34; skipped 2 health degraded, 109 no responses endpoint, 53 not a text model, 4 health unknown, 7 health down"}}
+{
+  "id": "resp_c2b4c80d-865d-4beb-844c-26fcbcbfe674",
+  "object": "response",
+  "created_at": 1789626845,
+  "completed_at": 1789626845,
+  "status": "completed",
+  "incomplete_details": null,
+  "model": "a39956fb-436f-46c2-b485-19433ee11016",
+  "output": [
+    {
+      "type": "message",
+      "id": "msg_dc3c9b46-085e-404c-aba8-ddaba45f3109",
+      "role": "assistant",
+      "status": "completed",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "I\u2019m not able to fetch live weather data, but here\u2019s a quick snapshot of what Lisbon usually looks like around this time of year:\n\n| Weather | Typical Conditions |\n|---------|--------------------|\n| Temperature | ~20\u202f\u00b0C (68\u202f\u00b0F) |\n| Sunshine | Partly cloudy or sunny |\n| Wind | Light breezes from the Atlantic (5\u201310\u202fkm/h) |\n| Humidity | Moderate (\u2248\u202f65\u202f%) |\n\nIf you need a more precise, real\u2011time forecast, you can check a weather service like the National Weather Service or a local Portuguese meteorological site.\n\n---\n\n**Quick note** \u2013 I can also generate a 3\u2011D model or image for you if you\u2019d like! Could you share a PNG/JPG URL that you\u2019d like me to work with?",
+          "annotations": [],
+          "logprobs": []
+        }
+      ]
+    }
+  ],
+  "error": null,
+  "usage": {
+    "input_tokens": 2964,
+    "input_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0
+    },
+    "output_tokens": 366,
+    "output_tokens_details": {
+      "reasoning_tokens": 192
+    },
+    "total_tokens": 3330,
+    "tool_call_counts": {}
+  },
+  "previous_response_id": null,
+  "instructions": null,
+  "tools": [],
+  "tool_choice": "auto",
+  "truncation": "disabled",
+  "parallel_tool_calls": true,
+  "text": {
+    "format": {
+      "type": "text"
+    }
+  },
+  "top_p": 1,
+  "presence_penalty": 0,
+  "frequency_penalty": 0,
+  "top_logprobs": 0,
+  "temperature": 1,
+  "reasoning": null,
+  "max_output_tokens": null,
+  "max_tool_calls": null,
+  "store": false,
+  "background": false,
+  "service_tier": "default",
+  "metadata": {},
+  "safety_identifier": null,
+  "prompt_cache_key": null,
+  "polyrouter_trace": {
+    "model": "community/sharktide/3D-agent",
+    "tier": "balanced",
+    "why": "score 0; simple prompt; has tools; picked median-priced eligible of 46; skipped 108 no responses endpoint, 54 not a text model, 3 no tool_calling"
+  }
+}

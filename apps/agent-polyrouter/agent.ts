@@ -3,9 +3,10 @@
 // For every request it picks the cheapest healthy model that fits the
 // request's complexity, then forwards the conversation unchanged. No LLM
 // call is spent on classification: tiers come from request features, and the
-// winner comes from the live catalog (price, capabilities, health) and the
-// live status feed (p95 latency, tokens/sec). The gateway already retries a
-// model's declared fallbacks - this agent's job is choosing between models.
+// winner comes from the live catalog (price, capabilities) plus the live
+// status feed (/models/status: per-model 5xx ratio and p95 latency,
+// aggregated here into health). The gateway already retries a model's
+// declared fallbacks - this agent's job is choosing between models.
 //
 // The decision is exposed on response headers:
 //   x-polyrouter-model  - the model that answered
@@ -25,15 +26,31 @@ type CatalogModel = {
     input_modalities?: string[];
     capabilities?: string[];
     pricing?: { promptTextTokens?: string; completionTextTokens?: string };
-    health?: { status?: string; success_rate?: number };
     supported_endpoints?: string[];
 };
 
+/** Raw row shape of the /models/status feed (Tinybird pipe response). */
 type StatusRow = {
     model?: string;
     event_type?: string;
+    is_rollup?: number | boolean;
+    total_requests?: number;
+    status_2xx?: number;
+    errors_4xx?: number;
+    errors_5xx?: number;
     latency_p95_ms?: number | null;
     tokens_per_second?: number | null;
+};
+
+/** Per-model health aggregated from the status feed's rollup rows. */
+export type ModelHealth = {
+    requests: number;
+    /** 2xx share of recent calls, null when the model has no traffic. */
+    successRate: number | null;
+    /** Worst generate.text rollup p95, null when unknown. */
+    p95: number | null;
+    /** Majority of recent calls failed server-side (5xx). */
+    broken: boolean;
 };
 
 export type RequestFeatures = {
@@ -140,6 +157,45 @@ export function classify(body: Record<string, unknown>): RequestFeatures {
     return { tier, needsTools, needsImage: hasImage, summary };
 }
 
+/**
+ * Aggregate raw /models/status rows into per-model health. Only rollup rows
+ * carry per-model totals. A model is broken when the majority of its recent
+ * calls failed with 5xx; 4xx are client faults and do not count against it.
+ * Low-traffic models get the benefit of the doubt.
+ */
+export function aggregateHealth(
+    statusRows: StatusRow[],
+): Map<string, ModelHealth> {
+    const acc = new Map<
+        string,
+        { req: number; ok: number; e5: number; p95: number | null }
+    >();
+    for (const row of statusRows) {
+        if (!row.is_rollup || typeof row.model !== "string") continue;
+        const entry = acc.get(row.model) ?? { req: 0, ok: 0, e5: 0, p95: null };
+        entry.req += row.total_requests ?? 0;
+        entry.ok += row.status_2xx ?? 0;
+        entry.e5 += row.errors_5xx ?? 0;
+        if (
+            row.event_type === "generate.text" &&
+            typeof row.latency_p95_ms === "number"
+        ) {
+            entry.p95 = Math.max(entry.p95 ?? 0, row.latency_p95_ms);
+        }
+        acc.set(row.model, entry);
+    }
+    const health = new Map<string, ModelHealth>();
+    for (const [model, e] of acc) {
+        health.set(model, {
+            requests: e.req,
+            successRate: e.req > 0 ? e.ok / e.req : null,
+            p95: e.p95,
+            broken: e.req >= 5 && e.e5 / e.req >= 0.5,
+        });
+    }
+    return health;
+}
+
 const unitPrice = (model: CatalogModel): number => {
     const pricing = model.pricing ?? {};
     return (
@@ -152,12 +208,12 @@ const isUsable = (
     model: CatalogModel,
     features: RequestFeatures,
     tierRequirement: Tier | null,
+    health: Map<string, ModelHealth>,
 ): string | null => {
     if (model.category !== "text") return "not a text model";
     if (!model.supported_endpoints?.includes("/v1/responses"))
         return "no responses endpoint";
-    const status = model.health?.status;
-    if (status !== "healthy") return `health ${status ?? "unknown"}`;
+    if (health.get(model.id)?.broken) return "unhealthy (5xx)";
     if (features.needsImage && !model.input_modalities?.includes("image"))
         return "no image input";
     if (features.needsTools && !model.capabilities?.includes("tool_calling"))
@@ -172,29 +228,19 @@ const isUsable = (
 };
 
 /**
- * Pick the winner. Candidates are the healthy text models that satisfy the
- * request's capability needs, sorted by unit price (ties: lower live p95
- * latency, then higher success rate). fast takes the cheapest candidate,
- * balanced the median-priced one, deep the priciest. If a tier has no
- * candidates the search escalates upward, and as a last resort any healthy
- * text model wins. Nothing here retries a model - that is the gateway's job.
+ * Pick the winner. Candidates are the text models that satisfy the request's
+ * capability needs and are not marked broken by the status feed, sorted by
+ * unit price (ties: lower live p95 latency, then higher success rate).
+ * fast takes the cheapest candidate, balanced the median-priced one, deep the
+ * priciest. If a tier has no candidates the search escalates upward, and as a
+ * last resort any eligible text model wins. Nothing here retries a model -
+ * that is the gateway's job.
  */
 export function pickModel(
     catalog: CatalogModel[],
-    statusRows: StatusRow[],
+    health: Map<string, ModelHealth>,
     features: RequestFeatures,
 ): PickResult {
-    const latency = new Map<string, number>();
-    for (const row of statusRows) {
-        if (
-            row.event_type === "generate.text" &&
-            typeof row.model === "string" &&
-            typeof row.latency_p95_ms === "number"
-        ) {
-            latency.set(row.model, row.latency_p95_ms);
-        }
-    }
-
     const skipped = new Map<string, number>();
     const note = (reason: string) =>
         skipped.set(reason, (skipped.get(reason) ?? 0) + 1);
@@ -202,7 +248,7 @@ export function pickModel(
     const candidatesFor = (tierRequirement: Tier | null): CatalogModel[] => {
         const usable: CatalogModel[] = [];
         for (const model of catalog) {
-            const reason = isUsable(model, features, tierRequirement);
+            const reason = isUsable(model, features, tierRequirement, health);
             if (reason) note(reason);
             else usable.push(model);
         }
@@ -210,11 +256,12 @@ export function pickModel(
             const byPrice = unitPrice(a) - unitPrice(b);
             if (byPrice !== 0) return byPrice;
             const byLatency =
-                (latency.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
-                (latency.get(b.id) ?? Number.MAX_SAFE_INTEGER);
+                (health.get(a.id)?.p95 ?? Number.MAX_SAFE_INTEGER) -
+                (health.get(b.id)?.p95 ?? Number.MAX_SAFE_INTEGER);
             if (byLatency !== 0) return byLatency;
             return (
-                (b.health?.success_rate ?? 0) - (a.health?.success_rate ?? 0)
+                (health.get(b.id)?.successRate ?? 0) -
+                (health.get(a.id)?.successRate ?? 0)
             );
         });
     };
@@ -244,12 +291,12 @@ export function pickModel(
                 : "";
         const why =
             `${escalated}${features.summary}; ` +
-            `picked ${wanted === "deep" || wanted === null ? "strongest" : wanted === "balanced" ? "median-priced" : "cheapest"} healthy of ${candidates.length}` +
+            `picked ${wanted === "deep" || wanted === null ? "strongest" : wanted === "balanced" ? "median-priced" : "cheapest"} eligible of ${candidates.length}` +
             (skipTrace ? `; skipped ${skipTrace}` : "");
         return { id: winner.id, tier: features.tier, why: why.slice(0, 200) };
     }
     throw new Error(
-        "No healthy text model in the catalog can serve this request",
+        "No eligible text model in the catalog can serve this request",
     );
 }
 
@@ -262,7 +309,7 @@ export default async function agent({
 
     const [catalogResponse, statusResponse] = await Promise.all([
         pollinations("/v1/models?status=all"),
-        pollinations("/v1/models/status?minutes=30"),
+        pollinations("/models/status?minutes=30"),
     ]);
     if (!catalogResponse.ok) {
         throw new Error(
@@ -272,11 +319,14 @@ export default async function agent({
     const catalog =
         ((await catalogResponse.json()) as { data?: CatalogModel[] }).data ??
         [];
+    // The status feed is advisory: when it is unreachable the router still
+    // works, just without health/latency signals (price-only routing).
     const statusRows: StatusRow[] = statusResponse.ok
         ? (((await statusResponse.json()) as { data?: StatusRow[] }).data ?? [])
         : [];
+    const health = aggregateHealth(statusRows);
 
-    const choice = pickModel(catalog, statusRows, features);
+    const choice = pickModel(catalog, health, features);
 
     const upstream = await pollinations("/v1/responses", {
         method: "POST",

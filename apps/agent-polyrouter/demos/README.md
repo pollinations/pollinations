@@ -3,54 +3,58 @@
 Three requests against the deployed agent `afanasevmylife/polyrouter`
 (`POST https://gen.pollinations.ai/v1/responses`), each routed differently.
 The full Responses JSON, including the `polyrouter_trace` field, is in each
-file.
+file. Re-run on 2026-09-17 after the platform's status-feed refactor (the
+catalog no longer carries `health`; the router now aggregates
+`/models/status` rollup rows itself).
 
-## 1. Simple prompt -> fast tier -> cheapest healthy model
+## 1. Simple prompt -> fast tier -> cheapest eligible model
 
-`demo-1-fast.json` - "Name the capital of Portugal, one word only."
+`demo-1-fast.json` - "Name the capital of Portugal in one word please."
 
 ```json
 "polyrouter_trace": {
   "model": "community/morriszdweck/osaii-swarm",
   "tier": "fast",
-  "why": "score 0; simple prompt; picked cheapest healthy of 34; skipped 2 health degraded, 109 no responses endpoint, 53 not a text model, 4 health unknown, 7 health down"
+  "why": "score 0; simple prompt; picked cheapest eligible of 49; skipped 108 no responses endpoint, 54 not a text model"
 }
 ```
 
-A trivial question takes a free, healthy community model. (Answer: "Lisbon".)
+A trivial question takes a free community model. (Answer: "Lisbon".)
 
-## 2. Code + reasoning prompt -> deep tier -> strongest healthy reasoning model
+## 2. Code + reasoning prompt -> deep tier -> strongest eligible reasoning model
 
-`demo-2-deep.json` - "Analyze why this TypeScript code can deadlock, explain
-step by step, then refactor it..."
+`demo-2-deep.json` - "Analyze why this concurrent queue implementation
+deadlocks under load and explain step by step how to refactor the locking
+strategy..."
 
 ```json
 "polyrouter_trace": {
   "model": "community/pollinations-router/midijourney",
   "tier": "deep",
-  "why": "score 4; code, reasoning keywords; picked strongest healthy of 26; skipped 8 no reasoning, 2 health degraded, ..."
+  "why": "score 4; code, reasoning keywords; picked strongest eligible of 33; skipped 16 no reasoning, 108 no responses endpoint, 54 not a text model"
 }
 ```
 
 Code fences plus reasoning keywords push the request to `deep`; the priciest
-healthy model advertising `reasoning` answers.
+model advertising `reasoning` that is not flagged broken by the live status
+feed answers.
 
 ## 3. Tool-using request -> balanced tier -> median-priced tool_calling model
 
-`demo-3-balanced-tools.json` - "What is the weather like in Lisbon right
-now?" with a `get_weather` function tool attached.
+`demo-3-balanced-tools.json` - "What is the weather in Lisbon right now?"
+with a `get_weather` function tool attached.
 
 ```json
 "polyrouter_trace": {
-  "model": "meta/muse-glimmer-30b",
+  "model": "community/sharktide/3D-agent",
   "tier": "balanced",
-  "why": "score 0; simple prompt; has tools; picked median-priced healthy of 34; skipped ..."
+  "why": "score 0; simple prompt; has tools; picked median-priced eligible of 46; skipped 108 no responses endpoint, 54 not a text model, 3 no tool_calling"
 }
 ```
 
 The prompt is simple, but the attached tool requires `tool_calling`, so the
-request is at least `balanced` and lands on the median-priced healthy
-tool-capable model.
+request is at least `balanced` and lands on the median-priced tool-capable
+model.
 
 ## Note on where the trace is visible
 

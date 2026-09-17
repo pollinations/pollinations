@@ -1,1 +1,69 @@
-{"id":"resp_599c3a1e-746a-4711-b079-5e4946042186","object":"response","created_at":1789594251,"completed_at":1789594251,"status":"completed","incomplete_details":null,"model":"11615efa-7963-4d73-b23a-78f352653d37","output":[{"type":"message","id":"msg_37218f43-5708-4de3-9fcd-b73a5bc63196","role":"assistant","status":"completed","content":[{"type":"output_text","text":"Lisbon","annotations":[],"logprobs":[]}]}],"error":null,"usage":{"input_tokens":12217,"input_tokens_details":{"cached_tokens":0,"cache_write_tokens":0},"output_tokens":4,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":12221,"tool_call_counts":{}},"previous_response_id":null,"instructions":null,"tools":[],"tool_choice":"auto","truncation":"disabled","parallel_tool_calls":true,"text":{"format":{"type":"text"}},"top_p":1,"presence_penalty":0,"frequency_penalty":0,"top_logprobs":0,"temperature":1,"reasoning":null,"max_output_tokens":null,"max_tool_calls":null,"store":false,"background":false,"service_tier":"default","metadata":{},"safety_identifier":null,"prompt_cache_key":null,"polyrouter_trace":{"model":"community/morriszdweck/osaii-swarm","tier":"fast","why":"score 0; simple prompt; picked cheapest healthy of 34; skipped 2 health degraded, 109 no responses endpoint, 53 not a text model, 4 health unknown, 7 health down"}}
+{
+  "id": "resp_0af1ce92-5a03-4828-adea-4abf8a7edc87",
+  "object": "response",
+  "created_at": 1789626827,
+  "completed_at": 1789626827,
+  "status": "completed",
+  "incomplete_details": null,
+  "model": "11615efa-7963-4d73-b23a-78f352653d37",
+  "output": [
+    {
+      "type": "message",
+      "id": "msg_73daa1e4-0505-4dbe-b900-3deb6e9fd720",
+      "role": "assistant",
+      "status": "completed",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "Lisbon.",
+          "annotations": [],
+          "logprobs": []
+        }
+      ]
+    }
+  ],
+  "error": null,
+  "usage": {
+    "input_tokens": 12217,
+    "input_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0
+    },
+    "output_tokens": 5,
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "total_tokens": 12222,
+    "tool_call_counts": {}
+  },
+  "previous_response_id": null,
+  "instructions": null,
+  "tools": [],
+  "tool_choice": "auto",
+  "truncation": "disabled",
+  "parallel_tool_calls": true,
+  "text": {
+    "format": {
+      "type": "text"
+    }
+  },
+  "top_p": 1,
+  "presence_penalty": 0,
+  "frequency_penalty": 0,
+  "top_logprobs": 0,
+  "temperature": 1,
+  "reasoning": null,
+  "max_output_tokens": null,
+  "max_tool_calls": null,
+  "store": false,
+  "background": false,
+  "service_tier": "default",
+  "metadata": {},
+  "safety_identifier": null,
+  "prompt_cache_key": null,
+  "polyrouter_trace": {
+    "model": "community/morriszdweck/osaii-swarm",
+    "tier": "fast",
+    "why": "score 0; simple prompt; picked cheapest eligible of 49; skipped 108 no responses endpoint, 54 not a text model"
+  }
+}

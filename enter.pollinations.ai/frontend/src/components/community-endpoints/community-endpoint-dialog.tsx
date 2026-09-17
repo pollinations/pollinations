@@ -967,7 +967,7 @@ export function CommunityEndpointDialog({
                         Cancel
                     </Button>
                     <Button
-                        icon={isEdit ? <CheckIcon /> : <BeakerIcon />}
+                        icon={<BeakerIcon />}
                         type="submit"
                         className="disabled:opacity-50"
                         disabled={!canSubmit}

@@ -1,12 +1,13 @@
 import { apiClient } from "@frontend/api.ts";
 import {
+    AppIcon,
     Button,
-    CheckIcon,
     CopyButton,
     cn,
     DialogBody,
     DialogFooter,
     DialogHeader,
+    KeyIcon,
     XIcon,
 } from "@pollinations/ui";
 import { AuthInfoCard, AuthModal, ErrorBanner } from "@pollinations/ui/auth";
@@ -206,7 +207,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         Cancel
                     </Button>
                     <Button
-                        icon={<CheckIcon />}
+                        icon={appKey ? <AppIcon /> : <KeyIcon />}
                         type="submit"
                         disabled={isSubmitting}
                     >

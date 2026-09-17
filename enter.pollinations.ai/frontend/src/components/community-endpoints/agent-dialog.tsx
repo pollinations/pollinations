@@ -261,7 +261,7 @@ export function AgentDialog({
                         Cancel
                     </Button>
                     <Button
-                        icon={agent ? <CheckIcon /> : <BotIcon />}
+                        icon={<BotIcon />}
                         type="submit"
                         disabled={!canSubmit}
                     >

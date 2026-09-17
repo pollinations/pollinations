@@ -1,9 +1,5 @@
 import { Button, RefreshIcon } from "@pollinations/ui";
-import {
-    AuthErrorContent,
-    AuthModalLoading,
-    ErrorBanner,
-} from "@pollinations/ui/auth";
+import { AuthModalLoading, ErrorBanner } from "@pollinations/ui/auth";
 import {
     getPollenPackByAmount,
     getPollenPackByKey,
@@ -141,7 +137,7 @@ function TopUpPage() {
     if (walletError) {
         return (
             <AuthFlowScreen
-                dialog={{ labelledBy: "top-up-title" }}
+                title="Couldn’t load your wallet"
                 balance={wallet}
                 topUpHref={null}
                 actions={
@@ -153,11 +149,9 @@ function TopUpPage() {
                     </Button>
                 }
             >
-                <AuthErrorContent
-                    title="Couldn’t load your wallet"
-                    titleId="top-up-title"
-                    message="We couldn’t load your wallet. Please try again."
-                />
+                <ErrorBanner>
+                    We couldn’t load your wallet. Please try again.
+                </ErrorBanner>
             </AuthFlowScreen>
         );
     }

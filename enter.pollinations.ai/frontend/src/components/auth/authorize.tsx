@@ -7,7 +7,7 @@ import {
     useScrollLock,
     XIcon,
 } from "@pollinations/ui";
-import { AuthErrorContent, AuthModalLoading } from "@pollinations/ui/auth";
+import { AuthModalLoading, ErrorBanner } from "@pollinations/ui/auth";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
@@ -463,133 +463,103 @@ export function Authorize() {
 
     if (isPending) return <AuthModalLoading title="Checking your sign-in" />;
 
+    if (error) {
+        return (
+            <AuthFlowScreen
+                title="Couldn’t connect"
+                actions={
+                    <Button
+                        intent="neutral"
+                        icon={<ArrowLeftIcon />}
+                        onClick={handleDeny}
+                    >
+                        Go back
+                    </Button>
+                }
+            >
+                <ErrorBanner>{error}</ErrorBanner>
+            </AuthFlowScreen>
+        );
+    }
+
+    const appCard = (
+        <AppAttribution
+            attribution={attribution}
+            isDeviceMode={isDeviceMode}
+            userCode={user_code}
+            redirectHostname={redirectHostname}
+        />
+    );
+
     if (!user) {
-        if (error) {
-            return (
-                <AuthFlowScreen
-                    dialog={{ labelledBy: "authorize-error-title" }}
-                    actions={
-                        <Button
-                            intent="neutral"
-                            icon={<ArrowLeftIcon />}
-                            onClick={handleDeny}
-                        >
-                            Go back
-                        </Button>
-                    }
-                >
-                    <AuthErrorContent
-                        title="Couldn’t connect"
-                        titleId="authorize-error-title"
-                        message={error}
-                    />
-                </AuthFlowScreen>
-            );
-        }
         return (
             <SignInScreen
                 title="Sign in to Pollinations"
                 description="Review the access this app is requesting before you connect."
                 onCancel={handleDeny}
             >
-                <AppAttribution
-                    attribution={attribution}
-                    isDeviceMode={isDeviceMode}
-                    userCode={user_code}
-                    redirectHostname={redirectHostname}
-                />
+                {appCard}
             </SignInScreen>
         );
     }
 
+    const subject = isDeviceMode ? "your device" : "this app";
     return (
         <AuthFlowScreen
-            dialog={
-                error ? { labelledBy: "authorize-dialog-title" } : undefined
-            }
-            title={
-                error
-                    ? undefined
-                    : isDeviceMode
-                      ? "Connect your device"
-                      : "Connect an app"
-            }
-            description={
-                isDeviceMode
-                    ? "Review what your device can access before you allow it."
-                    : "Review what this app can access before you allow it."
-            }
+            title={isDeviceMode ? "Connect your device" : "Connect an app"}
+            description={`Review what ${subject} can access before you allow it.`}
             actions={
                 <>
                     <Button
                         intent="neutral"
-                        icon={error ? <ArrowLeftIcon /> : <XIcon />}
+                        icon={<XIcon />}
                         onClick={handleDeny}
                         disabled={isAuthorizing}
                     >
-                        {error ? "Go back" : "Decline"}
+                        Decline
                     </Button>
-                    {!error && (
-                        <Button
-                            type="submit"
-                            form="authorize-permissions"
-                            icon={<CheckIcon />}
-                            disabled={!canAuthorize || isAuthorizing}
-                        >
-                            {isAuthorizing ? "Connecting…" : "Allow access"}
-                        </Button>
-                    )}
+                    <Button
+                        type="submit"
+                        form="authorize-permissions"
+                        icon={<CheckIcon />}
+                        disabled={!canAuthorize || isAuthorizing}
+                    >
+                        {isAuthorizing ? "Connecting…" : "Allow access"}
+                    </Button>
                 </>
             }
         >
-            {error ? (
-                <AuthErrorContent
-                    title="Couldn’t connect"
-                    titleId="authorize-dialog-title"
-                    message={error}
+            <form
+                id="authorize-permissions"
+                className="space-y-4"
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    void handleAuthorize();
+                }}
+            >
+                {appCard}
+                <Text size="sm" tone="muted">
+                    Wants access to your pollinations.ai account. You can revoke
+                    it from your dashboard.
+                </Text>
+                <KeyPermissionsInputs
+                    value={keyPermissions}
+                    visiblePermissions={new Set(visibleOptionalPermissions)}
+                    requestedModels={models}
+                    showIdentity
+                    disabled={isAuthorizing}
                 />
-            ) : (
-                <form
-                    id="authorize-permissions"
-                    onSubmit={(event) => {
-                        event.preventDefault();
-                        void handleAuthorize();
-                    }}
-                >
-                    <AppAttribution
-                        attribution={attribution}
-                        isDeviceMode={isDeviceMode}
-                        userCode={user_code}
-                        redirectHostname={redirectHostname}
-                    />
-                    <Text size="sm" tone="muted" className="mt-3">
-                        Wants access to your pollinations.ai account. You can
-                        revoke it from your dashboard.
+                {attribution?.earningsEnabled && (
+                    <Text
+                        size="xs"
+                        tone="muted"
+                        className="flex items-center gap-2"
+                    >
+                        <SproutIcon className="h-4 w-4" />
+                        The app earns 20% of the Pollen you spend in it.
                     </Text>
-
-                    <div className="mt-4">
-                        <KeyPermissionsInputs
-                            value={keyPermissions}
-                            visiblePermissions={
-                                new Set(visibleOptionalPermissions)
-                            }
-                            requestedModels={models}
-                            showIdentity
-                            disabled={isAuthorizing}
-                        />
-                    </div>
-                    {attribution?.earningsEnabled && (
-                        <Text
-                            size="xs"
-                            tone="muted"
-                            className="mt-3 flex items-center gap-2"
-                        >
-                            <SproutIcon className="h-4 w-4" />
-                            The app earns 20% of the Pollen you spend in it.
-                        </Text>
-                    )}
-                </form>
-            )}
+                )}
+            </form>
         </AuthFlowScreen>
     );
 }

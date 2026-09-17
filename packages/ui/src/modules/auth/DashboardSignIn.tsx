@@ -1,8 +1,8 @@
 import { Button } from "../../primitives/Button.tsx";
 import { ColorModeToggle } from "../../primitives/ColorModeToggle.tsx";
 import { RefreshIcon } from "../../primitives/icons/index.tsx";
-import { AuthErrorContent } from "./AuthErrorContent.tsx";
-import { AuthFlowLayout, AuthInfoCard } from "./AuthModal.tsx";
+import { Text } from "../../primitives/Typography.tsx";
+import { AuthFlowLayout, AuthInfoCard, ErrorBanner } from "./AuthModal.tsx";
 import { PollinationsSignInButton } from "./PollinationsSignInButton.tsx";
 
 const signInErrors = {
@@ -49,10 +49,12 @@ export function DashboardSignIn({
     return (
         <AuthFlowLayout
             headerAction={<ColorModeToggle />}
-            dialog={{ labelledBy: "dashboard-sign-in-title" }}
-            title={!isPending && error ? undefined : appName}
-            titleId="dashboard-sign-in-title"
-            description="Sign in with a Pollinations admin account."
+            title={!isPending && error ? error.title : appName}
+            description={
+                !isPending && error
+                    ? undefined
+                    : "Sign in with a Pollinations admin account."
+            }
             actions={
                 isPending ? (
                     <output>Checking sign-in…</output>
@@ -72,17 +74,14 @@ export function DashboardSignIn({
             }
         >
             {!isPending && error ? (
-                <AuthErrorContent
-                    title={error.title}
-                    titleId="dashboard-sign-in-title"
-                    message={error.message}
-                >
+                <>
+                    <ErrorBanner>{error.message}</ErrorBanner>
                     <AuthInfoCard title={null}>
-                        <p className="polli:font-body polli:font-semibold polli:text-theme-text-strong">
+                        <Text size="sm" weight="semibold" tone="strong">
                             {appName}
-                        </p>
+                        </Text>
                     </AuthInfoCard>
-                </AuthErrorContent>
+                </>
             ) : null}
         </AuthFlowLayout>
     );

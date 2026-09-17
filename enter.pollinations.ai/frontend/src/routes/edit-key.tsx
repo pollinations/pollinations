@@ -1,7 +1,7 @@
 import {
-    AuthErrorContent,
     AuthModalHeader,
     AuthModalLoading,
+    ErrorBanner,
 } from "@pollinations/ui/auth";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -120,7 +120,7 @@ function EditKeyPage() {
     if (!id || apiKey === null) {
         return (
             <AuthFlowScreen
-                dialog={{ labelledBy: "edit-key-title" }}
+                title="Key unavailable"
                 balance={balance}
                 topUpHref={topUpHref}
                 actions={
@@ -129,11 +129,10 @@ function EditKeyPage() {
                     ) : undefined
                 }
             >
-                <AuthErrorContent
-                    title="Key unavailable"
-                    titleId="edit-key-title"
-                    message="This key could not be loaded. Check that you’re signed in to the account that owns it."
-                />
+                <ErrorBanner>
+                    This key could not be loaded. Check that you’re signed in to
+                    the account that owns it.
+                </ErrorBanner>
             </AuthFlowScreen>
         );
     }

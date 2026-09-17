@@ -1,5 +1,5 @@
 import { ArrowRightIcon, Button, MailIcon } from "@pollinations/ui";
-import { AuthErrorContent } from "@pollinations/ui/auth";
+import { ErrorBanner } from "@pollinations/ui/auth";
 import { isBannedLoginError } from "@shared/auth/ban.ts";
 import { createFileRoute } from "@tanstack/react-router";
 import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
@@ -29,7 +29,7 @@ function ErrorPage() {
 
     return (
         <AuthFlowScreen
-            dialog={{ labelledBy: "login-error-title" }}
+            title={title}
             actions={
                 <>
                     {isBanned && (
@@ -48,11 +48,7 @@ function ErrorPage() {
                 </>
             }
         >
-            <AuthErrorContent
-                title={title}
-                titleId="login-error-title"
-                message={message}
-            />
+            <ErrorBanner>{message}</ErrorBanner>
         </AuthFlowScreen>
     );
 }

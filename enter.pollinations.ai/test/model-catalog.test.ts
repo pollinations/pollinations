@@ -2,22 +2,46 @@ import {
     getModelPricesFromCatalog,
     mergeModelCatalogs,
     parseModelCatalogResponse,
+    withModelHealth,
 } from "@frontend/components/models/model-catalog.ts";
 import { describe, expect, it } from "vitest";
 
-it("preserves the API health summary for discovery filtering", () => {
-    const health = {
-        status: "healthy" as const,
-        stale: false,
-        success_rate: 1,
-        sample_size: 10,
-        window_minutes: 1440,
-        checked_at: "2026-09-16T00:00:00Z",
-    };
-    const [model] = getModelPricesFromCatalog([
-        { name: "example/model", category: "text", health },
-    ]);
-    expect(model.health).toEqual(health);
+it("derives health from the model's rollup row and keeps it for filtering", () => {
+    const rows = [
+        {
+            model: "example/model",
+            event_type: "generate.text",
+            is_rollup: 0,
+            status_2xx: 0,
+            errors_5xx: 100,
+        },
+        {
+            model: "example/model",
+            event_type: "generate.text",
+            is_rollup: 1,
+            status_2xx: 96,
+            errors_5xx: 4,
+        },
+    ];
+    const [model, quiet] = getModelPricesFromCatalog(
+        withModelHealth(
+            [
+                { name: "example/model", category: "text" },
+                { name: "quiet/model", category: "image" },
+            ],
+            rows,
+        ),
+    );
+    expect(model.health).toEqual({
+        status: "healthy",
+        requests: 100,
+        successRate: 96,
+    });
+    expect(quiet.health).toEqual({
+        status: "unknown",
+        requests: 0,
+        successRate: null,
+    });
 });
 
 it("keeps search aliases but never transfers historical statistics to a new ID", () => {

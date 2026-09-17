@@ -1,4 +1,12 @@
 import { isCommunityProviderIconUrl } from "@shared/community-provider-icon.ts";
+import {
+    MODEL_HEALTH_WINDOW_MINUTES,
+    type ModelHealth,
+    type ModelHealthRow,
+    modelHealthFromRow,
+    modelHealthKey,
+    modelHealthRollups,
+} from "@shared/model-health.ts";
 import type { ModelInfo } from "@shared/registry/model-info.ts";
 import {
     formatPrice,
@@ -12,6 +20,7 @@ type ApiPricing = ModelInfo["pricing"];
 
 export type ApiModelInfo = Partial<ModelInfo> & {
     id?: string;
+    health?: ModelHealth;
 };
 
 type PriceField =
@@ -93,9 +102,7 @@ export function mergeModelCatalogs(
 }
 
 async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
-    const catalogUrl = new URL(url);
-    catalogUrl.searchParams.set("status", "all");
-    const response = await fetch(catalogUrl.toString(), {
+    const response = await fetch(url, {
         cache: "no-store",
         signal: AbortSignal.timeout(15_000),
     });
@@ -103,6 +110,41 @@ async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
         throw new Error(`Failed to fetch models (${response.status})`);
     }
     return parseModelCatalogResponse(await response.json());
+}
+
+// Health is optional decoration: when the feed is down every dot reads unknown.
+async function fetchModelHealthRows(
+    genBaseUrl: string,
+): Promise<ModelHealthRow[]> {
+    try {
+        const response = await fetch(
+            `${genBaseUrl}/models/status?minutes=${MODEL_HEALTH_WINDOW_MINUTES}`,
+            { signal: AbortSignal.timeout(15_000) },
+        );
+        if (!response.ok) return [];
+        const body = (await response.json()) as { data?: ModelHealthRow[] };
+        return body.data ?? [];
+    } catch {
+        return [];
+    }
+}
+
+export function withModelHealth(
+    models: ApiModelInfo[],
+    rows: ModelHealthRow[],
+): ApiModelInfo[] {
+    const rollups = modelHealthRollups(rows);
+    return models.map((model) => ({
+        ...model,
+        health: modelHealthFromRow(
+            rollups.get(
+                modelHealthKey(
+                    getCatalogModelId(model),
+                    `generate.${getCatalogCategory(model)}`,
+                ),
+            ),
+        ),
+    }));
 }
 
 export async function fetchModelCatalog(
@@ -115,13 +157,14 @@ export async function fetchModelCatalog(
     }
     modelCatalogPromise ??= import("../../config.ts")
         .then(async ({ config }) => {
-            const catalogs = await Promise.all([
+            const [rows, ...catalogs] = await Promise.all([
+                fetchModelHealthRows(config.genBaseUrl),
                 fetchCatalog(`${config.genBaseUrl}/models`),
                 ...(config.communityCatalogUrl
                     ? [fetchCatalog(config.communityCatalogUrl)]
                     : []),
             ]);
-            return mergeModelCatalogs(catalogs);
+            return withModelHealth(mergeModelCatalogs(catalogs), rows);
         })
         .catch((error) => {
             modelCatalogPromise = null;

@@ -122,24 +122,10 @@ describe("/openapi.json", () => {
                 ["paths", path, "get", "parameters"],
                 expect.arrayContaining([
                     expect.objectContaining({
-                        in: "query",
-                        name: "status",
-                        schema: expect.objectContaining({
-                            enum: ["all", "healthy"],
-                        }),
-                    }),
-                    expect.objectContaining({
                         in: "header",
                         name: "pollinations-model-source",
                         schema: expect.objectContaining({
                             enum: ["official", "community"],
-                        }),
-                    }),
-                    expect.objectContaining({
-                        in: "header",
-                        name: "pollinations-model-status",
-                        schema: expect.objectContaining({
-                            enum: ["all", "healthy"],
                         }),
                     }),
                 ]),

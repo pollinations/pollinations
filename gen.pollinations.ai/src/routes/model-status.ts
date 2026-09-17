@@ -7,25 +7,9 @@ import type { Env } from "@/env.ts";
 const MODEL_ROUTE_HEALTH_URL =
     "https://api.europe-west2.gcp.tinybird.co/v0/pipes/model_route_health.json?token=p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICI5ZWZmMGM3Ni1kOTZkLTQwYjgtYWQwOC1mNDFlMmRiYjBmYTIiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.6VnVkAQ5h_fkcDZVDUoU38dzTxaw0xo3DnmKkhECbA8";
 
-export type ModelHealthRow = {
-    model: string;
-    event_type: string;
-    /** 1 on the model total, 0 on one execution route (primary or fallback). */
-    is_rollup: number | boolean;
-    status_2xx: number;
-    errors_5xx: number;
-};
-
-/**
- * Fetches the public `model_route_health` pipe. The edge caches each window
- * for 60 s, so every viewer in a colo shares one Tinybird query per minute.
- */
-export function fetchModelHealth(minutes?: string): Promise<Response> {
-    const url = new URL(MODEL_ROUTE_HEALTH_URL);
-    if (minutes !== undefined) url.searchParams.set("minutes", minutes);
-    return fetch(url, { cf: { cacheTtl: 60, cacheEverything: true } });
-}
-
+// Exists only for the shared edge cache: Tinybird runs the query on every
+// call, so browsers in one colo share one query per minute instead of each
+// paying for a 24-hour scan.
 export const modelStatusRoutes = new Hono<Env>().get(
     "/models/status",
     describeRoute({
@@ -61,7 +45,12 @@ export const modelStatusRoutes = new Hono<Env>().get(
         },
     }),
     async (c) => {
-        const upstream = await fetchModelHealth(c.req.query("minutes"));
+        const url = new URL(MODEL_ROUTE_HEALTH_URL);
+        const minutes = c.req.query("minutes");
+        if (minutes !== undefined) url.searchParams.set("minutes", minutes);
+        const upstream = await fetch(url, {
+            cf: { cacheTtl: 60, cacheEverything: true },
+        });
         return new Response(upstream.body, {
             status: upstream.status,
             headers: {

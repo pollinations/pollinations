@@ -13,64 +13,34 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 | `GET /embeddings/models` | Embedding models with supported modalities |
 | `GET /3d/models` | 3D Generation models with supported modalities |
 
-### Filters and health
+### Filters
 
-All model list endpoints above accept the same optional filters. With no
-filters, the API returns the complete accessible catalog without health data.
-
-| Query | Values | Behaviour |
-|-------|--------|-----------|
-| `source` | `official`, `community` | Return one source; omit for both |
-| `status` | `all`, `healthy` | `all`: include health without filtering; `healthy`: include only healthy models with fresh data |
-
-`community=true|false|1|0` remains available as a legacy source filter.
-Query filters override connection-wide headers; `source` overrides `community`.
-Invalid filter values return **400 Bad Request**. Source and status filters
-combine with the caller's access restrictions; they do not change generation
-permissions. Omitting both the status query and header skips the health lookup.
-
-Health uses the last 24 hours of completed requests. `success_rate` is
-`2xx / (2xx + 5xx)`, so successful fallback rescues count as successes while
-final 4xx responses are excluded. This is the gateway's final-response metric,
-not the health of an individual upstream provider.
-
-`health` is an optional Pollinations extension on every list endpoint, including
-`/v1/models`. It contains only `status`, `success_rate`, `sample_size`, and
-`window_minutes`. With at least 10 measured requests,
-status is `healthy` below 5% failures, `degraded` from 5% to below 20%, and
-`down` at 20% or more. Smaller samples are `unknown`. These describe recent
-request outcomes, not live availability; alpha/preview status is separate.
-`success_rate` is a fraction from 0 to 1, or null when there are no samples.
-
-Health data is cached for 60 seconds. When it is unavailable every model is
-`unknown`, and `status=healthy` excludes unknown results.
-
-The dashboard defaults to `source:official status:healthy`, so unknown models
-are hidden. Select `status:all` to include every health state, or
-`source:community` for community models. Its dots are green for healthy, amber
-for degraded/down, and grey for unknown/stale. Filtering is local; it does not
-poll for updates.
-
-Detailed counters and latency statistics remain separate at `/models/status`,
-which also breaks down individual primary and fallback attempts. That
-diagnostic payload is not embedded in model lists.
+All model list endpoints above accept the same optional `source` filter:
+`official` or `community`. Omit it for both. `community=true|false|1|0`
+remains available as a legacy source filter. The query overrides the
+connection-wide header; `source` overrides `community`. Invalid values return
+**400 Bad Request**. The filter combines with the caller's access restrictions;
+it does not change generation permissions.
 
 ```bash
-curl 'https://gen.pollinations.ai/v1/models?source=official&status=healthy'
+curl 'https://gen.pollinations.ai/v1/models?source=official'
 ```
 
 OpenAI-compatible clients that append `/models` to their base URL can use the
-equivalent headers instead of query parameters:
+equivalent header instead of the query parameter:
 
 ```text
 Pollinations-Model-Source: official
-Pollinations-Model-Status: healthy
 ```
 
-These headers work with Open WebUI and Cline custom OpenAI connections.
-LibreChat administrators can set them in the custom endpoint's `headers` map.
+This header works with Open WebUI and Cline custom OpenAI connections.
+LibreChat administrators can set it in the custom endpoint's `headers` map.
 The client can use any returned model ID for generation without forwarding the
-catalog headers.
+catalog header.
+
+Model lists carry no health data. Recent request counts, error rates, latency
+and fallback breakdowns per model are served separately by
+`/models/status`, described in [Public Stats](/docs#tag/public-stats).
 
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.

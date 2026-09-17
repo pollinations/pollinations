@@ -1,0 +1,19 @@
+{
+  "name": "jev-mcp",
+  "main": "worker.js",
+  "compatibility_date": "2026-08-14",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public"
+  ],
+  "routes": [
+    {
+      "pattern": "jev-mcp.pollinations.ai",
+      "zone_name": "pollinations.ai",
+      "custom_domain": true
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

@@ -11,6 +11,7 @@ import {
     createOVHcloudModelConfig,
     createOVHcloudOAIConfig,
     createPerplexityModelConfig,
+    createTypeSafeModelConfig,
     createVercelAIGatewayModelConfig,
 } from "./providerConfigs.js";
 
@@ -73,6 +74,9 @@ function createPinnedOpenRouterGeminiConfig(
 // =============================================================================
 
 export const portkeyConfig: PortkeyConfigMap = {
+    // DRAFT — do not merge or deploy until TypeSafe AI grants standalone/reseller permission.
+    // -- TypeSafe AI (direct, bypasses Portkey — see systemOneClient.ts) -----
+    "jev-latest": () => createTypeSafeModelConfig(),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
         createAzureResponsesModelConfig(

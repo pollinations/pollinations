@@ -84,6 +84,23 @@ export function createAzureResponsesModelConfig(
     });
 }
 
+// DRAFT — do not merge or deploy until TypeSafe AI grants standalone/reseller permission.
+/**
+ * TypeSafe AI (Jev). Not chat-completions-shaped upstream, so this config is
+ * only a credential/model carrier for systemOneClient.ts — it bypasses
+ * Portkey entirely rather than going through the generic OpenAI client.
+ */
+export function createTypeSafeModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return {
+        provider: "typesafe",
+        "typesafe-api-key": process.env.TYPESAFE_API_KEY,
+        model: "jev-latest",
+        ...overrides,
+    };
+}
+
 export function createBedrockNativeConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

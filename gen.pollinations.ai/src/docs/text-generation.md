@@ -121,3 +121,40 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 **Nova** — `nova` and `nova-fast` cache. The prefix must be at least ~1,000 tokens (up to 20K tokens cacheable). Cache creates are free; hits bill at 25% of input. ~5-minute TTL.
 
 Models that advertise `/v1/responses` also accept OpenAI's cache controls. Set `prompt_cache_options.mode` to `explicit` and place `prompt_cache_breakpoint: { "mode": "explicit" }` on the content block ending each stable prefix (up to four). Chat requests adapted to Responses preserve these markers; the existing `cache_control: { "type": "ephemeral" }` marker is translated to the same explicit breakpoint. Managed prompt agents apply an explicit request without caller markers to their configured static prompt.
+
+### Typed decisions (`jev`)
+
+`jev` returns calibrated judgments instead of free text. Each property in `response_format.json_schema` becomes one question; the property shape selects the answer type — a string `enum` returns a **choice**, a number/integer with an ordered string `enum` returns a **score**, and a number/integer bounded `0`-`1` returns a **noul** (probability). Streaming is not supported.
+
+```json
+{
+  "model": "jev",
+  "messages": [
+    { "role": "user", "content": "My payouts have been failing for 3 days." }
+  ],
+  "response_format": {
+    "type": "json_schema",
+    "json_schema": {
+      "name": "triage",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "department": {
+            "type": "string",
+            "enum": ["billing", "technical"],
+            "description": "Which team should handle this?"
+          },
+          "is_urgent": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Does this convey urgency?"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+`message.content` returns one JSON field per question, each carrying the fields for its type (`choice` + `confidence` + `probabilities`, `score` + `legend`, or `noul`).

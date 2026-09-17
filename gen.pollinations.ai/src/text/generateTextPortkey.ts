@@ -3,6 +3,7 @@ import { findModelByName } from "./availableModels.js";
 import { sanitizeCohereResponse } from "./cohereCommandAPlus.js";
 import { genericOpenAIClient } from "./genericOpenAIClient.js";
 import { callChatViaResponses } from "./responses/chatClient.js";
+import { callSystemOne } from "./systemOneClient.js";
 import { normalizeOptions } from "./textGenerationUtils.js";
 import { generateHeaders } from "./transforms/headerGenerator.js";
 import { imageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
@@ -86,6 +87,14 @@ export async function generateTextPortkey(
 
     delete state.options.additionalHeaders;
     delete state.options.portkeyGatewayUrl;
+
+    // DRAFT — do not merge or deploy until TypeSafe AI grants standalone/reseller permission.
+    // Jev's wire format isn't chat-completions-shaped upstream, so it always
+    // bypasses Portkey — never conditional like the Responses dispatch below,
+    // which only diverts specific request shapes.
+    if (modelDef?.useSystemOneApi) {
+        return callSystemOne(state.messages, state.options);
+    }
 
     // Models marked for Responses use their declared direct Responses target;
     // the adapter keeps the public Chat Completions contract stateless.

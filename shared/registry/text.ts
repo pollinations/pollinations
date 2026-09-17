@@ -1101,6 +1101,37 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    // DRAFT — not mergeable/deployable yet. TypeSafe AI's terms don't currently
+    // permit Pollinations to offer Jev through its own API (their MCA prohibits
+    // reselling/offering the Services as a standalone service without written
+    // permission). This entry is prepared for once that's resolved.
+    // priceMultiplier/paidOnly are explicit placeholders pending a business
+    // decision — do not treat them as final. brandUrl/brandIconUrl intentionally
+    // omitted (no asset yet).
+    "typesafe/jev": {
+        aliases: ["jev"],
+        provider: "typesafe",
+        publisher: "TypeSafe",
+        category: "text",
+        addedDate: new Date("2026-09-17").getTime(),
+        priceMultiplier: 1, // PLACEHOLDER — pending business decision
+        paidOnly: true, // PLACEHOLDER — pending business decision
+        cost: {
+            // TypeSafe list price for Jev (docs.typesafe.ai, checked 2026-09-17).
+            promptTextTokens: perMillion(0.042),
+            completionTextTokens: perMillion(0),
+        },
+        title: "Jev",
+        description:
+            "Typed decisions with calibrated confidence instead of free text; " +
+            "ask via response_format.json_schema, one question per schema property",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 0, // UNKNOWN — not documented at docs.typesafe.ai; confirm before merge
+        isSpecialized: true,
+    },
     "pollinations/midijourney": {
         supportedParameters: CHAT_PARAMETERS.azureGptMini,
         aliases: ["midijourney"],

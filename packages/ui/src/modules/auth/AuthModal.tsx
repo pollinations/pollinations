@@ -60,8 +60,12 @@ export type AuthFlowLayoutProps = {
     children?: ReactNode;
     /** Screen title; rendered once with the shared recipe and labels the dialog. */
     title?: ReactNode;
+    /** The subject of the sentence: the app, the device, the key. Sits between title and description. */
+    subject?: ReactNode;
     /** One sentence under the title. */
     description?: ReactNode;
+    /** What failed; rendered as the error line under the description. */
+    error?: ReactNode;
     titleId?: string;
     headerAction?: ReactNode;
     actions?: ReactNode;
@@ -89,7 +93,9 @@ const legalFootnote = (
 export function AuthFlowLayout({
     children,
     title,
+    subject,
     description,
+    error,
     titleId,
     headerAction,
     actions,
@@ -107,15 +113,17 @@ export function AuthFlowLayout({
             <AuthModalHeader>{headerAction}</AuthModalHeader>
             <DialogBody>
                 {title && (
-                    <div className="polli:space-y-1">
+                    <div className="polli:space-y-3">
                         <Heading as="h1" size="section" id={headingId}>
                             {title}
                         </Heading>
+                        {subject}
                         {description && (
                             <Text size="sm" tone="muted">
                                 {description}
                             </Text>
                         )}
+                        {error && <ErrorBanner>{error}</ErrorBanner>}
                     </div>
                 )}
                 {children}
@@ -164,13 +172,15 @@ export function AuthModalHeader({ children }: AuthModalHeaderProps) {
 /** Titled loading screen so the frame never shows an empty body. */
 export function AuthModalLoading({
     title,
+    subject,
     message = "This only takes a moment.",
 }: {
     title: string;
+    subject?: ReactNode;
     message?: string;
 }) {
     return (
-        <AuthFlowLayout title={title}>
+        <AuthFlowLayout title={title} subject={subject}>
             <output className="polli:flex polli:items-center polli:gap-2 polli:font-body polli:text-sm polli:text-theme-text-muted">
                 <span
                     aria-hidden="true"

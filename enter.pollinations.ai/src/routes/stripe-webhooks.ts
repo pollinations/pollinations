@@ -830,22 +830,6 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 break;
             }
 
-            case "charge.dispute.created": {
-                const dispute = event.data.object as Stripe.Dispute;
-                console.log(
-                    `Dispute ${dispute.id}: ${dispute.reason} (${dispute.status})`,
-                );
-                // The daily Stripe scan reports this evidence for manual review.
-                break;
-            }
-
-            case "radar.early_fraud_warning.created": {
-                const warning = event.data
-                    .object as Stripe.Radar.EarlyFraudWarning;
-                console.log(`Early fraud warning ${warning.id}`);
-                break;
-            }
-
             default:
                 console.log(`Unhandled Stripe event type: ${event.type}`);
         }

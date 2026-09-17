@@ -73,19 +73,20 @@ function EditKeyPage() {
             .catch(() => setApiKey(null));
     }, [user, id]);
 
-    // The card reads as one sentence: "Edit key permissions · {key} · {step}"
-    const subject = (
+    // The card reads as one sentence: "Edit key permissions · {key} · {step}".
+    // The URL only carries the record id, so the card waits for the key row.
+    const subject = apiKey ? (
         <Surface>
             <Text size="sm" weight="semibold" tone="strong">
-                {apiKey?.name ?? id}
+                {apiKey.name ?? apiKey.id}
             </Text>
-            {apiKey?.start && (
+            {apiKey.start && (
                 <Text size="xs" className="mt-1 font-mono">
                     {apiKey.start}…
                 </Text>
             )}
         </Surface>
-    );
+    ) : undefined;
 
     if (isPending)
         return (

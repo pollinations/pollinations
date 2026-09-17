@@ -315,19 +315,11 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemma-4-26B-A4B-it"],
     },
     {
-        name: "google/gemma-4-26b-a4b-it:deepinfra",
-        config: portkeyConfig["google/gemma-4-26B-A4B-it"],
-    },
-    {
         name: "google/gemma-4-26b-a4b-it:openrouter:novita-bf16",
         config: portkeyConfig["gemma-4-26b-openrouter-novita"],
     },
     {
         name: "google/gemma-4-31b-it",
-        config: portkeyConfig["google/gemma-4-31B-it"],
-    },
-    {
-        name: "google/gemma-4-31b-it:deepinfra",
         config: portkeyConfig["google/gemma-4-31B-it"],
     },
     {

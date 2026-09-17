@@ -1177,13 +1177,13 @@ describe("error observability", () => {
                 message:
                     "The image URL must be a valid and downloadable URL or look like data:<MIMEType>;base64,<YOUR-BASE64-CONTENT>",
                 details: {
-                    upstreamHost: "openrouter.ai",
+                    upstreamHost: "portkey.test",
                 },
             },
         });
         expect(fetchRequests).toHaveLength(1);
         expect(fetchRequests[0].url).toBe(
-            "https://openrouter.ai/api/v1/chat/completions",
+            "https://portkey.test/v1/chat/completions",
         );
     });
 });

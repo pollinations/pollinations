@@ -1115,7 +1115,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-17").getTime(),
         priceMultiplier: 1, // PLACEHOLDER — pending business decision
-        paidOnly: true, // PLACEHOLDER — pending business decision
+        paidOnly: false, // Quest Pollen may pay for Jev; no paid balance needed.
         cost: {
             // TypeSafe list price for Jev (docs.typesafe.ai, checked 2026-09-17).
             promptTextTokens: perMillion(0.042),

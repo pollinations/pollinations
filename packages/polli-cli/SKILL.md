@@ -53,6 +53,7 @@ One-time: `polli auth login` (device-flow; creates a key with `profile`, `usage`
 `printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token`. Verify
 with `polli auth status`.
 Override the stored key for a single command with `--key <key>`.
+On `polli usage`, a `--key` written **after** the subcommand is a key filter (name or id) rather than an override — only a key before the subcommand (`polli --key sk_... usage`) or a `sk_`/`pk_` value overrides the stored key.
 
 ## Recipes
 
@@ -150,6 +151,8 @@ Use `--stats` before choosing a model. **Caveat**: the `err%` column counts **5x
 polli usage              # current pollen balance
 polli usage --history    # recent individual requests
 polli usage --daily      # daily cost summary
+polli usage --history --key polli-harness-dsh --days 1   # cost of one harness key, last day
+polli usage --history --key <name-or-id> --model <id> --days 7 --csv > usage.csv
 polli earnings           # developer earnings total + per-entity breakdown (default 30d)
 polli earnings --days 7  # rolling window, max 90
 polli quests             # your quests + claim state (open/claimable/claimed/coming)

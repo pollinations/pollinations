@@ -1,8 +1,5 @@
-import {
-    AuthModalHeader,
-    AuthModalLoading,
-    ErrorBanner,
-} from "@pollinations/ui/auth";
+import { Surface, Text } from "@pollinations/ui";
+import { AuthModalHeader, AuthModalLoading } from "@pollinations/ui/auth";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "../api.ts";
@@ -76,13 +73,28 @@ function EditKeyPage() {
             .catch(() => setApiKey(null));
     }, [user, id]);
 
-    if (isPending) return <AuthModalLoading title="Edit key permissions" />;
+    // The card reads as one sentence: "Edit · {key} · permissions. {step}"
+    const subject = (
+        <Surface>
+            <Text size="sm" weight="semibold" tone="strong">
+                {apiKey?.name ?? id}
+            </Text>
+            {apiKey?.start && (
+                <Text size="xs" className="mt-1 font-mono">
+                    {apiKey.start}…
+                </Text>
+            )}
+        </Surface>
+    );
+
+    if (isPending) return <AuthModalLoading title="Edit" subject={subject} />;
 
     if (!user) {
         return (
             <SignInScreen
-                title="Edit key permissions"
-                description="Sign in to change this key’s budget, expiry and permissions."
+                title="Edit"
+                subject={subject}
+                description="permissions. Sign in to change them."
             />
         );
     }
@@ -99,13 +111,12 @@ function EditKeyPage() {
         return (
             <AuthFlowScreen
                 footnote="back"
-                title={
-                    outcome === "saved" ? "Changes saved" : "No changes saved"
-                }
+                title="Edit"
+                subject={subject}
                 description={
                     outcome === "saved"
-                        ? "The updated permissions apply to future requests. You can return to the app."
-                        : "Your key’s permissions haven’t changed. You can return to the app."
+                        ? "permissions. Saved, they apply to future requests."
+                        : "permissions. Nothing changed."
                 }
                 balance={balance}
                 topUpHref={topUpHref}
@@ -122,7 +133,10 @@ function EditKeyPage() {
         return (
             <AuthFlowScreen
                 footnote="help"
-                title="Key unavailable"
+                title="Edit"
+                subject={subject}
+                description="permissions."
+                error="Couldn’t load this key. Check that you’re signed in to the account that owns it."
                 balance={balance}
                 topUpHref={topUpHref}
                 actions={
@@ -130,17 +144,12 @@ function EditKeyPage() {
                         <ReturnToApp returnUrl={returnUrl} />
                     ) : undefined
                 }
-            >
-                <ErrorBanner>
-                    This key could not be loaded. Check that you’re signed in to
-                    the account that owns it.
-                </ErrorBanner>
-            </AuthFlowScreen>
+            />
         );
     }
 
     if (apiKey === undefined)
-        return <AuthModalLoading title="Edit key permissions" />;
+        return <AuthModalLoading title="Edit" subject={subject} />;
 
     return (
         <EditApiKeyDialog

@@ -46,15 +46,19 @@ function AppSignIn() {
         };
     }, [client_id]);
 
-    if (client === "loading")
-        return <AuthModalLoading title="Sign in to a dashboard" />;
+    if (client === "loading") return <AuthModalLoading title="Sign in" />;
 
     if (client === "invalid") {
         return (
             <AuthFlowScreen
                 footnote="help"
-                title="Sign in to a dashboard"
-                error="This link is invalid or has expired. Open the dashboard again."
+                title="Sign in"
+                error="This sign-in link is invalid or has expired."
+                actions={
+                    <Button as="a" icon={<ArrowRightIcon />} href="/">
+                        Go to dashboard
+                    </Button>
+                }
             />
         );
     }
@@ -76,7 +80,7 @@ function AppSignIn() {
     if (user) {
         return (
             <AuthFlowScreen
-                title="Sign in to a dashboard"
+                title="Sign in"
                 subject={appCard}
                 description={`as ${user.name || user.githubUsername || user.email}.`}
                 actions={
@@ -90,7 +94,7 @@ function AppSignIn() {
 
     return (
         <SignInScreen
-            title="Sign in to a dashboard"
+            title="Sign in"
             subject={appCard}
             description="with your Pollinations admin account."
             callbackURL={callbackURL}

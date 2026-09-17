@@ -1,5 +1,6 @@
 import { Button } from "../../primitives/Button.tsx";
 import { ColorModeToggle } from "../../primitives/ColorModeToggle.tsx";
+import { RefreshIcon } from "../../primitives/icons/index.tsx";
 import { Heading } from "../../primitives/Typography.tsx";
 import { AuthErrorContent } from "./AuthErrorContent.tsx";
 import { AuthFlowLayout, AuthInfoCard } from "./AuthModal.tsx";
@@ -55,6 +56,7 @@ export function DashboardSignIn({
                     <output>Checking sign-in…</output>
                 ) : sessionError ? (
                     <Button
+                        icon={<RefreshIcon />}
                         onClick={() => window.location.reload()}
                         className="polli:w-full"
                     >

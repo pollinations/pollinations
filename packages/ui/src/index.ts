@@ -39,6 +39,10 @@ export {
     type CollapsibleProps,
 } from "./compositions/Collapsible.tsx";
 export {
+    ConfirmationDialog,
+    type ConfirmationDialogProps,
+} from "./compositions/ConfirmationDialog.tsx";
+export {
     ContentHeader,
     type ContentHeaderProps,
 } from "./compositions/ContentHeader.tsx";

@@ -1,8 +1,6 @@
-import { Button, Section } from "@pollinations/ui";
+import { Button, Heading, Text } from "@pollinations/ui";
 import {
-    AuthInfoCard,
-    AuthModal,
-    AuthModalHeader,
+    AuthFlowLayout,
     AuthModalLoading,
     ErrorBanner,
 } from "@pollinations/ui/auth";
@@ -16,9 +14,9 @@ import { useEffect, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import { AuthAccountIdentity } from "../components/auth/auth-account-identity.tsx";
+import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import { BuyPollenPanel } from "../components/pollen";
 import type { BillingState } from "../components/pollen/auto-top-up-panel.tsx";
-import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 import { preferredReturnUrl, ReturnToApp } from "../lib/return-to-app.tsx";
 
 import { validateTopUpSearch } from "../lib/top-up-search.ts";
@@ -44,7 +42,6 @@ function TopUpPage() {
     const navigate = useNavigate({ from: "/top-up" });
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user;
-    const { isSigningIn, error: signInError, signIn } = useGitHubSignIn();
     const [wallet, setWallet] = useState<WalletState | null>(null);
     const [walletError, setWalletError] = useState(false);
     const [loadAttempt, setLoadAttempt] = useState(0);
@@ -118,31 +115,10 @@ function TopUpPage() {
 
     if (!user) {
         return (
-            <AuthModal dialog={{ label: "Sign in to top up" }}>
-                <AuthModalHeader />
-                <div className="px-6 pb-6 pt-4 space-y-4">
-                    {signInError ? (
-                        <ErrorBanner>{signInError}</ErrorBanner>
-                    ) : (
-                        <AuthInfoCard title="Top up">
-                            <p className="text-sm text-theme-text-base">
-                                Sign in to add Pollen to your wallet.
-                            </p>
-                        </AuthInfoCard>
-                    )}
-                    <div className="flex justify-end">
-                        <Button
-                            as="button"
-                            onClick={signIn}
-                            disabled={isSigningIn}
-                        >
-                            {isSigningIn
-                                ? "Signing in..."
-                                : "Continue with GitHub"}
-                        </Button>
-                    </div>
-                </div>
-            </AuthModal>
+            <SignInScreen
+                title="Top up your wallet"
+                description="Sign in to buy Pollen for your Pollinations account."
+            />
         );
     }
 
@@ -152,69 +128,78 @@ function TopUpPage() {
 
     if (search.stripe_success) {
         return (
-            <AuthModal dialog={{ label: "Pollen added" }}>
-                <AuthModalHeader>{accountIdentity}</AuthModalHeader>
-                <div className="px-6 pb-6 pt-4 space-y-4">
-                    <AuthInfoCard title="Pollen added">
-                        <p className="text-sm text-theme-text-base">
-                            Your payment went through. You can close this tab
-                            and return to the app.
-                        </p>
-                    </AuthInfoCard>
-                    <ReturnToApp returnUrl={returnUrl} />
-                </div>
-            </AuthModal>
+            <AuthFlowLayout
+                dialog={{ labelledBy: "top-up-title" }}
+                headerAction={accountIdentity}
+                actions={
+                    returnUrl ? (
+                        <ReturnToApp returnUrl={returnUrl} />
+                    ) : undefined
+                }
+            >
+                <Heading as="h1" id="top-up-title">
+                    Checkout complete
+                </Heading>
+                <Text size="sm">
+                    Your wallet updates after Stripe confirms the payment.
+                </Text>
+            </AuthFlowLayout>
         );
     }
 
     if (walletError) {
         return (
-            <AuthModal dialog={{ label: "Top up" }}>
-                <AuthModalHeader>{accountIdentity}</AuthModalHeader>
-                <div className="px-6 pb-6 pt-4 space-y-4">
-                    <ErrorBanner>
-                        Could not load your wallet. Please try again.
-                    </ErrorBanner>
+            <AuthFlowLayout
+                dialog={{ labelledBy: "top-up-title" }}
+                headerAction={accountIdentity}
+                actions={
                     <Button
-                        as="button"
                         onClick={() => setLoadAttempt((attempt) => attempt + 1)}
                     >
                         Try again
                     </Button>
-                </div>
-            </AuthModal>
+                }
+            >
+                <Heading as="h1" id="top-up-title">
+                    Couldn’t load your wallet
+                </Heading>
+                <ErrorBanner>
+                    Could not load your wallet. Please try again.
+                </ErrorBanner>
+            </AuthFlowLayout>
         );
     }
 
     if (!wallet || billing === undefined) return <AuthModalLoading />;
 
     return (
-        <AuthModal dialog={{ label: "Top up" }} size="lg">
-            <AuthModalHeader>{accountIdentity}</AuthModalHeader>
-            <div className="flex flex-col gap-6 px-6 pb-6 pt-4">
-                {search.stripe_canceled && (
-                    <ErrorBanner>Checkout was cancelled.</ErrorBanner>
-                )}
-                <Section title="Top-up">
-                    <BuyPollenPanel
-                        initialBillingState={billing}
-                        selectedPackAmount={selectedPack?.amountUsd ?? 5}
-                        onSelectedPackAmountChange={(amount) => {
-                            const pack = getPollenPackByAmount(amount);
-                            if (pack) {
-                                void navigate({
-                                    search: (prev) => ({
-                                        ...prev,
-                                        pack: pack.packKey,
-                                    }),
-                                });
-                            }
-                        }}
-                        returnToTopUp={{ redirect: search.redirect }}
-                    />
-                </Section>
-                <ReturnToApp returnUrl={returnUrl} />
-            </div>
-        </AuthModal>
+        <AuthFlowLayout
+            dialog={{ labelledBy: "top-up-title" }}
+            size="lg"
+            headerAction={accountIdentity}
+            actions={
+                returnUrl ? <ReturnToApp returnUrl={returnUrl} /> : undefined
+            }
+        >
+            <Heading as="h1" id="top-up-title">
+                Top up your wallet
+            </Heading>
+            {search.stripe_canceled && (
+                <ErrorBanner>Checkout was cancelled.</ErrorBanner>
+            )}
+            <BuyPollenPanel
+                initialBillingState={billing}
+                selectedPackAmount={selectedPack?.amountUsd ?? 5}
+                onSelectedPackAmountChange={(amount) => {
+                    const pack = getPollenPackByAmount(amount);
+                    if (pack) {
+                        void navigate({
+                            search: (prev) => ({ ...prev, pack: pack.packKey }),
+                        });
+                    }
+                }}
+                returnToTopUp={{ redirect: search.redirect }}
+            />
+        </AuthFlowLayout>
     );
 }

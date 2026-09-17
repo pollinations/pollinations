@@ -23,8 +23,8 @@ export function AppAttribution({
         attribution?.appName ??
         (isDeviceMode ? "A device" : redirectHostname || "An app");
     const tipText = [
-        "Same as copy-pasting an API key into their app.",
-        "Only share with apps you trust.",
+        "This app receives a key limited to the access you allow.",
+        "Only connect apps you trust. You can revoke access from your dashboard.",
     ].join("\n");
     return (
         <>
@@ -55,8 +55,8 @@ export function AppAttribution({
                 </p>
             )}
             <p className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mt-3">
-                To access your Pollinations account{" "}
-                <InfoTip text={tipText} label="API key sharing warning" />
+                Wants access to your Pollinations account{" "}
+                <InfoTip text={tipText} label="About app access" />
             </p>
         </>
     );

@@ -1,4 +1,4 @@
-import { Button } from "@pollinations/ui";
+import { Button, ExternalLinkIcon } from "@pollinations/ui";
 import type { FC } from "react";
 
 /** An absolute http(s) URL, else null. Used for the `redirect` search param. */
@@ -57,13 +57,16 @@ export const ReturnToApp: FC<{ returnUrl: string | null }> = ({
 }) => {
     if (!returnUrl) return null;
     return (
-        <div className="space-y-3">
-            <Button as="a" href={returnUrl} className="w-full">
+        <div className="w-full space-y-3">
+            <Button as="a" href={returnUrl} className="min-h-11 w-full gap-2">
                 Back to {new URL(returnUrl).hostname}
+                <ExternalLinkIcon
+                    className="h-4 w-4 shrink-0"
+                    aria-hidden="true"
+                />
             </Button>
-            <p className="text-sm text-theme-text-muted">
-                If the app is still open in another tab, you can close this one
-                instead.
+            <p className="text-center text-xs text-theme-text-muted">
+                You can also close this tab if the app is still open.
             </p>
         </div>
     );

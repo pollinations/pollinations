@@ -1,8 +1,6 @@
-import { Button, Input } from "@pollinations/ui";
+import { Button, Field, Heading, Input, Text } from "@pollinations/ui";
 import {
-    AuthInfoCard,
-    AuthModal,
-    AuthModalHeader,
+    AuthFlowLayout,
     AuthModalLoading,
     ErrorBanner,
 } from "@pollinations/ui/auth";
@@ -10,7 +8,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { authClient } from "../../auth.ts";
-import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
+import { SignInScreen } from "./sign-in-screen.tsx";
 
 type DeviceProps = {
     prefilledCode: string;
@@ -25,7 +23,6 @@ export function Device({ prefilledCode }: DeviceProps) {
     const [userCode, setUserCode] = useState(prefilledCode);
     const [error, setError] = useState<string | null>(null);
     const [checking, setChecking] = useState(false);
-    const { isSigningIn, error: signInError, signIn } = useGitHubSignIn();
     const inputRef = useRef<HTMLInputElement>(null);
 
     const verifyAndRedirect = useCallback(
@@ -98,45 +95,42 @@ export function Device({ prefilledCode }: DeviceProps) {
 
     if (!user) {
         return (
-            <AuthModal>
-                <AuthModalHeader />
-                <div className="px-6 pb-6 pt-4 space-y-4">
-                    {signInError && <ErrorBanner>{signInError}</ErrorBanner>}
-                    <AuthInfoCard>
-                        <p className="text-theme-text-strong">
-                            Connect a device to your Pollinations account.
-                        </p>
-                        <p className="text-sm text-theme-text-base mt-3">
-                            Sign in to enter the device code.
-                        </p>
-                    </AuthInfoCard>
-                    <div className="flex justify-end">
-                        <Button
-                            as="button"
-                            onClick={signIn}
-                            disabled={isSigningIn}
-                        >
-                            {isSigningIn
-                                ? "Signing in..."
-                                : "Continue with GitHub"}
-                        </Button>
-                    </div>
-                </div>
-            </AuthModal>
+            <SignInScreen
+                title="Connect your device"
+                description="Sign in to enter the code shown on your device."
+            />
         );
     }
 
     return (
-        <AuthModal>
-            <AuthModalHeader />
-            <form onSubmit={handleSubmit} className="px-6 pb-6 pt-4 space-y-4">
-                {error && <ErrorBanner>{error}</ErrorBanner>}
-
-                <AuthInfoCard>
-                    <div className="space-y-3">
-                        <p className="text-theme-text-strong">
-                            Enter the code from your device.
-                        </p>
+        <AuthFlowLayout
+            dialog={{ labelledBy: "device-title" }}
+            actions={
+                <Button
+                    type="submit"
+                    form="device-code-form"
+                    disabled={checking}
+                >
+                    {checking ? "Checking code…" : "Continue"}
+                </Button>
+            }
+        >
+            <Heading as="h1" id="device-title">
+                Connect your device
+            </Heading>
+            <Text size="sm">
+                Enter the code shown on your device to review its access.
+            </Text>
+            <form
+                id="device-code-form"
+                onSubmit={handleSubmit}
+                className="space-y-4"
+            >
+                <Field.Root className="space-y-2">
+                    <Field.Label className="text-sm font-semibold">
+                        Device code
+                    </Field.Label>
+                    <Field.Input asChild>
                         <Input
                             type="text"
                             value={userCode}
@@ -144,20 +138,19 @@ export function Device({ prefilledCode }: DeviceProps) {
                                 setUserCode(e.target.value.toUpperCase())
                             }
                             placeholder="XXXX-XXXX"
-                            className="w-full border-2 border-theme-border bg-surface-white p-3 text-center font-mono text-2xl tracking-widest text-theme-text-strong"
+                            className="w-full text-center font-mono text-2xl tracking-widest"
                             ref={inputRef}
                             maxLength={20}
                             disabled={checking}
+                            autoCapitalize="characters"
+                            autoComplete="one-time-code"
+                            spellCheck={false}
+                            required
                         />
-                    </div>
-                </AuthInfoCard>
-
-                <div className="flex justify-end">
-                    <Button as="button" type="submit" disabled={checking}>
-                        {checking ? "Verifying..." : "Continue"}
-                    </Button>
-                </div>
+                    </Field.Input>
+                </Field.Root>
+                {error && <ErrorBanner>{error}</ErrorBanner>}
             </form>
-        </AuthModal>
+        </AuthFlowLayout>
     );
 }

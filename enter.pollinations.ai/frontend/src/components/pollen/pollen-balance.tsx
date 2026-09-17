@@ -289,7 +289,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 <p className="flex items-start gap-1.5">
                     <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
-                        Credits are instant, never expire, and follow our{" "}
+                        Paid Pollen never expires. See our{" "}
                         <InlineLink href={REFUND_POLICY_URL}>
                             Refund Policy
                         </InlineLink>
@@ -314,8 +314,8 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             {(copied) =>
                                 copied ? "Copied!" : "billing@pollinations.ai"
                             }
-                        </CopyButton>{" "}
-                        — we reply same day.
+                        </CopyButton>
+                        .
                     </span>
                 </p>
             </div>

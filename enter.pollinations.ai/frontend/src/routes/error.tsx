@@ -16,7 +16,7 @@ function ErrorPage() {
     const isStagingInviteOnly = error === "staging_is_invite-only";
 
     const title = isBanned
-        ? "Account Suspended"
+        ? "Account suspended"
         : isStagingInviteOnly
           ? "Staging is invite-only"
           : "Something went wrong";
@@ -30,9 +30,9 @@ function ErrorPage() {
         <AuthFlowLayout
             dialog={{ labelledBy: "login-error-title" }}
             actions={
-                <div className="flex flex-col gap-3">
+                <>
                     <Button as="a" size="lg" href="/">
-                        Go to Home →
+                        Go to dashboard
                     </Button>
                     {isBanned && (
                         <Button
@@ -43,7 +43,7 @@ function ErrorPage() {
                             Contact billing
                         </Button>
                     )}
-                </div>
+                </>
             }
         >
             <AuthErrorContent

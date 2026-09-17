@@ -1,10 +1,8 @@
-import { Heading, Text } from "@pollinations/ui";
-import { AuthModal, AuthModalHeader } from "@pollinations/ui/auth";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
+import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import { oauthSignInCallback } from "../lib/oauth-sign-in.ts";
-import { SignedOutAccountArea } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/app/sign-in")({
     validateSearch: (search: Record<string, unknown>) => ({
@@ -32,23 +30,14 @@ function AppSignIn() {
         };
     }, [client_id]);
     return (
-        <AuthModal dialog={{ labelledBy: "app-title" }}>
-            <AuthModalHeader />
-            <div className="flex flex-col gap-5 px-6 pb-6 pt-4">
-                <div className="flex flex-col gap-2">
-                    <Heading id="app-title">{name}</Heading>
-                    <Text tone="soft">
-                        Sign in with your Pollinations admin account.
-                    </Text>
-                </div>
-                <SignedOutAccountArea
-                    callbackURL={
-                        typeof window === "undefined"
-                            ? undefined
-                            : oauthSignInCallback(window.location.href)
-                    }
-                />
-            </div>
-        </AuthModal>
+        <SignInScreen
+            title={name}
+            description="Sign in with your Pollinations admin account."
+            callbackURL={
+                typeof window === "undefined"
+                    ? undefined
+                    : oauthSignInCallback(window.location.href)
+            }
+        />
     );
 }

@@ -1,0 +1,33 @@
+{
+  "pr_number": 15091,
+  "title": "fix: community monitor stops probing agents",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15091",
+  "merged_at": "2026-09-17T13:00:54Z",
+  "labels": [],
+  "pr_body_excerpt": "- Community monitor no longer covers agents (`agent: true`): probe sweep, 7-day audit and CYCLE.md rules all skip them\n- Probes made public agents do real work on the monitor's account: `community/xiaotian1171/bottle-courier` committed to collective-memory as voodoohop about every 45 min (key `quixotic-hare`)\n- Agent health follows their base model, which is still monitored\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01RBs8TiuvtC8xLLDP9MqfaH",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Agents Get a Day Off",
+    "blurb": "The community monitor has learned that agents are not ordinary garden visitors. It now watches their base models instead of sending probe bees into their workspaces.",
+    "summary": "Updated the community monitor’s probe sweep, seven-day audit, and CYCLE.md rules to skip entries marked `agent: true`, while continuing to track each agent through its monitored base model.",
+    "impact": "Automated community agents such as `community/xiaotian1171/bottle-courier` can keep doing their intended work without monitor probes using the monitor account, while base-model health coverage remains in place.",
+    "keywords": [
+      "community-monitor",
+      "agents",
+      "probes",
+      "health-checks",
+      "automation"
+    ],
+    "visual_concept": "A cozy garden-monitoring scene where Polli gently redirects an eager CRT monitor robot away from a small agent workshop, while a larger healthy base-model code-plant is checked from a respectful distance. A “SKIP AGENTS” sign and orderly monitoring clipboard make the new routing rule visible without portraying agents as broken.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener visor, gently placing a lime green (#ecf874) sign reading “SKIP AGENTS” beside a small autonomous code-garden workshop while a curious CRT-monitor robot checks a flourishing base-model code-plant with a clipboard. Cozy 8-bit pixel art aesthetic, soft lime green and pastel gradient background, warm lighting, pixel flowers and vines, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-17/PR-15091.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener visor, gently placing a lime green (#ecf874) sign reading “SKIP AGENTS” beside a small autonomous code-garden workshop while a curious CRT-monitor robot checks a flourishing base-model code-plant with a clipboard. Cozy 8-bit pixel art aesthetic, soft lime green and pastel gradient background, warm lighting, pixel flowers and vines, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
+  },
+  "generated_at": "2026-09-17T13:02:02.323152+00:00"
+}

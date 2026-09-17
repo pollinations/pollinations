@@ -1,4 +1,10 @@
-import { Button, ChevronIcon, PeriodPicker, TabButton } from "@pollinations/ui";
+import {
+    Button,
+    ChevronIcon,
+    IconButton,
+    PeriodPicker,
+    TabButton,
+} from "@pollinations/ui";
 import type { FC } from "react";
 import {
     ACTIVITY_MIN_DATE,
@@ -33,16 +39,15 @@ export const ActivityPeriodNavigation: FC<{
             className="flex min-w-0 items-center justify-end gap-1"
         >
             <div className="flex min-w-0 items-center gap-0.5">
-                <Button
-                    type="button"
-                    size="icon-sm"
+                <IconButton
+                    size="md"
                     className="shrink-0"
                     aria-label={`Previous ${value.granularity}`}
                     disabled={!isActivitySelectable(previous, now)}
                     onClick={() => onChange(previous)}
                 >
                     <ChevronIcon className="rotate-90" />
-                </Button>
+                </IconButton>
                 <PeriodPicker
                     value={value}
                     minDate={ACTIVITY_MIN_DATE}
@@ -91,16 +96,15 @@ export const ActivityPeriodNavigation: FC<{
                         </Button>
                     )}
                 />
-                <Button
-                    type="button"
-                    size="icon-sm"
+                <IconButton
+                    size="md"
                     className="shrink-0"
                     aria-label={`Next ${value.granularity}`}
                     disabled={!isActivitySelectable(next, now)}
                     onClick={() => onChange(next)}
                 >
                     <ChevronIcon className="-rotate-90" />
-                </Button>
+                </IconButton>
             </div>
         </nav>
     );

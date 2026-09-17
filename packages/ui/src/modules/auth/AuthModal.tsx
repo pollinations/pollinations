@@ -178,7 +178,7 @@ export function ErrorBanner({ children }: { children: ReactNode }) {
     return (
         <div
             role="alert"
-            className="polli:rounded-lg polli:bg-intent-danger-bg-light polli:p-4 polli:text-sm polli:text-intent-danger-text"
+            className="polli:border-l-[3px] polli:border-intent-danger-text polli:py-0.5 polli:pl-3 polli:font-body polli:text-sm polli:leading-6 polli:text-intent-danger-text"
         >
             {children}
         </div>

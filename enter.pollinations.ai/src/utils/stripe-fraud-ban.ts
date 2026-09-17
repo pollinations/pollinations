@@ -10,6 +10,7 @@ import {
 type FraudQuery = { sql: string; params: string[] };
 type FraudReportUser = FraudUser & {
     name: string | null;
+    github_username: string | null;
     banned: number | null;
     ban_expires: number | null;
 };
@@ -33,7 +34,7 @@ export async function runFraudBanCheck(
     let cursor = "";
     for (;;) {
         const [page] = await query({
-            sql: "SELECT id, stripe_customer_id, name, banned, ban_expires FROM user WHERE id > ? ORDER BY id LIMIT 5000",
+            sql: "SELECT id, stripe_customer_id, name, github_username, banned, ban_expires FROM user WHERE id > ? ORDER BY id LIMIT 5000",
             params: [cursor],
         });
         if (!Array.isArray(page?.results))
@@ -105,6 +106,7 @@ export async function runFraudBanCheck(
             .map((user) => ({
                 id: user.id,
                 name: user.name,
+                github_username: user.github_username,
                 // biome-ignore lint/style/noNonNullAssertion: Confirmed users are derived from these same collected payments.
                 ...result.details.get(user.id)!,
             }))

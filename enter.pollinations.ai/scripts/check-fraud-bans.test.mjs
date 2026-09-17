@@ -5,9 +5,9 @@ import { fileURLToPath } from "node:url";
 import Stripe from "stripe";
 import { FraudCheckError } from "../src/utils/stripe-fraud-score.ts";
 import {
-    askPolli,
     collectDailyEvidence,
     collectRefundReport,
+    formatDailyReport,
     fraudCheckErrorMessage,
     postFraudReport,
     runDailyReport,
@@ -79,12 +79,6 @@ test("parser, filesystem, and unknown errors never expose raw contents", () => {
 });
 
 const now = Date.UTC(2026, 8, 17, 7, 17);
-const modelReply = (
-    content = "**Disputes**: none. **Fraud review**: 1 warning. Review manually.",
-) => ({
-    choices: [{ message: { content }, finish_reason: "stop" }],
-    usage: { prompt_tokens: 100, completion_tokens: 20 },
-});
 const response = (body) => ({ ok: true, json: async () => body });
 
 function sources() {
@@ -156,6 +150,7 @@ function sources() {
                         id: "u_1",
                         stripe_customer_id: null,
                         name: "PRIVATE_CONTENT",
+                        github_username: "bee_runner",
                         banned: 0,
                         ban_expires: null,
                     },
@@ -163,6 +158,7 @@ function sources() {
                         id: "u_2",
                         stripe_customer_id: null,
                         name: "PRIVATE_CONTENT",
+                        github_username: "bee_runner",
                         banned: 0,
                         ban_expires: null,
                     },
@@ -173,112 +169,69 @@ function sources() {
     return { stripe, query };
 }
 
-test("collector reuses scores, supplies Stripe changes, and omits private/freeform fields", async () => {
+test("collector shows unbanned review accounts, pending disputes and no historical event feed", async () => {
     const { stripe, query } = sources();
+    stripe.events.list = () => {
+        throw new Error("Must not fetch historical events");
+    };
     const evidence = await collectDailyEvidence(stripe, query, [], now);
     const warned = evidence.fraudReview.shown.find((row) => row.id === "u_1");
     assert.equal(warned.score, 0.15);
-    assert.equal(warned.breakdown[0].signal, "ew");
-    assert.equal(warned.payments[0].amount, 500);
-    assert.match(warned.payments[0].url, /payments\/ch_a$/);
-    // Only accounts at or above the threshold are proposed, never applied.
-    assert.equal(evidence.banThreshold, 0.75);
-    assert.deepEqual(evidence.proposedBans, {
-        total: 1,
-        shown: [{ id: "u_2", score: 0.81 }],
-        omitted: 0,
-    });
-    assert.equal(evidence.changes.shown[0].status, "won");
+    assert.equal(warned.label, "bee_runner");
+    assert.equal(warned.paymentId, "ch_a");
+    assert.equal(evidence.fraudReview.shown[0].score, 0.81);
+    assert.equal(evidence.disputes.total, 0); // All fixture disputes are closed.
     assert.equal(evidence.health.complete, true);
     assert.doesNotMatch(JSON.stringify(evidence), /PRIVATE_CONTENT/);
+    const bannedQuery = async (body) =>
+        (await query(body)).map((page) => ({
+            results: page.results.map((u) => ({
+                ...u,
+                banned: u.id === "u_2" ? 1 : 0,
+            })),
+        }));
+    const filtered = await collectDailyEvidence(stripe, bannedQuery, [], now);
+    assert.deepEqual(
+        filtered.fraudReview.shown.map((u) => u.id),
+        ["u_1"],
+    );
 });
 
-test("incomplete refund reconciliation preserves other evidence and marks the report incomplete", async () => {
+test("missing refund ledger preserves review evidence and gives an actionable blocked check", async () => {
     const { stripe, query } = sources();
-    stripe.refunds.list = () => {
-        throw new FraudCheckError("Refund ledger unavailable");
-    };
-    const evidence = await collectDailyEvidence(stripe, query, [], now);
+    stripe.refunds.list = () => [{ id: "re_a" }];
+    const missingLedger = async (body) =>
+        body.sql.includes("sqlite_master") ? [{ results: [] }] : query(body);
+    const evidence = await collectDailyEvidence(stripe, missingLedger, [], now);
+    const report = formatDailyReport(evidence);
     assert.equal(evidence.health.complete, false);
-    assert.equal(evidence.refunds, undefined);
-    assert.equal(evidence.changes.shown[0].status, "won");
-    assert.match(
-        evidence.errors[0],
-        /Refund reconciliation: Refund ledger unavailable/,
+    assert.match(report, /Accounts to review/);
+    assert.match(report, /Deploy the refund ledger/);
+    assert.doesNotMatch(
+        report,
+        /HTTP|INCOMPLETE REPORT|Nothing needs attention/,
     );
 });
 
-test("Polli only receives evidence and returns one bounded report without tools", async () => {
-    const evidence = await collectDailyEvidence(
-        ...Object.values(sources()),
-        [],
-        now,
-    );
-    const answer = await askPolli(evidence, "test_key", async (url, init) => {
-        assert.equal(url, "https://gen.pollinations.ai/v1/chat/completions");
-        const body = JSON.parse(init.body);
-        assert.equal(body.model, "community/pollinations-router/polli");
-        assert.deepEqual(body.tools, []);
-        assert.equal(body.tool_choice, "none");
-        assert.equal(body.messages[0].role, "system");
-        assert.match(body.messages[0].content, /No scoring-calibration report/);
-        assert.deepEqual(JSON.parse(body.messages[1].content), evidence);
-        assert.doesNotMatch(
-            body.messages[1].content,
-            /test_key|PRIVATE_CONTENT/,
-        );
-        return response(modelReply());
-    });
-    assert.match(answer, /Review manually/);
-    for (const invalid of [
-        modelReply(""),
-        modelReply("a".repeat(1801)),
-        { ...modelReply(), usage: null },
-        {
-            ...modelReply(),
-            choices: [
-                { finish_reason: "length", message: { content: "partial" } },
-            ],
-        },
-        {
-            ...modelReply(),
-            choices: [
-                {
-                    finish_reason: "stop",
-                    message: { content: "act", tool_calls: [{}] },
-                },
-            ],
-        },
-    ])
-        await assert.rejects(
-            askPolli(evidence, "test_key", async () => response(invalid)),
-            /invalid report/,
-        );
-});
-
-test("one daily Discord post is bounded, disables mentions, and failures never expose the webhook", async () => {
+test("one bounded Discord post disables mentions and embeds without calling a model", async () => {
     const calls = [];
-    const fetchImpl = async (url, init) => {
-        calls.push({ url, init });
-        return url.startsWith("https://gen.")
-            ? response(modelReply("x".repeat(1800)))
-            : response({ id: "123" });
-    };
-    assert.equal(
-        await runDailyReport({
-            ...sources(),
-            webhookUrl: "https://discord.test/SECRET",
-            apiKey: "test_key",
-            fetchImpl,
-            now,
-        }),
-        true,
-    );
-    assert.equal(calls.length, 2);
-    const sent = JSON.parse(calls[1].init.body);
+    const complete = await runDailyReport({
+        ...sources(),
+        webhookUrl: "https://discord.test/SECRET",
+        now,
+        fetchImpl: async (url, init) => {
+            calls.push({ url, init });
+            return response({ id: "123" });
+        },
+    });
+    assert.equal(complete, true);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].url, "https://discord.test/SECRET?wait=true");
+    const sent = JSON.parse(calls[0].init.body);
     assert.deepEqual(sent.allowed_mentions, { parse: [] });
+    assert.equal(sent.flags, 4);
     assert.ok(sent.content.length <= 2000);
-    assert.match(sent.content, /No bans or refunds performed/);
+    assert.match(sent.content, /No actions performed/);
     await assert.rejects(
         postFraudReport("https://discord.test/SECRET", "brief", async () => ({
             ok: false,
@@ -288,24 +241,19 @@ test("one daily Discord post is bounded, disables mentions, and failures never e
     );
 });
 
-test("Polli failure sends one plain failure notice instead of an invented or partial report", async () => {
-    const sent = [];
-    const complete = await runDailyReport({
-        ...sources(),
-        webhookUrl: "https://discord.test/SECRET",
-        apiKey: "test_key",
-        now,
-        fetchImpl: async (url, init) => {
-            if (url.startsWith("https://gen."))
-                return { ok: false, status: 503 };
-            sent.push(JSON.parse(init.body));
-            return response({ id: "123" });
-        },
-    });
-    assert.equal(complete, false);
-    assert.equal(sent.length, 1);
-    assert.match(sent[0].content, /INCOMPLETE REPORT/);
-    assert.match(sent[0].content, /Polli summary failed: HTTP 503/);
+test("an unavailable scan still checks refunds and never reports all clear", async () => {
+    const { stripe, query } = sources();
+    stripe.charges.list = () => {
+        throw new FraudCheckError("Stripe unavailable");
+    };
+    const evidence = await collectDailyEvidence(stripe, query, [], now);
+    assert.equal(evidence.refunds.total, 0);
+    assert.equal(evidence.health.complete, false);
+    assert.match(
+        formatDailyReport(evidence),
+        /Account\/dispute checks unavailable/,
+    );
+    assert.doesNotMatch(formatDailyReport(evidence), /Nothing needs attention/);
 });
 
 test("refund reconciliation uses ledger amounts and distinguishes missing, pending and restored adjustments", async () => {
@@ -345,6 +293,8 @@ test("refund reconciliation uses ledger amounts and distinguishes missing, pendi
     ].map((row) => ({ charge_id: "ch_a", currency: "usd", ...row }));
     const query = async ({ sql, params }) => {
         assert.match(sql, /^SELECT /);
+        if (sql.includes("sqlite_master"))
+            return [{ results: [{ name: "stripe_refund" }] }];
         assert.equal(params.length, 5);
         return [{ results: rows }];
     };
@@ -357,7 +307,7 @@ test("refund reconciliation uses ledger amounts and distinguishes missing, pendi
     assert.equal(result[4].issue, "Pollen adjustment unverified");
 });
 
-test("a late failure of an older refund includes its restored Pollen in today's evidence", async () => {
+test("a reconciled older failed refund stays out of the active report", async () => {
     const { stripe, query } = sources();
     stripe.refunds.list = () => [
         {
@@ -395,7 +345,99 @@ test("a late failure of an older refund includes its restored Pollen in today's 
               ]
             : query(body);
     const evidence = await collectDailyEvidence(stripe, ledgerQuery, [], now);
-    assert.equal(evidence.refunds.total, 1);
-    assert.equal(evidence.refunds.shown[0].pollen, 5);
-    assert.equal(evidence.refunds.shown[0].issue, null);
+    assert.equal(evidence.refunds.total, 0);
+    assert.doesNotMatch(formatDailyReport(evidence), /Refunds to reconcile/);
+});
+
+test("active layout uses real amounts, deadlines, reasons and links with exact remaining counts", async () => {
+    const { stripe, query } = sources();
+    const disputes = stripe.disputes.list();
+    stripe.disputes.list = () => [
+        ...disputes,
+        ...Array.from({ length: 7 }, (_, i) => ({
+            ...disputes[0],
+            id: `dp_pending_${i}`,
+            status: "needs_response",
+            evidence_details: { due_by: now / 1000 + i * 86400 },
+            created: now / 1000 - 30 * 86400,
+        })),
+    ];
+    const evidence = await collectDailyEvidence(stripe, query, [], now);
+    const report = formatDailyReport(evidence);
+    assert.match(report, /Disputes to handle · 7/);
+    assert.match(report, /\$5.00/);
+    assert.match(report, /17 Sept?, 07:17 UTC/);
+    assert.match(report, /\+4 more awaiting review/);
+    assert.equal((report.match(/Open dispute/g) || []).length, 3);
+    assert.match(report, /bee_runner · 0.81/);
+    assert.match(report, /3 fraud disputes/);
+    assert.match(report, /Consider banning after review/);
+    assert.match(report, /payments\/ch_b/);
+    assert.doesNotMatch(
+        report,
+        /Last 24h|Health|minor units|null|unmapped|shown|omitted/,
+    );
+    assert.ok(
+        report.indexOf("Disputes to handle") <
+            report.indexOf("Accounts to review"),
+    );
+});
+
+test("currency conversion handles Stripe zero-decimal and legacy two-decimal amounts", () => {
+    const base = {
+        at: new Date(now).toISOString(),
+        errors: [],
+        fraudReview: { total: 0, shown: [] },
+        refunds: { total: 0, shown: [] },
+    };
+    for (const [currency, amount, expected] of [
+        ["usd", 548, "$5.48"],
+        ["jpy", 548, "¥548"],
+        ["isk", 500, "ISK\u00a05"],
+        ["ugx", 500, "UGX\u00a05"],
+    ]) {
+        const report = formatDailyReport({
+            ...base,
+            disputes: {
+                total: 1,
+                shown: [{ id: "dp_a", currency, amount, due: null }],
+            },
+        });
+        assert.ok(report.includes(expected), report);
+        assert.match(report, /deadline unavailable/);
+    }
+});
+
+test("empty sections disappear and oversized messages keep complete rows and accurate counts", () => {
+    const empty = {
+        at: new Date(now).toISOString(),
+        errors: [],
+        disputes: { total: 0, shown: [] },
+        fraudReview: { total: 0, shown: [] },
+        refunds: { total: 0, shown: [] },
+    };
+    const clear = formatDailyReport(empty);
+    assert.match(clear, /Nothing needs attention/);
+    assert.doesNotMatch(
+        clear,
+        /Disputes to handle|Accounts to review|Refunds to reconcile/,
+    );
+    const report = formatDailyReport({
+        ...empty,
+        refunds: {
+            total: 40,
+            shown: Array.from({ length: 3 }, (_, i) => ({
+                amount: 500,
+                currency: "usd",
+                status: "succeeded",
+                issue: "Pollen adjustment unverified",
+                chargeId: `ch_${i}${"x".repeat(600)}`,
+            })),
+        },
+    });
+    assert.ok(report.length <= 2000);
+    const displayed = (report.match(/Open payment/g) || []).length;
+    assert.ok(displayed > 0 && displayed < 3);
+    assert.ok(report.includes(`+${40 - displayed} more awaiting review`));
+    assert.ok(report.endsWith("_Manual review only. No actions performed._"));
 });

@@ -40,14 +40,9 @@ const textWeightClasses: Record<TextWeight, string> = {
     bold: "polli:font-bold",
 };
 
-export function headingClassName(
-    size: HeadingSize,
-    className?: string,
-    tone: TextTone = "strong",
-) {
+export function headingClassName(size: HeadingSize, className?: string) {
     return cn(
-        "polli:break-words",
-        textToneClasses[tone],
+        "polli:break-words polli:text-theme-text-strong",
         headingSizeClasses[size],
         className,
     );
@@ -76,7 +71,6 @@ function textClassName({
 type HeadingOwnProps<T extends ElementType> = PropsWithChildren<{
     as?: T;
     size?: HeadingSize;
-    tone?: TextTone;
     className?: string;
 }>;
 
@@ -86,17 +80,13 @@ export type HeadingProps<T extends ElementType = "h2"> = HeadingOwnProps<T> &
 export function Heading<T extends ElementType = "h2">({
     as,
     size = "section",
-    tone = "strong",
     className,
     children,
     ...rest
 }: HeadingProps<T>) {
     const Component = as || "h2";
     return (
-        <Component
-            {...rest}
-            className={headingClassName(size, className, tone)}
-        >
+        <Component {...rest} className={headingClassName(size, className)}>
             {children}
         </Component>
     );

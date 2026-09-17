@@ -93,12 +93,7 @@ export function AuthFlowLayout({
             <DialogBody>
                 {title && (
                     <div className="polli:space-y-1">
-                        <Heading
-                            as="h1"
-                            size="section"
-                            tone="soft"
-                            id={headingId}
-                        >
+                        <Heading as="h1" size="section" id={headingId}>
                             {title}
                         </Heading>
                         {description && (

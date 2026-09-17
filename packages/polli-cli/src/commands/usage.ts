@@ -109,6 +109,22 @@ export function tokensIn(r: UsageRecord): number {
     );
 }
 
+/** Client-side daily filters: key ids and/or model ids. */
+export function filterDailyRows(
+    rows: DailyUsageRecord[],
+    keyIds: string[],
+    models: string[],
+): DailyUsageRecord[] {
+    let out = rows;
+    if (keyIds.length > 0) {
+        out = out.filter((r) => keyIds.includes(r.api_key_id ?? ""));
+    }
+    if (models.length > 0) {
+        out = out.filter((r) => models.includes(r.model));
+    }
+    return out;
+}
+
 export function tokensOut(r: UsageRecord): number {
     return (
         (r.output_text_tokens ?? 0) +
@@ -254,25 +270,27 @@ export const usageCommand = new Command("usage")
 
         const params = new URLSearchParams();
         if (days !== undefined) params.set("days", String(days));
-        if (keyIds.length > 0) params.set("api_key_ids", keyIds.join(","));
 
         try {
             if (opts.daily) {
-                // The daily schema has no `models` param, so --model is
-                // applied client-side for this view.
-                if (opts.csv) params.set("format", "csv");
-                const path = `/account/usage/daily?${params}`;
+                // The daily schema has no `models` param and currently 500s
+                // on `api_key_ids` (endpoint bug, reported in the PR), so
+                // both filters run client-side for the JSON/table view.
                 if (opts.csv) {
+                    // Raw exports can't be filtered client-side - pass the
+                    // filters to the server (works once the endpoint is fixed).
+                    params.set("format", "csv");
+                    if (keyIds.length > 0)
+                        params.set("api_key_ids", keyIds.join(","));
+                    const path = `/account/usage/daily?${params}`;
                     process.stdout.write(await genText(path, { apiKey: key }));
                     return;
                 }
+                const path = `/account/usage/daily?${params}`;
                 const data = await gen<DailyUsageResponse>(path, {
                     apiKey: key,
                 });
-                const rows =
-                    models.length > 0
-                        ? data.usage.filter((r) => models.includes(r.model))
-                        : data.usage;
+                const rows = filterDailyRows(data.usage, keyIds, models);
                 printTable(
                     rows.map((r) => ({
                         date: r.date,
@@ -295,6 +313,7 @@ export const usageCommand = new Command("usage")
                 process.exit(1);
             }
             params.set("limit", String(limit));
+            if (keyIds.length > 0) params.set("api_key_ids", keyIds.join(","));
             if (models.length > 0) params.set("models", models.join(","));
             if (opts.csv) params.set("format", "csv");
             const path = `/account/usage?${params}`;

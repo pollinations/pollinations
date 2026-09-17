@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+    filterDailyRows,
     MAX_USAGE_DAYS,
     parseUsageDays,
     resolveKeyIds,
@@ -124,6 +125,57 @@ describe("splitKeyArgs", () => {
             authKey: undefined,
             filterKeys: [],
         });
+    });
+});
+
+describe("filterDailyRows", () => {
+    const rows = [
+        {
+            date: "2026-09-16",
+            model: "openai",
+            api_key: "kimi",
+            api_key_id: "id_kimi",
+            meter_source: "tier",
+            requests: 2,
+            cost_usd: 0.1,
+        },
+        {
+            date: "2026-09-16",
+            model: "muse",
+            api_key: "kimi3",
+            api_key_id: "id_kimi3",
+            meter_source: "tier",
+            requests: 1,
+            cost_usd: 0.2,
+        },
+        {
+            date: "2026-09-15",
+            model: "openai",
+            api_key: "kimi3",
+            api_key_id: "id_kimi3",
+            meter_source: "pack",
+            requests: 3,
+            cost_usd: 0.3,
+        },
+    ];
+
+    it("returns all rows without filters", () => {
+        expect(filterDailyRows(rows, [], [])).toHaveLength(3);
+    });
+
+    it("filters by key id, not name", () => {
+        const out = filterDailyRows(rows, ["id_kimi3"], []);
+        expect(out.map((r) => r.api_key_id)).toEqual(["id_kimi3", "id_kimi3"]);
+    });
+
+    it("filters by model and combines both filters", () => {
+        expect(filterDailyRows(rows, [], ["openai"])).toHaveLength(2);
+        expect(filterDailyRows(rows, ["id_kimi3"], ["openai"])).toHaveLength(1);
+    });
+
+    it("drops rows with a null api_key_id when key filters are set", () => {
+        const withNull = [{ ...rows[0], api_key_id: null }];
+        expect(filterDailyRows(withNull, ["id_kimi"], [])).toHaveLength(0);
     });
 });
 

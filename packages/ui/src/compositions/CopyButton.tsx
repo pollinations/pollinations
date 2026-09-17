@@ -7,7 +7,7 @@ import {
     useState,
 } from "react";
 import { cn } from "../lib/cn.ts";
-import { Button } from "../primitives/Button.tsx";
+import { Button, type ButtonProps } from "../primitives/Button.tsx";
 import { Tooltip } from "../primitives/Tooltip.tsx";
 
 type CopyValue = string | (() => string | Promise<string>);
@@ -27,6 +27,8 @@ export type CopyButtonProps = Omit<
     tooltipClassName?: string;
     className?: string | ((copied: boolean) => string);
     variant?: "plain" | "button";
+    /** Button intent, used with `variant="button"`. */
+    intent?: ButtonProps<"button">["intent"];
     onCopied?: () => void;
     onCopyError?: (error: unknown) => void;
 };
@@ -43,6 +45,7 @@ export function CopyButton({
     tooltipClassName,
     className,
     variant = "plain",
+    intent,
     onCopied,
     onCopyError,
     ...buttonProps
@@ -78,6 +81,7 @@ export function CopyButton({
     const button = (
         <Control
             {...buttonProps}
+            {...(variant === "button" && intent ? { intent } : {})}
             type="button"
             onClick={handleCopy}
             className={cn(

@@ -176,12 +176,13 @@ export function AuthModalLoading({
 
 export function ErrorBanner({ children }: { children: ReactNode }) {
     return (
-        <div
+        <Surface
             role="alert"
+            variant="card-subtle"
             className="polli:font-body polli:text-sm polli:leading-6 polli:text-intent-danger-text"
         >
             {children}
-        </div>
+        </Surface>
     );
 }
 

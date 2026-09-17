@@ -90,7 +90,7 @@ export const Dialog: FC<DialogProps> = ({
                             "polli:my-auto polli:w-full polli:overflow-hidden polli:rounded-lg polli:border-2 polli:border-theme-border polli:bg-surface-opaque polli:shadow-lg polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none",
                             sizeClasses[size],
                             layout === "flow" &&
-                                "polli:flex polli:h-dvh polli:max-h-dvh polli:flex-col polli:my-0 polli:rounded-none polli:border-0 polli:bg-surface-white polli:shadow-none polli:sm:my-auto polli:sm:h-[calc(100dvh-2rem)] polli:sm:max-h-[calc(100dvh-2rem)] polli:sm:rounded-2xl polli:sm:shadow-container",
+                                "polli:flex polli:h-dvh polli:max-h-dvh polli:max-sm:max-w-none polli:flex-col polli:overflow-y-auto polli:my-0 polli:rounded-none polli:border-0 polli:shadow-none polli:sm:my-auto polli:sm:h-[calc(100dvh-2rem)] polli:sm:max-h-[calc(100dvh-2rem)] polli:sm:rounded-2xl polli:sm:shadow-container",
                             contentClassName,
                         )}
                     >

@@ -1,3 +1,4 @@
+import { Button } from "../../primitives/Button.tsx";
 import { ColorModeToggle } from "../../primitives/ColorModeToggle.tsx";
 import { Heading } from "../../primitives/Typography.tsx";
 import { AuthErrorContent } from "./AuthErrorContent.tsx";
@@ -28,29 +29,45 @@ const signInErrors = {
 export function DashboardSignIn({
     appName,
     onSignIn,
+    isPending = false,
+    sessionError,
 }: {
     appName: string;
     onSignIn: () => void;
+    isPending?: boolean;
+    sessionError?: string | null;
 }) {
     const code =
         typeof window === "undefined"
             ? null
             : new URLSearchParams(window.location.search).get("auth_error");
-    const error =
-        code && Object.hasOwn(signInErrors, code)
-            ? signInErrors[code as keyof typeof signInErrors]
-            : null;
+    const error = sessionError
+        ? { title: "Couldn’t check your session", message: sessionError }
+        : code && Object.hasOwn(signInErrors, code)
+          ? signInErrors[code as keyof typeof signInErrors]
+          : null;
     return (
         <AuthFlowLayout
             headerAction={<ColorModeToggle />}
             dialog={{ labelledBy: "dashboard-sign-in-title" }}
             actions={
-                <PollinationsSignInButton onClick={onSignIn}>
-                    {error ? "Try again" : "Sign in with Pollinations"}
-                </PollinationsSignInButton>
+                isPending ? (
+                    <output>Checking sign-in…</output>
+                ) : sessionError ? (
+                    <Button
+                        onClick={() => window.location.reload()}
+                        className="polli:w-full"
+                    >
+                        Reload
+                    </Button>
+                ) : (
+                    <PollinationsSignInButton onClick={onSignIn}>
+                        {error ? "Try again" : "Sign in with Pollinations"}
+                    </PollinationsSignInButton>
+                )
             }
         >
-            {error ? (
+            {!isPending && error ? (
                 <AuthErrorContent
                     title={error.title}
                     titleId="dashboard-sign-in-title"

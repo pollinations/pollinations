@@ -98,7 +98,7 @@ export function Device({ prefilledCode }: DeviceProps) {
 
     if (!user) {
         return (
-            <AuthModal tone={signInError ? "error" : undefined}>
+            <AuthModal>
                 <AuthModalHeader />
                 <div className="px-6 pb-6 pt-4 space-y-4">
                     {signInError && <ErrorBanner>{signInError}</ErrorBanner>}
@@ -127,7 +127,7 @@ export function Device({ prefilledCode }: DeviceProps) {
     }
 
     return (
-        <AuthModal tone={error ? "error" : undefined}>
+        <AuthModal>
             <AuthModalHeader />
             <form onSubmit={handleSubmit} className="px-6 pb-6 pt-4 space-y-4">
                 {error && <ErrorBanner>{error}</ErrorBanner>}

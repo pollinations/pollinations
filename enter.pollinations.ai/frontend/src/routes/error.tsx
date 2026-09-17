@@ -1,5 +1,5 @@
-import { Button, Heading, Surface } from "@pollinations/ui";
-import logoWordmarkUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
+import { Button } from "@pollinations/ui";
+import { AuthErrorContent, AuthFlowLayout } from "@pollinations/ui/auth";
 import { isBannedLoginError } from "@shared/auth/ban.ts";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -27,38 +27,11 @@ function ErrorPage() {
           : "An unexpected error occurred. Please try again or open a GitHub issue if this keeps happening.";
 
     return (
-        <div className="flex min-h-screen items-center justify-center px-4">
-            <Surface
-                variant="card"
-                className="w-full max-w-md p-8 text-center shadow-lg"
-            >
-                {isBanned && (
-                    <a
-                        href="https://pollinations.ai/"
-                        className="inline-flex mb-6 text-theme-text-strong"
-                        aria-label="Pollinations"
-                    >
-                        <span className="sr-only">Pollinations</span>
-                        <span
-                            aria-hidden="true"
-                            className="block h-6 w-[195px] bg-current"
-                            style={{
-                                WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-                                mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-                            }}
-                        />
-                    </a>
-                )}
-                <Heading as="h1" size="section" className="mb-3">
-                    {title}
-                </Heading>
-
-                <p className="font-body text-theme-text-base mb-6 leading-relaxed">
-                    {message}
-                </p>
-
+        <AuthFlowLayout
+            dialog={{ labelledBy: "login-error-title" }}
+            actions={
                 <div className="flex flex-col gap-3">
-                    <Button as="a" size="lg" href="/" className="mt-2">
+                    <Button as="a" size="lg" href="/">
                         Go to Home →
                     </Button>
                     {isBanned && (
@@ -71,17 +44,13 @@ function ErrorPage() {
                         </Button>
                     )}
                 </div>
-
-                <div className="mt-8 text-sm text-theme-text-soft">
-                    {isBanned ? (
-                        <a href="https://pollinations.ai/terms">
-                            Terms &amp; Conditions
-                        </a>
-                    ) : (
-                        "pollinations.ai"
-                    )}
-                </div>
-            </Surface>
-        </div>
+            }
+        >
+            <AuthErrorContent
+                title={title}
+                titleId="login-error-title"
+                message={message}
+            />
+        </AuthFlowLayout>
     );
 }

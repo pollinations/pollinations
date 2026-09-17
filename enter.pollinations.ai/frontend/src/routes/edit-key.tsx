@@ -83,10 +83,7 @@ function EditKeyPage() {
 
     if (!user) {
         return (
-            <AuthModal
-                dialog={{ label: "Sign in to edit this key" }}
-                tone={signInError ? "error" : undefined}
-            >
+            <AuthModal dialog={{ label: "Sign in to edit this key" }}>
                 <AuthModalHeader />
                 <div className="px-6 pb-6 pt-4 space-y-4">
                     {signInError ? (
@@ -149,7 +146,7 @@ function EditKeyPage() {
 
     if (!id || apiKey === null) {
         return (
-            <AuthModal dialog={{ label: "Key not found" }} tone="error">
+            <AuthModal dialog={{ label: "Key not found" }}>
                 {accountHeader}
                 <div className="px-6 pb-6 pt-4 space-y-4">
                     <ErrorBanner>

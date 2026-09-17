@@ -118,10 +118,7 @@ function TopUpPage() {
 
     if (!user) {
         return (
-            <AuthModal
-                dialog={{ label: "Sign in to top up" }}
-                tone={signInError ? "error" : undefined}
-            >
+            <AuthModal dialog={{ label: "Sign in to top up" }}>
                 <AuthModalHeader />
                 <div className="px-6 pb-6 pt-4 space-y-4">
                     {signInError ? (
@@ -172,7 +169,7 @@ function TopUpPage() {
 
     if (walletError) {
         return (
-            <AuthModal dialog={{ label: "Top up" }} tone="error">
+            <AuthModal dialog={{ label: "Top up" }}>
                 <AuthModalHeader>{accountIdentity}</AuthModalHeader>
                 <div className="px-6 pb-6 pt-4 space-y-4">
                     <ErrorBanner>
@@ -192,13 +189,13 @@ function TopUpPage() {
     if (!wallet || billing === undefined) return <AuthModalLoading />;
 
     return (
-        <AuthModal dialog={{ label: "Top up" }} contentClassName="max-w-2xl">
+        <AuthModal dialog={{ label: "Top up" }} size="lg">
             <AuthModalHeader>{accountIdentity}</AuthModalHeader>
             <div className="flex flex-col gap-6 px-6 pb-6 pt-4">
                 {search.stripe_canceled && (
                     <ErrorBanner>Checkout was cancelled.</ErrorBanner>
                 )}
-                <Section title="Top-up" framed>
+                <Section title="Top-up">
                     <BuyPollenPanel
                         initialBillingState={billing}
                         selectedPackAmount={selectedPack?.amountUsd ?? 5}

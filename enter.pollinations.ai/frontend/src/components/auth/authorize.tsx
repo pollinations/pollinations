@@ -499,10 +499,7 @@ export function Authorize() {
     if (!user) {
         const displayedError = error ?? signInError;
         return (
-            <AuthModal
-                dialog={{ label: "Sign in to authorize" }}
-                tone={displayedError ? "error" : undefined}
-            >
+            <AuthModal dialog={{ label: "Sign in to authorize" }}>
                 <AuthModalHeader />
                 <div className="px-6 pb-6 pt-4 space-y-4">
                     {displayedError ? (
@@ -555,8 +552,6 @@ export function Authorize() {
                     ? { label: "Authorization error" }
                     : { labelledBy: "authorize-dialog-title" }
             }
-            tone={error ? "error" : undefined}
-            contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
         >
             <AuthModalHeader>
                 <AuthAccountIdentity
@@ -566,7 +561,7 @@ export function Authorize() {
                 />
             </AuthModalHeader>
 
-            <ScrollArea className="min-h-0 px-6 py-2 space-y-4 overscroll-contain">
+            <ScrollArea className="min-h-0 flex-1 px-6 py-2 space-y-4 overscroll-contain">
                 {error ? (
                     <ErrorBanner>{error}</ErrorBanner>
                 ) : (

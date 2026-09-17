@@ -1,7 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import logoUrl from "../../brand/mark.svg";
-import { cn } from "../../lib/cn.ts";
-import { Dialog } from "../../primitives/Dialog.tsx";
+import { Dialog, type DialogProps } from "../../primitives/Dialog.tsx";
 import { InlineLink } from "../../primitives/InlineLink.tsx";
 import { ScrollArea } from "../../primitives/ScrollArea.tsx";
 import { Surface } from "../../primitives/Surface.tsx";
@@ -21,36 +20,25 @@ const authLogoMask: CSSProperties = {
 
 export type AuthModalProps = {
     children: ReactNode;
-    contentClassName?: string;
+    size?: DialogProps["size"];
+    onClose?: () => void;
     dialog?: {
         label?: string;
         labelledBy?: string;
     };
-    tone?: "default" | "error";
 };
 
-export function AuthModal({
-    children,
-    contentClassName,
-    dialog,
-    tone = "default",
-}: AuthModalProps) {
-    const borderClass =
-        tone === "error"
-            ? "polli:border-intent-danger-border"
-            : "polli:border-theme-border";
+export function AuthModal({ children, size, dialog, onClose }: AuthModalProps) {
     return (
         <Dialog
             open
+            onOpenChange={(open) => !open && onClose?.()}
+            layout="flow"
             showBackdrop={false}
             ariaLabel={dialog?.label}
             labelledBy={dialog?.labelledBy}
-            positionerClassName="polli:items-start polli:overflow-y-auto polli:bg-app-bg"
-            contentClassName={cn(
-                "polli:bg-surface-white polli:border-2 polli:rounded-lg polli:shadow-lg polli:max-w-xl polli:w-full polli:my-auto",
-                borderClass,
-                contentClassName,
-            )}
+            positionerClassName="polli:bg-app-bg"
+            size={size}
         >
             {children}
         </Dialog>
@@ -74,14 +62,7 @@ export function AuthFlowLayout({
     dialog?: AuthModalProps["dialog"];
 }) {
     return (
-        <Dialog
-            open
-            layout="flow"
-            showBackdrop={false}
-            ariaLabel={dialog?.label}
-            labelledBy={dialog?.labelledBy}
-            positionerClassName="polli:bg-app-bg"
-        >
+        <AuthModal dialog={dialog}>
             <ScrollArea className="polli:min-h-0 polli:flex-1 polli:overscroll-contain polli:scroll-pt-28 polli:scroll-pb-4 polli:sm:rounded-t-2xl">
                 <div className="polli:flex polli:min-h-full polli:flex-col">
                     <div className="polli:sticky polli:top-0 polli:z-10 polli:shrink-0 polli:bg-surface-white/80 polli:pb-3 polli:backdrop-blur-md">
@@ -102,7 +83,7 @@ export function AuthFlowLayout({
                     Terms &amp; Conditions
                 </InlineLink>
             </div>
-        </Dialog>
+        </AuthModal>
     );
 }
 
@@ -126,13 +107,13 @@ export function AuthModalHeader({ children }: AuthModalHeaderProps) {
     );
     if (!children) {
         return (
-            <div className="polli:flex polli:justify-start polli:px-6 polli:pt-6">
+            <div className="polli:flex polli:shrink-0 polli:justify-start polli:px-6 polli:pt-6">
                 {logo}
             </div>
         );
     }
     return (
-        <div className="polli:px-6 polli:pt-6 polli:pb-2">
+        <div className="polli:shrink-0 polli:px-6 polli:pt-6 polli:pb-2">
             <div className="polli:flex polli:items-center polli:justify-between polli:gap-3">
                 {logo}
                 {children}

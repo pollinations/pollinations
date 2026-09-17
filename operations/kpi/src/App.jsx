@@ -132,19 +132,15 @@ const EXPLORER_ID = "kpi-explorer";
 
 export default function App() {
     const { user, isPending, error } = useDashboardSession();
-    if (isPending)
+    if (isPending || error || !user)
         return (
-            <main>
-                <Text>Checking sign-in…</Text>
-            </main>
+            <DashboardSignIn
+                appName="KPI"
+                onSignIn={signIn}
+                isPending={isPending}
+                sessionError={error}
+            />
         );
-    if (error)
-        return (
-            <main>
-                <Alert>Could not check your session. Please reload.</Alert>
-            </main>
-        );
-    if (!user) return <DashboardSignIn appName="KPI" onSignIn={signIn} />;
     return <Dashboard accountUser={user} />;
 }
 

@@ -5,7 +5,6 @@ import {
     Chip,
     CopyButton,
     cn,
-    Dialog,
     DialogTitle,
     Field,
     GlobeIcon,
@@ -13,6 +12,7 @@ import {
     LockIcon,
     ScrollArea,
 } from "@pollinations/ui";
+import { AuthModal } from "@pollinations/ui/auth";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
@@ -124,11 +124,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     }
 
     return (
-        <Dialog
-            open
-            onOpenChange={(open) => !open && onClose()}
-            contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
-        >
+        <AuthModal onClose={onClose}>
             {header}
             <div className="shrink-0 p-6 pb-4">
                 <DialogTitle className="text-xl font-bold mb-4">
@@ -237,6 +233,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     {isSubmitting ? "Saving..." : "Save"}
                 </Button>
             </div>
-        </Dialog>
+        </AuthModal>
     );
 };

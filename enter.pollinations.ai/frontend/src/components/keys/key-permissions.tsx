@@ -114,30 +114,61 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
             />
         </>
     );
-    const hasOptionalPermissions =
-        !visiblePermissions || visiblePermissions.size > 0;
+    const modelsItem = (
+        <AuthAccessItem
+            checked={hasModels}
+            disabled={disabled}
+            onChange={(checked) =>
+                setAllowedModels(checked ? (requestedModels ?? null) : [])
+            }
+            details={
+                <div className="space-y-2">
+                    {hasModels && (
+                        <ModelPermissionsInput
+                            catalog={catalog}
+                            categories={categories}
+                            models={models}
+                            selected={permissions.allowedModels}
+                            onChange={(next) =>
+                                setAllowedModels(
+                                    requestedModels == null
+                                        ? normalizeAllowedModelSelection(
+                                              next,
+                                              models.map(({ id }) => id),
+                                          )
+                                        : next,
+                                )
+                            }
+                            disabled={disabled}
+                            initiallyExpanded={
+                                permissions.allowedModels !== null
+                            }
+                        />
+                    )}
+                    <Text size="xs" tone="muted">
+                        Allow this key to generate with selected models.
+                    </Text>
+                </div>
+            }
+        >
+            Models
+        </AuthAccessItem>
+    );
     return (
         <div className="space-y-4">
             {showIdentity ? (
-                // Consent: what the app always gets, without checkboxes, then
-                // the optional grants it asked for.
-                <>
-                    <AuthInfoCard>
-                        <ul className="space-y-3 text-sm">
-                            <AuthAccessItem icon={<AccountIcon />}>
-                                Username and picture
-                            </AuthAccessItem>
-                            {limitInputs}
-                        </ul>
-                    </AuthInfoCard>
-                    {hasOptionalPermissions && (
-                        <AuthInfoCard>
-                            <ul className="space-y-3 text-sm">
-                                {accountPermissionsInput}
-                            </ul>
-                        </AuthInfoCard>
-                    )}
-                </>
+                // Consent: one card. What the app always gets, without
+                // checkboxes, then the optional grants it asked for, models last.
+                <AuthInfoCard>
+                    <ul className="space-y-3 text-sm">
+                        <AuthAccessItem icon={<AccountIcon />}>
+                            Username and picture
+                        </AuthAccessItem>
+                        {limitInputs}
+                        {accountPermissionsInput}
+                        {modelsItem}
+                    </ul>
+                </AuthInfoCard>
             ) : (
                 <>
                     <AuthInfoCard>
@@ -148,55 +179,11 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                     <AuthInfoCard>
                         <ul className="space-y-3 text-sm">{limitInputs}</ul>
                     </AuthInfoCard>
+                    <AuthInfoCard>
+                        <ul className="text-sm">{modelsItem}</ul>
+                    </AuthInfoCard>
                 </>
             )}
-            <AuthInfoCard>
-                <ul className="text-sm">
-                    <AuthAccessItem
-                        checked={hasModels}
-                        disabled={disabled}
-                        onChange={(checked) =>
-                            setAllowedModels(
-                                checked ? (requestedModels ?? null) : [],
-                            )
-                        }
-                        details={
-                            <div className="space-y-2">
-                                {hasModels && (
-                                    <ModelPermissionsInput
-                                        catalog={catalog}
-                                        categories={categories}
-                                        models={models}
-                                        selected={permissions.allowedModels}
-                                        onChange={(next) =>
-                                            setAllowedModels(
-                                                requestedModels == null
-                                                    ? normalizeAllowedModelSelection(
-                                                          next,
-                                                          models.map(
-                                                              ({ id }) => id,
-                                                          ),
-                                                      )
-                                                    : next,
-                                            )
-                                        }
-                                        disabled={disabled}
-                                        initiallyExpanded={
-                                            permissions.allowedModels !== null
-                                        }
-                                    />
-                                )}
-                                <Text size="xs" tone="muted">
-                                    Allow this key to generate with selected
-                                    models.
-                                </Text>
-                            </div>
-                        }
-                    >
-                        Models
-                    </AuthAccessItem>
-                </ul>
-            </AuthInfoCard>
         </div>
     );
 };

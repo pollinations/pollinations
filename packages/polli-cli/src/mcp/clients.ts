@@ -335,7 +335,9 @@ const codex: McpClient = {
         const text = readTextIfExists(path) ?? "";
         const installed: string[] = [];
         const re = /\[mcp_servers\.([^\]]+)\][^[]*gen\.pollinations\.ai\/mcp/g;
-        for (const m of text.matchAll(re)) installed.push(m[1]!);
+        for (const m of text.matchAll(re)) {
+            if (m[1]) installed.push(m[1]);
+        }
         return { installed, count: installed.length, path };
     },
 };

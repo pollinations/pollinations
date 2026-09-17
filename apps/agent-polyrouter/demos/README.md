@@ -5,33 +5,35 @@ Three requests against the deployed agent `afanasevmylife/polyrouter`
 The full Responses JSON, including the `polyrouter_trace` field, is in each
 file. Re-run on 2026-09-17 after the platform's status-feed refactor (the
 catalog no longer carries `health`; the router now aggregates
-`/models/status` rollup rows itself).
+`/models/status` rollup rows itself) and after excluding published agents
+from routing targets.
 
 ## 1. Simple prompt -> fast tier -> cheapest eligible model
 
-`demo-1-fast.json` - "Name the capital of Portugal in one word please."
+`demo-1-fast.json` - "Name the capital of Portugal in a single word."
 
 ```json
 "polyrouter_trace": {
-  "model": "community/morriszdweck/osaii-swarm",
+  "model": "openai/gpt-oss-20b",
   "tier": "fast",
-  "why": "score 0; simple prompt; picked cheapest eligible of 49; skipped 108 no responses endpoint, 54 not a text model"
+  "why": "score 0; simple prompt; picked cheapest eligible of 31; skipped 106 no responses endpoint, 54 not a text model, 18 community agent"
 }
 ```
 
-A trivial question takes a free community model. (Answer: "Lisbon".)
+A trivial question takes the cheapest non-broken real model. (Answer:
+"Lisbon".)
 
 ## 2. Code + reasoning prompt -> deep tier -> strongest eligible reasoning model
 
-`demo-2-deep.json` - "Analyze why this concurrent queue implementation
-deadlocks under load and explain step by step how to refactor the locking
-strategy..."
+`demo-2-deep.json` - "Analyze why this concurrent stack implementation
+corrupts data under contention and walk step by step through refactoring its
+synchronization..."
 
 ```json
 "polyrouter_trace": {
-  "model": "community/pollinations-router/midijourney",
+  "model": "openai/gpt-6-astra",
   "tier": "deep",
-  "why": "score 4; code, reasoning keywords; picked strongest eligible of 33; skipped 16 no reasoning, 108 no responses endpoint, 54 not a text model"
+  "why": "score 4; code, reasoning keywords; picked strongest eligible of 26; skipped 5 no reasoning, 106 no responses endpoint, 54 not a text model, 18 community agent"
 }
 ```
 
@@ -41,14 +43,14 @@ feed answers.
 
 ## 3. Tool-using request -> balanced tier -> median-priced tool_calling model
 
-`demo-3-balanced-tools.json` - "What is the weather in Lisbon right now?"
+`demo-3-balanced-tools.json` - "What is the weather like in Lisbon today?"
 with a `get_weather` function tool attached.
 
 ```json
 "polyrouter_trace": {
-  "model": "community/sharktide/3D-agent",
+  "model": "cohere/command-a-plus",
   "tier": "balanced",
-  "why": "score 0; simple prompt; has tools; picked median-priced eligible of 46; skipped 108 no responses endpoint, 54 not a text model, 3 no tool_calling"
+  "why": "score 0; simple prompt; has tools; picked median-priced eligible of 31; skipped 106 no responses endpoint, 54 not a text model, 18 community agent"
 }
 ```
 

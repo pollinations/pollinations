@@ -143,6 +143,27 @@ test("pickModel: broken models are skipped with reasons in the trace", () => {
     assert.match(pick.why, /2 unhealthy \(5xx\)/);
 });
 
+test("pickModel: community agents are never routing targets", () => {
+    const agentEntry = {
+        ...catalogOf([{ id: "community/someone/triage-router", price: 0 }])[0],
+        community: true,
+    };
+    const catalog = [
+        agentEntry,
+        ...catalogOf([{ id: "real-cheap", price: 0.00001 }]),
+    ];
+    const pick = pickModel(catalog, NO_HEALTH, FAST_FEATURES);
+    assert.equal(pick.id, "real-cheap");
+    assert.match(pick.why, /1 community agent/);
+    // The id prefix alone is enough even if the flag is missing.
+    const prefixOnly = catalogOf([{ id: "community/x/y", price: 0 }]);
+    const withReal = [
+        ...prefixOnly,
+        ...catalogOf([{ id: "real2", price: 0.00001 }]),
+    ];
+    assert.equal(pickModel(withReal, NO_HEALTH, FAST_FEATURES).id, "real2");
+});
+
 test("pickModel: balanced takes the median-priced candidate, deep the priciest reasoning one", () => {
     const catalog = catalogOf([
         { id: "a", price: 0 },

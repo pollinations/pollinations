@@ -1,69 +1,121 @@
 {
-  "id": "resp_c2b4c80d-865d-4beb-844c-26fcbcbfe674",
+  "id": "resp_078b500ccac5531e016aaba035cc888193933421a198127199",
   "object": "response",
-  "created_at": 1789626845,
-  "completed_at": 1789626845,
+  "created_at": 1789632565,
   "status": "completed",
+  "background": false,
+  "completed_at": 1789632568,
+  "content_filters": null,
+  "error": null,
+  "frequency_penalty": 0,
   "incomplete_details": null,
-  "model": "a39956fb-436f-46c2-b485-19433ee11016",
+  "instructions": null,
+  "max_output_tokens": null,
+  "max_tool_calls": null,
+  "model": "Cohere-command-a-plus-05-2026",
+  "moderation": null,
   "output": [
     {
-      "type": "message",
-      "id": "msg_dc3c9b46-085e-404c-aba8-ddaba45f3109",
-      "role": "assistant",
-      "status": "completed",
-      "content": [
+      "id": "rs_078b500ccac5531e016aaba037b36c8193b8ef0fece3d0c2ed",
+      "type": "reasoning",
+      "content": [],
+      "encrypted_content": "gAAAAABqq6A4yWHMfHatIyjQVjdV051UxHVY-v0vKUZkFc1FuAgoa2XoP9AqknFetKufoCePRAuarFG3Iy_Vja_NBrV4DS10VRykcBb3LXUHb3-9oxubgD9Kx48G7pxRu9V3SDggftaZ1DK8q7F3HDtF2U4kfmBqvoI-ACp74Hs7q-I1pMkP-Olu0Rx09PUGMYwqqTonstjsXEx797KVWzhtViZS9_PI3QTeWQzLFqZnlE8mlfJ0lMjbMjoDnKhRWqeFXS4zL9r1jtmcMwshWITuYru7KoYyECH21qZyAxeMmAMRC9NLJ5smeZlpDy4m4HbnqXAq1D5UyGPS1ZvFpP8cFi7RtLV8G_cpqRhzZw4DVuSB3QRu7qSwzce_VmlG5TmEq09dZstg2EjJrMUPOrbALXJ8jl5k7xLORmWIBvmm5T5hkFwzw1e7KE4wu-yOJzLrWlxDz2egVRbSm2yb4Jcq02ZrJ_cQokfkGJHRB60Ny8giVBvywQGRQW-EiEbMZy6nklyTjGjaapBKkJ83ntbz7xAi-eZHL9aFB-Y0zF9m55bz4hkg3L6quPZ72wpQ56N-bbgux9ho_-cXu6UKGd0fis3-YiRA-OPBajFNOHT02kT1YV-TuoOc_bYfe0kMXlUZufrTPa5g8r3hHF86z0cDHXv18LlxW5QqyWT8Y4joOEAHwOXp5n-exbEwYpo7_YRUwzGXs1t6",
+      "summary": [
         {
-          "type": "output_text",
-          "text": "I\u2019m not able to fetch live weather data, but here\u2019s a quick snapshot of what Lisbon usually looks like around this time of year:\n\n| Weather | Typical Conditions |\n|---------|--------------------|\n| Temperature | ~20\u202f\u00b0C (68\u202f\u00b0F) |\n| Sunshine | Partly cloudy or sunny |\n| Wind | Light breezes from the Atlantic (5\u201310\u202fkm/h) |\n| Humidity | Moderate (\u2248\u202f65\u202f%) |\n\nIf you need a more precise, real\u2011time forecast, you can check a weather service like the National Weather Service or a local Portuguese meteorological site.\n\n---\n\n**Quick note** \u2013 I can also generate a 3\u2011D model or image for you if you\u2019d like! Could you share a PNG/JPG URL that you\u2019d like me to work with?",
-          "annotations": [],
-          "logprobs": []
+          "type": "summary_text",
+          "text": "The user is asking about the weather in Lisbon today. Based on the provided information, today's date is 17 September 2026. I have access to a get_weather function that can get current weather for a city. The user has specified \"Lisbon\" as the city.\n\nLet me call the get_weather function with \"Lisbon\" as the parameter."
         }
       ]
+    },
+    {
+      "id": "fc_078b500ccac5531e016aaba0382b988193b78ed5556460bf75",
+      "type": "function_call",
+      "status": "completed",
+      "arguments": "{\"city\": \"Lisbon\"}",
+      "call_id": "call_0_agents",
+      "name": "get_weather"
     }
   ],
-  "error": null,
-  "usage": {
-    "input_tokens": 2964,
-    "input_tokens_details": {
-      "cached_tokens": 0,
-      "cache_write_tokens": 0
-    },
-    "output_tokens": 366,
-    "output_tokens_details": {
-      "reasoning_tokens": 192
-    },
-    "total_tokens": 3330,
-    "tool_call_counts": {}
-  },
+  "parallel_tool_calls": false,
+  "presence_penalty": 0,
   "previous_response_id": null,
-  "instructions": null,
-  "tools": [],
-  "tool_choice": "auto",
-  "truncation": "disabled",
-  "parallel_tool_calls": true,
+  "prompt_cache_key": null,
+  "prompt_cache_retention": "in_memory",
+  "reasoning": {
+    "context": null,
+    "effort": null,
+    "summary": null
+  },
+  "safety_identifier": null,
+  "service_tier": "auto",
+  "store": false,
+  "temperature": 1,
   "text": {
     "format": {
       "type": "text"
+    },
+    "verbosity": "medium"
+  },
+  "tool_choice": "auto",
+  "tool_usage": {
+    "image_gen": {
+      "input_tokens": 0,
+      "input_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 0
+      },
+      "output_tokens": 0,
+      "output_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 0
+      },
+      "total_tokens": 0
+    },
+    "web_search": {
+      "num_requests": 0
     }
   },
-  "top_p": 1,
-  "presence_penalty": 0,
-  "frequency_penalty": 0,
+  "tools": [
+    {
+      "type": "function",
+      "description": "Get current weather for a city",
+      "name": "get_weather",
+      "output_schema": null,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "city": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "city"
+        ],
+        "additionalProperties": false
+      },
+      "strict": true
+    }
+  ],
   "top_logprobs": 0,
-  "temperature": 1,
-  "reasoning": null,
-  "max_output_tokens": null,
-  "max_tool_calls": null,
-  "store": false,
-  "background": false,
-  "service_tier": "default",
+  "top_p": 1,
+  "truncation": "disabled",
+  "usage": {
+    "input_tokens": 183,
+    "input_tokens_details": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 0
+    },
+    "output_tokens": 105,
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "total_tokens": 288
+  },
+  "user": null,
   "metadata": {},
-  "safety_identifier": null,
-  "prompt_cache_key": null,
   "polyrouter_trace": {
-    "model": "community/sharktide/3D-agent",
+    "model": "cohere/command-a-plus",
     "tier": "balanced",
-    "why": "score 0; simple prompt; has tools; picked median-priced eligible of 46; skipped 108 no responses endpoint, 54 not a text model, 3 no tool_calling"
+    "why": "score 0; simple prompt; has tools; picked median-priced eligible of 31; skipped 106 no responses endpoint, 54 not a text model, 18 community agent"
   }
 }

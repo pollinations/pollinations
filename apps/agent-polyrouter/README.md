@@ -27,7 +27,9 @@ deterministic), then lets live platform data make the final pick.
    degrades gracefully to price-only routing.
 3. **Pick** - eligible text models that satisfy the request's capability needs
    (image input, `tool_calling`; `deep` also requires `reasoning`), sorted by
-   unit price with live p95 latency as tiebreak:
+   unit price with live p95 latency as tiebreak. Published agents
+   (`community/*`) are never routing targets - only real models, so no extra
+   hop, no router-to-router loops, no billing another agent's author:
    - `fast` -> cheapest candidate
    - `balanced` -> median-priced candidate
    - `deep` -> priciest (strongest) candidate

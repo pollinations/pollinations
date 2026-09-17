@@ -5,7 +5,8 @@
 // call is spent on classification: tiers come from request features, and the
 // winner comes from the live catalog (price, capabilities) plus the live
 // status feed (/models/status: per-model 5xx ratio and p95 latency,
-// aggregated here into health). The gateway already retries a model's
+// aggregated here into health). Published agents (community/*) are never
+// routing targets - only real models. The gateway already retries a model's
 // declared fallbacks - this agent's job is choosing between models.
 //
 // The decision is exposed on response headers:
@@ -23,6 +24,8 @@ type Tier = "fast" | "balanced" | "deep";
 type CatalogModel = {
     id: string;
     category?: string;
+    /** true on published agents (community/<owner>/<name>) - not real models. */
+    community?: boolean;
     input_modalities?: string[];
     capabilities?: string[];
     pricing?: { promptTextTokens?: string; completionTextTokens?: string };
@@ -213,6 +216,11 @@ const isUsable = (
     if (model.category !== "text") return "not a text model";
     if (!model.supported_endpoints?.includes("/v1/responses"))
         return "no responses endpoint";
+    // Published agents (incl. other routers - and polyrouter itself) are not
+    // routing targets: they add a hop, can loop back into routers, and bill
+    // the agent author. Route to real models only.
+    if (model.community === true || model.id.startsWith("community/"))
+        return "community agent";
     if (health.get(model.id)?.broken) return "unhealthy (5xx)";
     if (features.needsImage && !model.input_modalities?.includes("image"))
         return "no image input";

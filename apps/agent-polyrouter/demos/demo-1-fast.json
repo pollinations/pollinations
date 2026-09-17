@@ -1,69 +1,57 @@
 {
-  "id": "resp_0af1ce92-5a03-4828-adea-4abf8a7edc87",
+  "created_at": 1789632548,
+  "id": "resp_ae3f91749695da4c",
+  "max_output_tokens": 130995,
+  "model": "gpt-oss-20b",
   "object": "response",
-  "created_at": 1789626827,
-  "completed_at": 1789626827,
-  "status": "completed",
-  "incomplete_details": null,
-  "model": "11615efa-7963-4d73-b23a-78f352653d37",
   "output": [
     {
+      "type": "reasoning",
+      "id": "rs_a15f99b3911a1704",
+      "summary": [],
+      "content": [
+        {
+          "type": "reasoning_text",
+          "text": "The user asks: \"Name the capital of Portugal in a single word.\" The capital of Portugal is Lisbon. So answer: Lisbon."
+        }
+      ]
+    },
+    {
       "type": "message",
-      "id": "msg_73daa1e4-0505-4dbe-b900-3deb6e9fd720",
+      "id": "msg_add62480846bcd31",
       "role": "assistant",
       "status": "completed",
       "content": [
         {
           "type": "output_text",
-          "text": "Lisbon.",
-          "annotations": [],
-          "logprobs": []
+          "text": "Lisbon",
+          "annotations": []
         }
       ]
     }
   ],
-  "error": null,
-  "usage": {
-    "input_tokens": 12217,
-    "input_tokens_details": {
-      "cached_tokens": 0,
-      "cache_write_tokens": 0
-    },
-    "output_tokens": 5,
-    "output_tokens_details": {
-      "reasoning_tokens": 0
-    },
-    "total_tokens": 12222,
-    "tool_call_counts": {}
-  },
-  "previous_response_id": null,
-  "instructions": null,
-  "tools": [],
-  "tool_choice": "auto",
-  "truncation": "disabled",
   "parallel_tool_calls": true,
-  "text": {
-    "format": {
-      "type": "text"
-    }
-  },
-  "top_p": 1,
-  "presence_penalty": 0,
-  "frequency_penalty": 0,
-  "top_logprobs": 0,
+  "status": "completed",
   "temperature": 1,
-  "reasoning": null,
-  "max_output_tokens": null,
-  "max_tool_calls": null,
-  "store": false,
-  "background": false,
-  "service_tier": "default",
-  "metadata": {},
-  "safety_identifier": null,
-  "prompt_cache_key": null,
+  "tool_choice": "none",
+  "tools": [],
+  "top_p": 1,
+  "truncation": "disabled",
+  "usage": {
+    "input_tokens": 77,
+    "input_tokens_details": {
+      "cached_tokens": 64
+    },
+    "output_tokens": 39,
+    "output_tokens_details": {
+      "reasoning_tokens": 28
+    },
+    "total_tokens": 116
+  },
+  "service_tier": "auto",
   "polyrouter_trace": {
-    "model": "community/morriszdweck/osaii-swarm",
+    "model": "openai/gpt-oss-20b",
     "tier": "fast",
-    "why": "score 0; simple prompt; picked cheapest eligible of 49; skipped 108 no responses endpoint, 54 not a text model"
+    "why": "score 0; simple prompt; picked cheapest eligible of 31; skipped 106 no responses endpoint, 54 not a text model, 18 community agent"
   }
 }

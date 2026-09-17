@@ -17,7 +17,34 @@ export type ModelSequenceRegistryRow = {
     createdAt: Date;
 };
 
+// Cached in KV exactly like the community catalog: sequences sit on the same
+// registry load path, so an uncached full-table query per isolate would add
+// the same D1 load, and a skewed DB binding must not break KV-served loads.
+const MODEL_SEQUENCE_CACHE_KEY = "model-sequences:v1";
+const MODEL_SEQUENCE_CACHE_TTL_SECONDS = 60;
+
 export async function getModelSequenceRegistryRows(
+    env: CommunityModelEnv,
+): Promise<ModelSequenceRegistryRow[]> {
+    const cached = await env.KV.get<ModelSequenceRegistryRow[]>(
+        MODEL_SEQUENCE_CACHE_KEY,
+        "json",
+    ).catch(() => null);
+    if (cached) return cached;
+    const rows = await queryModelSequenceRegistryRows(env);
+    await env.KV.put(MODEL_SEQUENCE_CACHE_KEY, JSON.stringify(rows), {
+        expirationTtl: MODEL_SEQUENCE_CACHE_TTL_SECONDS,
+    }).catch(() => {});
+    return rows;
+}
+
+export async function resetModelSequenceRegistryCache(
+    env: CommunityModelEnv,
+): Promise<void> {
+    await env.KV.delete(MODEL_SEQUENCE_CACHE_KEY);
+}
+
+async function queryModelSequenceRegistryRows(
     env: CommunityModelEnv,
 ): Promise<ModelSequenceRegistryRow[]> {
     const dbBinding = env.DB;

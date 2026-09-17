@@ -40,6 +40,7 @@ import { mediaPromptRoute } from "./media/prompt-route.ts";
 import {
     getModelSequenceRegistryRows,
     type ModelSequenceRegistryRow,
+    resetModelSequenceRegistryCache,
 } from "./model-sequences.ts";
 import { supportsDirectResponses } from "./text/availableModels.ts";
 
@@ -466,4 +467,5 @@ export async function resetGenerationModelRegistryCache(
 ): Promise<void> {
     cachedRegistry = null;
     await resetCommunityModelRegistryCache(env);
+    await resetModelSequenceRegistryCache(env);
 }

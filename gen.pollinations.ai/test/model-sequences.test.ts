@@ -50,8 +50,8 @@ async function insertSequence(
     return id;
 }
 
-beforeEach(() => {
-    resetGenerationModelRegistryCache();
+beforeEach(async () => {
+    await resetGenerationModelRegistryCache(env);
 });
 
 describe("model sequence registry projection", () => {

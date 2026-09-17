@@ -1,0 +1,35 @@
+{
+  "pr_number": 15015,
+  "title": "fix: harden Stripe checkout and keep fraud actions manual",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15015",
+  "merged_at": "2026-09-17T00:48:08Z",
+  "labels": [],
+  "pr_body_excerpt": "- Requests best-effort 3DS for first purchases and packs under $10. Unsupported cards can still complete payment; this does not require authentication, guarantee liability shift, or eliminate dispute fees. No new Radar block rule is added.\n- Counts distinct cards from both successful and failed charges toward the four-card/24-hour gate. One successful card plus three other distinct cards reaches the limit; repeated attempts on one card count once. Existing `app_new_card_*` metadata keys remain unchanged. Enforcement depends on the existing Radar gate rule.\n- Keeps bans and refunds manual, explicitly disables scheduled automatic bans, and updates the operator documentation. Removes log-only dispute/warning handlers and their redundant tests; no new event subscriptions are needed for this PR.\n- Daily reporting and scan optimizations remain in #15050; refund accounting remains in #15044.\n- Validation: 90 Stripe/fraud regression tests, TypeScript, and Biome passed. No merge, deployment, or Stripe configuration changes performed.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The card gate learns to count",
+    "blurb": "Checkout grew a slightly wiser garden gate: first purchases and sub-$10 packs now request best-effort 3DS, while four distinct cards in 24 hours close the loop. The ban hammer remains firmly in human hands.",
+    "summary": "Stripe checkout now requests best-effort 3DS for first purchases and packs under $10, and the existing four-card/24-hour Radar gate counts distinct cards from both successful and failed charges while keeping bans and refunds manual.",
+    "impact": "Legitimate unsupported cards can still pay, while card-attempt patterns are counted more completely at the existing four-distinct-card threshold and operators retain control over enforcement actions.",
+    "keywords": [
+      "stripe",
+      "checkout",
+      "3ds",
+      "fraud-prevention",
+      "radar",
+      "card-gate",
+      "billing"
+    ],
+    "visual_concept": "A cozy checkout garden guarded by a friendly four-slot card gate: Polli, wearing a tiny operator cap, checks four different pastel card-shaped leaves while a small retro terminal shows a subtle 3DS shield. The gate is protective but welcoming, with an open path for ordinary visitors and Polli holding the manual gate controls to represent human-reviewed bans and refunds.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny operator cap, tending a welcoming checkout garden around a four-slot card gate; pastel card-shaped leaves and a small retro terminal display a simple shield labeled \"3DS,\" with Polli holding the manual gate lever. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and inviting."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-17/PR-15015.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny operator cap, tending a welcoming checkout garden around a four-slot card gate; pastel card-shaped leaves and a small retro terminal display a simple shield labeled \"3DS,\" with Polli holding the manual gate lever. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and inviting."
+  },
+  "generated_at": "2026-09-17T00:49:06.770394+00:00"
+}

@@ -277,3 +277,23 @@ test("GET /api/account/earnings?format=csv neutralizes app name formulas", async
 
     expect(row).toContain(`"'=HYPERLINK(""https://example.test"",""click"")"`);
 });
+
+test("GET /api/account/earnings accepts up to 365 days and rejects above", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    mocks.tinybird.state.earningsResponse = [earningsRow()];
+
+    const allowed = await SELF.fetch(
+        "http://localhost:3000/api/account/earnings?days=365",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(allowed.status).toBe(200);
+
+    const rejected = await SELF.fetch(
+        "http://localhost:3000/api/account/earnings?days=366",
+        { headers: authHeaders(sessionToken) },
+    );
+    expect(rejected.status).toBe(400);
+});

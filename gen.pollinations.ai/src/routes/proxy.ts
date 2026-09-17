@@ -269,7 +269,7 @@ const modelsListHandler = (
                 allowedModels,
                 paidBalance,
             );
-            const catalog = await filterCatalogEntries(c, entries);
+            const catalog = filterCatalogEntries(c, entries);
             return c.json(catalog.map((entry) => entry.info));
         },
     ] as const;
@@ -336,7 +336,6 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         }),
         pricing: entry.info.pricing,
         capabilities: entry.info.capabilities,
-        ...(entry.info.health && { health: entry.info.health }),
         supported_parameters: entry.info.supported_parameters,
         ...(entry.info.tools && { tools: entry.info.tools }),
         ...(entry.info.reasoning && { reasoning: entry.info.reasoning }),
@@ -407,7 +406,7 @@ export const proxyRoutes = new Hono<Env>()
         async (c) => {
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
-            const modelEntries = await filterCatalogEntries(
+            const modelEntries = filterCatalogEntries(
                 c,
                 filterEntriesByPermissions(
                     await getVisibleModelEntries(c),
@@ -1059,7 +1058,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "**Dialogue:** Set `model=elevenlabs/eleven-v3:dialogue`; provide one `<voice>: <text>` turn per line.",
                 "",
-                "**Music generation:** Set `model=elevenlabs/music-v2`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music instead of speech. `google/lyria-3-clip-preview` returns a fixed 30-second MP3 clip; `elevenlabs/music-v2` supports `duration` (3-300 seconds) and `instrumental` mode; the Stable Audio models support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.",
+                "**Music generation:** Set `model=elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music instead of speech. `google/lyria-3-clip-preview` returns a fixed 30-second MP3 clip; the ElevenLabs Music models support `duration` (3-300 seconds) and `instrumental` mode; the Stable Audio models support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.",
             ].join("\n"),
             responses: {
                 200: {

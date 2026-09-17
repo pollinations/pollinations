@@ -686,6 +686,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.0025,
     },
   },
+  "elevenlabs/music-v2.5": {
+    "cost": {
+      "completionAudioSeconds": 0.0025,
+      "promptAudioSeconds": 0.0025,
+    },
+    "price": {
+      "completionAudioSeconds": 0.0025,
+      "promptAudioSeconds": 0.0025,
+    },
+  },
   "elevenlabs/scribe-v2": {
     "cost": {
       "promptAudioSeconds": 0.0000611111111111111,

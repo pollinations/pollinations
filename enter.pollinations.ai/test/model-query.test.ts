@@ -108,27 +108,16 @@ describe("model query defaults", () => {
     });
 });
 
-it("filters by the API health result without hiding unknown models in all mode", () => {
+it("filters by health without hiding unknown models in all mode", () => {
     for (const status of ["healthy", "degraded", "down", "unknown"] as const) {
-        for (const stale of [false, true]) {
-            const candidate = model({
-                health: {
-                    status,
-                    stale,
-                    success_rate: null,
-                    sample_size: 0,
-                    checked_at: null,
-                    window_minutes: 1440,
-                },
-            });
-            expect(matches(candidate, "status:healthy")).toBe(
-                status === "healthy" && !stale,
-            );
-            expect(matches(candidate, ensureModelQueryDefaults(""))).toBe(
-                status === "healthy" && !stale,
-            );
-            expect(matches(candidate, "status:all")).toBe(true);
-        }
+        const candidate = model({
+            health: { status, requests: 0, successRate: null },
+        });
+        expect(matches(candidate, "status:healthy")).toBe(status === "healthy");
+        expect(matches(candidate, ensureModelQueryDefaults(""))).toBe(
+            status === "healthy",
+        );
+        expect(matches(candidate, "status:all")).toBe(true);
     }
     expect(matches(model(), "status:healthy")).toBe(false);
     expect(matches(model(), ensureModelQueryDefaults(""))).toBe(false);

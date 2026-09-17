@@ -1,15 +1,13 @@
 import type { ComponentPropsWithoutRef, ElementType } from "react";
 import { cn } from "../lib/cn.ts";
 
-type SurfaceVariant = "panel" | "card" | "card-themed" | "card-subtle";
+type SurfaceVariant = "panel" | "card" | "card-themed";
 
 const variantClasses: Record<SurfaceVariant, string> = {
     panel: "polli:rounded-2xl polli:bg-theme-bg-pale polli:p-6 polli:shadow-container",
     card: "polli:rounded-xl polli:bg-surface-opaque polli:p-4 polli:shadow-well",
     "card-themed":
         "polli:rounded-xl polli:bg-theme-bg-pale polli:p-4 polli:shadow-well",
-    "card-subtle":
-        "polli:rounded-xl polli:bg-theme-bg-subtle polli:p-4 polli:shadow-well",
 };
 
 type SurfaceOwnProps = {
@@ -18,8 +16,6 @@ type SurfaceOwnProps = {
      * - `panel` — Level 1 container: themed bg, container shadow
      * - `card` — Level 2 well: neutral surface, well shadow (default)
      * - `card-themed` — themed well: theme-tinted, well shadow
-     * - `card-subtle` — highlighted well: subtle theme tint, for the subject
-     *   of a screen (the app asking for access, the dashboard signing in)
      */
     variant?: SurfaceVariant;
     className?: string;

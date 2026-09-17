@@ -26,7 +26,7 @@ export function AppAttribution({
     const displayName =
         attribution?.appName || (isDeviceMode ? "Your device" : "This app");
     return (
-        <Surface variant="card-subtle">
+        <Surface>
             <div className="flex items-start justify-between gap-3">
                 <Text
                     size="sm"

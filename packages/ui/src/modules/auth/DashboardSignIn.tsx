@@ -70,7 +70,7 @@ export function DashboardSignIn({
             }
         >
             {!isPending && error && <ErrorBanner>{error.message}</ErrorBanner>}
-            <Surface variant="card-subtle">
+            <Surface>
                 <Text size="sm" weight="semibold" tone="strong">
                     {appName}
                 </Text>

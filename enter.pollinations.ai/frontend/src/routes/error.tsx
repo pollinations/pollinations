@@ -1,7 +1,8 @@
 import { ArrowRightIcon, Button, MailIcon } from "@pollinations/ui";
 import { ErrorBanner } from "@pollinations/ui/auth";
 import { isBannedLoginError } from "@shared/auth/ban.ts";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { authClient } from "../auth.ts";
 import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 
 export const Route = createFileRoute("/error")({
@@ -15,6 +16,11 @@ function ErrorPage() {
     const { error } = Route.useSearch();
     const isBanned = isBannedLoginError(error);
     const isStagingInviteOnly = error === "staging_is_invite-only";
+    const { data: session } = authClient.useSession();
+    // A sign-in failure is stale once a session exists (a retried callback,
+    // a reused link); account-state errors still apply to the signed-in user.
+    if (session?.user && !isBanned && !isStagingInviteOnly)
+        return <Navigate to="/" replace />;
 
     const title = isBanned
         ? "Account suspended"

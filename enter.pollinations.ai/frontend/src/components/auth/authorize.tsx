@@ -490,16 +490,15 @@ export function Authorize() {
         />
     );
 
-    const flowTitle = isDeviceMode ? "Connect your device" : "Connect an app";
-    const subject = isDeviceMode ? "Your device" : "This app";
+    const flowTitle = isDeviceMode ? "Allow device" : "Allow app";
 
     if (!user) {
         return (
             <SignInScreen title={flowTitle} onCancel={handleDeny}>
                 {appCard}
                 <Text size="sm" tone="muted">
-                    {subject} is asking for access to your pollinations.ai
-                    account. Sign in to review the request.
+                    Requests access to your pollinations.ai account. Sign in to
+                    review the request.
                 </Text>
             </SignInScreen>
         );
@@ -539,9 +538,8 @@ export function Authorize() {
             >
                 {appCard}
                 <Text size="sm" tone="muted">
-                    {subject} is asking for access to your pollinations.ai
-                    account. Choose what it can use. You can revoke access later
-                    from Keys.
+                    Requests access to your pollinations.ai account. Choose what
+                    it can use. You can revoke it later from Keys.
                 </Text>
                 <KeyPermissionsInputs
                     value={keyPermissions}

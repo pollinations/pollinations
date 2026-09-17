@@ -2,6 +2,7 @@ import { apiClient } from "@frontend/api.ts";
 import {
     AppIcon,
     Button,
+    Dialog,
     DialogBody,
     DialogFooter,
     DialogHeader,
@@ -27,6 +28,7 @@ interface EditApiKeyDialogProps {
     apiKey: ApiKey;
     onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onClose: () => void;
+    /** Standalone page shell with its own header; the dashboard uses the dialog overlay. */
     header?: ReactNode;
 }
 
@@ -121,8 +123,11 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         }
     }
 
+    // Same content in both places: the standalone page paints the page shell,
+    // the dashboard dims the page behind a dialog.
+    const Shell = header ? AuthModal : DashboardDialog;
     return (
-        <AuthModal onClose={onClose}>
+        <Shell onClose={onClose}>
             {header}
             <DialogHeader
                 title={appKey ? "Edit app key" : "Edit key permissions"}
@@ -200,6 +205,15 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     </Button>
                 </DialogFooter>
             </form>
-        </AuthModal>
+        </Shell>
     );
 };
+
+const DashboardDialog: FC<{ onClose: () => void; children: ReactNode }> = ({
+    onClose,
+    children,
+}) => (
+    <Dialog open onOpenChange={(open) => !open && onClose()} size="md">
+        {children}
+    </Dialog>
+);

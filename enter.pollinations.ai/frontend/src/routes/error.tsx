@@ -1,4 +1,4 @@
-import { ArrowRightIcon, Button, MailIcon } from "@pollinations/ui";
+import { ArrowRightIcon, Button } from "@pollinations/ui";
 import { isBannedLoginError } from "@shared/auth/ban.ts";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { authClient } from "../auth.ts";
@@ -23,32 +23,20 @@ function ErrorPage() {
 
     // "Sign in" opens the sentence; the error line finishes it.
     const message = isBanned
-        ? "Your account is suspended. If you think this is a mistake, contact billing."
+        ? "Your account is suspended."
         : isStagingInviteOnly
           ? "Staging is invite-only. Use pollinations.ai to continue."
           : "Couldn’t sign you in, please try again.";
 
     return (
         <AuthFlowScreen
-            footnote="help"
+            footnote={isBanned ? "billing" : "help"}
             title="Sign in"
             error={message}
             actions={
-                <>
-                    {isBanned && (
-                        <Button
-                            as="a"
-                            intent="neutral"
-                            icon={<MailIcon />}
-                            href="mailto:billing@pollinations.ai"
-                        >
-                            Contact billing
-                        </Button>
-                    )}
-                    <Button as="a" icon={<ArrowRightIcon />} href="/">
-                        Go to dashboard
-                    </Button>
-                </>
+                <Button as="a" icon={<ArrowRightIcon />} href="/">
+                    Go to dashboard
+                </Button>
             }
         />
     );

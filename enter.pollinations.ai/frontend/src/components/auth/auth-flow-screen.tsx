@@ -29,6 +29,15 @@ const footnotes = {
             .
         </>
     ),
+    billing: (
+        <>
+            Need help? Contact{" "}
+            <InlineLink href="mailto:billing@pollinations.ai">
+                billing@pollinations.ai
+            </InlineLink>
+            .
+        </>
+    ),
 };
 
 type AuthFlowScreenProps = Omit<

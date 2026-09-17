@@ -329,7 +329,8 @@ scores accounts daily on Stripe signals (`enter.pollinations.ai/src/utils/stripe
 
 - Scheduled and manually dispatched checks are read-only during calibration.
   The report always passes `apply: false`; bans and refunds require manual decisions.
-- One daily Discord message via `DISCORD_FRAUD_WEBHOOK_URL` covers fraud review,
+- Every run posts accounts still needing review to the private Discord channel via
+  `DISCORD_FRAUD_WEBHOOK_URL`. One daily message covers fraud review,
   dispute deadlines, refund/Pollen reconciliation, the last 24 hours of Stripe
   events and scan health. Polli summarizes bounded, read-only evidence; it receives
   no Stripe/D1 credentials, emails or card data. Excluded and already-banned

@@ -537,8 +537,7 @@ export function Authorize() {
                 }}
             >
                 {appCard}
-                <Text size="sm" className="flex items-center gap-2">
-                    <KeyIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
+                <Text size="sm">
                     Access to your pollinations.ai account, you can revoke it
                     any time.
                 </Text>

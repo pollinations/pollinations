@@ -1,0 +1,159 @@
+{
+  "date": "2026-09-16",
+  "period_start": "2026-09-16",
+  "period_end": "2026-09-16",
+  "title": "A small forest of community agents, games, comics, and tools",
+  "summary": "A buzzing day for community agents and Computer MCP, with sturdier model routing, faster WebUI chat, and fewer mysterious agent failures.\n\nThe catalog and chat ecosystem gained CatGPT Comic, Barnaby the Crow, Moko the Remembering Fox, the Sirius Elevator game, ComicStyles, Pollen Craft, Cogitor, and GitMuse. CatGPT also got a sturdier reference image and a newer caricature model, because apparently the cat has production requirements now.\n\nComputer MCP can now maintain a shared Git-backed collective memory, attribute default commits to linked GitHub accounts, and use a broader git implementation without exposing push credentials. It also gained CSV, file, and HTML-to-Markdown commands, plus a default User-Agent so ordinary API calls such as GitHub work without ceremonial header-writing.\n\nPrompt agents now preserve omitted fields during partial updates, accept richer descriptions, return normal length-limited empty responses instead of 502s, and keep actionable 4xx permission errors intact. Production deploys also redeploy code agents with the current runtime, while the agent guide now documents the full MCP set and the peculiar physics of temporary files.",
+  "pr_count": 37,
+  "prs": [
+    {
+      "number": 14406,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14869,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14907,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14912,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14940,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14944,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14945,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14947,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14948,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14949,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14953,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14956,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14957,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14958,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14960,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14964,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14972,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14983,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14985,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14986,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14992,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14996,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 14999,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 15000,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 15008,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 15012,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 15018,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 15026,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 15028,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 15029,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 15031,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 15033,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 15037,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 15038,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 15039,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 15042,
+      "date": "2026-09-16"
+    },
+    {
+      "number": 15049,
+      "date": "2026-09-16"
+    }
+  ],
+  "generated_at": "2026-09-17T06:30:59.952384+00:00"
+}

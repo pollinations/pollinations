@@ -51,7 +51,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 
 One-time: `polli auth login` (device-flow; creates a key with `profile`, `usage`, and `keys`). To store an existing key, run
 `printf '%s' "$POLLINATIONS_API_KEY" | polli auth login --with-token`. Verify
-with `polli auth status`.
+with `polli auth status` (or `polli whoami`).
 Override the stored key for a single command with `--key <key>`.
 
 ## Recipes
@@ -242,7 +242,7 @@ polli docs --open                   # open in browser
 
 ## Agent operating rules
 
-1. **Run `polli auth status` first** if you don't know whether the user is logged in. Fail fast with a clear "run `polli auth login`" message if not.
+1. **Run `polli auth status` (or `polli whoami`) first** if you don't know whether the user is logged in. Fail fast with a clear "run `polli auth login`" message if not.
 2. **Prefer `--json`** whenever you'll parse the output. Never grep human-formatted tables.
 3. **Don't hardcode model IDs.** Fetch the live list with `polli models --type <type>`. Model availability changes.
 4. **Before picking a model for production use, check `polli models --stats`.** Rule of thumb for "healthy": `err%` ≤ 5, `avg` latency in a reasonable range for the modality (standard text <5s, image <10s, video <60s), and `requests` high enough to be statistically meaningful (ignore rows with <10 requests — noise). **Filter by capability first, then optimize by health** — e.g. for a reasoning task, narrow to models where `reasoning: true` (via `polli models --type text --json`), *then* cross-reference against `--stats` output. The healthiest model overall may not support the capability you need. **Reasoning models are inherently slower — expect 5–50s, not <5s**; when picking among them, prioritize low `err%` and request count over raw latency, and compare latency only within the reasoning-capable subset.
@@ -255,7 +255,7 @@ polli docs --open                   # open in browser
 
 - Forgetting `--output` on binary generators (image/audio/video) — the file goes to a default path, which may not be what the user wants.
 - Using `polli gen text --json` expecting OpenAI chat-completions shape — the CLI's `--json` wraps its own structure. Use `polli docs /v1/chat/completions` to see the raw API shape if you need it.
-- Running commands without auth — `polli auth status` tells you who you're logged in as and your balance in one call.
+- Running commands without auth — `polli auth status` / `polli whoami` tells you who you're logged in as and your balance in one call.
 - **`gen text` streams to a TTY, buffers when piped.** The default now auto-detects — a human at the terminal sees tokens tick in, a pipe/redirect gets the full response once. Force either mode with `--stream` or `--no-stream`. For scripts and chains like `polli gen text … | polli gen audio …`, you don't need to do anything; buffering happens automatically.
 - **Translating a `polli` workflow into a browser app.** `gen.pollinations.ai` requires a bearer token for generation requests, so a plain client-side `fetch` with no auth returns 401 unless it is served from cache. Mint a scoped key with `polli keys create` and proxy via your own backend.
 - **Backgrounded `polli gen` can fail silently** — no output file, empty log, no error (a safety rejection is an explicit 400). Run in the foreground; if backgrounded, check the `--output` file exists and retry once in the foreground before calling it failed.

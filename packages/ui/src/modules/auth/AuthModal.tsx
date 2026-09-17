@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import { useId } from "react";
+import lockupUrl from "../../brand/lockup-horizontal.svg";
 import logoUrl from "../../brand/mark.svg";
 import { cn } from "../../lib/cn.ts";
 import {
@@ -13,18 +14,19 @@ import { CheckIcon } from "../../primitives/icons/index.tsx";
 import { Surface } from "../../primitives/Surface.tsx";
 import { Heading, Text } from "../../primitives/Typography.tsx";
 
-const authLogoMaskUrl = `url('${logoUrl}')`;
-
-const authLogoMask: CSSProperties = {
-    WebkitMaskImage: authLogoMaskUrl,
-    WebkitMaskPosition: "center",
+const brandMask = (url: string): CSSProperties => ({
+    WebkitMaskImage: `url('${url}')`,
+    WebkitMaskPosition: "left center",
     WebkitMaskRepeat: "no-repeat",
     WebkitMaskSize: "contain",
-    maskImage: authLogoMaskUrl,
-    maskPosition: "center",
+    maskImage: `url('${url}')`,
+    maskPosition: "left center",
     maskRepeat: "no-repeat",
     maskSize: "contain",
-};
+});
+
+const authMarkMask = brandMask(logoUrl);
+const authLockupMask = brandMask(lockupUrl);
 
 export type AuthModalProps = {
     children: ReactNode;
@@ -136,16 +138,22 @@ export function AuthModalHeader({ children }: AuthModalHeaderProps) {
             aria-label="pollinations.ai"
         >
             <span className="polli:sr-only">pollinations.ai</span>
+            {/* Mark alone on narrow screens; mark and wordmark from `sm` up. */}
             <span
                 aria-hidden="true"
-                className="polli:block polli:h-8 polli:w-8 polli:bg-current"
-                style={authLogoMask}
+                className="polli:block polli:h-8 polli:w-8 polli:bg-current polli:sm:hidden"
+                style={authMarkMask}
+            />
+            <span
+                aria-hidden="true"
+                className="polli:hidden polli:h-6 polli:w-[195px] polli:bg-current polli:sm:block"
+                style={authLockupMask}
             />
         </a>
     );
     return (
         <div className="polli:shrink-0 polli:p-6 polli:pb-4">
-            <div className="polli:flex polli:items-center polli:justify-between polli:gap-3">
+            <div className="polli:flex polli:min-h-10 polli:items-start polli:justify-between polli:gap-3">
                 {logo}
                 {children}
             </div>

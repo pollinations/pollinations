@@ -1,7 +1,6 @@
 import { Button } from "../../primitives/Button.tsx";
 import { ColorModeToggle } from "../../primitives/ColorModeToggle.tsx";
 import { RefreshIcon } from "../../primitives/icons/index.tsx";
-import { Heading } from "../../primitives/Typography.tsx";
 import { AuthErrorContent } from "./AuthErrorContent.tsx";
 import { AuthFlowLayout, AuthInfoCard } from "./AuthModal.tsx";
 import { PollinationsSignInButton } from "./PollinationsSignInButton.tsx";
@@ -51,6 +50,9 @@ export function DashboardSignIn({
         <AuthFlowLayout
             headerAction={<ColorModeToggle />}
             dialog={{ labelledBy: "dashboard-sign-in-title" }}
+            title={!isPending && error ? undefined : appName}
+            titleId="dashboard-sign-in-title"
+            description="Sign in with a Pollinations admin account."
             actions={
                 isPending ? (
                     <output>Checking sign-in…</output>
@@ -81,20 +83,7 @@ export function DashboardSignIn({
                         </p>
                     </AuthInfoCard>
                 </AuthErrorContent>
-            ) : (
-                <div className="polli:space-y-3">
-                    <Heading
-                        as="h1"
-                        size="section"
-                        id="dashboard-sign-in-title"
-                    >
-                        {appName}
-                    </Heading>
-                    <p className="polli:font-body polli:text-sm polli:leading-relaxed polli:text-theme-text-base">
-                        Sign in with a Pollinations admin account.
-                    </p>
-                </div>
-            )}
+            ) : null}
         </AuthFlowLayout>
     );
 }

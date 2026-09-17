@@ -1,4 +1,4 @@
-import { Heading } from "@pollinations/ui";
+import { Heading, Text } from "@pollinations/ui";
 
 type Attribution = {
     appName?: string;
@@ -32,12 +32,12 @@ export function AppAttribution({
                     {displayName}
                 </Heading>
             ) : (
-                <p className="font-body font-semibold text-theme-text-strong">
+                <Text size="sm" weight="semibold" tone="strong">
                     {displayName}
-                </p>
+                </Text>
             )}
             {attribution?.githubUsername && (
-                <p className="text-sm text-theme-text-base mt-1">
+                <Text size="sm" className="mt-1">
                     by{" "}
                     <a
                         href={`https://github.com/${attribution.githubUsername}`}
@@ -47,17 +47,17 @@ export function AppAttribution({
                     >
                         @{attribution.githubUsername}
                     </a>
-                </p>
+                </Text>
             )}
             {!isDeviceMode && redirectHostname && (
-                <p className="text-xs text-theme-text-base font-mono mt-1">
+                <Text size="xs" className="mt-1 font-mono">
                     {redirectHostname}
-                </p>
+                </Text>
             )}
             {isDeviceMode && userCode && (
-                <p className="text-xs text-theme-text-base font-mono mt-1">
+                <Text size="xs" className="mt-1 font-mono">
                     Code: {userCode}
-                </p>
+                </Text>
             )}
         </>
     );

@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { useId } from "react";
 import logoUrl from "../../brand/mark.svg";
 import { cn } from "../../lib/cn.ts";
 import {
@@ -10,6 +11,7 @@ import {
 import { InlineLink } from "../../primitives/InlineLink.tsx";
 import { CheckIcon } from "../../primitives/icons/index.tsx";
 import { Surface } from "../../primitives/Surface.tsx";
+import { Heading, Text } from "../../primitives/Typography.tsx";
 
 const authLogoMaskUrl = `url('${logoUrl}')`;
 
@@ -54,24 +56,53 @@ export type AuthModalHeaderProps = {
     children?: ReactNode;
 };
 
-/** Shared sign-in chrome with stable scrolling content and actions. */
-export function AuthFlowLayout({
-    children,
-    headerAction,
-    actions,
-    dialog,
-    size,
-}: {
-    children: ReactNode;
+export type AuthFlowLayoutProps = {
+    children?: ReactNode;
+    /** Screen title; rendered once with the shared recipe and labels the dialog. */
+    title?: ReactNode;
+    /** One sentence under the title. */
+    description?: ReactNode;
+    titleId?: string;
     headerAction?: ReactNode;
     actions?: ReactNode;
     dialog?: AuthModalProps["dialog"];
     size?: DialogProps["size"];
-}) {
+};
+
+/** Shared sign-in chrome with stable scrolling content and actions. */
+export function AuthFlowLayout({
+    children,
+    title,
+    description,
+    titleId,
+    headerAction,
+    actions,
+    dialog,
+    size,
+}: AuthFlowLayoutProps) {
+    const generatedId = useId();
+    const headingId = titleId ?? generatedId;
     return (
-        <AuthModal dialog={dialog} size={size}>
+        <AuthModal
+            dialog={dialog ?? (title ? { labelledBy: headingId } : undefined)}
+            size={size}
+        >
             <AuthModalHeader>{headerAction}</AuthModalHeader>
-            <DialogBody>{children}</DialogBody>
+            <DialogBody>
+                {title && (
+                    <div className="polli:space-y-1">
+                        <Heading as="h1" size="section" id={headingId}>
+                            {title}
+                        </Heading>
+                        {description && (
+                            <Text size="sm" tone="muted">
+                                {description}
+                            </Text>
+                        )}
+                    </div>
+                )}
+                {children}
+            </DialogBody>
             <div className="polli:shrink-0 polli:bg-theme-bg-pale polli:pb-5">
                 {actions && <DialogFooter>{actions}</DialogFooter>}
                 <div className="polli:flex polli:flex-wrap polli:justify-center polli:gap-x-4 polli:gap-y-2 polli:px-6">
@@ -122,11 +153,22 @@ export function AuthModalHeader({ children }: AuthModalHeaderProps) {
     );
 }
 
-export function AuthModalLoading() {
+/** Titled loading screen so the frame never shows an empty body. */
+export function AuthModalLoading({
+    title,
+    message = "This only takes a moment.",
+}: {
+    title: string;
+    message?: string;
+}) {
     return (
-        <AuthFlowLayout dialog={{ label: "Loading" }}>
-            <output className="polli:block polli:text-theme-text-muted">
-                Loading…
+        <AuthFlowLayout title={title}>
+            <output className="polli:flex polli:items-center polli:gap-2 polli:font-body polli:text-sm polli:text-theme-text-muted">
+                <span
+                    aria-hidden="true"
+                    className="polli:h-4 polli:w-4 polli:shrink-0 polli:animate-spin polli:rounded-full polli:border-2 polli:border-current polli:border-r-transparent"
+                />
+                {message}
             </output>
         </AuthFlowLayout>
     );

@@ -1,8 +1,7 @@
-import { Heading, Text } from "@pollinations/ui";
 import {
+    AuthErrorContent,
     AuthModalHeader,
     AuthModalLoading,
-    ErrorBanner,
 } from "@pollinations/ui/auth";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -77,7 +76,7 @@ function EditKeyPage() {
             .catch(() => setApiKey(null));
     }, [user, id]);
 
-    if (isPending) return <AuthModalLoading />;
+    if (isPending) return <AuthModalLoading title="Checking your sign-in" />;
 
     if (!user) {
         return (
@@ -99,7 +98,14 @@ function EditKeyPage() {
     if (outcome !== "editing") {
         return (
             <AuthFlowScreen
-                dialog={{ labelledBy: "edit-key-title" }}
+                title={
+                    outcome === "saved" ? "Changes saved" : "No changes saved"
+                }
+                description={
+                    outcome === "saved"
+                        ? "The updated permissions apply to future requests. You can return to the app."
+                        : "Your key’s permissions haven’t changed. You can return to the app."
+                }
                 balance={balance}
                 topUpHref={topUpHref}
                 actions={
@@ -107,17 +113,7 @@ function EditKeyPage() {
                         <ReturnToApp returnUrl={returnUrl} />
                     ) : undefined
                 }
-            >
-                <Heading as="h1" size="section" id="edit-key-title">
-                    {outcome === "saved" ? "Changes saved" : "No changes saved"}
-                </Heading>
-                <Text size="sm">
-                    {outcome === "saved"
-                        ? "The updated permissions apply to future requests."
-                        : "Your key’s permissions haven’t changed."}{" "}
-                    You can return to the app.
-                </Text>
-            </AuthFlowScreen>
+            />
         );
     }
 
@@ -133,18 +129,17 @@ function EditKeyPage() {
                     ) : undefined
                 }
             >
-                <Heading as="h1" size="section" id="edit-key-title">
-                    Key unavailable
-                </Heading>
-                <ErrorBanner>
-                    This key could not be loaded. Check that you’re signed in to
-                    the account that owns it.
-                </ErrorBanner>
+                <AuthErrorContent
+                    title="Key unavailable"
+                    titleId="edit-key-title"
+                    message="This key could not be loaded. Check that you’re signed in to the account that owns it."
+                />
             </AuthFlowScreen>
         );
     }
 
-    if (apiKey === undefined) return <AuthModalLoading />;
+    if (apiKey === undefined)
+        return <AuthModalLoading title="Loading your key" />;
 
     return (
         <EditApiKeyDialog

@@ -1,11 +1,4 @@
-import {
-    ArrowRightIcon,
-    Button,
-    Field,
-    Heading,
-    Input,
-    Text,
-} from "@pollinations/ui";
+import { ArrowRightIcon, Button, Field, Input } from "@pollinations/ui";
 import { AuthModalLoading, ErrorBanner } from "@pollinations/ui/auth";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -41,7 +34,10 @@ export function Device({ prefilledCode }: DeviceProps) {
                     const data = (await res.json().catch(() => null)) as {
                         error_description?: string;
                     } | null;
-                    setError(data?.error_description || "Invalid code");
+                    setError(
+                        data?.error_description ||
+                            "Code not recognized. Check it and try again.",
+                    );
                     return;
                 }
                 const data = (await res.json()) as {
@@ -52,8 +48,8 @@ export function Device({ prefilledCode }: DeviceProps) {
                 if (data.status !== "pending") {
                     setError(
                         data.status === "expired"
-                            ? "This code has expired"
-                            : "This code has already been used",
+                            ? "This code has expired. Get a new code from your device."
+                            : "This code has already been used. Return to your device, or get a new code to reconnect.",
                     );
                     return;
                 }
@@ -68,7 +64,7 @@ export function Device({ prefilledCode }: DeviceProps) {
                     },
                 });
             } catch {
-                setError("Couldn’t check this code. Please try again.");
+                setError("Couldn’t verify the code. Try again.");
             } finally {
                 setChecking(false);
             }
@@ -94,7 +90,7 @@ export function Device({ prefilledCode }: DeviceProps) {
     }
 
     if (isPending) {
-        return <AuthModalLoading />;
+        return <AuthModalLoading title="Checking your sign-in" />;
     }
 
     if (!user) {
@@ -108,7 +104,8 @@ export function Device({ prefilledCode }: DeviceProps) {
 
     return (
         <AuthFlowScreen
-            dialog={{ labelledBy: "device-title" }}
+            title="Connect your device"
+            description="Enter the code shown on your device to review its access."
             actions={
                 <Button
                     type="submit"
@@ -120,12 +117,6 @@ export function Device({ prefilledCode }: DeviceProps) {
                 </Button>
             }
         >
-            <Heading as="h1" size="section" id="device-title">
-                Connect your device
-            </Heading>
-            <Text size="sm">
-                Enter the code shown on your device to review its access.
-            </Text>
             <form
                 id="device-code-form"
                 onSubmit={handleSubmit}

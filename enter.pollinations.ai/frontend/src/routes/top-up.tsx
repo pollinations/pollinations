@@ -1,5 +1,9 @@
-import { Button, Heading, RefreshIcon, Text } from "@pollinations/ui";
-import { AuthModalLoading, ErrorBanner } from "@pollinations/ui/auth";
+import { Button, RefreshIcon } from "@pollinations/ui";
+import {
+    AuthErrorContent,
+    AuthModalLoading,
+    ErrorBanner,
+} from "@pollinations/ui/auth";
 import {
     getPollenPackByAmount,
     getPollenPackByKey,
@@ -107,7 +111,7 @@ function TopUpPage() {
         };
     }, [user, loadAttempt]);
 
-    if (isPending) return <AuthModalLoading />;
+    if (isPending) return <AuthModalLoading title="Checking your sign-in" />;
 
     if (!user) {
         return (
@@ -121,7 +125,8 @@ function TopUpPage() {
     if (search.stripe_success) {
         return (
             <AuthFlowScreen
-                dialog={{ labelledBy: "top-up-title" }}
+                title="Checkout complete"
+                description="Your wallet updates after Stripe confirms the payment."
                 balance={wallet}
                 topUpHref={null}
                 actions={
@@ -129,14 +134,7 @@ function TopUpPage() {
                         <ReturnToApp returnUrl={returnUrl} />
                     ) : undefined
                 }
-            >
-                <Heading as="h1" size="section" id="top-up-title">
-                    Checkout complete
-                </Heading>
-                <Text size="sm">
-                    Your wallet updates after Stripe confirms the payment.
-                </Text>
-            </AuthFlowScreen>
+            />
         );
     }
 
@@ -155,21 +153,22 @@ function TopUpPage() {
                     </Button>
                 }
             >
-                <Heading as="h1" size="section" id="top-up-title">
-                    Couldn’t load your wallet
-                </Heading>
-                <ErrorBanner>
-                    Could not load your wallet. Please try again.
-                </ErrorBanner>
+                <AuthErrorContent
+                    title="Couldn’t load your wallet"
+                    titleId="top-up-title"
+                    message="We couldn’t load your wallet. Please try again."
+                />
             </AuthFlowScreen>
         );
     }
 
-    if (!wallet || billing === undefined) return <AuthModalLoading />;
+    if (!wallet || billing === undefined)
+        return <AuthModalLoading title="Loading your wallet" />;
 
     return (
         <AuthFlowScreen
-            dialog={{ labelledBy: "top-up-title" }}
+            title="Top up your wallet"
+            description="Add Pollen to your account."
             size="lg"
             balance={wallet}
             topUpHref={null}
@@ -177,9 +176,6 @@ function TopUpPage() {
                 returnUrl ? <ReturnToApp returnUrl={returnUrl} /> : undefined
             }
         >
-            <Heading as="h1" size="section" id="top-up-title">
-                Top up your wallet
-            </Heading>
             {search.stripe_canceled && (
                 <ErrorBanner>Checkout was cancelled.</ErrorBanner>
             )}

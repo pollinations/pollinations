@@ -2,15 +2,13 @@ import {
     ArrowLeftIcon,
     Button,
     CheckIcon,
-    Heading,
-    InlineLink,
     SproutIcon,
     Surface,
     Text,
     useScrollLock,
     XIcon,
 } from "@pollinations/ui";
-import { AuthModalLoading, ErrorBanner } from "@pollinations/ui/auth";
+import { AuthErrorContent, AuthModalLoading } from "@pollinations/ui/auth";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
@@ -453,18 +451,18 @@ export function Authorize() {
     if (deviceOutcome !== "pending") {
         const denied = deviceOutcome === "denied";
         return (
-            <AuthFlowScreen dialog={{ labelledBy: "device-result-title" }}>
-                <Heading as="h1" size="section" id="device-result-title">
-                    {denied ? "Access declined" : "Device connected"}
-                </Heading>
-                <Text size="sm">
-                    You can close this tab and return to your device.
-                </Text>
-            </AuthFlowScreen>
+            <AuthFlowScreen
+                title={denied ? "Access declined" : "Device connected"}
+                description={
+                    denied
+                        ? "Your device wasn’t given access. You can close this tab."
+                        : "Return to your device to continue. You can close this tab."
+                }
+            />
         );
     }
 
-    if (isPending) return <AuthModalLoading />;
+    if (isPending) return <AuthModalLoading title="Checking your sign-in" />;
 
     if (!user) {
         if (error) {
@@ -481,10 +479,11 @@ export function Authorize() {
                         </Button>
                     }
                 >
-                    <Heading as="h1" size="section" id="authorize-error-title">
-                        Couldn’t connect
-                    </Heading>
-                    <ErrorBanner>{error}</ErrorBanner>
+                    <AuthErrorContent
+                        title="Couldn’t connect"
+                        titleId="authorize-error-title"
+                        message={error}
+                    />
                 </AuthFlowScreen>
             );
         }
@@ -533,12 +532,11 @@ export function Authorize() {
             }
         >
             {error ? (
-                <>
-                    <Heading as="h1" size="section" id="authorize-dialog-title">
-                        Couldn’t connect
-                    </Heading>
-                    <ErrorBanner>{error}</ErrorBanner>
-                </>
+                <AuthErrorContent
+                    title="Couldn’t connect"
+                    titleId="authorize-dialog-title"
+                    message={error}
+                />
             ) : (
                 <form
                     id="authorize-permissions"
@@ -555,13 +553,10 @@ export function Authorize() {
                             userCode={user_code}
                             redirectHostname={redirectHostname}
                         />
-                        <p className="mt-3 font-body text-sm font-semibold text-theme-text-soft">
-                            is requesting access to your{" "}
-                            <InlineLink href="https://pollinations.ai/">
-                                pollinations.ai account
-                            </InlineLink>
-                            . You can revoke access from your dashboard.
-                        </p>
+                        <Text size="sm" tone="muted" className="mt-1">
+                            Wants access to your pollinations.ai account. You
+                            can revoke it from your dashboard.
+                        </Text>
                     </div>
 
                     <div className="mt-3">
@@ -576,10 +571,14 @@ export function Authorize() {
                         />
                     </div>
                     {attribution?.earningsEnabled && (
-                        <p className="mt-3 flex items-center gap-2 text-sm">
+                        <Text
+                            size="xs"
+                            tone="muted"
+                            className="mt-3 flex items-center gap-2"
+                        >
                             <SproutIcon className="h-4 w-4" />
                             The app earns 20% of the Pollen you spend in it.
-                        </p>
+                        </Text>
                     )}
                 </form>
             )}

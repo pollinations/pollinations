@@ -1,4 +1,4 @@
-import { Button, Heading, Text, XIcon } from "@pollinations/ui";
+import { Button, XIcon } from "@pollinations/ui";
 import { ErrorBanner, GitHubSignInButton } from "@pollinations/ui/auth";
 import type { ReactNode } from "react";
 import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
@@ -21,7 +21,8 @@ export function SignInScreen({
     const { signIn, isSigningIn, error } = useGitHubSignIn(callbackURL);
     return (
         <AuthFlowScreen
-            dialog={{ labelledBy: "sign-in-title" }}
+            title={title}
+            description={description}
             actions={
                 <>
                     {onCancel && (
@@ -41,10 +42,6 @@ export function SignInScreen({
                 </>
             }
         >
-            <Heading as="h1" size="section" id="sign-in-title">
-                {title}
-            </Heading>
-            <Text size="sm">{description}</Text>
             {children}
             {error && <ErrorBanner>{error}</ErrorBanner>}
         </AuthFlowScreen>

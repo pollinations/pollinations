@@ -117,6 +117,7 @@ export {
 } from "./primitives/ColorModeToggle.tsx";
 export {
     Dialog,
+    DialogBody,
     DialogDescription,
     DialogFooter,
     type DialogFooterProps,

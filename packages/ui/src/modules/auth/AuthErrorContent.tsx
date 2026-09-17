@@ -15,11 +15,9 @@ export function AuthErrorContent({
 }) {
     return (
         <>
-            <div className="polli:pt-3">
-                <Heading as="h1" size="section" id={titleId}>
-                    {title}
-                </Heading>
-            </div>
+            <Heading as="h1" size="section" id={titleId}>
+                {title}
+            </Heading>
             <ErrorBanner>{message}</ErrorBanner>
             {children}
         </>

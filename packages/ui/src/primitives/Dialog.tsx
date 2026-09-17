@@ -3,6 +3,8 @@ import { Portal } from "@ark-ui/react/portal";
 import type { ComponentPropsWithoutRef, FC, ReactNode } from "react";
 import { useRef } from "react";
 import { cn } from "../lib/cn.ts";
+import { ScrollArea, type ScrollAreaProps } from "./ScrollArea.tsx";
+import { headingClassName } from "./Typography.tsx";
 
 const sizeClasses = {
     sm: "polli:max-w-md",
@@ -83,16 +85,12 @@ export const Dialog: FC<DialogProps> = ({
                         aria-label={ariaLabel}
                         aria-labelledby={labelledBy}
                         className={cn(
-                            "polli:flex polli:h-dvh polli:max-h-dvh polli:w-full polli:max-sm:max-w-none polli:flex-col polli:overflow-y-auto polli:bg-surface-opaque polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none polli:sm:my-auto polli:sm:h-[calc(100dvh-2rem)] polli:sm:max-h-[calc(100dvh-2rem)] polli:sm:rounded-2xl polli:sm:shadow-container",
+                            "polli:flex polli:h-dvh polli:max-h-dvh polli:w-full polli:max-sm:max-w-none polli:flex-col polli:overflow-y-auto polli:bg-theme-bg-pale polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none polli:sm:my-auto polli:sm:h-[calc(100dvh-2rem)] polli:sm:max-h-[calc(100dvh-2rem)] polli:sm:rounded-2xl polli:sm:shadow-container",
                             sizeClasses[size],
                             contentClassName,
                         )}
                     >
-                        {title && (
-                            <DialogTitle className="polli:shrink-0 polli:px-6 polli:pt-6 polli:font-subheading polli:text-xl polli:text-theme-text-strong">
-                                {title}
-                            </DialogTitle>
-                        )}
+                        {title && <DialogHeader title={title} />}
                         {children}
                     </ArkDialog.Content>
                 </ArkDialog.Positioner>
@@ -130,10 +128,7 @@ export const DialogHeader: FC<DialogHeaderProps> = ({
         >
             {title && (
                 <DialogTitle
-                    className={cn(
-                        "polli:font-subheading polli:text-lg polli:font-semibold polli:text-theme-text-strong",
-                        titleClassName,
-                    )}
+                    className={cn(headingClassName("section"), titleClassName)}
                 >
                     {title}
                 </DialogTitle>
@@ -155,6 +150,19 @@ export const DialogHeader: FC<DialogHeaderProps> = ({
 
 export type DialogFooterProps = ComponentPropsWithoutRef<"div">;
 
+/** The scrollable content between a dialog's header and actions. */
+export function DialogBody({ className, ...props }: ScrollAreaProps) {
+    return (
+        <ScrollArea
+            {...props}
+            className={cn(
+                "polli:min-h-0 polli:flex-1 polli:space-y-5 polli:overscroll-contain polli:px-6 polli:py-4",
+                className,
+            )}
+        />
+    );
+}
+
 export const DialogFooter: FC<DialogFooterProps> = ({
     children,
     className,
@@ -163,7 +171,7 @@ export const DialogFooter: FC<DialogFooterProps> = ({
     return (
         <div
             className={cn(
-                "polli:flex polli:shrink-0 polli:items-center polli:justify-end polli:gap-2 polli:p-6 polli:pt-4",
+                "polli:flex polli:shrink-0 polli:flex-wrap polli:items-center polli:justify-end polli:gap-3 polli:bg-theme-bg-pale polli:p-6 polli:pt-4 polli:[&>button]:self-stretch polli:[&>button]:min-h-11 polli:[&>button]:flex-1 polli:[&>a]:self-stretch polli:[&>a]:min-h-11 polli:[&>a]:flex-1",
                 className,
             )}
             {...props}

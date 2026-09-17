@@ -80,7 +80,7 @@ export function DashboardSignIn({
                     </AuthInfoCard>
                 </AuthErrorContent>
             ) : (
-                <div className="polli:space-y-2 polli:pt-3">
+                <div className="polli:space-y-3">
                     <Heading
                         as="h1"
                         size="section"
@@ -88,7 +88,7 @@ export function DashboardSignIn({
                     >
                         {appName}
                     </Heading>
-                    <p className="polli:font-body polli:text-xs polli:font-semibold polli:tracking-wide polli:text-theme-text-soft">
+                    <p className="polli:font-body polli:text-sm polli:leading-relaxed polli:text-theme-text-base">
                         Sign in with a Pollinations admin account.
                     </p>
                 </div>

@@ -4,6 +4,7 @@ export {
     AuthInfoCard,
     type AuthInfoCardProps,
     AuthModal,
+    AuthModalFootnote,
     AuthModalHeader,
     type AuthModalHeaderProps,
     AuthModalLoading,

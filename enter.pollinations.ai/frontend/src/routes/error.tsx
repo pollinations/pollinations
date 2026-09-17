@@ -1,7 +1,8 @@
 import { ArrowRightIcon, Button, MailIcon } from "@pollinations/ui";
-import { AuthErrorContent, AuthFlowLayout } from "@pollinations/ui/auth";
+import { AuthErrorContent } from "@pollinations/ui/auth";
 import { isBannedLoginError } from "@shared/auth/ban.ts";
 import { createFileRoute } from "@tanstack/react-router";
+import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 
 export const Route = createFileRoute("/error")({
     component: ErrorPage,
@@ -27,7 +28,7 @@ function ErrorPage() {
           : "We couldn’t sign you in to your pollinations.ai account. Please try again.";
 
     return (
-        <AuthFlowLayout
+        <AuthFlowScreen
             dialog={{ labelledBy: "login-error-title" }}
             actions={
                 <>
@@ -52,6 +53,6 @@ function ErrorPage() {
                 titleId="login-error-title"
                 message={message}
             />
-        </AuthFlowLayout>
+        </AuthFlowScreen>
     );
 }

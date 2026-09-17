@@ -1,9 +1,5 @@
 import { Button, Heading, RefreshIcon, Text } from "@pollinations/ui";
-import {
-    AuthFlowLayout,
-    AuthModalLoading,
-    ErrorBanner,
-} from "@pollinations/ui/auth";
+import { AuthModalLoading, ErrorBanner } from "@pollinations/ui/auth";
 import {
     getPollenPackByAmount,
     getPollenPackByKey,
@@ -13,7 +9,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
-import { AuthAccountIdentity } from "../components/auth/auth-account-identity.tsx";
+import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import { BuyPollenPanel } from "../components/pollen";
 import type { BillingState } from "../components/pollen/auto-top-up-panel.tsx";
@@ -122,15 +118,12 @@ function TopUpPage() {
         );
     }
 
-    const accountIdentity = (
-        <AuthAccountIdentity user={user} balance={wallet ?? undefined} />
-    );
-
     if (search.stripe_success) {
         return (
-            <AuthFlowLayout
+            <AuthFlowScreen
                 dialog={{ labelledBy: "top-up-title" }}
-                headerAction={accountIdentity}
+                balance={wallet}
+                topUpHref={null}
                 actions={
                     returnUrl ? (
                         <ReturnToApp returnUrl={returnUrl} />
@@ -143,15 +136,16 @@ function TopUpPage() {
                 <Text size="sm">
                     Your wallet updates after Stripe confirms the payment.
                 </Text>
-            </AuthFlowLayout>
+            </AuthFlowScreen>
         );
     }
 
     if (walletError) {
         return (
-            <AuthFlowLayout
+            <AuthFlowScreen
                 dialog={{ labelledBy: "top-up-title" }}
-                headerAction={accountIdentity}
+                balance={wallet}
+                topUpHref={null}
                 actions={
                     <Button
                         icon={<RefreshIcon />}
@@ -167,17 +161,18 @@ function TopUpPage() {
                 <ErrorBanner>
                     Could not load your wallet. Please try again.
                 </ErrorBanner>
-            </AuthFlowLayout>
+            </AuthFlowScreen>
         );
     }
 
     if (!wallet || billing === undefined) return <AuthModalLoading />;
 
     return (
-        <AuthFlowLayout
+        <AuthFlowScreen
             dialog={{ labelledBy: "top-up-title" }}
             size="lg"
-            headerAction={accountIdentity}
+            balance={wallet}
+            topUpHref={null}
             actions={
                 returnUrl ? <ReturnToApp returnUrl={returnUrl} /> : undefined
             }
@@ -201,6 +196,6 @@ function TopUpPage() {
                 }}
                 returnToTopUp={{ redirect: search.redirect }}
             />
-        </AuthFlowLayout>
+        </AuthFlowScreen>
     );
 }

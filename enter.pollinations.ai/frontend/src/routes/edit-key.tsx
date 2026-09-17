@@ -1,6 +1,5 @@
 import { Heading, Text } from "@pollinations/ui";
 import {
-    AuthFlowLayout,
     AuthModalHeader,
     AuthModalLoading,
     ErrorBanner,
@@ -10,6 +9,7 @@ import { useEffect, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import { AuthAccountIdentity } from "../components/auth/auth-account-identity.tsx";
+import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import type { ApiKey } from "../components/keys";
 import { EditApiKeyDialog } from "../components/keys/edit-api-key-dialog.tsx";
@@ -98,9 +98,10 @@ function EditKeyPage() {
 
     if (outcome !== "editing") {
         return (
-            <AuthFlowLayout
+            <AuthFlowScreen
                 dialog={{ labelledBy: "edit-key-title" }}
-                headerAction={accountIdentity}
+                balance={balance}
+                topUpHref={topUpHref}
                 actions={
                     returnUrl ? (
                         <ReturnToApp returnUrl={returnUrl} />
@@ -116,15 +117,16 @@ function EditKeyPage() {
                         : "Your key’s permissions haven’t changed."}{" "}
                     You can return to the app.
                 </Text>
-            </AuthFlowLayout>
+            </AuthFlowScreen>
         );
     }
 
     if (!id || apiKey === null) {
         return (
-            <AuthFlowLayout
+            <AuthFlowScreen
                 dialog={{ labelledBy: "edit-key-title" }}
-                headerAction={accountIdentity}
+                balance={balance}
+                topUpHref={topUpHref}
                 actions={
                     returnUrl ? (
                         <ReturnToApp returnUrl={returnUrl} />
@@ -138,7 +140,7 @@ function EditKeyPage() {
                     This key could not be loaded. Check that you’re signed in to
                     the account that owns it.
                 </ErrorBanner>
-            </AuthFlowLayout>
+            </AuthFlowScreen>
         );
     }
 

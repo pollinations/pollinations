@@ -6,15 +6,12 @@ import {
     Input,
     Text,
 } from "@pollinations/ui";
-import {
-    AuthFlowLayout,
-    AuthModalLoading,
-    ErrorBanner,
-} from "@pollinations/ui/auth";
+import { AuthModalLoading, ErrorBanner } from "@pollinations/ui/auth";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { authClient } from "../../auth.ts";
+import { AuthFlowScreen } from "./auth-flow-screen.tsx";
 import { SignInScreen } from "./sign-in-screen.tsx";
 
 type DeviceProps = {
@@ -110,7 +107,7 @@ export function Device({ prefilledCode }: DeviceProps) {
     }
 
     return (
-        <AuthFlowLayout
+        <AuthFlowScreen
             dialog={{ labelledBy: "device-title" }}
             actions={
                 <Button
@@ -159,6 +156,6 @@ export function Device({ prefilledCode }: DeviceProps) {
                 </Field.Root>
                 {error && <ErrorBanner>{error}</ErrorBanner>}
             </form>
-        </AuthFlowLayout>
+        </AuthFlowScreen>
     );
 }

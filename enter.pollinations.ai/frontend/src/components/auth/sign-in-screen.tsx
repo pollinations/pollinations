@@ -1,17 +1,8 @@
-import {
-    Button,
-    ColorModeToggle,
-    Heading,
-    Text,
-    XIcon,
-} from "@pollinations/ui";
-import {
-    AuthFlowLayout,
-    ErrorBanner,
-    GitHubSignInButton,
-} from "@pollinations/ui/auth";
+import { Button, Heading, Text, XIcon } from "@pollinations/ui";
+import { ErrorBanner, GitHubSignInButton } from "@pollinations/ui/auth";
 import type { ReactNode } from "react";
 import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
+import { AuthFlowScreen } from "./auth-flow-screen.tsx";
 
 /** The same GitHub sign-in step for Enter's standalone flows. */
 export function SignInScreen({
@@ -29,9 +20,8 @@ export function SignInScreen({
 }) {
     const { signIn, isSigningIn, error } = useGitHubSignIn(callbackURL);
     return (
-        <AuthFlowLayout
+        <AuthFlowScreen
             dialog={{ labelledBy: "sign-in-title" }}
-            headerAction={<ColorModeToggle />}
             actions={
                 <>
                     {onCancel && (
@@ -57,6 +47,6 @@ export function SignInScreen({
             <Text size="sm">{description}</Text>
             {children}
             {error && <ErrorBanner>{error}</ErrorBanner>}
-        </AuthFlowLayout>
+        </AuthFlowScreen>
     );
 }

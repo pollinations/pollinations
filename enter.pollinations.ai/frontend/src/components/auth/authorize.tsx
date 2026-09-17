@@ -10,11 +10,7 @@ import {
     useScrollLock,
     XIcon,
 } from "@pollinations/ui";
-import {
-    AuthFlowLayout,
-    AuthModalLoading,
-    ErrorBanner,
-} from "@pollinations/ui/auth";
+import { AuthModalLoading, ErrorBanner } from "@pollinations/ui/auth";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
@@ -26,14 +22,13 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
-import { useAccountBalance } from "../../hooks/use-account-balance.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
 import {
     KeyPermissionsInputs,
     useKeyPermissions,
 } from "../keys/key-permissions.tsx";
 import { AppAttribution } from "./app-attribution.tsx";
-import { AuthAccountIdentity } from "./auth-account-identity.tsx";
+import { AuthFlowScreen } from "./auth-flow-screen.tsx";
 import { SignInScreen } from "./sign-in-screen.tsx";
 
 type Attribution = {
@@ -93,11 +88,6 @@ export function Authorize() {
     const [deviceOutcome, setDeviceOutcome] = useState<
         "pending" | "approved" | "denied"
     >("pending");
-    const balance = useAccountBalance(Boolean(user));
-    const topUpHref =
-        typeof window === "undefined"
-            ? "/top-up"
-            : `/top-up?${new URLSearchParams({ redirect: window.location.href })}`;
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
@@ -463,14 +453,14 @@ export function Authorize() {
     if (deviceOutcome !== "pending") {
         const denied = deviceOutcome === "denied";
         return (
-            <AuthFlowLayout dialog={{ labelledBy: "device-result-title" }}>
+            <AuthFlowScreen dialog={{ labelledBy: "device-result-title" }}>
                 <Heading as="h1" size="section" id="device-result-title">
                     {denied ? "Access declined" : "Device connected"}
                 </Heading>
                 <Text size="sm">
                     You can close this tab and return to your device.
                 </Text>
-            </AuthFlowLayout>
+            </AuthFlowScreen>
         );
     }
 
@@ -479,7 +469,7 @@ export function Authorize() {
     if (!user) {
         if (error) {
             return (
-                <AuthFlowLayout
+                <AuthFlowScreen
                     dialog={{ labelledBy: "authorize-error-title" }}
                     actions={
                         <Button
@@ -495,7 +485,7 @@ export function Authorize() {
                         Couldn’t connect
                     </Heading>
                     <ErrorBanner>{error}</ErrorBanner>
-                </AuthFlowLayout>
+                </AuthFlowScreen>
             );
         }
         return (
@@ -517,15 +507,8 @@ export function Authorize() {
     }
 
     return (
-        <AuthFlowLayout
+        <AuthFlowScreen
             dialog={{ labelledBy: "authorize-dialog-title" }}
-            headerAction={
-                <AuthAccountIdentity
-                    user={user}
-                    balance={balance}
-                    topUpHref={topUpHref}
-                />
-            }
             actions={
                 <>
                     <Button
@@ -600,6 +583,6 @@ export function Authorize() {
                     )}
                 </form>
             )}
-        </AuthFlowLayout>
+        </AuthFlowScreen>
     );
 }

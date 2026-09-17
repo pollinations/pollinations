@@ -163,7 +163,6 @@ function TopUpPage() {
         <AuthFlowScreen
             title="Top up"
             description="Add Pollen to your account."
-            size="lg"
             balance={wallet}
             topUpHref={null}
             actions={

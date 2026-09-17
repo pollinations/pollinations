@@ -1,11 +1,6 @@
 import type { ReactNode } from "react";
 import { Button } from "../primitives/Button.tsx";
-import {
-    Dialog,
-    DialogBody,
-    DialogFooter,
-    type DialogProps,
-} from "../primitives/Dialog.tsx";
+import { Dialog, DialogBody, DialogFooter } from "../primitives/Dialog.tsx";
 import { CheckIcon, TrashIcon, XIcon } from "../primitives/icons/index.tsx";
 
 type ConfirmIntent = "danger" | "info" | "neutral";
@@ -32,7 +27,6 @@ export type ConfirmationDialogProps = {
     cancelDisabled?: boolean;
     onConfirm: () => void;
     onCancel: () => void;
-    size?: DialogProps["size"];
 };
 
 /** One Cancel + action footer for every yes/no dialog. */
@@ -48,14 +42,12 @@ export function ConfirmationDialog({
     cancelDisabled = false,
     onConfirm,
     onCancel,
-    size = "sm",
 }: ConfirmationDialogProps) {
     return (
         <Dialog
             open={open}
             onOpenChange={(next) => !next && onCancel()}
             title={title}
-            size={size}
         >
             <DialogBody>
                 {description && (

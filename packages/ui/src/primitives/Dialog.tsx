@@ -7,13 +7,6 @@ import { ButtonDefaultsContext } from "./Button.tsx";
 import { ScrollArea, type ScrollAreaProps } from "./ScrollArea.tsx";
 import { headingClassName } from "./Typography.tsx";
 
-const sizeClasses = {
-    sm: "polli:max-w-md",
-    md: "polli:max-w-xl",
-    lg: "polli:max-w-2xl",
-    xl: "polli:max-w-6xl",
-} as const;
-
 export type DialogProps = {
     open: boolean;
     onOpenChange?: (open: boolean) => void;
@@ -23,7 +16,6 @@ export type DialogProps = {
     title?: ReactNode;
     ariaLabel?: string;
     labelledBy?: string;
-    size?: keyof typeof sizeClasses;
     showBackdrop?: boolean;
     backdropBlur?: boolean;
     positionerClassName?: string;
@@ -40,7 +32,6 @@ export const Dialog: FC<DialogProps> = ({
     title,
     ariaLabel,
     labelledBy,
-    size = "md",
     showBackdrop = true,
     backdropBlur = true,
     positionerClassName,
@@ -86,8 +77,7 @@ export const Dialog: FC<DialogProps> = ({
                         aria-label={ariaLabel}
                         aria-labelledby={labelledBy}
                         className={cn(
-                            "polli:flex polli:h-dvh polli:max-h-dvh polli:w-full polli:max-sm:max-w-none polli:flex-col polli:overflow-y-auto polli:bg-theme-bg-pale polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none polli:sm:my-auto polli:sm:h-auto polli:sm:max-h-[calc(100dvh-2rem)] polli:sm:rounded-2xl polli:sm:shadow-container",
-                            sizeClasses[size],
+                            "polli:flex polli:h-dvh polli:max-h-dvh polli:w-full polli:max-sm:max-w-none polli:sm:max-w-[800px] polli:flex-col polli:overflow-y-auto polli:bg-theme-bg-pale polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none polli:sm:my-auto polli:sm:h-auto polli:sm:max-h-[calc(100dvh-2rem)] polli:sm:rounded-2xl polli:sm:shadow-container",
                             contentClassName,
                         )}
                     >

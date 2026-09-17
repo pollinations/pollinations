@@ -81,7 +81,12 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
               }
             : DEFAULT_KEY_LIMITS,
     );
-    const { setPollenBudget, setExpiryDays } = keyPermissions;
+    const {
+        setAllowedModels,
+        setAccountPermissions,
+        setPollenBudget,
+        setExpiryDays,
+    } = keyPermissions;
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
         null,
     );
@@ -129,6 +134,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     useEffect(() => {
         if (!isOpen) {
             if (!simplified) {
+                setAllowedModels(null);
+                setAccountPermissions([]);
                 setPollenBudget(DEFAULT_KEY_LIMITS.pollenBudget);
                 setExpiryDays(DEFAULT_KEY_LIMITS.expiryDays);
             }
@@ -146,7 +153,14 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             year: "2-digit",
         });
         setDescription(simplified ? "" : `Created on ${dateStr}`);
-    }, [isOpen, simplified, setPollenBudget, setExpiryDays]);
+    }, [
+        isOpen,
+        simplified,
+        setAllowedModels,
+        setAccountPermissions,
+        setPollenBudget,
+        setExpiryDays,
+    ]);
 
     const submitButton = createdKey ? (
         <CopyButton

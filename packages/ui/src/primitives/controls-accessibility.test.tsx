@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { AccountIdentity } from "../compositions/AccountIdentity.tsx";
 import { AccountMenu } from "../compositions/AccountMenu.tsx";
-import { ErrorBanner } from "../modules/auth/AuthModal.tsx";
+import { AuthAccessItem, ErrorBanner } from "../modules/auth/AuthModal.tsx";
 import { PollinationsSignInButton } from "../modules/auth/PollinationsSignInButton.tsx";
 import { DialogFooter, DialogHeader } from "./Dialog.tsx";
 import { DropdownItem } from "./DropdownItem.tsx";
@@ -178,4 +178,24 @@ describe("shared control accessibility", () => {
         expect(markup).toContain('role="alert"');
         expect(markup).toContain("Sign-in failed.");
     });
+});
+
+it("renders editable and required permissions as labelled native checkboxes", () => {
+    const editable = renderToStaticMarkup(
+        <AuthAccessItem
+            checked
+            onChange={() => {}}
+            ariaLabel="Share account activity"
+        >
+            Balance and usage
+        </AuthAccessItem>,
+    );
+    const required = renderToStaticMarkup(
+        <AuthAccessItem checked>AI generation</AuthAccessItem>,
+    );
+    expect(editable).toContain('type="checkbox"');
+    expect(editable).toContain('aria-label="Share account activity"');
+    expect(editable).toContain('checked=""');
+    expect(editable).not.toContain('disabled=""');
+    expect(required).toContain('disabled=""');
 });

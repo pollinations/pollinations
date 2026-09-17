@@ -1,5 +1,6 @@
 export { AuthErrorContent } from "./AuthErrorContent.tsx";
 export {
+    AuthAccessItem,
     AuthFlowLayout,
     AuthInfoCard,
     type AuthInfoCardProps,

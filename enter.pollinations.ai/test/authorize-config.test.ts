@@ -1,4 +1,8 @@
-import { normalizeAllowedModelSelection } from "@frontend/components/keys/model-selection.ts";
+import {
+    normalizeAllowedModelSelection,
+    setConsentModelGroup,
+    toggleConsentModel,
+} from "@frontend/components/keys/model-selection.ts";
 import {
     DEFAULT_CONSENT_BUDGET,
     DEFAULT_CONSENT_EXPIRY_DAYS,
@@ -153,5 +157,38 @@ describe("sanitizeAuthorizeAccountPermissions", () => {
         expect(
             sanitizeAuthorizeAccountPermissions(["admin", "offline_access"]),
         ).toBeNull();
+    });
+});
+
+describe("permission picker selections", () => {
+    it("keeps a finite consent grant finite when every offered model is reselected", () => {
+        const offered = ["a", "b"];
+        const narrowed = toggleConsentModel(null, offered, "a");
+        expect(narrowed).toEqual(["b"]);
+        expect(new Set(toggleConsentModel(narrowed, offered, "a"))).toEqual(
+            new Set(offered),
+        );
+        expect(toggleConsentModel(narrowed, offered, "unrequested")).toEqual([
+            "b",
+        ]);
+    });
+    it("changes only visible models and preserves selections outside the loaded catalog", () => {
+        expect(
+            setConsentModelGroup(
+                ["a", "b", "private"],
+                ["a", "b", "c"],
+                ["a"],
+                false,
+            ),
+        ).toEqual(["b", "private"]);
+        expect(
+            setConsentModelGroup(["b"], ["a", "b"], ["a", "unrequested"], true),
+        ).toEqual(["b", "a"]);
+    });
+    it("preserves the difference between no models and all models", () => {
+        expect(normalizeAllowedModelSelection([], ["a", "b"])).toEqual([]);
+        expect(
+            setConsentModelGroup(null, ["a", "b"], ["a", "b"], false),
+        ).toEqual([]);
     });
 });

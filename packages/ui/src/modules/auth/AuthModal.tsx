@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import logoUrl from "../../brand/mark.svg";
+import { cn } from "../../lib/cn.ts";
 import {
     Dialog,
     DialogBody,
@@ -7,6 +8,7 @@ import {
     type DialogProps,
 } from "../../primitives/Dialog.tsx";
 import { InlineLink } from "../../primitives/InlineLink.tsx";
+import { CheckIcon } from "../../primitives/icons/index.tsx";
 import { Surface } from "../../primitives/Surface.tsx";
 
 const authLogoMaskUrl = `url('${logoUrl}')`;
@@ -156,5 +158,69 @@ export function AuthInfoCard({ title, children }: AuthInfoCardProps) {
             )}
             {children}
         </Surface>
+    );
+}
+
+/** A consent row with an optional checkbox and expandable details. */
+export function AuthAccessItem({
+    children,
+    control,
+    details,
+    checked = false,
+    onChange,
+    ariaLabel,
+    disabled = false,
+}: {
+    children: ReactNode;
+    control?: ReactNode;
+    details?: ReactNode;
+    checked?: boolean;
+    onChange?: (checked: boolean) => void;
+    ariaLabel?: string;
+    disabled?: boolean;
+}) {
+    return (
+        <li>
+            <label
+                className={cn(
+                    "polli:flex polli:min-h-9 polli:items-center polli:gap-3",
+                    onChange &&
+                        (disabled
+                            ? "polli:cursor-not-allowed"
+                            : "polli:cursor-pointer"),
+                )}
+            >
+                <span className="polli:relative polli:flex polli:h-5 polli:w-5 polli:shrink-0">
+                    <input
+                        type="checkbox"
+                        aria-label={ariaLabel}
+                        checked={checked}
+                        disabled={disabled || !onChange}
+                        onChange={(event) => onChange?.(event.target.checked)}
+                        className="polli:peer polli:sr-only"
+                    />
+                    <span
+                        aria-hidden="true"
+                        className="polli:flex polli:h-5 polli:w-5 polli:items-center polli:justify-center polli:rounded polli:border polli:border-theme-text-muted/50 polli:bg-transparent polli:transition-colors polli:peer-checked:border-theme-bg-active polli:peer-checked:bg-theme-bg-active polli:peer-checked:text-theme-text-strong polli:peer-focus-visible:outline-2 polli:peer-focus-visible:outline-offset-2 polli:peer-focus-visible:outline-theme-text-soft polli:peer-disabled:opacity-50"
+                    >
+                        {checked && (
+                            <CheckIcon className="polli:h-3.5 polli:w-3.5" />
+                        )}
+                    </span>
+                </span>
+                <span
+                    className={cn(
+                        "polli:min-w-0 polli:flex-1 polli:transition-opacity",
+                        !!onChange && !checked && "polli:opacity-60",
+                    )}
+                >
+                    {children}
+                </span>
+                {control != null && (
+                    <span className="polli:shrink-0">{control}</span>
+                )}
+            </label>
+            {details && <div className="polli:pt-3">{details}</div>}
+        </li>
     );
 }

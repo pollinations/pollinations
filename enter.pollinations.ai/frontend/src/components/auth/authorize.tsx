@@ -1,14 +1,9 @@
 import {
-    AccountIcon,
     Button,
-    Collapsible,
     Heading,
-    KeyIcon,
-    MailIcon,
     SproutIcon,
     Surface,
     Text,
-    UsageIcon,
     useScrollLock,
 } from "@pollinations/ui";
 import {
@@ -16,7 +11,6 @@ import {
     AuthModalLoading,
     ErrorBanner,
 } from "@pollinations/ui/auth";
-import { ModalityChip } from "@pollinations/ui/gen";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
@@ -30,13 +24,10 @@ import { apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
 import { useAccountBalance } from "../../hooks/use-account-balance.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
-import { AccountPermissionsInput } from "../keys/account-permissions-input.tsx";
-import { ExpiryDaysInput } from "../keys/expiry-days-input.tsx";
-import { useKeyPermissions } from "../keys/key-permissions.tsx";
-import { PollenBudgetInput } from "../keys/pollen-budget-input.tsx";
-import { computeCategoryModalities } from "../models/model-categories.ts";
-import { useModelCategories } from "../models/use-model-categories.ts";
-import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
+import {
+    KeyPermissionsInputs,
+    useKeyPermissions,
+} from "../keys/key-permissions.tsx";
 import { AppAttribution } from "./app-attribution.tsx";
 import { AuthAccountIdentity } from "./auth-account-identity.tsx";
 import { SignInScreen } from "./sign-in-screen.tsx";
@@ -99,7 +90,6 @@ export function Authorize() {
         "pending" | "approved" | "denied"
     >("pending");
     const balance = useAccountBalance(Boolean(user));
-    const [permissionsExpanded, setPermissionsExpanded] = useState(false);
     const topUpHref =
         typeof window === "undefined"
             ? "/top-up"
@@ -118,14 +108,6 @@ export function Authorize() {
     );
     const { setAccountPermissions } = keyPermissions;
 
-    // The minted key is the signed-in user's, so it reaches their own private
-    // models just as their dashboard keys do — but the anonymous catalog omits
-    // them, so the consent screen has to learn them separately.
-    const modelCategories = useModelCategories(useOwnCommunityModels(!!user));
-    const modalities = computeCategoryModalities(
-        keyPermissions.permissions.allowedModels,
-        modelCategories,
-    );
     // Which optional scopes the caller requested. Stays constant once set —
     // unaffected by the user toggling a scope off in the Advanced panel.
     // Sources: `scope` URL param (both flows) and /api/device/info fallback.
@@ -572,154 +554,24 @@ export function Authorize() {
                         />
                     </Surface>
 
-                    <Surface className="mt-5">
-                        <p className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mb-3">
-                            Requested access
+                    <div className="mt-3">
+                        <KeyPermissionsInputs
+                            value={keyPermissions}
+                            visiblePermissions={
+                                new Set(visibleOptionalPermissions)
+                            }
+                            requestedModels={models}
+                            showIdentity
+                            inline
+                            disabled={isAuthorizing}
+                        />
+                    </div>
+                    {attribution?.earningsEnabled && (
+                        <p className="mt-3 flex items-center gap-2 text-sm">
+                            <SproutIcon className="h-4 w-4" />
+                            Earn 20% of the Pollen you spend in-app.
                         </p>
-                        <ul className="text-sm text-theme-text-base space-y-3">
-                            <li className="flex items-start gap-2">
-                                <span className="w-4 shrink-0 text-theme-text-soft">
-                                    <AccountIcon className="h-4 w-4" />
-                                </span>
-                                <span>
-                                    See your username and this key&apos;s budget
-                                    and usage.
-                                </span>
-                            </li>
-                            {keyPermissions.permissions.accountPermissions?.includes(
-                                "profile",
-                            ) && (
-                                <li className="flex items-start gap-2">
-                                    <span
-                                        className="flex h-5 w-4 shrink-0 items-center justify-center text-theme-text-soft"
-                                        aria-hidden="true"
-                                    >
-                                        <MailIcon className="h-4 w-4" />
-                                    </span>
-                                    <span>See your name and email.</span>
-                                </li>
-                            )}
-                            {keyPermissions.permissions.accountPermissions?.includes(
-                                "usage",
-                            ) && (
-                                <li className="flex items-start gap-2">
-                                    <span className="w-4 shrink-0 text-theme-text-soft">
-                                        <UsageIcon className="h-4 w-4" />
-                                    </span>
-                                    <span>
-                                        See your account balance and usage.
-                                    </span>
-                                </li>
-                            )}
-                            {keyPermissions.permissions.accountPermissions?.includes(
-                                "keys",
-                            ) && (
-                                <li className="flex items-start gap-2">
-                                    <span className="w-4 shrink-0 text-theme-text-soft">
-                                        <KeyIcon className="h-4 w-4" />
-                                    </span>
-                                    <span>
-                                        Manage API keys, agents, and models when
-                                        enabled.
-                                    </span>
-                                </li>
-                            )}
-                            <li className="flex items-start gap-2">
-                                <span
-                                    className={`w-4 shrink-0 ${
-                                        modalities.length === 0
-                                            ? "text-intent-danger-text"
-                                            : "text-theme-text-soft"
-                                    }`}
-                                >
-                                    {modalities.length === 0
-                                        ? "\u2717"
-                                        : "\u2713"}
-                                </span>
-                                {modalities.length === 0 ? (
-                                    <span>No AI models are enabled.</span>
-                                ) : (
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <span>Generate</span>
-                                        <div className="flex flex-wrap items-center gap-1">
-                                            {modalities.map((m) => (
-                                                <ModalityChip
-                                                    key={m}
-                                                    modality={m}
-                                                    size="sm"
-                                                >
-                                                    {m}
-                                                </ModalityChip>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </li>
-                            {attribution?.earningsEnabled && (
-                                <li className="flex items-start gap-2">
-                                    <span
-                                        className="w-4 shrink-0 text-theme-text-soft"
-                                        aria-hidden="true"
-                                    >
-                                        <SproutIcon className="h-4 w-4" />
-                                    </span>
-                                    <span>
-                                        Earn{" "}
-                                        <span className="font-semibold">
-                                            20%
-                                        </span>{" "}
-                                        of the pollen you spend in-app.
-                                    </span>
-                                </li>
-                            )}
-                        </ul>
-                    </Surface>
-
-                    <Surface className="mt-5">
-                        <PollenBudgetInput
-                            value={keyPermissions.permissions.pollenBudget}
-                            onChange={keyPermissions.setPollenBudget}
-                            inline
-                        />
-                    </Surface>
-
-                    <Surface className="mt-5">
-                        <ExpiryDaysInput
-                            value={keyPermissions.permissions.expiryDays}
-                            onChange={keyPermissions.setExpiryDays}
-                            inline
-                        />
-                    </Surface>
-
-                    <Collapsible
-                        expanded={permissionsExpanded}
-                        onToggle={() => setPermissionsExpanded((v) => !v)}
-                        wrapperClassName="mt-5 border-0 bg-surface-opaque shadow-well"
-                        hoverClassName="hover:bg-theme-bg-pale"
-                        panelClassName="px-3 pb-3 pt-1 space-y-6"
-                        label={
-                            <span className="flex justify-end">
-                                <span className="text-sm font-medium text-theme-text-strong">
-                                    Edit permissions
-                                </span>
-                            </span>
-                        }
-                    >
-                        <AccountPermissionsInput
-                            value={
-                                keyPermissions.permissions.accountPermissions
-                            }
-                            onChange={keyPermissions.setAccountPermissions}
-                            allowedModels={
-                                keyPermissions.permissions.allowedModels
-                            }
-                            onModelsChange={keyPermissions.setAllowedModels}
-                            visiblePermissions={visibleOptionalPermissions}
-                            showApiName={false}
-                            modelsInitiallyExpanded
-                            modelCategories={modelCategories}
-                        />
-                    </Collapsible>
+                    )}
                 </div>
             )}
         </AuthFlowLayout>

@@ -1,6 +1,26 @@
 [
   {
     "emoji": "🛠️",
+    "name": "ApiScribe",
+    "url": "https://fadyabohamza-netizen.github.io/apiscribe",
+    "description": "Describe an API in plain English, get organized REST or GraphQL endpoint blueprints with params and responses. BYOP Pollinations-powered.",
+    "language": "en",
+    "category": "build",
+    "platform": "web",
+    "githubUsername": "fadyabohamza-netizen",
+    "githubUserId": "243879765",
+    "repositoryUrl": "https://github.com/fadyabohamza-netizen/apiscribe",
+    "repositoryStars": null,
+    "discordUsername": "fadyabohamza-netizen --- **Update (evidence of actual integration provided in co",
+    "other": null,
+    "submittedDate": "2026-09-16",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14991",
+    "approvedDate": "2026-09-17",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
+    "emoji": "🛠️",
     "name": "TestMine",
     "url": "https://fadyabohamza-netizen.github.io/testmine",
     "description": "Paste source code, pick a framework, get unit tests covering happy path and edge cases. BYOP Pollinations-powered.",

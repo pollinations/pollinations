@@ -119,7 +119,9 @@ export function AuthFlowLayout({
                         </Heading>
                         {subject}
                         {description && (
-                            <Text size="sm" tone="muted">
+                            // The step instruction: body tone, so it reads as
+                            // the sentence's second half rather than a caption.
+                            <Text size="sm" tone="base">
                                 {description}
                             </Text>
                         )}

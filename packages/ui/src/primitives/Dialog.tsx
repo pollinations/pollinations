@@ -188,7 +188,7 @@ export const DialogFooter: FC<DialogFooterProps> = ({
     return (
         <div
             className={cn(
-                "polli:flex polli:shrink-0 polli:flex-wrap polli:items-stretch polli:justify-center polli:gap-3 polli:bg-theme-bg-pale polli:p-6 polli:pt-4",
+                "polli:flex polli:shrink-0 polli:flex-wrap polli:items-stretch polli:justify-center polli:gap-3 polli:bg-theme-bg-pale polli:p-6 polli:pt-4 polli:sm:[&>:last-child]:grow",
                 className,
             )}
             {...props}

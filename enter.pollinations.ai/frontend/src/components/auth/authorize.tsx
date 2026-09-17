@@ -3,7 +3,6 @@ import {
     Button,
     CheckIcon,
     SproutIcon,
-    Surface,
     Text,
     useScrollLock,
     XIcon,
@@ -493,21 +492,33 @@ export function Authorize() {
                 description="Review the access this app is requesting before you connect."
                 onCancel={handleDeny}
             >
-                <Surface>
-                    <AppAttribution
-                        attribution={attribution}
-                        isDeviceMode={isDeviceMode}
-                        userCode={user_code}
-                        redirectHostname={redirectHostname}
-                    />
-                </Surface>
+                <AppAttribution
+                    attribution={attribution}
+                    isDeviceMode={isDeviceMode}
+                    userCode={user_code}
+                    redirectHostname={redirectHostname}
+                />
             </SignInScreen>
         );
     }
 
     return (
         <AuthFlowScreen
-            dialog={{ labelledBy: "authorize-dialog-title" }}
+            dialog={
+                error ? { labelledBy: "authorize-dialog-title" } : undefined
+            }
+            title={
+                error
+                    ? undefined
+                    : isDeviceMode
+                      ? "Connect your device"
+                      : "Connect an app"
+            }
+            description={
+                isDeviceMode
+                    ? "Review what your device can access before you allow it."
+                    : "Review what this app can access before you allow it."
+            }
             actions={
                 <>
                     <Button
@@ -545,21 +556,18 @@ export function Authorize() {
                         void handleAuthorize();
                     }}
                 >
-                    <div>
-                        <AppAttribution
-                            titleId="authorize-dialog-title"
-                            attribution={attribution}
-                            isDeviceMode={isDeviceMode}
-                            userCode={user_code}
-                            redirectHostname={redirectHostname}
-                        />
-                        <Text size="sm" tone="muted" className="mt-1">
-                            Wants access to your pollinations.ai account. You
-                            can revoke it from your dashboard.
-                        </Text>
-                    </div>
+                    <AppAttribution
+                        attribution={attribution}
+                        isDeviceMode={isDeviceMode}
+                        userCode={user_code}
+                        redirectHostname={redirectHostname}
+                    />
+                    <Text size="sm" tone="muted" className="mt-3">
+                        Wants access to your pollinations.ai account. You can
+                        revoke it from your dashboard.
+                    </Text>
 
-                    <div className="mt-3">
+                    <div className="mt-4">
                         <KeyPermissionsInputs
                             value={keyPermissions}
                             visiblePermissions={

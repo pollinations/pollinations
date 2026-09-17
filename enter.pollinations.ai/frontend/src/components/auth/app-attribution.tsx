@@ -1,4 +1,4 @@
-import { Heading, Text } from "@pollinations/ui";
+import { Surface, Text } from "@pollinations/ui";
 
 type Attribution = {
     appName?: string;
@@ -7,15 +7,14 @@ type Attribution = {
 };
 
 type AppAttributionProps = {
-    titleId?: string;
     attribution: Attribution | null;
     isDeviceMode: boolean;
     userCode?: string;
     redirectHostname: string;
 };
 
+/** The requesting app or device, shown the same way before and after sign-in. */
 export function AppAttribution({
-    titleId,
     attribution,
     isDeviceMode,
     userCode,
@@ -26,16 +25,10 @@ export function AppAttribution({
     const displayName =
         attribution?.appName || (isDeviceMode ? "Your device" : "This app");
     return (
-        <>
-            {titleId ? (
-                <Heading as="h1" size="section" id={titleId}>
-                    {displayName}
-                </Heading>
-            ) : (
-                <Text size="sm" weight="semibold" tone="strong">
-                    {displayName}
-                </Text>
-            )}
+        <Surface>
+            <Text size="sm" weight="semibold" tone="strong">
+                {displayName}
+            </Text>
             {attribution?.githubUsername && (
                 <Text size="sm" className="mt-1">
                     by{" "}
@@ -59,6 +52,6 @@ export function AppAttribution({
                     Code: {userCode}
                 </Text>
             )}
-        </>
+        </Surface>
     );
 }

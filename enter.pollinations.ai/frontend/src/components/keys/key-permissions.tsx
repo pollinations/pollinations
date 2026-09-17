@@ -113,6 +113,22 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 </ul>
             </AuthInfoCard>
             <AuthInfoCard>
+                <ul className="space-y-3 text-sm">
+                    <KeyLimitInput
+                        kind="budget"
+                        value={permissions.pollenBudget}
+                        onChange={setPollenBudget}
+                        disabled={disabled}
+                    />
+                    <KeyLimitInput
+                        kind="expiry"
+                        value={permissions.expiryDays}
+                        onChange={setExpiryDays}
+                        disabled={disabled}
+                    />
+                </ul>
+            </AuthInfoCard>
+            <AuthInfoCard>
                 <ul className="text-sm">
                     <AuthAccessItem
                         checked={hasModels}
@@ -157,22 +173,6 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                     >
                         AI models
                     </AuthAccessItem>
-                </ul>
-            </AuthInfoCard>
-            <AuthInfoCard>
-                <ul className="space-y-3 text-sm">
-                    <KeyLimitInput
-                        kind="budget"
-                        value={permissions.pollenBudget}
-                        onChange={setPollenBudget}
-                        disabled={disabled}
-                    />
-                    <KeyLimitInput
-                        kind="expiry"
-                        value={permissions.expiryDays}
-                        onChange={setExpiryDays}
-                        disabled={disabled}
-                    />
                 </ul>
             </AuthInfoCard>
         </div>

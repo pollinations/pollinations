@@ -497,8 +497,8 @@ export function Authorize() {
             <SignInScreen title={flowTitle} onCancel={handleDeny}>
                 {appCard}
                 <Text size="sm" tone="muted">
-                    Requests access to your pollinations.ai account. Sign in to
-                    review the request.
+                    Access to your pollinations.ai account. Sign in to review
+                    the request.
                 </Text>
             </SignInScreen>
         );
@@ -538,8 +538,8 @@ export function Authorize() {
             >
                 {appCard}
                 <Text size="sm" tone="muted">
-                    Requests access to your pollinations.ai account. Choose what
-                    it can use. You can revoke it later from Keys.
+                    Access to your pollinations.ai account. Choose what it can
+                    use. You can revoke it later from Keys.
                 </Text>
                 <KeyPermissionsInputs
                     value={keyPermissions}

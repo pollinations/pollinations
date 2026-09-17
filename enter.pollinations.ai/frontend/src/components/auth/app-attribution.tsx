@@ -1,4 +1,4 @@
-import { Chip, SproutIcon, Surface, Text } from "@pollinations/ui";
+import { AppIcon, Chip, SproutIcon, Surface, Text } from "@pollinations/ui";
 
 type Attribution = {
     appName?: string;
@@ -28,7 +28,18 @@ export function AppAttribution({
     return (
         <Surface variant="card-subtle">
             <div className="flex items-start justify-between gap-3">
-                <Text size="sm" weight="semibold" tone="strong">
+                <Text
+                    size="sm"
+                    weight="semibold"
+                    tone="strong"
+                    className="flex items-center gap-2"
+                >
+                    {!isDeviceMode && (
+                        <AppIcon
+                            aria-hidden="true"
+                            className="h-4 w-4 shrink-0"
+                        />
+                    )}
                     {displayName}
                 </Text>
                 {attribution?.earningsEnabled && (

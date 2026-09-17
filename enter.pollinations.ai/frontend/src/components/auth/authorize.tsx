@@ -1,7 +1,7 @@
 import {
     ArrowLeftIcon,
     Button,
-    CheckIcon,
+    KeyIcon,
     Text,
     useScrollLock,
     XIcon,
@@ -520,7 +520,7 @@ export function Authorize() {
                     <Button
                         type="submit"
                         form="authorize-permissions"
-                        icon={<CheckIcon />}
+                        icon={<KeyIcon />}
                         disabled={!canAuthorize || isAuthorizing}
                     >
                         {isAuthorizing ? "Connecting…" : "Allow access"}

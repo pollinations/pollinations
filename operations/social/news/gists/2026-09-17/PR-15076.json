@@ -1,0 +1,36 @@
+{
+  "pr_number": 15076,
+  "title": "Add DCORE to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15076",
+  "merged_at": "2026-09-17T08:15:23Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [DCORE](https://bot.dtempest.online) to image\n- A multi-purpose Discord-Telegram bot featuring image generation via Pollinations, along with useful commands for server owners, developers, and much more; it is currently active on 16 servers.\n\nFixes #14831",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "DCORE joins the garden",
+    "blurb": "DCORE has landed in the app garden: a Discord-and-Telegram helper that can grow Pollinations images alongside its useful server-owner and developer tools.",
+    "summary": "Added DCORE to the Pollinations app directory, highlighting a multi-purpose Discord-Telegram bot that provides Pollinations image generation and is already active across 16 servers.",
+    "impact": "People browsing Pollinations-powered projects can now discover DCORE as a ready-to-use bot for generating images and handling server and developer utilities.",
+    "keywords": [
+      "community",
+      "app-directory",
+      "DCORE",
+      "Discord",
+      "Telegram",
+      "image-generation"
+    ],
+    "visual_concept": "Depict DCORE as a friendly chunky pixel bot bridge between a Discord-style chat window and a Telegram-style paper-plane chat window, with a small generated landscape image emerging from both. Polli, wearing tiny moderator headphones, helps the bot tend a garden of code-plants to represent image generation and server tools.",
+    "image_prompt": "Cozy pixel art scene of the cute Polli bee mascot with a yellow body, dark brown stripes, black antennae, oval black eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded translucent light-blue wings, wearing tiny moderator headphones while helping a friendly chunky bot tend code-plants between two retro chat terminals, one with a Discord-style speech bubble and one with a paper-plane message icon; a little generated pixel landscape blooms from the screens. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream garden shed, dark purple (#110518) outlines, warm lighting, retro gaming vibes, soft scanlines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-17/PR-15076.jpg",
+    "prompt": "Cozy pixel art scene of the cute Polli bee mascot with a yellow body, dark brown stripes, black antennae, oval black eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded translucent light-blue wings, wearing tiny moderator headphones while helping a friendly chunky bot tend code-plants between two retro chat terminals, one with a Discord-style speech bubble and one with a paper-plane message icon; a little generated pixel landscape blooms from the screens. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream garden shed, dark purple (#110518) outlines, warm lighting, retro gaming vibes, soft scanlines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-17T08:16:22.474402+00:00",
+  "app_name": "DCORE",
+  "app_url": "https://bot.dtempest.online"
+}

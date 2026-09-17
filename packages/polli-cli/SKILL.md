@@ -44,6 +44,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
 | Update the CLI | `polli update` (global installs only; npx/local get instructions) |
+| Install MCP servers into coding agents | `polli mcp add <client> [--server id]` (`list` / `clients` / `status` / `remove`) |
 | Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|opencode\|openclaw\|pi\|prime> on` (available adapters: `polli harness --help`) |
 | Machine-readable output | append `--json` to any command |
 
@@ -206,6 +207,16 @@ polli keys create --name "my-app" --type publishable --redirect-uri https://app.
 polli keys revoke <id>                                             # id comes from `keys list --json`
 ```
 `--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. `"keys"` is auto-stripped from the list so a scoped key can never mint further keys. Existing keys with `account:keys` can manage my-models where that invite-only feature is enabled, but still need `account:usage` for read-only account state. Publishable app keys default developer earnings off; pass `--earnings` to enable them. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
+
+
+### Install MCP servers into a coding agent
+```bash
+polli mcp list
+polli mcp add cursor --server pollinations
+polli mcp status cursor
+polli mcp remove cursor --server pollinations
+```
+Reads the live catalog at `GET /mcp`. Prefers each client's `mcp add` CLI when available; otherwise writes the config file. Codex/VS Code keep the key out of the config via env var / inputs.
 
 ### Connect a coding harness
 ```bash

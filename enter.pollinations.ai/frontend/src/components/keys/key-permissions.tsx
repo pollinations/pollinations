@@ -1,14 +1,13 @@
-import { Chip, Surface } from "@pollinations/ui";
-import { AuthAccessItem } from "@pollinations/ui/auth";
+import { Chip } from "@pollinations/ui";
+import { AuthAccessItem, AuthInfoCard } from "@pollinations/ui/auth";
 import type { FC } from "react";
 import { useState } from "react";
 import { useModelCategories } from "../models/use-model-categories.ts";
 import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
 import { AccountPermissionsInput } from "./account-permissions-input.tsx";
-import { ExpiryDaysInput } from "./expiry-days-input.tsx";
+import { KeyLimitInput } from "./key-limit-input.tsx";
 import { ModelPermissionsInput } from "./model-permissions-input.tsx";
 import { normalizeAllowedModelSelection } from "./model-selection.ts";
-import { PollenBudgetInput } from "./pollen-budget-input.tsx";
 
 export interface KeyPermissions {
     allowedModels: string[] | null;
@@ -46,7 +45,6 @@ export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
 interface KeyPermissionsInputsProps {
     value: ReturnType<typeof useKeyPermissions>;
     disabled?: boolean;
-    inline?: boolean;
     visiblePermissions?: ReadonlySet<string>;
     requestedModels?: string[] | null;
     showIdentity?: boolean;
@@ -58,7 +56,6 @@ interface KeyPermissionsInputsProps {
 export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     value,
     disabled = false,
-    inline = false,
     visiblePermissions,
     requestedModels,
     showIdentity = false,
@@ -86,9 +83,12 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                       },
               );
 
+    const hasModels =
+        permissions.allowedModels === null ||
+        permissions.allowedModels.length > 0;
     return (
-        <div className="space-y-3">
-            <Surface>
+        <div className="space-y-4">
+            <AuthInfoCard>
                 <ul className="space-y-3 text-sm">
                     {showIdentity && (
                         <AuthAccessItem
@@ -111,51 +111,70 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                         visiblePermissions={visiblePermissions}
                     />
                 </ul>
-            </Surface>
-            <Surface className="space-y-3">
+            </AuthInfoCard>
+            <AuthInfoCard>
                 <ul className="text-sm">
                     <AuthAccessItem
-                        checked={
-                            permissions.allowedModels === null ||
-                            permissions.allowedModels.length > 0
+                        checked={hasModels}
+                        disabled={disabled}
+                        onChange={(checked) =>
+                            setAllowedModels(
+                                checked ? (requestedModels ?? null) : [],
+                            )
+                        }
+                        details={
+                            <div className="space-y-2">
+                                <p>
+                                    Allow this key to generate with selected
+                                    models.
+                                </p>
+                                {hasModels && (
+                                    <ModelPermissionsInput
+                                        catalog={catalog}
+                                        categories={categories}
+                                        models={models}
+                                        selected={permissions.allowedModels}
+                                        onChange={(next) =>
+                                            setAllowedModels(
+                                                requestedModels == null
+                                                    ? normalizeAllowedModelSelection(
+                                                          next,
+                                                          models.map(
+                                                              ({ id }) => id,
+                                                          ),
+                                                      )
+                                                    : next,
+                                            )
+                                        }
+                                        disabled={disabled}
+                                        initiallyExpanded={
+                                            permissions.allowedModels !== null
+                                        }
+                                    />
+                                )}
+                            </div>
                         }
                     >
-                        AI generation
+                        AI models
                     </AuthAccessItem>
                 </ul>
-                <PollenBudgetInput
-                    value={permissions.pollenBudget}
-                    onChange={setPollenBudget}
-                    disabled={disabled}
-                    inline={inline}
-                />
-                <ModelPermissionsInput
-                    catalog={catalog}
-                    categories={categories}
-                    models={models}
-                    selected={permissions.allowedModels}
-                    onChange={(next) =>
-                        setAllowedModels(
-                            requestedModels == null
-                                ? normalizeAllowedModelSelection(
-                                      next,
-                                      models.map(({ id }) => id),
-                                  )
-                                : next,
-                        )
-                    }
-                    disabled={disabled}
-                    initiallyExpanded={permissions.allowedModels !== null}
-                />
-            </Surface>
-            <Surface>
-                <ExpiryDaysInput
-                    value={permissions.expiryDays}
-                    onChange={setExpiryDays}
-                    disabled={disabled}
-                    inline={inline}
-                />
-            </Surface>
+            </AuthInfoCard>
+            <AuthInfoCard>
+                <ul className="space-y-3 text-sm">
+                    <KeyLimitInput
+                        kind="budget"
+                        value={permissions.pollenBudget}
+                        onChange={setPollenBudget}
+                        disabled={disabled}
+                    />
+                    <KeyLimitInput
+                        kind="expiry"
+                        value={permissions.expiryDays}
+                        onChange={setExpiryDays}
+                        disabled={disabled}
+                    />
+                </ul>
+            </AuthInfoCard>
         </div>
     );
 };

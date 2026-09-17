@@ -40,11 +40,16 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
     }
 
     return (
-        <div className="space-y-3">
+        <div className="space-y-4">
             <AuthInfoCard title={null}>
                 <div className="space-y-3">
                     <div>
-                        <Text size="sm" weight="semibold">
+                        <Text
+                            size="sm"
+                            weight="semibold"
+                            tone="strong"
+                            className="polli:leading-5"
+                        >
                             Callback URLs
                         </Text>
                         <Text size="xs" tone="muted" className="polli:mt-1">

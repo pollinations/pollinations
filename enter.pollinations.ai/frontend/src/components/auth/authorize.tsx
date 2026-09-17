@@ -1,6 +1,7 @@
 import {
     Button,
     Heading,
+    InlineLink,
     SproutIcon,
     Surface,
     Text,
@@ -460,7 +461,7 @@ export function Authorize() {
         const denied = deviceOutcome === "denied";
         return (
             <AuthFlowLayout dialog={{ labelledBy: "device-result-title" }}>
-                <Heading as="h1" id="device-result-title">
+                <Heading as="h1" size="section" id="device-result-title">
                     {denied ? "Access declined" : "Device connected"}
                 </Heading>
                 <Text size="sm">
@@ -483,7 +484,7 @@ export function Authorize() {
                         </Button>
                     }
                 >
-                    <Heading as="h1" id="authorize-error-title">
+                    <Heading as="h1" size="section" id="authorize-error-title">
                         Couldn’t connect
                     </Heading>
                     <ErrorBanner>{error}</ErrorBanner>
@@ -529,7 +530,8 @@ export function Authorize() {
                     </Button>
                     {!error && (
                         <Button
-                            onClick={handleAuthorize}
+                            type="submit"
+                            form="authorize-permissions"
                             disabled={!canAuthorize || isAuthorizing}
                         >
                             {isAuthorizing ? "Connecting…" : "Allow access"}
@@ -538,21 +540,37 @@ export function Authorize() {
                 </>
             }
         >
-            <Heading as="h1" id="authorize-dialog-title">
-                {error ? "Couldn’t connect" : "Allow app access"}
-            </Heading>
             {error ? (
-                <ErrorBanner>{error}</ErrorBanner>
+                <>
+                    <Heading as="h1" size="section" id="authorize-dialog-title">
+                        Couldn’t connect
+                    </Heading>
+                    <ErrorBanner>{error}</ErrorBanner>
+                </>
             ) : (
-                <div>
-                    <Surface>
+                <form
+                    id="authorize-permissions"
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        void handleAuthorize();
+                    }}
+                >
+                    <div>
                         <AppAttribution
+                            titleId="authorize-dialog-title"
                             attribution={attribution}
                             isDeviceMode={isDeviceMode}
                             userCode={user_code}
                             redirectHostname={redirectHostname}
                         />
-                    </Surface>
+                        <p className="mt-3 font-body text-sm font-semibold text-theme-text-soft">
+                            is requesting access to your{" "}
+                            <InlineLink href="https://pollinations.ai/">
+                                pollinations.ai account
+                            </InlineLink>
+                            . You can revoke access from your dashboard.
+                        </p>
+                    </div>
 
                     <div className="mt-3">
                         <KeyPermissionsInputs
@@ -562,17 +580,16 @@ export function Authorize() {
                             }
                             requestedModels={models}
                             showIdentity
-                            inline
                             disabled={isAuthorizing}
                         />
                     </div>
                     {attribution?.earningsEnabled && (
                         <p className="mt-3 flex items-center gap-2 text-sm">
                             <SproutIcon className="h-4 w-4" />
-                            Earn 20% of the Pollen you spend in-app.
+                            The app earns 20% of the Pollen you spend in it.
                         </p>
                     )}
-                </div>
+                </form>
             )}
         </AuthFlowLayout>
     );

@@ -1,24 +1,27 @@
 import {
+    AppIcon,
     Button,
+    CheckIcon,
     CopyButton,
-    cn,
     Dialog,
     DialogBody,
     DialogFooter,
     DialogHeader,
     Field,
-    InlineLink,
+    FieldStack,
     Input,
+    KeyIcon,
+    XIcon,
 } from "@pollinations/ui";
 import { AuthInfoCard, ErrorBanner } from "@pollinations/ui/auth";
-import type { FC, ReactNode } from "react";
-import { useState } from "react";
+import type { FC } from "react";
+import { useEffect, useState } from "react";
 import {
     adjectives,
     animals,
     uniqueNamesGenerator,
 } from "unique-names-generator";
-import { genDocsUrl } from "../../config.ts";
+import { KeyNameField } from "./key-name-field.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
 import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";
@@ -33,28 +36,30 @@ const DEFAULT_LOCALHOST_REDIRECT = "http://localhost/callback";
 type ApiKeyDialogProps = {
     onSubmit: (state: CreateApiKey) => Promise<CreateApiKeyResponse>;
     onComplete: () => void;
-    triggerLabel?: ReactNode;
-    triggerClassName?: string;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
     /** Simplified mode: hides key type selector, permissions, budget, expiry. Shows only app key settings. */
     simplified?: boolean;
 };
 
+function generateFunName(): string {
+    return uniqueNamesGenerator({
+        dictionaries: [adjectives, animals],
+        separator: "-",
+        length: 2,
+        style: "lowerCase",
+    });
+}
+
+const DEFAULT_KEY_LIMITS = { pollenBudget: 5, expiryDays: 7 };
+
 export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     onSubmit,
     onComplete,
-    triggerLabel = "Create new key",
-    triggerClassName,
+    open: isOpen,
+    onOpenChange: setIsOpen,
     simplified = false,
 }) => {
-    function generateFunName(): string {
-        return uniqueNamesGenerator({
-            dictionaries: [adjectives, animals],
-            separator: "-",
-            length: 2,
-            style: "lowerCase",
-        });
-    }
-
     const [name, setName] = useState(generateFunName());
     const [description, setDescription] = useState(
         `Created on ${new Date().toLocaleDateString("en-US", { day: "2-digit", month: "2-digit", year: "2-digit" })}`,
@@ -74,13 +79,14 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                   allowedModels: [],
                   accountPermissions: [],
               }
-            : {},
+            : DEFAULT_KEY_LIMITS,
     );
+    const { setPollenBudget, setExpiryDays } = keyPermissions;
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
         null,
     );
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isOpen, setIsOpen] = useState(false);
+
     const [error, setError] = useState<string | null>(null);
 
     async function handleSubmit(e: React.FormEvent) {
@@ -119,13 +125,29 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         }, 500);
     }
 
-    const { allowedModels } = keyPermissions.permissions;
-    const noModelsSelected =
-        !simplified &&
-        Array.isArray(allowedModels) &&
-        allowedModels.length === 0;
-    const isCreateDisabled =
-        !createdKey && (!name.trim() || isSubmitting || noModelsSelected);
+    const isCreateDisabled = !createdKey && (!name.trim() || isSubmitting);
+    useEffect(() => {
+        if (!isOpen) {
+            if (!simplified) {
+                setPollenBudget(DEFAULT_KEY_LIMITS.pollenBudget);
+                setExpiryDays(DEFAULT_KEY_LIMITS.expiryDays);
+            }
+            return;
+        }
+
+        setCreatedKey(null);
+        setError(null);
+        setName(generateFunName());
+        setRedirectUris(simplified ? [DEFAULT_LOCALHOST_REDIRECT] : []);
+        setEarningsEnabled(true);
+        const dateStr = new Date().toLocaleDateString("en-US", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "2-digit",
+        });
+        setDescription(simplified ? "" : `Created on ${dateStr}`);
+    }, [isOpen, simplified, setPollenBudget, setExpiryDays]);
+
     const submitButton = createdKey ? (
         <CopyButton
             value={createdKey.key}
@@ -143,50 +165,23 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         </CopyButton>
     ) : (
         <Button
+            icon={simplified ? <AppIcon /> : <KeyIcon />}
             type="submit"
             className="disabled:opacity-50"
             disabled={isCreateDisabled}
         >
-            {isSubmitting ? "Creating…" : "Create key"}
+            {isSubmitting
+                ? "Creating…"
+                : simplified
+                  ? "Create app key"
+                  : "Create API key"}
         </Button>
     );
 
     return (
-        <Dialog
-            open={isOpen}
-            onOpenChange={(open) => {
-                if (open) {
-                    setCreatedKey(null);
-                    setError(null);
-                    setName(generateFunName());
-                    setRedirectUris(
-                        simplified ? [DEFAULT_LOCALHOST_REDIRECT] : [],
-                    );
-                    setEarningsEnabled(true);
-                    const dateStr = new Date().toLocaleDateString("en-US", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "2-digit",
-                    });
-                    setDescription(simplified ? "" : `Created on ${dateStr}`);
-                }
-                setIsOpen(open);
-            }}
-            size="md"
-            trigger={
-                <Button
-                    type="button"
-                    className={cn(
-                        "inline-flex shrink-0 self-start whitespace-nowrap",
-                        triggerClassName,
-                    )}
-                >
-                    {triggerLabel}
-                </Button>
-            }
-            triggerAsChild
-        >
+        <Dialog open={isOpen} onOpenChange={setIsOpen} size="md">
             <DialogHeader
+                icon={simplified ? <AppIcon /> : <KeyIcon />}
                 title={
                     createdKey
                         ? simplified
@@ -214,50 +209,31 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 <DialogBody>
                     {error && <ErrorBanner>{error}</ErrorBanner>}
                     <AuthInfoCard>
-                        <Field.Root className="flex flex-col gap-2">
-                            <Field.Label className="text-sm font-semibold">
-                                {createdKey
-                                    ? simplified
-                                        ? "App key"
-                                        : "Secret key"
-                                    : "Name"}
-                            </Field.Label>
-                            <Field.Input asChild>
-                                <Input
-                                    type="text"
-                                    value={createdKey ? createdKey.key : name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    className={cn(
-                                        "w-full",
-                                        createdKey && "font-mono text-xs",
-                                    )}
-                                    placeholder="Key name"
-                                    required={!createdKey}
-                                    disabled={isSubmitting}
-                                    readOnly={!!createdKey}
-                                />
-                            </Field.Input>
-                        </Field.Root>
-
-                        {!createdKey && (
-                            <p className="text-sm text-theme-text-muted">
-                                {simplified
-                                    ? "Add your app’s callback URLs below, then integrate Pollinations Connect with the SDK. "
-                                    : "Keep this key private. For a browser app, create an app key and use Pollinations Connect. "}
-                                <InlineLink
-                                    href={genDocsUrl(
-                                        "#tag/connect-user-wallets",
-                                    )}
-                                >
-                                    Read the guide
-                                </InlineLink>
-                            </p>
-                        )}
-                        {!simplified && createdKey && (
-                            <p className="text-sm text-theme-text-muted">
-                                Keep this key in your backend. Don’t share it or
-                                include it in public code.
-                            </p>
+                        {createdKey ? (
+                            <FieldStack
+                                label={simplified ? "App key" : "Secret key"}
+                                helper={
+                                    !simplified
+                                        ? "Keep this key in your backend. Don’t share it or include it in public code."
+                                        : undefined
+                                }
+                            >
+                                <Field.Input asChild>
+                                    <Input
+                                        type="text"
+                                        value={createdKey.key}
+                                        className="font-mono text-xs"
+                                        readOnly
+                                    />
+                                </Field.Input>
+                            </FieldStack>
+                        ) : (
+                            <KeyNameField
+                                app={simplified}
+                                value={name}
+                                onChange={setName}
+                                disabled={isSubmitting}
+                            />
                         )}
                     </AuthInfoCard>
                     {simplified && !createdKey && (
@@ -270,22 +246,17 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                         />
                     )}
 
-                    {!simplified && !createdKey && (
+                    {isOpen && !simplified && !createdKey && (
                         <KeyPermissionsInputs
                             value={keyPermissions}
                             disabled={isSubmitting}
-                            inline
                         />
-                    )}
-                    {!createdKey && noModelsSelected && (
-                        <output className="block text-sm text-theme-text-muted">
-                            Select at least one model to create this key.
-                        </output>
                     )}
                 </DialogBody>
 
                 <DialogFooter>
                     <Button
+                        icon={createdKey ? <CheckIcon /> : <XIcon />}
                         type="button"
                         intent="neutral"
                         onClick={() => {

@@ -1,11 +1,11 @@
 import {
     AppIcon,
+    Button,
     Chip,
     GlobeIcon,
     IconButton,
     InlineLink,
     KeyIcon,
-    LockIcon,
     PencilIcon,
     Section,
     Surface,
@@ -33,6 +33,8 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     onUpdate,
     onDelete,
 }) => {
+    const [keyCreateOpen, setKeyCreateOpen] = useState(false);
+    const [appCreateOpen, setAppCreateOpen] = useState(false);
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
 
@@ -70,46 +72,36 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 key={apiKey.id}
                 className="transition-colors hover:bg-surface-opaque/90"
             >
-                <div className="flex items-center gap-2 mb-2">
-                    <Chip size="sm">
-                        {isApp ? (
-                            <>
-                                <AppIcon className="h-3.5 w-3.5" />
-                                App
-                            </>
-                        ) : isPublishable ? (
-                            <>
-                                <GlobeIcon className="h-3.5 w-3.5" />
-                                Publishable
-                            </>
-                        ) : (
-                            <>
-                                <LockIcon className="h-3.5 w-3.5" />
-                                Secret
-                            </>
-                        )}
-                    </Chip>
-                    <span className="text-sm font-medium truncate">
-                        {apiKey.name}
-                    </span>
-                    <span className="flex-1" />
-                    {isPublishable && plaintextKey ? (
-                        <KeyDisplay
-                            fullKey={plaintextKey}
-                            start={apiKey.start ?? ""}
-                        />
-                    ) : (
-                        <span className="font-mono text-xs text-theme-text-muted shrink-0">
-                            {apiKey.start}...
+                <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1">
+                    <div className="flex min-w-0 items-start gap-2">
+                        <span className="mt-0.5 shrink-0 text-theme-text-muted">
+                            {isApp ? (
+                                <AppIcon className="h-4 w-4" />
+                            ) : isPublishable ? (
+                                <GlobeIcon className="h-4 w-4" />
+                            ) : (
+                                <KeyIcon className="h-4 w-4" />
+                            )}
+                            <span className="sr-only">
+                                {isApp
+                                    ? "App key"
+                                    : isPublishable
+                                      ? "Publishable key"
+                                      : "Secret key"}
+                            </span>
                         </span>
-                    )}
-                    <div className="flex gap-1 shrink-0 ml-2 items-center">
+                        <span className="min-w-0 text-sm font-semibold leading-5 [overflow-wrap:anywhere]">
+                            {apiKey.name}
+                        </span>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1">
                         <IconButton
                             intent="info"
                             title="Edit key"
                             tooltip="Edit key"
                             tooltipAlign="center"
                             tooltipClampToViewport={false}
+                            aria-haspopup="dialog"
                             onClick={() => setEditingKey(apiKey)}
                         >
                             <PencilIcon className="h-4 w-4" />
@@ -120,13 +112,26 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             tooltip="Delete key"
                             tooltipAlign="center"
                             tooltipClampToViewport={false}
+                            aria-haspopup="dialog"
                             onClick={() => setDeleteId(apiKey.id)}
                         >
                             <XIcon className="h-4 w-4" />
                         </IconButton>
                     </div>
+                    <div className="col-span-2 min-w-0">
+                        {isPublishable && plaintextKey ? (
+                            <KeyDisplay
+                                fullKey={plaintextKey}
+                                start={apiKey.start ?? ""}
+                            />
+                        ) : (
+                            <span className="font-mono text-xs text-theme-text-muted">
+                                {apiKey.start}...
+                            </span>
+                        )}
+                    </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-4 text-xs">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
                     <span>
                         <span className="text-theme-text-muted">Created: </span>
                         <span className="text-theme-text-muted">
@@ -225,32 +230,41 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
         );
     }
 
+    const keyAction = (
+        <Button
+            type="button"
+            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+            aria-haspopup="dialog"
+            onClick={() => setKeyCreateOpen(true)}
+        >
+            <KeyIcon className="h-4 w-4" />
+            Add Key
+        </Button>
+    );
+    const appAction = (
+        <Button
+            type="button"
+            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+            aria-haspopup="dialog"
+            onClick={() => setAppCreateOpen(true)}
+        >
+            <AppIcon className="h-4 w-4" />
+            Add App
+        </Button>
+    );
+
     return (
         <>
             <div className="flex flex-col gap-6">
                 <Section
                     title="API"
                     framed
-                    action={
-                        <ApiKeyDialog
-                            onSubmit={onCreate}
-                            onComplete={() => {}}
-                            triggerLabel={
-                                <span className="inline-flex items-center gap-1.5">
-                                    <KeyIcon className="h-4 w-4" />
-                                    Add Key
-                                </span>
-                            }
-                        />
-                    }
+                    action={sortedApiKeys.length > 0 && keyAction}
                 >
                     <div className="flex flex-col gap-3">
                         {!sortedApiKeys.length && (
                             <Surface className="p-6 text-center">
-                                <KeyIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
-                                <p className="font-semibold text-ink-900 text-lg mb-2">
-                                    Create your first API key
-                                </p>
+                                <div className="mb-2">{keyAction}</div>
                                 <p className="text-sm text-theme-text-muted">
                                     Use API keys for your own private
                                     server-side integrations.
@@ -263,34 +277,25 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
                             For your own backend, scripts, and CLIs — billed to
-                            your account.
+                            your account. Keep these keys private. For a browser
+                            app, create an app key and use Pollinations Connect.{" "}
+                            <InlineLink
+                                href={genDocsUrl("#tag/connect-user-wallets")}
+                            >
+                                Read the guide
+                            </InlineLink>
                         </span>
                     </p>
                 </Section>
                 <Section
                     title="App"
                     framed
-                    action={
-                        <ApiKeyDialog
-                            onSubmit={onCreate}
-                            onComplete={() => {}}
-                            triggerLabel={
-                                <span className="inline-flex items-center gap-1.5">
-                                    <AppIcon className="h-4 w-4" />
-                                    Add App
-                                </span>
-                            }
-                            simplified
-                        />
-                    }
+                    action={sortedAppKeys.length > 0 && appAction}
                 >
                     <div className="flex flex-col gap-3">
                         {!sortedAppKeys.length && (
                             <Surface className="p-6 text-center">
-                                <AppIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
-                                <p className="font-semibold text-ink-900 text-lg mb-2">
-                                    Create your first app key
-                                </p>
+                                <div className="mb-2">{appAction}</div>
                                 <p className="text-sm text-theme-text-muted">
                                     Use app keys when your users bring their own
                                     Pollinations account.
@@ -305,6 +310,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             <span>
                                 For apps where users sign in with their own
                                 Pollinations account and spend their own Pollen.
+                                Connect your app with the Pollinations SDK.
                             </span>
                         </p>
                         <p className="flex items-start gap-1.5">
@@ -336,6 +342,19 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     onClose={() => setEditingKey(null)}
                 />
             )}
+            <ApiKeyDialog
+                open={keyCreateOpen}
+                onOpenChange={setKeyCreateOpen}
+                onSubmit={onCreate}
+                onComplete={() => {}}
+            />
+            <ApiKeyDialog
+                open={appCreateOpen}
+                onOpenChange={setAppCreateOpen}
+                onSubmit={onCreate}
+                onComplete={() => {}}
+                simplified
+            />
         </>
     );
 };

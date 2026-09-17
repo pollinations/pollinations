@@ -1,4 +1,4 @@
-import { InfoTip } from "@pollinations/ui";
+import { Heading } from "@pollinations/ui";
 
 type Attribution = {
     appName?: string;
@@ -7,6 +7,7 @@ type Attribution = {
 };
 
 type AppAttributionProps = {
+    titleId?: string;
     attribution: Attribution | null;
     isDeviceMode: boolean;
     userCode?: string;
@@ -14,23 +15,27 @@ type AppAttributionProps = {
 };
 
 export function AppAttribution({
+    titleId,
     attribution,
     isDeviceMode,
     userCode,
     redirectHostname,
 }: AppAttributionProps) {
+    // A callback hostname identifies the destination, not the app. Keep it in
+    // the details row even when lookup has not supplied an app name.
     const displayName =
-        attribution?.appName ??
-        (isDeviceMode ? "A device" : redirectHostname || "An app");
-    const tipText = [
-        "This app receives a key limited to the access you allow.",
-        "Only connect apps you trust. You can revoke access from your dashboard.",
-    ].join("\n");
+        attribution?.appName || (isDeviceMode ? "Your device" : "This app");
     return (
         <>
-            <p className="text-theme-text-strong">
-                <span className="font-bold text-lg">{displayName}</span>
-            </p>
+            {titleId ? (
+                <Heading as="h1" size="section" id={titleId}>
+                    {displayName}
+                </Heading>
+            ) : (
+                <p className="font-body font-semibold text-theme-text-strong">
+                    {displayName}
+                </p>
+            )}
             {attribution?.githubUsername && (
                 <p className="text-sm text-theme-text-base mt-1">
                     by{" "}
@@ -44,7 +49,7 @@ export function AppAttribution({
                     </a>
                 </p>
             )}
-            {!isDeviceMode && attribution?.appName && redirectHostname && (
+            {!isDeviceMode && redirectHostname && (
                 <p className="text-xs text-theme-text-base font-mono mt-1">
                     {redirectHostname}
                 </p>
@@ -54,10 +59,6 @@ export function AppAttribution({
                     Code: {userCode}
                 </p>
             )}
-            <p className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mt-3">
-                Wants access to your Pollinations account{" "}
-                <InfoTip text={tipText} label="About app access" />
-            </p>
         </>
     );
 }

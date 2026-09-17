@@ -34,20 +34,12 @@ export function ModelPermissionsInput({
     return (
         <Collapsible
             label={
-                <span className="flex flex-wrap items-center gap-2">
-                    <span>Models</span>
-                    <span className="flex min-w-0 flex-wrap gap-1.5">
-                        {counts.map(({ modality, label, count }) => (
-                            <Chip key={modality} size="sm" intent="neutral">
-                                {label} · {count}
-                            </Chip>
-                        ))}
-                        {counts.length === 0 && selected?.length === 0 && (
-                            <Chip size="sm" intent="neutral">
-                                None selected
-                            </Chip>
-                        )}
-                    </span>
+                <span className="flex min-w-0 flex-wrap gap-1.5">
+                    {counts.map(({ modality, label, count }) => (
+                        <Chip key={modality} size="sm" intent="neutral">
+                            {label} · {count}
+                        </Chip>
+                    ))}
                 </span>
             }
             expanded={expanded}

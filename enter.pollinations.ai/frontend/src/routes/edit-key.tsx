@@ -107,7 +107,7 @@ function EditKeyPage() {
                     ) : undefined
                 }
             >
-                <Heading as="h1" id="edit-key-title">
+                <Heading as="h1" size="section" id="edit-key-title">
                     {outcome === "saved" ? "Changes saved" : "No changes saved"}
                 </Heading>
                 <Text size="sm">
@@ -131,7 +131,7 @@ function EditKeyPage() {
                     ) : undefined
                 }
             >
-                <Heading as="h1" id="edit-key-title">
+                <Heading as="h1" size="section" id="edit-key-title">
                     Key unavailable
                 </Heading>
                 <ErrorBanner>

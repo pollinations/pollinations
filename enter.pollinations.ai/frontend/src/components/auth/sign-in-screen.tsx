@@ -1,11 +1,9 @@
+import { Button, ColorModeToggle, Heading, Text } from "@pollinations/ui";
 import {
-    Button,
-    ColorModeToggle,
-    GitHubIcon,
-    Heading,
-    Text,
-} from "@pollinations/ui";
-import { AuthFlowLayout, ErrorBanner } from "@pollinations/ui/auth";
+    AuthFlowLayout,
+    ErrorBanner,
+    GitHubSignInButton,
+} from "@pollinations/ui/auth";
 import type { ReactNode } from "react";
 import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
 
@@ -39,19 +37,14 @@ export function SignInScreen({
                             Cancel
                         </Button>
                     )}
-                    <Button
+                    <GitHubSignInButton
                         onClick={signIn}
-                        disabled={isSigningIn}
-                        aria-busy={isSigningIn}
-                        className="gap-2"
-                    >
-                        <GitHubIcon className="h-4 w-4 shrink-0" />
-                        {isSigningIn ? "Signing in…" : "Continue with GitHub"}
-                    </Button>
+                        isSigningIn={isSigningIn}
+                    />
                 </>
             }
         >
-            <Heading as="h1" id="sign-in-title">
+            <Heading as="h1" size="section" id="sign-in-title">
                 {title}
             </Heading>
             <Text size="sm">{description}</Text>

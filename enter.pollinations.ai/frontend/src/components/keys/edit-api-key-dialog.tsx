@@ -2,20 +2,20 @@ import { apiClient } from "@frontend/api.ts";
 import {
     AppIcon,
     Button,
-    Chip,
+    CheckIcon,
     CopyButton,
     cn,
     DialogBody,
     DialogFooter,
     DialogHeader,
-    Field,
     GlobeIcon,
-    Input,
-    LockIcon,
+    KeyIcon,
+    XIcon,
 } from "@pollinations/ui";
 import { AuthInfoCard, AuthModal, ErrorBanner } from "@pollinations/ui/auth";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
+import { KeyNameField } from "./key-name-field.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import {
     isAppKey,
@@ -128,6 +128,15 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         <AuthModal onClose={onClose}>
             {header}
             <DialogHeader
+                icon={
+                    appKey ? (
+                        <AppIcon />
+                    ) : isPublishable ? (
+                        <GlobeIcon />
+                    ) : (
+                        <KeyIcon />
+                    )
+                }
                 title={appKey ? "Edit app key" : "Edit key permissions"}
                 description={
                     appKey
@@ -136,24 +145,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                 }
             >
                 <div className="mt-3 flex min-w-0 flex-wrap items-center gap-3">
-                    <Chip>
-                        {appKey ? (
-                            <>
-                                <AppIcon className="h-4 w-4" />
-                                App
-                            </>
-                        ) : isPublishable ? (
-                            <>
-                                <GlobeIcon className="h-4 w-4" />
-                                Publishable
-                            </>
-                        ) : (
-                            <>
-                                <LockIcon className="h-4 w-4" />
-                                Secret
-                            </>
-                        )}
-                    </Chip>
                     {isPublishable && plaintextKey ? (
                         <CopyButton
                             value={plaintextKey}
@@ -178,64 +169,63 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                 </div>
             </DialogHeader>
 
-            <DialogBody>
-                {error && <ErrorBanner>{error}</ErrorBanner>}
+            <form
+                className="flex min-h-0 flex-1 flex-col"
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    void handleSave();
+                }}
+            >
+                <DialogBody>
+                    {error && <ErrorBanner>{error}</ErrorBanner>}
 
-                <div className="space-y-4">
-                    <AuthInfoCard>
-                        <Field.Root className="flex flex-col gap-2">
-                            <Field.Label className="text-sm font-semibold">
-                                Name
-                            </Field.Label>
-                            <Field.Input asChild>
-                                <Input
-                                    type="text"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    className="w-full"
-                                    placeholder="Enter API key name"
-                                    disabled={isSubmitting}
-                                />
-                            </Field.Input>
-                        </Field.Root>
-                    </AuthInfoCard>
-                    {isPublishable && (
-                        <PublishableKeySettings
-                            redirectUris={redirectUris}
-                            onRedirectUrisChange={setRedirectUris}
-                            earningsEnabled={earningsEnabled}
-                            onEarningsEnabledChange={setEarningsEnabled}
-                            disabled={isSubmitting}
-                        />
-                    )}
+                    <div className="space-y-4">
+                        <AuthInfoCard>
+                            <KeyNameField
+                                app={appKey}
+                                value={name}
+                                onChange={setName}
+                                disabled={isSubmitting}
+                            />
+                        </AuthInfoCard>
+                        {isPublishable && (
+                            <PublishableKeySettings
+                                redirectUris={redirectUris}
+                                onRedirectUrisChange={setRedirectUris}
+                                earningsEnabled={earningsEnabled}
+                                onEarningsEnabledChange={setEarningsEnabled}
+                                disabled={isSubmitting}
+                            />
+                        )}
 
-                    {!isPublishable && (
-                        <KeyPermissionsInputs
-                            value={keyPermissions}
-                            disabled={isSubmitting}
-                            inline
-                        />
-                    )}
-                </div>
-            </DialogBody>
+                        {!isPublishable && (
+                            <KeyPermissionsInputs
+                                value={keyPermissions}
+                                disabled={isSubmitting}
+                            />
+                        )}
+                    </div>
+                </DialogBody>
 
-            <DialogFooter>
-                <Button
-                    type="button"
-                    intent="neutral"
-                    onClick={onClose}
-                    disabled={isSubmitting}
-                >
-                    Cancel
-                </Button>
-                <Button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={isSubmitting}
-                >
-                    {isSubmitting ? "Saving…" : "Save changes"}
-                </Button>
-            </DialogFooter>
+                <DialogFooter>
+                    <Button
+                        icon={<XIcon />}
+                        type="button"
+                        intent="neutral"
+                        onClick={onClose}
+                        disabled={isSubmitting}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        icon={<CheckIcon />}
+                        type="submit"
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting ? "Saving…" : "Save changes"}
+                    </Button>
+                </DialogFooter>
+            </form>
         </AuthModal>
     );
 };

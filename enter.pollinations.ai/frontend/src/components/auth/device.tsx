@@ -115,7 +115,7 @@ export function Device({ prefilledCode }: DeviceProps) {
                 </Button>
             }
         >
-            <Heading as="h1" id="device-title">
+            <Heading as="h1" size="section" id="device-title">
                 Connect your device
             </Heading>
             <Text size="sm">

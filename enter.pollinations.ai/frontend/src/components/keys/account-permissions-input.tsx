@@ -1,20 +1,21 @@
+import { Text } from "@pollinations/ui";
 import { AuthAccessItem } from "@pollinations/ui/auth";
 
 const permissions = [
     {
         id: "profile",
-        label: "Display name and email.",
-        ariaLabel: "Share display name and email",
+        label: "Read profile",
+        description: "Display name and email.",
     },
     {
         id: "usage",
-        label: "Balance, usage, earnings and quest status.",
-        ariaLabel: "Share account activity",
+        label: "Read account activity",
+        description: "Balance, usage, earnings and quest status.",
     },
     {
         id: "keys",
-        label: "API keys, agents, models and connected apps.",
-        ariaLabel: "Allow account management",
+        label: "Manage account resources",
+        description: "API keys, agents, models and connected apps.",
     },
 ] as const;
 
@@ -32,10 +33,14 @@ export function AccountPermissionsInput({
 }) {
     return permissions
         .filter(({ id }) => !visiblePermissions || visiblePermissions.has(id))
-        .map(({ id, label, ariaLabel }) => (
+        .map(({ id, label, description }) => (
             <AuthAccessItem
                 key={id}
-                ariaLabel={ariaLabel}
+                details={
+                    <Text size="xs" tone="muted">
+                        {description}
+                    </Text>
+                }
                 checked={value?.includes(id) ?? false}
                 disabled={disabled}
                 onChange={(checked) =>

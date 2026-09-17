@@ -1,4 +1,10 @@
-import { ArrowRightIcon, Button, Field, Input } from "@pollinations/ui";
+import {
+    ArrowRightIcon,
+    Button,
+    Field,
+    FieldStack,
+    Input,
+} from "@pollinations/ui";
 import { AuthModalLoading } from "@pollinations/ui/auth";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -106,7 +112,6 @@ export function Device({ prefilledCode }: DeviceProps) {
         <AuthFlowScreen
             title="Allow your device"
             description={`${access} Enter the code shown on it.`}
-            error={error}
             actions={
                 <Button
                     type="submit"
@@ -123,13 +128,11 @@ export function Device({ prefilledCode }: DeviceProps) {
                 onSubmit={handleSubmit}
                 className="space-y-4"
             >
-                <Field.Root className="space-y-2">
-                    <Field.Label className="text-sm font-semibold">
-                        Device code
-                    </Field.Label>
+                <FieldStack error={error}>
                     <Field.Input asChild>
                         <Input
                             type="text"
+                            aria-label="Device code"
                             value={userCode}
                             onChange={(e) =>
                                 setUserCode(e.target.value.toUpperCase())
@@ -145,7 +148,7 @@ export function Device({ prefilledCode }: DeviceProps) {
                             required
                         />
                     </Field.Input>
-                </Field.Root>
+                </FieldStack>
             </form>
         </AuthFlowScreen>
     );

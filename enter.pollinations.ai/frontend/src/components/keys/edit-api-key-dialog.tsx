@@ -140,7 +140,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                 <div className="mt-3">
                     <KeyChip
                         prefix={apiKey.start ?? ""}
-                        kind={isPublishable ? "app" : "secret"}
                         value={isPublishable ? plaintextKey : undefined}
                         label="Copy app key"
                     />

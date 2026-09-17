@@ -121,7 +121,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                     <div className="col-span-2 min-w-0">
                         <KeyChip
                             prefix={apiKey.start ?? ""}
-                            kind={isPublishable ? "app" : "secret"}
                             value={isPublishable ? plaintextKey : undefined}
                             label="Copy app key"
                         />

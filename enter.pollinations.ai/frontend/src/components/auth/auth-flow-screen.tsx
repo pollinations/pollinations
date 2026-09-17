@@ -1,4 +1,4 @@
-import { ColorModeToggle, InlineLink } from "@pollinations/ui";
+import { InlineLink } from "@pollinations/ui";
 import { AuthFlowLayout } from "@pollinations/ui/auth";
 import type { ComponentProps } from "react";
 import { authClient } from "../../auth.ts";
@@ -80,6 +80,7 @@ export function AuthFlowScreen({
                       ? footnotes.dashboard
                       : undefined
             }
+            // Standalone pages follow the system theme; the switch lives on the dashboard.
             headerAction={
                 user ? (
                     <AuthAccountIdentity
@@ -91,9 +92,7 @@ export function AuthFlowScreen({
                                 : (topUpHref ?? returnToTopUpHref())
                         }
                     />
-                ) : (
-                    <ColorModeToggle />
-                )
+                ) : undefined
             }
         />
     );

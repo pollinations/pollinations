@@ -1,6 +1,9 @@
+import { ArrowRightIcon, Button, Text } from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
+import { AppAttribution } from "../components/auth/app-attribution.tsx";
+import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import { oauthSignInCallback } from "../lib/oauth-sign-in.ts";
 
@@ -14,6 +17,8 @@ export const Route = createFileRoute("/app/sign-in")({
 
 function AppSignIn() {
     const { client_id } = Route.useSearch();
+    const { data: session } = authClient.useSession();
+    const user = session?.user;
     const [name, setName] = useState("Pollinations");
     useEffect(() => {
         let cancelled = false;
@@ -29,15 +34,45 @@ function AppSignIn() {
             cancelled = true;
         };
     }, [client_id]);
-    return (
-        <SignInScreen
-            title={name}
-            description="Sign in with your Pollinations admin account."
-            callbackURL={
-                typeof window === "undefined"
-                    ? undefined
-                    : oauthSignInCallback(window.location.href)
-            }
+
+    const callbackURL =
+        typeof window === "undefined"
+            ? undefined
+            : oauthSignInCallback(window.location.href);
+    const appCard = (
+        <AppAttribution
+            attribution={{ appName: name }}
+            isDeviceMode={false}
+            redirectHostname=""
         />
+    );
+
+    // A signed-in admin only needs to resume the dashboard's authorize request.
+    if (user) {
+        return (
+            <AuthFlowScreen
+                title="Sign in"
+                actions={
+                    <Button as="a" href={callbackURL} icon={<ArrowRightIcon />}>
+                        Continue
+                    </Button>
+                }
+            >
+                {appCard}
+                <Text size="sm" tone="muted">
+                    You’re signed in as{" "}
+                    {user.name || user.githubUsername || user.email}.
+                </Text>
+            </AuthFlowScreen>
+        );
+    }
+
+    return (
+        <SignInScreen title="Sign in" callbackURL={callbackURL}>
+            {appCard}
+            <Text size="sm" tone="muted">
+                Sign in with your Pollinations admin account.
+            </Text>
+        </SignInScreen>
     );
 }

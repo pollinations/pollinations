@@ -96,16 +96,16 @@ export function Device({ prefilledCode }: DeviceProps) {
     if (!user) {
         return (
             <SignInScreen
-                title="Connect your device"
-                description="Sign in to enter the code shown on your device."
+                title="Allow device"
+                description="Access to your pollinations.ai account, sign in to enter the code shown on your device."
             />
         );
     }
 
     return (
         <AuthFlowScreen
-            title="Connect your device"
-            description="Enter the code shown on your device to review its access."
+            title="Allow device"
+            description="Access to your pollinations.ai account, enter the code shown on your device."
             actions={
                 <Button
                     type="submit"

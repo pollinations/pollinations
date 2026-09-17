@@ -20,6 +20,11 @@ Authorization: Bearer YOUR_KEY
 Get a key from [enter.pollinations.ai](https://enter.pollinations.ai/keys).
 Calls use that key's Pollen wallet, permissions, and budget.
 
+To register this server in a coding client, use the
+[Polli CLI](https://github.com/pollinations/pollinations/tree/main/packages/polli-cli):
+`polli mcp install cursor pollinations` reads the live catalog, mints a
+dedicated key, and writes the client's config.
+
 For all Pollinations-hosted MCP servers, see the
 [MCP Servers documentation](https://gen.pollinations.ai/docs#tag/mcp-servers).
 

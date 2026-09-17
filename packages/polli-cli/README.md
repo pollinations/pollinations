@@ -130,6 +130,38 @@ Creating an agent also creates its callable model listing. See [Publish an Agent
 
 `polli auth login` creates a key with all account permissions Polli needs: `profile`, `usage`, and `keys`. Use `account:usage` for narrow read-only account state like usage and quests. Use `account:keys` to manage keys and, where invite-only My Models access is enabled, my-models. Quest claiming remains in the dashboard.
 
+## MCP servers
+
+Register the hosted Pollinations MCP servers in a coding client. `polli mcp`
+reads the live catalog from `GET /mcp`, so it never hardcodes a server list, and
+gives each client its own Pollinations key.
+
+```bash
+polli mcp list                            # catalog servers + supported clients
+polli mcp install codex --all             # register every catalog server
+polli mcp install cursor pollinations exa # or pick servers by id
+polli mcp status                          # where Pollinations MCP is registered now
+polli mcp status cursor                   # one client
+polli mcp remove cursor                   # remove only Pollinations entries
+```
+
+Clients with an official `mcp add` command are driven through it — Claude Code,
+Codex CLI, Gemini CLI, and Amp. The rest get their config file edited in place:
+VS Code / Copilot Chat, Cursor, OpenCode, Copilot CLI, Windsurf, Cline, Kiro,
+Zed, and Warp. Harness ids work too: `polli mcp install dsh --no-browser` is
+`polli harness dsh on`, and those adapters report whether they register MCP at
+all. `polli mcp remove <harness>` points at `polli harness <harness> off`.
+
+Installing is idempotent: an unchanged entry is left alone, and a changed key
+replaces just that entry. Removing drops the Pollinations entries, their prompt
+input, and nothing else in your config.
+
+Two clients never store the key in their config: Codex writes the variable *name*
+(`bearer_token_env_var`) into `config.toml` and keeps the value in
+`$CODEX_HOME/.env`, and VS Code's `mcp.json` references
+`${input:pollinations-mcp-key}` — pasting the printed key into VS Code's prompt
+once stores it in secret storage.
+
 ## Coding harnesses
 
 Point an agentic coding tool at Pollinations. `on` logs in if needed, mints a

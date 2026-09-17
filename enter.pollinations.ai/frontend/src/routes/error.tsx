@@ -23,7 +23,7 @@ function ErrorPage() {
 
     // "Sign in" opens the sentence; the error line finishes it.
     const message = isBanned
-        ? "Your account is suspended."
+        ? "Your Pollinations account is suspended."
         : isStagingInviteOnly
           ? "Staging is invite-only. Use pollinations.ai to continue."
           : "Couldn’t sign you in, please try again.";

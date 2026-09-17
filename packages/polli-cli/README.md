@@ -100,6 +100,7 @@ Keys can't be edited — to change a name, budget, or model list, revoke and rec
 polli usage                  # pollen balance
 polli usage --history        # recent requests
 polli usage --daily          # daily spend
+polli usage --history --for-key image-gen --model openai/gpt-image-2 --days 7
 polli earnings               # developer earnings (default 30 days, --days up to 90)
 polli quests --claimable     # only rewards ready to claim
 polli agents list            # managed prompt agents

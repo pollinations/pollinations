@@ -1,0 +1,37 @@
+{
+  "pr_number": 15092,
+  "title": "Add Regexly to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15092",
+  "merged_at": "2026-09-17T12:48:33Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Regexly](https://fadyabohamza-netizen.github.io/regexly) to build\n- Describe a regex pattern in plain English, get the regular expression with flavor-specific explanation (JavaScript/Python/PCRE). BYOP Pollinations-powered.\n\nFixes #14987",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Plain English, Sharp Regex",
+    "blurb": "Regexly joined the garden: describe the pattern you mean, and it grows into a regex with an explanation for its chosen habitat. JavaScript, Python, and PCRE can now stop pretending they all speak the same dialect.",
+    "summary": "Added the Pollinations-powered Regexly app to the build, letting people describe a regex in plain English and receive a generated pattern plus flavor-specific explanations for JavaScript, Python, or PCRE.",
+    "impact": "Users can turn an intent such as a validation or text-matching rule into a usable regex and understand how it maps to their selected JavaScript, Python, or PCRE flavor.",
+    "keywords": [
+      "Regexly",
+      "regex",
+      "community app",
+      "BYOP",
+      "JavaScript",
+      "Python",
+      "PCRE"
+    ],
+    "visual_concept": "Depict Regexly as a cozy garden-workbench where plain-English notes transform into curling, neatly labeled regex vines for JavaScript, Python, and PCRE. Polli, wearing tiny librarian glasses, tends the code-plants while a friendly CRT robot reads the resulting pattern; a retro terminal and small flowers make the translation from words to syntax feel approachable.",
+    "image_prompt": "A cozy pixel art garden-workbench where handwritten plain-English notes bloom into tidy curly regex vines labeled \"JS\", \"PY\", and \"PCRE\" beside a lime green (#ecf874) retro terminal; Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny librarian glasses and carefully prunes a code-plant while a chunky CRT-monitor robot holds a regex printout. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with warm cream, mint, lavender, and peach accents, subtle CRT glow, pixel flowers, and simple pixel-font text: \"WORDS → REGEX\"; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-17/PR-15092.jpg",
+    "prompt": "A cozy pixel art garden-workbench where handwritten plain-English notes bloom into tidy curly regex vines labeled \"JS\", \"PY\", and \"PCRE\" beside a lime green (#ecf874) retro terminal; Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny librarian glasses and carefully prunes a code-plant while a chunky CRT-monitor robot holds a regex printout. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with warm cream, mint, lavender, and peach accents, subtle CRT glow, pixel flowers, and simple pixel-font text: \"WORDS → REGEX\"; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-17T12:49:41.260577+00:00",
+  "app_name": "Regexly",
+  "app_url": "https://fadyabohamza-netizen.github.io/regexly"
+}

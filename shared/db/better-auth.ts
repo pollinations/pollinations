@@ -438,7 +438,6 @@ export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   pollenCredited: real("pollen_credited").notNull(),
-  pollenReversed: real("pollen_reversed").notNull().default(0),
   createdAt: integer("created_at", { mode: "timestamp" })
     .defaultNow()
     .notNull(),

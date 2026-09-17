@@ -122,8 +122,10 @@ export const stripeRoutes = new Hono<Env>()
             // Request 3DS on first purchases and small packs. Successful
             // authentication can shift fraud liability; requesting it alone
             // does not guarantee authentication or eliminate dispute fees.
+            // Refunds are negative rows, so a fully refunded history counts
+            // as no prior purchase.
             const priorCredit = await c.env.DB.prepare(
-                "SELECT 1 FROM stripe_checkout_credits WHERE user_id = ? LIMIT 1",
+                "SELECT 1 FROM stripe_checkout_credits WHERE user_id = ? GROUP BY user_id HAVING SUM(pollen_credited) > 0",
             )
                 .bind(userId)
                 .first();

@@ -3703,13 +3703,15 @@ async function readRefundState(userId: string) {
         .from(userTable)
         .where(eq(userTable.id, userId));
     const credit = await env.DB.prepare(
-        "SELECT pollen_reversed AS reversed FROM stripe_checkout_credits WHERE session_id = 'cs_refunded'",
-    ).first<{ reversed: number }>();
-    return { packBalance: row?.packBalance, reversed: credit?.reversed };
+        "SELECT SUM(pollen_credited) AS net FROM stripe_checkout_credits WHERE user_id = ?",
+    )
+        .bind(userId)
+        .first<{ net: number }>();
+    return { packBalance: row?.packBalance, netCredited: credit?.net };
 }
 
-test("charge.refunded reverses the purchased Pollen once", async ({
-    sessionToken: _sessionToken,
+test("charge.refunded reverses a fully refunded purchase once", async ({
+    sessionToken,
     mocks,
 }) => {
     await mocks.enable("stripe", "tinybird");
@@ -3721,33 +3723,39 @@ test("charge.refunded reverses the purchased Pollen once", async ({
         );
         expect(response.status).toBe(200);
     }
-
     expect(await readRefundState(userId)).toEqual({
         packBalance: 15,
-        reversed: 10,
+        netCredited: 0,
     });
+
+    mocks.stripe.state.requests.length = 0;
+    await SELF.fetch(`${base}/checkout/p10`, {
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        redirect: "manual",
+    });
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    expect(body?.["payment_method_options[card][request_three_d_secure]"]).toBe(
+        "any",
+    );
 });
 
-test("charge.refunded reverses partial refunds proportionally and ignores stale events", async ({
+test("charge.refunded leaves partial refunds for manual adjustment", async ({
     sessionToken: _sessionToken,
     mocks,
 }) => {
     await mocks.enable("stripe", "tinybird");
     const userId = await seedRefundablePurchase(mocks);
 
-    await postSignedStripeWebhook(chargeRefundedEvent("evt_refund_half", 600));
-    expect(await readRefundState(userId)).toEqual({
-        packBalance: 20,
-        reversed: 5,
-    });
-
-    await postSignedStripeWebhook(chargeRefundedEvent("evt_refund_rest", 1200));
-    await postSignedStripeWebhook(
-        chargeRefundedEvent("evt_refund_half_late", 600),
+    const response = await postSignedStripeWebhook(
+        chargeRefundedEvent("evt_refund_partial", 600),
     );
+
+    expect(response.status).toBe(200);
     expect(await readRefundState(userId)).toEqual({
-        packBalance: 15,
-        reversed: 10,
+        packBalance: 25,
+        netCredited: 10,
     });
 });
 

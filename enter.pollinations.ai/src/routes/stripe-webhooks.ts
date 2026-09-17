@@ -1,7 +1,4 @@
-import {
-    POLLEN_BILLING_PRECISION,
-    roundPollenLedgerAmount,
-} from "@shared/billing/precision.ts";
+import { POLLEN_BILLING_PRECISION } from "@shared/billing/precision.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
 import { getPollenPackByKey } from "@shared/pollen-packs.ts";
 import { eq } from "drizzle-orm";
@@ -555,18 +552,20 @@ const handleCheckoutSessionCompleted = async (
     };
 };
 
-// amount_refunded is cumulative, so each event moves the reversal up to the
-// refunded share of the purchase. Failed refunds are corrected by hand.
+// A full refund is recorded as a negative credit row keyed by the refunded
+// session, so a repeated event hits the primary key and changes nothing.
+// Partial and failed refunds are corrected by hand.
 async function reversePollenForRefund(
     env: CloudflareBindings,
     stripe: Stripe,
+    event: Stripe.Event,
     charge: Stripe.Charge,
 ): Promise<void> {
     const paymentIntent =
         typeof charge.payment_intent === "string"
             ? charge.payment_intent
             : charge.payment_intent?.id;
-    if (!paymentIntent || !charge.amount_captured) return;
+    if (!paymentIntent) return;
 
     const sessions = await stripe.checkout.sessions.list({
         payment_intent: paymentIntent,
@@ -575,50 +574,51 @@ async function reversePollenForRefund(
     const sessionId = sessions.data[0]?.id;
     const credit = sessionId
         ? await env.DB.prepare(
-              `SELECT user_id AS userId, pollen_credited AS pollenCredited,
-                  pollen_reversed AS pollenReversed
-              FROM stripe_checkout_credits WHERE session_id = ?`,
+              "SELECT user_id AS userId, pollen_credited AS pollen FROM stripe_checkout_credits WHERE session_id = ?",
           )
               .bind(sessionId)
-              .first<{
-                  userId: string;
-                  pollenCredited: number;
-                  pollenReversed: number;
-              }>()
+              .first<{ userId: string; pollen: number }>()
         : null;
     if (!credit) {
         console.warn(`Stripe refund: no Pollen credit for charge ${charge.id}`);
         return;
     }
+    if (charge.amount_refunded < charge.amount_captured) {
+        console.warn(
+            `Stripe refund: partial refund on charge ${charge.id} needs a manual Pollen adjustment`,
+        );
+        return;
+    }
 
-    const target = roundPollenLedgerAmount(
-        (credit.pollenCredited * charge.amount_refunded) /
-            charge.amount_captured,
-    );
-    if (target <= credit.pollenReversed) return;
-    const debit = roundPollenLedgerAmount(target - credit.pollenReversed);
-
-    // The debit applies only while pollen_reversed still holds the value read
-    // above, so a duplicate or concurrent event changes nothing.
-    await env.DB.batch([
-        env.DB.prepare(
-            `UPDATE user
-            SET pack_balance = ROUND(
-                COALESCE(pack_balance, 0) - ?,
-                ${POLLEN_BILLING_PRECISION}
-            )
-            WHERE id = ? AND (
-                SELECT pollen_reversed FROM stripe_checkout_credits
-                WHERE session_id = ?
-            ) = ?`,
-        ).bind(debit, credit.userId, sessionId, credit.pollenReversed),
-        env.DB.prepare(
-            `UPDATE stripe_checkout_credits SET pollen_reversed = ?
-            WHERE session_id = ? AND pollen_reversed = ?`,
-        ).bind(target, sessionId, credit.pollenReversed),
-    ]);
+    try {
+        await env.DB.batch([
+            env.DB.prepare(
+                `INSERT INTO stripe_checkout_credits (
+                    session_id, event_id, event_type, user_id, pollen_credited, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?)`,
+            ).bind(
+                `refund:${sessionId}`,
+                event.id,
+                event.type,
+                credit.userId,
+                -credit.pollen,
+                Date.now(),
+            ),
+            env.DB.prepare(
+                `UPDATE user
+                SET pack_balance = ROUND(
+                    COALESCE(pack_balance, 0) - ?,
+                    ${POLLEN_BILLING_PRECISION}
+                )
+                WHERE id = ?`,
+            ).bind(credit.pollen, credit.userId),
+        ]);
+    } catch (error) {
+        if (isUniqueConstraintError(error)) return;
+        throw error;
+    }
     console.log(
-        `Stripe refund: reversed ${debit} pollen from user ${credit.userId} (charge ${charge.id})`,
+        `Stripe refund: reversed ${credit.pollen} pollen from user ${credit.userId} (charge ${charge.id})`,
     );
 }
 
@@ -878,6 +878,7 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 await reversePollenForRefund(
                     c.env,
                     stripe,
+                    event,
                     event.data.object as Stripe.Charge,
                 );
                 break;

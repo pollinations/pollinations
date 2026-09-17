@@ -11,30 +11,25 @@ import {
     questionsToProperties,
 } from "./jev.js";
 
-// DRAFT — do not merge or deploy until TypeSafe grants standalone-service permission.
 function buildServer() {
     const server = new McpServer(
-        { name: "jev-mcp", version: "0.1.0" },
+        { name: "ask-jev-mcp", title: "Ask Jev MCP", version: "0.1.0" },
         { capabilities: { tools: {} } },
     );
     server.registerTool(
         "jev_decide",
         {
             description:
-                "Make typed decisions about a state: choice, ordered score, or noul (probability). " +
-                "Send multiple named questions in one call — they are answered in parallel and cannot see each other. " +
-                "Jev judges the state you give it and does not know current events: put the evidence in state, " +
-                "because without it Jev answers confidently and wrongly about anything recent. " +
-                "For choice, criteria keys are the options and their descriptions explain when to select them. " +
-                "For noul, optional criteria.true and criteria.false describe what yes and no mean. " +
-                "Read a score's legend rather than assuming a direction — the number indexes the criteria order you sent. " +
-                "Keep counting, arithmetic, and date comparison in your own code; Jev is unreliable at all three.",
+                "Evaluate state with independent choice, ordered score, or noul (probability) questions. " +
+                "Supply relevant facts in state; confidence can remain high when facts are missing. " +
+                "Choice criteria map options to descriptions; optional noul criteria.true/false define yes/no. " +
+                "Read score legends; handle counting, arithmetic, and date comparisons in code.",
             inputSchema: z.object(jevInputSchema),
         },
         async ({ state, questions }, context) => {
             const result = await postChatCompletion(
                 {
-                    model: "jev",
+                    model: "openjev",
                     messages: [{ role: "user", content: state }],
                     response_format: {
                         type: "json_schema",
@@ -83,7 +78,8 @@ function unauthorizedResponse() {
         {
             status: 401,
             headers: {
-                "WWW-Authenticate": 'Bearer realm="jev-mcp.pollinations.ai"',
+                "WWW-Authenticate":
+                    'Bearer realm="ask-jev-mcp.pollinations.ai"',
             },
         },
     );
@@ -95,7 +91,7 @@ export default {
 
         if (url.pathname === "/health" && request.method === "GET") {
             return Response.json({
-                name: "jev-mcp",
+                name: "ask-jev-mcp",
                 transport: "streamable-http",
                 endpoint: "/",
                 stateless: true,

@@ -1,5 +1,4 @@
-import { collectUpstreamHeaders, remapUpstreamStatus } from "@shared/error.ts";
-import debug from "debug";
+import { ensureUpstreamOk } from "@shared/error.ts";
 import type {
     ChatCompletion,
     ChatMessage,
@@ -8,7 +7,6 @@ import type {
 } from "./types.js";
 import { isPlainObject } from "./utils/objectCleaners.js";
 
-const log = debug("pollinations:systemone");
 const DOCS_URL = "https://gen.pollinations.ai/docs#tag/text";
 const FORMAT_EXAMPLE =
     '{"response_format":{"type":"json_schema","json_schema":{"name":"decision","schema":{"type":"object","properties":{"urgent":{"type":"number","minimum":0,"maximum":1}}}}}}';
@@ -51,20 +49,20 @@ export async function callSystemOne(
     options: TransformOptions,
 ): Promise<ChatCompletion> {
     if (options.stream === true) {
-        throw serviceError("jev does not support streaming.", 400);
+        throw serviceError("openjev does not support streaming.", 400);
     }
     const apiKey = options.modelConfig?.["typesafe-api-key"];
     if (typeof apiKey !== "string" || !apiKey) {
         throw serviceError(
-            "TypeSafe credentials are not configured for jev.",
+            "TypeSafe credentials are not configured for openjev.",
             500,
         );
     }
-    const model = options.modelConfig?.model ?? "jev-latest";
+    const model = options.modelConfig?.model;
     const format = options.response_format;
     if (format?.type !== "json_schema") {
         throw serviceError(
-            `jev requires response_format.type to be "json_schema"; received ${JSON.stringify(format?.type) ?? "missing"}. Minimal request shape: ${FORMAT_EXAMPLE}. Full example: ${DOCS_URL}`,
+            `openjev requires response_format.type to be "json_schema"; received ${JSON.stringify(format?.type) ?? "missing"}. Minimal request shape: ${FORMAT_EXAMPLE}. Full example: ${DOCS_URL}`,
             400,
         );
     }
@@ -73,7 +71,7 @@ export async function callSystemOne(
     const properties = isPlainObject(schema) ? schema.properties : undefined;
     if (!isPlainObject(properties)) {
         throw serviceError(
-            `jev requires response_format.json_schema.schema.properties to be an object, not missing, null, an array, or a scalar. Minimal request shape: ${FORMAT_EXAMPLE}. Full example: ${DOCS_URL}`,
+            `openjev requires response_format.json_schema.schema.properties to be an object, not missing, null, an array, or a scalar. Minimal request shape: ${FORMAT_EXAMPLE}. Full example: ${DOCS_URL}`,
             400,
         );
     }
@@ -130,15 +128,21 @@ export async function callSystemOne(
                     }
                 }
                 throw serviceError(
-                    `jev cannot infer a question type for property ${JSON.stringify(name)} from ${JSON.stringify(property)}. Use ${PROPERTY_EXAMPLES}. Choice needs a non-empty string enum; score needs at least two ordered string labels. Full example: ${DOCS_URL}`,
+                    `openjev cannot infer a question type for property ${JSON.stringify(name)} from ${JSON.stringify(property)}. Use ${PROPERTY_EXAMPLES}. Choice needs a non-empty string enum; score needs at least two ordered string labels. Full example: ${DOCS_URL}`,
                     400,
                 );
             },
         ),
     );
     const state = messages
-        .map((message) =>
-            typeof message.content === "string" ? message.content : "",
+        .flatMap(({ content }) =>
+            Array.isArray(content)
+                ? content.map((part) =>
+                      isPlainObject(part) && part.type === "text"
+                          ? part.text
+                          : "",
+                  )
+                : [content],
         )
         .filter(Boolean)
         .join("\n\n");
@@ -155,19 +159,7 @@ export async function callSystemOne(
             body: JSON.stringify({ state, model, questions }),
             signal: controller.signal,
         });
-        if (!response.ok) {
-            const text = await response.text();
-            log("TypeSafe upstream error (%d): %s", response.status, text);
-            const error = serviceError(
-                text || `TypeSafe returned HTTP ${response.status}`,
-                remapUpstreamStatus(response.status),
-            );
-            error.upstreamStatus = response.status;
-            error.upstreamHeaders = collectUpstreamHeaders(response.headers);
-            error.responseBody = text;
-            error.requestUrl = requestUrl;
-            throw error;
-        }
+        await ensureUpstreamOk(response, requestUrl);
         const result = (await response.json()) as SystemOneResponse;
         // Billable responses must carry usage; reject rather than bill zero.
         if (

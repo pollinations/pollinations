@@ -122,13 +122,13 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 
 Models that advertise `/v1/responses` also accept OpenAI's cache controls. Set `prompt_cache_options.mode` to `explicit` and place `prompt_cache_breakpoint: { "mode": "explicit" }` on the content block ending each stable prefix (up to four). Chat requests adapted to Responses preserve these markers; the existing `cache_control: { "type": "ephemeral" }` marker is translated to the same explicit breakpoint. Managed prompt agents apply an explicit request without caller markers to their configured static prompt.
 
-### Typed decisions (`jev`)
+### Typed decisions (`openjev`)
 
-`jev` returns calibrated judgments instead of free text. Each property in `response_format.json_schema` becomes one question; the property shape selects the answer type — a string `enum` returns a **choice**, a number/integer with an ordered string `enum` returns a **score**, and a number/integer bounded `0`-`1` returns a **noul** (probability). Streaming is not supported.
+`openjev` returns calibrated judgments instead of free text. Each property in `response_format.json_schema` becomes one question; the property shape selects the answer type — a string `enum` returns a **choice**, a number/integer with an ordered string `enum` returns a **score**, and a number/integer bounded `0`-`1` returns a **noul** (probability). Streaming is not supported.
 
 ```json
 {
-  "model": "jev",
+  "model": "openjev",
   "messages": [
     { "role": "user", "content": "My payouts have been failing for 3 days." }
   ],
@@ -159,12 +159,6 @@ Models that advertise `/v1/responses` also accept OpenAI's cache controls. Set `
 
 `message.content` returns one JSON field per question, each carrying the fields for its type (`choice` + `confidence` + `probabilities`, `score` + `legend`, or `noul`).
 
-**Writing good questions**
-
-1. Put the evidence in the user message: Jev judges the text you send and does not know current events. On events after its training cutoff, the measured Brier score was 0.469 without source text and 0.062 with it; Jev does not lower its confidence when it lacks the facts.
-2. Ask every independent question in one request. Questions are answered in parallel and cannot see each other's answers.
-3. `enum` values carry the whole meaning of an option; per-option descriptions are not forwarded. Use self-describing values or spell out the options in the property `description`: measured confidence was 0.19 for opaque labels and 1.0 for the same labels explained in the description.
-4. A `score` number indexes the `enum` order you sent. Read `legend` rather than assuming higher means worse.
-5. Keep counting, arithmetic and date comparison in your own code. In measurements, counting was correct at 12 items and wrong by a whole bucket at 30.
+Supply relevant facts in the message; Jev can be confident even when facts are missing. Explain enum options in the property `description`, interpret scores using `legend`, and handle counting, arithmetic, and date comparisons in code. Questions are evaluated independently.
 
 The context limit is 64k tokens for `state` and all questions together, and 32k for `state` plus the longest question.

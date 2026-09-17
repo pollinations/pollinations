@@ -1101,15 +1101,8 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    // DRAFT — not mergeable/deployable yet. TypeSafe AI's terms don't currently
-    // permit Pollinations to offer Jev through its own API (their MCA prohibits
-    // reselling/offering the Services as a standalone service without written
-    // permission). This entry is prepared for once that's resolved.
-    // priceMultiplier/paidOnly are explicit placeholders pending a business
-    // decision — do not treat them as final. brandUrl/brandIconUrl intentionally
-    // omitted (no asset yet).
-    "typesafe/jev": {
-        aliases: ["jev"],
+    openjev: {
+        aliases: [],
         provider: "typesafe",
         publisher: "TypeSafe",
         category: "text",
@@ -1121,7 +1114,7 @@ const TEXT_BASE_SERVICES = {
             promptTextTokens: perMillion(0.042),
             completionTextTokens: perMillion(0),
         },
-        title: "Jev",
+        title: "OpenJev",
         description:
             "Typed decisions with calibrated confidence instead of free text; " +
             "ask via response_format.json_schema, one question per schema property",

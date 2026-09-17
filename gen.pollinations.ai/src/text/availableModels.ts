@@ -515,9 +515,8 @@ const models: ModelDefinition[] = [
             createGeminiThinkingTransform("v2.5"),
         ),
     },
-    // DRAFT — do not merge or deploy until TypeSafe AI grants standalone/reseller permission.
     {
-        name: "typesafe/jev",
+        name: "openjev",
         config: portkeyConfig["jev-latest"],
         useSystemOneApi: true,
     },

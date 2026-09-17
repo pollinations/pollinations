@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { findModelByName } from "../../src/text/availableModels.js";
+import { generateTextPortkey } from "../../src/text/generateTextPortkey.js";
 import { callSystemOne } from "../../src/text/systemOneClient.js";
 import type { TransformOptions } from "../../src/text/types.js";
 
-const modelConfig = { "typesafe-api-key": "test-key" };
+const modelConfig = { "typesafe-api-key": "test-key", model: "jev-latest" };
 const properties = {
     department: {
         type: "string",
@@ -48,6 +50,12 @@ afterEach(() => {
 });
 
 describe("System One adapter", () => {
+    it("resolves openjev without the retired public names", () => {
+        expect(findModelByName("openjev")?.name).toBe("openjev");
+        expect(findModelByName("jev")).toBeNull();
+        expect(findModelByName("typesafe/jev")).toBeNull();
+    });
+
     it("sends all question types in one call and maps answers and usage", async () => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")
@@ -65,7 +73,7 @@ describe("System One adapter", () => {
                 expect(init?.signal).toBeInstanceOf(AbortSignal);
                 expect(JSON.parse(String(init?.body))).toEqual({
                     model: "jev-latest",
-                    state: "Route the request.\n\nMy payouts have failed for 3 days.",
+                    state: "Route the request.\n\nMy payouts have failed\n\nfor 3 days.",
                     questions: {
                         department: {
                             type: "choice",
@@ -98,10 +106,12 @@ describe("System One adapter", () => {
                 { role: "assistant", content: "" },
                 {
                     role: "user",
-                    content: [{ type: "text", text: "skip non-string" }],
+                    content: [
+                        { type: "text", text: "My payouts have failed" },
+                        { type: "text", text: "for 3 days." },
+                    ],
                 },
                 { role: "assistant", content: null },
-                { role: "user", content: "My payouts have failed for 3 days." },
             ],
             { modelConfig, response_format },
         );
@@ -142,10 +152,49 @@ describe("System One adapter", () => {
         });
     });
 
+    it("routes openjev directly with the configured upstream model", async () => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (input, init) => {
+                expect(String(input)).toBe(
+                    "https://api.typesafe.ai/v1/systemone",
+                );
+                expect(JSON.parse(String(init?.body))).toMatchObject({
+                    model: "jev-1.13.0",
+                    state: "Payment failed.",
+                });
+                expect(
+                    new Headers(init?.headers).get("x-portkey-provider"),
+                ).toBeNull();
+                return Response.json({
+                    model: "jev-1.13.0",
+                    answers,
+                    usage: { input_tokens: 312, output_tokens: 48 },
+                });
+            });
+        const portkeyFetcher = vi.fn();
+        await generateTextPortkey(
+            [
+                {
+                    role: "user",
+                    content: [{ type: "text", text: "Payment failed." }],
+                },
+            ],
+            {
+                model: "openjev",
+                modelConfig: { ...modelConfig, model: "jev-1.13.0" },
+                response_format,
+            },
+            portkeyFetcher,
+        );
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        expect(portkeyFetcher).not.toHaveBeenCalled();
+    });
+
     it("rejects streaming before fetching or checking credentials", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
         await expect(callSystemOne([], { stream: true })).rejects.toMatchObject(
-            { status: 400, message: "jev does not support streaming." },
+            { status: 400, message: "openjev does not support streaming." },
         );
         expect(fetchSpy).not.toHaveBeenCalled();
     });
@@ -156,7 +205,7 @@ describe("System One adapter", () => {
             callSystemOne([], { response_format }),
         ).rejects.toMatchObject({
             status: 500,
-            message: "TypeSafe credentials are not configured for jev.",
+            message: "TypeSafe credentials are not configured for openjev.",
         });
         expect(fetchSpy).not.toHaveBeenCalled();
     });

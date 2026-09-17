@@ -55,6 +55,10 @@ export async function generateTextPortkey(
 
     if (state.options.model) {
         state = await resolveModelConfig(state.messages, state.options);
+        // TypeSafe has its own wire format and does not use Portkey transforms.
+        if (modelDef?.useSystemOneApi) {
+            return callSystemOne(state.messages, state.options);
+        }
         state = await generateHeaders(state.messages, state.options);
         state = await imageUrlToBase64Transform(state.messages, state.options);
         state = await processParameters(state.messages, state.options);
@@ -87,14 +91,6 @@ export async function generateTextPortkey(
 
     delete state.options.additionalHeaders;
     delete state.options.portkeyGatewayUrl;
-
-    // DRAFT — do not merge or deploy until TypeSafe AI grants standalone/reseller permission.
-    // Jev's wire format isn't chat-completions-shaped upstream, so it always
-    // bypasses Portkey — never conditional like the Responses dispatch below,
-    // which only diverts specific request shapes.
-    if (modelDef?.useSystemOneApi) {
-        return callSystemOne(state.messages, state.options);
-    }
 
     // Models marked for Responses use their declared direct Responses target;
     // the adapter keeps the public Chat Completions contract stateless.

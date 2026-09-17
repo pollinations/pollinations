@@ -16,11 +16,11 @@ function localFetch(input, init) {
 
 async function connectClient(options = {}, token = TOKEN) {
     const client = new Client(
-        { name: "jev-mcp-worker-test", version: "0.0.1" },
+        { name: "ask-jev-mcp-worker-test", version: "0.0.1" },
         { capabilities: {}, ...options },
     );
     const transport = new StreamableHTTPClientTransport(
-        new URL("https://jev-mcp.pollinations.ai"),
+        new URL("https://ask-jev-mcp.pollinations.ai"),
         {
             fetch: localFetch,
             requestInit: {
@@ -34,13 +34,13 @@ async function connectClient(options = {}, token = TOKEN) {
 
 test("serves health and requires bearer auth", async () => {
     const health = await worker.fetch(
-        new Request("https://jev-mcp.pollinations.ai/health"),
+        new Request("https://ask-jev-mcp.pollinations.ai/health"),
     );
     assert.equal(health.status, 200);
     assert.equal((await health.json()).endpoint, "/");
 
     const unauthorized = await worker.fetch(
-        new Request("https://jev-mcp.pollinations.ai", {
+        new Request("https://ask-jev-mcp.pollinations.ai", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: "{}",
@@ -49,11 +49,11 @@ test("serves health and requires bearer auth", async () => {
     assert.equal(unauthorized.status, 401);
     assert.equal(
         unauthorized.headers.get("www-authenticate"),
-        'Bearer realm="jev-mcp.pollinations.ai"',
+        'Bearer realm="ask-jev-mcp.pollinations.ai"',
     );
 
     const oldEndpoint = await worker.fetch(
-        new Request("https://jev-mcp.pollinations.ai/mcp"),
+        new Request("https://ask-jev-mcp.pollinations.ai/mcp"),
     );
     assert.equal(oldEndpoint.status, 404);
 });
@@ -81,7 +81,7 @@ test("serves current and 2025 Streamable HTTP without sessions", async () => {
 
 test("rejects JSON-RPC batches", async () => {
     const response = await worker.fetch(
-        new Request("https://jev-mcp.pollinations.ai", {
+        new Request("https://ask-jev-mcp.pollinations.ai", {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${TOKEN}`,
@@ -159,7 +159,7 @@ test("translates all question types in one non-streaming chat completion", async
             "application/json",
         );
         assert.deepEqual(JSON.parse(init.body), {
-            model: "jev",
+            model: "openjev",
             messages: [
                 {
                     role: "user",

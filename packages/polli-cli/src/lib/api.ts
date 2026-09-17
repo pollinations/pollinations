@@ -26,6 +26,7 @@ interface RequestOptions {
     method?: string;
     body?: unknown;
     apiKey?: string;
+    responseType?: "json" | "text";
 }
 
 const request = async <T>(
@@ -33,7 +34,7 @@ const request = async <T>(
     path: string,
     options: RequestOptions = {},
 ): Promise<T> => {
-    const { method = "GET", body, apiKey } = options;
+    const { method = "GET", body, apiKey, responseType = "json" } = options;
     const key = resolveApiKey(apiKey);
 
     const headers: Record<string, string> = {
@@ -55,6 +56,7 @@ const request = async <T>(
         );
     }
 
+    if (responseType === "text") return res.text() as Promise<T>;
     return res.json() as Promise<T>;
 };
 

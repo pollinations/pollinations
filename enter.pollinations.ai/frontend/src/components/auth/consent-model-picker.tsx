@@ -250,7 +250,7 @@ export function ConsentModelPicker({
                         <TabButton
                             key={model.id}
                             active={active}
-                            size="sm"
+                            size="xs"
                             variant="ghost"
                             disabled={disabled}
                             onClick={() =>

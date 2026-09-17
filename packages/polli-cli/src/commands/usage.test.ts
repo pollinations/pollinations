@@ -162,4 +162,18 @@ describe("splitUsageKeyArgs / applyUsageKeyAuth", () => {
         expect(filters).toEqual(["harness-a", "harness-b"]);
         expect(getKeyOverride()).toBe("sk_live_auth");
     });
+
+    it("clears a non-api-key override when no auth key precedes usage", () => {
+        setKeyOverride("not-an-api-key");
+        const filters = applyUsageKeyAuth([
+            "node",
+            "polli",
+            "--key",
+            "not-an-api-key",
+            "usage",
+            "--history",
+        ]);
+        expect(filters).toEqual([]);
+        expect(getKeyOverride()).toBeUndefined();
+    });
 });

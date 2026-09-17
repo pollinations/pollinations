@@ -174,10 +174,10 @@ export const applyUsageKeyAuth = (argv: string[] = process.argv): string[] => {
     const { authKeys, filterKeys } = splitUsageKeyArgs(argv);
     if (authKeys.length > 0) {
         setKeyOverride(authKeys[authKeys.length - 1]);
-    } else if (filterKeys.length > 0) {
-        // Shared program `--key` may have copied a filter value into the
-        // override — including values that look like `pk_`/`sk_`. Never treat
-        // a post-`usage` filter as auth; fall back to stored credentials.
+    } else {
+        // No pre-`usage` pk_/sk_ auth key. Any override present can only have
+        // come from a post-`usage` filter (including pk_/sk_-looking names) or
+        // a non-key value before `usage` — never preserve it as Bearer auth.
         clearKeyOverride();
     }
     return filterKeys;

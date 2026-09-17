@@ -1,0 +1,36 @@
+{
+  "pr_number": 15101,
+  "title": "Add Codeverter to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15101",
+  "merged_at": "2026-09-17T16:53:33Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Codeverter](https://fadyabohamza-netizen.github.io/codeverter) to build\n- Convert code between 9+ programming languages with AI. BYOP Pollinations-powered.\n\nFixes #14988",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Nine tongues, one hive",
+    "blurb": "Codeverter has joined the garden: bring your own Pollinations key and let AI help code travel between nine-plus programming languages. The syntax migratory season is now open.",
+    "summary": "Added the Pollinations-powered Codeverter app to the build, giving users a BYOP tool for converting code between more than nine programming languages with AI.",
+    "impact": "Users can discover and run Codeverter from the app build to translate code across 9+ languages using their own Pollinations-powered setup.",
+    "keywords": [
+      "Codeverter",
+      "community app",
+      "code conversion",
+      "programming languages",
+      "BYOP",
+      "AI tools"
+    ],
+    "visual_concept": "Depict Codeverter as a cozy multilingual code garden: labeled code scrolls or terminal panes in several language-like colors flow through a friendly converter machine and emerge as new scrolls. Polli, wearing tiny translator glasses and carrying a clipboard, oversees the translation while code-plants and flowers grow around the retro workstation.",
+    "image_prompt": "A cozy pixel art garden workshop where the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings wears tiny translator glasses and guides colorful code scrolls through a chunky retro “CODEVERTER” machine, emerging as scrolls in many programming languages amid sprouting code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-17/PR-15101.jpg",
+    "prompt": "A cozy pixel art garden workshop where the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light-blue translucent wings wears tiny translator glasses and guides colorful code scrolls through a chunky retro “CODEVERTER” machine, emerging as scrolls in many programming languages amid sprouting code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-17T16:54:34.797509+00:00",
+  "app_name": "Codeverter",
+  "app_url": "https://fadyabohamza-netizen.github.io/codeverter"
+}

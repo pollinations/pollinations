@@ -157,18 +157,24 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     return (
         <div className="space-y-4">
             {showIdentity ? (
-                // Consent: one card. What the app always gets, without
-                // checkboxes, then the optional grants it asked for, models last.
-                <AuthInfoCard>
-                    <ul className="space-y-3 text-sm">
-                        <AuthAccessItem icon={<AccountIcon />}>
-                            Username and picture
-                        </AuthAccessItem>
-                        {limitInputs}
-                        {accountPermissionsInput}
-                        {modelsItem}
-                    </ul>
-                </AuthInfoCard>
+                // Consent: what the app always gets, without checkboxes, then
+                // one card of optional grants, models last.
+                <>
+                    <AuthInfoCard>
+                        <ul className="space-y-3 text-sm">
+                            <AuthAccessItem icon={<AccountIcon />}>
+                                Username and picture
+                            </AuthAccessItem>
+                            {limitInputs}
+                        </ul>
+                    </AuthInfoCard>
+                    <AuthInfoCard>
+                        <ul className="space-y-3 text-sm">
+                            {accountPermissionsInput}
+                            {modelsItem}
+                        </ul>
+                    </AuthInfoCard>
+                </>
             ) : (
                 <>
                     <AuthInfoCard>

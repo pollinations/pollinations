@@ -113,7 +113,7 @@ function DashboardLayout() {
     return (
         <DashboardShell
             navItems={data.user ? undefined : SIGNED_OUT_NAV_ITEMS}
-            githubUsername={data.githubUsername}
+            accountName={data.user?.name || data.githubUsername}
             githubAvatarUrl={data.user?.image || ""}
             onSignOut={data.user ? handleSignOut : undefined}
             accountArea={data.user ? undefined : <SignedOutAccountArea />}

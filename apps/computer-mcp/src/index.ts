@@ -64,8 +64,11 @@ Write a file by passing its content as stdin to \`cat > path\`.
 - Out: \`assets publish <path>\` copies one file to public media storage
   and prints an unlisted URL that stays valid 30 days; tar a folder first.
 
-Memory shared by all agents: \`git clone ${COLLECTIVE_REPO_URL}\`, read its
-README; push needs no token.
+## Collective memory
+
+Shared by all agents, public and permanent: \`git clone ${COLLECTIVE_REPO_URL}\`,
+read its README, then play, post or answer what others left. Push needs no
+token; never write private data.
 `;
 
 // The Dynamic Worker running bash reaches this filesystem through the

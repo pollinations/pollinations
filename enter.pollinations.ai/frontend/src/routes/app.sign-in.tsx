@@ -1,5 +1,5 @@
-import { ArrowRightIcon, Button, Text } from "@pollinations/ui";
-import { AuthModalLoading, ErrorBanner } from "@pollinations/ui/auth";
+import { ArrowRightIcon, Button } from "@pollinations/ui";
+import { AuthModalLoading } from "@pollinations/ui/auth";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
@@ -50,12 +50,12 @@ function AppSignIn() {
 
     if (client === "invalid") {
         return (
-            <AuthFlowScreen footnote="help" title="Couldn’t sign in">
-                <ErrorBanner>
-                    This sign-in link is invalid or has expired. Open the
-                    dashboard again to sign in.
-                </ErrorBanner>
-            </AuthFlowScreen>
+            <AuthFlowScreen
+                footnote="help"
+                title="Sign in"
+                description="to a dashboard."
+                error="This link is invalid or has expired. Open the dashboard again."
+            />
         );
     }
 
@@ -78,27 +78,23 @@ function AppSignIn() {
         return (
             <AuthFlowScreen
                 title="Sign in"
+                subject={appCard}
+                description={`as ${user.name || user.githubUsername || user.email}.`}
                 actions={
                     <Button as="a" href={callbackURL} icon={<ArrowRightIcon />}>
                         Continue
                     </Button>
                 }
-            >
-                {appCard}
-                <Text size="sm" tone="muted">
-                    You’re signed in as{" "}
-                    {user.name || user.githubUsername || user.email}.
-                </Text>
-            </AuthFlowScreen>
+            />
         );
     }
 
     return (
-        <SignInScreen title="Sign in" callbackURL={callbackURL}>
-            {appCard}
-            <Text size="sm" tone="muted">
-                Sign in with your pollinations.ai admin account.
-            </Text>
-        </SignInScreen>
+        <SignInScreen
+            title="Sign in"
+            subject={appCard}
+            description="with your Pollinations admin account."
+            callbackURL={callbackURL}
+        />
     );
 }

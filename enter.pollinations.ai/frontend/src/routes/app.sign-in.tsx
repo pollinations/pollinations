@@ -1,4 +1,4 @@
-import { ArrowRightIcon, Button } from "@pollinations/ui";
+import { ArrowRightIcon, Button, RefreshIcon } from "@pollinations/ui";
 import { AuthModalLoading } from "@pollinations/ui/auth";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -7,7 +7,7 @@ import { AppAttribution } from "../components/auth/app-attribution.tsx";
 import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import { oauthSignInCallback } from "../lib/oauth-sign-in.ts";
-import { parseAppUrl } from "../lib/return-to-app.tsx";
+import { parseAppUrl, ReturnToApp } from "../lib/return-to-app.tsx";
 
 export const Route = createFileRoute("/app/sign-in")({
     validateSearch: (search: Record<string, unknown>) => ({
@@ -23,13 +23,17 @@ function AppSignIn() {
     const { client_id, redirect_uri } = Route.useSearch();
     const { data: session } = authClient.useSession();
     const user = session?.user;
-    // The issuer signs the whole query; the lookup fails for hand-typed or
-    // expired links, and then there is no dashboard to sign in to.
+    // The issuer signs the whole query. "invalid" means the server knows no
+    // such client (hand-typed or expired link); "unreachable" means the
+    // check itself failed and can be retried.
     const [client, setClient] = useState<
-        { name: string } | "loading" | "invalid"
+        { name: string } | "loading" | "invalid" | "unreachable"
     >("loading");
+    const [lookupAttempt, setLookupAttempt] = useState(0);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: lookupAttempt re-runs the check when the user selects Try again.
     useEffect(() => {
         let cancelled = false;
+        setClient("loading");
         void authClient.oauth2
             .publicClientPrelogin({ client_id })
             .then(({ data }) => {
@@ -39,15 +43,40 @@ function AppSignIn() {
                 );
             })
             .catch(() => {
-                if (!cancelled) setClient("invalid");
+                if (!cancelled) setClient("unreachable");
             });
         return () => {
             cancelled = true;
         };
-    }, [client_id]);
+    }, [client_id, lookupAttempt]);
+
+    const parsedRedirect = parseAppUrl(redirect_uri);
+    const redirectHost = parsedRedirect ? new URL(parsedRedirect).host : "";
 
     if (client === "loading") return <AuthModalLoading title="Sign in" />;
 
+    if (client === "unreachable") {
+        return (
+            <AuthFlowScreen
+                footnote="help"
+                title="Sign in"
+                error="Couldn’t check this sign-in link."
+                actions={
+                    <Button
+                        icon={<RefreshIcon />}
+                        onClick={() =>
+                            setLookupAttempt((attempt) => attempt + 1)
+                        }
+                    >
+                        Try again
+                    </Button>
+                }
+            />
+        );
+    }
+
+    // The dashboard that sent the link issues a fresh one; only a link with
+    // no callback address falls back to this dashboard.
     if (client === "invalid") {
         return (
             <AuthFlowScreen
@@ -55,9 +84,15 @@ function AppSignIn() {
                 title="Sign in"
                 error="This sign-in link is invalid or has expired."
                 actions={
-                    <Button as="a" icon={<ArrowRightIcon />} href="/">
-                        Go to dashboard
-                    </Button>
+                    parsedRedirect ? (
+                        <ReturnToApp
+                            returnUrl={new URL(parsedRedirect).origin}
+                        />
+                    ) : (
+                        <Button as="a" icon={<ArrowRightIcon />} href="/">
+                            Go to dashboard
+                        </Button>
+                    )
                 }
             />
         );
@@ -67,8 +102,6 @@ function AppSignIn() {
         typeof window === "undefined"
             ? undefined
             : oauthSignInCallback(window.location.href);
-    const parsedRedirect = parseAppUrl(redirect_uri);
-    const redirectHost = parsedRedirect ? new URL(parsedRedirect).host : "";
     const appCard = (
         <AppAttribution
             attribution={{ appName: client.name }}

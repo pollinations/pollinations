@@ -1,11 +1,14 @@
 import {
+    ArrowLeftIcon,
     Button,
+    CheckIcon,
     Heading,
     InlineLink,
     SproutIcon,
     Surface,
     Text,
     useScrollLock,
+    XIcon,
 } from "@pollinations/ui";
 import {
     AuthFlowLayout,
@@ -479,7 +482,11 @@ export function Authorize() {
                 <AuthFlowLayout
                     dialog={{ labelledBy: "authorize-error-title" }}
                     actions={
-                        <Button intent="neutral" onClick={handleDeny}>
+                        <Button
+                            intent="neutral"
+                            icon={<ArrowLeftIcon />}
+                            onClick={handleDeny}
+                        >
                             Go back
                         </Button>
                     }
@@ -523,6 +530,7 @@ export function Authorize() {
                 <>
                     <Button
                         intent="neutral"
+                        icon={error ? <ArrowLeftIcon /> : <XIcon />}
                         onClick={handleDeny}
                         disabled={isAuthorizing}
                     >
@@ -532,6 +540,7 @@ export function Authorize() {
                         <Button
                             type="submit"
                             form="authorize-permissions"
+                            icon={<CheckIcon />}
                             disabled={!canAuthorize || isAuthorizing}
                         >
                             {isAuthorizing ? "Connecting…" : "Allow access"}

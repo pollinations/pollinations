@@ -1,4 +1,4 @@
-import { Button } from "@pollinations/ui";
+import { ArrowRightIcon, Button, MailIcon } from "@pollinations/ui";
 import { AuthErrorContent, AuthFlowLayout } from "@pollinations/ui/auth";
 import { isBannedLoginError } from "@shared/auth/ban.ts";
 import { createFileRoute } from "@tanstack/react-router";
@@ -31,18 +31,19 @@ function ErrorPage() {
             dialog={{ labelledBy: "login-error-title" }}
             actions={
                 <>
-                    <Button as="a" size="lg" href="/">
-                        Go to dashboard
-                    </Button>
                     {isBanned && (
                         <Button
                             as="a"
-                            size="lg"
+                            intent="neutral"
+                            icon={<MailIcon />}
                             href="mailto:billing@pollinations.ai"
                         >
                             Contact billing
                         </Button>
                     )}
+                    <Button as="a" icon={<ArrowRightIcon />} href="/">
+                        Go to dashboard
+                    </Button>
                 </>
             }
         >

@@ -1,4 +1,4 @@
-import { Button, Heading, Text } from "@pollinations/ui";
+import { Button, Heading, RefreshIcon, Text } from "@pollinations/ui";
 import {
     AuthFlowLayout,
     AuthModalLoading,
@@ -154,6 +154,7 @@ function TopUpPage() {
                 headerAction={accountIdentity}
                 actions={
                     <Button
+                        icon={<RefreshIcon />}
                         onClick={() => setLoadAttempt((attempt) => attempt + 1)}
                     >
                         Try again

@@ -1,4 +1,11 @@
-import { Button, Field, Heading, Input, Text } from "@pollinations/ui";
+import {
+    ArrowRightIcon,
+    Button,
+    Field,
+    Heading,
+    Input,
+    Text,
+} from "@pollinations/ui";
 import {
     AuthFlowLayout,
     AuthModalLoading,
@@ -109,6 +116,7 @@ export function Device({ prefilledCode }: DeviceProps) {
                 <Button
                     type="submit"
                     form="device-code-form"
+                    icon={<ArrowRightIcon />}
                     disabled={checking}
                 >
                     {checking ? "Checking code…" : "Continue"}

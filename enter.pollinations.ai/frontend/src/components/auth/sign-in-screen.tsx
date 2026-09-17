@@ -1,4 +1,10 @@
-import { Button, ColorModeToggle, Heading, Text } from "@pollinations/ui";
+import {
+    Button,
+    ColorModeToggle,
+    Heading,
+    Text,
+    XIcon,
+} from "@pollinations/ui";
 import {
     AuthFlowLayout,
     ErrorBanner,
@@ -31,6 +37,7 @@ export function SignInScreen({
                     {onCancel && (
                         <Button
                             intent="neutral"
+                            icon={<XIcon />}
                             onClick={onCancel}
                             disabled={isSigningIn}
                         >

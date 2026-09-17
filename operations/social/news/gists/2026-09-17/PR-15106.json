@@ -1,0 +1,36 @@
+{
+  "pr_number": 15106,
+  "title": "Add TestMine to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15106",
+  "merged_at": "2026-09-17T17:00:54Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [TestMine](https://fadyabohamza-netizen.github.io/testmine) to build\n- Paste source code, pick a framework, get unit tests covering happy path and edge cases. BYOP Pollinations-powered.\n\nFixes #14990",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Tests bloom from paste",
+    "blurb": "TestMine joined the build: paste in source code, choose a framework, and let a small cloud of Pollinations-powered tests cover the obvious and the weird bits.",
+    "summary": "Added TestMine to the app build, giving developers a BYOP Pollinations-powered tool that turns pasted source code into framework-specific unit tests for happy paths and edge cases.",
+    "impact": "Developers can now discover TestMine through the Pollinations app ecosystem and generate a practical first pass of unit tests without starting from an empty test file.",
+    "keywords": [
+      "TestMine",
+      "unit tests",
+      "developer tools",
+      "BYOP",
+      "community app",
+      "code generation"
+    ],
+    "visual_concept": "Depict TestMine as a cozy testing garden: Polli, wearing tiny safety goggles and holding a clipboard, feeds a source-code scroll into a retro terminal while neat little test-case sprouts emerge in labeled pots. Include friendly happy-path and edge-case plant markers, with code blocks on the CRT screen and flowers growing around the workstation.",
+    "image_prompt": "A cozy pixel art garden-workshop where the cute Polli bee mascot, with a yellow body, dark brown stripes, pink cheek blush, light blue wings, and tiny safety goggles, pastes a code scroll into a lime green (#ecf874) glowing retro terminal as happy-path and edge-case unit-test sprouts bloom from little pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, pixel-font text reading \"TESTMINE\", with flowers and code-vines around the desk; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-17/PR-15106.jpg",
+    "prompt": "A cozy pixel art garden-workshop where the cute Polli bee mascot, with a yellow body, dark brown stripes, pink cheek blush, light blue wings, and tiny safety goggles, pastes a code scroll into a lime green (#ecf874) glowing retro terminal as happy-path and edge-case unit-test sprouts bloom from little pots. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, pixel-font text reading \"TESTMINE\", with flowers and code-vines around the desk; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-17T17:01:55.122312+00:00",
+  "app_name": "TestMine",
+  "app_url": "https://fadyabohamza-netizen.github.io/testmine"
+}

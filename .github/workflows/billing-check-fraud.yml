@@ -8,11 +8,6 @@ on:
     # not moved. Webhooks are the route to faster detection, not polling.
     - cron: "17 7 * * *"
   workflow_dispatch:
-    inputs:
-      expected_webhook_id:
-        description: Optional Discord webhook ID to verify before sending
-        type: string
-        required: false
 
 permissions:
   contents: read
@@ -31,29 +26,6 @@ jobs:
       - uses: actions/checkout@v5
         with:
           ref: production
-      - name: Verify Discord destination
-        env:
-          DISCORD_FRAUD_WEBHOOK_URL: ${{ secrets.DISCORD_FRAUD_WEBHOOK_URL }}
-          EXPECTED_WEBHOOK_ID: ${{ inputs.expected_webhook_id }}
-        run: |
-          node --input-type=module <<'NODE'
-          try {
-            const url = new URL(process.env.DISCORD_FRAUD_WEBHOOK_URL);
-            const id = url.pathname.match(/^\/api\/webhooks\/(\d+)\//)?.[1];
-            if (url.origin !== 'https://discord.com' || !id ||
-                (process.env.EXPECTED_WEBHOOK_ID && id !== process.env.EXPECTED_WEBHOOK_ID)) {
-              throw new Error('Unexpected destination');
-            }
-            const response = await fetch(url, { signal: AbortSignal.timeout(30000) });
-            if (!response.ok) throw new Error('Webhook unavailable');
-            const webhook = await response.json();
-            if (webhook.id !== id) throw new Error('Unexpected webhook');
-            console.log(`Verified Discord webhook ${id}; channel ${webhook.channel_id}`);
-          } catch {
-            console.error('Discord destination verification failed; details hidden.');
-            process.exitCode = 1;
-          }
-          NODE
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
@@ -65,11 +37,8 @@ jobs:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
-          FRAUD_BAN_APPLY: "false"
-          # Set once to the actual production refund-webhook activation timestamp.
-          STRIPE_REFUND_LEDGER_START_SECONDS: ${{ vars.STRIPE_REFUND_LEDGER_START_SECONDS }}
           FRAUD_BAN_EXCLUDED_USER_IDS: ${{ vars.FRAUD_BAN_EXCLUDED_USER_IDS }}
-          # Private operators' channel; account identities never reach public logs.
+          # Private operators' channel; candidate identities never reach public logs.
           DISCORD_FRAUD_WEBHOOK_URL: ${{ secrets.DISCORD_FRAUD_WEBHOOK_URL }}
         run: >-
           sops exec-file --no-fifo enter.pollinations.ai/secrets/prod.vars.json

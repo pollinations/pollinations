@@ -14,17 +14,14 @@ export const FRAUD_BAN_THRESHOLD = 0.75;
 export const FRAUD_SCAN_START_SECONDS = Math.floor(Date.UTC(2026, 4, 1) / 1000);
 // Manually settled account: never automatically ban it.
 export const FRAUD_BAN_EXCLUDED_USER_ID = "GcN1eNVQXW58eLIppqxlgvI6a1w9Scic";
-// Radar blocks alone carry no weight: a decline is not evidence of fraud.
 const WEIGHTS = { fd: 5, ew: 2, fraud: 3, hr: 1, rb: 0 } as const;
 type Signal = keyof typeof WEIGHTS;
-const SIGNALS = (Object.keys(WEIGHTS) as Signal[]).filter(
-    (signal) => WEIGHTS[signal] > 0,
-);
+const SIGNALS = Object.keys(WEIGHTS) as Signal[];
 /**
- * Reports from a person or issuer after the payment, rather than only Radar's
- * prediction at the moment of the attempt. An issuer warning is still suspected
- * fraud, not proof. Repeated legitimate declines can escalate Radar predictions,
- * so prediction volume alone must never ban an account.
+ * Signals where a person or a card issuer confirmed fraud after the fact. The
+ * rest are only Radar's prediction at the moment of the attempt, and repeated
+ * declines of one legitimate card escalate those on their own, so prediction
+ * volume alone must never ban an account.
  */
 const CONFIRMED_SIGNALS = [
     "fd",
@@ -37,10 +34,6 @@ export type FraudPayment = { chargeId: string } & Partial<
 
 /** Simulator parity: deduplicate charges, strongest signal wins, sum capped contributions. */
 export function cappedFraudScore(payments: Iterable<FraudPayment>): number {
-    return fraudScoreBreakdown(payments).score;
-}
-
-export function fraudScoreBreakdown(payments: Iterable<FraudPayment>) {
     const charges = new Map<string, Set<Signal>>();
     for (const payment of payments) {
         if (!/^(ch|py)_.+/.test(payment.chargeId))
@@ -61,27 +54,18 @@ export function fraudScoreBreakdown(payments: Iterable<FraudPayment>) {
         }
         if (winner) counts[winner]++;
     }
-    const breakdown = SIGNALS.filter((signal) => counts[signal]).map(
-        (signal) => ({
-            signal,
-            count: counts[signal],
-            contribution:
-                WEIGHTS[signal] *
+    const score = SIGNALS.reduce(
+        (sum, signal) =>
+            sum +
+            WEIGHTS[signal] *
                 Math.min(
                     1,
                     0.1 *
                         (counts[signal] / 2) ** (Math.log(10) / Math.log(500)),
                 ),
-        }),
+        0,
     );
-    return {
-        score: Number(
-            breakdown
-                .reduce((sum, row) => sum + row.contribution, 0)
-                .toFixed(2),
-        ),
-        breakdown,
-    };
+    return Number(score.toFixed(2));
 }
 
 export function hasConfirmedFraud(payments: Iterable<FraudPayment>): boolean {
@@ -112,26 +96,6 @@ export async function collectStripeFraudScores(
         { userId: string | null; payment: FraudPayment }
     >();
     const customers = new Map<string, Set<string>>();
-    const paymentDetails = new Map<
-        string,
-        {
-            id: string;
-            created: number;
-            amount: number;
-            currency: string;
-            refunded: number;
-        }
-    >();
-    const warnings: string[] = [];
-    const disputes: {
-        id: string;
-        chargeId: string;
-        status: string;
-        reason: string;
-        amount: number;
-        currency: string;
-        due: number | null;
-    }[] = [];
     for (const [customerId, ids] of customerUsers) {
         if (ids.size === 1) {
             const [id] = ids;
@@ -177,14 +141,8 @@ export async function collectStripeFraudScores(
                     charge.fraud_details?.stripe_report === "fraudulent" ||
                     charge.fraud_details?.user_report === "fraudulent",
                 hr: charge.outcome?.risk_level === "highest",
+                rb: charge.outcome?.type === "blocked",
             },
-        });
-        paymentDetails.set(charge.id, {
-            id: charge.id,
-            created: charge.created,
-            amount: charge.amount,
-            currency: charge.currency,
-            refunded: charge.amount_refunded,
         });
     }
     /**
@@ -193,12 +151,10 @@ export async function collectStripeFraudScores(
      * trusting a map with a hole in it: anything inside the window must be
      * present, or the charge pages did not load completely.
      */
-    const archivedChargeIds = new Set<string>();
     async function paymentFor(value: string | Stripe.Charge) {
         const id = typeof value === "string" ? value : value.id;
         const known = payments.get(id);
         if (known) return known.payment;
-        if (archivedChargeIds.has(id)) return null;
         const charge =
             typeof value === "string"
                 ? await stripe.charges.retrieve(id).catch(() => null)
@@ -209,29 +165,14 @@ export async function collectStripeFraudScores(
             typeof charge?.created === "number" ? charge.created : null;
         if (created === null || created >= FRAUD_SCAN_START_SECONDS)
             throw new FraudCheckError("Incomplete Stripe charge coverage");
-        archivedChargeIds.add(id);
         return null;
     }
-    // A dispute or warning cannot predate its charge. Earlier events cannot
-    // affect this window; recent events against older charges are checked above.
     for await (const dispute of stripe.disputes.list({
         limit: 100,
-        created: { gte: FRAUD_SCAN_START_SECONDS, lte: until },
+        created: { lte: until },
     })) {
         if (!dispute.livemode)
             throw new FraudCheckError("Expected live Stripe disputes");
-        disputes.push({
-            id: dispute.id,
-            chargeId:
-                typeof dispute.charge === "string"
-                    ? dispute.charge
-                    : dispute.charge.id,
-            status: dispute.status,
-            reason: dispute.reason,
-            amount: dispute.amount,
-            currency: dispute.currency,
-            due: dispute.evidence_details?.due_by ?? null,
-        });
         if (dispute.reason === "fraudulent") {
             const payment = await paymentFor(dispute.charge);
             if (payment) payment.fd = true;
@@ -239,11 +180,10 @@ export async function collectStripeFraudScores(
     }
     for await (const warning of stripe.radar.earlyFraudWarnings.list({
         limit: 100,
-        created: { gte: FRAUD_SCAN_START_SECONDS, lte: until },
+        created: { lte: until },
     })) {
         if (!warning.livemode)
             throw new FraudCheckError("Expected live Stripe warnings");
-        warnings.push(warning.id);
         const payment = await paymentFor(warning.charge);
         if (payment) payment.ew = true;
     }
@@ -267,23 +207,10 @@ export async function collectStripeFraudScores(
         list.push(payment);
         byUser.set(userId, list);
     }
-    const details = new Map(
-        [...byUser].map(([id, list]) => [
-            id,
-            {
-                ...fraudScoreBreakdown(list),
-                payments: list
-                    .filter((payment) => hasConfirmedFraud([payment]))
-                    // biome-ignore lint/style/noNonNullAssertion: Each scanned payment has details recorded in the same loop.
-                    .map((payment) => paymentDetails.get(payment.chargeId)!),
-            },
-        ]),
-    );
     return {
-        scores: new Map([...details].map(([id, detail]) => [id, detail.score])),
-        details,
-        disputes,
-        warnings,
+        scores: new Map(
+            [...byUser].map(([id, list]) => [id, cappedFraudScore(list)]),
+        ),
         confirmed: new Set(
             [...byUser]
                 .filter(([, list]) => hasConfirmedFraud(list))

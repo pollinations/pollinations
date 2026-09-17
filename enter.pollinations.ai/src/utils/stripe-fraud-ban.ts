@@ -18,7 +18,7 @@ type QueryRunner = (
     body: FraudQuery | { batch: FraudQuery[] },
 ) => Promise<{ results?: unknown[] }[]>;
 
-/** Scan attributable Stripe history. Callers must explicitly enable writes. */
+/** All-history hourly check. Callers must explicitly enable writes. */
 export async function runFraudBanCheck(
     stripe: Stripe,
     query: QueryRunner,
@@ -85,7 +85,7 @@ export async function runFraudBanCheck(
             for (const customer of result.customers.get(user.id) ?? []) {
                 await expireOpenStripeCheckoutSessions(stripe, customer, () => {
                     console.error(
-                        "Checkout expiry failed; the next apply run will retry.",
+                        "Checkout expiry failed; the next hourly run will retry.",
                     );
                 });
             }
@@ -96,19 +96,18 @@ export async function runFraudBanCheck(
         applied: apply ? candidates.length : 0,
         charges: result.charges,
         unmapped: result.unmapped,
-        disputes: result.disputes,
-        warnings: result.warnings,
         // Private report of accounts still needing action; never printed to public logs.
-        // Review every confirmed signal, including a first issuer warning below
-        // the threshold. Scores prioritize the queue during manual calibration.
+        // Review every confirmed signal, including one issuer warning below the
+        // ban threshold; the score orders the queue.
         report: confirmedUsers
             .filter((user) => !isActiveBan(user))
             .map((user) => ({
                 id: user.id,
                 name: user.name,
                 github_username: user.github_username,
-                // biome-ignore lint/style/noNonNullAssertion: Confirmed users are derived from these same collected payments.
-                ...result.details.get(user.id)!,
+                customerId:
+                    [...(result.customers.get(user.id) ?? [])][0] ?? null,
+                score: result.scores.get(user.id) ?? 0,
             }))
             .sort((a, b) => b.score - a.score),
     };

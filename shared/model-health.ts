@@ -46,8 +46,14 @@ export function modelHealthLookup(
             .filter((row) => row.is_rollup)
             .map((row) => [`${row.model}\0${row.event_type}`, row]),
     );
-    return (model, category) =>
-        modelHealthFromRow(rollups.get(`${model}\0generate.${category}`));
+    return (model, category) => {
+        const fallbackEventType =
+            category === "video" || category === "3d" ? "image" : category;
+        return modelHealthFromRow(
+            rollups.get(`${model}\0generate.${category}`) ??
+                rollups.get(`${model}\0generate.${fallbackEventType}`),
+        );
+    };
 }
 
 function modelHealthFromRow(row: ModelHealthRow | undefined): ModelHealth {

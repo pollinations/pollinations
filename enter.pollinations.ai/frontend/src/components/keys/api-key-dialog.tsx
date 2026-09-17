@@ -21,6 +21,7 @@ import {
     animals,
     uniqueNamesGenerator,
 } from "unique-names-generator";
+import { DEFAULT_KEY_LIMITS } from "./key-limit-input.tsx";
 import { KeyNameField } from "./key-name-field.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
@@ -50,8 +51,6 @@ function generateFunName(): string {
         style: "lowerCase",
     });
 }
-
-const DEFAULT_KEY_LIMITS = { pollenBudget: 5, expiryDays: 7 };
 
 export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     onSubmit,

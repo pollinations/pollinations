@@ -4,7 +4,7 @@ import {
     EditableCombobox,
     TabButton,
 } from "@pollinations/ui";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
     setConsentModelGroup,
     toggleConsentModel,
@@ -14,23 +14,7 @@ import {
     getModelPricesFromCatalog,
 } from "../models/model-catalog.ts";
 import type { ModelCategoryModel } from "../models/model-categories.ts";
-import {
-    MODEL_FILTER_LABELS,
-    ModelFilterTokens,
-} from "../models/model-filter-tokens.tsx";
-import {
-    getModelQueryDraftFilter,
-    getModelQueryDraftSuggestionValue,
-    getModelQueryFilterTokens,
-    getModelQuerySuggestions,
-    getModelQueryVisibleSearch,
-    type ModelQueryDraftFilter,
-    type ModelQueryFilterToken,
-    matchesModelQuery,
-    parseModelQuery,
-    removeModelQueryFilterToken,
-    replaceModelQueryFilterToken,
-} from "../models/model-query.ts";
+import { useModelQuerySearch } from "../models/use-model-query-search.tsx";
 
 export function ConsentModelPicker({
     models,
@@ -45,11 +29,6 @@ export function ConsentModelPicker({
     onChange: (models: string[]) => void;
     disabled: boolean;
 }) {
-    const [search, setSearch] = useState("source:official");
-    const [draft, setDraft] = useState<ModelQueryDraftFilter>();
-    const [editing, setEditing] = useState<ModelQueryFilterToken>();
-    const [pendingRemoval, setPendingRemoval] = useState<number>();
-    const [open, setOpen] = useState(false);
     const requestedIds = models.map(({ id }) => id);
     const searchableModels = useMemo(() => {
         const offered = new Set(models.map(({ id }) => id));
@@ -57,151 +36,30 @@ export function ConsentModelPicker({
             offered.has(name),
         );
     }, [catalog, models]);
-    const tokens = getModelQueryFilterTokens(search).filter(
-        ({ index }) => index !== draft?.index,
-    );
-    const cancelledDraft = () =>
-        !draft
-            ? search.trim()
-            : editing
-              ? replaceModelQueryFilterToken(search, draft.index, editing.token)
-              : removeModelQueryFilterToken(search, draft.index);
-    const query = draft ? cancelledDraft() : search.trim();
-    const visibleSearch = getModelQueryVisibleSearch(search, tokens, draft);
-    const parsed = parseModelQuery(query);
+    const { parsed, matches, comboboxProps } = useModelQuerySearch({
+        models: searchableModels,
+    });
     const indexed = new Map(
         searchableModels.map((model) => [model.name, model]),
     );
     const visibleModels = models.filter((model) => {
         const metadata = indexed.get(model.id);
         return metadata
-            ? matchesModelQuery(metadata, parsed)
+            ? matches(metadata)
             : parsed.filters.length === 0 &&
                   parsed.terms.every((term) =>
                       `${model.id} ${model.label}`.toLowerCase().includes(term),
                   );
     });
-    const suggestions = getModelQuerySuggestions(
-        draft ? search : visibleSearch,
-        searchableModels,
-    );
-    const options = draft
-        ? suggestions.map(getModelQueryDraftSuggestionValue)
-        : suggestions;
-    const resetDraft = () => {
-        setDraft(undefined);
-        setEditing(undefined);
-        setPendingRemoval(undefined);
-    };
-    const editFilter = (token: ModelQueryFilterToken) => {
-        setEditing(token);
-        setPendingRemoval(undefined);
-        setSearch(
-            replaceModelQueryFilterToken(
-                search,
-                token.index,
-                `${token.filter.key}:`,
-            ),
-        );
-        setDraft({ index: token.index, key: token.filter.key, value: "" });
-        setOpen(true);
-    };
-    const changeSearch = (value: string) => {
-        setPendingRemoval(undefined);
-        const editable = value.trim().split(/\s+/).filter(Boolean);
-        const next = [
-            ...tokens.map(({ token }) => token),
-            ...(draft
-                ? [
-                      ...editable.slice(0, -1),
-                      `${draft.key}:${editable.at(-1) ?? ""}`,
-                  ]
-                : [value.trim()]),
-        ]
-            .filter(Boolean)
-            .join(" ");
-        const nextDraft =
-            value.trim() === "" || value.endsWith(" ")
-                ? undefined
-                : getModelQueryDraftFilter(next, true);
-        setSearch(next);
-        setDraft(nextDraft);
-        if (!nextDraft) setEditing(undefined);
-        setOpen(
-            !value.endsWith(" ") &&
-                (!!nextDraft ||
-                    getModelQuerySuggestions(value, searchableModels).length >
-                        0),
-        );
-    };
 
     return (
         <div className="space-y-3">
             <div className="space-y-1">
                 <EditableCombobox
-                    value={visibleSearch}
-                    options={options}
-                    onChange={changeSearch}
-                    open={open && options.length > 0}
-                    onOpenChange={setOpen}
-                    closeOnSelect={false}
+                    {...comboboxProps}
                     disabled={disabled}
                     aria-label="Search and filter models"
                     autoComplete="off"
-                    placeholder={
-                        draft
-                            ? `${MODEL_FILTER_LABELS[draft.key]} value…`
-                            : "Search models…"
-                    }
-                    onClick={() => setPendingRemoval(undefined)}
-                    onBlur={() => {
-                        setSearch(
-                            draft && !draft.value
-                                ? cancelledDraft()
-                                : search.trim(),
-                        );
-                        resetDraft();
-                    }}
-                    onKeyDown={(event) => {
-                        // Searching inside a key form must not submit it.
-                        if (
-                            event.key === "Enter" &&
-                            (!open || options.length === 0)
-                        ) {
-                            event.preventDefault();
-                            return;
-                        }
-                        if (event.key !== "Backspace" || visibleSearch !== "") {
-                            setPendingRemoval(undefined);
-                            return;
-                        }
-                        const last = tokens.at(-1);
-                        if (!draft && !last) return;
-                        event.preventDefault();
-                        setOpen(false);
-                        if (draft) {
-                            setSearch(cancelledDraft());
-                            resetDraft();
-                        } else if (last) {
-                            if (pendingRemoval === last.index) {
-                                setSearch(
-                                    removeModelQueryFilterToken(
-                                        search,
-                                        last.index,
-                                    ),
-                                );
-                                resetDraft();
-                            } else setPendingRemoval(last.index);
-                        }
-                    }}
-                    startContent={
-                        <ModelFilterTokens
-                            tokens={tokens}
-                            draft={draft}
-                            pendingRemovalIndex={pendingRemoval}
-                            onEdit={editFilter}
-                        />
-                    }
                 />
                 <div className="flex flex-wrap items-center justify-end gap-3">
                     <Button

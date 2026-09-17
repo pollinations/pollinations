@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🛠️ SQLCraft](https://fadyabohamza-netizen.github.io/sqlcraft) | Describe a database query in plain English, get clean SQL in your dialect (SQLite/PostgreSQL/MySQL/SQL Server). BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
 | [🛠️ Codeverter](https://fadyabohamza-netizen.github.io/codeverter) | Convert code between 9+ programming languages with AI. BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
 | [🛠️ Regexly](https://fadyabohamza-netizen.github.io/regexly) | Describe a regex pattern in plain English, get the regular expression with flavor-specific explanation (JavaScript/Python/PCRE). BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
 | [🖼️ DCORE](https://bot.dtempest.online) | A multi-purpose Discord-Telegram bot featuring image generation via Pollinations, along with useful commands for server owners, developers, and much more; it is currently active on 16 servers. | [@dairyum](https://github.com/dairyum) |
@@ -37,7 +38,6 @@
 | [💬 Moko - The Remembering Fox](https://heard-was-lessons-altered.trycloudflare.com) | A web chat with Moko, a desert fox NPC that remembers facts you ask it to keep between conversations. Each user's facts are stored in a per-user memory file (Pollinations Computer MCP), recalled acros | [@mhmdrizzzki](https://github.com/mhmdrizzzki) |
 | [🌻 Pollen Craft](https://tomdacat.itch.io/pollen-craft) | Infinite crafting game where Pollinations names and illustrates every discovery. | [@tomdacatto](https://github.com/tomdacatto) |
 | [📚 AI Flashcards](https://chibbit-99.github.io/flashcardgen) | Create AI flashcards. Helps turn content into study cards for review. | [@Chibbit-99](https://github.com/Chibbit-99) |
-| [🖼️ PollenBatch Multi-Image Generation + Character Generation Engine](https://donwrightdesigns.github.io/pollenbatch) | Generate multiple variations of the same prompt in low res, select the version that you like the most, and then regenerate at high resolution! Also, create consistent characters with the same top-down | [@donwrightdesigns](https://github.com/donwrightdesigns) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

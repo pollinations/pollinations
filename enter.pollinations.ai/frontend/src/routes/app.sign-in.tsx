@@ -77,19 +77,29 @@ function AppSignIn() {
     }
 
     // The dashboard that sent the link issues a fresh one; a link with no
-    // callback address only has the footnote back to this dashboard.
+    // callback address falls back to this dashboard. Always a way out.
     if (client === "invalid") {
         return (
             <AuthFlowScreen
-                footnote={parsedRedirect ? "help" : "back"}
+                footnote="help"
                 title="Sign in"
-                error="This sign-in link is invalid or has expired."
+                description="with your Pollinations account."
+                error="This sign-in link is invalid or has expired. Open the dashboard again to get a new one."
                 actions={
                     parsedRedirect ? (
                         <ReturnToApp
                             returnUrl={new URL(parsedRedirect).origin}
                         />
-                    ) : undefined
+                    ) : (
+                        <Button
+                            as="a"
+                            intent="neutral"
+                            icon={<ArrowRightIcon />}
+                            href="/"
+                        >
+                            Go to dashboard
+                        </Button>
+                    )
                 }
             />
         );

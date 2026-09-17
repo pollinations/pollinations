@@ -73,7 +73,7 @@ function EditKeyPage() {
             .catch(() => setApiKey(null));
     }, [user, id]);
 
-    // The card reads as one sentence: "Edit · {key} · permissions. {step}"
+    // The card reads as one sentence: "Edit key permissions · {key} · {step}"
     const subject = (
         <Surface>
             <Text size="sm" weight="semibold" tone="strong">
@@ -87,14 +87,17 @@ function EditKeyPage() {
         </Surface>
     );
 
-    if (isPending) return <AuthModalLoading title="Edit" subject={subject} />;
+    if (isPending)
+        return (
+            <AuthModalLoading title="Edit key permissions" subject={subject} />
+        );
 
     if (!user) {
         return (
             <SignInScreen
-                title="Edit"
+                title="Edit key permissions"
                 subject={subject}
-                description="permissions. Sign in to change them."
+                description="Sign in to change them."
             />
         );
     }
@@ -111,12 +114,12 @@ function EditKeyPage() {
         return (
             <AuthFlowScreen
                 footnote="back"
-                title="Edit"
+                title="Edit key permissions"
                 subject={subject}
                 description={
                     outcome === "saved"
-                        ? "permissions. Saved, they apply to future requests."
-                        : "permissions. Nothing changed."
+                        ? "Saved, they apply to future requests."
+                        : "Nothing changed."
                 }
                 balance={balance}
                 topUpHref={topUpHref}
@@ -133,9 +136,8 @@ function EditKeyPage() {
         return (
             <AuthFlowScreen
                 footnote="help"
-                title="Edit"
+                title="Edit key permissions"
                 subject={subject}
-                description="permissions."
                 error="Couldn’t load this key. Check that you’re signed in to the account that owns it."
                 balance={balance}
                 topUpHref={topUpHref}
@@ -149,7 +151,9 @@ function EditKeyPage() {
     }
 
     if (apiKey === undefined)
-        return <AuthModalLoading title="Edit" subject={subject} />;
+        return (
+            <AuthModalLoading title="Edit key permissions" subject={subject} />
+        );
 
     return (
         <EditApiKeyDialog

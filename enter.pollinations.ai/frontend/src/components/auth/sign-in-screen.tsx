@@ -1,5 +1,5 @@
 import { Button, XIcon } from "@pollinations/ui";
-import { ErrorBanner, GitHubSignInButton } from "@pollinations/ui/auth";
+import { GitHubSignInButton } from "@pollinations/ui/auth";
 import type { ReactNode } from "react";
 import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
 import { AuthFlowScreen } from "./auth-flow-screen.tsx";
@@ -7,12 +7,14 @@ import { AuthFlowScreen } from "./auth-flow-screen.tsx";
 /** The same GitHub sign-in step for Enter's standalone flows. */
 export function SignInScreen({
     title,
+    subject,
     description,
     children,
     onCancel,
     callbackURL,
 }: {
     title: string;
+    subject?: ReactNode;
     description?: string;
     children?: ReactNode;
     onCancel?: () => void;
@@ -22,7 +24,9 @@ export function SignInScreen({
     return (
         <AuthFlowScreen
             title={title}
+            subject={subject}
             description={description}
+            error={error}
             actions={
                 <>
                     {onCancel && (
@@ -43,7 +47,6 @@ export function SignInScreen({
             }
         >
             {children}
-            {error && <ErrorBanner>{error}</ErrorBanner>}
         </AuthFlowScreen>
     );
 }

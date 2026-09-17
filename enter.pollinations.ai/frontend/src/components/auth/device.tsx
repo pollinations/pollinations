@@ -1,9 +1,10 @@
 import { ArrowRightIcon, Button, Field, Input } from "@pollinations/ui";
-import { AuthModalLoading, ErrorBanner } from "@pollinations/ui/auth";
+import { AuthModalLoading } from "@pollinations/ui/auth";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { authClient } from "../../auth.ts";
+import { AppAttribution } from "./app-attribution.tsx";
 import { AuthFlowScreen } from "./auth-flow-screen.tsx";
 import { SignInScreen } from "./sign-in-screen.tsx";
 
@@ -89,23 +90,29 @@ export function Device({ prefilledCode }: DeviceProps) {
         verifyAndRedirect(code);
     }
 
-    if (isPending) {
-        return <AuthModalLoading title="Allow device" />;
-    }
+    const subject = (
+        <AppAttribution attribution={null} isDeviceMode redirectHostname="" />
+    );
+    const access = "to access your account.";
+
+    if (isPending) return <AuthModalLoading title="Allow" subject={subject} />;
 
     if (!user) {
         return (
             <SignInScreen
-                title="Allow device"
-                description="Sign in, then enter the code shown on your device."
+                title="Allow"
+                subject={subject}
+                description={`${access} Sign in, then enter the code shown on it.`}
             />
         );
     }
 
     return (
         <AuthFlowScreen
-            title="Allow device"
-            description="Enter the code shown on your device."
+            title="Allow"
+            subject={subject}
+            description={`${access} Enter the code shown on it.`}
+            error={error}
             actions={
                 <Button
                     type="submit"
@@ -145,7 +152,6 @@ export function Device({ prefilledCode }: DeviceProps) {
                         />
                     </Field.Input>
                 </Field.Root>
-                {error && <ErrorBanner>{error}</ErrorBanner>}
             </form>
         </AuthFlowScreen>
     );

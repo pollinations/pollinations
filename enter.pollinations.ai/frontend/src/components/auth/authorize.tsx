@@ -2,11 +2,10 @@ import {
     ArrowLeftIcon,
     Button,
     KeyIcon,
-    Text,
     useScrollLock,
     XIcon,
 } from "@pollinations/ui";
-import { AuthModalLoading, ErrorBanner } from "@pollinations/ui/auth";
+import { AuthModalLoading } from "@pollinations/ui/auth";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
@@ -446,33 +445,39 @@ export function Authorize() {
         }
     }
 
+    // The card reads as one sentence: "Allow · {subject} · to access your account. {step}"
+    const subject = (
+        <AppAttribution
+            attribution={attribution}
+            isDeviceMode={isDeviceMode}
+            userCode={user_code}
+            redirectHostname={redirectHostname}
+        />
+    );
+    const access = "to access your account.";
+
     if (deviceOutcome !== "pending") {
         const denied = deviceOutcome === "denied";
         return (
             <AuthFlowScreen
                 footnote="back"
-                title={denied ? "Access declined" : "Device connected"}
-                description={
-                    denied
-                        ? "Your device wasn’t given access. You can close this tab."
-                        : "Return to your device to continue. You can close this tab."
-                }
+                title="Allow"
+                subject={subject}
+                description={`${access} ${denied ? "Declined" : "Allowed"}, return to your device.`}
             />
         );
     }
 
-    if (isPending)
-        return (
-            <AuthModalLoading
-                title={isDeviceMode ? "Allow device" : "Allow app"}
-            />
-        );
+    if (isPending) return <AuthModalLoading title="Allow" subject={subject} />;
 
     if (error) {
         return (
             <AuthFlowScreen
                 footnote="help"
-                title="Couldn’t connect"
+                title="Allow"
+                subject={subject}
+                description={access}
+                error={`Couldn’t connect. ${error}`}
                 actions={
                     <Button
                         intent="neutral"
@@ -482,38 +487,26 @@ export function Authorize() {
                         Go back
                     </Button>
                 }
-            >
-                <ErrorBanner>{error}</ErrorBanner>
-            </AuthFlowScreen>
+            />
         );
     }
 
-    const appCard = (
-        <AppAttribution
-            attribution={attribution}
-            isDeviceMode={isDeviceMode}
-            userCode={user_code}
-            redirectHostname={redirectHostname}
-        />
-    );
-
-    const flowTitle = isDeviceMode ? "Allow device" : "Allow app";
-
     if (!user) {
         return (
-            <SignInScreen title={flowTitle} onCancel={handleDeny}>
-                {appCard}
-                <Text size="sm">
-                    Access to your pollinations.ai account, sign in to review
-                    the request.
-                </Text>
-            </SignInScreen>
+            <SignInScreen
+                title="Allow"
+                subject={subject}
+                description={`${access} Sign in to review the request.`}
+                onCancel={handleDeny}
+            />
         );
     }
 
     return (
         <AuthFlowScreen
-            title={flowTitle}
+            title="Allow"
+            subject={subject}
+            description={`${access} Choose what it can use, you can revoke it any time.`}
             actions={
                 <>
                     <Button
@@ -543,11 +536,6 @@ export function Authorize() {
                     void handleAuthorize();
                 }}
             >
-                {appCard}
-                <Text size="sm">
-                    Access to your pollinations.ai account, you can revoke it
-                    any time.
-                </Text>
                 <KeyPermissionsInputs
                     value={keyPermissions}
                     visiblePermissions={new Set(visibleOptionalPermissions)}

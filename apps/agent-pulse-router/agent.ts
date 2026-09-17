@@ -125,8 +125,15 @@ async function pickModel(
 
     const pool = models
         .filter((m) => health.has(m.id))
-        .map((m) => ({ m, cost: tokenCost(m), row: health.get(m.id)! }))
-        .filter((x) => Number.isFinite(x.cost))
+        .map((m) => {
+            const row = health.get(m.id);
+            if (!row) return null;
+            return { m, cost: tokenCost(m), row };
+        })
+        .filter(
+            (x): x is { m: CatalogModel; cost: number; row: StatusRow } =>
+                x !== null && Number.isFinite(x.cost),
+        )
         .sort((a, b) => {
             // Prefer community on EASY when within 2x of cheapest overall.
             if (band === "EASY") {

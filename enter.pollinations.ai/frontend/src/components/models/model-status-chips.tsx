@@ -1,6 +1,6 @@
 import { Chip, SparklesIcon, Tooltip } from "@pollinations/ui";
 import { PaidChip, TierChip, WalletKindIcon } from "@pollinations/ui/wallet";
-import type { ModelHealth } from "@shared/registry/model-health.ts";
+import type { ModelHealth } from "@shared/model-health.ts";
 import type { FC } from "react";
 
 export type BalanceAccess = "quest" | "paid" | "free";
@@ -25,10 +25,10 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
 }) => {
     if (!showNew && !showAlpha && !health) return null;
 
-    const unknown = !health || health.stale || health.status === "unknown";
+    const unknown = !health || health.status === "unknown";
     const healthy = !unknown && health.status === "healthy";
     const healthLabel = unknown
-        ? "Status unknown or stale"
+        ? "No requests in the last 24 hours"
         : healthy
           ? "Healthy over the last 24 hours"
           : "Elevated errors over the last 24 hours";

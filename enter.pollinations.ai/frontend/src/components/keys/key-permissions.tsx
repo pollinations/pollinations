@@ -1,4 +1,4 @@
-import { AccountIcon, Text } from "@pollinations/ui";
+import { AccountIcon, BeakerIcon, Text } from "@pollinations/ui";
 import { AuthAccessItem, AuthInfoCard } from "@pollinations/ui/auth";
 import type { FC } from "react";
 import { useState } from "react";
@@ -103,14 +103,12 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 value={permissions.pollenBudget}
                 onChange={setPollenBudget}
                 disabled={disabled}
-                required={showIdentity}
             />
             <KeyLimitInput
                 kind="expiry"
                 value={permissions.expiryDays}
                 onChange={setExpiryDays}
                 disabled={disabled}
-                required={showIdentity}
             />
         </>
     );
@@ -145,7 +143,15 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                             }
                         />
                     )}
-                    <Text size="xs" tone="muted">
+                    <Text
+                        size="xs"
+                        tone="muted"
+                        className="flex items-center gap-1.5"
+                    >
+                        <BeakerIcon
+                            aria-hidden="true"
+                            className="h-3.5 w-3.5 shrink-0"
+                        />
                         Allow this key to generate with selected models.
                     </Text>
                 </div>
@@ -156,40 +162,23 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     );
     return (
         <div className="space-y-4">
-            {showIdentity ? (
-                // Consent: what the app always gets, without checkboxes, then
-                // one card of optional grants, models last.
-                <>
-                    <AuthInfoCard>
-                        <ul className="space-y-3 text-sm">
-                            <AuthAccessItem icon={<AccountIcon />}>
-                                Username and picture
-                            </AuthAccessItem>
-                            {limitInputs}
-                        </ul>
-                    </AuthInfoCard>
-                    <AuthInfoCard>
-                        <ul className="space-y-3 text-sm">
-                            {accountPermissionsInput}
-                            {modelsItem}
-                        </ul>
-                    </AuthInfoCard>
-                </>
-            ) : (
-                <>
-                    <AuthInfoCard>
-                        <ul className="space-y-3 text-sm">
-                            {accountPermissionsInput}
-                        </ul>
-                    </AuthInfoCard>
-                    <AuthInfoCard>
-                        <ul className="space-y-3 text-sm">{limitInputs}</ul>
-                    </AuthInfoCard>
-                    <AuthInfoCard>
-                        <ul className="text-sm">{modelsItem}</ul>
-                    </AuthInfoCard>
-                </>
-            )}
+            {/* What the key always has, then what it may be granted. */}
+            <AuthInfoCard>
+                <ul className="space-y-3 text-sm">
+                    {showIdentity && (
+                        <AuthAccessItem icon={<AccountIcon />}>
+                            Username and picture
+                        </AuthAccessItem>
+                    )}
+                    {limitInputs}
+                </ul>
+            </AuthInfoCard>
+            <AuthInfoCard>
+                <ul className="space-y-3 text-sm">
+                    {accountPermissionsInput}
+                    {modelsItem}
+                </ul>
+            </AuthInfoCard>
         </div>
     );
 };

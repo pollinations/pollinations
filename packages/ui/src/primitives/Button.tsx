@@ -37,7 +37,7 @@ const blockSizes = {
 
 const appearanceClasses: Record<ButtonAppearance, string> = {
     pill: "polli:rounded-full",
-    block: "polli:rounded-md polli:flex-1 polli:self-stretch",
+    block: "polli:rounded-md polli:min-w-40 polli:max-sm:flex-1 polli:max-sm:self-stretch",
     raised:
         "polli:rounded-xl polli:border-r-[3px] polli:border-b-[3px] polli:border-solid " +
         "polli:border-theme-text-strong/20 polli:hover:border-theme-text-strong/45",

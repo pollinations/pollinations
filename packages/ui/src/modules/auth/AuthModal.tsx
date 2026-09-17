@@ -65,9 +65,25 @@ export type AuthFlowLayoutProps = {
     titleId?: string;
     headerAction?: ReactNode;
     actions?: ReactNode;
+    /** One sentence under the actions; defaults to the legal notice. */
+    footnote?: ReactNode;
     dialog?: AuthModalProps["dialog"];
     size?: DialogProps["size"];
 };
+
+const legalFootnote = (
+    <>
+        By continuing, you agree to the{" "}
+        <InlineLink href="https://pollinations.ai/terms" external>
+            Terms
+        </InlineLink>{" "}
+        and acknowledge the{" "}
+        <InlineLink href="https://pollinations.ai/privacy" external>
+            Privacy Policy
+        </InlineLink>
+        .
+    </>
+);
 
 /** Shared sign-in chrome with stable scrolling content and actions. */
 export function AuthFlowLayout({
@@ -77,6 +93,7 @@ export function AuthFlowLayout({
     titleId,
     headerAction,
     actions,
+    footnote = legalFootnote,
     dialog,
     size,
 }: AuthFlowLayoutProps) {
@@ -105,22 +122,13 @@ export function AuthFlowLayout({
             </DialogBody>
             <div className="polli:shrink-0 polli:bg-theme-bg-pale polli:pb-5">
                 {actions && <DialogFooter>{actions}</DialogFooter>}
-                <div className="polli:flex polli:flex-wrap polli:justify-center polli:gap-x-4 polli:gap-y-2 polli:px-6">
-                    <InlineLink
-                        href="https://pollinations.ai/terms"
-                        external
-                        className="polli:font-body polli:text-xs"
-                    >
-                        Terms &amp; Conditions
-                    </InlineLink>
-                    <InlineLink
-                        href="https://pollinations.ai/privacy"
-                        external
-                        className="polli:font-body polli:text-xs"
-                    >
-                        Privacy Policy
-                    </InlineLink>
-                </div>
+                <Text
+                    size="xs"
+                    tone="muted"
+                    className="polli:px-6 polli:text-center"
+                >
+                    {footnote}
+                </Text>
             </div>
         </AuthModal>
     );

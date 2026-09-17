@@ -450,6 +450,7 @@ export function Authorize() {
         const denied = deviceOutcome === "denied";
         return (
             <AuthFlowScreen
+                footnote="back"
                 title={denied ? "Access declined" : "Device connected"}
                 description={
                     denied
@@ -470,6 +471,7 @@ export function Authorize() {
     if (error) {
         return (
             <AuthFlowScreen
+                footnote="help"
                 title="Couldn’t connect"
                 actions={
                     <Button

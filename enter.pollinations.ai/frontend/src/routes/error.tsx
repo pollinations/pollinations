@@ -35,6 +35,7 @@ function ErrorPage() {
 
     return (
         <AuthFlowScreen
+            footnote="help"
             title={title}
             actions={
                 <>

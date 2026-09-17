@@ -1,4 +1,4 @@
-import { ColorModeToggle } from "@pollinations/ui";
+import { ColorModeToggle, InlineLink } from "@pollinations/ui";
 import { AuthFlowLayout } from "@pollinations/ui/auth";
 import type { ComponentProps } from "react";
 import { authClient } from "../../auth.ts";
@@ -8,10 +8,35 @@ import {
 } from "../../hooks/use-account-balance.ts";
 import { AuthAccountIdentity } from "./auth-account-identity.tsx";
 
+const footnotes = {
+    dashboard: (
+        <>
+            Manage your account on the{" "}
+            <InlineLink href="/">dashboard</InlineLink>.
+        </>
+    ),
+    back: (
+        <>
+            <InlineLink href="/">Back to the dashboard</InlineLink>.
+        </>
+    ),
+    help: (
+        <>
+            Need help? Contact{" "}
+            <InlineLink href="mailto:hello@pollinations.ai">
+                hello@pollinations.ai
+            </InlineLink>
+            .
+        </>
+    ),
+};
+
 type AuthFlowScreenProps = Omit<
     ComponentProps<typeof AuthFlowLayout>,
-    "headerAction"
+    "headerAction" | "footnote"
 > & {
+    /** Results say "back", errors say "help"; otherwise legal when signed out, dashboard when signed in. */
+    footnote?: keyof typeof footnotes;
     /** Wallet the screen already loads; skips the shared balance request. */
     balance?: AccountBalance | null;
     /** Identity top-up link. Defaults to returning here; `null` on the top-up page. */
@@ -28,6 +53,7 @@ function returnToTopUpHref(): string {
 export function AuthFlowScreen({
     balance,
     topUpHref,
+    footnote,
     ...props
 }: AuthFlowScreenProps) {
     const { data: session } = authClient.useSession();
@@ -38,6 +64,13 @@ export function AuthFlowScreen({
     return (
         <AuthFlowLayout
             {...props}
+            footnote={
+                footnote
+                    ? footnotes[footnote]
+                    : user
+                      ? footnotes.dashboard
+                      : undefined
+            }
             headerAction={
                 user ? (
                     <AuthAccountIdentity

@@ -98,6 +98,7 @@ function EditKeyPage() {
     if (outcome !== "editing") {
         return (
             <AuthFlowScreen
+                footnote="back"
                 title={
                     outcome === "saved" ? "Access updated" : "Nothing changed"
                 }
@@ -120,6 +121,7 @@ function EditKeyPage() {
     if (!id || apiKey === null) {
         return (
             <AuthFlowScreen
+                footnote="help"
                 title="Key unavailable"
                 balance={balance}
                 topUpHref={topUpHref}

@@ -121,6 +121,7 @@ function TopUpPage() {
     if (search.stripe_success) {
         return (
             <AuthFlowScreen
+                footnote="back"
                 title="Pollen added"
                 description="Your wallet updates as soon as Stripe confirms the payment. You can return to the app or close this tab."
                 balance={wallet}
@@ -137,6 +138,7 @@ function TopUpPage() {
     if (walletError) {
         return (
             <AuthFlowScreen
+                footnote="help"
                 title="Couldn’t load your wallet"
                 balance={wallet}
                 topUpHref={null}

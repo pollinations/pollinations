@@ -50,7 +50,7 @@ function AppSignIn() {
 
     if (client === "invalid") {
         return (
-            <AuthFlowScreen title="Couldn’t sign in">
+            <AuthFlowScreen footnote="help" title="Couldn’t sign in">
                 <ErrorBanner>
                     This sign-in link is invalid or has expired. Open the
                     dashboard again to sign in.

@@ -22,8 +22,13 @@ function buildServer() {
         {
             description:
                 "Make typed decisions about a state: choice, ordered score, or noul (probability). " +
-                "Send multiple named questions in one call. For choice, criteria keys are the options; " +
-                "include option-specific guidance in instructions, since criteria descriptions are not forwarded.",
+                "Send multiple named questions in one call — they are answered in parallel and cannot see each other. " +
+                "Jev judges the state you give it and does not know current events: put the evidence in state, " +
+                "because without it Jev answers confidently and wrongly about anything recent. " +
+                "For choice, criteria keys are the options; include option-specific guidance in instructions, " +
+                "since criteria descriptions are not forwarded. " +
+                "Read a score's legend rather than assuming a direction — the number indexes the criteria order you sent. " +
+                "Keep counting, arithmetic, and date comparison in your own code; Jev is unreliable at all three.",
             inputSchema: z.object(jevInputSchema),
         },
         async ({ state, questions }, context) => {

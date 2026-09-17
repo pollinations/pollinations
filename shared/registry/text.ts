@@ -1129,7 +1129,9 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         tools: false,
         reasoning: false,
-        contextLength: 0, // UNKNOWN — not documented at docs.typesafe.ai; confirm before merge
+        // 64k for state + questions together; 32k for state + the longest
+        // question. https://docs.typesafe.ai/model-jaggedness/jev-1.13
+        contextLength: 64000,
         isSpecialized: true,
     },
     "pollinations/midijourney": {

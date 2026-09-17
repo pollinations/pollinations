@@ -1,6 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
 import { useId } from "react";
-import lockupUrl from "../../brand/lockup-horizontal.svg";
 import logoUrl from "../../brand/mark.svg";
 import { cn } from "../../lib/cn.ts";
 import {
@@ -26,7 +25,6 @@ const brandMask = (url: string): CSSProperties => ({
 });
 
 const authMarkMask = brandMask(logoUrl);
-const authLockupMask = brandMask(lockupUrl);
 
 export type AuthModalProps = {
     children: ReactNode;
@@ -138,16 +136,10 @@ export function AuthModalHeader({ children }: AuthModalHeaderProps) {
             aria-label="pollinations.ai"
         >
             <span className="polli:sr-only">pollinations.ai</span>
-            {/* Mark alone on narrow screens; mark and wordmark from `sm` up. */}
             <span
                 aria-hidden="true"
-                className="polli:block polli:h-8 polli:w-8 polli:bg-current polli:sm:hidden"
+                className="polli:block polli:h-8 polli:w-8 polli:bg-current"
                 style={authMarkMask}
-            />
-            <span
-                aria-hidden="true"
-                className="polli:hidden polli:h-6 polli:w-[195px] polli:bg-current polli:sm:block"
-                style={authLockupMask}
             />
         </a>
     );

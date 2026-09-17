@@ -57,8 +57,18 @@ export const ReturnToApp: FC<{ returnUrl: string | null }> = ({
 }) => {
     if (!returnUrl) return null;
     return (
-        <Button as="a" href={returnUrl} icon={<ExternalLinkIcon />}>
-            Back to {new URL(returnUrl).hostname}
-        </Button>
+        <div className="w-full space-y-3">
+            <Button
+                as="a"
+                href={returnUrl}
+                icon={<ExternalLinkIcon />}
+                className="min-h-11 w-full"
+            >
+                Back to {new URL(returnUrl).hostname}
+            </Button>
+            <p className="text-center text-xs text-theme-text-muted">
+                You can also close this tab if the app is still open.
+            </p>
+        </div>
     );
 };

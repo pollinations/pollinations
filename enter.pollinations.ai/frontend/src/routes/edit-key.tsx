@@ -76,13 +76,13 @@ function EditKeyPage() {
             .catch(() => setApiKey(null));
     }, [user, id]);
 
-    if (isPending) return <AuthModalLoading title="Update access" />;
+    if (isPending) return <AuthModalLoading title="Edit key permissions" />;
 
     if (!user) {
         return (
             <SignInScreen
-                title="Update access"
-                description="Sign in to change this key’s budget, expiry and models."
+                title="Edit key permissions"
+                description="Sign in to change this key’s budget, expiry and permissions."
             />
         );
     }
@@ -100,12 +100,12 @@ function EditKeyPage() {
             <AuthFlowScreen
                 footnote="back"
                 title={
-                    outcome === "saved" ? "Access updated" : "Nothing changed"
+                    outcome === "saved" ? "Changes saved" : "No changes saved"
                 }
                 description={
                     outcome === "saved"
-                        ? "The new permissions apply to future requests. You can return to the app or close this tab."
-                        : "Your key’s permissions are as they were. You can return to the app or close this tab."
+                        ? "The updated permissions apply to future requests. You can return to the app."
+                        : "Your key’s permissions haven’t changed. You can return to the app."
                 }
                 balance={balance}
                 topUpHref={topUpHref}
@@ -132,13 +132,15 @@ function EditKeyPage() {
                 }
             >
                 <ErrorBanner>
-                    Check that you’re signed in to the account that owns it.
+                    This key could not be loaded. Check that you’re signed in to
+                    the account that owns it.
                 </ErrorBanner>
             </AuthFlowScreen>
         );
     }
 
-    if (apiKey === undefined) return <AuthModalLoading title="Update access" />;
+    if (apiKey === undefined)
+        return <AuthModalLoading title="Edit key permissions" />;
 
     return (
         <EditApiKeyDialog

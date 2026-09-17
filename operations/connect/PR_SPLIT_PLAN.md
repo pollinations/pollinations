@@ -1,6 +1,6 @@
 # Connect branch extraction and delivery plan
 
-**Date:** 16 September 2026
+**Date:** 17 September 2026
 
 **Status:** Planning only. No extraction branches, PRs, deployments, or credential operations are authorized by this document.
 
@@ -14,31 +14,31 @@ Keep the existing branch as the reference for the work. Start each approved extr
 
 ## 2. Frozen references and confidence
 
-**Revision:** Main merge, SDK reconciliation and residual inventory updated 16 September 2026. P01–P12 are planning IDs, not GitHub PR numbers.
+**Revision:** Main sync and merged-extraction status updated 17 September 2026. P01–P12 are planning IDs, not GitHub PR numbers.
 
 | Reference | Value |
 | --- | --- |
 | Repository workspace | /private/tmp/pollinations-pollen-connect-ux |
 | Source branch | codex/pollen-connect-ux |
-| Source HEAD / completed main merge | e312c989414cb8834fa195d36c3bc7ddcea23e28 |
+| Source HEAD / completed main merge | 72246bc39d2b0396375d4b94071fd46759c562b2 |
 | Preserved pre-merge branch parent | d7dac212ad6808e248608d0597e59c2f2b381599 |
-| Merged main parent / inventory baseline | 44a3f92e5b6e33fb79cf034362d1fc36bf488d8e |
-| Included main work | #14936 simplified SDK auth; #14917 DialogHeader/DialogFooter; intervening main changes |
-| Remaining code delta against merged main | 230 files; +27,698 / −4,062 text lines |
-| Connect files / other files | 83 / 147 |
-| Commits relative to merged main | 106 source-only; 0 main-only |
-| Snapshot scope | Code at e312c98941; this plan is recorded in a separate documentation commit |
+| Merged main parent / live extraction baseline | 7922d12d343830f2381921ddb68810bab47fe62d |
+| Included main work | #14936 SDK auth; #14949 dialog tooltips; #14951 account/menu/wallet presentation; all intervening main changes |
+| Remaining code delta against merged main | 223 files; +28,003 / −3,856 text lines |
+| Connect files / other files | 84 / 139 |
+| Commits relative to merged main | 112 source-only; 0 main-only |
+| Snapshot scope | Live source at 72246bc39d against current main 7922d12d34; Appendix A remains the dated historical ownership inventory |
 
 
 The first plan described the pre-merge branch against merge base 8236a3df6179a066511a5c262bcd2457029ec552 (234 files). That is historical context, not the extraction inventory. The merge preserves the entire previous branch as its first parent and reconciles main’s newer features with the accepted branch UI.
 
-The appendix is the exact **44a3f92e5b → e312c98941** code delta. Main is an ancestor. The six SDK React files from P01 now match main exactly and have been removed from the residual inventory. The seven unexplained working-tree deletions were restored before the merge; no product code was lost through those deletions. Refresh the inventory after later main integrations; never apply the entire delta as one PR.
+The appendix records the historical **44a3f92e5b → e312c98941** ownership inventory. It is no longer the live delta after the later main integrations and merged extractions. The current extraction comparison is **7922d12d34 → 72246bc39d**. Main is an ancestor. Refresh the relevant hunk ledger for each extraction; never apply the historical delta or replace whole files from it.
 
 GitHub inspection covered metadata and file lists for 188 open PRs, including all 293 files in #14472. Relevant bodies and selected patches informed section 9. This is an overlap assessment, not a full correctness audit of 188 PRs. Recheck status, head, mergeability and CI for each extraction. File overlap alone is neither duplication nor a blocker.
 
 ### Post-merge evidence and limits
 
-At e312c98941:
+Historical merge evidence at e312c98941:
 
 - SDK: 92 tests; UI: 71 tests; focused Enter model/authorization/device helpers: 118 tests; Connect non-credential suite: 238 tests. All 519 passed.
 - SDK, UI and Connect typechecks and builds passed. Connect’s typecheck/build also includes the Enter frontend source.
@@ -48,7 +48,7 @@ At e312c98941:
 - Startup validation, its retry API, and its Connect situation were removed. OAuth callback waiting/errors and real account-request recovery remain. The Map now routes saved-key restoration directly to the connected account panel.
 - Shared dialogs use main’s new header/footer compositions while retaining the branch’s copy, actions and layout. Model filter tokens include main’s new Status filter.
 
-The merge and reconciliation are local commits; no push, new PR or deployment is part of this update.
+At 72246bc39d, the source branch is pushed and contains current main. The latest sync passed 104 focused Enter tests, 229 focused Gen tests, the complete Connect suite with 255 passed and 18 credential-gated skips, and the relevant Enter and Connect typechecks. PRs #14936, #14949 and #14951 are merged into main.
 
 ## 3. Non-negotiable boundaries
 
@@ -113,8 +113,8 @@ The merge resolved integration conflicts. Each extraction still needs behavior-l
 | ID | Proposed title | Group | Prerequisites | Visible or behavioral change |
 | --- | --- | --- | --- | --- |
 | P01 — complete | fix(sdk): handle browser auth failures — #14936 | SDK | Merged into main | Browser storage/navigation fixes and SDK CI; no startup validation or retry API |
-| P02 | refactor(ui): align shared controls and accessibility | UI | Current main; subtract baseline #14855/#14917 work | Controls, focus, spacing and tokens |
-| P03 | refactor(ui): share account and authentication presentation | UI | P01, P02 | Shared account, sign-in, error and wallet presentation |
+| P02 — first slice complete | refactor(ui): align shared controls and accessibility — #14949 | UI | Current main; remaining options travel with real consumers | Dialog tooltip behavior merged; broader control changes stay independently justified |
+| P03 — P03a complete, P03b next | refactor(ui): share account and authentication presentation | UI | P01 and accepted P02 slices | #14951 merged account/menu/wallet status; sign-in, error, result and confirmation presentation remain |
 | P04 | refactor(enter): share consent and key permission controls | Flows / shared forms | P03 | Permissions, model selection, budget and expiry controls |
 | P05 | fix(enter): preserve App and Device authorization recovery | Flows | P04 | Validation, sign-in, errors, cancellation and key cleanup |
 | P06 | fix(auth): preserve dashboard sign-in and sign-out recovery | Flows | P03 | Admin/internal dashboard auth and return behavior |
@@ -133,7 +133,8 @@ Proposed branch names, to be approved before creation:
 | --- | --- |
 | P01 | codex/sdk-connection-recovery |
 | P02 | codex/ui-controls-accessibility |
-| P03 | codex/ui-auth-account-presentation |
+| P03a — complete | codex/ui-auth-account-presentation |
+| P03b — next | codex/ui-auth-result-presentation |
 | P04 | codex/enter-shared-permission-controls |
 | P05 | codex/enter-authorization-recovery |
 | P06 | codex/dashboard-auth-recovery |
@@ -176,7 +177,9 @@ Keep button sizing, surface styling and other accepted visual changes for a sepa
 
 ### P03 — Account, authentication, and wallet presentation
 
-**First delivery (P03a):** shared account avatar/dashboard link and menu trigger, with existing AppUserMenu and Enter identity consumers. Keep destinations caller-owned, preserve menus without a dashboard link, and omit unused layout/portal options. Authentication, funding and error behavior remain separate follow-ups within P03; this first PR does not complete the whole group.
+**First delivery (P03a) — complete:** [PR #14951](https://github.com/pollinations/pollinations/pull/14951) merged at `e121960cf9`. It delivers the shared account avatar/dashboard link, menu trigger, wallet status and existing AppUserMenu/Enter identity consumers. Destinations remain caller-owned, menus without a dashboard link remain valid, and the rejected public state callback was not restored.
+
+**Next delivery (P03b):** shared sign-in, error, authorization-result and confirmation presentation, with only the minimum product callsites required to prove those components. Keep consent form controls in P04, App/Device lifecycle and cleanup in P05, dashboard authentication behavior in P06, wallet confirmation/returns in P08, and Connect in P12. Carry control changes only when a P03b consumer requires them.
 
 **Outcome:** Product consumers share one set of account, permission, sign-in, error, result, and funding components.
 
@@ -610,11 +613,12 @@ Continue unrelated read-only and safe work. Record the concrete issue rather tha
 
 ## 14. Immediate next work
 
-1. P01 is complete on main as #14936. Preserve its narrower merged behavior: no startup validation request and no `retryConnection` API. Do not reopen the merged PR or restore those rejected additions from the source branch.
-2. Start with P02’s proposed dialog-tooltip slice: reproduce the existing behavior, then extract only the justified fix and regression test. Keep broader visual changes separately reviewable.
-3. Obtain approval for the next extraction branch/worktree before creating it. Use current main as the base; preserve main’s DialogHeader/DialogFooter and other intervening work.
-4. P03’s SDK reconciliation is complete. Refresh the relevant hunk ledger against then-current main; the appendix is a residual ownership inventory, not an apply-ready patch.
-5. Keep #12320’s server revocation and connected-app management separate; KeyInfo.id remains P08. Resolve remaining navigation and top-up overlaps before P07/P08/P11 publication, and land Connect last.
+1. P01 is complete on main as #14936. Preserve its narrower merged behavior: no startup validation request and no `retryConnection` API.
+2. P02’s dialog-tooltip slice is complete on main as #14949. Carry any remaining control change only with the product consumer that requires it.
+3. P03a is complete on main as #14951. Do not restore the rejected public AppUserMenu state callback or duplicate balance presentation.
+4. Create `codex/ui-auth-result-presentation` from current main for P03b. Extract sign-in, error, result and confirmation presentation plus minimum callers; exclude P04–P09 behavior and Connect.
+5. Refresh the P03b hunk ledger against current main before editing. The appendix is historical ownership evidence, not an apply-ready patch.
+6. Keep #12320’s server revocation and connected-app management separate; KeyInfo.id remains P08. Resolve remaining navigation and top-up overlaps before P07/P08/P11 publication, and land Connect last.
 
 No rewrite or replacement of the approved UI is planned. The outcome is a smaller set of independently reviewable changes with existing main behavior and open-PR boundaries accounted for.
 

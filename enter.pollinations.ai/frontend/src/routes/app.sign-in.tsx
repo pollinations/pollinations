@@ -75,12 +75,12 @@ function AppSignIn() {
         );
     }
 
-    // The dashboard that sent the link issues a fresh one; only a link with
-    // no callback address falls back to this dashboard.
+    // The dashboard that sent the link issues a fresh one; a link with no
+    // callback address only has the footnote back to this dashboard.
     if (client === "invalid") {
         return (
             <AuthFlowScreen
-                footnote="help"
+                footnote={parsedRedirect ? "help" : "back"}
                 title="Sign in"
                 error="This sign-in link is invalid or has expired."
                 actions={
@@ -88,11 +88,7 @@ function AppSignIn() {
                         <ReturnToApp
                             returnUrl={new URL(parsedRedirect).origin}
                         />
-                    ) : (
-                        <Button as="a" icon={<ArrowRightIcon />} href="/">
-                            Go to dashboard
-                        </Button>
-                    )
+                    ) : undefined
                 }
             />
         );

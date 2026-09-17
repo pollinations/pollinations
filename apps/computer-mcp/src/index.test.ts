@@ -291,4 +291,28 @@ describe("computer MCP worker", () => {
         ]);
         await client.close();
     });
+
+    it("supports mv, rebase, ranges and log formats", async () => {
+        const client = await connect("user-git-more");
+        const result = await bash(
+            client,
+            [
+                "echo 1 > a.txt && git init -b main . >/dev/null && git add a.txt && git commit -m one >/dev/null",
+                "git switch -c topic >/dev/null 2>&1 && git mv a.txt b.txt && git commit -m move >/dev/null",
+                "git switch main >/dev/null 2>&1 && echo 2 > c.txt && git add c.txt && git commit -m two >/dev/null",
+                "git switch topic >/dev/null 2>&1 && git rebase main >/dev/null 2>&1",
+                "git log --format=%s main..topic",
+                "ls",
+            ].join(" && "),
+            undefined,
+            "/workspace/rebase",
+        );
+        expect(result.isError).toBe(false);
+        expect(result.text.trim().split("\n")).toEqual([
+            "move",
+            "b.txt",
+            "c.txt",
+        ]);
+        await client.close();
+    });
 });

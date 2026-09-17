@@ -118,7 +118,8 @@ export function Device({ prefilledCode }: DeviceProps) {
                     form="device-code-form"
                     intent="neutral"
                     icon={<ArrowRightIcon />}
-                    disabled={checking}
+                    // After a failed check the same code cannot succeed; wait for an edit.
+                    disabled={checking || error !== null}
                 >
                     {checking ? "Checking code…" : "Continue"}
                 </Button>
@@ -135,9 +136,10 @@ export function Device({ prefilledCode }: DeviceProps) {
                             type="text"
                             aria-label="Device code"
                             value={userCode}
-                            onChange={(e) =>
-                                setUserCode(e.target.value.toUpperCase())
-                            }
+                            onChange={(e) => {
+                                setUserCode(e.target.value.toUpperCase());
+                                setError(null);
+                            }}
                             placeholder="XXXX-XXXX"
                             className="w-full text-center font-mono text-2xl tracking-widest"
                             ref={inputRef}

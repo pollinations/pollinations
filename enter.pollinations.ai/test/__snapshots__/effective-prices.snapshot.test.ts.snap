@@ -2632,20 +2632,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "qwen/qwen3.8-max": {
     "cost": {
-      "completionTextTokens": 0.00000633,
-      "promptCacheWriteTokens": 0.0000026375,
-      "promptCachedTokens": 0.00000026375,
-      "promptImageTokens": 0.00000211,
-      "promptTextTokens": 0.00000211,
-      "promptVideoTokens": 0.00000211,
+      "completionTextTokens": 0.000006,
+      "promptCachedTokens": 0.00000025,
+      "promptTextTokens": 0.000002,
     },
     "price": {
-      "completionTextTokens": 0.00000633,
-      "promptCacheWriteTokens": 0.0000026375,
-      "promptCachedTokens": 0.00000026375,
-      "promptImageTokens": 0.00000211,
-      "promptTextTokens": 0.00000211,
-      "promptVideoTokens": 0.00000211,
+      "completionTextTokens": 0.000006,
+      "promptCachedTokens": 0.00000025,
+      "promptTextTokens": 0.000002,
     },
   },
   "qwen/qwen3.8-max-0902": {

@@ -242,19 +242,16 @@ describe("resolveModelConfig", () => {
                 function: { name: "get_weather" },
             },
         ],
-    ])(
-        "disables Qwen3.8 Max 0902 thinking for %s tool choice",
-        async (_label, toolChoice) => {
-            const definition = findModelByName("qwen/qwen3.8-max-0902");
-            const transformed = await definition?.transform?.(messages, {
-                model: "qwen/qwen3.8-max-0902",
-                reasoning_effort: "high",
-                tool_choice: toolChoice,
-            });
+    ])("disables Qwen3.8 Max 0902 thinking for %s tool choice", async (_label, toolChoice) => {
+        const definition = findModelByName("qwen/qwen3.8-max-0902");
+        const transformed = await definition?.transform?.(messages, {
+            model: "qwen/qwen3.8-max-0902",
+            reasoning_effort: "high",
+            tool_choice: toolChoice,
+        });
 
-            expect(transformed?.options.reasoning_effort).toBe("none");
-        },
-    );
+        expect(transformed?.options.reasoning_effort).toBe("none");
+    });
 
     it("keeps Qwen3.8 Max 0902 reasoning for automatic tool choice", async () => {
         const definition = findModelByName("qwen/qwen3.8-max-0902");
@@ -323,24 +320,21 @@ describe("resolveModelConfig", () => {
                 function: { name: "get_weather" },
             },
         ],
-    ])(
-        "disables Qwen3.8 Flash thinking for %s tool choice",
-        async (_label, toolChoice) => {
-            for (const name of [
-                "qwen/qwen3.8-flash",
-                "qwen/qwen3.8-flash:alibaba",
-            ]) {
-                const definition = findModelByName(name);
-                const transformed = await definition?.transform?.(messages, {
-                    model: name,
-                    reasoning_effort: "high",
-                    tool_choice: toolChoice,
-                });
+    ])("disables Qwen3.8 Flash thinking for %s tool choice", async (_label, toolChoice) => {
+        for (const name of [
+            "qwen/qwen3.8-flash",
+            "qwen/qwen3.8-flash:alibaba",
+        ]) {
+            const definition = findModelByName(name);
+            const transformed = await definition?.transform?.(messages, {
+                model: name,
+                reasoning_effort: "high",
+                tool_choice: toolChoice,
+            });
 
-                expect(transformed?.options.reasoning_effort).toBe("none");
-            }
-        },
-    );
+            expect(transformed?.options.reasoning_effort).toBe("none");
+        }
+    });
 
     it("keeps Qwen3.8 Flash reasoning for automatic tool choice", async () => {
         const definition = findModelByName("qwen/qwen3.8-flash");
@@ -464,18 +458,15 @@ describe("resolveModelConfig", () => {
             "meta-llama/llama-4-scout",
             "novita/bf16",
         ],
-    ])(
-        "pins %s to %s through %s without fallback",
-        (model, route, provider) => {
-            const result = resolveModelConfig(messages, { model });
+    ])("pins %s to %s through %s without fallback", (model, route, provider) => {
+        const result = resolveModelConfig(messages, { model });
 
-            expect(result.options.model).toBe(route);
-            expect(result.options.provider).toEqual({
-                only: [provider],
-                allow_fallbacks: false,
-            });
-        },
-    );
+        expect(result.options.model).toBe(route);
+        expect(result.options.provider).toEqual({
+            only: [provider],
+            allow_fallbacks: false,
+        });
+    });
 
     it("routes the MiniMax M2.7 fallback directly to DeepInfra", () => {
         const result = resolveModelConfig(messages, {
@@ -592,66 +583,61 @@ describe("resolveModelConfig", () => {
         ["perplexity/sonar", "high"],
         ["perplexity/sonar-pro", "high"],
         ["perplexity/sonar-reasoning-pro", "high"],
-    ] as const)(
-        "preserves %s %s search context on OpenRouter",
-        (model, searchContextSize) => {
-            const result = resolveModelConfig(messages, {
-                model: `${model}:openrouter:perplexity`,
-                web_search_options: { search_context_size: searchContextSize },
-            });
-            expect(result.options.model).toBe(model);
-            expect(result.options.web_search_options).toEqual({
-                search_context_size: searchContextSize,
-            });
-            expect(result.options.modelConfig).toMatchObject({
-                directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
-            });
-            expect(result.options.provider).toEqual({
-                only: ["perplexity"],
-                allow_fallbacks: false,
-            });
-        },
-    );
+    ] as const)("preserves %s %s search context on OpenRouter", (model, searchContextSize) => {
+        const result = resolveModelConfig(messages, {
+            model: `${model}:openrouter:perplexity`,
+            web_search_options: { search_context_size: searchContextSize },
+        });
+        expect(result.options.model).toBe(model);
+        expect(result.options.web_search_options).toEqual({
+            search_context_size: searchContextSize,
+        });
+        expect(result.options.modelConfig).toMatchObject({
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+        });
+        expect(result.options.provider).toEqual({
+            only: ["perplexity"],
+            allow_fallbacks: false,
+        });
+    });
 
-    it.each(["perplexity-high", "perplexity-deep", "sonar-deep"])(
-        "resolves %s to Sonar and forwards an explicit context",
-        async (modelName) => {
-            const model = findModelByName(modelName);
+    it.each([
+        "perplexity-high",
+        "perplexity-deep",
+        "sonar-deep",
+    ])("resolves %s to Sonar and forwards an explicit context", async (modelName) => {
+        const model = findModelByName(modelName);
 
-            expect(model?.name).toBe("perplexity/sonar");
-            const result = resolveModelConfig(messages, {
-                model: modelName,
-                web_search_options: { search_context_size: "high" },
-            });
-            expect(result.options.model).toBe("sonar");
-            expect(result.options.web_search_options).toEqual({
-                search_context_size: "high",
-            });
-        },
-    );
+        expect(model?.name).toBe("perplexity/sonar");
+        const result = resolveModelConfig(messages, {
+            model: modelName,
+            web_search_options: { search_context_size: "high" },
+        });
+        expect(result.options.model).toBe("sonar");
+        expect(result.options.web_search_options).toEqual({
+            search_context_size: "high",
+        });
+    });
 
     it.each([
         ["grok", undefined, "grok-4-20-non-reasoning"],
         ["grok-4-20-reasoning", undefined, "grok-4-20-non-reasoning"],
         ["grok", "high", "grok-4-20-reasoning"],
         ["grok-4-20-reasoning", "none", "grok-4-20-non-reasoning"],
-    ] as const)(
-        "routes %s with reasoning_effort=%s to %s",
-        async (model, reasoningEffort, deployment) => {
-            const definition = findModelByName(model);
-            const transformed = await definition?.transform?.(messages, {
-                model,
-                reasoning_effort: reasoningEffort,
-            });
-            if (!transformed) throw new Error("Grok transform missing");
+    ] as const)("routes %s with reasoning_effort=%s to %s", async (model, reasoningEffort, deployment) => {
+        const definition = findModelByName(model);
+        const transformed = await definition?.transform?.(messages, {
+            model,
+            reasoning_effort: reasoningEffort,
+        });
+        if (!transformed) throw new Error("Grok transform missing");
 
-            const result = resolveModelConfig(messages, transformed.options);
-            expect(result.options.model).toBe(deployment);
-            if (deployment === "grok-4-20-non-reasoning") {
-                expect(result.options.reasoning_effort).toBeUndefined();
-            }
-        },
-    );
+        const result = resolveModelConfig(messages, transformed.options);
+        expect(result.options.model).toBe(deployment);
+        if (deployment === "grok-4-20-non-reasoning") {
+            expect(result.options.reasoning_effort).toBeUndefined();
+        }
+    });
 
     it("marks missing model configs as 404 errors", () => {
         expect(() =>

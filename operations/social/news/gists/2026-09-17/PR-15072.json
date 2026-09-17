@@ -1,0 +1,35 @@
+{
+  "pr_number": 15072,
+  "title": "docs: update README — 2026-09-17",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/15072",
+  "merged_at": "2026-09-17T07:25:46Z",
+  "labels": [
+    "NEWS"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News and star history. Recent Apps is refreshed when an app is published.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The garden sign is fresh",
+    "blurb": "The README's little public noticeboard got its daily tending: fresh news and an updated view of the hive's star trail.",
+    "summary": "Updated the README's Latest News section and refreshed the light and dark GitHub star-history charts for 2026-09-17.",
+    "impact": "Visitors to the repository now get current project news and an up-to-date view of pollinations.ai's GitHub growth.",
+    "keywords": [
+      "README",
+      "news",
+      "star history",
+      "GitHub",
+      "documentation"
+    ],
+    "visual_concept": "Depict Polli as a tiny garden librarian updating a cozy lime-green community noticeboard, with a star-chart vine climbing beside it and small flowers growing around the board. The scene represents the README as the project's public front gate and the refreshed star history as a gentle record of community growth.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown stripes, pink cheek blush, light blue wings, and a tiny librarian scarf, pinning a fresh news note to a garden noticeboard while a glowing star-history chart grows like a vine beside it; small pixel flowers and code-plants surround the board. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: 'LATEST NEWS', nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-17/PR-15072.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown stripes, pink cheek blush, light blue wings, and a tiny librarian scarf, pinning a fresh news note to a garden noticeboard while a glowing star-history chart grows like a vine beside it; small pixel flowers and code-plants surround the board. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: 'LATEST NEWS', nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-17T07:26:50.505650+00:00"
+}

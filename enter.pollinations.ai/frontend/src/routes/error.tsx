@@ -34,9 +34,12 @@ function ErrorPage() {
             title="Sign in"
             error={message}
             actions={
-                <Button as="a" icon={<ArrowRightIcon />} href="/">
-                    Go to dashboard
-                </Button>
+                // A suspended account has nowhere to go; the footnote is the way out.
+                isBanned ? undefined : (
+                    <Button as="a" icon={<ArrowRightIcon />} href="/">
+                        Go to dashboard
+                    </Button>
+                )
             }
         />
     );

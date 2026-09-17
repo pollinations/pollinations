@@ -31,7 +31,7 @@ const footnotes = {
     ),
     billing: (
         <>
-            Need help? Contact{" "}
+            If you think this is a mistake, contact{" "}
             <InlineLink href="mailto:billing@pollinations.ai">
                 billing@pollinations.ai
             </InlineLink>

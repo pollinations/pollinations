@@ -33,7 +33,6 @@ export function AuthModal({ children, size, dialog, onClose }: AuthModalProps) {
         <Dialog
             open
             onOpenChange={(open) => !open && onClose?.()}
-            layout="flow"
             showBackdrop={false}
             ariaLabel={dialog?.label}
             labelledBy={dialog?.labelledBy}

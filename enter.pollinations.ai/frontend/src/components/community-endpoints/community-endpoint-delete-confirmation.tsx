@@ -1,4 +1,4 @@
-import { Button, Dialog } from "@pollinations/ui";
+import { Button, Dialog, DialogFooter } from "@pollinations/ui";
 import type { CommunityEndpoint } from "./types.ts";
 
 type CommunityEndpointDeleteConfirmationProps = {
@@ -18,21 +18,20 @@ export function CommunityEndpointDeleteConfirmation({
             onOpenChange={(open) => !open && onCancel()}
             title="Delete Model"
             size="sm"
-            contentClassName="p-6"
         >
-            <p className="mb-6 mt-4">
+            <p className="flex-1 px-6 py-4">
                 Delete{" "}
                 <span className="font-mono text-sm">{endpoint?.modelId}</span>?
                 This removes the model and cannot be undone.
             </p>
-            <div className="flex justify-end gap-2">
+            <DialogFooter>
                 <Button type="button" onClick={onCancel}>
                     Cancel
                 </Button>
                 <Button type="button" intent="danger" onClick={onConfirm}>
                     Delete
                 </Button>
-            </div>
+            </DialogFooter>
         </Dialog>
     );
 }

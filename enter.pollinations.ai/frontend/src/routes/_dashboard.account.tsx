@@ -338,7 +338,7 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
             title="Delete Pollinations account?"
             size="sm"
         >
-            <div className="mt-4 flex flex-col gap-5 px-6 pb-6">
+            <div className="mt-4 flex flex-1 flex-col gap-5 px-6 pb-6">
                 <Alert intent="danger" title="This cannot be undone">
                     <div className="flex flex-col gap-3">
                         <p>Deleting your Pollinations account removes:</p>
@@ -390,7 +390,7 @@ function DeleteAccountDialog({ open, onOpenChange }: DeleteAccountDialogProps) {
                     />
                 </FieldStack>
 
-                <div className="flex justify-end gap-2">
+                <div className="mt-auto flex justify-end gap-2">
                     <Button
                         type="button"
                         onClick={() => handleOpenChange(false)}

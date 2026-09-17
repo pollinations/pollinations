@@ -115,7 +115,6 @@ export function AgentDialog({
             size="lg"
             trigger={trigger}
             triggerAsChild
-            contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
         >
             <div className="shrink-0 p-6 pb-4">
                 <DialogTitle className="text-lg font-semibold">

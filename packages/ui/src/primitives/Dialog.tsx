@@ -21,8 +21,6 @@ export type DialogProps = {
     ariaLabel?: string;
     labelledBy?: string;
     size?: keyof typeof sizeClasses;
-    /** Full-height form or review surface. */
-    layout?: "dialog" | "flow";
     showBackdrop?: boolean;
     backdropBlur?: boolean;
     positionerClassName?: string;
@@ -40,7 +38,6 @@ export const Dialog: FC<DialogProps> = ({
     ariaLabel,
     labelledBy,
     size = "md",
-    layout = "dialog",
     showBackdrop = true,
     backdropBlur = true,
     positionerClassName,
@@ -77,8 +74,7 @@ export const Dialog: FC<DialogProps> = ({
                 )}
                 <ArkDialog.Positioner
                     className={cn(
-                        "polli:fixed polli:inset-0 polli:z-[110] polli:flex polli:h-dvh polli:items-start polli:justify-center polli:overflow-hidden polli:p-4",
-                        layout === "flow" && "polli:p-0 polli:sm:p-4",
+                        "polli:fixed polli:inset-0 polli:z-[110] polli:flex polli:h-dvh polli:items-start polli:justify-center polli:overflow-hidden polli:p-0 polli:sm:p-4",
                         positionerClassName,
                     )}
                 >
@@ -87,15 +83,13 @@ export const Dialog: FC<DialogProps> = ({
                         aria-label={ariaLabel}
                         aria-labelledby={labelledBy}
                         className={cn(
-                            "polli:my-auto polli:w-full polli:overflow-hidden polli:rounded-lg polli:border-2 polli:border-theme-border polli:bg-surface-opaque polli:shadow-lg polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none",
+                            "polli:flex polli:h-dvh polli:max-h-dvh polli:w-full polli:max-sm:max-w-none polli:flex-col polli:overflow-y-auto polli:bg-surface-opaque polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none polli:sm:my-auto polli:sm:h-[calc(100dvh-2rem)] polli:sm:max-h-[calc(100dvh-2rem)] polli:sm:rounded-2xl polli:sm:shadow-container",
                             sizeClasses[size],
-                            layout === "flow" &&
-                                "polli:flex polli:h-dvh polli:max-h-dvh polli:max-sm:max-w-none polli:flex-col polli:overflow-y-auto polli:my-0 polli:rounded-none polli:border-0 polli:shadow-none polli:sm:my-auto polli:sm:h-[calc(100dvh-2rem)] polli:sm:max-h-[calc(100dvh-2rem)] polli:sm:rounded-2xl polli:sm:shadow-container",
                             contentClassName,
                         )}
                     >
                         {title && (
-                            <DialogTitle className="polli:px-6 polli:pt-6 polli:font-subheading polli:text-xl polli:text-theme-text-strong">
+                            <DialogTitle className="polli:shrink-0 polli:px-6 polli:pt-6 polli:font-subheading polli:text-xl polli:text-theme-text-strong">
                                 {title}
                             </DialogTitle>
                         )}

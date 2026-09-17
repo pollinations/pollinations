@@ -194,7 +194,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 </Button>
             }
             triggerAsChild
-            layout="flow"
         >
             <div className="shrink-0 p-6 pb-4">
                 <DialogTitle className="text-lg font-semibold">

@@ -394,7 +394,6 @@ export function CommunityEndpointDialog({
             size="lg"
             trigger={trigger}
             triggerAsChild
-            contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
         >
             <DialogHeader
                 title={

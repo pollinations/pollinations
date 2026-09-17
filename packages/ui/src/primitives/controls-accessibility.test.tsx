@@ -159,6 +159,7 @@ describe("shared control accessibility", () => {
         const ready = renderToStaticMarkup(<PollinationsSignInButton />);
         expect(ready).toContain("Connect with Pollinations");
         expect(ready).not.toContain('aria-busy="true"');
+        expect(ready).not.toContain('disabled=""');
 
         const pending = renderToStaticMarkup(
             <PollinationsSignInButton isPending>
@@ -167,7 +168,7 @@ describe("shared control accessibility", () => {
         );
         expect(pending).toContain("Checking sign-in…");
         expect(pending).toContain('aria-busy="true"');
-        expect(pending).toContain("disabled");
+        expect(pending).toContain('disabled=""');
     });
 
     it("announces authentication errors", () => {

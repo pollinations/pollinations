@@ -1,3 +1,4 @@
+import { ColorModeToggle } from "../../primitives/ColorModeToggle.tsx";
 import { Heading } from "../../primitives/Typography.tsx";
 import { AuthErrorContent } from "./AuthErrorContent.tsx";
 import { AuthFlowLayout, AuthInfoCard } from "./AuthModal.tsx";
@@ -41,6 +42,7 @@ export function DashboardSignIn({
             : null;
     return (
         <AuthFlowLayout
+            headerAction={<ColorModeToggle />}
             dialog={{ labelledBy: "dashboard-sign-in-title" }}
             actions={
                 <PollinationsSignInButton onClick={onSignIn}>
@@ -70,7 +72,7 @@ export function DashboardSignIn({
                         {appName}
                     </Heading>
                     <p className="polli:font-body polli:text-xs polli:font-semibold polli:tracking-wide polli:text-theme-text-soft">
-                        requires your pollinations.ai admin account.
+                        Sign in with a Pollinations admin account.
                     </p>
                 </div>
             )}

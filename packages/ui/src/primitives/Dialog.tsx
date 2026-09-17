@@ -84,7 +84,6 @@ export const Dialog: FC<DialogProps> = ({
                 >
                     <ArkDialog.Content
                         ref={contentRef}
-                        data-layout={layout}
                         aria-label={ariaLabel}
                         aria-labelledby={labelledBy}
                         className={cn(

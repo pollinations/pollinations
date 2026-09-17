@@ -12,6 +12,7 @@ import { useLoaderData } from "@tanstack/react-router";
 import type { FC } from "react";
 import { downloadActivityCsv } from "./activity-csv";
 import {
+    ActivityEmptyState,
     ActivityFilter,
     CsvDownloadButton,
     clearActivitySelectionOnEscape,
@@ -53,6 +54,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
         usedModels,
         chartData,
         hasData,
+        hasPeriodData,
         stats,
         exportRows,
     } = useEarningsData({
@@ -133,21 +135,25 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                     />
                 }
             >
-                <ActivityFilter
-                    label="Apps"
-                    missingLabel="Unavailable app"
-                    options={appSelectOptions}
-                    selected={selectedAppKeyIds}
-                    onChange={onSelectedAppKeyIdsChange}
-                    emptyMessage="No app earnings in this period"
-                />
-                <ActivityFilter
-                    label="Models"
-                    options={modelSelectOptions}
-                    selected={selectedModelIds}
-                    onChange={onSelectedModelIdsChange}
-                    emptyMessage="No model earnings in this period"
-                />
+                {hasPeriodData && (
+                    <>
+                        <ActivityFilter
+                            label="Apps"
+                            missingLabel="Unavailable app"
+                            options={appSelectOptions}
+                            selected={selectedAppKeyIds}
+                            onChange={onSelectedAppKeyIdsChange}
+                            emptyMessage="No app earnings in this period"
+                        />
+                        <ActivityFilter
+                            label="Models"
+                            options={modelSelectOptions}
+                            selected={selectedModelIds}
+                            onChange={onSelectedModelIdsChange}
+                            emptyMessage="No model earnings in this period"
+                        />
+                    </>
+                )}
             </ActivityToolbar>
 
             <div className="min-h-[180px]">
@@ -288,14 +294,14 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
 };
 
 const EarningsEmptyState: FC = () => (
-    <p className="text-sm text-ink-600">
-        No earnings in this selected period. Once users start spending pollen
-        through your apps or community models, earnings will appear here.{" "}
+    <ActivityEmptyState>
+        No earnings in this period. Once users spend Pollen through your apps or
+        community models, earnings will appear here.{" "}
         <InlineLink href="/keys" showIcon={false}>
             Create an App key
         </InlineLink>
         .
-    </p>
+    </ActivityEmptyState>
 );
 
 export default EarningsGraph;

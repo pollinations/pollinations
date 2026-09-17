@@ -269,7 +269,7 @@ const modelsListHandler = (
                 allowedModels,
                 paidBalance,
             );
-            const catalog = await filterCatalogEntries(c, entries);
+            const catalog = filterCatalogEntries(c, entries);
             return c.json(catalog.map((entry) => entry.info));
         },
     ] as const;
@@ -336,7 +336,6 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         }),
         pricing: entry.info.pricing,
         capabilities: entry.info.capabilities,
-        ...(entry.info.health && { health: entry.info.health }),
         supported_parameters: entry.info.supported_parameters,
         ...(entry.info.tools && { tools: entry.info.tools }),
         ...(entry.info.reasoning && { reasoning: entry.info.reasoning }),
@@ -407,7 +406,7 @@ export const proxyRoutes = new Hono<Env>()
         async (c) => {
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
-            const modelEntries = await filterCatalogEntries(
+            const modelEntries = filterCatalogEntries(
                 c,
                 filterEntriesByPermissions(
                     await getVisibleModelEntries(c),

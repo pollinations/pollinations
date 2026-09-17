@@ -4,10 +4,11 @@ import {
     DownloadIcon,
     MultiSelect,
     SproutIcon,
+    Surface,
     Tooltip,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
-import type { FC, KeyboardEvent } from "react";
+import type { FC, KeyboardEvent, ReactNode } from "react";
 import { formatActivityPollen } from "./format-activity-pollen";
 import type { Metric } from "./types";
 
@@ -100,7 +101,7 @@ export const CsvDownloadButton: FC<CsvDownloadButtonProps> = ({
             as="button"
             onClick={onClick}
             disabled={disabled}
-            size="lg"
+            size="sm"
             className="gap-2 whitespace-nowrap"
         >
             <DownloadIcon className="h-4 w-4 shrink-0" />
@@ -121,6 +122,15 @@ export const CsvDownloadButton: FC<CsvDownloadButtonProps> = ({
         button
     );
 };
+
+/** Same height as the chart and loading states so the card never jumps. */
+export const ActivityEmptyState: FC<{ children: ReactNode }> = ({
+    children,
+}) => (
+    <Surface className="flex h-[180px] items-center justify-center text-center">
+        <p className="max-w-md text-sm text-theme-text-muted">{children}</p>
+    </Surface>
+);
 
 export function downloadFile(url: string): void {
     const anchor = document.createElement("a");

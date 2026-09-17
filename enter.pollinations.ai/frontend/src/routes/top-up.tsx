@@ -137,7 +137,7 @@ function TopUpPage() {
                     ) : undefined
                 }
             >
-                <Heading as="h1" id="top-up-title">
+                <Heading as="h1" size="section" id="top-up-title">
                     Checkout complete
                 </Heading>
                 <Text size="sm">
@@ -160,7 +160,7 @@ function TopUpPage() {
                     </Button>
                 }
             >
-                <Heading as="h1" id="top-up-title">
+                <Heading as="h1" size="section" id="top-up-title">
                     Couldn’t load your wallet
                 </Heading>
                 <ErrorBanner>
@@ -181,7 +181,7 @@ function TopUpPage() {
                 returnUrl ? <ReturnToApp returnUrl={returnUrl} /> : undefined
             }
         >
-            <Heading as="h1" id="top-up-title">
+            <Heading as="h1" size="section" id="top-up-title">
                 Top up your wallet
             </Heading>
             {search.stripe_canceled && (

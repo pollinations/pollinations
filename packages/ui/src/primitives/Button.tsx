@@ -1,4 +1,8 @@
-import type { PropsWithChildren, MouseEvent as ReactMouseEvent } from "react";
+import type {
+    PropsWithChildren,
+    MouseEvent as ReactMouseEvent,
+    ReactNode,
+} from "react";
 import { cn } from "../lib/cn.ts";
 
 /** Semantic soft-fill roles. Label recipes live on Chip. */
@@ -8,9 +12,9 @@ export type ButtonAppearance = "pill" | "raised";
 const pillSizes = {
     icon: "polli:h-12 polli:w-12 polli:p-0",
     xs: "polli:h-5 polli:px-1.5 polli:py-0 polli:text-[11px] polli:leading-none",
-    sm: "polli:px-2 polli:pt-0.5 polli:pb-1",
-    md: "polli:px-4 polli:pt-1.5 polli:pb-2",
-    lg: "polli:px-6 polli:py-3",
+    sm: "polli:min-h-7 polli:px-2 polli:pt-0.5 polli:pb-1",
+    md: "polli:min-h-9 polli:px-4 polli:pt-1.5 polli:pb-2",
+    lg: "polli:min-h-12 polli:px-6 polli:py-3",
 } as const;
 
 const raisedSizes = {
@@ -48,6 +52,7 @@ const intentClasses: Record<ButtonIntent, string> = {
 };
 
 type BaseButtonProps = {
+    icon?: ReactNode;
     /** Optional semantic recipe; omit for the ambient theme button. */
     intent?: ButtonIntent;
     /** `raised` is the stronger website CTA treatment. */
@@ -67,7 +72,7 @@ const buttonClasses = ({
     const colorClasses = intent ? intentClasses[intent] : themeClasses;
     const sizeClasses = appearance === "raised" ? raisedSizes : pillSizes;
     return cn(
-        "polli-control polli:inline-flex polli:items-center polli:justify-center polli:self-center polli:font-medium polli:leading-normal polli:box-border",
+        "polli-control polli:inline-flex polli:items-center polli:justify-center polli:self-center polli:font-body polli:text-sm polli:font-medium polli:leading-normal polli:box-border",
         disabled
             ? "polli:opacity-50 polli:cursor-not-allowed"
             : "polli:hover:filter polli:hover:brightness-105 polli:cursor-pointer",
@@ -86,6 +91,7 @@ export type ButtonProps<T extends React.ElementType = "button"> =
 export function Button<T extends React.ElementType = "button">({
     as,
     children,
+    icon,
     intent,
     appearance,
     size,
@@ -131,6 +137,14 @@ export function Button<T extends React.ElementType = "button">({
                 disabled,
             })}
         >
+            {icon && (
+                <span
+                    aria-hidden="true"
+                    className="polli:mr-2 polli:flex polli:size-4 polli:shrink-0 polli:[&>svg]:size-full"
+                >
+                    {icon}
+                </span>
+            )}
             {children}
         </Component>
     );

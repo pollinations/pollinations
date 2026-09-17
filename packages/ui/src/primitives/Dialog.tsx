@@ -107,6 +107,7 @@ export type DialogHeaderProps = Omit<
     "title"
 > & {
     title?: ReactNode;
+    icon?: ReactNode;
     description?: ReactNode;
     titleClassName?: string;
     descriptionClassName?: string;
@@ -114,6 +115,7 @@ export type DialogHeaderProps = Omit<
 
 export const DialogHeader: FC<DialogHeaderProps> = ({
     title,
+    icon,
     description,
     children,
     className,
@@ -128,15 +130,27 @@ export const DialogHeader: FC<DialogHeaderProps> = ({
         >
             {title && (
                 <DialogTitle
-                    className={cn(headingClassName("section"), titleClassName)}
+                    className={cn(
+                        headingClassName("section"),
+                        !!icon && "polli:flex polli:items-center polli:gap-2",
+                        titleClassName,
+                    )}
                 >
+                    {icon && (
+                        <span
+                            aria-hidden="true"
+                            className="polli:flex polli:size-6 polli:shrink-0 polli:[&>svg]:size-full"
+                        >
+                            {icon}
+                        </span>
+                    )}
                     {title}
                 </DialogTitle>
             )}
             {description && (
                 <DialogDescription
                     className={cn(
-                        "polli:mt-1 polli:text-sm polli:text-theme-text-muted",
+                        "polli:mt-1 polli:font-body polli:text-sm polli:font-normal polli:leading-5 polli:text-theme-text-muted",
                         descriptionClassName,
                     )}
                 >
@@ -156,7 +170,7 @@ export function DialogBody({ className, ...props }: ScrollAreaProps) {
         <ScrollArea
             {...props}
             className={cn(
-                "polli:min-h-0 polli:flex-1 polli:space-y-5 polli:overscroll-contain polli:px-6 polli:py-4",
+                "polli:min-h-0 polli:flex-1 polli:space-y-4 polli:overscroll-contain polli:px-6 polli:py-4",
                 className,
             )}
         />

@@ -29,7 +29,10 @@ export function FieldStack({
 }: FieldStackProps) {
     return (
         <Field.Root
-            className={cn("polli:flex polli:flex-col polli:gap-2", className)}
+            className={cn(
+                "polli:flex polli:flex-col polli:gap-2 polli:font-body",
+                className,
+            )}
             invalid={Boolean(error)}
         >
             <div
@@ -40,7 +43,7 @@ export function FieldStack({
             >
                 <Field.Label
                     className={cn(
-                        "polli:text-sm polli:font-semibold polli:text-theme-text-strong",
+                        "polli:text-sm polli:font-semibold polli:leading-5 polli:text-theme-text-strong",
                         labelClassName,
                     )}
                 >
@@ -61,7 +64,7 @@ export function FieldStack({
             ) : helper ? (
                 <Field.HelperText
                     className={cn(
-                        "polli:text-xs polli:leading-5 polli:text-theme-text-muted",
+                        "polli:text-xs polli:font-normal polli:leading-normal polli:text-theme-text-muted",
                         helperClassName,
                     )}
                 >

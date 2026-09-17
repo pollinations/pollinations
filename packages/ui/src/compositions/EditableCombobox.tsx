@@ -1,6 +1,5 @@
 import { createListCollection } from "@ark-ui/react/collection";
 import { Combobox } from "@ark-ui/react/combobox";
-import { Portal } from "@ark-ui/react/portal";
 import {
     type ComponentPropsWithoutRef,
     type ReactNode,
@@ -126,6 +125,7 @@ export function EditableCombobox({
             positioning={{
                 placement: align === "end" ? "bottom-end" : "bottom-start",
                 sameWidth: true,
+                strategy: "fixed",
             }}
             onInputValueChange={(details) => onChange(details.inputValue)}
             onOpenChange={(details) => onOpenChange?.(details.open)}
@@ -168,36 +168,34 @@ export function EditableCombobox({
                     </Combobox.Trigger>
                 )}
             </Combobox.Control>
-            <Portal>
-                <Combobox.Positioner>
-                    <Combobox.Content className="polli:z-[120] polli:overflow-hidden polli:rounded-lg polli:bg-theme-bg-pale polli:p-1 polli:shadow-lg polli:focus:outline-none">
-                        <ScrollArea className="polli:max-h-64">
-                            <Combobox.List className="polli:flex polli:flex-col">
-                                {visibleOptions.map((option) => (
-                                    <Combobox.Item
-                                        key={option}
-                                        item={option}
-                                        className={cn(
-                                            "polli-control polli:flex polli:w-full polli:cursor-pointer polli:items-center polli:rounded-lg polli:bg-transparent polli:px-3 polli:py-2 polli:text-left polli:text-sm polli:font-medium polli:text-theme-text-base polli:transition-colors polli:hover:bg-theme-bg-hover polli:data-[highlighted]:bg-theme-bg-hover",
-                                            value === option &&
-                                                "polli:bg-theme-bg-active polli:text-theme-text-strong",
-                                        )}
-                                    >
-                                        <Combobox.ItemText className="polli:truncate polli:font-mono">
-                                            {option}
-                                        </Combobox.ItemText>
-                                    </Combobox.Item>
-                                ))}
-                                {visibleOptions.length === 0 && (
-                                    <Combobox.Empty className="polli:m-0 polli:px-2 polli:py-2 polli:text-sm polli:text-theme-text-soft">
-                                        {emptyMessage}
-                                    </Combobox.Empty>
-                                )}
-                            </Combobox.List>
-                        </ScrollArea>
-                    </Combobox.Content>
-                </Combobox.Positioner>
-            </Portal>
+            <Combobox.Positioner>
+                <Combobox.Content className="polli:z-[120] polli:overflow-hidden polli:rounded-lg polli:bg-surface-menu polli:p-1 polli:shadow-lg polli:focus:outline-none">
+                    <ScrollArea className="polli:max-h-64">
+                        <Combobox.List className="polli:flex polli:flex-col">
+                            {visibleOptions.map((option) => (
+                                <Combobox.Item
+                                    key={option}
+                                    item={option}
+                                    className={cn(
+                                        "polli-control polli:flex polli:w-full polli:cursor-pointer polli:items-center polli:rounded-lg polli:bg-transparent polli:px-3 polli:py-2 polli:text-left polli:text-sm polli:font-medium polli:text-theme-text-base polli:transition-colors polli:hover:bg-theme-bg-hover polli:data-[highlighted]:bg-theme-bg-hover",
+                                        value === option &&
+                                            "polli:bg-theme-bg-active polli:text-theme-text-strong",
+                                    )}
+                                >
+                                    <Combobox.ItemText className="polli:truncate polli:font-mono">
+                                        {option}
+                                    </Combobox.ItemText>
+                                </Combobox.Item>
+                            ))}
+                            {visibleOptions.length === 0 && (
+                                <Combobox.Empty className="polli:m-0 polli:px-2 polli:py-2 polli:text-sm polli:text-theme-text-soft">
+                                    {emptyMessage}
+                                </Combobox.Empty>
+                            )}
+                        </Combobox.List>
+                    </ScrollArea>
+                </Combobox.Content>
+            </Combobox.Positioner>
         </Combobox.Root>
     );
 }

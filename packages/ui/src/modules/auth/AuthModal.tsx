@@ -150,9 +150,9 @@ export type AuthInfoCardProps = {
 
 export function AuthInfoCard({ title, children }: AuthInfoCardProps) {
     return (
-        <Surface>
+        <Surface className="polli:space-y-3 polli:font-body">
             {title != null && (
-                <p className="polli:mb-2 polli:font-body polli:text-xs polli:font-semibold polli:tracking-wide polli:text-theme-text-soft">
+                <p className="polli:font-body polli:text-sm polli:font-semibold polli:leading-5 polli:text-theme-text-strong">
                     {title}
                 </p>
             )}
@@ -183,7 +183,7 @@ export function AuthAccessItem({
         <li>
             <label
                 className={cn(
-                    "polli:flex polli:min-h-9 polli:items-center polli:gap-3",
+                    "polli:flex polli:min-h-8 polli:items-center polli:gap-3 polli:font-body polli:text-sm polli:font-semibold polli:leading-5",
                     onChange &&
                         (disabled
                             ? "polli:cursor-not-allowed"
@@ -220,7 +220,11 @@ export function AuthAccessItem({
                     <span className="polli:shrink-0">{control}</span>
                 )}
             </label>
-            {details && <div className="polli:pt-3">{details}</div>}
+            {details && (
+                <div className="polli:pl-8 polli:font-body polli:text-xs polli:font-normal polli:leading-normal polli:text-theme-text-muted">
+                    {details}
+                </div>
+            )}
         </li>
     );
 }

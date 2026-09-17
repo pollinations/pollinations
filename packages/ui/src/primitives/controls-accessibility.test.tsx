@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { AccountIdentity } from "../compositions/AccountIdentity.tsx";
 import { AccountMenu } from "../compositions/AccountMenu.tsx";
 import { AuthAccessItem, ErrorBanner } from "../modules/auth/AuthModal.tsx";
+import { GitHubSignInButton } from "../modules/auth/GitHubSignInButton.tsx";
 import { PollinationsSignInButton } from "../modules/auth/PollinationsSignInButton.tsx";
 import { DialogFooter, DialogHeader } from "./Dialog.tsx";
 import { DropdownItem } from "./DropdownItem.tsx";
@@ -169,6 +170,16 @@ describe("shared control accessibility", () => {
         expect(pending).toContain("Checking sign-in…");
         expect(pending).toContain('aria-busy="true"');
         expect(pending).toContain('disabled=""');
+
+        const githubReady = renderToStaticMarkup(<GitHubSignInButton />);
+        expect(githubReady).toContain("Sign in with GitHub");
+        expect(githubReady).not.toContain('disabled=""');
+        const githubPending = renderToStaticMarkup(
+            <GitHubSignInButton isSigningIn />,
+        );
+        expect(githubPending).toContain("Signing in…");
+        expect(githubPending).toContain('aria-busy="true"');
+        expect(githubPending).toContain('disabled=""');
     });
 
     it("announces authentication errors", () => {

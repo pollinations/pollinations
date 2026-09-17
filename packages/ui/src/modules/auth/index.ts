@@ -13,6 +13,7 @@ export {
 } from "./AuthModal.tsx";
 export { DashboardAccountMenu } from "./DashboardAccountMenu.tsx";
 export { DashboardSignIn } from "./DashboardSignIn.tsx";
+export { GitHubSignInButton } from "./GitHubSignInButton.tsx";
 export {
     PollinationsSignInButton,
     type PollinationsSignInButtonProps,

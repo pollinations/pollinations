@@ -327,29 +327,28 @@ async def _sse_events(
     yield "data: [DONE]\n\n"
 
 
-def _agent_run_token(http_request: Request) -> str | None:
-    """Return the gateway-minted run token; reject direct user credentials."""
+def _bearer_credential(http_request: Request) -> str | None:
+    """Return the Authorization bearer as an opaque credential.
+
+    Accepts gateway `ag_` run tokens and direct `sk_`/`pk_` keys. Gen validates
+    the credential; Floret must not pre-judge the prefix.
+    """
     header = http_request.headers.get("Authorization", "")
     if not header:
         return None
     token = header[7:].strip() if header[:7].lower() == "bearer " else ""
-    if not token.startswith("ag_"):
-        raise HTTPException(
-            status_code=401,
-            detail="Floret requires an agent run token.",
-        )
-    return token
+    return token or None
 
 
 @app.post("/v1/chat/completions")
 async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
-    api_key = _agent_run_token(http_request)
+    api_key = _bearer_credential(http_request)
     # Fail here rather than part-way through a run: without a credential every
     # downstream generation 401s anyway, after the caller has already waited.
     if not api_key and not settings.allow_operator_key:
         raise HTTPException(
             status_code=401,
-            detail="Missing agent run token.",
+            detail="Missing API key.",
         )
 
     if settings.catalog_endpoint:

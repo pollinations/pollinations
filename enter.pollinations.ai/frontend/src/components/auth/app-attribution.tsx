@@ -1,9 +1,10 @@
-import { Surface, Text } from "@pollinations/ui";
+import { Chip, SproutIcon, Surface, Text } from "@pollinations/ui";
 
 type Attribution = {
     appName?: string;
     githubUsername?: string;
     found?: boolean;
+    earningsEnabled?: boolean;
 };
 
 type AppAttributionProps = {
@@ -26,9 +27,21 @@ export function AppAttribution({
         attribution?.appName || (isDeviceMode ? "Your device" : "This app");
     return (
         <Surface variant="card-subtle">
-            <Text size="sm" weight="semibold" tone="strong">
-                {displayName}
-            </Text>
+            <div className="flex items-start justify-between gap-3">
+                <Text size="sm" weight="semibold" tone="strong">
+                    {displayName}
+                </Text>
+                {attribution?.earningsEnabled && (
+                    <Chip
+                        size="sm"
+                        intent="success"
+                        title="The app earns 20% of the Pollen you spend in it."
+                    >
+                        <SproutIcon className="h-3 w-3" />
+                        Earns 20%
+                    </Chip>
+                )}
+            </div>
             {attribution?.githubUsername && (
                 <Text size="sm" className="mt-1">
                     by{" "}

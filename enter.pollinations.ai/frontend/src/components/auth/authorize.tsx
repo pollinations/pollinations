@@ -2,7 +2,6 @@ import {
     ArrowLeftIcon,
     Button,
     CheckIcon,
-    SproutIcon,
     Text,
     useScrollLock,
     XIcon,
@@ -551,16 +550,6 @@ export function Authorize() {
                     showIdentity
                     disabled={isAuthorizing}
                 />
-                {attribution?.earningsEnabled && (
-                    <Text
-                        size="xs"
-                        tone="muted"
-                        className="flex items-center gap-2"
-                    >
-                        <SproutIcon className="h-4 w-4" />
-                        The app earns 20% of the Pollen you spend in it.
-                    </Text>
-                )}
             </form>
         </AuthFlowScreen>
     );

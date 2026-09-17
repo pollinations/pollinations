@@ -9,22 +9,17 @@ type Attribution = {
 
 type AppAttributionProps = {
     attribution: Attribution | null;
-    isDeviceMode: boolean;
-    userCode?: string;
     redirectHostname: string;
 };
 
-/** The requesting app or device, shown the same way before and after sign-in. */
+/** The requesting app, shown the same way before and after sign-in. */
 export function AppAttribution({
     attribution,
-    isDeviceMode,
-    userCode,
     redirectHostname,
 }: AppAttributionProps) {
     // A callback hostname identifies the destination, not the app. Keep it in
     // the details row even when lookup has not supplied an app name.
-    const displayName =
-        attribution?.appName || (isDeviceMode ? "Your device" : "This app");
+    const displayName = attribution?.appName || "This app";
     return (
         <Surface>
             <div className="flex items-start justify-between gap-3">
@@ -34,12 +29,7 @@ export function AppAttribution({
                     tone="strong"
                     className="flex items-center gap-2"
                 >
-                    {!isDeviceMode && (
-                        <AppIcon
-                            aria-hidden="true"
-                            className="h-4 w-4 shrink-0"
-                        />
-                    )}
+                    <AppIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
                     {displayName}
                 </Text>
                 {attribution?.earningsEnabled && (
@@ -66,14 +56,9 @@ export function AppAttribution({
                     </a>
                 </Text>
             )}
-            {!isDeviceMode && redirectHostname && (
+            {redirectHostname && (
                 <Text size="xs" className="mt-1 font-mono">
                     {redirectHostname}
-                </Text>
-            )}
-            {isDeviceMode && userCode && (
-                <Text size="xs" className="mt-1 font-mono">
-                    Code: {userCode}
                 </Text>
             )}
         </Surface>

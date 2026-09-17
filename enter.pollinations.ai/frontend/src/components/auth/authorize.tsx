@@ -2,6 +2,8 @@ import {
     ArrowLeftIcon,
     Button,
     KeyIcon,
+    Surface,
+    Text,
     useScrollLock,
     XIcon,
 } from "@pollinations/ui";
@@ -445,12 +447,22 @@ export function Authorize() {
         }
     }
 
-    // The card reads as one sentence: "Allow · {subject} · to access your account. {step}"
-    const subject = (
+    // The card reads as one sentence: "{title} · {who} · to access your account. {step}"
+    const title = isDeviceMode ? "Allow your device" : "Allow this app";
+    const subject = isDeviceMode ? (
+        <Surface>
+            <Text
+                size="sm"
+                weight="semibold"
+                tone="strong"
+                className="font-mono"
+            >
+                Code: {user_code}
+            </Text>
+        </Surface>
+    ) : (
         <AppAttribution
             attribution={attribution}
-            isDeviceMode={isDeviceMode}
-            userCode={user_code}
             redirectHostname={redirectHostname}
         />
     );
@@ -461,20 +473,20 @@ export function Authorize() {
         return (
             <AuthFlowScreen
                 footnote="back"
-                title="Allow"
+                title={title}
                 subject={subject}
                 description={`${access} ${denied ? "Declined" : "Allowed"}, return to your device.`}
             />
         );
     }
 
-    if (isPending) return <AuthModalLoading title="Allow" subject={subject} />;
+    if (isPending) return <AuthModalLoading title={title} subject={subject} />;
 
     if (error) {
         return (
             <AuthFlowScreen
                 footnote="help"
-                title="Allow"
+                title={title}
                 subject={subject}
                 description={access}
                 error={`Couldn’t connect. ${error}`}
@@ -494,7 +506,7 @@ export function Authorize() {
     if (!user) {
         return (
             <SignInScreen
-                title="Allow"
+                title={title}
                 subject={subject}
                 description={`${access} Sign in to review the request.`}
                 onCancel={handleDeny}
@@ -504,7 +516,7 @@ export function Authorize() {
 
     return (
         <AuthFlowScreen
-            title="Allow"
+            title={title}
             subject={subject}
             description={`${access} Choose what it can use, you can revoke it any time.`}
             actions={

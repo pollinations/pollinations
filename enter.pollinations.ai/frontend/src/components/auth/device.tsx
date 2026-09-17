@@ -4,7 +4,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { authClient } from "../../auth.ts";
-import { AppAttribution } from "./app-attribution.tsx";
 import { AuthFlowScreen } from "./auth-flow-screen.tsx";
 import { SignInScreen } from "./sign-in-screen.tsx";
 
@@ -90,18 +89,14 @@ export function Device({ prefilledCode }: DeviceProps) {
         verifyAndRedirect(code);
     }
 
-    const subject = (
-        <AppAttribution attribution={null} isDeviceMode redirectHostname="" />
-    );
     const access = "to access your account.";
 
-    if (isPending) return <AuthModalLoading title="Allow" subject={subject} />;
+    if (isPending) return <AuthModalLoading title="Allow your device" />;
 
     if (!user) {
         return (
             <SignInScreen
-                title="Allow"
-                subject={subject}
+                title="Allow your device"
                 description={`${access} Sign in, then enter the code shown on it.`}
             />
         );
@@ -109,8 +104,7 @@ export function Device({ prefilledCode }: DeviceProps) {
 
     return (
         <AuthFlowScreen
-            title="Allow"
-            subject={subject}
+            title="Allow your device"
             description={`${access} Enter the code shown on it.`}
             error={error}
             actions={

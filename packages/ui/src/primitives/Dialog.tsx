@@ -137,7 +137,7 @@ export const DialogHeader: FC<DialogHeaderProps> = ({
             {description && (
                 <DialogDescription
                     className={cn(
-                        "polli:mt-1 polli:font-body polli:text-sm polli:font-normal polli:leading-5 polli:text-theme-text-muted",
+                        "polli:mt-1 polli:font-body polli:text-sm polli:font-normal polli:leading-5 polli:text-theme-text-base",
                         descriptionClassName,
                     )}
                 >

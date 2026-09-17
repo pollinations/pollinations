@@ -171,7 +171,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                             </div>
                         }
                     >
-                        AI models
+                        Models
                     </AuthAccessItem>
                 </ul>
             </AuthInfoCard>

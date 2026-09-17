@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { chmodSync, existsSync, readFileSync } from "node:fs";
 import JSON5 from "json5";
 import { writeTextAtomic } from "../harnesses/fs.js";
 import { entryName } from "./catalog.js";
@@ -30,6 +30,12 @@ export const loadJsonish = (path: string): Json => {
 
 export const saveJsonish = (path: string, data: Json) => {
     writeTextAtomic(path, `${JSON.stringify(data, null, 2)}\n`);
+    // Client configs embed Pollinations API keys: keep them owner-only.
+    try {
+        chmodSync(path, 0o600);
+    } catch {
+        // best effort — never fail the install over permissions
+    }
 };
 
 /** Pollinations owns entries named pollinations-* or pointing at our /mcp URLs. */

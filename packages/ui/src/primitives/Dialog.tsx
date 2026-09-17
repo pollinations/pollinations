@@ -3,6 +3,7 @@ import { Portal } from "@ark-ui/react/portal";
 import type { ComponentPropsWithoutRef, FC, ReactNode } from "react";
 import { useRef } from "react";
 import { cn } from "../lib/cn.ts";
+import { ButtonDefaultsContext } from "./Button.tsx";
 import { ScrollArea, type ScrollAreaProps } from "./ScrollArea.tsx";
 import { headingClassName } from "./Typography.tsx";
 
@@ -164,6 +165,8 @@ export const DialogHeader: FC<DialogHeaderProps> = ({
 
 export type DialogFooterProps = ComponentPropsWithoutRef<"div">;
 
+const footerButtonDefaults = { appearance: "block" as const };
+
 /** The scrollable content between a dialog's header and actions. */
 export function DialogBody({ className, ...props }: ScrollAreaProps) {
     return (
@@ -185,12 +188,14 @@ export const DialogFooter: FC<DialogFooterProps> = ({
     return (
         <div
             className={cn(
-                "polli:flex polli:shrink-0 polli:flex-wrap polli:items-center polli:justify-end polli:gap-3 polli:bg-theme-bg-pale polli:p-6 polli:pt-4 polli:[&>button]:rounded-md polli:[&>a]:rounded-md polli:[&>button]:font-body polli:[&>a]:font-body polli:[&>button]:text-sm polli:[&>a]:text-sm polli:[&>button]:self-stretch polli:[&>button]:min-h-11 polli:[&>button]:flex-1 polli:[&>a]:self-stretch polli:[&>a]:min-h-11 polli:[&>a]:flex-1",
+                "polli:flex polli:shrink-0 polli:flex-wrap polli:items-stretch polli:justify-end polli:gap-3 polli:bg-theme-bg-pale polli:p-6 polli:pt-4",
                 className,
             )}
             {...props}
         >
-            {children}
+            <ButtonDefaultsContext.Provider value={footerButtonDefaults}>
+                {children}
+            </ButtonDefaultsContext.Provider>
         </div>
     );
 };

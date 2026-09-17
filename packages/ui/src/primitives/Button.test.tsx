@@ -50,12 +50,19 @@ describe("Button appearances", () => {
     });
 
     test("makes disabled polymorphic links inert", () => {
-        const element = Button({
-            as: "a",
-            href: "/unavailable",
-            disabled: true,
-            children: "Unavailable",
-        });
+        // Button reads footer defaults through a hook, so call it inside a
+        // rendering component to capture the element it returns.
+        let element = <span />;
+        function Probe() {
+            element = Button({
+                as: "a",
+                href: "/unavailable",
+                disabled: true,
+                children: "Unavailable",
+            });
+            return element;
+        }
+        renderToStaticMarkup(<Probe />);
         const props = element.props as {
             "aria-disabled": boolean;
             href?: string;

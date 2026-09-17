@@ -17,7 +17,7 @@ export function KeyNameField({
             helper={
                 app
                     ? "Shown to users when they connect to your app."
-                    : "A label to help you recognize this key, also used in the activity dashboard and CSV exports."
+                    : "Shown in your activity and CSV exports."
             }
         >
             <Field.Input asChild>

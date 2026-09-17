@@ -7,7 +7,7 @@ import { createContext, useContext } from "react";
 import { cn } from "../lib/cn.ts";
 
 /** Semantic soft-fill roles. Label recipes live on Chip. */
-type ButtonIntent = "danger" | "info" | "neutral" | "brand";
+type ButtonIntent = "danger" | "info" | "neutral" | "brand" | "commit";
 export type ButtonAppearance = "pill" | "raised" | "block";
 
 const pillSizes = {
@@ -49,21 +49,28 @@ const themeClasses =
     "polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover polli:transition-colors";
 
 // Soft intent recipes — light tile + deep text, slightly deeper bg on hover.
-// No filled CTAs anywhere: the commit action is `brand`, the outlined
-// authorization look shared with the provider sign-in buttons.
+// No filled CTAs at rest. Two outlined families share one look: `brand` for
+// signing in (identity, calm pale hover) and `commit` for granting or saving
+// (fills with the accent only under the pointer or keyboard focus).
+const outlined =
+    "polli:border polli:border-theme-text-soft polli:bg-surface-white polli:text-theme-text-strong " +
+    "polli:transition-colors polli:[.dark_&]:bg-transparent";
 const intentClasses: Record<ButtonIntent, string> = {
-    brand:
-        "polli:border polli:border-theme-text-soft polli:bg-surface-white polli:text-theme-text-strong " +
-        "polli:hover:bg-theme-text-soft/10 polli:transition-colors polli:[.dark_&]:bg-transparent",
+    brand: `${outlined} polli:hover:bg-theme-text-soft/10`,
+    commit:
+        `${outlined} polli:hover:border-theme-bg-active polli:hover:bg-theme-bg-active ` +
+        "polli:focus-visible:border-theme-bg-active polli:focus-visible:bg-theme-bg-active " +
+        "polli:[.dark_&]:hover:bg-theme-bg-active polli:[.dark_&]:focus-visible:bg-theme-bg-active",
     danger:
         "polli:bg-intent-danger-bg-light polli:text-intent-danger-text " +
         "polli:hover:bg-intent-danger-bg-hover polli:transition-colors",
     info:
         "polli:bg-intent-info-bg-light polli:text-intent-info-text " +
         "polli:hover:bg-intent-info-bg-hover polli:transition-colors",
+    // Secondary actions never take the accent: one step stronger grey on hover.
     neutral:
         "polli:bg-theme-bg-subtle polli:text-theme-text-base " +
-        "polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover polli:transition-colors",
+        "polli:hover:bg-theme-text-muted/25 polli:hover:text-theme-text-strong polli:transition-colors",
 };
 
 type BaseButtonProps = {

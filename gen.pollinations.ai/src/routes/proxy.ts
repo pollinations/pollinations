@@ -84,7 +84,7 @@ import {
     Generate3dRequestQueryParamsSchema,
 } from "@/schemas/model3d.ts";
 import {
-    type ModelListQueryParams,
+    ModelListHeadersSchema,
     ModelListQueryParamsSchema,
 } from "@/schemas/models.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
@@ -109,6 +109,7 @@ import {
     simpleAudioQuerySchema,
     textBodyLimit,
 } from "./generation-handlers.ts";
+import { filterCatalogEntries } from "./model-catalog.ts";
 import { handleRealtimeWebSocket } from "./realtime.ts";
 
 const ModelInfoListSchema = z.array(ModelInfoSchema).meta({
@@ -250,21 +251,8 @@ function hasPaidBalance(c: any): boolean | undefined {
     return (user.packBalance ?? 0) > 0;
 }
 
-// Optionally filter entries by the validated `?community` query parameter.
-function filterEntriesByCommunityParam(
-    entries: GenerationModelEntry[],
-    communityParam: string | undefined,
-): GenerationModelEntry[] {
-    if (communityParam === undefined) return entries;
-    const wantCommunity = communityParam === "true" || communityParam === "1";
-    return entries.filter(
-        (entry) => (entry.communityEndpoint !== undefined) === wantCommunity,
-    );
-}
-
-// Factory for model-list endpoints: validates the community query parameter,
-// filters by API key permissions, paid balance, and community flag,
-// then returns the model list as JSON.
+// Factory for model-list endpoints. Permission filtering always happens before
+// the optional discovery-only source and status filters.
 const modelsListHandler = (
     getEntries: (
         c: Context<Env>,
@@ -272,22 +260,17 @@ const modelsListHandler = (
 ) =>
     [
         validator("query", ModelListQueryParamsSchema),
+        validator("header", ModelListHeadersSchema),
         async (c: Context<Env>) => {
-            const { community } = c.req.valid(
-                "query" as never,
-            ) as ModelListQueryParams;
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
-            return c.json(
-                filterEntriesByCommunityParam(
-                    filterEntriesByPermissions(
-                        await getEntries(c),
-                        allowedModels,
-                        paidBalance,
-                    ),
-                    community,
-                ).map((entry) => entry.info),
+            const entries = filterEntriesByPermissions(
+                await getEntries(c),
+                allowedModels,
+                paidBalance,
             );
+            const catalog = filterCatalogEntries(c, entries);
+            return c.json(catalog.map((entry) => entry.info));
         },
     ] as const;
 
@@ -419,19 +402,17 @@ export const proxyRoutes = new Hono<Env>()
             },
         }),
         validator("query", ModelListQueryParamsSchema),
+        validator("header", ModelListHeadersSchema),
         async (c) => {
-            const { community } = c.req.valid(
-                "query" as never,
-            ) as ModelListQueryParams;
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
-            const modelEntries = filterEntriesByCommunityParam(
+            const modelEntries = filterCatalogEntries(
+                c,
                 filterEntriesByPermissions(
                     await getVisibleModelEntries(c),
                     allowedModels,
                     paidBalance,
                 ),
-                community,
             );
             return c.json({
                 object: "list" as const,
@@ -1077,7 +1058,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "**Dialogue:** Set `model=elevenlabs/eleven-v3:dialogue`; provide one `<voice>: <text>` turn per line.",
                 "",
-                "**Music generation:** Set `model=elevenlabs/music-v2`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music instead of speech. `google/lyria-3-clip-preview` returns a fixed 30-second MP3 clip; `elevenlabs/music-v2` supports `duration` (3-300 seconds) and `instrumental` mode; the Stable Audio models support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.",
+                "**Music generation:** Set `model=elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music instead of speech. `google/lyria-3-clip-preview` returns a fixed 30-second MP3 clip; the ElevenLabs Music models support `duration` (3-300 seconds) and `instrumental` mode; the Stable Audio models support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.",
             ].join("\n"),
             responses: {
                 200: {

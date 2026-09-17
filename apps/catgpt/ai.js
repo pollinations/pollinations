@@ -6,7 +6,8 @@ const MEDIA = "https://media.pollinations.ai";
 const COMMUNITY_TAG = "catgpt";
 const ORIGINAL_CATGPT =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png";
-const SELFIE_CATGPT = "https://media.pollinations.ai/657d58ee4c9c22d7";
+const SELFIE_CATGPT =
+    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/selfie-catgpt.png";
 const AUTH_KEY = "catgpt_api_key";
 const APP_KEY = "pk_uWjreBEkxFAhjDHo";
 
@@ -39,7 +40,7 @@ export function getAuthorizeUrl() {
         redirect_url: redirect,
         app_key: APP_KEY,
         budget: "5",
-        models: "openai/gpt-image-1-mini,google/gemini-2.5-flash-image,anthropic/claude-haiku-4.5",
+        models: "openai/gpt-image-1-mini,google/gemini-3.1-flash-lite-image,google/gemini-2.5-flash-image,anthropic/claude-haiku-4.5",
         permissions: "profile,usage",
     })}`;
 }
@@ -125,7 +126,7 @@ export function generateImageURL(prompt, model, imageUrl = null) {
 
 // ── Models ──────────────────────────────────────────────────────────────────
 
-const PREFERRED_MODEL = "nanobanana";
+const PREFERRED_MODELS = ["nanobanana-2-lite", "nanobanana"];
 const FALLBACK_MODEL = "gptimage";
 
 export async function pickModel(apiKey) {
@@ -135,14 +136,16 @@ export async function pickModel(apiKey) {
         });
         if (!res.ok) return { model: FALLBACK_MODEL, isPremium: false };
         const models = await res.json();
-        if (
-            models.some(
-                (model) =>
-                    model.name === PREFERRED_MODEL ||
-                    model.aliases?.includes(PREFERRED_MODEL),
-            )
-        ) {
-            return { model: PREFERRED_MODEL, isPremium: true };
+        for (const preferred of PREFERRED_MODELS) {
+            if (
+                models.some(
+                    (model) =>
+                        model.name === preferred ||
+                        model.aliases?.includes(preferred),
+                )
+            ) {
+                return { model: preferred, isPremium: true };
+            }
         }
         return { model: FALLBACK_MODEL, isPremium: false };
     } catch {

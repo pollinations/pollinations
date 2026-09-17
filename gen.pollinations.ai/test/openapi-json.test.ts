@@ -108,6 +108,29 @@ describe("/openapi.json", () => {
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/v1/audio/music/upload"]).toBeUndefined();
+        for (const path of [
+            "/models",
+            "/v1/models",
+            "/text/models",
+            "/image/models",
+            "/video/models",
+            "/audio/models",
+            "/embeddings/models",
+            "/3d/models",
+        ]) {
+            expect(schema).toHaveProperty(
+                ["paths", path, "get", "parameters"],
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        in: "header",
+                        name: "pollinations-model-source",
+                        schema: expect.objectContaining({
+                            enum: ["official", "community"],
+                        }),
+                    }),
+                ]),
+            );
+        }
 
         for (const [path, method] of [
             ["/image/{prompt}", "get"],
@@ -241,20 +264,14 @@ describe("/openapi.json", () => {
             }),
         );
 
-        const statusOperation = schema.paths["/v1/models/status"] as {
+        const statusOperation = schema.paths["/models/status"] as {
             get: {
                 parameters: { name: string }[];
             };
         };
         expect(statusOperation.get.parameters.map(({ name }) => name)).toEqual([
             "minutes",
-            "format",
         ]);
-        expect(
-            collectPropertySets(schema.paths["/v1/models/status"]).some(
-                (properties) => "data" in properties,
-            ),
-        ).toBe(true);
 
         const speechRequestPropertySets = collectPropertySets(schema).filter(
             (properties) =>

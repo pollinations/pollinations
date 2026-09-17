@@ -50,6 +50,32 @@ if (modelArgIndex !== -1 && !onlyModel) {
     console.error("--model requires a community/owner/model id");
     process.exit(1);
 }
+// --models-file <path>: probe several exact IDs (typically monitor-hidden rows)
+// in one targeted run. JSON array of { name, category, operation? }.
+const modelsFileArgIndex = process.argv.indexOf("--models-file");
+const fileModels =
+    modelsFileArgIndex === -1
+        ? []
+        : JSON.parse(
+              fs.readFileSync(process.argv[modelsFileArgIndex + 1], "utf8"),
+          );
+if (
+    (modelsFileArgIndex !== -1 && onlyModel) ||
+    !Array.isArray(fileModels) ||
+    fileModels.some(
+        (m) =>
+            typeof m?.name !== "string" ||
+            !["text", "image"].includes(m.category) ||
+            (m.operation !== undefined &&
+                !["generate", "edit"].includes(m.operation)),
+    )
+) {
+    console.error(
+        "--models-file needs a JSON array of { name, category: text|image, operation?: generate|edit } and excludes --model",
+    );
+    process.exit(1);
+}
+const fileOperation = new Map(fileModels.map((m) => [m.name, m.operation]));
 const categoryArgIndex = process.argv.indexOf("--category");
 const onlyCategory =
     categoryArgIndex === -1 ? null : process.argv[categoryArgIndex + 1];
@@ -85,8 +111,13 @@ if (
 async function fetchCommunityModels() {
     const list = await fetch(`${GEN}/models`).then((r) => r.json());
     const models = Array.isArray(list) ? list : (list.data ?? list);
+    // Agents are skipped: a probe message makes them do their real work
+    // (tool calls, commits, generations) on the monitor's account.
     return models.filter(
-        (m) => m.community && (m.category === "text" || m.category === "image"),
+        (m) =>
+            m.community &&
+            !m.agent &&
+            (m.category === "text" || m.category === "image"),
     );
 }
 
@@ -211,6 +242,7 @@ async function probeText(model) {
         const body = await res.text();
         let usage;
         let content;
+        let servedModel;
         let protocolError;
         let errorCode;
         let errorMessage;
@@ -219,6 +251,7 @@ async function probeText(model) {
             ({
                 usage,
                 content,
+                servedModel,
                 protocolError,
                 errorCode,
                 errorMessage,
@@ -243,6 +276,7 @@ async function probeText(model) {
             model: model.name,
             modelUsed,
             fallbackUsed: modelUsed ? modelUsed !== model.name : null,
+            servedModel: servedModel ?? null,
             category: model.category,
             requestPath,
             requestId: res.headers.get("x-request-id"),
@@ -346,8 +380,10 @@ function probe(model) {
     return model.category === "image"
         ? probeImage(
               model,
-              onlyModel
-                  ? (onlyOperation ?? "generate")
+              targeted
+                  ? (onlyOperation ??
+                        fileOperation.get(model.name) ??
+                        "generate")
                   : nextImageOperation(
                         model,
                         state.spend?.lastImageProbeOperation?.[
@@ -411,6 +447,19 @@ if (onlyModel && !models.some((model) => model.name === onlyModel)) {
         flat_rate: false,
     });
 }
+for (const entry of fileModels) {
+    if (models.some((model) => model.name === entry.name)) continue;
+    models.push({
+        name: entry.name,
+        category: entry.category,
+        pricing: {},
+        flat_rate: false,
+    });
+}
+const targetNames = new Set(
+    onlyModel ? [onlyModel] : fileModels.map((m) => m.name),
+);
+const targeted = targetNames.size > 0;
 const priceByModel = new Map(
     models.map((m) => [
         m.name,
@@ -436,12 +485,12 @@ const imageProbeDue = (model) => {
         !Number.isFinite(previous) || now - previous >= IMAGE_PROBE_INTERVAL_MS
     );
 };
-const modelsToProbe = onlyModel
-    ? models.filter((model) => model.name === onlyModel)
+const modelsToProbe = targeted
+    ? models.filter((model) => targetNames.has(model.name))
     : models.filter(
           (model) => model.category === "text" || imageProbeDue(model),
       );
-const skippedImageModels = onlyModel
+const skippedImageModels = targeted
     ? []
     : models
           .filter(
@@ -512,7 +561,7 @@ const nextState = {
         },
     },
 };
-if (!onlyModel) {
+if (!targeted) {
     fs.writeFileSync(STATE_PATH, JSON.stringify(nextState, null, 2));
 }
 
@@ -535,7 +584,7 @@ const out = {
     results,
     billingFlagsByModel,
 };
-if (onlyModel) {
+if (targeted) {
     // Targeted freshness checks return their result without replacing the
     // latest complete sweep or influencing the next sweep's cadence state.
     console.log(JSON.stringify(out));
@@ -557,7 +606,7 @@ for (const r of [...byModel.values()].sort(
     (a, b) => Number(a.ok) - Number(b.ok),
 )) {
     console.log(
-        `${r.ok ? "OK  " : "FAIL"} ${String(r.status).padEnd(4)} x${r.count}  ${String(r.ms).padStart(6)}ms  ${r.model} ${r.requestPath}${r.modelUsed ? ` served by ${r.modelUsed}` : " (served model unknown)"}`,
+        `${r.ok ? "OK  " : "FAIL"} ${String(r.status).padEnd(4)} x${r.count}  ${String(r.ms).padStart(6)}ms  ${r.model} ${r.requestPath}${r.modelUsed ? ` served by ${r.modelUsed}` : " (served model unknown)"}${r.servedModel ? ` upstream=${r.servedModel}` : ""}`,
     );
 }
 console.log(

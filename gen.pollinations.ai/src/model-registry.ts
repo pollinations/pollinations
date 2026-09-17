@@ -33,6 +33,7 @@ import {
     type CommunityModelEnv,
     type CommunityModelRegistryEntry,
     getCommunityModelRegistryEntries,
+    resetCommunityModelRegistryCache,
 } from "./community-models.ts";
 import { linkFallbackEntries } from "./fallback.ts";
 import { mediaPromptRoute } from "./media/prompt-route.ts";
@@ -460,6 +461,9 @@ export async function getGenerationModelRegistry(
     return registry;
 }
 
-export function resetGenerationModelRegistryCache(): void {
+export async function resetGenerationModelRegistryCache(
+    env: CommunityModelEnv,
+): Promise<void> {
     cachedRegistry = null;
+    await resetCommunityModelRegistryCache(env);
 }

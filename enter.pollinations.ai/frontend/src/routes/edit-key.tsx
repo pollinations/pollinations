@@ -1,4 +1,4 @@
-import { AccountIdentity, Button } from "@pollinations/ui";
+import { Button } from "@pollinations/ui";
 import {
     AuthInfoCard,
     AuthModal,
@@ -10,8 +10,10 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
+import { AuthAccountIdentity } from "../components/auth/auth-account-identity.tsx";
 import type { ApiKey } from "../components/keys";
 import { EditApiKeyDialog } from "../components/keys/edit-api-key-dialog.tsx";
+import { useAccountBalance } from "../hooks/use-account-balance.ts";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 import {
     parseAppUrl,
@@ -47,8 +49,13 @@ function EditKeyPage() {
     const user = session?.user;
     const { isSigningIn, error: signInError, signIn } = useGitHubSignIn();
     const [apiKey, setApiKey] = useState<ApiKey | null | undefined>(undefined);
+    const balance = useAccountBalance(Boolean(user));
     const [outcome, setOutcome] = useState<Outcome>("editing");
     const returnUrl = redirect ?? null;
+    const topUpHref =
+        typeof window === "undefined"
+            ? "/top-up"
+            : `/top-up?${new URLSearchParams({ redirect: window.location.href })}`;
 
     useEffect(() => {
         const from = preferredReturnUrl(redirect);
@@ -109,9 +116,10 @@ function EditKeyPage() {
 
     const accountHeader = (
         <AuthModalHeader>
-            <AccountIdentity
-                name={user.githubUsername || user.name}
-                avatarUrl={user.image}
+            <AuthAccountIdentity
+                user={user}
+                balance={balance}
+                topUpHref={topUpHref}
             />
         </AuthModalHeader>
     );

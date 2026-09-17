@@ -39,6 +39,7 @@ import {
     hasPollinationsTools,
 } from "../frontend/src/components/models/model-info.ts";
 import { ModelRow } from "../frontend/src/components/models/model-row.tsx";
+import { ModelStatusChips } from "../frontend/src/components/models/model-status-chips.tsx";
 import { ModelPricingLedger } from "../frontend/src/components/models/price-badge.tsx";
 
 const getCatalogModelPrices = () =>
@@ -50,6 +51,24 @@ const getCatalogModelPrices = () =>
         ...getEmbeddingModelsInfo(),
         ...getModel3dModelsInfo(),
     ]);
+
+test("health indicators use three states", () => {
+    for (const [status, label] of [
+        ["healthy", "Healthy over the last 24 hours"],
+        ["degraded", "Elevated errors over the last 24 hours"],
+        ["down", "Elevated errors over the last 24 hours"],
+        ["unknown", "No requests in the last 24 hours"],
+    ] as const) {
+        const markup = renderToStaticMarkup(
+            createElement(ModelStatusChips, {
+                showNew: false,
+                showAlpha: false,
+                health: { status, requests: 0, successRate: null },
+            }),
+        );
+        expect(markup).toContain(`aria-label="${label}"`);
+    }
+});
 
 const getCatalogModels = () => [
     ...getTextModelsInfo(),

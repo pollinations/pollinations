@@ -686,6 +686,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.0025,
     },
   },
+  "elevenlabs/music-v2.5": {
+    "cost": {
+      "completionAudioSeconds": 0.0025,
+      "promptAudioSeconds": 0.0025,
+    },
+    "price": {
+      "completionAudioSeconds": 0.0025,
+      "promptAudioSeconds": 0.0025,
+    },
+  },
   "elevenlabs/scribe-v2": {
     "cost": {
       "promptAudioSeconds": 0.0000611111111111111,
@@ -753,6 +763,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
   },
   "google/gemini-2.5-flash-lite:openrouter:ai-studio": {
+    "cost": {
+      "completionTextTokens": 0.000000422,
+      "promptAudioTokens": 0.0000003165,
+      "promptCacheWriteTokens": 0.0000001055,
+      "promptCachedTokens": 0.00000001055,
+      "promptImageTokens": 0.0000001055,
+      "promptTextTokens": 0.0000001055,
+      "promptVideoTokens": 0.0000001055,
+    },
+    "price": {
+      "completionTextTokens": 0.000000422,
+      "promptAudioTokens": 0.0000003165,
+      "promptCacheWriteTokens": 0.0000001055,
+      "promptCachedTokens": 0.00000001055,
+      "promptImageTokens": 0.0000001055,
+      "promptTextTokens": 0.0000001055,
+      "promptVideoTokens": 0.0000001055,
+    },
+  },
+  "google/gemini-2.5-flash-lite:openrouter:vertex-global": {
     "cost": {
       "completionTextTokens": 0.000000422,
       "promptAudioTokens": 0.0000003165,

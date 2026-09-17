@@ -139,6 +139,16 @@ npm run deploy && npm run push-secrets   # production; CI does this on `producti
 
 Production deploys run through `.github/workflows/deploy-applications.yml`.
 
+## Placement
+
+The container is constrained to `ENAM` (`containers[].constraints.regions` in
+`wrangler.jsonc`) because Postgres is in AWS us-east-1. Unconstrained, Cloudflare
+starts the container nearest to whichever request woke it (it ran in Riga), and
+every DB session then costs ~3 transatlantic round trips (~0.45 s), which made
+each page load ~20 s. A deploy that changes the constraint rolls the single
+instance to the new region: expect ~5 min of 500/503 while the 1.5 GB image
+cold-starts. Verified on staging 2026-09-16: `/health/db` 0.9 s → 0.3 s.
+
 ## Login requirements on the Pollinations side
 
 - App Key (`pk_`) with the exact redirect URIs registered:

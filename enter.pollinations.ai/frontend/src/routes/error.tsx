@@ -1,4 +1,6 @@
-import { Button, Surface } from "@pollinations/ui";
+import { Button, Heading, Surface } from "@pollinations/ui";
+import logoWordmarkUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
+import { isBannedLoginError } from "@shared/auth/ban.ts";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/error")({
@@ -10,16 +12,16 @@ export const Route = createFileRoute("/error")({
 
 function ErrorPage() {
     const { error } = Route.useSearch();
-    const isBanned = error === "banned";
+    const isBanned = isBannedLoginError(error);
     const isStagingInviteOnly = error === "staging_is_invite-only";
 
     const title = isBanned
-        ? "Account Deactivated"
+        ? "Account Suspended"
         : isStagingInviteOnly
           ? "Staging is invite-only"
           : "Something went wrong";
     const message = isBanned
-        ? "Your account has been deactivated. This might be a mistake — reach out and we'll sort it out together."
+        ? "Your account has been suspended. If you think this is a mistake, contact billing."
         : isStagingInviteOnly
           ? "This is the staging environment and access is limited to the Pollinations team. Head to pollinations.ai to use the production app."
           : "An unexpected error occurred. Please try again or open a GitHub issue if this keeps happening.";
@@ -30,32 +32,54 @@ function ErrorPage() {
                 variant="card"
                 className="w-full max-w-md p-8 text-center shadow-lg"
             >
-                <h1 className="font-heading text-3xl mb-3">{title}</h1>
+                {isBanned && (
+                    <a
+                        href="https://pollinations.ai/"
+                        className="inline-flex mb-6 text-theme-text-strong"
+                        aria-label="Pollinations"
+                    >
+                        <span className="sr-only">Pollinations</span>
+                        <span
+                            aria-hidden="true"
+                            className="block h-6 w-[195px] bg-current"
+                            style={{
+                                WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
+                                mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
+                            }}
+                        />
+                    </a>
+                )}
+                <Heading as="h1" size="section" className="mb-3">
+                    {title}
+                </Heading>
 
                 <p className="font-body text-theme-text-base mb-6 leading-relaxed">
                     {message}
                 </p>
 
                 <div className="flex flex-col gap-3">
+                    <Button as="a" size="lg" href="/" className="mt-2">
+                        Go to Home →
+                    </Button>
                     {isBanned && (
                         <Button
                             as="a"
                             size="lg"
-                            href="https://github.com/pollinations/pollinations/issues/new?title=Account+deactivated&body=Hi%2C+my+account+has+been+deactivated+and+I+believe+this+may+be+a+mistake.+Could+you+please+review+it%3F"
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            href="mailto:billing@pollinations.ai"
                         >
-                            Create a GitHub Issue
+                            Contact billing
                         </Button>
                     )}
-
-                    <Button as="a" size="lg" href="/" className="mt-2">
-                        Go to Home →
-                    </Button>
                 </div>
 
                 <div className="mt-8 text-sm text-theme-text-soft">
-                    pollinations.ai
+                    {isBanned ? (
+                        <a href="https://pollinations.ai/terms">
+                            Terms &amp; Conditions
+                        </a>
+                    ) : (
+                        "pollinations.ai"
+                    )}
                 </div>
             </Surface>
         </div>

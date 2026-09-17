@@ -25,7 +25,7 @@ export function AppAttribution({
     const displayName =
         attribution?.appName || (isDeviceMode ? "Your device" : "This app");
     return (
-        <Surface>
+        <Surface variant="card-subtle">
             <Text size="sm" weight="semibold" tone="strong">
                 {displayName}
             </Text>

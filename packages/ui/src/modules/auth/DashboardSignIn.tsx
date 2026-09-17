@@ -1,8 +1,9 @@
 import { Button } from "../../primitives/Button.tsx";
 import { ColorModeToggle } from "../../primitives/ColorModeToggle.tsx";
 import { RefreshIcon } from "../../primitives/icons/index.tsx";
+import { Surface } from "../../primitives/Surface.tsx";
 import { Text } from "../../primitives/Typography.tsx";
-import { AuthFlowLayout, AuthInfoCard, ErrorBanner } from "./AuthModal.tsx";
+import { AuthFlowLayout, ErrorBanner } from "./AuthModal.tsx";
 import { PollinationsSignInButton } from "./PollinationsSignInButton.tsx";
 
 const signInErrors = {
@@ -76,11 +77,11 @@ export function DashboardSignIn({
             {!isPending && error ? (
                 <>
                     <ErrorBanner>{error.message}</ErrorBanner>
-                    <AuthInfoCard title={null}>
+                    <Surface variant="card-subtle">
                         <Text size="sm" weight="semibold" tone="strong">
                             {appName}
                         </Text>
-                    </AuthInfoCard>
+                    </Surface>
                 </>
             ) : null}
         </AuthFlowLayout>

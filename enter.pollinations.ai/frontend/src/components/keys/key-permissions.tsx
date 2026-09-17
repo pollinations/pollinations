@@ -1,4 +1,4 @@
-import { Chip, Text } from "@pollinations/ui";
+import { AccountIcon, Text } from "@pollinations/ui";
 import { AuthAccessItem, AuthInfoCard } from "@pollinations/ui/auth";
 import type { FC } from "react";
 import { useState } from "react";
@@ -86,48 +86,70 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     const hasModels =
         permissions.allowedModels === null ||
         permissions.allowedModels.length > 0;
+    const accountPermissionsInput = (
+        <AccountPermissionsInput
+            value={permissions.accountPermissions}
+            onChange={(next) =>
+                setAccountPermissions(next.length ? next : null)
+            }
+            disabled={disabled}
+            visiblePermissions={visiblePermissions}
+        />
+    );
+    const limitInputs = (
+        <>
+            <KeyLimitInput
+                kind="budget"
+                value={permissions.pollenBudget}
+                onChange={setPollenBudget}
+                disabled={disabled}
+                required={showIdentity}
+            />
+            <KeyLimitInput
+                kind="expiry"
+                value={permissions.expiryDays}
+                onChange={setExpiryDays}
+                disabled={disabled}
+                required={showIdentity}
+            />
+        </>
+    );
+    const hasOptionalPermissions =
+        !visiblePermissions || visiblePermissions.size > 0;
     return (
         <div className="space-y-4">
-            <AuthInfoCard>
-                <ul className="space-y-3 text-sm">
-                    {showIdentity && (
-                        <AuthAccessItem
-                            checked
-                            control={
-                                <Chip size="sm" intent="neutral">
-                                    Required
-                                </Chip>
-                            }
-                        >
-                            Username, picture and this key’s budget and usage.
-                        </AuthAccessItem>
+            {showIdentity ? (
+                // Consent: what the app always gets, without checkboxes, then
+                // the optional grants it asked for.
+                <>
+                    <AuthInfoCard>
+                        <ul className="space-y-3 text-sm">
+                            <AuthAccessItem icon={<AccountIcon />}>
+                                Username and picture
+                            </AuthAccessItem>
+                            {limitInputs}
+                        </ul>
+                    </AuthInfoCard>
+                    {hasOptionalPermissions && (
+                        <AuthInfoCard>
+                            <ul className="space-y-3 text-sm">
+                                {accountPermissionsInput}
+                            </ul>
+                        </AuthInfoCard>
                     )}
-                    <AccountPermissionsInput
-                        value={permissions.accountPermissions}
-                        onChange={(next) =>
-                            setAccountPermissions(next.length ? next : null)
-                        }
-                        disabled={disabled}
-                        visiblePermissions={visiblePermissions}
-                    />
-                </ul>
-            </AuthInfoCard>
-            <AuthInfoCard>
-                <ul className="space-y-3 text-sm">
-                    <KeyLimitInput
-                        kind="budget"
-                        value={permissions.pollenBudget}
-                        onChange={setPollenBudget}
-                        disabled={disabled}
-                    />
-                    <KeyLimitInput
-                        kind="expiry"
-                        value={permissions.expiryDays}
-                        onChange={setExpiryDays}
-                        disabled={disabled}
-                    />
-                </ul>
-            </AuthInfoCard>
+                </>
+            ) : (
+                <>
+                    <AuthInfoCard>
+                        <ul className="space-y-3 text-sm">
+                            {accountPermissionsInput}
+                        </ul>
+                    </AuthInfoCard>
+                    <AuthInfoCard>
+                        <ul className="space-y-3 text-sm">{limitInputs}</ul>
+                    </AuthInfoCard>
+                </>
+            )}
             <AuthInfoCard>
                 <ul className="text-sm">
                     <AuthAccessItem

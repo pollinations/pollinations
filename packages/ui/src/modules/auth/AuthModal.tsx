@@ -162,7 +162,7 @@ export function AuthActionFooter({
             <InlineLink
                 href="https://pollinations.ai/terms"
                 external
-                className="polli:text-xs"
+                className="polli:font-body polli:text-xs"
             >
                 Terms &amp; Conditions
             </InlineLink>

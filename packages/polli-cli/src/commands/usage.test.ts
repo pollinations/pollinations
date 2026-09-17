@@ -133,6 +133,20 @@ describe("splitUsageKeyArgs / applyUsageKeyAuth", () => {
         expect(getKeyOverride()).toBeUndefined();
     });
 
+    it("clears a pk_/sk_ filter value that leaked into the auth override", () => {
+        setKeyOverride("sk_looks_like_auth_but_is_filter");
+        const filters = applyUsageKeyAuth([
+            "node",
+            "polli",
+            "usage",
+            "--history",
+            "--key",
+            "sk_looks_like_auth_but_is_filter",
+        ]);
+        expect(filters).toEqual(["sk_looks_like_auth_but_is_filter"]);
+        expect(getKeyOverride()).toBeUndefined();
+    });
+
     it("keeps an auth key that appears before usage", () => {
         const filters = applyUsageKeyAuth([
             "node",

@@ -4,7 +4,6 @@ import { gen, requireKey } from "../lib/api.js";
 import {
     BASE_URL,
     clearKeyOverride,
-    getKeyOverride,
     isApiKeyValue,
     setKeyOverride,
 } from "../lib/config.js";
@@ -135,7 +134,8 @@ export const collectKeyArgs = (argv: string[]): string[] => {
     for (let i = 0; i < argv.length; i++) {
         const arg = argv[i];
         if (arg === "--key") out.push(argv[i + 1] ?? "");
-        else if (arg?.startsWith("--key=")) out.push(arg.slice("--key=".length));
+        else if (arg?.startsWith("--key="))
+            out.push(arg.slice("--key=".length));
     }
     return out;
 };
@@ -174,9 +174,11 @@ export const applyUsageKeyAuth = (argv: string[] = process.argv): string[] => {
     const { authKeys, filterKeys } = splitUsageKeyArgs(argv);
     if (authKeys.length > 0) {
         setKeyOverride(authKeys[authKeys.length - 1]);
-    } else {
-        const current = getKeyOverride();
-        if (current && !isApiKeyValue(current)) clearKeyOverride();
+    } else if (filterKeys.length > 0) {
+        // Shared program `--key` may have copied a filter value into the
+        // override — including values that look like `pk_`/`sk_`. Never treat
+        // a post-`usage` filter as auth; fall back to stored credentials.
+        clearKeyOverride();
     }
     return filterKeys;
 };

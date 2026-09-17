@@ -350,13 +350,13 @@ export const portkeyConfig: PortkeyConfigMap = {
             },
         }),
 
-    // -- OpenRouter (Gemma) ---------------------------------------------------
-    // Novita preserves remote image URLs; NextBit rejects that public input form.
-    "google/gemma-4-26b-a4b-it": createPinnedOpenRouterConfig(
+    // -- OpenRouter (Gemma fallback) -----------------------------------------
+    // Novita preserves remote image URLs; kept as fallback when DeepInfra fails.
+    "gemma-4-26b-openrouter-novita": createPinnedOpenRouterConfig(
         "google/gemma-4-26b-a4b-it",
         "novita/bf16",
     ),
-    "google/gemma-4-31b-it": createPinnedOpenRouterConfig(
+    "gemma-4-31b-openrouter-novita": createPinnedOpenRouterConfig(
         "google/gemma-4-31b-it",
         "novita/bf16",
     ),

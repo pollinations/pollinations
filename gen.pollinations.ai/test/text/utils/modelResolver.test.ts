@@ -450,8 +450,6 @@ describe("resolveModelConfig", () => {
             "mistralai/mistral-small-3.2-24b-instruct",
             "deepinfra/fp8",
         ],
-        ["gemma", "google/gemma-4-26b-a4b-it", "novita/bf16"],
-        ["gemma-4-31b", "google/gemma-4-31b-it", "novita/bf16"],
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
         ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
         [
@@ -465,6 +463,44 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe(route);
         expect(result.options.provider).toEqual({
             only: [provider],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("routes Gemma 4 26B A4B directly to DeepInfra", () => {
+        const result = resolveModelConfig(messages, {
+            model: "google/gemma-4-26b-a4b-it",
+        });
+
+        expect(result.options.model).toBe("google/gemma-4-26B-A4B-it");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes Gemma 4 31B directly to DeepInfra", () => {
+        const result = resolveModelConfig(messages, {
+            model: "google/gemma-4-31b-it",
+        });
+
+        expect(result.options.model).toBe("google/gemma-4-31B-it");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("pins Gemma 4 26B A4B OpenRouter fallback to Novita without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "google/gemma-4-26b-a4b-it:openrouter:novita-bf16",
+        });
+
+        expect(result.options.model).toBe("google/gemma-4-26b-a4b-it");
+        expect(result.options.provider).toEqual({
+            only: ["novita/bf16"],
             allow_fallbacks: false,
         });
     });

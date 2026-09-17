@@ -90,18 +90,37 @@ const response = (body) => ({ ok: true, json: async () => body });
 function sources() {
     const stripe = new Stripe("sk_test_mock", { maxNetworkRetries: 0 });
     stripe.accounts.retrieve = async () => ({ id: "acct_1SrY3q7rcjS3l7tr" });
+    const charge = (id, userId, extra = {}) => ({
+        id,
+        livemode: true,
+        metadata: { userId, private: "PRIVATE_CONTENT" },
+        amount: 500,
+        currency: "usd",
+        amount_refunded: 0,
+        created: now / 1000,
+        ...extra,
+    });
+    // u_2 carries three fraud disputes and one fraud report: 0.81 > 0.75.
     stripe.charges.list = () => [
-        {
-            id: "ch_a",
+        charge("ch_a", "u_1"),
+        charge("ch_b", "u_2"),
+        charge("ch_c", "u_2"),
+        charge("ch_d", "u_2"),
+        charge("ch_e", "u_2", {
+            fraud_details: { stripe_report: "fraudulent" },
+        }),
+    ];
+    stripe.disputes.list = () =>
+        ["ch_b", "ch_c", "ch_d"].map((id) => ({
+            id: `dp_${id}`,
             livemode: true,
-            metadata: { userId: "u_1", private: "PRIVATE_CONTENT" },
+            charge: id,
+            reason: "fraudulent",
+            status: "lost",
             amount: 500,
             currency: "usd",
-            amount_refunded: 0,
             created: now / 1000,
-        },
-    ];
-    stripe.disputes.list = () => [];
+        }));
     stripe.radar.earlyFraudWarnings.list = () => [
         { id: "issfr_a", livemode: true, charge: "ch_a" },
     ];
@@ -140,6 +159,13 @@ function sources() {
                         banned: 0,
                         ban_expires: null,
                     },
+                    {
+                        id: "u_2",
+                        stripe_customer_id: null,
+                        name: "PRIVATE_CONTENT",
+                        banned: 0,
+                        ban_expires: null,
+                    },
                 ],
             },
         ];
@@ -150,13 +176,18 @@ function sources() {
 test("collector reuses scores, supplies Stripe changes, and omits private/freeform fields", async () => {
     const { stripe, query } = sources();
     const evidence = await collectDailyEvidence(stripe, query, [], now);
-    assert.equal(evidence.fraudReview.shown[0].score, 0.15);
-    assert.equal(evidence.fraudReview.shown[0].breakdown[0].signal, "ew");
-    assert.equal(evidence.fraudReview.shown[0].payments[0].amount, 500);
-    assert.match(
-        evidence.fraudReview.shown[0].payments[0].url,
-        /payments\/ch_a$/,
-    );
+    const warned = evidence.fraudReview.shown.find((row) => row.id === "u_1");
+    assert.equal(warned.score, 0.15);
+    assert.equal(warned.breakdown[0].signal, "ew");
+    assert.equal(warned.payments[0].amount, 500);
+    assert.match(warned.payments[0].url, /payments\/ch_a$/);
+    // Only accounts at or above the threshold are proposed, never applied.
+    assert.equal(evidence.banThreshold, 0.75);
+    assert.deepEqual(evidence.proposedBans, {
+        total: 1,
+        shown: [{ id: "u_2", score: 0.81 }],
+        omitted: 0,
+    });
     assert.equal(evidence.changes.shown[0].status, "won");
     assert.equal(evidence.health.complete, true);
     assert.doesNotMatch(JSON.stringify(evidence), /PRIVATE_CONTENT/);

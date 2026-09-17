@@ -3647,3 +3647,118 @@ test("GET /api/stripe/checkout skips 3DS for a returning buyer on a pack of $10 
         ).toBe(expected);
     }
 });
+
+async function seedRefundablePurchase(mocks: {
+    stripe: { state: { checkoutSessions: unknown[] } };
+}): Promise<string> {
+    const userId = await getSeededUserId();
+    const db = drizzle(env.DB);
+    await db
+        .update(userTable)
+        .set({ packBalance: 25 })
+        .where(eq(userTable.id, userId));
+    await db.insert(stripeCheckoutCreditsTable).values({
+        sessionId: "cs_refunded",
+        eventId: "evt_refunded_purchase",
+        eventType: "checkout.session.completed",
+        userId,
+        pollenCredited: 10,
+        createdAt: new Date(),
+    });
+    mocks.stripe.state.checkoutSessions.push({
+        id: "cs_refunded",
+        object: "checkout.session",
+        mode: "payment",
+        customer: null,
+        url: null,
+        status: "complete",
+        payment_intent: "pi_refunded",
+    });
+    return userId;
+}
+
+function chargeRefundedEvent(
+    eventId: string,
+    amountRefunded: number,
+): Record<string, unknown> {
+    return {
+        id: eventId,
+        type: "charge.refunded",
+        livemode: false,
+        data: {
+            object: {
+                id: "ch_refunded",
+                object: "charge",
+                payment_intent: "pi_refunded",
+                amount_captured: 1200,
+                amount_refunded: amountRefunded,
+            },
+        },
+    };
+}
+
+async function readRefundState(userId: string) {
+    const [row] = await drizzle(env.DB)
+        .select({ packBalance: userTable.packBalance })
+        .from(userTable)
+        .where(eq(userTable.id, userId));
+    const credit = await env.DB.prepare(
+        "SELECT pollen_reversed AS reversed FROM stripe_checkout_credits WHERE session_id = 'cs_refunded'",
+    ).first<{ reversed: number }>();
+    return { packBalance: row?.packBalance, reversed: credit?.reversed };
+}
+
+test("charge.refunded reverses the purchased Pollen once", async ({
+    sessionToken: _sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await seedRefundablePurchase(mocks);
+
+    for (const eventId of ["evt_refund_full", "evt_refund_full_retry"]) {
+        const response = await postSignedStripeWebhook(
+            chargeRefundedEvent(eventId, 1200),
+        );
+        expect(response.status).toBe(200);
+    }
+
+    expect(await readRefundState(userId)).toEqual({
+        packBalance: 15,
+        reversed: 10,
+    });
+});
+
+test("charge.refunded reverses partial refunds proportionally and ignores stale events", async ({
+    sessionToken: _sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await seedRefundablePurchase(mocks);
+
+    await postSignedStripeWebhook(chargeRefundedEvent("evt_refund_half", 600));
+    expect(await readRefundState(userId)).toEqual({
+        packBalance: 20,
+        reversed: 5,
+    });
+
+    await postSignedStripeWebhook(chargeRefundedEvent("evt_refund_rest", 1200));
+    await postSignedStripeWebhook(
+        chargeRefundedEvent("evt_refund_half_late", 600),
+    );
+    expect(await readRefundState(userId)).toEqual({
+        packBalance: 15,
+        reversed: 10,
+    });
+});
+
+test("charge.refunded without a Pollen purchase is acknowledged", async ({
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+
+    const response = await postSignedStripeWebhook(
+        chargeRefundedEvent("evt_refund_unknown", 1200),
+    );
+
+    expect(response.status).toBe(200);
+});

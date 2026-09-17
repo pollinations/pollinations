@@ -1,0 +1,1 @@
+ALTER TABLE `stripe_checkout_credits` ADD `pollen_reversed` real DEFAULT 0 NOT NULL;

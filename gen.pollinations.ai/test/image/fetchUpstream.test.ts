@@ -122,7 +122,7 @@ describe("fetchUpstream", () => {
             fetchUpstream("https://example.com/api"),
         ).rejects.toMatchObject({
             message:
-                "Service temporarily unavailable. Please try again shortly.",
+                "We're temporarily down for maintenance. Sorry about that!",
             status: 503,
         });
     });

@@ -1,0 +1,35 @@
+{
+  "pr_number": 14951,
+  "title": "feat(ui): shared account identity, app user menu, and wallet status",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14951",
+  "merged_at": "2026-09-17T00:06:29Z",
+  "labels": [],
+  "pr_body_excerpt": "- Avatars link to the dashboard everywhere: on Enter's authorize, edit-key, and top-up headers and inside the app user menu, where the name and chevron open the menu. Menus without a destination keep the whole pill as the trigger.\n- App sign-in button reads \"Pollinations Connect\": amber cell with the Pollinations mark, light label cell, amber border. One style only; the `triggerVariant` prop is removed.\n- App user menu: Permissions, Buy Pollen, Disconnect. Quests shortcut, `onTopUpKey`, and the old label keys are removed. After following Permissions or Buy Pollen, the menu re-reads the key and wallet when the app regains focus, so the pill reflects the change without a reload.\n- Second line of the pill: a budgeted key shows its own budget (\"3.25 pollen\") or a red Limit reached badge; an unlimited key shows the account's quest and paid balances when the key has the usage scope, otherwise a blue Unlimited badge.\n- Enter's authorize, edit-key, and top-up headers show quest and paid balances, or a red No Pollen · Top up badge when the wallet is empty (no link on the top-up page itself). The authorize screen's separate out-of-Pollen alert is removed; the header carries it.\n- Account names use the display name, then the GitHub handle, everywhere.\n- Account menus size to the pill and their content; the balance line never truncates.\n- `/account/key` returns the key's opaque `id`; SDK `KeyInfo.id` added.\n- New shared `AccountPollen` in `@pollinations/ui/wallet`; new `PowerIcon`.\n- Not included: paid-only signalling on the authorize screen and the connection error/hydrating states (later PRs).",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Your key has a pulse",
+    "blurb": "Account identity and wallet status now travel together across Connect, Enter, and the dashboard. Polli has placed the pollen meter somewhere you can actually see it.",
+    "summary": "Unified account identity and wallet UI across Enter and app menus, adding dashboard-linked avatars, display-name-first labels, live key/account pollen status, and the key’s opaque id in `/account/key` and `KeyInfo.id`.",
+    "impact": "Users can see a key’s 3.25-pollen budget or Limit reached state, or quest and paid balances for unlimited usage-scoped keys, then refresh those details after Permissions or Buy Pollen without reloading the app.",
+    "keywords": [
+      "account identity",
+      "wallet",
+      "pollen",
+      "app user menu",
+      "keys",
+      "sdk",
+      "permissions"
+    ],
+    "visual_concept": "A cozy shared account-status pill becomes a little garden dashboard: Polli, wearing a tiny accountant visor, checks a glowing pollen jar beside a dashboard-linked avatar card while a friendly CRT robot holds a key marked with an opaque ID. Small code-plants and balance badges show a healthy budget, an Unlimited badge, and a carefully tended pollen supply.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny accountant visor as she checks a glowing wallet-and-key status panel linked to a retro dashboard monitor; a friendly CRT robot holds a key while code-plants grow around jars of pollen, with simple pixel text reading “3.25 POLLEN” and “UNLIMITED.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-17/PR-14951.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny accountant visor as she checks a glowing wallet-and-key status panel linked to a retro dashboard monitor; a friendly CRT robot holds a key while code-plants grow around jars of pollen, with simple pixel text reading “3.25 POLLEN” and “UNLIMITED.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-17T00:07:28.216688+00:00"
+}

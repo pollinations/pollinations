@@ -491,23 +491,24 @@ export function Authorize() {
         />
     );
 
+    const flowTitle = isDeviceMode ? "Connect your device" : "Connect an app";
+    const subject = isDeviceMode ? "your device" : "this app";
+
     if (!user) {
         return (
-            <SignInScreen
-                title="Sign in to Pollinations"
-                description="Review the access this app is requesting before you connect."
-                onCancel={handleDeny}
-            >
+            <SignInScreen title={flowTitle} onCancel={handleDeny}>
                 {appCard}
+                <Text size="sm" tone="muted">
+                    Wants access to your pollinations.ai account. Sign in to
+                    review what {subject} can access before you allow it.
+                </Text>
             </SignInScreen>
         );
     }
 
-    const subject = isDeviceMode ? "your device" : "this app";
     return (
         <AuthFlowScreen
-            title={isDeviceMode ? "Connect your device" : "Connect an app"}
-            description={`Review what ${subject} can access before you allow it.`}
+            title={flowTitle}
             actions={
                 <>
                     <Button

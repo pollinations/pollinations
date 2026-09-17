@@ -13,7 +13,7 @@ export function SignInScreen({
     callbackURL,
 }: {
     title: string;
-    description: string;
+    description?: string;
     children?: ReactNode;
     onCancel?: () => void;
     callbackURL?: string;

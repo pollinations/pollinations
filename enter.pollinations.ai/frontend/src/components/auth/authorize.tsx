@@ -1,4 +1,5 @@
 import {
+    AccountIcon,
     ArrowLeftIcon,
     Button,
     KeyIcon,
@@ -7,7 +8,7 @@ import {
     useScrollLock,
     XIcon,
 } from "@pollinations/ui";
-import { AuthModalLoading } from "@pollinations/ui/auth";
+import { AuthAccessItem, AuthModalLoading } from "@pollinations/ui/auth";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
@@ -553,7 +554,11 @@ export function Authorize() {
                     value={keyPermissions}
                     visiblePermissions={new Set(visibleOptionalPermissions)}
                     requestedModels={models}
-                    showIdentity
+                    lead={
+                        <AuthAccessItem icon={<AccountIcon />}>
+                            Username and picture
+                        </AuthAccessItem>
+                    }
                     disabled={isAuthorizing}
                 />
             </form>

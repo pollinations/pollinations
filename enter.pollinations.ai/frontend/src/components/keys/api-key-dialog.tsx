@@ -161,6 +161,14 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         setExpiryDays,
     ]);
 
+    const nameField = (
+        <KeyNameField
+            app={simplified}
+            value={name}
+            onChange={setName}
+            disabled={isSubmitting}
+        />
+    );
     const submitButton = createdKey ? (
         <CopyButton
             value={createdKey.key}
@@ -232,8 +240,8 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             >
                 <DialogBody>
                     {error && <ErrorBanner>{error}</ErrorBanner>}
-                    <AuthInfoCard>
-                        {createdKey ? (
+                    {createdKey && (
+                        <AuthInfoCard>
                             <FieldStack
                                 label={
                                     <span className="inline-flex items-center gap-1.5">
@@ -266,15 +274,13 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                     }
                                 />
                             </FieldStack>
-                        ) : (
-                            <KeyNameField
-                                app={simplified}
-                                value={name}
-                                onChange={setName}
-                                disabled={isSubmitting}
-                            />
-                        )}
-                    </AuthInfoCard>
+                        </AuthInfoCard>
+                    )}
+                    {simplified && !createdKey && (
+                        <AuthInfoCard>
+                            <ul className="space-y-3 text-sm">{nameField}</ul>
+                        </AuthInfoCard>
+                    )}
                     {simplified && !createdKey && (
                         <PublishableKeySettings
                             redirectUris={redirectUris}
@@ -288,6 +294,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                     {isOpen && !simplified && !createdKey && (
                         <KeyPermissionsInputs
                             value={keyPermissions}
+                            lead={nameField}
                             disabled={isSubmitting}
                         />
                     )}

@@ -123,6 +123,14 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         }
     }
 
+    const nameField = (
+        <KeyNameField
+            app={appKey}
+            value={name}
+            onChange={setName}
+            disabled={isSubmitting}
+        />
+    );
     // Same content in both places: the standalone page paints the page shell,
     // the dashboard dims the page behind a dialog.
     const Shell = header ? AuthModal : DashboardDialog;
@@ -157,14 +165,13 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     {error && <ErrorBanner>{error}</ErrorBanner>}
 
                     <div className="space-y-4">
-                        <AuthInfoCard>
-                            <KeyNameField
-                                app={appKey}
-                                value={name}
-                                onChange={setName}
-                                disabled={isSubmitting}
-                            />
-                        </AuthInfoCard>
+                        {isPublishable && (
+                            <AuthInfoCard>
+                                <ul className="space-y-3 text-sm">
+                                    {nameField}
+                                </ul>
+                            </AuthInfoCard>
+                        )}
                         {isPublishable && (
                             <PublishableKeySettings
                                 redirectUris={redirectUris}
@@ -178,6 +185,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                         {!isPublishable && (
                             <KeyPermissionsInputs
                                 value={keyPermissions}
+                                lead={nameField}
                                 disabled={isSubmitting}
                             />
                         )}

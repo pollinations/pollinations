@@ -1,6 +1,6 @@
-import { AccountIcon, BeakerIcon, Text } from "@pollinations/ui";
+import { BeakerIcon, Text } from "@pollinations/ui";
 import { AuthAccessItem, AuthInfoCard } from "@pollinations/ui/auth";
-import type { FC } from "react";
+import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import { useModelCategories } from "../models/use-model-categories.ts";
 import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
@@ -47,7 +47,8 @@ interface KeyPermissionsInputsProps {
     disabled?: boolean;
     visiblePermissions?: ReadonlySet<string>;
     requestedModels?: string[] | null;
-    showIdentity?: boolean;
+    /** First rows of the "always" card: the identity row on consent, the name field in dialogs. */
+    lead?: ReactNode;
 }
 
 /**
@@ -58,7 +59,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     disabled = false,
     visiblePermissions,
     requestedModels,
-    showIdentity = false,
+    lead,
 }) => {
     const {
         permissions,
@@ -165,11 +166,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
             {/* What the key always has, then what it may be granted. */}
             <AuthInfoCard>
                 <ul className="space-y-3 text-sm">
-                    {showIdentity && (
-                        <AuthAccessItem icon={<AccountIcon />}>
-                            Username and picture
-                        </AuthAccessItem>
-                    )}
+                    {lead}
                     {limitInputs}
                 </ul>
             </AuthInfoCard>

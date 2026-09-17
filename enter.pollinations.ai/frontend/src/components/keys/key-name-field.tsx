@@ -1,5 +1,8 @@
-import { Field, FieldStack, Input } from "@pollinations/ui";
+import { AppIcon, Input, KeyIcon, Text } from "@pollinations/ui";
+import { AuthAccessItem } from "@pollinations/ui/auth";
+import { useId } from "react";
 
+/** The key's name, as a row of the "what the key always has" card. */
 export function KeyNameField({
     app,
     value,
@@ -11,25 +14,34 @@ export function KeyNameField({
     onChange: (value: string) => void;
     disabled: boolean;
 }) {
+    const inputId = useId();
+    const label = app ? "App name" : "Name";
     return (
-        <FieldStack
-            label={app ? "App name" : "Name"}
-            helper={
-                app
-                    ? "Shown to users when they connect to your app."
-                    : "Shown in your activity and CSV exports."
+        <AuthAccessItem
+            icon={app ? <AppIcon /> : <KeyIcon />}
+            details={
+                <div className="space-y-2">
+                    <label htmlFor={inputId} className="block">
+                        <span className="sr-only">{label}</span>
+                        <Input
+                            id={inputId}
+                            type="text"
+                            value={value}
+                            onChange={(event) => onChange(event.target.value)}
+                            placeholder={app ? "App name" : "Key name"}
+                            required
+                            disabled={disabled}
+                        />
+                    </label>
+                    <Text size="xs" tone="muted">
+                        {app
+                            ? "Shown to users when they connect to your app."
+                            : "Shown in your activity and CSV exports."}
+                    </Text>
+                </div>
             }
         >
-            <Field.Input asChild>
-                <Input
-                    type="text"
-                    value={value}
-                    onChange={(event) => onChange(event.target.value)}
-                    placeholder={app ? "App name" : "Key name"}
-                    required
-                    disabled={disabled}
-                />
-            </Field.Input>
-        </FieldStack>
+            {label}
+        </AuthAccessItem>
     );
 }

@@ -5,7 +5,10 @@ import { useEffect, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import { AuthAccountIdentity } from "../components/auth/auth-account-identity.tsx";
-import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
+import {
+    AuthFlowScreen,
+    footnotes,
+} from "../components/auth/auth-flow-screen.tsx";
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import type { ApiKey } from "../components/keys";
 import { EditApiKeyDialog } from "../components/keys/edit-api-key-dialog.tsx";
@@ -161,6 +164,7 @@ function EditKeyPage() {
             key={apiKey.id}
             apiKey={apiKey}
             header={<AuthModalHeader>{accountIdentity}</AuthModalHeader>}
+            footnote={footnotes.dashboard}
             onUpdate={async (keyId, updates) => {
                 await updateApiKey(keyId, updates);
                 setOutcome("saved");

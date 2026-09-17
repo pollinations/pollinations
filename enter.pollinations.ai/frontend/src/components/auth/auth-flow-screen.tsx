@@ -8,7 +8,7 @@ import {
 } from "../../hooks/use-account-balance.ts";
 import { AuthAccountIdentity } from "./auth-account-identity.tsx";
 
-const footnotes = {
+export const footnotes = {
     dashboard: (
         <>
             Manage your account on the{" "}

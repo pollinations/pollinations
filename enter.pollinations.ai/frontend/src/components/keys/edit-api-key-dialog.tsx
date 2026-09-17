@@ -10,7 +10,11 @@ import {
     KeyIcon,
     XIcon,
 } from "@pollinations/ui";
-import { AuthModal, ErrorBanner } from "@pollinations/ui/auth";
+import {
+    AuthModal,
+    AuthModalFootnote,
+    ErrorBanner,
+} from "@pollinations/ui/auth";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
 import { KeyNameField } from "./key-name-field.tsx";
@@ -30,6 +34,8 @@ interface EditApiKeyDialogProps {
     onClose: () => void;
     /** Standalone page shell with its own header; the dashboard uses the dialog overlay. */
     header?: ReactNode;
+    /** Standalone page only: the line under the actions. */
+    footnote?: ReactNode;
 }
 
 function cleanRedirectUris(uris: string[]): string[] {
@@ -41,6 +47,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     onUpdate,
     onClose,
     header,
+    footnote,
 }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [name, setName] = useState(apiKey.name || "");
@@ -206,6 +213,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                     </Button>
                 </DialogFooter>
             </form>
+            {footnote && <AuthModalFootnote>{footnote}</AuthModalFootnote>}
         </Shell>
     );
 };

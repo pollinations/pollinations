@@ -108,7 +108,6 @@ export type DialogHeaderProps = Omit<
     "title"
 > & {
     title?: ReactNode;
-    icon?: ReactNode;
     description?: ReactNode;
     titleClassName?: string;
     descriptionClassName?: string;
@@ -116,7 +115,6 @@ export type DialogHeaderProps = Omit<
 
 export const DialogHeader: FC<DialogHeaderProps> = ({
     title,
-    icon,
     description,
     children,
     className,
@@ -131,20 +129,8 @@ export const DialogHeader: FC<DialogHeaderProps> = ({
         >
             {title && (
                 <DialogTitle
-                    className={cn(
-                        headingClassName("section"),
-                        !!icon && "polli:flex polli:items-center polli:gap-2",
-                        titleClassName,
-                    )}
+                    className={cn(headingClassName("section"), titleClassName)}
                 >
-                    {icon && (
-                        <span
-                            aria-hidden="true"
-                            className="polli:flex polli:size-6 polli:shrink-0 polli:[&>svg]:size-full"
-                        >
-                            {icon}
-                        </span>
-                    )}
                     {title}
                 </DialogTitle>
             )}

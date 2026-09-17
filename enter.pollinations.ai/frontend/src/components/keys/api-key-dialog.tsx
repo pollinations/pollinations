@@ -204,7 +204,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen} size="md">
             <DialogHeader
-                icon={simplified ? <AppIcon /> : <KeyIcon />}
                 title={
                     createdKey
                         ? simplified

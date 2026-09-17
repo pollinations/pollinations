@@ -1,6 +1,5 @@
 import { apiClient } from "@frontend/api.ts";
 import {
-    AppIcon,
     Button,
     CheckIcon,
     CopyButton,
@@ -8,8 +7,6 @@ import {
     DialogBody,
     DialogFooter,
     DialogHeader,
-    GlobeIcon,
-    KeyIcon,
     XIcon,
 } from "@pollinations/ui";
 import { AuthInfoCard, AuthModal, ErrorBanner } from "@pollinations/ui/auth";
@@ -128,15 +125,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         <AuthModal onClose={onClose}>
             {header}
             <DialogHeader
-                icon={
-                    appKey ? (
-                        <AppIcon />
-                    ) : isPublishable ? (
-                        <GlobeIcon />
-                    ) : (
-                        <KeyIcon />
-                    )
-                }
                 title={appKey ? "Edit app key" : "Edit key permissions"}
                 description={
                     appKey

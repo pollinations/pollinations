@@ -1,7 +1,6 @@
 import {
     Alert,
     BeakerIcon,
-    BotIcon,
     Button,
     ButtonGroup,
     CheckIcon,
@@ -407,7 +406,6 @@ export function CommunityEndpointDialog({
             triggerAsChild
         >
             <DialogHeader
-                icon={isEndpointAgent ? <BotIcon /> : <BeakerIcon />}
                 title={
                     isEndpointAgent
                         ? "Edit endpoint agent"

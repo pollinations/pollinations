@@ -117,7 +117,6 @@ export function AgentDialog({
             triggerAsChild
         >
             <DialogHeader
-                icon={<BotIcon />}
                 title={agent ? "Edit agent" : "Create agent"}
                 description="Choose a prompt and model, or deploy code from GitHub."
             />

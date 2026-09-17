@@ -14,6 +14,12 @@ const jevQuestionSchema = z.discriminatedUnion("type", [
     z.object({
         type: z.literal("noul"),
         instructions: z.string(),
+        criteria: z
+            .object({
+                true: z.string().optional(),
+                false: z.string().optional(),
+            })
+            .optional(),
     }),
 ]);
 
@@ -25,7 +31,12 @@ export const jevInputSchema = {
 export function questionsToProperties(questions) {
     return Object.fromEntries(
         Object.entries(questions).map(([name, question]) => {
-            const description = question.instructions;
+            // Gen forwards descriptions as instructions; preserve option guidance
+            // there without adding provider-specific JSON Schema keywords.
+            const description =
+                question.type !== "score" && question.criteria
+                    ? `${question.instructions}\n\nCriteria: ${JSON.stringify(question.criteria)}`
+                    : question.instructions;
             switch (question.type) {
                 case "choice":
                     return [

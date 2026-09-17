@@ -176,7 +176,8 @@ test("translates all question types in one non-streaming chat completion", async
                             department: {
                                 type: "string",
                                 enum: ["billing", "technical"],
-                                description: "Which team should handle this?",
+                                description:
+                                    'Which team should handle this?\n\nCriteria: {"billing":"Payment issues","technical":"Product failures"}',
                             },
                             frustration: {
                                 type: "integer",
@@ -216,6 +217,46 @@ test("translates all question types in one non-streaming chat completion", async
         frustration: { type: "score", ...ANSWERS.frustration },
         is_urgent: { type: "noul", ...ANSWERS.is_urgent },
     });
+});
+
+test("preserves optional noul criteria in the question description", async (t) => {
+    const criteriaCases = [
+        { true: "Explicitly time-sensitive", false: "No urgency expressed" },
+        { true: "A deadline is stated" },
+        { false: "No deadline is stated" },
+    ];
+    const descriptions = [];
+    t.mock.method(globalThis, "fetch", async (_input, init) => {
+        const property = JSON.parse(init.body).response_format.json_schema
+            .schema.properties.is_urgent;
+        assert.equal(property.type, "number");
+        assert.equal(property.minimum, 0);
+        assert.equal(property.maximum, 1);
+        descriptions.push(property.description);
+        return completion({ is_urgent: ANSWERS.is_urgent });
+    });
+    const client = await connectClient();
+    t.after(() => client.close());
+    for (const criteria of criteriaCases) {
+        const result = await client.callTool({
+            name: "jev_decide",
+            arguments: {
+                state: "Please fix this before noon.",
+                questions: {
+                    is_urgent: { ...QUESTIONS.is_urgent, criteria },
+                },
+            },
+        });
+        assert.notEqual(result.isError, true);
+        assert.deepEqual(JSON.parse(result.content[0].text), {
+            is_urgent: { type: "noul", ...ANSWERS.is_urgent },
+        });
+    }
+    assert.deepEqual(descriptions, [
+        'Does this convey urgency?\n\nCriteria: {"true":"Explicitly time-sensitive","false":"No urgency expressed"}',
+        'Does this convey urgency?\n\nCriteria: {"true":"A deadline is stated"}',
+        'Does this convey urgency?\n\nCriteria: {"false":"No deadline is stated"}',
+    ]);
 });
 
 test("keeps bearer tokens scoped to concurrent requests", async (t) => {
@@ -273,6 +314,9 @@ test("rejects invalid question types and criteria before fetching", async (t) =>
         { type: "score", instructions: "Rate", criteria: ["Only one label"] },
         { type: "choice", instructions: "Choose", criteria: ["Not a map"] },
         { type: "noul" },
+        { ...QUESTIONS.is_urgent, criteria: { true: 1 } },
+        { ...QUESTIONS.is_urgent, criteria: { false: false } },
+        { ...QUESTIONS.is_urgent, criteria: ["yes", "no"] },
     ]) {
         const result = await client.callTool({
             name: "jev_decide",

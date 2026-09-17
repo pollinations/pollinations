@@ -1,0 +1,34 @@
+{
+  "pr_number": 15053,
+  "title": "fix: lean empty state on activity usage and earnings cards",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15053",
+  "merged_at": "2026-09-17T00:27:15Z",
+  "labels": [],
+  "pr_body_excerpt": "Cleans up the Usage and Earnings cards on the activity page when a period has no data, and drops the week view.\n\n- Hides the Keys/Apps, Models and Pollen/Requests controls when the period has nothing to filter; only the period nav and a disabled CSV button remain\n- Replaces the bare-text empty state with a fixed-height panel matching the chart and loading heights\n- Shrinks the period nav and CSV button, reusing the existing `IconButton size=\"md\"` for navigation arrows\n- Removes the week granularity from the picker and URL parsing; week URLs fall back to the day view\n- Adds `hasPeriodData` to the earnings hook, mirroring usage\n\nNo API or data changes.\n\nValidation: formatting passes; all 6 existing Button and IconButton tests pass.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A quieter empty hive",
+    "blurb": "Quiet periods on the Activity page now get a proper place to rest. Usage and Earnings keep their chart-shaped rooms tidy, rather than leaving stray filters to forage alone.",
+    "summary": "The Activity page now uses fixed-height empty panels for Usage and Earnings, hides irrelevant Keys/Apps, Models, and Pollen/Requests filters when a period has no data, and consolidates period selection around day-based fallback behavior instead of week URLs.",
+    "impact": "Users viewing an inactive period get a stable chart-sized empty state, simpler period navigation, a disabled CSV action, and no filters that cannot affect the displayed data.",
+    "keywords": [
+      "activity",
+      "usage",
+      "earnings",
+      "empty-state",
+      "frontend",
+      "period-navigation"
+    ],
+    "visual_concept": "Depict the Activity dashboard as a cozy garden chart bed during a quiet day: Polli gently tidies away unused filter tags while a neat, chart-shaped blank panel waits beneath a small day-calendar and inactive CSV button. The scene represents a deliberately calm, uncluttered no-data state rather than an error.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded translucent light-blue wings, wearing a tiny gardener scarf as she tidies unused filter labels into a flower pot beside a clean chart-shaped empty Activity panel; a small calendar shows a single day and a muted CSV button rests nearby, with code-plants sprouting around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-17/PR-15053.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded translucent light-blue wings, wearing a tiny gardener scarf as she tidies unused filter labels into a flower pot beside a clean chart-shaped empty Activity panel; a small calendar shows a single day and a muted CSV button rests nearby, with code-plants sprouting around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-17T00:28:23.378673+00:00"
+}

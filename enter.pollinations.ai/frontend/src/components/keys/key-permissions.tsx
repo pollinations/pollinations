@@ -1,4 +1,4 @@
-import { Chip } from "@pollinations/ui";
+import { Chip, Text } from "@pollinations/ui";
 import { AuthAccessItem, AuthInfoCard } from "@pollinations/ui/auth";
 import type { FC } from "react";
 import { useState } from "react";
@@ -140,10 +140,6 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                         }
                         details={
                             <div className="space-y-2">
-                                <p>
-                                    Allow this key to generate with selected
-                                    models.
-                                </p>
                                 {hasModels && (
                                     <ModelPermissionsInput
                                         catalog={catalog}
@@ -168,6 +164,10 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                                         }
                                     />
                                 )}
+                                <Text size="xs" tone="muted">
+                                    Allow this key to generate with selected
+                                    models.
+                                </Text>
                             </div>
                         }
                     >

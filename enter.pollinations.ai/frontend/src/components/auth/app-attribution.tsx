@@ -40,28 +40,26 @@ export function AppAttribution({
                         <Text
                             size="sm"
                             tone="muted"
-                            className="mt-1.5 flex items-center gap-2"
+                            className="mt-1.5 flex items-center gap-1.5"
                         >
-                            <img
-                                src={`https://github.com/${owner}.png?size=40`}
-                                alt=""
-                                width={20}
-                                height={20}
-                                loading="lazy"
-                                referrerPolicy="no-referrer"
-                                className="h-5 w-5 shrink-0 rounded-full bg-theme-bg-subtle object-cover"
-                            />
-                            <span>
-                                by{" "}
-                                <a
-                                    href={`https://github.com/${owner}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="font-medium underline hover:text-theme-text-strong"
-                                >
-                                    @{owner}
-                                </a>
-                            </span>
+                            <span>by</span>
+                            <a
+                                href={`https://github.com/${owner}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 font-medium hover:text-theme-text-strong"
+                            >
+                                <img
+                                    src={`https://github.com/${owner}.png?size=40`}
+                                    alt=""
+                                    width={20}
+                                    height={20}
+                                    loading="lazy"
+                                    referrerPolicy="no-referrer"
+                                    className="h-5 w-5 shrink-0 rounded-full bg-theme-bg-subtle object-cover"
+                                />
+                                <span className="underline">@{owner}</span>
+                            </a>
                         </Text>
                     )}
                 </div>

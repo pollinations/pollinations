@@ -11,16 +11,22 @@ export const Route = createFileRoute("/error")({
         error: typeof search.error === "string" ? search.error : "",
     }),
     beforeLoad: ({ search }) => {
-        if (getLoginError(search.error).id !== "login-failed") return;
+        if (resolveLoginError(search.error).id !== "login-failed") return;
         const context = getSignInContext();
         const href = context && appSignInErrorPath(context.path);
         if (href) throw redirect({ href, replace: true });
     },
 });
 
+function resolveLoginError(error: string) {
+    return getLoginError(
+        error === "staging_is_invite-only" ? "staging" : error,
+    );
+}
+
 function ErrorPage() {
     const { error } = Route.useSearch();
-    const { id, title, message, action } = getLoginError(error);
+    const { id, title, message, action } = resolveLoginError(error);
     const isBanned = id === "account-deactivated";
     const href =
         id === "login-failed"

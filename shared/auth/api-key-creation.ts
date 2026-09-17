@@ -8,6 +8,7 @@ import {
     INVALID_AUTHORIZATION_CLIENT_MESSAGE,
     sanitizeAuthorizeAccountPermissions,
 } from "./authorize-config.ts";
+import { isUserBanned } from "./ban.ts";
 import {
     isAllowedRedirectUrl,
     redirectUriMatchesAllowlist,
@@ -165,6 +166,10 @@ async function validateClientRedirectBinding(
     if (!clientKey || clientKey.prefix !== "pk") {
         rejectInvalidClientId();
     }
+    const owner = await db.query.user.findFirst({
+        where: eq(schema.user.id, clientKey.referenceId),
+    });
+    if (!owner || isUserBanned(owner)) rejectInvalidClientId();
     const attribution = {
         clientId: clientKey.id,
     };

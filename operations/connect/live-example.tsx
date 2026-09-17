@@ -1,10 +1,6 @@
-import { PolliProvider } from "@pollinations/sdk/react";
+import { PolliProvider, useAuthState } from "@pollinations/sdk/react";
 import { setColorMode, useColorMode } from "@pollinations/ui";
-import {
-    AppUserMenu,
-    type AppUserMenuState,
-} from "@pollinations/ui/app-user-menu/sdk";
-import { useState } from "react";
+import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import { createRoot } from "react-dom/client";
 import { readState } from "./live-client";
 import { exampleStorage } from "./review-storage";
@@ -16,7 +12,6 @@ if (mode === "light" || mode === "dark") setColorMode(mode);
 
 function Example({ appKey }: { appKey: string }) {
     useColorMode();
-    const [state, setState] = useState<AppUserMenuState>("signed-out");
     return (
         <PolliProvider
             appKey={appKey}
@@ -27,17 +22,26 @@ function Example({ appKey }: { appKey: string }) {
             budget={5}
             expiry={7}
         >
-            <main
-                className="connect-developer-app"
-                data-theme="accent"
-                data-connect-state={state}
-            >
-                <AppUserMenu
-                    labels={{ appUserMenu: "App account menu" }}
-                    onStateChange={setState}
-                />
-            </main>
+            <ExampleMenu />
         </PolliProvider>
+    );
+}
+
+function ExampleMenu() {
+    const { isHydrated, isLoggedIn } = useAuthState();
+    const state = !isHydrated
+        ? "checking-connection"
+        : isLoggedIn
+          ? "connected"
+          : "signed-out";
+    return (
+        <main
+            className="connect-developer-app"
+            data-theme="accent"
+            data-connect-state={state}
+        >
+            <AppUserMenu labels={{ appUserMenu: "App account menu" }} />
+        </main>
     );
 }
 

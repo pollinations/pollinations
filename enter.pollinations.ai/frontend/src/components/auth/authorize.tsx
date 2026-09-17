@@ -26,6 +26,7 @@ import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
+import { useAccountBalance } from "../../hooks/use-account-balance.ts";
 import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
 import { apiErrorMessage, apiResponseError } from "../../lib/api-error.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
@@ -140,10 +141,7 @@ export function Authorize() {
     const [deviceOutcome, setDeviceOutcome] = useState<
         "pending" | "approved" | "denied"
     >("pending");
-    const [balances, setBalances] = useState<{
-        quest: number;
-        paid: number;
-    } | null>(null);
+    const balance = useAccountBalance(Boolean(user));
     const [generationEnabled, setGenerationEnabled] = useState(
         models?.length !== 0,
     );
@@ -398,39 +396,6 @@ export function Authorize() {
         setAccountPermissions,
     ]);
 
-    useEffect(() => {
-        let active = true;
-        setBalances(null);
-        if (!user) return;
-        let request = 0;
-        const refreshBalances = () => {
-            const currentRequest = ++request;
-            void apiClient.customer.balance
-                .$get()
-                .then((response) => (response.ok ? response.json() : null))
-                .then((data) => {
-                    if (!active || currentRequest !== request) return;
-                    setBalances(
-                        data
-                            ? {
-                                  quest: data.tierBalance,
-                                  paid: data.packBalance,
-                              }
-                            : null,
-                    );
-                })
-                .catch(() => {
-                    if (active && currentRequest === request) setBalances(null);
-                });
-        };
-        refreshBalances();
-        window.addEventListener("focus", refreshBalances);
-        return () => {
-            active = false;
-            window.removeEventListener("focus", refreshBalances);
-        };
-    }, [user]);
-
     async function handleAuthorize(): Promise<void> {
         if (!canAuthorize || isAuthorizing) return;
 
@@ -630,7 +595,7 @@ export function Authorize() {
     const accountHeader = user ? (
         <AuthAccountIdentity
             user={user}
-            balances={balances}
+            balance={balance}
             requirement={fundingRequirement}
         />
     ) : undefined;

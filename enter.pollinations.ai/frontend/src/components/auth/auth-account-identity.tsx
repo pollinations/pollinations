@@ -4,14 +4,15 @@ import {
     type AccountPollenSource,
 } from "@pollinations/ui/wallet";
 import type { User } from "../../auth.ts";
+import type { AccountBalance } from "../../hooks/use-account-balance.ts";
 
 export function AuthAccountIdentity({
     user,
-    balances,
+    balance,
     requirement,
 }: {
     user: Pick<User, "name" | "email" | "image" | "githubUsername">;
-    balances?: { paid: number; quest: number } | null;
+    balance?: AccountBalance;
     requirement?: Extract<
         AccountPollenSource,
         { type: "wallet" }
@@ -28,9 +29,16 @@ export function AuthAccountIdentity({
                 dashboardHref="/pollen"
                 className="polli:bg-transparent polli:p-0 polli:pr-0"
                 secondaryContent={
-                    balances !== undefined ? (
+                    balance ? (
                         <AccountPollen
-                            source={{ type: "wallet", balances, requirement }}
+                            source={{
+                                type: "wallet",
+                                balances: {
+                                    paid: balance.packBalance,
+                                    quest: balance.tierBalance,
+                                },
+                                requirement,
+                            }}
                             topUpHref="/top-up"
                         />
                     ) : undefined

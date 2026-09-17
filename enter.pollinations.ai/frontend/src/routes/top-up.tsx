@@ -11,12 +11,11 @@ import {
 } from "@shared/pollen-packs.ts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import { AuthAccountIdentity } from "../components/auth/auth-account-identity.tsx";
 import { SignInAgain } from "../components/auth/sign-in-again.tsx";
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
-import { BuyPollenPanel, PollenBalance } from "../components/pollen";
+import { BuyPollenPanel } from "../components/pollen";
 import type { BillingState } from "../components/pollen/auto-top-up-panel.tsx";
 import { WalletPaymentStatus } from "../components/pollen/wallet-payment-status.tsx";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
@@ -33,8 +32,6 @@ export const Route = createFileRoute("/top-up")({
 type WalletData = {
     tierBalance: number;
     packBalance: number;
-    paidWeek?: number;
-    tierWeek?: number;
     billing: BillingState | null;
     payment?: "pending" | "credited";
 };
@@ -80,17 +77,6 @@ function WalletPage() {
             .then((wallet) => {
                 if (!active) return;
                 setData(wallet);
-                // Earnings are supplementary; unavailable history must not hide the wallet.
-                void apiClient.customer.balance.today
-                    .$get()
-                    .then((response) => (response.ok ? response.json() : null))
-                    .then((earnings) => {
-                        if (active && earnings)
-                            setData((current) =>
-                                current ? { ...current, ...earnings } : current,
-                            );
-                    })
-                    .catch(() => {});
             })
             .catch((error) => {
                 if (active)
@@ -131,13 +117,13 @@ function WalletPage() {
             account={
                 <AuthAccountIdentity
                     user={session.user}
-                    balances={
+                    balance={
                         data
                             ? {
-                                  paid: data.packBalance,
-                                  quest: data.tierBalance,
+                                  packBalance: data.packBalance,
+                                  tierBalance: data.tierBalance,
                               }
-                            : null
+                            : undefined
                     }
                 />
             }
@@ -167,13 +153,6 @@ function WalletPage() {
             />
             {data && (
                 <>
-                    <PollenBalance
-                        tierBalance={data.tierBalance}
-                        packBalance={data.packBalance}
-                        paidWeek={data.paidWeek}
-                        tierWeek={data.tierWeek}
-                        compact
-                    />
                     {data.payment !== "pending" && (
                         <Section title="Top up" framed>
                             <BuyPollenPanel

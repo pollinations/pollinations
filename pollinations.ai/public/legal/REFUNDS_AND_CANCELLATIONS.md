@@ -1,6 +1,6 @@
 # Refunds & Cancellations
 
-**Updated: 2026-07-02**
+**Updated: 2026-09-16**
 
 ## Refunds & Cancellations (digital API services & Pollen)
 
@@ -49,9 +49,9 @@ This policy does not limit any non-waivable statutory rights for non-conforming 
 
 If we introduce paid subscriptions, cancellation stops future renewals. It does not refund prior periods, consumed usage, or already-provisioned Pollen unless required by law or expressly approved by us.
 
-## 6) Chargebacks
+## 6) Chargebacks & Payment Fraud
 
-If a chargeback or payment dispute is filed, we may suspend access while it is investigated. Pollen, credits, benefits, and developer earnings tied to the disputed order may be manually reviewed and reversed or adjusted after dispute notification.
+If a chargeback or payment dispute is filed, or we reasonably believe a payment was unauthorized or fraudulent, we may suspend access while it is investigated. Pollen, credits, benefits, and developer earnings tied to that payment may be manually reviewed and reversed or adjusted; where the Pollen has already been spent, reversal can leave a negative balance.
 
 ## 7) B2B Purchases
 

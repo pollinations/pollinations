@@ -1049,7 +1049,6 @@ test("real Enter session, PKCE grant and SDK→Gen→Enter share the local accou
         return response;
     }
 
-    expect((await request("/__connect/state")).status).toBe(409);
     const reset = await request("/__connect/reset", {});
     expect(reset.status).toBe(200);
     expect(cookie.startsWith("better-auth.session_token=")).toBe(true);
@@ -1134,7 +1133,7 @@ test("real Enter session, PKCE grant and SDK→Gen→Enter share the local accou
     expect((await sdk.accountBalance()).accountBalance?.total).toBe(0);
     await expect(
         sdk.text("Local preflight", { model: "openai" }),
-    ).rejects.toMatchObject({ status: 402 });
+    ).resolves.toContain("doesn't have enough credits");
 
     await request("/__connect/conditions", {
         pollen: "paid",
@@ -1143,7 +1142,7 @@ test("real Enter session, PKCE grant and SDK→Gen→Enter share the local accou
     expect((await sdk.accountBalance()).balance).toBe(0);
     await expect(
         sdk.text("Local allowance preflight", { model: "openai" }),
-    ).rejects.toMatchObject({ status: 402 });
+    ).resolves.toContain("reached its budget");
     await request("/__connect/conditions", { account: "banned" });
     await expect(sdk.accountProfile()).rejects.toMatchObject({ status: 403 });
 

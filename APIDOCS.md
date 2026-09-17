@@ -843,7 +843,7 @@ Text-to-speech, music generation, and audio transcription.
 | `POST /v1/audio/speech` | OpenAI-compatible TTS |
 | `POST /v1/audio/transcriptions` | Speech-to-text transcription |
 
-**Audio models:** elevenlabs/eleven-v3, elevenlabs/eleven-flash-v2.5, elevenlabs/eleven-multilingual-v2, elevenlabs/eleven-v3:dialogue, elevenlabs/eleven-multilingual-sts-v2, elevenlabs/voice-isolator, elevenlabs/music-v2, google/lyria-3-clip-preview, elevenlabs/eleven-text-to-sound-v2, openai/whisper-large-v3, openai/gpt-transcribe, elevenlabs/scribe-v2, x-ai/grok-transcribe, x-ai/grok-tts, assemblyai/universal-2, assemblyai/universal-3.5-pro, stability-ai/stable-audio-3-medium, stability-ai/stable-audio-3, fish-audio/s2.1-pro, qwen/qwen3-tts-flash, qwen/qwen3-tts-instruct-flash, sesame/csm-1b, hexgrad/kokoro-82m
+**Audio models:** elevenlabs/eleven-v3, elevenlabs/eleven-flash-v2.5, elevenlabs/eleven-multilingual-v2, elevenlabs/eleven-v3:dialogue, elevenlabs/eleven-multilingual-sts-v2, elevenlabs/voice-isolator, elevenlabs/music-v2, elevenlabs/music-v2.5, google/lyria-3-clip-preview, elevenlabs/eleven-text-to-sound-v2, openai/whisper-large-v3, openai/gpt-transcribe, elevenlabs/scribe-v2, x-ai/grok-transcribe, x-ai/grok-tts, assemblyai/universal-2, assemblyai/universal-3.5-pro, stability-ai/stable-audio-3-medium, stability-ai/stable-audio-3, fish-audio/s2.1-pro, qwen/qwen3-tts-flash, qwen/qwen3-tts-instruct-flash, sesame/csm-1b, hexgrad/kokoro-82m
 
 **Available voices:** alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
 
@@ -903,7 +903,7 @@ curl -X POST "https://gen.pollinations.ai/v1/audio/voice-isolator" \
 
 Generate speech, music, sound effects, or dialogue from text. Compatible with the OpenAI TTS API for JSON requests.
 
-Set `model` to `elevenlabs/music-v2`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music. Lyria returns one fixed 30-second MP3 clip. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3`, or reference-audio conditioning on `elevenlabs/music-v2`; for ElevenLabs inpainting, pass a `composition_plan`.
+Set `model` to `elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music. Lyria returns one fixed 30-second MP3 clip. Pass any publicly accessible audio URL as `reference_audio` to run audio-to-audio (style transfer) on `stability-ai/stable-audio-3-medium` or `stability-ai/stable-audio-3`, or reference-audio conditioning on either ElevenLabs Music model; for ElevenLabs inpainting, pass a `composition_plan`.
 
 For multi-speaker audio, set `model` to `elevenlabs/eleven-v3:dialogue` and put one turn per line in `input` as `<voice>: <text>`. Voice labels may be preset names or ElevenLabs voice IDs; the top-level `voice` field is ignored for this model. Dialogue supports up to 10 unique voices and 2,000 total text characters.
 
@@ -1059,7 +1059,7 @@ Generate speech, dialogue, music, or sound effects from text via a simple GET re
 
 **Dialogue:** Set `model=elevenlabs/eleven-v3:dialogue`; provide one `<voice>: <text>` turn per line.
 
-**Music generation:** Set `model=elevenlabs/music-v2`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music instead of speech. `google/lyria-3-clip-preview` returns a fixed 30-second MP3 clip; `elevenlabs/music-v2` supports `duration` (3-300 seconds) and `instrumental` mode; the Stable Audio models support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.
+**Music generation:** Set `model=elevenlabs/music-v2`, `elevenlabs/music-v2.5`, `google/lyria-3-clip-preview`, `stability-ai/stable-audio-3-medium`, or `stability-ai/stable-audio-3` to generate music instead of speech. `google/lyria-3-clip-preview` returns a fixed 30-second MP3 clip; the ElevenLabs Music models support `duration` (3-300 seconds) and `instrumental` mode; the Stable Audio models support `seconds` (1-380), `steps`, `seed`, and `negative_prompt`. Pass any publicly accessible audio URL as `reference_audio` to `POST /v1/audio/speech`.
 
 ⚙️ **Parameters**
 
@@ -1069,11 +1069,11 @@ Generate speech, dialogue, music, or sound effects from text via a simple GET re
 | `voice` | `query` | `string` | Voice preset or custom provider voice ID. Dialogue voices come from labels in the text. · default: `"alloy"` |
 | `response_format` | `query` | enum (6) — `"mp3"`, `"opus"`, `"aac"`, … | Audio output format. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; `google/lyria-3-clip-preview` and `elevenlabs/eleven-text-to-sound-v2` support mp3 only. · default: `"mp3"` |
 | `model` | `query` | `string` | Audio model for speech, dialogue, music, or sound-effect generation |
-| `duration` | `query` | `string` | Music duration in seconds (`elevenlabs/music-v2` 3-300; `google/lyria-3-clip-preview` fixed at 30) |
+| `duration` | `query` | `string` | Music duration in seconds (`elevenlabs/music-v2` and `elevenlabs/music-v2.5` 3-300; `google/lyria-3-clip-preview` fixed at 30) |
 | `seconds` | `query` | `number` | Audio duration in seconds for Stable Audio models, 1-380 · range: `1…380` |
 | `steps` | `query` | `integer` | Sampling steps (`stability-ai/stable-audio-3-medium` 1-100, `stability-ai/stable-audio-3` 4-8) · range: `1…100` |
 | `negative_prompt` | `query` | `string` | Negative prompt for `stability-ai/stable-audio-3` |
-| `instrumental` | `query` | `"true"` \| `"false"` | If true, guarantees instrumental output (`elevenlabs/music-v2` only) · default: `"false"` |
+| `instrumental` | `query` | `"true"` \| `"false"` | If true, guarantees instrumental output (`elevenlabs/music-v2` and `elevenlabs/music-v2.5` only) · default: `"false"` |
 | `instructions` | `query` | `string` | Emotion/style instruction (`qwen/qwen3-tts-instruct-flash` only) |
 | `loop` | `query` | `"true"` \| `"false"` | Loop the generated sound effect (`elevenlabs/eleven-text-to-sound-v2` only) |
 | `prompt_influence` | `query` | `string` | How strictly to follow the prompt, 0-1 (`elevenlabs/eleven-text-to-sound-v2` only) |
@@ -1218,7 +1218,11 @@ Returns available embedding models with pricing, capabilities, and supported inp
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+| `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `status` | `query` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `pollinations-model-status` | `header` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1227,7 +1231,7 @@ Returns available embedding models with pricing, capabilities, and supported inp
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/embeddings/models?community=0" \
+curl "https://gen.pollinations.ai/embeddings/models?source=official&status=all" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1301,19 +1305,67 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 | `GET /embeddings/models` | Embedding models with supported modalities |
 | `GET /3d/models` | 3D Generation models with supported modalities |
 
-### Query Parameters
+### Filters and health
 
-All model discovery endpoints accept an optional `community` query parameter:
+All model list endpoints above accept the same optional filters. With no
+filters, the API returns the complete accessible catalog without health data.
 
-| Parameter | Values | Behaviour |
-|-----------|--------|-----------|
-| *(omitted)* | | Returns all models (default, backward-compatible) |
-| `community=false` | `false`, `0` | Excludes community models — returns official models only |
-| `community=true` | `true`, `1` | Returns community models only |
+| Query | Values | Behaviour |
+|-------|--------|-----------|
+| `source` | `official`, `community` | Return one source; omit for both |
+| `status` | `all`, `healthy` | `all`: include health without filtering; `healthy`: include only healthy models with fresh data |
 
-Any other value (e.g. `tru`, `yes`, `2`) returns **400 Bad Request**.
+`community=true|false|1|0` remains available as a legacy source filter.
+Query filters override connection-wide headers; `source` overrides `community`.
+Invalid filter values return **400 Bad Request**. Source and status filters
+combine with the caller's access restrictions; they do not change generation
+permissions. Omitting both the status query and header skips the health lookup.
 
-Example: `GET /models?community=false`
+Health uses the last 24 hours of completed requests. `success_rate` is
+`2xx / (2xx + 5xx)`, so successful fallback rescues count as successes while
+final 4xx responses are excluded. This is the gateway's final-response metric,
+not the health of an individual upstream provider.
+
+`health` is an optional Pollinations extension on every list endpoint, including
+`/v1/models`. It contains only `status`, `success_rate`, `sample_size`,
+`window_minutes`, `checked_at`, and `stale`. With at least 10 measured requests,
+status is `healthy` below 5% failures, `degraded` from 5% to below 20%, and
+`down` at 20% or more. Smaller samples are `unknown`. These describe recent
+request outcomes, not live availability; alpha/preview status is separate.
+`success_rate` is a fraction from 0 to 1, or null when there are no samples.
+
+Health snapshots are cached for 60 seconds. `checked_at` is the snapshot-fetch
+time in UTC, not the model's last request time. If refresh fails, `status=all`
+can return an older snapshot marked `stale`, or `unknown` with a null
+`checked_at` when no snapshot exists. `status=healthy` excludes both stale and
+unknown results.
+
+The dashboard defaults to `source:official status:healthy`, so unknown models
+are hidden. Select `status:all` to include every health state, or
+`source:community` for community models. Its dots are green for healthy, amber
+for degraded/down, and grey for unknown/stale. Filtering is local; it does not
+poll for updates.
+
+Detailed counters and latency statistics remain separate at `/v1/models/status`;
+`/v1/models/status/routes` breaks down individual primary and fallback attempts.
+Neither diagnostic payload is embedded in model lists.
+
+```bash
+curl 'https://gen.pollinations.ai/v1/models?source=official&status=healthy'
+```
+
+OpenAI-compatible clients that append `/models` to their base URL can use the
+equivalent headers instead of query parameters:
+
+```text
+Pollinations-Model-Source: official
+Pollinations-Model-Status: healthy
+```
+
+These headers work with Open WebUI and Cline custom OpenAI connections.
+LibreChat administrators can set them in the custom endpoint's `headers` map.
+The client can use any returned model ID for generation without forwarding the
+catalog headers.
 
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.
@@ -1354,6 +1406,9 @@ Community models and agents use a canonical `community/owner/model` id and appea
 
 The old `owner/model` IDs remain generation aliases in each model's `aliases` array. Key creation and updates accept only canonical model IDs. Existing stored permissions are migrated with the rename.
 
+The `source=community` and `source=official` filters are equivalent source filters
+for discovery. Source, access, and status filters combine with AND semantics.
+
 For registration, publishing, pricing, fallbacks, and health monitoring, see [Publish a Model](/docs#tag/publish-a-model). For ownership endpoints and schemas, see [Community Models](/docs#tag/community-models) under Resources.
 
 #### `GET` `/v1/models` — List Models (OpenAI-compatible)
@@ -1364,7 +1419,11 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+| `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `status` | `query` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `pollinations-model-status` | `header` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1395,13 +1454,14 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `data[].reasoning` | `boolean` | — |
 | `data[].context_length` | `number` | — |
 | `data[].per_user_rpm` | `number` \| `null` | — |
+| `data[].health` | `object` | Recent gateway final-response reliability. Final 4xx responses are excluded; successful fallback rescues count as successes. Not individual upstream health. |
 
 <sub>`*` = required field</sub>
 
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/v1/models?community=0" \
+curl "https://gen.pollinations.ai/v1/models?source=official&status=all" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1482,6 +1542,13 @@ Returns a single model by ID or alias in the OpenAI-compatible format, resolved 
 | `reasoning` | `boolean` | — |
 | `context_length` | `number` | — |
 | `per_user_rpm` | `number` \| `null` | — |
+| `health` | `object` | Recent gateway final-response reliability. Final 4xx responses are excluded; successful fallback rescues count as successes. Not individual upstream health. |
+| `health.status` * | `"healthy"` \| `"degraded"` \| `"down"` \| `"unknown"` | Based on the reported window: healthy above 95% success, degraded above 80% through 95%, down at 80% or below, unknown below 10 measured requests. Check stale before relying on this status. |
+| `health.success_rate` * | `number` \| `null` | Successful requests / measured requests (0–1); null with no samples. |
+| `health.sample_size` * | `integer` | — |
+| `health.window_minutes` * | `integer` | — |
+| `health.checked_at` * | `string · date-time` \| `null` | UTC snapshot-fetch time, not the last model request; null if unavailable. |
+| `health.stale` * | `boolean` | Refresh failed: data is older or unavailable. Excluded by status=healthy. |
 
 <sub>`*` = required field</sub>
 
@@ -1502,7 +1569,11 @@ Returns all available models with pricing, capabilities, and metadata. Official 
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+| `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `status` | `query` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `pollinations-model-status` | `header` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1511,7 +1582,7 @@ Returns all available models with pricing, capabilities, and metadata. Official 
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/models?community=0" \
+curl "https://gen.pollinations.ai/models?source=official&status=all" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1536,7 +1607,11 @@ Returns all available 3D model generation models with pricing, capabilities, and
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+| `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `status` | `query` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `pollinations-model-status` | `header` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1545,7 +1620,7 @@ Returns all available 3D model generation models with pricing, capabilities, and
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/3d/models?community=0" \
+curl "https://gen.pollinations.ai/3d/models?source=official&status=all" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1570,7 +1645,11 @@ Returns all available image and video generation models with pricing, capabiliti
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+| `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `status` | `query` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `pollinations-model-status` | `header` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1579,7 +1658,7 @@ Returns all available image and video generation models with pricing, capabiliti
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/image/models?community=0" \
+curl "https://gen.pollinations.ai/image/models?source=official&status=all" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1604,7 +1683,11 @@ Returns all available video generation models with pricing, capabilities, and me
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+| `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `status` | `query` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `pollinations-model-status` | `header` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1613,7 +1696,7 @@ Returns all available video generation models with pricing, capabilities, and me
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/video/models?community=0" \
+curl "https://gen.pollinations.ai/video/models?source=official&status=all" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1638,7 +1721,11 @@ Returns all available text generation and community text models with pricing, ca
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+| `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `status` | `query` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `pollinations-model-status` | `header` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1647,7 +1734,7 @@ Returns all available text generation and community text models with pricing, ca
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/text/models?community=0" \
+curl "https://gen.pollinations.ai/text/models?source=official&status=all" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1672,7 +1759,11 @@ Returns all available audio models (text-to-speech, music generation, and transc
 
 | Param | In | Type | Description |
 |---|---|---|---|
-| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models. |
+| `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `status` | `query` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
+| `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
+| `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
+| `pollinations-model-status` | `header` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1681,7 +1772,7 @@ Returns all available audio models (text-to-speech, music generation, and transc
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/audio/models?community=0" \
+curl "https://gen.pollinations.ai/audio/models?source=official&status=all" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1906,7 +1997,7 @@ Update a community model owned by the authenticated account. Code-agent names, t
 |---|---|---|
 | `name` | `string` | length: `1…120` |
 | `title` | `string` | Display name shown in the model catalog. · length: `1…42` |
-| `description` | `string` | max length: `160` |
+| `description` | `string` | max length: `1000` |
 | `visibility` | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. |
 | `requiredSafetyFeatures` | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. |
 | `hidden` | `boolean` | — |
@@ -2117,7 +2208,7 @@ curl "https://gen.pollinations.ai/account/agents/key_abc123" \
 
 #### `PATCH` `/account/agents/{id}` — Update Agent
 
-Update a prompt agent's configuration or a code agent's visibility and safety policy. A code agent's identity and repository are fixed after creation. API keys require `account:keys`.
+Update a prompt agent's configuration or a code agent's visibility and safety policy. Send only the fields to change; the rest keep their current values. A code agent's identity and repository are fixed after creation. API keys require `account:keys`.
 
 ⚙️ **Parameters**
 
@@ -2133,7 +2224,7 @@ Update a prompt agent's configuration or a code agent's visibility and safety po
 |---|---|---|
 | `name` | `string` | length: `1…120` |
 | `title` | `string` | length: `1…42` |
-| `description` | `string` | max length: `160` |
+| `description` | `string` | max length: `1000` |
 | `visibility` | `"private"` \| `"public"` | — |
 | `requiredSafetyFeatures` | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. |
 | `systemPrompt` | `any` | — |
@@ -2208,7 +2299,7 @@ Register an agent running on an external OpenAI-compatible endpoint. Pollination
 | `outputModalities` | enum (6) — `"text"`, `"image"`, `"audio"`, …[] | Output types produced by the agent. Defaults to text. |
 | `name` * | `string` | length: `1…120` |
 | `title` * | `string` | Display name shown in the model catalog. · length: `1…42` |
-| `description` | `string` | max length: `160` |
+| `description` | `string` | max length: `1000` |
 | `visibility` | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. · default: `"private"` |
 | `api` * | `"chat_completions"` \| `"responses"` | — |
 | `url` * | `string · uri` | Exact upstream endpoint URL for the selected text API, including its path and query parameters. |

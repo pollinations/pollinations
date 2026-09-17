@@ -768,11 +768,9 @@ export async function trackResponse(
                         : "upstream_finish_reason_error"),
                 errorMessage:
                     finishError.message ??
-                    (finishError.code === "usage_missing"
-                        ? "Upstream stream failed usage validation"
-                        : finishError.status === CONTENT_POLICY_STATUS
-                          ? "Upstream rejected generation for content policy"
-                          : "Upstream ended generation with finish_reason=error"),
+                    (finishError.status === CONTENT_POLICY_STATUS
+                        ? "Upstream rejected generation for content policy"
+                        : "Upstream ended generation with finish_reason=error"),
             },
             errorOutput: output,
         };
@@ -871,51 +869,46 @@ function streamErrorClass(code: string | undefined): string {
     return "UpstreamFinishReasonError";
 }
 
+type StreamError = { status: number; code?: string; message?: string };
+
+// Every text protocol carries its terminal error in one of three places:
+// Chat `{error}`, Responses `{type:"error", ...}` or
+// `{type:"response.failed", response:{error}}`.
+function streamErrorObject(event: object): object | undefined {
+    const { error, type, response } = event as {
+        error?: unknown;
+        type?: unknown;
+        response?: { error?: unknown };
+    };
+    const found = error ?? (type === "error" ? event : response?.error);
+    return found && typeof found === "object" ? found : undefined;
+}
+
+function streamError(raw: unknown): StreamError {
+    const { code, message } = (raw ?? {}) as {
+        code?: unknown;
+        message?: unknown;
+    };
+    return {
+        status: isContentPolicyViolation(JSON.stringify(raw ?? {}))
+            ? CONTENT_POLICY_STATUS
+            : 502,
+        code: typeof code === "string" ? code : undefined,
+        message: typeof message === "string" ? message : undefined,
+    };
+}
+
 function finishReasonError(
     output: unknown,
     hasUsage: boolean,
-):
-    | {
-          status: number;
-          code?: "usage_missing" | "upstream_stream_error";
-          message?: string;
-      }
-    | undefined {
+): StreamError | undefined {
     if (!output || typeof output !== "object") return undefined;
     const streamEvents = (output as { streamEvents?: unknown }).streamEvents;
     const events = Array.isArray(streamEvents) ? streamEvents : [output];
     for (const event of events) {
         if (!event || typeof event !== "object") continue;
-        const eventError = (event as { error?: unknown }).error;
-        if (
-            eventError &&
-            typeof eventError === "object" &&
-            (eventError as { code?: unknown }).code === "upstream_stream_error"
-        ) {
-            const { message } = eventError as { message?: unknown };
-            return {
-                status: 502,
-                code: "upstream_stream_error",
-                message: typeof message === "string" ? message : undefined,
-            };
-        }
-        if (
-            (eventError &&
-                typeof eventError === "object" &&
-                (eventError as { code?: unknown }).code === "usage_missing") ||
-            ((event as { type?: unknown }).type === "error" &&
-                (event as { code?: unknown }).code === "usage_missing")
-        ) {
-            return { status: 502, code: "usage_missing" };
-        }
-        if (isResponsesFailure(event)) return { status: 502 };
-        if (eventError) {
-            return {
-                status: isContentPolicyViolation(JSON.stringify(eventError))
-                    ? CONTENT_POLICY_STATUS
-                    : 502,
-            };
-        }
+        const error = streamErrorObject(event);
+        if (error || isResponsesFailure(event)) return streamError(error);
         const choices = (event as { choices?: unknown }).choices;
         if (!Array.isArray(choices)) continue;
         for (const choice of choices) {
@@ -929,12 +922,9 @@ function finishReasonError(
             if (!hasUsage && finish.finish_reason === "content_filter") {
                 return { status: CONTENT_POLICY_STATUS };
             }
-            if (finish.finish_reason !== "error") continue;
-            return {
-                status: isContentPolicyViolation(JSON.stringify(finish.error))
-                    ? CONTENT_POLICY_STATUS
-                    : 502,
-            };
+            if (finish.finish_reason === "error") {
+                return streamError(finish.error);
+            }
         }
     }
     return undefined;

@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
+import { useId } from "react";
 import { cn } from "../lib/cn.ts";
+import { ChevronIcon } from "../primitives/ChevronIcon.tsx";
+import { Dropdown, type DropdownProps } from "../primitives/Dropdown.tsx";
 
 function initials(name: string) {
     const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -8,17 +11,19 @@ function initials(name: string) {
     return `${parts[0][0] ?? ""}${parts.at(-1)?.[0] ?? ""}`.toUpperCase();
 }
 
-export function AccountAvatar({
+function AccountAvatar({
     name,
     avatarUrl,
-    className,
+    secondaryContent,
     dashboardHref,
 }: {
     name: string;
     avatarUrl?: string | null;
-    className: string;
+    secondaryContent?: ReactNode;
     dashboardHref?: string;
 }) {
+    const large = secondaryContent != null;
+    const className = large ? "polli:h-11 polli:w-11" : "polli:h-8 polli:w-8";
     const avatar = avatarUrl ? (
         <img
             src={avatarUrl}
@@ -47,7 +52,6 @@ export function AccountAvatar({
             rel="noopener noreferrer"
             aria-label="Open dashboard"
             title="Open dashboard"
-            data-pollinations-action="dashboard"
             className="polli:shrink-0 polli:rounded-full polli:cursor-pointer polli:transition-transform polli:hover:scale-105 polli:hover:brightness-110 polli:focus-visible:outline-2 polli:focus-visible:outline-offset-2 polli:focus-visible:outline-current polli:motion-reduce:transition-none polli:motion-reduce:hover:scale-100"
         >
             {avatar}
@@ -61,8 +65,7 @@ export type AccountIdentityProps = {
     name: string;
     avatarUrl?: string | null;
     secondaryContent?: ReactNode;
-    layout?: "stacked" | "inline";
-    secondaryId?: string;
+    /** Optional dashboard destination, owned by the caller. Opens in a new tab. */
     dashboardHref?: string;
     className?: string;
 };
@@ -71,15 +74,13 @@ export function AccountIdentity({
     name,
     avatarUrl,
     secondaryContent,
-    layout = "stacked",
-    secondaryId,
     dashboardHref,
     className,
 }: AccountIdentityProps) {
     return (
         <span
             className={cn(
-                "polli:inline-flex polli:min-w-0 polli:flex-1 polli:items-center polli:gap-2 polli:rounded-full polli:bg-ink-100/80 polli:p-1 polli:pr-3",
+                "polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:bg-ink-100/80 polli:p-1 polli:pr-3",
                 className,
             )}
         >
@@ -87,42 +88,24 @@ export function AccountIdentity({
                 name={name}
                 avatarUrl={avatarUrl}
                 dashboardHref={dashboardHref}
-                className={
-                    layout === "stacked" && secondaryContent != null
-                        ? "polli:h-11 polli:w-11"
-                        : "polli:h-8 polli:w-8"
-                }
-            />
-            <AccountDetails
-                name={name}
                 secondaryContent={secondaryContent}
-                layout={layout}
-                secondaryId={secondaryId}
             />
+            <AccountDetails name={name} secondaryContent={secondaryContent} />
         </span>
     );
 }
 
-export function AccountDetails({
+function AccountDetails({
     name,
     secondaryContent,
-    layout,
     secondaryId,
 }: {
     name: string;
     secondaryContent?: ReactNode;
-    layout: "stacked" | "inline";
     secondaryId?: string;
 }) {
     return (
-        <span
-            className={cn(
-                "polli:flex polli:min-w-0 polli:flex-1 polli:text-left",
-                layout === "inline"
-                    ? "polli:items-center polli:gap-2"
-                    : "polli:flex-col polli:items-start",
-            )}
-        >
+        <span className="polli:flex polli:min-w-0 polli:flex-col polli:items-start polli:text-left">
             <span
                 title={name}
                 className="polli:max-w-full polli:truncate polli:text-sm polli:font-medium polli:leading-5 polli:text-theme-text-strong"
@@ -132,14 +115,88 @@ export function AccountDetails({
             {secondaryContent != null && (
                 <span
                     id={secondaryId}
-                    className={cn(
-                        "polli:inline-flex polli:min-h-5 polli:max-w-full polli:items-center polli:truncate polli:text-xs polli:leading-4 polli:text-theme-text-base",
-                        layout === "inline" && "polli:shrink-0",
-                    )}
+                    className="polli:inline-flex polli:min-h-5 polli:items-center polli:whitespace-nowrap polli:text-xs polli:leading-4 polli:text-theme-text-base"
                 >
                     {secondaryContent}
                 </span>
             )}
         </span>
+    );
+}
+
+export type AccountMenuProps = AccountIdentityProps & {
+    /** The caller owns navigation, permissions and sign-out behavior. */
+    children: DropdownProps["children"];
+    menuClassName?: string;
+    side?: "top" | "bottom";
+    menuLabel?: string;
+};
+
+/**
+ * With `dashboardHref` the avatar is a link and the name/chevron open the
+ * menu; without one the whole pill is the trigger.
+ */
+export function AccountMenu({
+    name,
+    avatarUrl,
+    dashboardHref,
+    secondaryContent,
+    children,
+    className,
+    menuClassName,
+    side = "bottom",
+    menuLabel = `Account menu for ${name}`,
+}: AccountMenuProps) {
+    const statusId = useId();
+    const avatar = (
+        <AccountAvatar
+            name={name}
+            avatarUrl={avatarUrl}
+            dashboardHref={dashboardHref}
+            secondaryContent={secondaryContent}
+        />
+    );
+
+    return (
+        <div
+            data-theme="accent"
+            className={cn(
+                "polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:bg-theme-bg-active polli:p-1 polli:pr-3 polli:text-theme-text-strong polli:transition-colors polli:hover:bg-theme-bg-hover",
+                className,
+            )}
+        >
+            {dashboardHref && avatar}
+            <Dropdown
+                align="end"
+                side={side}
+                className={cn(
+                    "polli:w-max polli:min-w-[var(--reference-width)] polli:p-1",
+                    menuClassName,
+                )}
+                trigger={(open) => (
+                    <button
+                        type="button"
+                        aria-label={menuLabel}
+                        aria-describedby={
+                            secondaryContent != null ? statusId : undefined
+                        }
+                        className="polli-control polli:flex polli:min-w-0 polli:flex-1 polli:items-center polli:gap-2 polli:self-stretch polli:rounded-full polli:text-theme-text-strong"
+                    >
+                        {!dashboardHref && avatar}
+                        <AccountDetails
+                            name={name}
+                            secondaryContent={secondaryContent}
+                            secondaryId={statusId}
+                        />
+                        <ChevronIcon
+                            expanded={open}
+                            className="polli:ml-auto polli:h-4 polli:w-4 polli:text-theme-text-strong"
+                        />
+                    </button>
+                )}
+            >
+                {children}
+            </Dropdown>
+        </div>
     );
 }

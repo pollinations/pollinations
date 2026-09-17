@@ -151,7 +151,6 @@ export function AppUserMenuView({
             avatarUrl={avatarUrl}
             dashboardHref={dashboardHref}
             menuLabel={labels.appUserMenu}
-            layout="stacked"
             className="polli:max-w-64 polli:shrink-0"
             menuClassName="polli:w-max polli:min-w-48"
             secondaryContent={
@@ -160,7 +159,7 @@ export function AppUserMenuView({
                 Number.isFinite(remaining) ? (
                     <AccountPollen
                         source={{
-                            type: "allowance",
+                            type: "budget",
                             remaining,
                             generationEnabled,
                         }}

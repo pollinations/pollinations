@@ -6,74 +6,71 @@ import { WalletKindIcon } from "./wallet-display.tsx";
 export type AccountPollenSource =
     | {
           type: "wallet";
-          balances?: { paid: number; quest: number } | null;
+          /** Undefined while the balance is unavailable. */
+          balances?: { paid: number; quest: number };
           /** None covers disabled generation and a selection of free models. */
           requirement?: "any" | "paid" | "none";
       }
     | {
-          type: "allowance";
-          /** The app's remaining budget, never the owner's wallet total. */
+          type: "budget";
+          /** The app's remaining budget, never the owner's wallet total. `null` = unlimited. */
           remaining?: number | null;
           generationEnabled?: boolean;
       };
 
-/** Only confirmed values can replace amounts with a warning. */
-export function getAccountPollenStatus(
-    source: AccountPollenSource,
-): PollenStatus | undefined {
-    if (source.type === "allowance") {
-        return source.generationEnabled !== false &&
-            source.remaining != null &&
-            Number.isFinite(source.remaining) &&
-            source.remaining <= 0
-            ? { state: "limit-reached" }
-            : undefined;
+function getStatus(source: AccountPollenSource): PollenStatus | undefined {
+    if (source.type === "budget") {
+        if (
+            source.generationEnabled === false ||
+            source.remaining === undefined
+        )
+            return undefined;
+        if (source.remaining === null) return { state: "unlimited" };
+        return source.remaining <= 0 ? { state: "limit-reached" } : undefined;
     }
     const { balances, requirement = "any" } = source;
-    if (!balances || requirement === "none") return undefined;
-    if (!Number.isFinite(balances.paid) || balances.paid > 0) return undefined;
+    if (!balances || requirement === "none" || balances.paid > 0)
+        return undefined;
     if (requirement === "paid") return { state: "paid-required" };
-    return Number.isFinite(balances.quest) && balances.quest <= 0
-        ? { state: "no-pollen" }
-        : undefined;
+    return balances.quest <= 0 ? { state: "no-pollen" } : undefined;
 }
 
-/** Shared secondary line for a static identity or a menu trigger. */
+/** Icon + amount; unlimited, exhausted, or empty states become a badge. */
 export function AccountPollen({
     source,
     topUpHref,
 }: {
     source: AccountPollenSource;
-    /** Static identity only. A menu keeps recovery links in its dropdown. */
+    /** Shown in the empty-wallet badge. A menu keeps recovery links in its dropdown. */
     topUpHref?: string;
 }) {
-    const status = getAccountPollenStatus(source);
+    const status = getStatus(source);
     if (status) return <PollenStatusBadge {...status} topUpHref={topUpHref} />;
-    if (source.type === "allowance") {
-        if (
-            source.generationEnabled === false ||
-            source.remaining == null ||
-            !Number.isFinite(source.remaining)
-        )
-            return null;
+    if (source.type === "budget") {
+        if (source.generationEnabled === false) return null;
+        if (source.remaining == null) return null;
+        const remaining = source.remaining as number;
         return (
             <span
-                title="Available app Pollen"
+                title="App budget left"
                 className="polli:inline-flex polli:items-center polli:gap-1 polli:tabular-nums"
             >
                 <KeyIcon
                     aria-hidden="true"
                     className="polli:h-3.5 polli:w-3.5 polli:shrink-0"
                 />
-                {formatPollen(source.remaining)} Pollen
+                <span className="polli:sr-only">App budget: </span>
+                {formatPollen(remaining)} pollen
             </span>
         );
     }
-    if (source.balances === undefined) return null;
+    const { balances } = source;
+    if (!balances) return null;
     return (
         <span className="polli:inline-flex polli:items-center polli:gap-2 polli:tabular-nums">
-            {(["paid", "quest"] as const).map((kind) => {
-                const amount = source.balances?.[kind];
+            {/* Quest Pollen is spent first, so it comes first. */}
+            {(["quest", "paid"] as const).map((kind) => {
+                const amount = balances[kind];
                 return (
                     <span
                         key={kind}
@@ -85,9 +82,7 @@ export function AccountPollen({
                         <span className="polli:sr-only">
                             {kind === "paid" ? "Paid" : "Quest"} Pollen:{" "}
                         </span>
-                        {amount != null && Number.isFinite(amount)
-                            ? formatPollen(Math.max(0, amount))
-                            : "…"}
+                        {formatPollen(Math.max(0, amount))}
                     </span>
                 );
             })}

@@ -115,6 +115,71 @@ import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coo
 
 const db = drizzle(env.DB);
 
+fixtureTest(
+    "banned owners' public models and agents leave the registry",
+    async () => {
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: "banned-owner",
+        });
+        await insertCommunityEndpoints({
+            id: "ban-model",
+            ownerUserId,
+            name: "model",
+            description: "Test",
+            type: "proxy",
+            visibility: "public",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "test",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        await insertCommunityEndpoints({
+            id: "ban-agent",
+            ownerUserId,
+            name: "agent",
+            description: "Test",
+            type: "prompt_agent",
+            visibility: "public",
+            baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+            upstreamModel: "ban-agent",
+            payload: JSON.stringify({
+                prompt: "Test",
+                baseModel: DEFAULT_TEXT_MODEL,
+                mcpServers: [],
+            }),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        const before = await getCommunityModelRegistryEntries(env);
+        expect(
+            before.filter(
+                (row) => row.communityEndpoint.ownerUserId === ownerUserId,
+            ),
+        ).toHaveLength(2);
+        await db
+            .update(userTable)
+            .set({ banned: true })
+            .where(eq(userTable.id, ownerUserId));
+        await resetGenerationModelRegistryCache(env);
+        expect(
+            (await getCommunityModelRegistryEntries(env)).filter(
+                (row) => row.communityEndpoint.ownerUserId === ownerUserId,
+            ),
+        ).toHaveLength(0);
+        await db
+            .update(userTable)
+            .set({ banned: false })
+            .where(eq(userTable.id, ownerUserId));
+        await resetGenerationModelRegistryCache(env);
+        expect(
+            (await getCommunityModelRegistryEntries(env)).filter(
+                (row) => row.communityEndpoint.ownerUserId === ownerUserId,
+            ),
+        ).toHaveLength(2);
+    },
+);
+
 type CommunityEndpointInsert = typeof communityEndpointTable.$inferInsert;
 type CommunityEndpointFixture = Omit<CommunityEndpointInsert, "title"> &
     Partial<CommunityEndpointPrices> & {
@@ -255,12 +320,12 @@ function isCommunityImageEditsRequest(request: Request): boolean {
     return new URL(request.url).pathname.endsWith("/images/edits");
 }
 
-beforeEach(() => {
-    resetGenerationModelRegistryCache();
+beforeEach(async () => {
+    await resetGenerationModelRegistryCache(env);
 });
 
-afterEach(() => {
-    resetGenerationModelRegistryCache();
+afterEach(async () => {
+    await resetGenerationModelRegistryCache(env);
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
 });
@@ -3218,7 +3283,7 @@ fixtureTest(
             .update(communityEndpointTable)
             .set({ visibility: "public" })
             .where(eq(communityEndpointTable.id, endpointId));
-        resetGenerationModelRegistryCache();
+        await resetGenerationModelRegistryCache(env);
         const callFreePublicModel = async (callerKey: string) =>
             fetchGen(
                 new Request("https://gen.pollinations.ai/v1/chat/completions", {
@@ -3634,7 +3699,7 @@ fixtureTest.each(
             createdAt: new Date(),
             updatedAt: new Date(),
         });
-        resetGenerationModelRegistryCache();
+        await resetGenerationModelRegistryCache(env);
 
         const caller = await createTestApiKey({
             name: "managed-responses-mcp-billing",
@@ -7319,7 +7384,7 @@ fixtureTest(
             })
             .where(eq(userTable.id, userId));
 
-        resetGenerationModelRegistryCache();
+        await resetGenerationModelRegistryCache(env);
 
         const registryEntry = (
             await getCommunityModelRegistryEntries(env)
@@ -7845,7 +7910,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         }),
         enterEnv,
     );
-    expect(partialUpdateResponse.status).toBe(400);
+    expect(partialUpdateResponse.status).toBe(200);
     const updateAgentResponse = await fetchEnterApi(
         enterApi,
         new Request(`https://enter.test/api/account/agents/${agent.id}`, {
@@ -8076,6 +8141,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         enterEnv,
     );
     expect(invalidEndpointAgentUpdateResponse.status).toBe(400);
+    await resetGenerationModelRegistryCache(env);
     const endpointAgentRegistryEntry = (
         await getCommunityModelRegistryEntries(env)
     ).find((entry) => entry.communityEndpoint.id === endpointAgentId);
@@ -9007,7 +9073,7 @@ fixtureTest(
             await insertCommunityEndpoints(row);
         }
 
-        resetGenerationModelRegistryCache();
+        await resetGenerationModelRegistryCache(env);
         const registry = await getGenerationModelRegistry(env);
 
         const fallbackIds = (model: string) =>
@@ -9083,7 +9149,7 @@ fixtureTest(
         const previousFallbacks = source.fallbacks;
         try {
             source.fallbacks = [fallbackModelId];
-            resetGenerationModelRegistryCache();
+            await resetGenerationModelRegistryCache(env);
 
             const messageRoles: string[][] = [];
             vi.stubGlobal(
@@ -9152,7 +9218,7 @@ fixtureTest(
             expect(messageRoles).toEqual([["system", "user"], ["user"]]);
         } finally {
             source.fallbacks = previousFallbacks;
-            resetGenerationModelRegistryCache();
+            await resetGenerationModelRegistryCache(env);
         }
     },
 );

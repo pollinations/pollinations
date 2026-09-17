@@ -13,6 +13,7 @@ import { AuthAccountIdentity } from "../components/auth/auth-account-identity.ts
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import { EditApiKeyDialog } from "../components/keys/edit-api-key-dialog.tsx";
 import type { ApiKey } from "../components/keys/types.ts";
+import { useAccountBalance } from "../hooks/use-account-balance.ts";
 import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 import {
     AccountReturn,
@@ -50,30 +51,7 @@ function EditKeyPage() {
     } | null>(null);
     const [finished, setFinished] = useState<"saved" | "closed" | null>(null);
     const userId = session?.user.id;
-    const [balances, setBalances] = useState<{
-        paid: number;
-        quest: number;
-    } | null>(null);
-    useEffect(() => {
-        setBalances(null);
-        if (!userId) return;
-        let active = true;
-        apiClient.customer.balance
-            .$get()
-            .then(async (response) => {
-                if (!response.ok) return;
-                const balance = await response.json();
-                if (active)
-                    setBalances({
-                        paid: balance.packBalance,
-                        quest: balance.tierBalance,
-                    });
-            })
-            .catch(() => {});
-        return () => {
-            active = false;
-        };
-    }, [userId]);
+    const balance = useAccountBalance(Boolean(userId));
     // biome-ignore lint/correctness/useExhaustiveDependencies: attempt explicitly retries the failed request.
     useEffect(() => {
         if (!userId || !id) return;
@@ -102,7 +80,7 @@ function EditKeyPage() {
     }, [userId, id, attempt]);
     const back = redirect ? <AccountReturn href={redirect} /> : undefined;
     const account = session?.user ? (
-        <AuthAccountIdentity user={session.user} balances={balances} />
+        <AuthAccountIdentity user={session.user} balance={balance} />
     ) : undefined;
     if (isPending) return <AuthModalLoading title="Loading app access" />;
     if (!userId)

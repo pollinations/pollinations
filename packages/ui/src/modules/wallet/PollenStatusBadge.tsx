@@ -4,7 +4,7 @@ import { KeyIcon, WalletIcon } from "../../primitives/icons/index.tsx";
 import { WalletKindIcon } from "./wallet-display.tsx";
 
 export type PollenStatus = {
-    state: "no-pollen" | "limit-reached" | "paid-required";
+    state: "no-pollen" | "limit-reached" | "paid-required" | "unlimited";
     wallet?: "paid" | "tier";
 };
 
@@ -12,6 +12,7 @@ const labels = {
     "no-pollen": "No Pollen",
     "limit-reached": "Limit reached",
     "paid-required": "Paid required",
+    unlimited: "Unlimited",
 } as const;
 
 /** The caller supplies a confirmed status; this component does not infer affordability. */
@@ -21,7 +22,7 @@ export function PollenStatusBadge({
     showIcon = true,
     topUpHref,
 }: PollenStatus & { showIcon?: boolean; topUpHref?: string }) {
-    const allowance = state === "limit-reached";
+    const allowance = state === "limit-reached" || state === "unlimited";
     const kind = state === "paid-required" ? "paid" : wallet;
     const Icon = allowance ? KeyIcon : WalletIcon;
     const label = labels[state];
@@ -29,9 +30,11 @@ export function PollenStatusBadge({
         <Chip
             size="sm"
             intent={
-                state === "no-pollen" || state === "limit-reached"
-                    ? "danger"
-                    : "warning"
+                state === "unlimited"
+                    ? "info"
+                    : state === "paid-required"
+                      ? "warning"
+                      : "danger"
             }
             aria-label={
                 kind && !allowance
@@ -56,7 +59,6 @@ export function PollenStatusBadge({
                         href={topUpHref}
                         external
                         showIcon={false}
-                        data-pollinations-action="fund-account"
                         aria-label={`${label}. Top up (opens in a new tab)`}
                         className="polli:text-current polli:hover:text-current"
                     >

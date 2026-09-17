@@ -7,8 +7,8 @@ import {
 } from "../src/model-registry.ts";
 import { availableModels } from "../src/text/availableModels.ts";
 
-afterEach(() => {
-    resetGenerationModelRegistryCache();
+afterEach(async () => {
+    await resetGenerationModelRegistryCache(env);
     vi.restoreAllMocks();
 });
 
@@ -137,17 +137,36 @@ describe("getGenerationModelRegistry", () => {
         expect(advertised).not.toContain("midijourney-large");
     });
 
+    it("serves the community catalog from KV without querying D1", async () => {
+        await resetGenerationModelRegistryCache(env);
+        const healthy = await getGenerationModelRegistry(env);
+
+        // A different DB binding misses the in-memory cache; the catalog must
+        // still come from KV, so the failing D1 is never reached.
+        const consoleError = vi
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
+        const fromKv = await getGenerationModelRegistry({
+            ...env,
+            DB: skewedDbBinding(),
+        });
+        expect(consoleError).not.toHaveBeenCalled();
+        expect(fromKv.visibleEntries().map((e) => e.id)).toEqual(
+            healthy.visibleEntries().map((e) => e.id),
+        );
+    });
+
     it("serves static models when the community catalog query fails", async () => {
         const consoleError = vi
             .spyOn(console, "error")
             .mockImplementation(() => {});
 
-        resetGenerationModelRegistryCache();
+        await resetGenerationModelRegistryCache(env);
         const healthy = await getGenerationModelRegistry(env);
         const healthyCount = healthy.visibleEntries().length;
         expect(healthyCount).toBeGreaterThan(0);
 
-        resetGenerationModelRegistryCache();
+        await resetGenerationModelRegistryCache(env);
         const degradedEnv: CommunityModelEnv = {
             ...env,
             DB: skewedDbBinding(),

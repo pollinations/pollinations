@@ -1,7 +1,6 @@
 export {
     AccountPollen,
     type AccountPollenSource,
-    getAccountPollenStatus,
 } from "./AccountPollen.tsx";
 export { PaidChip, TierChip, type WalletChipProps } from "./chips.tsx";
 export {
@@ -12,7 +11,6 @@ export { formatPollen } from "./format-pollen.ts";
 export { PollenAmountSlider } from "./PollenAmountSlider.tsx";
 export { PollenFundingAction } from "./PollenFundingAction.tsx";
 export { PollenModelNotice } from "./PollenModelNotice.tsx";
-export { type PollenStatus, PollenStatusBadge } from "./PollenStatusBadge.tsx";
 export {
     WalletBalanceCard,
     type WalletBalanceCardProps,

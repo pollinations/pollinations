@@ -79,6 +79,7 @@ test("parser, filesystem, and unknown errors never expose raw contents", () => {
 });
 
 const now = Date.UTC(2026, 8, 17, 7, 17);
+const ledgerStart = now / 1000 - 14 * 86400;
 const response = (body) => ({ ok: true, json: async () => body });
 
 function sources() {
@@ -174,7 +175,13 @@ test("collector shows unbanned review accounts, pending disputes and no historic
     stripe.events.list = () => {
         throw new Error("Must not fetch historical events");
     };
-    const evidence = await collectDailyEvidence(stripe, query, [], now);
+    const evidence = await collectDailyEvidence(
+        stripe,
+        query,
+        [],
+        now,
+        ledgerStart,
+    );
     const warned = evidence.fraudReview.shown.find((row) => row.id === "u_1");
     assert.equal(warned.score, 0.15);
     assert.equal(warned.label, "bee_runner");
@@ -190,7 +197,13 @@ test("collector shows unbanned review accounts, pending disputes and no historic
                 banned: u.id === "u_2" ? 1 : 0,
             })),
         }));
-    const filtered = await collectDailyEvidence(stripe, bannedQuery, [], now);
+    const filtered = await collectDailyEvidence(
+        stripe,
+        bannedQuery,
+        [],
+        now,
+        ledgerStart,
+    );
     assert.deepEqual(
         filtered.fraudReview.shown.map((u) => u.id),
         ["u_1"],
@@ -202,7 +215,13 @@ test("missing refund ledger preserves review evidence and gives an actionable bl
     stripe.refunds.list = () => [{ id: "re_a" }];
     const missingLedger = async (body) =>
         body.sql.includes("sqlite_master") ? [{ results: [] }] : query(body);
-    const evidence = await collectDailyEvidence(stripe, missingLedger, [], now);
+    const evidence = await collectDailyEvidence(
+        stripe,
+        missingLedger,
+        [],
+        now,
+        ledgerStart,
+    );
     const report = formatDailyReport(evidence);
     assert.equal(evidence.health.complete, false);
     assert.match(report, /Accounts to review/);
@@ -219,6 +238,7 @@ test("one bounded Discord post disables mentions and embeds without calling a mo
         ...sources(),
         webhookUrl: "https://discord.test/SECRET",
         now,
+        refundLedgerStartSeconds: ledgerStart,
         fetchImpl: async (url, init) => {
             calls.push({ url, init });
             return response({ id: "123" });
@@ -246,7 +266,13 @@ test("an unavailable scan still checks refunds and never reports all clear", asy
     stripe.charges.list = () => {
         throw new FraudCheckError("Stripe unavailable");
     };
-    const evidence = await collectDailyEvidence(stripe, query, [], now);
+    const evidence = await collectDailyEvidence(
+        stripe,
+        query,
+        [],
+        now,
+        ledgerStart,
+    );
     assert.equal(evidence.refunds.total, 0);
     assert.equal(evidence.health.complete, false);
     assert.match(
@@ -298,13 +324,75 @@ test("refund reconciliation uses ledger amounts and distinguishes missing, pendi
         assert.equal(params.length, 5);
         return [{ results: rows }];
     };
-    const result = await collectRefundReport(stripe, query, now / 1000);
+    const result = await collectRefundReport(
+        stripe,
+        query,
+        now / 1000,
+        ledgerStart,
+    );
     assert.equal(result[0].pollen, 5);
     assert.equal(result[1].pollen, 5);
     assert.equal(result[2].issue, "Pollen adjustment unverified");
     assert.equal(result[3].pollen, null);
     assert.equal(result[3].issue, null);
     assert.equal(result[4].issue, "Pollen adjustment unverified");
+});
+
+test("refund scan excludes pre-activation refunds but keeps missing adjustments at and after activation", async () => {
+    const { stripe, query } = sources();
+    stripe.refunds.list = ({ created }) => {
+        assert.deepEqual(created, { gte: ledgerStart, lte: now / 1000 });
+        return [ledgerStart - 1, ledgerStart, now / 1000]
+            .filter((at) => at >= created.gte && at <= created.lte)
+            .map((at) => ({
+                id: `re_${at}`,
+                charge: "ch_a",
+                amount: 500,
+                currency: "usd",
+                status: "succeeded",
+                created: at,
+            }));
+    };
+    const ledgerQuery = async (body) =>
+        body.sql.includes("FROM stripe_refund")
+            ? [{ results: [] }]
+            : query(body);
+    const evidence = await collectDailyEvidence(
+        stripe,
+        ledgerQuery,
+        [],
+        now,
+        ledgerStart,
+    );
+    assert.equal(evidence.refunds.total, 2);
+    assert.deepEqual(
+        evidence.refunds.shown.map((r) => r.created),
+        [ledgerStart, now / 1000],
+    );
+    assert.match(formatDailyReport(evidence), /Refunds to reconcile · 2/);
+});
+
+test("missing, invalid or future activation time blocks refunds without scanning history", async () => {
+    const { stripe, query } = sources();
+    stripe.refunds.list = () => {
+        throw new Error("Must not scan without a valid activation time");
+    };
+    for (const since of [undefined, NaN, 0, -1, 1.5, now / 1000 + 1]) {
+        const evidence = await collectDailyEvidence(
+            stripe,
+            query,
+            [],
+            now,
+            since,
+        );
+        assert.equal(evidence.health.complete, false);
+        assert.equal(evidence.refunds, undefined);
+        assert.match(evidence.errors[0], /Refund ledger start time/);
+        const report = formatDailyReport(evidence);
+        assert.match(report, /Accounts to review/);
+        assert.match(report, /Set the report’s refund start time/);
+        assert.doesNotMatch(report, /Nothing needs attention/);
+    }
 });
 
 test("a reconciled older failed refund stays out of the active report", async () => {
@@ -344,7 +432,13 @@ test("a reconciled older failed refund stays out of the active report", async ()
                   },
               ]
             : query(body);
-    const evidence = await collectDailyEvidence(stripe, ledgerQuery, [], now);
+    const evidence = await collectDailyEvidence(
+        stripe,
+        ledgerQuery,
+        [],
+        now,
+        ledgerStart,
+    );
     assert.equal(evidence.refunds.total, 0);
     assert.doesNotMatch(formatDailyReport(evidence), /Refunds to reconcile/);
 });
@@ -362,13 +456,19 @@ test("active layout uses real amounts, deadlines, reasons and links with exact r
             created: now / 1000 - 30 * 86400,
         })),
     ];
-    const evidence = await collectDailyEvidence(stripe, query, [], now);
+    const evidence = await collectDailyEvidence(
+        stripe,
+        query,
+        [],
+        now,
+        ledgerStart,
+    );
     const report = formatDailyReport(evidence);
     assert.match(report, /Disputes to handle · 7/);
     assert.match(report, /\$5.00/);
     assert.match(report, /17 Sept?, 07:17 UTC/);
     assert.match(report, /\+4 more awaiting review/);
-    assert.equal((report.match(/Open dispute/g) || []).length, 3);
+    assert.equal((report.match(/Review disputes/g) || []).length, 3);
     assert.match(report, /bee_runner · 0.81/);
     assert.match(report, /3 fraud disputes/);
     assert.match(report, /Consider banning after review/);
@@ -381,6 +481,42 @@ test("active layout uses real amounts, deadlines, reasons and links with exact r
         report.indexOf("Disputes to handle") <
             report.indexOf("Accounts to review"),
     );
+});
+
+test("disputes sharing a deadline aggregate all amounts without mixing currencies or closed cases", async () => {
+    const { stripe, query } = sources();
+    const base = stripe.disputes.list()[0];
+    stripe.disputes.list = () => [
+        ...Array.from({ length: 120 }, (_, i) => ({
+            ...base,
+            id: `dp_${i}`,
+            amount: 548,
+            status: "needs_response",
+            evidence_details: { due_by: now / 1000 - 60 },
+        })),
+        {
+            ...base,
+            id: "dp_eur",
+            currency: "eur",
+            status: "warning_needs_response",
+            evidence_details: { due_by: now / 1000 - 60 },
+        },
+        { ...base, id: "dp_closed", amount: 99999 },
+    ];
+    const evidence = await collectDailyEvidence(
+        stripe,
+        query,
+        [],
+        now,
+        ledgerStart,
+    );
+    assert.equal(evidence.disputes.total, 121);
+    assert.equal(evidence.disputes.shown.length, 2);
+    const report = formatDailyReport(evidence);
+    assert.match(report, /120 disputes · \$657\.60 USD/);
+    assert.match(report, /1 dispute · €5\.00 EUR/);
+    assert.equal((report.match(/🚨/g) || []).length, 2);
+    assert.doesNotMatch(report, /more awaiting review/);
 });
 
 test("currency conversion handles Stripe zero-decimal and legacy two-decimal amounts", () => {
@@ -400,7 +536,7 @@ test("currency conversion handles Stripe zero-decimal and legacy two-decimal amo
             ...base,
             disputes: {
                 total: 1,
-                shown: [{ id: "dp_a", currency, amount, due: null }],
+                shown: [{ count: 1, currency, amount, due: null }],
             },
         });
         assert.ok(report.includes(expected), report);

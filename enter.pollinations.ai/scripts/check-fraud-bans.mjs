@@ -3,7 +3,6 @@ import Stripe from "stripe";
 import { runFraudBanCheck } from "../src/utils/stripe-fraud-ban.ts";
 import {
     FRAUD_BAN_THRESHOLD,
-    FRAUD_SCAN_START_SECONDS,
     FraudCheckError,
 } from "../src/utils/stripe-fraud-score.ts";
 
@@ -26,11 +25,15 @@ export function fraudCheckErrorMessage(error) {
 }
 
 /** Match current Stripe state against the atomic refund ledger; never change money. */
-export async function collectRefundReport(stripe, query, until) {
+export async function collectRefundReport(stripe, query, until, since) {
+    if (!Number.isSafeInteger(since) || since <= 0 || since > until)
+        throw new FraudCheckError(
+            "Refund ledger start time is not configured correctly",
+        );
     const refunds = [];
     for await (const refund of stripe.refunds.list({
         limit: 100,
-        created: { gte: FRAUD_SCAN_START_SECONDS, lte: until },
+        created: { gte: since, lte: until },
     }))
         refunds.push(refund);
     if (refunds.length) {
@@ -95,6 +98,7 @@ export async function collectDailyEvidence(
     query,
     excludedUserIds = [],
     now = Date.now(),
+    refundLedgerStartSeconds,
 ) {
     let requests = 0;
     const count = () => {
@@ -123,15 +127,35 @@ export async function collectDailyEvidence(
                 }),
             ),
         );
-        evidence.disputes = select(
-            scan.disputes
-                .filter((d) =>
-                    ["needs_response", "warning_needs_response"].includes(
-                        d.status,
-                    ),
+        const groups = new Map();
+        let disputeCount = 0;
+        for (const d of scan.disputes) {
+            if (
+                !["needs_response", "warning_needs_response"].includes(d.status)
+            )
+                continue;
+            const key = `${d.due}:${d.currency}`;
+            const group = groups.get(key) ?? {
+                due: d.due,
+                currency: d.currency,
+                amount: 0,
+                count: 0,
+            };
+            group.amount += d.amount;
+            group.count++;
+            disputeCount++;
+            groups.set(key, group);
+        }
+        evidence.disputes = {
+            total: disputeCount,
+            shown: [...groups.values()]
+                .sort(
+                    (a, b) =>
+                        (a.due ?? Infinity) - (b.due ?? Infinity) ||
+                        a.currency.localeCompare(b.currency),
                 )
-                .sort((a, b) => (a.due ?? Infinity) - (b.due ?? Infinity)),
-        );
+                .slice(0, 3),
+        };
     } catch (error) {
         evidence.errors.push(
             `Account/dispute scan: ${fraudCheckErrorMessage(error)}`,
@@ -143,6 +167,7 @@ export async function collectDailyEvidence(
             stripe,
             query,
             Math.floor(now / 1000),
+            refundLedgerStartSeconds,
         );
         evidence.refunds = select(
             refunds
@@ -195,29 +220,35 @@ export function formatDailyReport(evidence) {
     const footer = "_Manual review only. No actions performed._";
     const render = (limit) => {
         const sections = [`**🐝 Polli-ce · ${date}**`];
-        const section = (title, group, row) => {
+        const section = (title, group, row, count = () => 1) => {
             if (!group?.total) return;
             const shown = group.shown.slice(0, limit);
-            const remaining = group.total - shown.length;
+            const remaining =
+                group.total - shown.reduce((sum, item) => sum + count(item), 0);
             sections.push(
                 `**${title} · ${group.total}**\n${shown.map(row).join("\n")}${remaining ? `\n+${remaining} more awaiting review` : ""}`,
             );
         };
-        section("📋 Disputes to handle", evidence.disputes, (d) => {
-            const deadline = d.due
-                ? `${new Date(d.due * 1000).toLocaleString("en-GB", {
-                      day: "numeric",
-                      month: "short",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      timeZone: "UTC",
-                  })} UTC`
-                : "deadline unavailable";
-            const urgent =
-                d.due &&
-                d.due * 1000 - Date.parse(evidence.at) <= 2 * 86400_000;
-            return `• ${urgent ? "🚨 " : ""}**${money(d.amount, d.currency)}** — ${d.due ? "respond by " : ""}**${deadline}** → ${stripeLink("disputes", d.id, "Open dispute")}`;
-        });
+        section(
+            "📋 Disputes to handle",
+            evidence.disputes,
+            (d) => {
+                const deadline = d.due
+                    ? `${new Date(d.due * 1000).toLocaleString("en-GB", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          timeZone: "UTC",
+                      })} UTC`
+                    : "deadline unavailable";
+                const urgent =
+                    d.due &&
+                    d.due * 1000 - Date.parse(evidence.at) <= 2 * 86400_000;
+                return `• ${urgent ? "🚨 " : ""}**${d.count} dispute${d.count === 1 ? "" : "s"} · ${money(d.amount, d.currency)} ${d.currency.toUpperCase()}** — ${d.due ? "respond by " : ""}**${deadline}** → [Review disputes](https://dashboard.stripe.com/disputes)`;
+            },
+            (d) => d.count,
+        );
         section("👀 Accounts to review", evidence.fraudReview, (u) => {
             const label =
                 u.label.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 40) || u.id;
@@ -254,7 +285,11 @@ export function formatDailyReport(evidence) {
                     e.includes("Refund ledger is not deployed"),
                 )
                     ? "• Refund checks unavailable → Deploy the refund ledger, then rerun."
-                    : "• Refund checks unavailable → Check the report job and rerun.",
+                    : evidence.errors.some((e) =>
+                            e.includes("Refund ledger start time"),
+                        )
+                      ? "• Refund checks unavailable → Set the report’s refund start time to the production ledger activation time."
+                      : "• Refund checks unavailable → Check the report job and rerun.",
             );
         if (blocked.length)
             sections.push(`**🔧 Blocked checks**\n${blocked.join("\n")}`);
@@ -297,12 +332,14 @@ export async function runDailyReport({
     excludedUserIds = [],
     fetchImpl = fetch,
     now = Date.now(),
+    refundLedgerStartSeconds,
 }) {
     const evidence = await collectDailyEvidence(
         stripe,
         query,
         excludedUserIds,
         now,
+        refundLedgerStartSeconds,
     );
     console.log(
         JSON.stringify({ health: evidence.health, errors: evidence.errors }),
@@ -368,6 +405,9 @@ async function main() {
         stripe,
         query,
         webhookUrl,
+        refundLedgerStartSeconds: Number(
+            process.env.STRIPE_REFUND_LEDGER_START_SECONDS,
+        ),
         excludedUserIds: (process.env.FRAUD_BAN_EXCLUDED_USER_IDS ?? "")
             .split(",")
             .map((id) => id.trim())

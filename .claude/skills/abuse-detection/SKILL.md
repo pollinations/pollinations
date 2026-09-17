@@ -332,13 +332,20 @@ scores accounts daily on Stripe signals (`enter.pollinations.ai/src/utils/stripe
 - Every run posts accounts still needing review to the private Discord channel via
   `DISCORD_FRAUD_WEBHOOK_URL`. One compact, deterministic message shows only open
   disputes, unbanned accounts needing review, refund/Pollen mismatches, and blocked
-  checks. Each section shows up to three items with links and an accurate remaining
+  checks. Disputes are grouped by exact UTC deadline and currency, with counts and
+  total amounts. Each section shows up to three rows with links and an accurate remaining
   count. Empty sections and resolved refunds are hidden. No model call, event feed,
   KV history or score-delta tracking. Excluded and already-banned accounts are omitted
   from the fraud queue, not from disputes. Manual reruns post again.
 - Refund reconciliation requires the `stripe_refund` ledger and webhook deployment
-  from #15044. Missing or mismatched records are unverified, not proof of a failed
-  deduction (historical manual adjustments may predate the ledger).
+  from #15044. At production activation, set GitHub repository variable
+  `STRIPE_REFUND_LEDGER_START_SECONDS` once to that activation time (Unix seconds).
+  Do not use the merge time or advance it on reruns: missing post-activation records
+  must remain visible until resolved. An unset or invalid value blocks only refund
+  checks. Review pre-activation refunds separately once, including pending refunds
+  that may transition after activation; historical manual adjustments may predate
+  the ledger. Missing or mismatched records are unverified, not proof of a failed deduction.
+- Both scheduled and manual runs check out `production`; branch previews are disabled.
 - Issuer warnings are **suspected** fraud, not proof. They enter the review queue
   even below 0.75. Radar blocks have zero weight; highest-risk flags contribute but
   never qualify an account alone. Scores are heuristic, not probabilities.

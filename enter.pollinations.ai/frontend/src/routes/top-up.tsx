@@ -107,12 +107,12 @@ function TopUpPage() {
         };
     }, [user, loadAttempt]);
 
-    if (isPending) return <AuthModalLoading title="Top up your Pollen" />;
+    if (isPending) return <AuthModalLoading title="Pollen Top up" />;
 
     if (!user) {
         return (
             <SignInScreen
-                title="Top up your Pollen"
+                title="Pollen Top up"
                 description="Sign in to continue."
             />
         );
@@ -122,7 +122,7 @@ function TopUpPage() {
         return (
             <AuthFlowScreen
                 footnote="back"
-                title="Top up your Pollen"
+                title="Pollen Top up"
                 description="Done, your wallet updates when Stripe confirms the payment."
                 balance={wallet}
                 topUpHref={null}
@@ -139,7 +139,7 @@ function TopUpPage() {
         return (
             <AuthFlowScreen
                 footnote="help"
-                title="Top up your Pollen"
+                title="Pollen Top up"
                 error="Couldn’t load your wallet."
                 balance={wallet}
                 topUpHref={null}
@@ -156,11 +156,11 @@ function TopUpPage() {
     }
 
     if (!wallet || billing === undefined)
-        return <AuthModalLoading title="Top up your Pollen" />;
+        return <AuthModalLoading title="Pollen Top up" />;
 
     return (
         <AuthFlowScreen
-            title="Top up your Pollen"
+            title="Pollen Top up"
             description="Paid Pollen never expires."
             error={
                 search.stripe_canceled

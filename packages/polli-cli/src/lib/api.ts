@@ -28,11 +28,11 @@ interface RequestOptions {
     apiKey?: string;
 }
 
-const request = async <T>(
+const fetchFrom = async (
     baseUrl: string,
     path: string,
     options: RequestOptions = {},
-): Promise<T> => {
+) => {
     const { method = "GET", body, apiKey } = options;
     const key = resolveApiKey(apiKey);
 
@@ -55,8 +55,24 @@ const request = async <T>(
         );
     }
 
-    return res.json() as Promise<T>;
+    return res;
 };
+
+const request = async <T>(
+    baseUrl: string,
+    path: string,
+    options: RequestOptions = {},
+): Promise<T> => (await fetchFrom(baseUrl, path, options)).json() as Promise<T>;
+
+const requestText = async (
+    baseUrl: string,
+    path: string,
+    options: RequestOptions = {},
+): Promise<string> => (await fetchFrom(baseUrl, path, options)).text();
 
 export const gen = <T>(path: string, options?: RequestOptions) =>
     request<T>(BASE_URL, path, options);
+
+/** Fetch a response as raw text (used for `format=csv` exports). */
+export const genText = (path: string, options?: RequestOptions) =>
+    requestText(BASE_URL, path, options);

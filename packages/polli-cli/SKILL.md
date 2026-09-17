@@ -150,6 +150,9 @@ Use `--stats` before choosing a model. **Caveat**: the `err%` column counts **5x
 polli usage              # current pollen balance
 polli usage --history    # recent individual requests
 polli usage --daily      # daily cost summary
+polli usage --history --key my-app --model openai --days 3  # filter by key name/model/window
+polli usage --daily --key polli-harness-... --days 1        # cost of one harness key for the last day
+polli usage --history --key my-app --csv                    # raw CSV export
 polli earnings           # developer earnings total + per-entity breakdown (default 30d)
 polli earnings --days 7  # rolling window, max 90
 polli quests             # your quests + claim state (open/claimable/claimed/coming)

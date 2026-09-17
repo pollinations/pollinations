@@ -22,9 +22,9 @@ const footnotes = {
     ),
     help: (
         <>
-            Need help? Contact{" "}
-            <InlineLink href="mailto:hello@pollinations.ai">
-                hello@pollinations.ai
+            Need help?{" "}
+            <InlineLink href="https://discord.gg/pollinations-ai-885844321461485618">
+                Ask on Discord
             </InlineLink>
             .
         </>

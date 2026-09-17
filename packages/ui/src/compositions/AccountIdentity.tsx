@@ -61,6 +61,9 @@ function AccountAvatar({
     );
 }
 
+const identityPillClassName =
+    "polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:p-1 polli:pr-3 polli:text-theme-text-strong";
+
 export type AccountIdentityProps = {
     name: string;
     avatarUrl?: string | null;
@@ -80,7 +83,9 @@ export function AccountIdentity({
     return (
         <span
             className={cn(
-                "polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:bg-surface-opaque polli:p-1 polli:pr-3",
+                identityPillClassName,
+                // Same surface and lift as a card, so it reads on the container in both modes.
+                "polli:bg-surface-opaque polli:shadow-well",
                 className,
             )}
         >
@@ -161,7 +166,8 @@ export function AccountMenu({
         <div
             data-theme="accent"
             className={cn(
-                "polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:bg-theme-bg-active polli:p-1 polli:pr-3 polli:text-theme-text-strong polli:transition-colors polli:hover:bg-theme-bg-hover",
+                identityPillClassName,
+                "polli:bg-theme-bg-active polli:transition-colors polli:hover:bg-theme-bg-hover",
                 className,
             )}
         >

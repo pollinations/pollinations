@@ -107,13 +107,13 @@ function TopUpPage() {
         };
     }, [user, loadAttempt]);
 
-    if (isPending) return <AuthModalLoading title="Checking your sign-in" />;
+    if (isPending) return <AuthModalLoading title="Add Pollen" />;
 
     if (!user) {
         return (
             <SignInScreen
-                title="Top up"
-                description="Sign in to add Pollen to your pollinations.ai account."
+                title="Add Pollen"
+                description="Sign in to add Pollen to your account."
             />
         );
     }
@@ -121,8 +121,8 @@ function TopUpPage() {
     if (search.stripe_success) {
         return (
             <AuthFlowScreen
-                title="Checkout complete"
-                description="Your wallet updates after Stripe confirms the payment."
+                title="Pollen added"
+                description="Your wallet updates as soon as Stripe confirms the payment. You can return to the app or close this tab."
                 balance={wallet}
                 topUpHref={null}
                 actions={
@@ -149,20 +149,22 @@ function TopUpPage() {
                     </Button>
                 }
             >
-                <ErrorBanner>
-                    We couldn’t load your wallet. Please try again.
-                </ErrorBanner>
+                <ErrorBanner>Please try again.</ErrorBanner>
             </AuthFlowScreen>
         );
     }
 
     if (!wallet || billing === undefined)
-        return <AuthModalLoading title="Loading your wallet" />;
+        return <AuthModalLoading title="Add Pollen" />;
 
     return (
         <AuthFlowScreen
-            title="Top up"
-            description="Add Pollen to your account."
+            title="Add Pollen"
+            description={
+                search.stripe_canceled
+                    ? "Checkout was cancelled. Choose an amount to try again."
+                    : "Choose an amount. Paid Pollen never expires."
+            }
             size="lg"
             balance={wallet}
             topUpHref={null}
@@ -170,9 +172,6 @@ function TopUpPage() {
                 returnUrl ? <ReturnToApp returnUrl={returnUrl} /> : undefined
             }
         >
-            {search.stripe_canceled && (
-                <ErrorBanner>Checkout was cancelled.</ErrorBanner>
-            )}
             <BuyPollenPanel
                 initialBillingState={billing}
                 selectedPackAmount={selectedPack?.amountUsd ?? 5}

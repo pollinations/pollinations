@@ -460,7 +460,12 @@ export function Authorize() {
         );
     }
 
-    if (isPending) return <AuthModalLoading title="Checking your sign-in" />;
+    if (isPending)
+        return (
+            <AuthModalLoading
+                title={isDeviceMode ? "Allow device" : "Allow app"}
+            />
+        );
 
     if (error) {
         return (

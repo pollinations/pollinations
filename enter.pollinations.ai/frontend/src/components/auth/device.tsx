@@ -90,7 +90,7 @@ export function Device({ prefilledCode }: DeviceProps) {
     }
 
     if (isPending) {
-        return <AuthModalLoading title="Checking your sign-in" />;
+        return <AuthModalLoading title="Allow device" />;
     }
 
     if (!user) {

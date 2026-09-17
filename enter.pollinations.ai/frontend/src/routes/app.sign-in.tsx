@@ -46,8 +46,7 @@ function AppSignIn() {
         };
     }, [client_id]);
 
-    if (client === "loading")
-        return <AuthModalLoading title="Checking your sign-in" />;
+    if (client === "loading") return <AuthModalLoading title="Sign in" />;
 
     if (client === "invalid") {
         return (

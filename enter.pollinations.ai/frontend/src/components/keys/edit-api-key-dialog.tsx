@@ -125,7 +125,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         <AuthModal onClose={onClose}>
             {header}
             <DialogHeader
-                title={appKey ? "Edit app key" : "Edit key permissions"}
+                title={appKey ? "Update app" : "Update access"}
                 description={
                     appKey
                         ? "Update your app’s name, callback URLs and earnings settings."

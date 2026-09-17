@@ -16,7 +16,7 @@ export function CommunityEndpointToggleConfirmation({
         <Dialog
             open={!!endpoint}
             onOpenChange={(open) => !open && onCancel()}
-            title={endpoint?.hidden ? "Relist model?" : "Hide model?"}
+            title={`${endpoint?.hidden ? "Relist" : "Hide"} ${endpoint?.type === "endpoint_agent" ? "agent" : "model"}?`}
             size="sm"
         >
             <DialogBody>

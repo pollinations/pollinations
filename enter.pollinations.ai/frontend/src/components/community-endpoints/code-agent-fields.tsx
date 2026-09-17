@@ -30,7 +30,6 @@ export function CodeAgentFields({
                     Private code agents coming soon.
                 </>
             }
-            alignLabelRow
         >
             <Field.Input asChild>
                 <Input

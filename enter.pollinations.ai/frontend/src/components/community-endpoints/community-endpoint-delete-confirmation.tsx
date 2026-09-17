@@ -16,7 +16,11 @@ export function CommunityEndpointDeleteConfirmation({
         <Dialog
             open={!!endpoint}
             onOpenChange={(open) => !open && onCancel()}
-            title="Delete model?"
+            title={
+                endpoint?.type === "endpoint_agent"
+                    ? "Delete agent?"
+                    : "Delete model?"
+            }
             size="sm"
         >
             <DialogBody>
@@ -25,7 +29,9 @@ export function CommunityEndpointDeleteConfirmation({
                     <span className="font-mono text-sm">
                         {endpoint?.modelId}
                     </span>
-                    ? This removes the model and cannot be undone.
+                    ? This removes the{" "}
+                    {endpoint?.type === "endpoint_agent" ? "agent" : "model"}{" "}
+                    and cannot be undone.
                 </p>
             </DialogBody>
             <DialogFooter>

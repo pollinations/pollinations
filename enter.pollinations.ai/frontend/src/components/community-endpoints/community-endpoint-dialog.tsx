@@ -1,5 +1,7 @@
 import {
     Alert,
+    BeakerIcon,
+    BotIcon,
     Button,
     ButtonGroup,
     CheckIcon,
@@ -16,14 +18,16 @@ import {
     Input,
     ScrollArea,
     TabButton,
+    XIcon,
 } from "@pollinations/ui";
-import { AuthInfoCard } from "@pollinations/ui/auth";
+import { AuthAccessItem, AuthInfoCard } from "@pollinations/ui/auth";
 import { MAX_FALLBACK_TARGETS } from "@shared/community-endpoints.ts";
 import type { ModelInputModality } from "@shared/registry/registry.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { OpenWebUiLink } from "../models/open-webui-link.tsx";
+import { ModelCapabilityFields } from "./model-capability-fields.tsx";
 import { ModelListingFields } from "./model-listing-fields.tsx";
 import {
     basePriceKeysForModality,
@@ -84,6 +88,7 @@ export function CommunityEndpointDialog({
         ? openWebUiTestableModelId(endpoint)
         : null;
     const [form, setForm] = useState<EndpointFormState>(emptyForm);
+    const [rpmLimited, setRpmLimited] = useState(false);
     const [modelOptions, setModelOptions] = useState<string[]>([]);
     const [modelListState, setModelListState] =
         useState<ActionState>(idleAction);
@@ -102,6 +107,7 @@ export function CommunityEndpointDialog({
     // never survive a dismissed dialog.
     useEffect(() => {
         setForm(open && endpoint ? endpointToForm(endpoint) : emptyForm);
+        setRpmLimited(open && endpoint?.perUserRpm != null);
         setModelOptions([]);
         setModelListState(idleAction);
         setProviderModelMenuOpen(false);
@@ -326,7 +332,9 @@ export function CommunityEndpointDialog({
         form,
         visiblePriceKeys,
     );
-    const hasValidPerUserRpm = isValidPerUserRpm(form.perUserRpm);
+    const hasValidPerUserRpm =
+        (!rpmLimited || form.perUserRpm.trim() !== "") &&
+        isValidPerUserRpm(form.perUserRpm);
     const cancelsPendingChange =
         Boolean(endpoint?.pending) && form.visibility === "private";
     // First-time publishing of an external endpoint re-observes its billed
@@ -399,12 +407,13 @@ export function CommunityEndpointDialog({
             triggerAsChild
         >
             <DialogHeader
+                icon={isEndpointAgent ? <BotIcon /> : <BeakerIcon />}
                 title={
                     isEndpointAgent
                         ? "Edit endpoint agent"
                         : isEdit
                           ? "Edit model"
-                          : "Add model"
+                          : "Create model"
                 }
                 description={
                     isEndpointAgent
@@ -445,58 +454,25 @@ export function CommunityEndpointDialog({
 
                     <AuthInfoCard>
                         <div className="space-y-3">
-                            {!isEndpointAgent && (
-                                <FieldStack
-                                    label="Modality"
-                                    helper={
-                                        isEdit
-                                            ? "Existing models keep their registered modality."
-                                            : "Choose the API this endpoint serves."
-                                    }
-                                    alignLabelRow
-                                >
-                                    <ButtonGroup aria-label="Modality">
-                                        {(
-                                            [
-                                                "text",
-                                                "image",
-                                                "video",
-                                                "transcription",
-                                                "speech",
-                                                "embedding",
-                                            ] as const
-                                        ).map((modality) => (
-                                            <TabButton
-                                                key={modality}
-                                                active={
-                                                    form.modality === modality
-                                                }
-                                                disabled={isEdit}
-                                                onClick={() =>
-                                                    updateForm(
-                                                        "modality",
-                                                        modality,
-                                                    )
-                                                }
-                                                size="sm"
-                                                className="min-w-20 gap-1.5 capitalize"
-                                            >
-                                                {form.modality === modality && (
-                                                    <CheckIcon className="h-3.5 w-3.5" />
-                                                )}
-                                                {modality}
-                                            </TabButton>
-                                        ))}
-                                    </ButtonGroup>
-                                </FieldStack>
-                            )}
-
                             <ModelListingFields
                                 form={form}
-                                modality={form.modality}
                                 canPublish={canPublish}
                                 isAgent={isEndpointAgent}
-                                allowPerUserRpm
+                                onChange={(key, value) =>
+                                    updateForm(key, value)
+                                }
+                            />
+                        </div>
+                    </AuthInfoCard>
+                    {!isEndpointAgent && (
+                        <AuthInfoCard>
+                            <ModelCapabilityFields
+                                form={form}
+                                modality={form.modality}
+                                disabled={isEdit}
+                                onModalityChange={(modality) =>
+                                    updateForm("modality", modality)
+                                }
                                 onChange={(key, value) =>
                                     updateForm(key, value)
                                 }
@@ -513,8 +489,8 @@ export function CommunityEndpointDialog({
                                     }))
                                 }
                             />
-                        </div>
-                    </AuthInfoCard>
+                        </AuthInfoCard>
+                    )}
                     {form.visibility === "public" && (
                         <Alert intent="warning" title="Public provider duties">
                             Requests are sent to your endpoint. You are
@@ -531,7 +507,7 @@ export function CommunityEndpointDialog({
                                     label="Upstream API"
                                     helper="Responses endpoints also work through Pollinations Chat Completions."
                                 >
-                                    <ButtonGroup>
+                                    <ButtonGroup aria-label="Upstream API">
                                         {(
                                             [
                                                 [
@@ -548,7 +524,11 @@ export function CommunityEndpointDialog({
                                                     updateForm("api", api)
                                                 }
                                                 size="sm"
+                                                className="gap-1.5"
                                             >
+                                                {form.api === api && (
+                                                    <CheckIcon className="h-3.5 w-3.5" />
+                                                )}
                                                 {label}
                                             </TabButton>
                                         ))}
@@ -556,7 +536,7 @@ export function CommunityEndpointDialog({
                                 </FieldStack>
                             )}
 
-                            <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-3">
                                 <FieldStack
                                     label={
                                         form.modality === "video"
@@ -570,7 +550,6 @@ export function CommunityEndpointDialog({
                                               ? "The exact URL Pollinations calls to generate a video."
                                               : "OpenAI-compatible /v1 base URL, or full image/edit/transcription/speech URL."
                                     }
-                                    alignLabelRow
                                 >
                                     <Field.Input asChild>
                                         <Input
@@ -602,7 +581,6 @@ export function CommunityEndpointDialog({
                                     <FieldStack
                                         label="Agent model ID"
                                         helper="Model ID sent to the endpoint with each request."
-                                        alignLabelRow
                                     >
                                         <Field.Input asChild>
                                             <Input
@@ -622,6 +600,42 @@ export function CommunityEndpointDialog({
                                         </Field.Input>
                                     </FieldStack>
                                 )}
+                                {!isEndpointAgent && (
+                                    <FieldStack
+                                        label="API bearer token"
+                                        helper={
+                                            isEdit
+                                                ? "Leave blank to keep the saved token. Enter a token to fetch models, test, or replace it."
+                                                : "Stored encrypted and sent as Authorization: Bearer to your endpoint."
+                                        }
+                                    >
+                                        <Field.Input asChild>
+                                            <Input
+                                                name="community-api-bearer-token"
+                                                type="password"
+                                                value={form.bearerToken}
+                                                placeholder={
+                                                    isEdit
+                                                        ? "Re-enter token"
+                                                        : undefined
+                                                }
+                                                autoComplete="new-password"
+                                                autoCapitalize="none"
+                                                data-lpignore="true"
+                                                data-1p-ignore="true"
+                                                data-bwignore="true"
+                                                required={!isEdit}
+                                                onChange={(e) =>
+                                                    updateForm(
+                                                        "bearerToken",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </Field.Input>
+                                    </FieldStack>
+                                )}
+
                                 {!isEndpointAgent &&
                                     form.modality !== "video" && (
                                         <FieldStack
@@ -634,7 +648,6 @@ export function CommunityEndpointDialog({
                                                       )
                                                     : "Model ID sent to the Responses endpoint. Model discovery is not required."
                                             }
-                                            alignLabelRow
                                             action={
                                                 canFetchModels && (
                                                     <Button
@@ -703,43 +716,6 @@ export function CommunityEndpointDialog({
                             </div>
 
                             {!isEndpointAgent && (
-                                <FieldStack
-                                    label="API bearer token"
-                                    helper={
-                                        isEdit
-                                            ? "Leave blank to keep the saved token. Enter a token to fetch models, test, or replace it."
-                                            : "Stored encrypted and sent as Authorization: Bearer to your endpoint."
-                                    }
-                                    alignLabelRow
-                                >
-                                    <Field.Input asChild>
-                                        <Input
-                                            name="community-api-bearer-token"
-                                            type="password"
-                                            value={form.bearerToken}
-                                            placeholder={
-                                                isEdit
-                                                    ? "Re-enter token"
-                                                    : undefined
-                                            }
-                                            autoComplete="new-password"
-                                            autoCapitalize="none"
-                                            data-lpignore="true"
-                                            data-1p-ignore="true"
-                                            data-bwignore="true"
-                                            required={!isEdit}
-                                            onChange={(e) =>
-                                                updateForm(
-                                                    "bearerToken",
-                                                    e.target.value,
-                                                )
-                                            }
-                                        />
-                                    </Field.Input>
-                                </FieldStack>
-                            )}
-
-                            {!isEndpointAgent && (
                                 <div className="flex flex-wrap items-center gap-3">
                                     <Button
                                         type="button"
@@ -772,63 +748,106 @@ export function CommunityEndpointDialog({
                         </div>
                     </AuthInfoCard>
                     {isShared && (
-                        <PriceGroups
-                            form={form}
-                            modality={form.modality}
-                            imagePricing={form.imagePricing}
-                            testState={testState}
-                            visiblePriceKeys={visiblePriceKeys}
-                            onChange={updateForm}
-                        />
-                    )}
-                    {isShared && (
                         <AuthInfoCard>
-                            <FieldStack
-                                label="Balance"
-                                helper={
-                                    form.paidOnly
-                                        ? "Paid only: callers must spend Paid Pollen. Use this when your upstream bills per use, so free Quest Pollen cannot cover the price."
-                                        : "Any Pollen: callers can pay with Quest or Paid Pollen."
-                                }
-                                alignLabelRow
-                            >
-                                <ButtonGroup aria-label="Accepted balance">
-                                    <TabButton
-                                        active={!form.paidOnly}
-                                        onClick={() =>
-                                            setForm((current) => ({
-                                                ...current,
-                                                paidOnly: false,
-                                            }))
-                                        }
-                                        size="sm"
-                                        className="min-w-24 gap-1.5"
-                                    >
-                                        {!form.paidOnly && (
-                                            <CheckIcon className="h-3.5 w-3.5" />
-                                        )}
-                                        Any Pollen
-                                    </TabButton>
-                                    <TabButton
-                                        active={form.paidOnly}
-                                        onClick={() =>
-                                            setForm((current) => ({
-                                                ...current,
-                                                paidOnly: true,
-                                            }))
-                                        }
-                                        size="sm"
-                                        className="min-w-24 gap-1.5"
-                                    >
-                                        {form.paidOnly && (
-                                            <CheckIcon className="h-3.5 w-3.5" />
-                                        )}
-                                        Paid only
-                                    </TabButton>
-                                </ButtonGroup>
-                            </FieldStack>
+                            <div className="space-y-3">
+                                <PriceGroups
+                                    form={form}
+                                    modality={form.modality}
+                                    imagePricing={form.imagePricing}
+                                    testState={testState}
+                                    visiblePriceKeys={visiblePriceKeys}
+                                    onChange={updateForm}
+                                />
+                                <FieldStack
+                                    label="Accepted Pollen"
+                                    helper={
+                                        form.paidOnly
+                                            ? "Paid only: callers must spend Paid Pollen. Use this when your upstream bills per use, so free Quest Pollen cannot cover the price."
+                                            : "Any Pollen: callers can pay with Quest or Paid Pollen."
+                                    }
+                                >
+                                    <ButtonGroup aria-label="Accepted balance">
+                                        <TabButton
+                                            active={!form.paidOnly}
+                                            onClick={() =>
+                                                setForm((current) => ({
+                                                    ...current,
+                                                    paidOnly: false,
+                                                }))
+                                            }
+                                            size="sm"
+                                            className="min-w-24 gap-1.5"
+                                        >
+                                            {!form.paidOnly && (
+                                                <CheckIcon className="h-3.5 w-3.5" />
+                                            )}
+                                            Any Pollen
+                                        </TabButton>
+                                        <TabButton
+                                            active={form.paidOnly}
+                                            onClick={() =>
+                                                setForm((current) => ({
+                                                    ...current,
+                                                    paidOnly: true,
+                                                }))
+                                            }
+                                            size="sm"
+                                            className="min-w-24 gap-1.5"
+                                        >
+                                            {form.paidOnly && (
+                                                <CheckIcon className="h-3.5 w-3.5" />
+                                            )}
+                                            Paid only
+                                        </TabButton>
+                                    </ButtonGroup>
+                                </FieldStack>
+                            </div>
                         </AuthInfoCard>
                     )}
+                    <AuthInfoCard>
+                        <ul>
+                            <AuthAccessItem
+                                checked={rpmLimited}
+                                disabled={isSubmitting}
+                                onChange={(checked) => {
+                                    setRpmLimited(checked);
+                                    if (!checked) updateForm("perUserRpm", "");
+                                }}
+                                details={
+                                    rpmLimited ? (
+                                        <div className="space-y-2">
+                                            <Input
+                                                name="community-per-user-rpm"
+                                                aria-label="Requests per minute value"
+                                                type="number"
+                                                step="any"
+                                                required
+                                                disabled={isSubmitting}
+                                                value={form.perUserRpm}
+                                                onChange={(event) =>
+                                                    updateForm(
+                                                        "perUserRpm",
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                className="w-[116px]"
+                                                hideNumberSteppers
+                                            />
+                                            <p>
+                                                Per user. Decimals allowed: 0.5
+                                                means one request every 2
+                                                minutes.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        "No limit."
+                                    )
+                                }
+                            >
+                                Requests per minute
+                            </AuthAccessItem>
+                        </ul>
+                    </AuthInfoCard>
                     {!isEndpointAgent && (
                         <AuthInfoCard>
                             <SafetyFeatureSelector
@@ -848,12 +867,12 @@ export function CommunityEndpointDialog({
                             <FieldStack
                                 label="Fallback models"
                                 helper={`Optional. Tried in order when this model's upstream fails, up to ${MAX_FALLBACK_TARGETS}. Each must be another public community model of the same modality, priced at or below this one.`}
-                                alignLabelRow
                             >
                                 <div className="flex flex-col gap-2">
                                     {fallbackRows.map((selected, index) => (
                                         <Dropdown
                                             key={selected || "new-fallback"}
+                                            portalled={false}
                                             align="start"
                                             className="w-[var(--reference-width)] min-w-0 p-1"
                                             trigger={(open) => (
@@ -940,6 +959,7 @@ export function CommunityEndpointDialog({
                 </DialogBody>
                 <DialogFooter>
                     <Button
+                        icon={<XIcon />}
                         type="button"
                         intent="neutral"
                         className="disabled:opacity-50"
@@ -949,6 +969,7 @@ export function CommunityEndpointDialog({
                         Cancel
                     </Button>
                     <Button
+                        icon={isEdit ? <CheckIcon /> : <BeakerIcon />}
                         type="submit"
                         className="disabled:opacity-50"
                         disabled={!canSubmit}
@@ -957,9 +978,7 @@ export function CommunityEndpointDialog({
                             ? "Saving…"
                             : isEdit
                               ? "Save changes"
-                              : isShared
-                                ? "Publish model"
-                                : "Add private model"}
+                              : "Create model"}
                     </Button>
                 </DialogFooter>
             </form>

@@ -25,37 +25,38 @@ export function PromptAgentFields({
 }) {
     return (
         <>
-            <AuthInfoCard title={null}>
-                <FieldStack
-                    label="System prompt"
-                    helper="Sent on every call. Users may extract these instructions; do not include credentials, personal data, or confidential information."
-                >
-                    <Field.Textarea asChild>
-                        <Textarea
-                            name="prompt-agent-system-prompt"
-                            value={form.systemPrompt}
-                            placeholder="You are a helpful assistant that…"
-                            rows={6}
-                            maxLength={8000}
+            <AuthInfoCard>
+                <div className="space-y-3">
+                    {" "}
+                    <FieldStack
+                        label="Base model"
+                        helper="Choose a Pollinations text model or enter its ID. Accepted inputs are inherited from this model."
+                    >
+                        <BaseModelInput
+                            value={form.baseModel}
                             disabled={disabled}
-                            onChange={(e) =>
-                                onChange("systemPrompt", e.target.value)
-                            }
+                            onChange={(value) => onChange("baseModel", value)}
                         />
-                    </Field.Textarea>
-                </FieldStack>
-            </AuthInfoCard>
-            <AuthInfoCard title={null}>
-                <FieldStack
-                    label="Base model"
-                    helper="Choose a Pollinations text model or enter its ID. Accepted inputs are inherited from this model."
-                >
-                    <BaseModelInput
-                        value={form.baseModel}
-                        disabled={disabled}
-                        onChange={(value) => onChange("baseModel", value)}
-                    />
-                </FieldStack>
+                    </FieldStack>
+                    <FieldStack
+                        label="System prompt"
+                        helper="Sent on every call. Users may extract these instructions; do not include credentials, personal data, or confidential information."
+                    >
+                        <Field.Textarea asChild>
+                            <Textarea
+                                name="prompt-agent-system-prompt"
+                                value={form.systemPrompt}
+                                placeholder="You are a helpful assistant that…"
+                                rows={6}
+                                maxLength={8000}
+                                disabled={disabled}
+                                onChange={(e) =>
+                                    onChange("systemPrompt", e.target.value)
+                                }
+                            />
+                        </Field.Textarea>
+                    </FieldStack>
+                </div>
             </AuthInfoCard>
             <AuthInfoCard title="Tools">
                 <ul className="space-y-3">

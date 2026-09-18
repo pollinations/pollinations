@@ -317,7 +317,9 @@ export default async function agent({
 
     const [catalogResponse, statusResponse] = await Promise.all([
         pollinations("/v1/models?status=all"),
-        pollinations("/models/status?minutes=30"),
+        // The status feed is advisory: a network failure must degrade to
+        // price-only routing, not abort the request.
+        pollinations("/models/status?minutes=30").catch(() => null),
     ]);
     if (!catalogResponse.ok) {
         throw new Error(
@@ -329,8 +331,9 @@ export default async function agent({
         [];
     // The status feed is advisory: when it is unreachable the router still
     // works, just without health/latency signals (price-only routing).
-    const statusRows: StatusRow[] = statusResponse.ok
-        ? (((await statusResponse.json()) as { data?: StatusRow[] }).data ?? [])
+    const statusRows: StatusRow[] = statusResponse?.ok
+        ? (((await statusResponse.json()) as { data?: StatusRow[] }).data ??
+          [])
         : [];
     const health = aggregateHealth(statusRows);
 
@@ -358,6 +361,9 @@ export default async function agent({
             tier: choice.tier,
             why: choice.why,
         };
+        // The trace grows the body, so the upstream content-length is now
+        // stale; keeping it would truncate the response for the caller.
+        headers.delete("content-length");
         return new Response(JSON.stringify(payload), {
             status: upstream.status,
             headers,

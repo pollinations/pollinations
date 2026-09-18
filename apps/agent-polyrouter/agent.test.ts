@@ -332,3 +332,74 @@ test("agent: routes by price alone when the status feed is down", async () => {
     assert.equal(forwarded[0].model, "cheap");
     assert.equal(result.status, 200);
 });
+
+test("agent: a rejecting status feed still degrades to price-only routing", async () => {
+    const forwarded: Record<string, unknown>[] = [];
+    const result = await agent({
+        request: new Request("https://example.com/v1/responses", {
+            method: "POST",
+            body: JSON.stringify({
+                model: "afanasevmylife/polyrouter",
+                input: "hi",
+            }),
+        }),
+        pollinations: async (path, init) => {
+            if (path === "/v1/models?status=all") {
+                return Response.json({
+                    data: catalogOf([
+                        { id: "pricey", price: 0.0001 },
+                        { id: "cheap", price: 0 },
+                    ]),
+                });
+            }
+            if (path === "/models/status?minutes=30") {
+                throw new Error("status feed unreachable");
+            }
+            forwarded.push(JSON.parse(init?.body as string));
+            return new Response("ok", { status: 200 });
+        },
+    });
+    assert.equal(forwarded[0]?.model, "cheap");
+    assert.equal(result.status, 200);
+});
+
+test("agent: traced JSON responses drop the stale upstream content-length", async () => {
+    const upstreamPayload = JSON.stringify({ id: "resp_1", output: [] });
+    const result = await agent({
+        request: new Request("https://example.com/v1/responses", {
+            method: "POST",
+            body: JSON.stringify({
+                model: "afanasevmylife/polyrouter",
+                input: "hi",
+            }),
+        }),
+        pollinations: async (path) => {
+            if (path === "/v1/models?status=all") {
+                return Response.json({
+                    data: catalogOf([{ id: "cheap", price: 0 }]),
+                });
+            }
+            if (path === "/models/status?minutes=30") {
+                return Response.json({ data: [] });
+            }
+            return new Response(upstreamPayload, {
+                status: 200,
+                headers: {
+                    "content-type": "application/json",
+                    "content-length": String(upstreamPayload.length),
+                },
+            });
+        },
+    });
+    const body = await result.text();
+    // The trace grew the body, so the original content-length no longer
+    // describes it; a stale header would truncate the response.
+    const contentLength = result.headers.get("content-length");
+    assert.ok(
+        contentLength === null || Number(contentLength) === body.length,
+        `content-length ${contentLength} must match the traced body`,
+    );
+    assert.ok(body.length > upstreamPayload.length);
+    const parsed = JSON.parse(body) as Record<string, unknown>;
+    assert.ok(parsed.polyrouter_trace);
+});

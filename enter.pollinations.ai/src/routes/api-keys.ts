@@ -199,6 +199,7 @@ const UpdateMetadataSchema = z.object({
     description: z.string().optional(),
     redirectUris: z.array(z.string()).optional(),
     earningsEnabled: z.boolean().optional(),
+    markupPct: z.number().min(0.1).max(0.5).optional(),
 });
 
 /**
@@ -437,6 +438,15 @@ export const apiKeysRoutes = new Hono<Env>()
                 throw new HTTPException(400, {
                     message:
                         "BYOP earnings can only be enabled on publishable app keys",
+                });
+            }
+            if (
+                metadataUpdate.markupPct !== undefined &&
+                existingKey.prefix !== "pk"
+            ) {
+                throw new HTTPException(400, {
+                    message:
+                        "BYOP markup percentage can only be set on publishable app keys",
                 });
             }
             const metadata = await updateKeyMetadata(

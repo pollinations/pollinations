@@ -1,0 +1,34 @@
+{
+  "pr_number": 14811,
+  "title": "feat: add black-forest-labs/flux.2-max via Replicate",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/14811",
+  "merged_at": "2026-09-18T15:22:37Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #15140\n\n## Summary\r\n- Adds `black-forest-labs/flux.2-max` as a new paid-only image model (no aliases)\r\n- Azure AI Foundry (the route used for `flux.2-pro`/`flux.2-flex`) does not offer Max — confirmed against Microsoft's own docs/blog, which list only `[flex]` and `[pro]` in the BFL collection. Replicate, already integrated for this exact model family (`flux.2-pro`, `flux.1-kontext-pro` both use it as a fallback), becomes FLUX.2 Max's **primary** route — the first time Replicate is used as primary for this specific model family (it's already primary elsewhere: seedream, ideogram, wan, qwen-image, krea)\r\n- Fallback: OpenRouter, pinned to BFL's own `black-forest-labs/us-3` deployment (its only endpoint)\r\n\r\n## Contract (confirmed)\r\n| Field | Value |\r\n|---|---|\r\n| Canonical name | `black-forest-labs/flux.2-max` |\r\n| Aliases | none |\r\n| `priceMultiplier` | 1 |\r\n| `paidOnly` | yes |\r\n| Registry provider | `replicate` |\r\n| Primary route | Replicate, `black-forest-labs/flux-2-max` |\r\n| Fallback | OpenRouter, `black-forest-labs/us-3` tag |\r\n| Pollinations GPU | no |\r\n\r\n## Pricing (live-verified 2026-09-13)\r\n- **Replicate** (primary): $0.04/run + $0.03/input megapixel + $0.03/output megapixel (fetched directly from the model's Replicate page)\r\n- **OpenRouter** (fallback): $0.07/output megapixel flat, no input charge (fetched via `/api/v1/images/models/black-forest-labs/flux.2-max/endpoints`)\r\n- Both cap at 8 reference images per request\r\n\r\n## Fallback candidates considered\r\n- **Vercel AI Gateway** (`bfl/flux-2-max`): rejected — its listing shows unpublished `$0`/`$0` pricing and declares text-only input (no image-editing support), unlike Replicate/OpenRouter's confirmed 8-reference editing.\r\n- **Fireworks**: no confirmed direct hosting of this specific checkpoint.\r\n\r\n## Implementation\r\n- `shared/registry/image.ts`: new primary entry, with a `billing.adjustments` rule for Replicate's flat $0.04 execution fee (same mechanism already used for `flux.2-pro`'s Replicate fallb",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Max flux, no hedge",
+    "blurb": "FLUX.2 Max has joined the garden as a paid image model. Polli sends the big visual ideas through Replicate first, with BFL's OpenRouter deployment keeping a second path open.",
+    "summary": "Added the paid-only `black-forest-labs/flux.2-max` image model with Replicate's `black-forest-labs/flux-2-max` as its primary route, OpenRouter's BFL `black-forest-labs/us-3` deployment as fallback, and support for up to eight reference images.",
+    "impact": "Developers can now request FLUX.2 Max by its canonical model name for high-end generation and image editing, with billing that accounts for Replicate's $0.04 run fee plus input/output megapixels.",
+    "keywords": [
+      "flux.2-max",
+      "black-forest-labs",
+      "replicate",
+      "openrouter",
+      "image-generation",
+      "paid-models"
+    ],
+    "visual_concept": "Depict FLUX.2 Max as a large, friendly pixel-art camera-and-painting workstation with eight tiny reference-picture cards feeding into it. Polli, wearing a tiny photographer's beret, carefully routes glowing image seeds through a Replicate-labelled garden pipe while a second OpenRouter path grows nearby; code-plants and flowers make the model-routing metaphor feel like a reliable, cozy garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wearing a tiny photographer's beret as she feeds eight little reference-image cards into a grand FLUX.2 MAX camera-painting machine; two gentle garden pipes labeled in simple pixel text “REPLICATE” and “OPENROUTER” carry glowing image seeds past flower pots of sprouting code. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-18/PR-14811.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wearing a tiny photographer's beret as she feeds eight little reference-image cards into a grand FLUX.2 MAX camera-painting machine; two gentle garden pipes labeled in simple pixel text “REPLICATE” and “OPENROUTER” carry glowing image seeds past flower pots of sprouting code. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-18T15:23:41.750248+00:00"
+}

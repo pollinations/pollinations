@@ -457,6 +457,10 @@ export function parseUsageHeaders(
         "promptAudioSeconds",
         "completionAudioSeconds",
         "completionVideoSeconds",
+        // Image-editing megapixel counts (e.g. Replicate FLUX.2 reference
+        // images) are rarely whole numbers; parseInt truncated them to 0.
+        "promptImageTokens",
+        "completionImageTokens",
     ]);
 
     for (const [usageType, headerName] of Object.entries(USAGE_TYPE_HEADERS)) {

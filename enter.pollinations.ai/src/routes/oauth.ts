@@ -126,13 +126,9 @@ export const oauthRoutes = new Hono<Env>()
             await c.env.KV.put(`oauth-code:${code}`, JSON.stringify(stored), {
                 expirationTtl: KV_TTL,
             });
-            captureFromRequest(
-                c,
-                "authorize_granted",
-                user.id,
-                { client_id: body.clientId },
-                `code:${c.get("requestId")}`,
-            );
+            captureFromRequest(c, "authorize_granted", user.id, {
+                client_id: body.clientId,
+            });
 
             return c.json({ code });
         },

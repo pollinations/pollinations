@@ -43,7 +43,6 @@ export async function captureProductEvent(
         utm_campaign?: string;
         amount_usd?: number;
     } = {},
-    eventId: string = crypto.randomUUID(),
 ): Promise<void> {
     if (env.TINYBIRD_ANALYTICS_ENABLED !== "true") return;
     try {
@@ -61,7 +60,6 @@ export async function captureProductEvent(
                 body: JSON.stringify({
                     ...properties,
                     event,
-                    event_id: eventId,
                     user_id: userId,
                     timestamp: new Date().toISOString(),
                     environment: env.ENVIRONMENT,
@@ -92,10 +90,9 @@ export function captureFromRequest(
     event: ProductEvent,
     userId: string,
     properties?: Parameters<typeof captureProductEvent>[3],
-    eventId?: string,
 ): void {
     if (optedOut(c.req.raw.headers)) return;
     c.executionCtx.waitUntil(
-        captureProductEvent(c.env, event, userId, properties, eventId),
+        captureProductEvent(c.env, event, userId, properties),
     );
 }

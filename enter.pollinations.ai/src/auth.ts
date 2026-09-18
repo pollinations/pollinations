@@ -105,6 +105,17 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         disableDefaultReference: true,
     });
 
+    // Every auth-stage capture goes through here: a browser that opted out
+    // must be skipped at all four sites, not just the ones that remember.
+    const captureAuthStage = (
+        headers: Headers | null | undefined,
+        event: Parameters<typeof captureProductEvent>[1],
+        userId: string,
+    ) => {
+        if (optedOut(headers)) return;
+        ctx?.waitUntil(captureProductEvent(env, event, userId));
+    };
+
     return betterAuth({
         // Always anchor auth (callbacks, cookies, redirects) to the public
         // Pollinations hostname, never the Myceli upstream. The proxy
@@ -126,10 +137,11 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                             message:
                                 "Discord can only be connected to an existing Pollinations account.",
                         });
-                    if (!optedOut(authContext.headers))
-                        ctx?.waitUntil(
-                            captureProductEvent(env, "sign_in_started", ""),
-                        );
+                    captureAuthStage(
+                        authContext.headers,
+                        "sign_in_started",
+                        "",
+                    );
                 }
                 if (
                     authContext.path === "/link-social" &&
@@ -140,12 +152,10 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                         throw discordAccountAlreadyConnected();
                     }
                     if (session)
-                        ctx?.waitUntil(
-                            captureProductEvent(
-                                env,
-                                "link_started",
-                                session.user.id,
-                            ),
+                        captureAuthStage(
+                            authContext.headers,
+                            "link_started",
+                            session.user.id,
                         );
                 }
                 if (authContext.path !== "/delete-user") return;
@@ -183,16 +193,12 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                             throw discordAccountAlreadyConnected();
                         }
                     },
-                    after: async (account) => {
+                    after: async (account, accountCtx) => {
                         if (account.providerId === "discord")
-                            ctx?.waitUntil(
-                                captureProductEvent(
-                                    env,
-                                    "link_completed",
-                                    account.userId,
-                                    {},
-                                    `link:${account.userId}:discord`,
-                                ),
+                            captureAuthStage(
+                                accountCtx?.headers,
+                                "link_completed",
+                                account.userId,
                             );
                         if (account.providerId !== "github") return;
                         // These authorization fields stay read-only in Better

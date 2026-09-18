@@ -157,24 +157,19 @@ test("page views derive the user from the authenticated session", async ({
             event: "page_viewed",
             page: "/top-up",
             user_id: user?.user_id,
-            event_id: expect.any(String),
             timestamp: expect.any(String),
             environment: "test",
         },
     ]);
 });
 
-test("capture reuses Tinybird ingestion, preserving pack key and event ID", async () => {
+test("capture reuses Tinybird ingestion and carries the pack key", async () => {
     const fetch = vi
         .spyOn(globalThis, "fetch")
         .mockResolvedValue(new Response(null, { status: 202 }));
-    await captureProductEvent(
-        bindings,
-        "checkout_started",
-        "user-1",
-        { pack_key: "pack-1" },
-        "checkout:cs-1",
-    );
+    await captureProductEvent(bindings, "checkout_started", "user-1", {
+        pack_key: "pack-1",
+    });
     expect(fetch).toHaveBeenCalledTimes(1);
     const [url, init] = fetch.mock.calls[0];
     expect(new URL(String(url)).searchParams.get("name")).toBe("product_event");
@@ -184,7 +179,6 @@ test("capture reuses Tinybird ingestion, preserving pack key and event ID", asyn
     expect(JSON.parse(String(init?.body))).toMatchObject({
         event: "checkout_started",
         user_id: "user-1",
-        event_id: "checkout:cs-1",
         pack_key: "pack-1",
         environment: "test",
     });

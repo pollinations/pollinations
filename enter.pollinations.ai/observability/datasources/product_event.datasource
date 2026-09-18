@@ -14,7 +14,6 @@ DESCRIPTION >
 
 SCHEMA >
     `timestamp` DateTime64(3) `json:$.timestamp`,
-    `event_id` String `json:$.event_id`,
     `event` LowCardinality(String) `json:$.event`,
     `user_id` String `json:$.user_id`,
     `environment` LowCardinality(String) `json:$.environment`,

@@ -108,16 +108,10 @@ export const deviceRoutes = new Hono<Env>()
             clientId: body.client_id || null,
             scope: body.scope || null,
         });
-        captureFromRequest(
-            c,
-            "device_code_issued",
-            "",
-            {
-                flow_id: id,
-                client_id: (body.client_id ?? "").slice(0, 100),
-            },
-            `device:${id}:issued`,
-        );
+        captureFromRequest(c, "device_code_issued", "", {
+            flow_id: id,
+            client_id: (body.client_id ?? "").slice(0, 100),
+        });
 
         const baseUrl = getPublicOrigin(c);
         return c.json({
@@ -203,13 +197,10 @@ export const deviceRoutes = new Hono<Env>()
                     })
                     .where(eq(schema.deviceCode.id, device.id)),
             ]);
-            captureFromRequest(
-                c,
-                "device_approved",
-                user.id,
-                { flow_id: device.id, client_id: device.clientId ?? "" },
-                `device:${device.id}:approved`,
-            );
+            captureFromRequest(c, "device_approved", user.id, {
+                flow_id: device.id,
+                client_id: device.clientId ?? "",
+            });
 
             return c.json({ success: true });
         },
@@ -233,13 +224,10 @@ export const deviceRoutes = new Hono<Env>()
                 .update(schema.deviceCode)
                 .set({ status: "denied" satisfies DeviceStatus })
                 .where(eq(schema.deviceCode.id, device.id));
-            captureFromRequest(
-                c,
-                "device_denied",
-                c.var.auth.user?.id ?? "",
-                { flow_id: device.id, client_id: device.clientId ?? "" },
-                `device:${device.id}:denied`,
-            );
+            captureFromRequest(c, "device_denied", c.var.auth.user?.id ?? "", {
+                flow_id: device.id,
+                client_id: device.clientId ?? "",
+            });
 
             return c.json({ success: true });
         },
@@ -341,13 +329,10 @@ export async function exchangeDeviceCode(
                     .where(eq(schema.deviceCode.id, device.id)),
                 c.env.KV.delete(`device-key:${device.deviceCode}`),
             ]);
-            captureFromRequest(
-                c,
-                "device_token_issued",
-                device.userId ?? "",
-                { flow_id: device.id, client_id: device.clientId ?? "" },
-                `device:${device.id}:token`,
-            );
+            captureFromRequest(c, "device_token_issued", device.userId ?? "", {
+                flow_id: device.id,
+                client_id: device.clientId ?? "",
+            });
 
             return c.json({
                 access_token: stored.key,

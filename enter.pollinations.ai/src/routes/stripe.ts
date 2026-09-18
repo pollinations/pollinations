@@ -219,13 +219,9 @@ export const stripeRoutes = new Hono<Env>()
                 return c.json({ error: ACCOUNT_RESTRICTED_MESSAGE }, 403);
             }
             if (checkoutSession.url) {
-                captureFromRequest(
-                    c,
-                    "checkout_started",
-                    userId,
-                    { pack_key: pack.packKey },
-                    `checkout:${checkoutSession.id}`,
-                );
+                captureFromRequest(c, "checkout_started", userId, {
+                    pack_key: pack.packKey,
+                });
                 return c.redirect(checkoutSession.url);
             }
 

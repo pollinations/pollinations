@@ -173,7 +173,6 @@ describe("Device Authorization Flow", () => {
                 event: "device_denied",
                 flow_id: device.id,
                 client_id: "test-client",
-                event_id: `device:${device.id}:denied`,
                 user_id: expect.any(String),
             }),
         ]);
@@ -312,14 +311,12 @@ describe("Device Authorization Flow", () => {
                 flow_id: device.id,
                 client_id: "test-client",
                 user_id: session.user.id,
-                event_id: `device:${device.id}:approved`,
             }),
             expect.objectContaining({
                 event: "device_token_issued",
                 flow_id: device.id,
                 client_id: "test-client",
                 user_id: session.user.id,
-                event_id: `device:${device.id}:token`,
             }),
         ]);
     }, 30000);

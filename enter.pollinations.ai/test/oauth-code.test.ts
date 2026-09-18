@@ -373,7 +373,6 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
             expect.objectContaining({
                 client_id: client.key,
                 user_id: expect.any(String),
-                event_id: expect.stringMatching(/^code:/),
             }),
         ]);
     }, 30000);

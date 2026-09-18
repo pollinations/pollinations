@@ -1134,7 +1134,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "TypeSafe",
         category: "text",
         addedDate: new Date("2026-09-17").getTime(),
-        priceMultiplier: 1, // PLACEHOLDER — pending business decision
+        priceMultiplier: 1, // Billed at TypeSafe list price, no margin.
         paidOnly: false, // Quest Pollen may pay for Jev; no paid balance needed.
         cost: {
             // TypeSafe list price for Jev (docs.typesafe.ai, checked 2026-09-17).

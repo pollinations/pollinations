@@ -98,6 +98,10 @@ const models: ModelDefinition[] = [
         transform: omitOpenAISampling,
     },
     {
+        name: "openai/gpt-4o-mini",
+        config: portkeyConfig["openai/gpt-4o-mini"],
+    },
+    {
         name: "openai/gpt-oss-20b",
         config: portkeyConfig["gpt-oss-20b"],
     },

@@ -116,11 +116,7 @@ const OPENROUTER_ROUTES = [
         "qwen/qwen3-coder-next",
         "streamlake",
     ],
-    [
-        "tencent/hy3:openrouter:atlas-cloud-fp8",
-        "tencent/hy3",
-        "atlas-cloud/fp8",
-    ],
+    ["tencent/hy3:openrouter:phala", "tencent/hy3", "phala"],
 ] as const;
 
 function fallbackRoutes(fallbacks: Record<string, Record<string, unknown>>) {

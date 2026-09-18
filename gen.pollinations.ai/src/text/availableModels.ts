@@ -678,8 +678,8 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["tencent/hy3"],
     },
     {
-        name: "tencent/hy3:openrouter:atlas-cloud-fp8",
-        config: portkeyConfig["hy3-openrouter-atlas-cloud"],
+        name: "tencent/hy3:openrouter:phala",
+        config: portkeyConfig["hy3-openrouter-phala"],
     },
     {
         name: "minimax/minimax-m3",

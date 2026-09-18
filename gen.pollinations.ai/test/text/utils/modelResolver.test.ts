@@ -105,26 +105,26 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("pins Hy3 to GMICloud on OpenRouter without fallback", () => {
+    it("pins Hy3 to Novita on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "tencent/hy3",
         });
 
         expect(result.options.model).toBe("tencent/hy3");
         expect(result.options.provider).toEqual({
-            only: ["gmicloud/bf16"],
+            only: ["novita"],
             allow_fallbacks: false,
         });
     });
 
-    it("routes the Hy3 AtlasCloud fallback to the exact OpenRouter endpoint", () => {
+    it("routes the Hy3 Phala fallback to the exact OpenRouter endpoint", () => {
         const result = resolveModelConfig(messages, {
-            model: "tencent/hy3:openrouter:atlas-cloud-fp8",
+            model: "tencent/hy3:openrouter:phala",
         });
 
         expect(result.options.model).toBe("tencent/hy3");
         expect(result.options.provider).toEqual({
-            only: ["atlas-cloud/fp8"],
+            only: ["phala"],
             allow_fallbacks: false,
         });
     });

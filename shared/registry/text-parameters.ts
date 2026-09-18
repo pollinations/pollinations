@@ -292,22 +292,25 @@ export const CHAT_PARAMETERS = {
     ],
     museSpark: [...CHAT, "temperature", "tools"],
     openRouterMistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
-    // GMICloud route (2026-09-13): no penalties, stop, top_k or
-    // structured_outputs in supported_parameters.
+    // Novita route (2026-09-18).
     openRouterHy3: [
         "max_tokens",
         "stream",
         ...TOOLS,
-        "response_format",
+        "structured_outputs",
         "temperature",
         "top_p",
+        "top_k",
+        ...PENALTIES,
+        "repetition_penalty",
+        "stop",
         "seed",
         ...OPENROUTER_REASONING,
         "reasoning_effort",
     ],
-    // AtlasCloud fallback route for Hy3 (2026-09-13): distinct provider, wider
-    // parameter surface than the GMICloud primary.
-    openRouterHy3AtlasCloud: [
+    // Phala fallback route for Hy3 (2026-09-18): distinct provider from
+    // Novita primary, adds min_p over Novita's parameter surface.
+    openRouterHy3Phala: [
         "max_tokens",
         "stream",
         ...TOOLS,
@@ -320,7 +323,6 @@ export const CHAT_PARAMETERS = {
         "repetition_penalty",
         "stop",
         "seed",
-        "logit_bias",
         ...OPENROUTER_REASONING,
         "reasoning_effort",
     ],

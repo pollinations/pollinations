@@ -1581,19 +1581,25 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter GMICloud (bf16) route rates (2026-09-13). Tencent's
-            // own direct route bills a time-of-day rate the registry can't
-            // represent, and DeepInfra was degraded at research time — both
-            // were passed over for this flat-rate, high-uptime route.
-            promptTextTokens: perMillion(0.14),
-            promptCachedTokens: perMillion(0.035),
-            completionTextTokens: perMillion(0.58),
+            // OpenRouter Novita route rates (2026-09-18, includes the
+            // mandatory 5.5% OpenRouter credit fee). Ties GMICloud's flat
+            // rate but with materially better uptime (99.96% vs 99.91%) and
+            // roughly half the latency in local E2E testing. Tencent's own
+            // direct route bills a time-of-day rate the registry can't
+            // represent, and DeepInfra's discount pricing structure was
+            // passed over — both confirmed still true on re-check.
+            promptTextTokens: perMillion(0.14) * 1.055,
+            promptCachedTokens: perMillion(0.035) * 1.055,
+            completionTextTokens: perMillion(0.58) * 1.055,
         },
         title: "Hy3",
         description:
             "Mixture-of-experts reasoning for agentic workflows and production tool-use",
         inputModalities: ["text"],
         outputModalities: ["text"],
+        // Forced tool_choice:"required" isn't reliably supported on any of
+        // Hy3's OpenRouter routes: Novita/GMICloud/Phala silently ignore it
+        // (plain text, no tool call, no error) and AtlasCloud hard-400s.
         tools: true,
         reasoning: true,
         contextLength: 262144,

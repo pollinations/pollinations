@@ -1,0 +1,63 @@
+{
+  "date": "2026-09-17",
+  "period_start": "2026-09-17",
+  "period_end": "2026-09-17",
+  "title": "Five new builder tools landed in the app catalog",
+  "summary": "A community-heavy day: five new BYOP developer tools, clearer account views, and a leaner way to check whether models are awake.\n\nThe build gained a small developer-tool shelf: Regexly turns plain English into explainable regexes, Codeverter translates code across 9+ languages, SQLCraft writes dialect-specific SQL, TestMine drafts unit tests, and ApiScribe sketches REST or GraphQL contracts. The blank page remains undefeated, but it now has more opponents.\n\nAccount identity and wallet status are now shared across Enter and app menus, with dashboard-linked avatars, display-name-first labels, live key and account Pollen details, and refreshes after permissions or wallet actions. Activity pages also handle quiet periods more cleanly with stable empty charts, fewer irrelevant filters, and simpler day-based navigation.\n\nModel uptime moved out of the catalog and into a raw, edge-cached `/models/status` endpoint. Built-in clients, the website, and Enter now share the same health logic, while `/models` no longer repeatedly drags a 24-hour status query through the garden.",
+  "pr_count": 13,
+  "prs": [
+    {
+      "number": 14951,
+      "date": "2026-09-17"
+    },
+    {
+      "number": 15015,
+      "date": "2026-09-17"
+    },
+    {
+      "number": 15052,
+      "date": "2026-09-17"
+    },
+    {
+      "number": 15053,
+      "date": "2026-09-17"
+    },
+    {
+      "number": 15056,
+      "date": "2026-09-17"
+    },
+    {
+      "number": 15059,
+      "date": "2026-09-17"
+    },
+    {
+      "number": 15072,
+      "date": "2026-09-17"
+    },
+    {
+      "number": 15076,
+      "date": "2026-09-17"
+    },
+    {
+      "number": 15092,
+      "date": "2026-09-17"
+    },
+    {
+      "number": 15101,
+      "date": "2026-09-17"
+    },
+    {
+      "number": 15104,
+      "date": "2026-09-17"
+    },
+    {
+      "number": 15106,
+      "date": "2026-09-17"
+    },
+    {
+      "number": 15107,
+      "date": "2026-09-17"
+    }
+  ],
+  "generated_at": "2026-09-18T06:29:30.834688+00:00"
+}

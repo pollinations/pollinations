@@ -45,6 +45,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Manage invite-only community models | `polli my-models list` |
 | Update the CLI | `polli update` (global installs only; npx/local get instructions) |
 | Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|opencode\|openclaw\|pi\|prime> on` (available adapters: `polli harness --help`) |
+| Install Pollinations MCP servers into a coding agent/IDE | `polli mcp install <client> --all` (supported clients: `polli mcp --help`) |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -226,6 +227,18 @@ polli harness openclaw off          # remove the Pollinations provider, key, and
 Each adapter checks that its harness can be launched before login, key creation, or configuration. DSH's official launch uses `npx`, so its adapter checks for `npx`; Bloom, OpenCode, OpenClaw, and Pi require their installed commands.
 
 Bloom already uses Pollinations and only needs a dedicated key in `$BLOOM_HOME/.env` (default `~/.bloom/.env`). The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). OpenCode enables the existing Pollinations plugin and stores its dedicated key in the plugin config. OpenClaw adds a `pollinations` provider to `~/.openclaw/openclaw.json`, stores a dedicated key in `env.vars`, and installs this skill under `~/.openclaw/skills/polli/`. Pi writes `~/.pi/agent/models.json`, `auth.json`, and `settings.json`, and installs this skill under `~/.pi/agent/skills/polli/`. Guide: `polli docs` section "Coding Harnesses".
+
+### Install MCP servers into a coding agent or IDE
+```bash
+polli mcp list                                    # live server catalog (id, name, url)
+polli mcp install cursor --all                    # every catalog server into Cursor
+polli mcp install claude-code pollinations ffmpeg # specific servers
+polli mcp status                                  # what each client currently has
+polli mcp status vscode                           # one client only
+polli mcp remove cursor ffmpeg                    # remove selected entries
+polli mcp remove cursor                           # remove all Pollinations-owned entries
+```
+Supported clients: `claude-code`, `codex`, `vscode`, `cursor`, `opencode`, `gemini`, `copilot`, `windsurf`, `cline`, `amp`, `kiro`, `zed`, `warp` (`polli mcp --help` lists them). Each install mints (or reuses, if the client's config already has a live one) a dedicated `polli-harness-mcp-<client>` key; `--no-browser` prints the login URL instead of opening one. Codex and VS Code keep the secret out of the config file — Codex reads `POLLI_MCP_CODEX_API_KEY` from `~/.codex/.env`, VS Code prompts via its own secret storage. `remove` only deletes entries whose URL points at the Pollinations gateway, so hand-added servers are never touched.
 
 ### Read API docs
 ```bash

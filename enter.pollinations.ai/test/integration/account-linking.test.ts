@@ -4,6 +4,7 @@ import {
     rewards as rewardsTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
+import { symmetricDecrypt } from "better-auth/crypto";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
@@ -146,8 +147,20 @@ test("links a Discord identity to the signed-in GitHub account", async ({
         accountId: mocks.discord.state.userId,
         userId: user?.id,
     });
-    expect(discordAccount?.accessToken).toBe("mock_discord_access_token");
-    expect(discordAccount?.refreshToken).toBe("mock_discord_refresh_token");
+    expect(discordAccount?.accessToken).not.toBe("mock_discord_access_token");
+    expect(discordAccount?.refreshToken).not.toBe("mock_discord_refresh_token");
+    await expect(
+        symmetricDecrypt({
+            key: env.BETTER_AUTH_SECRET,
+            data: discordAccount?.accessToken ?? "",
+        }),
+    ).resolves.toBe("mock_discord_access_token");
+    await expect(
+        symmetricDecrypt({
+            key: env.BETTER_AUTH_SECRET,
+            data: discordAccount?.refreshToken ?? "",
+        }),
+    ).resolves.toBe("mock_discord_refresh_token");
 
     const secondLinkResponse = await SELF.fetch(
         "http://localhost:3000/api/auth/link-social",

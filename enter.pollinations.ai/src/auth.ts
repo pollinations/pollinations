@@ -28,7 +28,7 @@ import {
     createAuthMiddleware,
     getSessionFromCtx,
 } from "better-auth/api";
-import { admin, openAPI } from "better-auth/plugins";
+import { admin, genericOAuth, openAPI } from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { discordConfigFromEnv } from "./services/discord.ts";
@@ -54,6 +54,10 @@ export function isAdminUser(user: {
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
     const apiKeyPlugin = createApiKeyPlugin();
+    const githubConnectEnv = env as Cloudflare.Env & {
+        GITHUB_CONNECT_APP_CLIENT_ID?: string;
+        GITHUB_CONNECT_APP_CLIENT_SECRET?: string;
+    };
     const discordConfig = discordConfigFromEnv(env);
     let githubProfile: { id: number; username: string } | undefined;
 
@@ -120,6 +124,15 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             // lands ~1000x too high and never fires. Enforce it here instead.
             before: createAuthMiddleware(async (authContext) => {
                 if (
+                    authContext.path === "/sign-in/oauth2" &&
+                    authContext.body?.providerId === "github-app"
+                ) {
+                    throw new APIError("BAD_REQUEST", {
+                        message:
+                            "The GitHub App can only be connected to an existing Pollinations account.",
+                    });
+                }
+                if (
                     authContext.path === "/sign-in/social" &&
                     authContext.body.provider === "discord"
                 ) {
@@ -170,6 +183,18 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                             (await hasDiscordAccount(account.userId))
                         ) {
                             throw discordAccountAlreadyConnected();
+                        }
+                        if (account.providerId !== "github-app") return;
+                        const [user] = await db
+                            .select({ githubId: userTable.githubId })
+                            .from(userTable)
+                            .where(eq(userTable.id, account.userId))
+                            .limit(1);
+                        if (String(user?.githubId) !== account.accountId) {
+                            throw new APIError("BAD_REQUEST", {
+                                message:
+                                    "Authorize the same GitHub account used to sign in to Pollinations.",
+                            });
                         }
                     },
                     after: async (account) => {
@@ -228,12 +253,14 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             },
         },
         account: {
+            encryptOAuthTokens: true,
             accountLinking: {
                 allowDifferentEmails: true,
-                // Better Auth 1.4 requires this for Discord accounts without a
-                // verified email. The sign-in hook above still limits Discord
-                // to explicit, authenticated linkSocial flows.
-                trustedProviders: discordConfig ? ["discord"] : [],
+                // Both providers are limited to explicit account-linking flows.
+                trustedProviders: [
+                    "github-app",
+                    ...(discordConfig ? ["discord"] : []),
+                ],
             },
         },
         socialProviders: {
@@ -278,6 +305,58 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             adminPlugin,
             oauthProviderPlugin,
             apiKeyPlugin,
+            genericOAuth({
+                config:
+                    githubConnectEnv.GITHUB_CONNECT_APP_CLIENT_ID &&
+                    githubConnectEnv.GITHUB_CONNECT_APP_CLIENT_SECRET
+                        ? [
+                              {
+                                  providerId: "github-app",
+                                  clientId:
+                                      githubConnectEnv.GITHUB_CONNECT_APP_CLIENT_ID,
+                                  clientSecret:
+                                      githubConnectEnv.GITHUB_CONNECT_APP_CLIENT_SECRET,
+                                  authorizationUrl:
+                                      "https://github.com/login/oauth/authorize",
+                                  tokenUrl:
+                                      "https://github.com/login/oauth/access_token",
+                                  disableSignUp: true,
+                                  getUserInfo: async (tokens) => {
+                                      const response = await fetch(
+                                          "https://api.github.com/user",
+                                          {
+                                              headers: {
+                                                  Accept: "application/vnd.github+json",
+                                                  Authorization: `Bearer ${tokens.accessToken}`,
+                                                  "User-Agent":
+                                                      "pollinations-enter",
+                                                  "X-GitHub-Api-Version":
+                                                      "2022-11-28",
+                                              },
+                                          },
+                                      );
+                                      if (!response.ok) return null;
+                                      const profile =
+                                          (await response.json()) as {
+                                              id: number;
+                                              login: string;
+                                              email: string | null;
+                                              avatar_url: string;
+                                          };
+                                      return {
+                                          id: String(profile.id),
+                                          email:
+                                              profile.email ??
+                                              `${profile.id}@github.invalid`,
+                                          emailVerified: true,
+                                          name: profile.login,
+                                          image: profile.avatar_url,
+                                      };
+                                  },
+                              },
+                          ]
+                        : [],
+            }),
             githubProfileSyncPlugin(env, ctx),
             openAPIPlugin,
         ],

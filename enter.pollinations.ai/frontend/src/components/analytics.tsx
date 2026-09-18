@@ -11,10 +11,9 @@ export function Analytics() {
 }
 
 // Random per-tab id plus where the tab came from, captured at the first
-// document load and repeated on every view. Signed-out tabs also keep the id
-// in the auth_flow cookie so the server can link /sign-in/social and the
-// GitHub callback to it; ten minutes covers the redirect and is refreshed on
-// every signed-out view.
+// document load and repeated on every view. sessionStorage survives the
+// GitHub redirect in the same tab, so a tab whose views go from signed out to
+// signed in is a completed sign-in — no cookie and no server hook needed.
 function tabAttribution(): Record<string, string> {
     try {
         const stored = sessionStorage.getItem("analytics_tab");
@@ -30,7 +29,7 @@ function tabAttribution(): Record<string, string> {
         const value =
             params.get(key) ??
             (key === "utm_source" ? params.get("ref") : null);
-        if (value) tab[key] = value;
+        if (value) tab[key] = value.slice(0, 100);
     }
     try {
         sessionStorage.setItem("analytics_tab", JSON.stringify(tab));
@@ -58,17 +57,15 @@ function PageViews() {
         const view = productPageViewSchema.safeParse({
             page,
             ...tabAttribution(),
-            client_id:
-                params.get("client_id") ?? params.get("app_key") ?? undefined,
+            client_id: (
+                params.get("client_id") ??
+                params.get("app_key") ??
+                undefined
+            )?.slice(0, 100),
         });
         const key = `${userId ?? ""}:${page}`;
         if (!view.success || lastPage.current === key) return;
         lastPage.current = key;
-        if (!userId) {
-            const secure = location.protocol === "https:" ? "; Secure" : "";
-            // biome-ignore lint/suspicious/noDocumentCookie: the Cookie Store API is missing in Safari and Firefox
-            document.cookie = `auth_flow=${view.data.flow_id}; Max-Age=600; Path=/; SameSite=Lax${secure}`;
-        }
         const query = new URLSearchParams(view.data);
         void fetch(`${config.apiBaseUrl}/analytics/page-view?${query}`, {
             method: "POST",

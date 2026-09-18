@@ -7,7 +7,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "../env.ts";
 import { type AuthVariables, auth } from "../middleware/auth.ts";
-import { captureProductEvent } from "../utils/product-analytics.ts";
+import { captureFromRequest } from "../utils/product-analytics.ts";
 import { hasAccountPermission } from "./account-permissions.ts";
 
 type AuthedContext = Context<{
@@ -108,17 +108,15 @@ export const deviceRoutes = new Hono<Env>()
             clientId: body.client_id || null,
             scope: body.scope || null,
         });
-        c.executionCtx.waitUntil(
-            captureProductEvent(
-                c.env,
-                "device_code_issued",
-                "",
-                {
-                    flow_id: id,
-                    client_id: (body.client_id ?? "").slice(0, 100),
-                },
-                `device:${id}:issued`,
-            ),
+        captureFromRequest(
+            c,
+            "device_code_issued",
+            "",
+            {
+                flow_id: id,
+                client_id: (body.client_id ?? "").slice(0, 100),
+            },
+            `device:${id}:issued`,
         );
 
         const baseUrl = getPublicOrigin(c);
@@ -205,14 +203,12 @@ export const deviceRoutes = new Hono<Env>()
                     })
                     .where(eq(schema.deviceCode.id, device.id)),
             ]);
-            c.executionCtx.waitUntil(
-                captureProductEvent(
-                    c.env,
-                    "device_approved",
-                    user.id,
-                    { flow_id: device.id, client_id: device.clientId ?? "" },
-                    `device:${device.id}:approved`,
-                ),
+            captureFromRequest(
+                c,
+                "device_approved",
+                user.id,
+                { flow_id: device.id, client_id: device.clientId ?? "" },
+                `device:${device.id}:approved`,
             );
 
             return c.json({ success: true });
@@ -237,14 +233,12 @@ export const deviceRoutes = new Hono<Env>()
                 .update(schema.deviceCode)
                 .set({ status: "denied" satisfies DeviceStatus })
                 .where(eq(schema.deviceCode.id, device.id));
-            c.executionCtx.waitUntil(
-                captureProductEvent(
-                    c.env,
-                    "device_denied",
-                    c.var.auth.user?.id ?? "",
-                    { flow_id: device.id, client_id: device.clientId ?? "" },
-                    `device:${device.id}:denied`,
-                ),
+            captureFromRequest(
+                c,
+                "device_denied",
+                c.var.auth.user?.id ?? "",
+                { flow_id: device.id, client_id: device.clientId ?? "" },
+                `device:${device.id}:denied`,
             );
 
             return c.json({ success: true });
@@ -347,14 +341,12 @@ export async function exchangeDeviceCode(
                     .where(eq(schema.deviceCode.id, device.id)),
                 c.env.KV.delete(`device-key:${device.deviceCode}`),
             ]);
-            c.executionCtx.waitUntil(
-                captureProductEvent(
-                    c.env,
-                    "device_token_issued",
-                    device.userId ?? "",
-                    { flow_id: device.id, client_id: device.clientId ?? "" },
-                    `device:${device.id}:token`,
-                ),
+            captureFromRequest(
+                c,
+                "device_token_issued",
+                device.userId ?? "",
+                { flow_id: device.id, client_id: device.clientId ?? "" },
+                `device:${device.id}:token`,
             );
 
             return c.json({

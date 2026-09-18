@@ -4,10 +4,11 @@ import { z } from "zod";
 // from the browser. This list is not derived from routeTree.gen.ts: a new
 // route drops its page views silently until it is added here.
 //
-// flow_id is a random per-tab id. Signed-out tabs also keep it in the
-// auth_flow cookie so the server hooks can link /sign-in/social and the
-// GitHub callback back to what the visitor saw. client_id is the public app
-// key of an OAuth or device entry, from the page URL. The referrer hostname
+// flow_id is a random per-tab id kept in sessionStorage, which survives the
+// GitHub redirect in the same tab: a tab whose views go from an empty user_id
+// to a real one completed a sign-in, so no cookie and no server hook are
+// needed. client_id is the public app key of an OAuth or device entry, from
+// the page URL. The referrer hostname
 // (never a path) and utm_* / ref values from the landing URL are captured once
 // per tab and repeated on every view. Values are length-capped, not filtered.
 export const productPageViewSchema = z.strictObject({

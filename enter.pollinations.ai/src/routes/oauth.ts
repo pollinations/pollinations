@@ -8,7 +8,7 @@ import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
-import { captureProductEvent } from "../utils/product-analytics.ts";
+import { captureFromRequest } from "../utils/product-analytics.ts";
 import {
     type DeviceTokenRequest,
     exchangeDeviceCode,
@@ -126,14 +126,12 @@ export const oauthRoutes = new Hono<Env>()
             await c.env.KV.put(`oauth-code:${code}`, JSON.stringify(stored), {
                 expirationTtl: KV_TTL,
             });
-            c.executionCtx.waitUntil(
-                captureProductEvent(
-                    c.env,
-                    "authorize_granted",
-                    user.id,
-                    { client_id: body.clientId },
-                    `code:${c.get("requestId")}`,
-                ),
+            captureFromRequest(
+                c,
+                "authorize_granted",
+                user.id,
+                { client_id: body.clientId },
+                `code:${c.get("requestId")}`,
             );
 
             return c.json({ code });

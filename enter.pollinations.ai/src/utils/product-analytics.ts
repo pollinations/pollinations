@@ -1,15 +1,14 @@
 import { getTinybirdDatasourceIngestUrl } from "@shared/events.ts";
+import type { Context } from "hono";
 
 export type ProductEvent =
     | "page_viewed"
     | "checkout_started"
     | "auto_top_up_enabled"
     | "auto_top_up_disabled"
-    // Pre-login stages. flow_id is the random per-tab id (sign-in) or the
-    // device_code row id (device flow), never a code, token or email.
-    | "sign_in_viewed"
-    | "sign_in_started"
-    | "sign_in_completed"
+    // flow_id is the random per-tab id (page views) or the device_code row
+    // id (device flow), never a code, token or email. A sign-in needs no
+    // event: it is a tab whose views go from an empty user_id to a real one.
     | "authorize_granted"
     | "device_code_issued"
     | "device_approved"
@@ -73,4 +72,22 @@ export async function captureProductEvent(
         // Best-effort analytics must never fail auth or payment fulfillment.
         console.warn("Product event ingest failed");
     }
+}
+
+/**
+ * Fire-and-forget capture from a request handler. Browsers that ask not to be
+ * measured are skipped here too, not just on the page-view beacon.
+ */
+export function captureFromRequest(
+    // biome-ignore lint/suspicious/noExplicitAny: every route shape may capture
+    c: Context<any>,
+    event: ProductEvent,
+    userId: string,
+    properties?: Parameters<typeof captureProductEvent>[3],
+    eventId?: string,
+): void {
+    if (c.req.header("DNT") === "1" || c.req.header("Sec-GPC") === "1") return;
+    c.executionCtx.waitUntil(
+        captureProductEvent(c.env, event, userId, properties, eventId),
+    );
 }

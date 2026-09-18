@@ -36,7 +36,6 @@ import { captureProductEvent } from "./utils/product-analytics.ts";
 
 const DELETE_ACCOUNT_FRESH_SESSION_MS = 10 * 60 * 1000;
 // Set by frontend/src/components/analytics.tsx on signed-out sign-in pages.
-const AUTH_FLOW_COOKIE = "auth_flow";
 const ADMIN_USER_IDS = ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"];
 
 export function isAdminUser(user: {
@@ -130,21 +129,6 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                         message:
                             "Discord can only be connected to an existing Pollinations account.",
                     });
-                }
-                if (authContext.path === "/sign-in/social") {
-                    // The browser set auth_flow when it showed the sign-in
-                    // page; a repeated click reuses the same event id.
-                    const flowId =
-                        authContext.getCookie(AUTH_FLOW_COOKIE) ?? "";
-                    ctx?.waitUntil(
-                        captureProductEvent(
-                            env,
-                            "sign_in_started",
-                            "",
-                            { flow_id: flowId },
-                            flowId ? `start:${flowId}` : undefined,
-                        ),
-                    );
                 }
                 if (
                     authContext.path === "/link-social" &&
@@ -360,16 +344,8 @@ function onAfterSessionCreate(
 ) {
     return async (
         session: { userId: string },
-        ctx?: GenericEndpointContext | null,
+        _ctx?: GenericEndpointContext | null,
     ) => {
-        // The admin plugin also creates sessions (impersonation); only the
-        // OAuth callback is a sign-in.
-        if (ctx?.path.startsWith("/callback"))
-            executionCtx?.waitUntil(
-                captureProductEvent(env, "sign_in_completed", session.userId, {
-                    flow_id: ctx.getCookie(AUTH_FLOW_COOKIE) ?? "",
-                }),
-            );
         executionCtx?.waitUntil(
             (async () => {
                 try {

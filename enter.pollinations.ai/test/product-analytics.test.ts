@@ -211,60 +211,43 @@ test("delivery failure never fails the caller and is not retried", async () => {
     expect(fetch).toHaveBeenCalledTimes(2);
 });
 
-test("GitHub sign-in records started and completed stages under the auth_flow cookie", async ({
-    mocks,
+test("a tab that signs in keeps its flow id, so the sign-in is derivable", async ({
+    sessionToken,
 }) => {
-    await mocks.enable("github", "tinybird");
-    const flowCookie = `auth_flow=${FLOW_ID}`;
-    const signIn = await SELF.fetch(
-        "http://localhost:3000/api/auth/sign-in/social",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Cookie: flowCookie,
-                Origin: "http://localhost:3000",
-            },
-            body: JSON.stringify({ provider: "github" }),
-        },
-    );
-    expect(signIn.status).toBe(200);
-    const { url } = (await signIn.json()) as { url: string };
-    const state = new URL(url).searchParams.get("state");
-    const callback = new URL("http://localhost:3000/api/auth/callback/github");
-    callback.searchParams.set("code", "test-code");
-    callback.searchParams.set("state", state ?? "");
-    const callbackResponse = await SELF.fetch(callback, {
-        headers: {
-            "User-Agent": "Mozilla/5.0 (compatible; test-browser)",
-            Accept: "text/html,application/xhtml+xml",
-            Cookie: `${signIn.headers.get("Set-Cookie")}; ${flowCookie}`,
-        },
-        redirect: "manual",
+    const originalFetch = globalThis.fetch;
+    const rows: Record<string, unknown>[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        if (
+            new URL(String(input)).searchParams.get("name") === "product_event"
+        ) {
+            rows.push(JSON.parse(String(init?.body)));
+            return new Response(null, { status: 202 });
+        }
+        return originalFetch(input, init);
     });
-    expect(callbackResponse.status).toBe(302);
-    await mocks.clear();
     const user = await env.DB.prepare(
         "SELECT id AS user_id FROM user LIMIT 1",
     ).first<{ user_id: string }>();
+    const view = { page: "/sign-in", flow_id: FLOW_ID } as const;
+    expect((await pageView(view)).status).toBe(204);
     expect(
-        mocks.tinybird.state.productEvents.map(
-            ({ timestamp: _, ...row }) => row,
-        ),
-    ).toEqual([
-        {
-            event: "sign_in_started",
-            flow_id: FLOW_ID,
-            user_id: "",
-            event_id: `start:${FLOW_ID}`,
-            environment: "test",
-        },
-        {
-            event: "sign_in_completed",
-            flow_id: FLOW_ID,
-            user_id: user?.user_id,
-            event_id: expect.any(String),
-            environment: "test",
-        },
+        (await pageView(view, `better-auth.session_token=${sessionToken}`))
+            .status,
+    ).toBe(204);
+    expect(rows.map((row) => [row.flow_id, row.user_id])).toEqual([
+        [FLOW_ID, ""],
+        [FLOW_ID, user?.user_id],
     ]);
+});
+
+test("server events skip browsers that opted out", async ({ mocks }) => {
+    await mocks.enable("tinybird");
+    const issued = await SELF.fetch("http://localhost:3000/api/device/code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Sec-GPC": "1" },
+        body: JSON.stringify({ client_id: "test-cli" }),
+    });
+    expect(issued.status).toBe(200);
+    await mocks.clear();
+    expect(mocks.tinybird.state.productEvents).toEqual([]);
 });

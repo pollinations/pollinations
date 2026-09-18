@@ -223,6 +223,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         "minimax/minimax-m2.7",
         "deepinfra/fp8",
     ),
+    "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
+    "hy3-openrouter-phala": createPinnedOpenRouterConfig(
+        "tencent/hy3",
+        "phala",
+    ),
     // Reasoning models: explicit max_tokens default below. Without one, the
     // upstream provider's own default applies (Chutes AI defaults to 1024),
     // which reasoning models can burn entirely on their internal thinking

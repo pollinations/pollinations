@@ -1,0 +1,35 @@
+{
+  "pr_number": 15111,
+  "title": "feat: add Jev typed-decision model and Jev MCP server",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15111",
+  "merged_at": "2026-09-18T22:07:35Z",
+  "labels": [],
+  "pr_body_excerpt": "Jev (TypeSafe AI) answers typed questions with calibrated confidence instead of free text.\n\n- Adds `typesafe/jev` (alias `jev`) as a text model. The native TypeSafe request (`state` + a map of `questions`) is JSON in the last user message; the native `answers` object comes back as the assistant content. Same shape as the System One API, proxied through Chat Completions — no new public endpoint.\n- OpenAI-client compatible: system messages and earlier turns are ignored (like the media models), and `stream: true` returns the finished answers as one content chunk, the usage chunk, then `[DONE]`. No token-by-token streaming.\n- Malformed input returns a 400 with the required shape and a docs link.\n- Adds `apps/ask-jev-mcp`, a bring-your-own-key MCP server with one `jev_decide` tool that calls gen internally.\n- Bought through OpenRouter's decisions endpoint, so it needs no new provider credential — every environment already carries `OPENROUTER_API_KEY`.\n- Billed from Quest Pollen (`paidOnly: false`) at $0.042/M input, $0 output, `priceMultiplier: 1` (no margin).\n\n### Confirmed contract\n\n| Field | Value |\n|---|---|\n| Canonical name | `typesafe/jev` |\n| Aliases | `jev` |\n| `priceMultiplier` | 1 |\n| `paidOnly` | false |\n| Pollinations GPU | no |\n| Registry provider | `openrouter` |\n| Primary route | `POST openrouter.ai/api/alpha/decisions`, upstream `typesafe/jev-1.13` |\n| Fallback | none |\n\n### Why OpenRouter and not TypeSafe directly\n\nOpenRouter serves Jev at `POST /api/alpha/decisions`, not `/chat/completions`, which refuses it outright. That endpoint takes the native TypeSafe body and returns the native answers, at list price with no markup (measured: `usage.cost` 1.3734e-05 for 327 input tokens = $0.042/M). Buying there reuses the `OPENROUTER_API_KEY` already deployed everywhere, so the model ships without a new secret. The cost is a version pin — OpenRouter exposes no floating alias, so `typesafe/jev-1.13` is pinned in the model config and new releases need a registry b",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Decisions, but typed",
+    "blurb": "The hive gained a careful little oracle. Jev turns structured questions into typed answers with calibrated confidence, and it is available through chat or a tiny MCP tool.",
+    "summary": "Added the `typesafe/jev` text model (alias `jev`) through Chat Completions, proxying TypeSafe's native `state` plus `questions` decision format to OpenRouter's pinned `typesafe/jev-1.13`, alongside an `ask-jev-mcp` server exposing `jev_decide`.",
+    "impact": "Developers can now request structured, confidence-calibrated answers without a new endpoint or provider key, with completed answers returned as a single chunk when `stream: true` is used.",
+    "keywords": [
+      "jev",
+      "typesafe",
+      "structured-output",
+      "confidence",
+      "mcp",
+      "openrouter",
+      "text-models"
+    ],
+    "visual_concept": "Depict Jev as a cozy decision garden: a retro terminal turns labeled question cards into neat answer cards with small confidence gauges. Polli, wearing tiny librarian glasses, inspects the cards while the eager CRT Monitor Robot holds a `jev_decide` tool card; code-plants and flowers show that the typed-answer pipeline is growing from the existing chat API.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace where a retro terminal glows prominently lime green (#ecf874) and sorts question cards into tidy typed answer cards with gentle confidence meters; the cute pixel art bee mascot has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she reviews the answers beside a chunky CRT-monitor robot holding a pixel card labeled \"jev_decide\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with flowering code-plants, subtle scanlines, dark purple (#110518) outlines, and a small pixel-font terminal label: \"TYPED ANSWERS\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-18/PR-15111.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace where a retro terminal glows prominently lime green (#ecf874) and sorts question cards into tidy typed answer cards with gentle confidence meters; the cute pixel art bee mascot has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she reviews the answers beside a chunky CRT-monitor robot holding a pixel card labeled \"jev_decide\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with flowering code-plants, subtle scanlines, dark purple (#110518) outlines, and a small pixel-font terminal label: \"TYPED ANSWERS\"."
+  },
+  "generated_at": "2026-09-18T22:08:35.450410+00:00"
+}

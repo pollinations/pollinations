@@ -54,7 +54,52 @@ beforeEach(async () => {
     await resetGenerationModelRegistryCache(env);
 });
 
+// A D1 binding that fails the way schema skew fails: the statement prepares,
+// then errors on execution. Mirrors model-registry.test.ts.
+function skewedDbBinding(): CloudflareBindings["DB"] {
+    const fail = () => {
+        throw new Error("D1_ERROR: no such column: agent.config");
+    };
+    const statement = {
+        bind: () => statement,
+        all: fail,
+        run: fail,
+        first: fail,
+        raw: fail,
+    };
+    return {
+        prepare: () => statement,
+        batch: fail,
+        dump: fail,
+        exec: fail,
+        withSession: () => {
+            throw new Error("unused");
+        },
+    } as unknown as CloudflareBindings["DB"];
+}
+
 describe("model sequence registry projection", () => {
+    it("projects sequences served from the KV cache (dates revived)", async () => {
+        const { userId, githubUsername } = await createSequenceOwner();
+        await insertSequence(userId, "kv-chain", [PRIMARY, FALLBACK]);
+        const modelId = modelSequenceModelId(githubUsername, "kv-chain");
+
+        // First load seeds the sequence KV cache (createdAt serializes to a
+        // string in JSON); a skewed DB binding then forces the KV path.
+        const seeded = await getGenerationModelRegistry(env);
+        expect(seeded.resolve(modelId)).not.toBeNull();
+
+        const fromKv = await getGenerationModelRegistry({
+            ...env,
+            DB: skewedDbBinding(),
+        });
+        const entry = fromKv.resolve(modelId);
+        expect(entry).not.toBeNull();
+        // row.createdAt.getTime() runs during projection: a stringified date
+        // would throw here instead of yielding a timestamp.
+        expect(Number.isFinite(entry?.definition.addedDate)).toBe(true);
+    });
+
     it("projects a sequence as a virtual model cloned from its primary", async () => {
         const { userId, githubUsername } = await createSequenceOwner();
         await insertSequence(

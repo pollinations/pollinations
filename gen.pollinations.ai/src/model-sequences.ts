@@ -30,7 +30,14 @@ export async function getModelSequenceRegistryRows(
         MODEL_SEQUENCE_CACHE_KEY,
         "json",
     ).catch(() => null);
-    if (cached) return cached;
+    // JSON round-trip turns Date into a string; registry projection calls
+    // row.createdAt.getTime(), so revive it on cache hits.
+    if (cached) {
+        return cached.map((row) => ({
+            ...row,
+            createdAt: new Date(row.createdAt),
+        }));
+    }
     const rows = await queryModelSequenceRegistryRows(env);
     await env.KV.put(MODEL_SEQUENCE_CACHE_KEY, JSON.stringify(rows), {
         expirationTtl: MODEL_SEQUENCE_CACHE_TTL_SECONDS,

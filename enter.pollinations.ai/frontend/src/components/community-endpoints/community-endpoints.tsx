@@ -371,6 +371,29 @@ export function CommunityEndpoints({
         );
     }
 
+    const agentAction = (
+        <Button
+            type="button"
+            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+            aria-haspopup="dialog"
+            onClick={() => setAgentCreateOpen(true)}
+        >
+            <BotIcon className="h-4 w-4" />
+            Add Agent
+        </Button>
+    );
+    const modelAction = (
+        <Button
+            type="button"
+            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+            aria-haspopup="dialog"
+            onClick={() => setCreateOpen(true)}
+        >
+            <BeakerIcon className="h-4 w-4" />
+            Add Model
+        </Button>
+    );
+
     return (
         <>
             <div className="flex flex-col gap-6">
@@ -442,6 +465,7 @@ export function CommunityEndpoints({
                             <div>
                                 <Button
                                     type="submit"
+                                    intent="commit"
                                     disabled={
                                         isSavingProvider || providerIsSaved
                                     }
@@ -473,23 +497,7 @@ export function CommunityEndpoints({
                 <Section
                     title="Agents"
                     framed
-                    action={
-                        <AgentDialog
-                            open={agentCreateOpen}
-                            onOpenChange={setAgentCreateOpen}
-                            onSubmit={handleCreateAgent}
-                            canPublish={canPublish}
-                            trigger={
-                                <Button
-                                    type="button"
-                                    className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
-                                >
-                                    <BotIcon className="h-4 w-4" />
-                                    Add Agent
-                                </Button>
-                            }
-                        />
-                    }
+                    action={agentEndpoints.length > 0 && agentAction}
                 >
                     <div className="flex flex-col gap-3">
                         {isLoading ? (
@@ -498,10 +506,7 @@ export function CommunityEndpoints({
                             </Surface>
                         ) : agentEndpoints.length === 0 ? (
                             <Surface className="p-6 text-center">
-                                <BotIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
-                                <p className="mb-2 text-lg font-semibold">
-                                    Create your first agent
-                                </p>
+                                <div className="mb-2">{agentAction}</div>
                                 <p className="text-sm text-theme-text-muted">
                                     Build from a prompt and model, or deploy
                                     agent.ts from GitHub.
@@ -526,24 +531,7 @@ export function CommunityEndpoints({
                 <Section
                     title="Models"
                     framed
-                    action={
-                        <CommunityEndpointDialog
-                            open={createOpen}
-                            onOpenChange={setCreateOpen}
-                            onSubmit={handleCreate}
-                            canPublish={canPublish}
-                            fallbackOptions={fallbackOptions}
-                            trigger={
-                                <Button
-                                    type="button"
-                                    className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
-                                >
-                                    <BeakerIcon className="h-4 w-4" />
-                                    Add Model
-                                </Button>
-                            }
-                        />
-                    }
+                    action={modelEndpoints.length > 0 && modelAction}
                 >
                     <div className="flex flex-col gap-3">
                         {isLoading ? (
@@ -552,10 +540,7 @@ export function CommunityEndpoints({
                             </Surface>
                         ) : modelEndpoints.length === 0 ? (
                             <Surface className="p-6 text-center">
-                                <BeakerIcon className="mx-auto mb-2 h-8 w-8 text-theme-text-muted" />
-                                <p className="mb-2 text-lg font-semibold">
-                                    Add your first model
-                                </p>
+                                <div className="mb-2">{modelAction}</div>
                                 <p className="text-sm text-theme-text-muted">
                                     {canPublish
                                         ? "Register an OpenAI-compatible endpoint."
@@ -628,6 +613,19 @@ export function CommunityEndpoints({
                     setToggling(null);
                 }}
                 onCancel={() => setToggling(null)}
+            />
+            <AgentDialog
+                open={agentCreateOpen}
+                onOpenChange={setAgentCreateOpen}
+                onSubmit={handleCreateAgent}
+                canPublish={canPublish}
+            />
+            <CommunityEndpointDialog
+                open={createOpen}
+                onOpenChange={setCreateOpen}
+                onSubmit={handleCreate}
+                canPublish={canPublish}
+                fallbackOptions={fallbackOptions}
             />
         </>
     );

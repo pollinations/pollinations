@@ -1,4 +1,5 @@
-import { Button, GitHubIcon, InlineLink } from "@pollinations/ui";
+import { InlineLink } from "@pollinations/ui";
+import { GitHubSignInButton } from "@pollinations/ui/auth";
 import { Await, createFileRoute, Outlet } from "@tanstack/react-router";
 import { useState } from "react";
 import { apiClient } from "../api.ts";
@@ -145,16 +146,13 @@ export function SignedOutAccountArea({
 
     return (
         <div className="flex flex-col gap-2">
-            <Button
-                as="button"
-                data-theme="accent"
+            <GitHubSignInButton
                 onClick={() => void signIn()}
-                disabled={isSigningIn}
-                className="w-full justify-center gap-2 text-center"
-            >
-                <GitHubIcon className="h-4 w-4 shrink-0" />
-                {isSigningIn ? "Signing in..." : "Sign in with GitHub"}
-            </Button>
+                isSigningIn={isSigningIn}
+            />
+            <p className="text-center text-xs text-theme-text-soft">
+                New here? Continuing creates your Pollinations account.
+            </p>
             <p className="px-1 text-center text-micro font-normal leading-[1.35] text-theme-text-muted">
                 By continuing, you agree to the{" "}
                 <InlineLink

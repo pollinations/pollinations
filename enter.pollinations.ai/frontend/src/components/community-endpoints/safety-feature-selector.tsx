@@ -1,17 +1,32 @@
-import {
-    ButtonGroup,
-    CheckIcon,
-    FieldStack,
-    TabButton,
-} from "@pollinations/ui";
+import { FieldStack, Text } from "@pollinations/ui";
+import { AuthAccessItem } from "@pollinations/ui/auth";
 import { SAFETY_FEATURES, type SafetyFeature } from "@shared/schemas/safety.ts";
 
-const SAFETY_LABELS: Record<SafetyFeature, string> = {
-    privacy: "Personal data",
-    secrets: "Secrets",
-    sexual: "Sexual content",
-    violence: "Violence & hate",
-    shield: "Prompt attacks",
+const SAFETY_OPTIONS: Record<
+    SafetyFeature,
+    { label: string; description: string }
+> = {
+    privacy: {
+        label: "Personal data",
+        description: "Redact detected personal information from prompts.",
+    },
+    secrets: {
+        label: "Secrets",
+        description:
+            "Block prompts containing detected credentials or financial details.",
+    },
+    sexual: {
+        label: "Sexual content",
+        description: "Block prompts flagged for sexual content.",
+    },
+    violence: {
+        label: "Violence & hate",
+        description: "Block prompts flagged for violence, hate, or insults.",
+    },
+    shield: {
+        label: "Prompt attacks",
+        description: "Block prompts flagged for prompt attacks or misconduct.",
+    },
 };
 
 export function SafetyFeatureSelector({
@@ -33,27 +48,28 @@ export function SafetyFeatureSelector({
     return (
         <FieldStack
             label="Prompt safety"
-            helper="Always apply selected checks before prompts reach this model. Personal data is redacted; other matches are blocked. Callers cannot turn these checks off."
-            alignLabelRow
+            helper="Selected checks run before prompts reach the model. Callers cannot turn them off."
         >
-            <ButtonGroup aria-label="Required prompt safety checks">
-                {SAFETY_FEATURES.map((feature) => {
-                    const selected = value.includes(feature);
-                    return (
-                        <TabButton
-                            key={feature}
-                            size="sm"
-                            active={selected}
-                            disabled={disabled}
-                            className="gap-1.5"
-                            onClick={() => toggle(feature)}
-                        >
-                            {selected && <CheckIcon className="h-3.5 w-3.5" />}
-                            {SAFETY_LABELS[feature]}
-                        </TabButton>
-                    );
-                })}
-            </ButtonGroup>
+            <ul
+                aria-label="Required prompt safety checks"
+                className="space-y-3"
+            >
+                {SAFETY_FEATURES.map((feature) => (
+                    <AuthAccessItem
+                        key={feature}
+                        checked={value.includes(feature)}
+                        disabled={disabled}
+                        onChange={() => toggle(feature)}
+                        details={
+                            <Text size="xs" tone="muted">
+                                {SAFETY_OPTIONS[feature].description}
+                            </Text>
+                        }
+                    >
+                        {SAFETY_OPTIONS[feature].label}
+                    </AuthAccessItem>
+                ))}
+            </ul>
         </FieldStack>
     );
 }

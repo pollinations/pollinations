@@ -3,6 +3,9 @@ import { Portal } from "@ark-ui/react/portal";
 import type { ComponentPropsWithoutRef, FC, ReactNode } from "react";
 import { useRef } from "react";
 import { cn } from "../lib/cn.ts";
+import { ButtonDefaultsContext } from "./Button.tsx";
+import { ScrollArea, type ScrollAreaProps } from "./ScrollArea.tsx";
+import { headingClassName } from "./Typography.tsx";
 
 const sizeClasses = {
     sm: "polli:max-w-md",
@@ -74,7 +77,7 @@ export const Dialog: FC<DialogProps> = ({
                 )}
                 <ArkDialog.Positioner
                     className={cn(
-                        "polli:fixed polli:inset-0 polli:z-[110] polli:flex polli:h-dvh polli:items-start polli:justify-center polli:overflow-hidden polli:p-4",
+                        "polli:fixed polli:inset-0 polli:z-[110] polli:flex polli:h-dvh polli:items-start polli:justify-center polli:overflow-hidden polli:p-0 polli:sm:p-4",
                         positionerClassName,
                     )}
                 >
@@ -83,16 +86,12 @@ export const Dialog: FC<DialogProps> = ({
                         aria-label={ariaLabel}
                         aria-labelledby={labelledBy}
                         className={cn(
-                            "polli:my-auto polli:w-full polli:overflow-hidden polli:rounded-lg polli:border-2 polli:border-theme-border polli:bg-surface-opaque polli:shadow-lg polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none",
+                            "polli:flex polli:h-dvh polli:max-h-dvh polli:w-full polli:max-sm:max-w-none polli:flex-col polli:overflow-y-auto polli:bg-theme-bg-pale polli:outline-none polli:focus:outline-none polli:focus-visible:outline-none polli:sm:my-auto polli:sm:h-auto polli:sm:max-h-[calc(100dvh-2rem)] polli:sm:rounded-2xl polli:sm:shadow-container",
                             sizeClasses[size],
                             contentClassName,
                         )}
                     >
-                        {title && (
-                            <DialogTitle className="polli:px-6 polli:pt-6 polli:font-subheading polli:text-xl polli:text-theme-text-strong">
-                                {title}
-                            </DialogTitle>
-                        )}
+                        {title && <DialogHeader title={title} />}
                         {children}
                     </ArkDialog.Content>
                 </ArkDialog.Positioner>
@@ -130,10 +129,7 @@ export const DialogHeader: FC<DialogHeaderProps> = ({
         >
             {title && (
                 <DialogTitle
-                    className={cn(
-                        "polli:font-subheading polli:text-lg polli:font-semibold polli:text-theme-text-strong",
-                        titleClassName,
-                    )}
+                    className={cn(headingClassName("section"), titleClassName)}
                 >
                     {title}
                 </DialogTitle>
@@ -141,7 +137,7 @@ export const DialogHeader: FC<DialogHeaderProps> = ({
             {description && (
                 <DialogDescription
                     className={cn(
-                        "polli:mt-1 polli:text-sm polli:text-theme-text-muted",
+                        "polli:mt-1 polli:font-body polli:text-sm polli:font-normal polli:leading-5 polli:text-theme-text-base",
                         descriptionClassName,
                     )}
                 >
@@ -155,6 +151,21 @@ export const DialogHeader: FC<DialogHeaderProps> = ({
 
 export type DialogFooterProps = ComponentPropsWithoutRef<"div">;
 
+const footerButtonDefaults = { appearance: "block" as const };
+
+/** The scrollable content between a dialog's header and actions. */
+export function DialogBody({ className, ...props }: ScrollAreaProps) {
+    return (
+        <ScrollArea
+            {...props}
+            className={cn(
+                "polli:min-h-0 polli:flex-1 polli:space-y-4 polli:overscroll-contain polli:px-6 polli:py-4",
+                className,
+            )}
+        />
+    );
+}
+
 export const DialogFooter: FC<DialogFooterProps> = ({
     children,
     className,
@@ -163,12 +174,14 @@ export const DialogFooter: FC<DialogFooterProps> = ({
     return (
         <div
             className={cn(
-                "polli:flex polli:shrink-0 polli:items-center polli:justify-end polli:gap-2 polli:p-6 polli:pt-4",
+                "polli:flex polli:shrink-0 polli:flex-wrap polli:items-stretch polli:justify-center polli:gap-3 polli:bg-theme-bg-pale polli:p-6 polli:pt-4 polli:sm:[&>:last-child]:grow",
                 className,
             )}
             {...props}
         >
-            {children}
+            <ButtonDefaultsContext.Provider value={footerButtonDefaults}>
+                {children}
+            </ButtonDefaultsContext.Provider>
         </div>
     );
 };

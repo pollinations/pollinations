@@ -1,20 +1,18 @@
-import { Button } from "@pollinations/ui";
-import {
-    AuthInfoCard,
-    AuthModal,
-    AuthModalHeader,
-    AuthModalLoading,
-    ErrorBanner,
-} from "@pollinations/ui/auth";
+import { KeyChip, Surface, Text } from "@pollinations/ui";
+import { AuthModalHeader, AuthModalLoading } from "@pollinations/ui/auth";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import { AuthAccountIdentity } from "../components/auth/auth-account-identity.tsx";
+import {
+    AuthFlowScreen,
+    footnotes,
+} from "../components/auth/auth-flow-screen.tsx";
+import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import type { ApiKey } from "../components/keys";
 import { EditApiKeyDialog } from "../components/keys/edit-api-key-dialog.tsx";
 import { useAccountBalance } from "../hooks/use-account-balance.ts";
-import { useGitHubSignIn } from "../hooks/use-github-sign-in.ts";
 import {
     parseAppUrl,
     preferredReturnUrl,
@@ -33,6 +31,9 @@ type EditKeySearch = {
  * can raise the budget and go back to the app.
  */
 export const Route = createFileRoute("/edit-key")({
+    head: () => ({
+        meta: [{ title: "Edit key permissions | pollinations.ai" }],
+    }),
     validateSearch: (search: Record<string, unknown>): EditKeySearch => ({
         id: typeof search.id === "string" ? search.id : "",
         redirect: parseAppUrl(search.redirect) ?? undefined,
@@ -47,7 +48,6 @@ function EditKeyPage() {
     const navigate = useNavigate({ from: "/edit-key" });
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user;
-    const { isSigningIn, error: signInError, signIn } = useGitHubSignIn();
     const [apiKey, setApiKey] = useState<ApiKey | null | undefined>(undefined);
     const balance = useAccountBalance(Boolean(user));
     const [outcome, setOutcome] = useState<Outcome>("editing");
@@ -79,95 +79,95 @@ function EditKeyPage() {
             .catch(() => setApiKey(null));
     }, [user, id]);
 
-    if (isPending) return <AuthModalLoading />;
+    // The card reads as one sentence: "Edit key permissions · {key} · {step}".
+    // The URL only carries the record id, so the card waits for the key row.
+    const subject = apiKey ? (
+        <Surface>
+            <Text size="sm" weight="semibold" tone="strong">
+                {apiKey.name ?? apiKey.id}
+            </Text>
+            {apiKey.start && (
+                <div className="mt-1.5">
+                    <KeyChip prefix={apiKey.start} />
+                </div>
+            )}
+        </Surface>
+    ) : undefined;
+
+    if (isPending)
+        return (
+            <AuthModalLoading title="Edit key permissions" subject={subject} />
+        );
 
     if (!user) {
         return (
-            <AuthModal
-                dialog={{ label: "Sign in to edit this key" }}
-                tone={signInError ? "error" : undefined}
-            >
-                <AuthModalHeader />
-                <div className="px-6 pb-6 pt-4 space-y-4">
-                    {signInError ? (
-                        <ErrorBanner>{signInError}</ErrorBanner>
-                    ) : (
-                        <AuthInfoCard title="Edit API key">
-                            <p className="text-sm text-theme-text-base">
-                                Sign in to change this key's budget and limits.
-                            </p>
-                        </AuthInfoCard>
-                    )}
-                    <div className="flex justify-end">
-                        <Button
-                            as="button"
-                            onClick={signIn}
-                            disabled={isSigningIn}
-                        >
-                            {isSigningIn
-                                ? "Signing in..."
-                                : "Continue with GitHub"}
-                        </Button>
-                    </div>
-                </div>
-            </AuthModal>
+            <SignInScreen
+                title="Edit key permissions"
+                subject={subject}
+                description="Sign in to change them."
+            />
         );
     }
 
-    const accountHeader = (
-        <AuthModalHeader>
-            <AuthAccountIdentity
-                user={user}
-                balance={balance}
-                topUpHref={topUpHref}
-            />
-        </AuthModalHeader>
+    const accountIdentity = (
+        <AuthAccountIdentity
+            user={user}
+            balance={balance}
+            topUpHref={topUpHref}
+        />
     );
 
     if (outcome !== "editing") {
         return (
-            <AuthModal dialog={{ label: "Key updated" }}>
-                {accountHeader}
-                <div className="px-6 pb-6 pt-4 space-y-4">
-                    <AuthInfoCard
-                        title={
-                            outcome === "saved" ? "Key updated" : "No changes"
-                        }
-                    >
-                        <p className="text-sm text-theme-text-base">
-                            {outcome === "saved"
-                                ? "The new limits apply to the next request. "
-                                : "The key was left as it is. "}
-                            You can close this tab and return to the app.
-                        </p>
-                    </AuthInfoCard>
-                    <ReturnToApp returnUrl={returnUrl} />
-                </div>
-            </AuthModal>
+            <AuthFlowScreen
+                footnote="back"
+                title="Edit key permissions"
+                subject={subject}
+                description={
+                    outcome === "saved"
+                        ? "Saved, they apply to future requests."
+                        : "Nothing changed."
+                }
+                balance={balance}
+                topUpHref={topUpHref}
+                actions={
+                    returnUrl ? (
+                        <ReturnToApp returnUrl={returnUrl} />
+                    ) : undefined
+                }
+            />
         );
     }
 
     if (!id || apiKey === null) {
         return (
-            <AuthModal dialog={{ label: "Key not found" }} tone="error">
-                {accountHeader}
-                <div className="px-6 pb-6 pt-4 space-y-4">
-                    <ErrorBanner>
-                        This key doesn't exist or belongs to another account.
-                    </ErrorBanner>
-                    <ReturnToApp returnUrl={returnUrl} />
-                </div>
-            </AuthModal>
+            <AuthFlowScreen
+                footnote="help"
+                title="Edit key permissions"
+                subject={subject}
+                error="Couldn’t load this key. Check that you’re signed in to the account that owns it."
+                balance={balance}
+                topUpHref={topUpHref}
+                actions={
+                    returnUrl ? (
+                        <ReturnToApp returnUrl={returnUrl} />
+                    ) : undefined
+                }
+            />
         );
     }
 
-    if (apiKey === undefined) return <AuthModalLoading />;
+    if (apiKey === undefined)
+        return (
+            <AuthModalLoading title="Edit key permissions" subject={subject} />
+        );
 
     return (
         <EditApiKeyDialog
             key={apiKey.id}
             apiKey={apiKey}
-            header={accountHeader}
+            header={<AuthModalHeader>{accountIdentity}</AuthModalHeader>}
+            footnote={footnotes.dashboard}
             onUpdate={async (keyId, updates) => {
                 await updateApiKey(keyId, updates);
                 setOutcome("saved");

@@ -1,9 +1,11 @@
-import { Button, Heading, Surface } from "@pollinations/ui";
-import logoWordmarkUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
+import { ArrowRightIcon, Button } from "@pollinations/ui";
 import { isBannedLoginError } from "@shared/auth/ban.ts";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { authClient } from "../auth.ts";
+import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 
 export const Route = createFileRoute("/error")({
+    head: () => ({ meta: [{ title: "Sign in | pollinations.ai" }] }),
     component: ErrorPage,
     validateSearch: (search: Record<string, unknown>) => ({
         error: (search.error as string) || "",
@@ -14,74 +16,37 @@ function ErrorPage() {
     const { error } = Route.useSearch();
     const isBanned = isBannedLoginError(error);
     const isStagingInviteOnly = error === "staging_is_invite-only";
+    const { data: session } = authClient.useSession();
+    // A sign-in failure is stale once a session exists (a retried callback,
+    // a reused link); account-state errors still apply to the signed-in user.
+    if (session?.user && !isBanned && !isStagingInviteOnly)
+        return <Navigate to="/" replace />;
 
-    const title = isBanned
-        ? "Account Suspended"
-        : isStagingInviteOnly
-          ? "Staging is invite-only"
-          : "Something went wrong";
+    // "Sign in" opens the sentence; the error line finishes it.
     const message = isBanned
-        ? "Your account has been suspended. If you think this is a mistake, contact billing."
+        ? "Your Pollinations account is suspended."
         : isStagingInviteOnly
-          ? "This is the staging environment and access is limited to the Pollinations team. Head to pollinations.ai to use the production app."
-          : "An unexpected error occurred. Please try again or open a GitHub issue if this keeps happening.";
+          ? "Staging is invite-only. Use pollinations.ai to continue."
+          : "Couldn’t sign you in, please try again.";
 
     return (
-        <div className="flex min-h-screen items-center justify-center px-4">
-            <Surface
-                variant="card"
-                className="w-full max-w-md p-8 text-center shadow-lg"
-            >
-                {isBanned && (
-                    <a
-                        href="https://pollinations.ai/"
-                        className="inline-flex mb-6 text-theme-text-strong"
-                        aria-label="Pollinations"
+        <AuthFlowScreen
+            footnote={isBanned ? "billing" : "help"}
+            title="Sign in"
+            error={message}
+            actions={
+                // A suspended account has nowhere to go; the footnote is the way out.
+                isBanned ? undefined : (
+                    <Button
+                        as="a"
+                        intent="neutral"
+                        icon={<ArrowRightIcon />}
+                        href="/"
                     >
-                        <span className="sr-only">Pollinations</span>
-                        <span
-                            aria-hidden="true"
-                            className="block h-6 w-[195px] bg-current"
-                            style={{
-                                WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-                                mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-                            }}
-                        />
-                    </a>
-                )}
-                <Heading as="h1" size="section" className="mb-3">
-                    {title}
-                </Heading>
-
-                <p className="font-body text-theme-text-base mb-6 leading-relaxed">
-                    {message}
-                </p>
-
-                <div className="flex flex-col gap-3">
-                    <Button as="a" size="lg" href="/" className="mt-2">
-                        Go to Home →
+                        Go to dashboard
                     </Button>
-                    {isBanned && (
-                        <Button
-                            as="a"
-                            size="lg"
-                            href="mailto:billing@pollinations.ai"
-                        >
-                            Contact billing
-                        </Button>
-                    )}
-                </div>
-
-                <div className="mt-8 text-sm text-theme-text-soft">
-                    {isBanned ? (
-                        <a href="https://pollinations.ai/terms">
-                            Terms &amp; Conditions
-                        </a>
-                    ) : (
-                        "pollinations.ai"
-                    )}
-                </div>
-            </Surface>
-        </div>
+                )
+            }
+        />
     );
 }

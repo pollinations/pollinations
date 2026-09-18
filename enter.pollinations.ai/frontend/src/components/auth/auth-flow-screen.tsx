@@ -1,0 +1,99 @@
+import { InlineLink } from "@pollinations/ui";
+import { AuthFlowLayout } from "@pollinations/ui/auth";
+import type { ComponentProps } from "react";
+import { authClient } from "../../auth.ts";
+import {
+    type AccountBalance,
+    useAccountBalance,
+} from "../../hooks/use-account-balance.ts";
+import { AuthAccountIdentity } from "./auth-account-identity.tsx";
+
+export const footnotes = {
+    dashboard: (
+        <>
+            Manage your account on the{" "}
+            <InlineLink href="/">dashboard</InlineLink>.
+        </>
+    ),
+    back: (
+        <>
+            <InlineLink href="/">Back to the dashboard</InlineLink>.
+        </>
+    ),
+    help: (
+        <>
+            Need help?{" "}
+            <InlineLink href="https://discord.gg/pollinations-ai-885844321461485618">
+                Ask on Discord
+            </InlineLink>
+            .
+        </>
+    ),
+    billing: (
+        <>
+            If you think this is a mistake, contact{" "}
+            <InlineLink href="mailto:billing@pollinations.ai">
+                billing@pollinations.ai
+            </InlineLink>
+            .
+        </>
+    ),
+};
+
+type AuthFlowScreenProps = Omit<
+    ComponentProps<typeof AuthFlowLayout>,
+    "headerAction" | "footnote"
+> & {
+    /** Results say "back", errors say "help"; otherwise legal when signed out, dashboard when signed in. */
+    footnote?: keyof typeof footnotes;
+    /** Wallet the screen already loads; skips the shared balance request. */
+    balance?: AccountBalance | null;
+    /** Identity top-up link. Defaults to returning here; `null` on the top-up page. */
+    topUpHref?: string | null;
+};
+
+function returnToTopUpHref(): string {
+    return typeof window === "undefined"
+        ? "/top-up"
+        : `/top-up?${new URLSearchParams({ redirect: window.location.href })}`;
+}
+
+/** Enter auth-flow screen: a signed-in user always sees their identity and balances. */
+export function AuthFlowScreen({
+    balance,
+    topUpHref,
+    footnote,
+    ...props
+}: AuthFlowScreenProps) {
+    const { data: session } = authClient.useSession();
+    const user = session?.user;
+    const fetchedBalance = useAccountBalance(
+        Boolean(user) && balance === undefined,
+    );
+    return (
+        <AuthFlowLayout
+            {...props}
+            footnote={
+                footnote
+                    ? footnotes[footnote]
+                    : user
+                      ? footnotes.dashboard
+                      : undefined
+            }
+            // Standalone pages follow the system theme; the switch lives on the dashboard.
+            headerAction={
+                user ? (
+                    <AuthAccountIdentity
+                        user={user}
+                        balance={balance ?? fetchedBalance}
+                        topUpHref={
+                            topUpHref === null
+                                ? undefined
+                                : (topUpHref ?? returnToTopUpHref())
+                        }
+                    />
+                ) : undefined
+            }
+        />
+    );
+}

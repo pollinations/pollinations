@@ -17,9 +17,9 @@ export async function updateApiKey(
         },
     });
     if (!response.ok) {
-        const error = await response.json();
-        throw new Error(
-            (error as { message?: string }).message || "Update failed",
-        );
+        const { error } = (await response.json()) as unknown as {
+            error: { message: string };
+        };
+        throw new Error(error.message);
     }
 }

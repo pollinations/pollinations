@@ -86,19 +86,6 @@ export function parseModelCatalogResponse(data: unknown): ApiModelInfo[] {
 let modelCatalogPromise: Promise<ApiModelInfo[]> | null = null;
 let modelCatalogExpiresAt = 0;
 
-export function mergeModelCatalogs(
-    catalogs: readonly ApiModelInfo[][],
-): ApiModelInfo[] {
-    const modelsById = new Map<string, ApiModelInfo>();
-    for (const catalog of catalogs) {
-        for (const model of catalog) {
-            const id = getCatalogModelId(model);
-            if (id && !modelsById.has(id)) modelsById.set(id, model);
-        }
-    }
-    return [...modelsById.values()];
-}
-
 async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
     const response = await fetch(url, {
         cache: "no-store",
@@ -131,15 +118,12 @@ export async function fetchModelCatalog(
     }
     modelCatalogPromise ??= import("../../config.ts")
         .then(async ({ config }) => {
-            const [rows, ...catalogs] = await Promise.all([
+            const [rows, catalog] = await Promise.all([
                 // Health is decoration: without the feed every dot reads unknown.
                 fetchModelHealthRows(config.genBaseUrl).catch(() => []),
                 fetchCatalog(`${config.genBaseUrl}/models`),
-                ...(config.communityCatalogUrl
-                    ? [fetchCatalog(config.communityCatalogUrl)]
-                    : []),
             ]);
-            return withModelHealth(mergeModelCatalogs(catalogs), rows);
+            return withModelHealth(catalog, rows);
         })
         .catch((error) => {
             modelCatalogPromise = null;

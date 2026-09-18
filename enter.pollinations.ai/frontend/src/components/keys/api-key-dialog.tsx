@@ -1,23 +1,28 @@
 import {
+    AppIcon,
     Button,
+    CheckIcon,
+    ClipboardIcon,
     CopyButton,
-    cn,
+    CopyField,
     Dialog,
-    DialogTitle,
-    Field,
-    InlineLink,
-    Input,
-    ScrollArea,
-    Tooltip,
+    DialogBody,
+    DialogFooter,
+    DialogHeader,
+    FieldStack,
+    KeyIcon,
+    XIcon,
 } from "@pollinations/ui";
-import type { FC, ReactNode } from "react";
-import { useState } from "react";
+import { AuthInfoCard, ErrorBanner } from "@pollinations/ui/auth";
+import type { FC } from "react";
+import { useEffect, useState } from "react";
 import {
     adjectives,
     animals,
     uniqueNamesGenerator,
 } from "unique-names-generator";
-import { genDocsUrl } from "../../config.ts";
+import { DEFAULT_KEY_LIMITS } from "./key-limit-input.tsx";
+import { KeyNameField } from "./key-name-field.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import { PublishableKeySettings } from "./publishable-key-settings.tsx";
 import type { CreateApiKey, CreateApiKeyResponse } from "./types.ts";
@@ -32,28 +37,28 @@ const DEFAULT_LOCALHOST_REDIRECT = "http://localhost/callback";
 type ApiKeyDialogProps = {
     onSubmit: (state: CreateApiKey) => Promise<CreateApiKeyResponse>;
     onComplete: () => void;
-    triggerLabel?: ReactNode;
-    triggerClassName?: string;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
     /** Simplified mode: hides key type selector, permissions, budget, expiry. Shows only app key settings. */
     simplified?: boolean;
 };
 
+function generateFunName(): string {
+    return uniqueNamesGenerator({
+        dictionaries: [adjectives, animals],
+        separator: "-",
+        length: 2,
+        style: "lowerCase",
+    });
+}
+
 export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     onSubmit,
     onComplete,
-    triggerLabel = "Create new key",
-    triggerClassName,
+    open: isOpen,
+    onOpenChange: setIsOpen,
     simplified = false,
 }) => {
-    function generateFunName(): string {
-        return uniqueNamesGenerator({
-            dictionaries: [adjectives, animals],
-            separator: "-",
-            length: 2,
-            style: "lowerCase",
-        });
-    }
-
     const [name, setName] = useState(generateFunName());
     const [description, setDescription] = useState(
         `Created on ${new Date().toLocaleDateString("en-US", { day: "2-digit", month: "2-digit", year: "2-digit" })}`,
@@ -73,13 +78,19 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                   allowedModels: [],
                   accountPermissions: [],
               }
-            : {},
+            : DEFAULT_KEY_LIMITS,
     );
+    const {
+        setAllowedModels,
+        setAccountPermissions,
+        setPollenBudget,
+        setExpiryDays,
+    } = keyPermissions;
     const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(
         null,
     );
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isOpen, setIsOpen] = useState(false);
+
     const [error, setError] = useState<string | null>(null);
 
     async function handleSubmit(e: React.FormEvent) {
@@ -118,183 +129,156 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         }, 500);
     }
 
-    const { allowedModels } = keyPermissions.permissions;
-    const noModelsSelected =
-        !simplified &&
-        Array.isArray(allowedModels) &&
-        allowedModels.length === 0;
-    const isCreateDisabled =
-        !createdKey && (!name.trim() || isSubmitting || noModelsSelected);
-    function getButtonText(): string {
-        if (isSubmitting) return "Creating...";
-        return "Create";
-    }
+    const isCreateDisabled = !createdKey && (!name.trim() || isSubmitting);
+    useEffect(() => {
+        if (!isOpen) {
+            if (!simplified) {
+                setAllowedModels(null);
+                setAccountPermissions([]);
+                setPollenBudget(DEFAULT_KEY_LIMITS.pollenBudget);
+                setExpiryDays(DEFAULT_KEY_LIMITS.expiryDays);
+            }
+            return;
+        }
 
-    const createDisabledReason =
-        !createdKey && noModelsSelected
-            ? "Select at least one model"
-            : undefined;
+        setCreatedKey(null);
+        setError(null);
+        setName(generateFunName());
+        setRedirectUris(simplified ? [DEFAULT_LOCALHOST_REDIRECT] : []);
+        setEarningsEnabled(true);
+        const dateStr = new Date().toLocaleDateString("en-US", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "2-digit",
+        });
+        setDescription(simplified ? "" : `Created on ${dateStr}`);
+    }, [
+        isOpen,
+        simplified,
+        setAllowedModels,
+        setAccountPermissions,
+        setPollenBudget,
+        setExpiryDays,
+    ]);
 
+    const nameField = (
+        <KeyNameField
+            app={simplified}
+            value={name}
+            onChange={setName}
+            disabled={isSubmitting}
+        />
+    );
     const submitButton = createdKey ? (
         <CopyButton
             value={createdKey.key}
+            variant="button"
+            intent="commit"
             copiedTimeoutMs={500}
-            tooltip="Copy key"
-            copiedTooltip="Copied! Closing..."
+            tooltip={null}
             onCopied={closeAfterCopy}
-            onCopyError={() => {
-                onComplete();
-                setIsOpen(false);
-            }}
-            className="inline-flex items-center justify-center self-center rounded-full bg-theme-bg-active px-4 pb-2 pt-1.5 font-medium leading-normal text-theme-text-strong transition-colors hover:bg-theme-bg-hover hover:brightness-105"
+            onCopyError={() =>
+                setError(
+                    "Couldn’t copy the key. Select it and copy it manually before closing.",
+                )
+            }
         >
-            {(copied) => (copied ? "Copied! Closing..." : "Copy and Close")}
+            {(copied) => (
+                <span className="inline-flex items-center gap-2">
+                    <span
+                        aria-hidden="true"
+                        className="flex size-4 shrink-0 [&>svg]:size-full"
+                    >
+                        {copied ? <CheckIcon /> : <ClipboardIcon />}
+                    </span>
+                    {copied ? "Copied" : "Copy and close"}
+                </span>
+            )}
         </CopyButton>
     ) : (
         <Button
+            icon={simplified ? <AppIcon /> : <KeyIcon />}
             type="submit"
+            intent="commit"
             className="disabled:opacity-50"
             disabled={isCreateDisabled}
         >
-            {getButtonText()}
+            {isSubmitting
+                ? "Creating…"
+                : simplified
+                  ? "Create app key"
+                  : "Create API key"}
         </Button>
     );
 
     return (
-        <Dialog
-            open={isOpen}
-            onOpenChange={(open) => {
-                if (open) {
-                    setCreatedKey(null);
-                    setError(null);
-                    setName(generateFunName());
-                    setRedirectUris(
-                        simplified ? [DEFAULT_LOCALHOST_REDIRECT] : [],
-                    );
-                    setEarningsEnabled(true);
-                    const dateStr = new Date().toLocaleDateString("en-US", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "2-digit",
-                    });
-                    setDescription(simplified ? "" : `Created on ${dateStr}`);
+        <Dialog open={isOpen} onOpenChange={setIsOpen} size="md">
+            <DialogHeader
+                title={
+                    createdKey
+                        ? simplified
+                            ? "App key created"
+                            : "API key created"
+                        : simplified
+                          ? "Create app key"
+                          : "Create API key"
                 }
-                setIsOpen(open);
-            }}
-            size="lg"
-            trigger={
-                <Button
-                    type="button"
-                    className={cn(
-                        "inline-flex shrink-0 self-start whitespace-nowrap",
-                        triggerClassName,
-                    )}
-                >
-                    {triggerLabel}
-                </Button>
-            }
-            triggerAsChild
-            contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
-        >
-            <div className="shrink-0 p-6 pb-4">
-                <DialogTitle className="text-lg font-semibold">
-                    {simplified ? "Create App Key" : "Create API Key"}
-                </DialogTitle>
-                <div className="mt-1 text-sm text-theme-text-muted">
-                    {simplified ? (
-                        <ul className="list-disc space-y-1 pl-5">
-                            <li>
-                                For web apps, add the callback URL your app will
-                                use after consent.
-                            </li>
-                            <li>
-                                We return a scoped API key in the URL fragment.
-                            </li>
-                            <li>
-                                Use that key for API requests paid with the
-                                user&apos;s Pollen.{" "}
-                                <InlineLink
-                                    href={genDocsUrl(
-                                        "#tag/connect-user-wallets",
-                                    )}
-                                >
-                                    Read the guide
-                                </InlineLink>
-                            </li>
-                        </ul>
-                    ) : (
-                        <p>
-                            Access AI models for text, image, audio, video, and
-                            embeddings.
-                        </p>
-                    )}
-                </div>
-            </div>
+                description={
+                    createdKey
+                        ? simplified
+                            ? "Use this app key to connect your app to Pollinations."
+                            : "Copy your secret key now. You won’t be able to see it again."
+                        : simplified
+                          ? "Let users connect their Pollinations accounts and spend their own Pollen in your app."
+                          : "Create a secret key for API requests from your backend."
+                }
+            />
 
             <form
                 onSubmit={handleSubmit}
                 className="flex min-h-0 flex-1 flex-col"
             >
-                <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2 touch-pan-y [-webkit-overflow-scrolling:touch]">
-                    {error && (
-                        <div className="pb-2">
-                            <p className="text-sm text-intent-danger-text bg-intent-danger-bg-light px-3 py-2 rounded-lg">
-                                {error}
-                            </p>
-                        </div>
-                    )}
-
-                    <hr className="border-divider" />
-                    <Field.Root className="flex flex-col gap-2">
-                        <Field.Label className="text-sm font-semibold">
-                            {createdKey
-                                ? simplified
-                                    ? "Your App Key"
-                                    : "Your API Key"
-                                : "Name"}
-                        </Field.Label>
-                        <Input
-                            type="text"
-                            value={createdKey ? createdKey.key : name}
-                            onChange={(e) => setName(e.target.value)}
-                            className={cn(
-                                "w-full",
-                                createdKey && "font-mono text-xs",
-                            )}
-                            placeholder={createdKey ? "" : "Enter API key name"}
-                            required={!createdKey}
-                            disabled={isSubmitting || !!createdKey}
-                            readOnly={!!createdKey}
-                        />
-                    </Field.Root>
-
-                    {!simplified && !createdKey && (
-                        <p className="text-xs text-theme-text-muted">
-                            Raw publishable keys (<code>pk_</code>) are legacy.
-                            For browsers, create an App Key on this dashboard
-                            and use{" "}
-                            <InlineLink
-                                href={genDocsUrl("#tag/connect-user-wallets")}
+                <DialogBody>
+                    {error && <ErrorBanner>{error}</ErrorBanner>}
+                    {createdKey && (
+                        <AuthInfoCard>
+                            <FieldStack
+                                label={
+                                    <span className="inline-flex items-center gap-1.5">
+                                        {simplified ? (
+                                            <AppIcon
+                                                aria-hidden="true"
+                                                className="h-4 w-4"
+                                            />
+                                        ) : (
+                                            <KeyIcon
+                                                aria-hidden="true"
+                                                className="h-4 w-4"
+                                            />
+                                        )}
+                                        {simplified ? "App key" : "Secret key"}
+                                    </span>
+                                }
+                                helper={
+                                    !simplified
+                                        ? "Keep this key in your backend. Don’t share it or include it in public code."
+                                        : undefined
+                                }
                             >
-                                Connect User Wallets
-                            </InlineLink>
-                            — do not mint a raw <code>pk_</code> via the CLI.
-                        </p>
+                                <CopyField
+                                    value={createdKey.key}
+                                    label={
+                                        simplified
+                                            ? "Copy app key"
+                                            : "Copy secret key"
+                                    }
+                                />
+                            </FieldStack>
+                        </AuthInfoCard>
                     )}
-
-                    {!simplified && createdKey && (
-                        <ul className="text-xs text-ink-700 space-y-1 list-disc pl-5">
-                            <li className="text-intent-warning-text font-medium">
-                                Only shown once – copy it now.
-                            </li>
-                            <li>
-                                Never expose publicly – keep it in your backend.
-                            </li>
-                        </ul>
-                    )}
-
                     {simplified && !createdKey && (
                         <PublishableKeySettings
+                            lead={nameField}
                             redirectUris={redirectUris}
                             onRedirectUrisChange={setRedirectUris}
                             earningsEnabled={earningsEnabled}
@@ -303,39 +287,31 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                         />
                     )}
 
-                    {!simplified && !createdKey && (
+                    {isOpen && !simplified && !createdKey && (
                         <KeyPermissionsInputs
                             value={keyPermissions}
+                            lead={nameField}
                             disabled={isSubmitting}
-                            inline
                         />
                     )}
-                </ScrollArea>
+                </DialogBody>
 
-                <div className="flex gap-2 justify-end p-6 pt-4 shrink-0">
-                    {!createdKey && (
-                        <Button
-                            type="button"
-                            intent="danger"
-                            onClick={() => setIsOpen(false)}
-                            className="disabled:opacity-50"
-                            disabled={isSubmitting}
-                        >
-                            Cancel
-                        </Button>
-                    )}
-                    {createDisabledReason ? (
-                        <Tooltip
-                            triggerAs="span"
-                            content={createDisabledReason}
-                            className="inline-flex"
-                        >
-                            {submitButton}
-                        </Tooltip>
-                    ) : (
-                        submitButton
-                    )}
-                </div>
+                <DialogFooter>
+                    <Button
+                        icon={<XIcon />}
+                        type="button"
+                        intent="neutral"
+                        onClick={() => {
+                            if (createdKey) onComplete();
+                            setIsOpen(false);
+                        }}
+                        className="disabled:opacity-50"
+                        disabled={isSubmitting}
+                    >
+                        {createdKey ? "Close" : "Cancel"}
+                    </Button>
+                    {submitButton}
+                </DialogFooter>
             </form>
         </Dialog>
     );

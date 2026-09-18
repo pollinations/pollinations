@@ -2,19 +2,22 @@ import { apiClient } from "@frontend/api.ts";
 import {
     AppIcon,
     Button,
-    Chip,
-    CopyButton,
-    cn,
     Dialog,
-    DialogTitle,
-    Field,
-    GlobeIcon,
-    Input,
-    LockIcon,
-    ScrollArea,
+    DialogBody,
+    DialogFooter,
+    DialogHeader,
+    KeyChip,
+    KeyIcon,
+    XIcon,
 } from "@pollinations/ui";
+import {
+    AuthModal,
+    AuthModalFootnote,
+    ErrorBanner,
+} from "@pollinations/ui/auth";
 import type { FC, ReactNode } from "react";
 import { useState } from "react";
+import { KeyNameField } from "./key-name-field.tsx";
 import { KeyPermissionsInputs, useKeyPermissions } from "./key-permissions.tsx";
 import {
     isAppKey,
@@ -29,7 +32,10 @@ interface EditApiKeyDialogProps {
     apiKey: ApiKey;
     onUpdate: (id: string, updates: ApiKeyUpdateParams) => Promise<void>;
     onClose: () => void;
+    /** Standalone page shell with its own header; the dashboard uses the dialog overlay. */
     header?: ReactNode;
+    /** Standalone page only: the line under the actions. */
+    footnote?: ReactNode;
 }
 
 function cleanRedirectUris(uris: string[]): string[] {
@@ -41,6 +47,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     onUpdate,
     onClose,
     header,
+    footnote,
 }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [name, setName] = useState(apiKey.name || "");
@@ -123,120 +130,99 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
         }
     }
 
+    const nameField = (
+        <KeyNameField
+            app={appKey}
+            value={name}
+            onChange={setName}
+            disabled={isSubmitting}
+        />
+    );
+    // Same content in both places: the standalone page paints the page shell,
+    // the dashboard dims the page behind a dialog.
+    const Shell = header ? AuthModal : DashboardDialog;
     return (
-        <Dialog
-            open
-            onOpenChange={(open) => !open && onClose()}
-            contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
-        >
+        <Shell onClose={onClose}>
             {header}
-            <div className="shrink-0 p-6 pb-4">
-                <DialogTitle className="text-xl font-bold mb-4">
-                    {appKey ? "Edit App Key" : "Edit API Key"}
-                </DialogTitle>
+            <DialogHeader
+                title={appKey ? "Edit app key" : "Edit key permissions"}
+                description={
+                    appKey
+                        ? "Update your app’s name, callback URLs and earnings settings."
+                        : "Choose what this key can access and how much it can spend."
+                }
+            >
+                <div className="mt-3">
+                    <KeyChip
+                        prefix={apiKey.start ?? ""}
+                        value={isPublishable ? plaintextKey : undefined}
+                        label="Copy app key"
+                    />
+                </div>
+            </DialogHeader>
 
-                <div className="flex items-center gap-3">
-                    <Chip>
-                        {appKey ? (
-                            <>
-                                <AppIcon className="h-4 w-4" />
-                                App
-                            </>
-                        ) : isPublishable ? (
-                            <>
-                                <GlobeIcon className="h-4 w-4" />
-                                Publishable
-                            </>
-                        ) : (
-                            <>
-                                <LockIcon className="h-4 w-4" />
-                                Secret
-                            </>
+            <form
+                className="flex min-h-0 flex-1 flex-col"
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    void handleSave();
+                }}
+            >
+                <DialogBody>
+                    {error && <ErrorBanner>{error}</ErrorBanner>}
+
+                    <div className="space-y-4">
+                        {isPublishable && (
+                            <PublishableKeySettings
+                                lead={nameField}
+                                redirectUris={redirectUris}
+                                onRedirectUrisChange={setRedirectUris}
+                                earningsEnabled={earningsEnabled}
+                                onEarningsEnabledChange={setEarningsEnabled}
+                                disabled={isSubmitting}
+                            />
                         )}
-                    </Chip>
-                    {isPublishable && plaintextKey ? (
-                        <CopyButton
-                            value={plaintextKey}
-                            tooltipClassName="inline-flex min-w-0"
-                            aria-label="Copy publishable API key"
-                            className={(copied) =>
-                                cn(
-                                    "font-mono text-sm cursor-pointer transition-all",
-                                    copied
-                                        ? "text-intent-success-text font-semibold"
-                                        : "text-theme-text-soft hover:text-theme-text-strong hover:underline",
-                                )
-                            }
-                        >
-                            {(copied) => (copied ? "Copied!" : plaintextKey)}
-                        </CopyButton>
-                    ) : (
-                        <span className="font-mono text-sm text-theme-text-muted">
-                            {apiKey.start}...
-                        </span>
-                    )}
-                </div>
-            </div>
 
-            <ScrollArea className="min-h-0 flex-1 overscroll-contain p-6 py-4 touch-pan-y [-webkit-overflow-scrolling:touch]">
-                {error && (
-                    <div className="mb-4 rounded-xl bg-intent-danger-bg-light p-4 text-intent-danger-text">
-                        {error}
+                        {!isPublishable && (
+                            <KeyPermissionsInputs
+                                value={keyPermissions}
+                                lead={nameField}
+                                disabled={isSubmitting}
+                            />
+                        )}
                     </div>
-                )}
+                </DialogBody>
 
-                <div className="space-y-4">
-                    <Field.Root className="flex flex-col gap-2">
-                        <Field.Label className="text-sm font-semibold">
-                            Name
-                        </Field.Label>
-                        <Input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            className="w-full"
-                            placeholder="Enter API key name"
-                            disabled={isSubmitting}
-                        />
-                    </Field.Root>
-
-                    {isPublishable && (
-                        <PublishableKeySettings
-                            redirectUris={redirectUris}
-                            onRedirectUrisChange={setRedirectUris}
-                            earningsEnabled={earningsEnabled}
-                            onEarningsEnabledChange={setEarningsEnabled}
-                            disabled={isSubmitting}
-                        />
-                    )}
-
-                    {!isPublishable && (
-                        <KeyPermissionsInputs
-                            value={keyPermissions}
-                            disabled={isSubmitting}
-                            inline
-                        />
-                    )}
-                </div>
-            </ScrollArea>
-
-            <div className="flex gap-2 justify-end p-6 pt-4 shrink-0">
-                <Button
-                    type="button"
-                    intent="danger"
-                    onClick={onClose}
-                    disabled={isSubmitting}
-                >
-                    Cancel
-                </Button>
-                <Button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={isSubmitting}
-                >
-                    {isSubmitting ? "Saving..." : "Save"}
-                </Button>
-            </div>
-        </Dialog>
+                <DialogFooter>
+                    <Button
+                        icon={<XIcon />}
+                        type="button"
+                        intent="neutral"
+                        onClick={onClose}
+                        disabled={isSubmitting}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        icon={appKey ? <AppIcon /> : <KeyIcon />}
+                        type="submit"
+                        intent="commit"
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting ? "Saving…" : "Save changes"}
+                    </Button>
+                </DialogFooter>
+            </form>
+            {footnote && <AuthModalFootnote>{footnote}</AuthModalFootnote>}
+        </Shell>
     );
 };
+
+const DashboardDialog: FC<{ onClose: () => void; children: ReactNode }> = ({
+    onClose,
+    children,
+}) => (
+    <Dialog open onOpenChange={(open) => !open && onClose()} size="md">
+        {children}
+    </Dialog>
+);

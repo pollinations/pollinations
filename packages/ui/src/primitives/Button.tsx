@@ -1,16 +1,21 @@
-import type { PropsWithChildren, MouseEvent as ReactMouseEvent } from "react";
+import type {
+    PropsWithChildren,
+    MouseEvent as ReactMouseEvent,
+    ReactNode,
+} from "react";
+import { createContext, useContext } from "react";
 import { cn } from "../lib/cn.ts";
 
 /** Semantic soft-fill roles. Label recipes live on Chip. */
-type ButtonIntent = "danger" | "info" | "neutral";
-export type ButtonAppearance = "pill" | "raised";
+type ButtonIntent = "danger" | "info" | "neutral" | "brand" | "commit";
+export type ButtonAppearance = "pill" | "raised" | "block";
 
 const pillSizes = {
     icon: "polli:h-12 polli:w-12 polli:p-0",
     xs: "polli:h-5 polli:px-1.5 polli:py-0 polli:text-[11px] polli:leading-none",
-    sm: "polli:px-2 polli:pt-0.5 polli:pb-1",
-    md: "polli:px-4 polli:pt-1.5 polli:pb-2",
-    lg: "polli:px-6 polli:py-3",
+    sm: "polli:min-h-7 polli:px-2 polli:pt-0.5 polli:pb-1",
+    md: "polli:min-h-9 polli:px-4 polli:pt-1.5 polli:pb-2",
+    lg: "polli:min-h-12 polli:px-6 polli:py-3",
 } as const;
 
 const raisedSizes = {
@@ -21,8 +26,18 @@ const raisedSizes = {
     lg: "polli:px-8 polli:py-4 polli:text-lg",
 } as const;
 
+// Rectangular, stretch-to-fill actions for dialog and flow footers.
+const blockSizes = {
+    icon: "polli:h-11 polli:w-11 polli:p-0",
+    xs: "polli:min-h-8 polli:px-2 polli:py-1 polli:text-xs",
+    sm: "polli:min-h-9 polli:px-3 polli:py-1.5",
+    md: "polli:min-h-11 polli:px-4 polli:py-2",
+    lg: "polli:min-h-12 polli:px-6 polli:py-3",
+} as const;
+
 const appearanceClasses: Record<ButtonAppearance, string> = {
     pill: "polli:rounded-full",
+    block: "polli:rounded-md polli:min-w-40 polli:max-sm:flex-1 polli:max-sm:self-stretch",
     raised:
         "polli:rounded-xl polli:border-r-[3px] polli:border-b-[3px] polli:border-solid " +
         "polli:border-theme-text-strong/20 polli:hover:border-theme-text-strong/45",
@@ -34,20 +49,32 @@ const themeClasses =
     "polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover polli:transition-colors";
 
 // Soft intent recipes — light tile + deep text, slightly deeper bg on hover.
-// No filled CTAs anywhere.
+// No filled CTAs at rest. Two outlined families share one look: `brand` for
+// signing in (identity, calm pale hover) and `commit` for granting or saving
+// (fills with the accent only under the pointer or keyboard focus).
+const outlined =
+    "polli:border polli:border-theme-text-soft polli:bg-surface-white polli:text-theme-text-strong " +
+    "polli:transition-colors polli:[.dark_&]:bg-transparent";
 const intentClasses: Record<ButtonIntent, string> = {
+    brand: `${outlined} polli:hover:bg-theme-text-soft/10`,
+    commit:
+        `${outlined} polli:hover:border-theme-bg-active polli:hover:bg-theme-bg-active ` +
+        "polli:focus-visible:border-theme-bg-active polli:focus-visible:bg-theme-bg-active " +
+        "polli:[.dark_&]:hover:bg-theme-bg-active polli:[.dark_&]:focus-visible:bg-theme-bg-active",
     danger:
         "polli:bg-intent-danger-bg-light polli:text-intent-danger-text " +
         "polli:hover:bg-intent-danger-bg-hover polli:transition-colors",
     info:
         "polli:bg-intent-info-bg-light polli:text-intent-info-text " +
         "polli:hover:bg-intent-info-bg-hover polli:transition-colors",
+    // Secondary actions never take the accent: one step stronger grey on hover.
     neutral:
         "polli:bg-theme-bg-subtle polli:text-theme-text-base " +
-        "polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover polli:transition-colors",
+        "polli:hover:bg-theme-text-muted/25 polli:hover:text-theme-text-strong polli:transition-colors",
 };
 
 type BaseButtonProps = {
+    icon?: ReactNode;
     /** Optional semantic recipe; omit for the ambient theme button. */
     intent?: ButtonIntent;
     /** `raised` is the stronger website CTA treatment. */
@@ -57,6 +84,20 @@ type BaseButtonProps = {
     disabled?: boolean;
 };
 
+const sizeMaps: Record<
+    ButtonAppearance,
+    Record<keyof typeof pillSizes, string>
+> = {
+    pill: pillSizes,
+    raised: raisedSizes,
+    block: blockSizes,
+};
+
+/** Containers such as `DialogFooter` set the appearance for every button inside. */
+export const ButtonDefaultsContext = createContext<{
+    appearance?: ButtonAppearance;
+}>({});
+
 const buttonClasses = ({
     intent,
     appearance = "pill",
@@ -65,9 +106,9 @@ const buttonClasses = ({
     disabled,
 }: BaseButtonProps & { disabled?: boolean }) => {
     const colorClasses = intent ? intentClasses[intent] : themeClasses;
-    const sizeClasses = appearance === "raised" ? raisedSizes : pillSizes;
+    const sizeClasses = sizeMaps[appearance];
     return cn(
-        "polli-control polli:inline-flex polli:items-center polli:justify-center polli:self-center polli:font-medium polli:leading-normal polli:box-border",
+        "polli-control polli:inline-flex polli:items-center polli:justify-center polli:self-center polli:font-body polli:text-sm polli:font-medium polli:leading-normal polli:box-border",
         disabled
             ? "polli:opacity-50 polli:cursor-not-allowed"
             : "polli:hover:filter polli:hover:brightness-105 polli:cursor-pointer",
@@ -86,6 +127,7 @@ export type ButtonProps<T extends React.ElementType = "button"> =
 export function Button<T extends React.ElementType = "button">({
     as,
     children,
+    icon,
     intent,
     appearance,
     size,
@@ -93,6 +135,7 @@ export function Button<T extends React.ElementType = "button">({
     disabled,
     ...buttonProps
 }: ButtonProps<T>) {
+    const defaults = useContext(ButtonDefaultsContext);
     const Component: React.ElementType = as || "button";
     const isButton = Component === "button";
     const isAnchor = Component === "a";
@@ -125,12 +168,20 @@ export function Button<T extends React.ElementType = "button">({
             onClick={handleClick}
             className={buttonClasses({
                 intent,
-                appearance,
+                appearance: appearance ?? defaults.appearance,
                 size,
                 className,
                 disabled,
             })}
         >
+            {icon && (
+                <span
+                    aria-hidden="true"
+                    className="polli:mr-2 polli:flex polli:size-4 polli:shrink-0 polli:[&>svg]:size-full"
+                >
+                    {icon}
+                </span>
+            )}
             {children}
         </Component>
     );

@@ -1,4 +1,4 @@
-import { FieldStack, InlineLink, Input } from "@pollinations/ui";
+import { Field, FieldStack, InlineLink, Input } from "@pollinations/ui";
 import type { AgentFormState } from "./types.ts";
 
 type CodeAgentFieldsProps = {
@@ -30,20 +30,23 @@ export function CodeAgentFields({
                     Private code agents coming soon.
                 </>
             }
-            alignLabelRow
         >
-            <Input
-                name="code-agent-repository"
-                type="url"
-                value={form.repository}
-                placeholder="https://github.com/your-name/your-agent"
-                autoComplete="off"
-                autoCapitalize="none"
-                spellCheck={false}
-                required
-                disabled={disabled}
-                onChange={(event) => onChange("repository", event.target.value)}
-            />
+            <Field.Input asChild>
+                <Input
+                    name="code-agent-repository"
+                    type="url"
+                    value={form.repository}
+                    placeholder="https://github.com/your-name/your-agent"
+                    autoComplete="off"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    required
+                    disabled={disabled}
+                    onChange={(event) =>
+                        onChange("repository", event.target.value)
+                    }
+                />
+            </Field.Input>
         </FieldStack>
     );
 }

@@ -6,9 +6,12 @@ export type ProductEvent =
     | "checkout_started"
     | "auto_top_up_enabled"
     | "auto_top_up_disabled"
-    // flow_id is the random per-tab id (page views) or the device_code row
-    // id (device flow), never a code, token or email. A sign-in needs no
-    // event: it is a tab whose views go from an empty user_id to a real one.
+    // Sign-in is two server-side counts, so the drop-off is measured without
+    // any browser identifier: started when GitHub is requested, completed when
+    // the session exists. flow_id is only the device_code row id, never a
+    // code, token or email.
+    | "sign_in_started"
+    | "sign_in_completed"
     | "authorize_granted"
     | "device_code_issued"
     | "device_approved"
@@ -74,6 +77,11 @@ export async function captureProductEvent(
     }
 }
 
+/** A browser asking not to be measured, on any request that carries headers. */
+export function optedOut(headers?: Headers | null): boolean {
+    return headers?.get("DNT") === "1" || headers?.get("Sec-GPC") === "1";
+}
+
 /**
  * Fire-and-forget capture from a request handler. Browsers that ask not to be
  * measured are skipped here too, not just on the page-view beacon.
@@ -86,7 +94,7 @@ export function captureFromRequest(
     properties?: Parameters<typeof captureProductEvent>[3],
     eventId?: string,
 ): void {
-    if (c.req.header("DNT") === "1" || c.req.header("Sec-GPC") === "1") return;
+    if (optedOut(c.req.raw.headers)) return;
     c.executionCtx.waitUntil(
         captureProductEvent(c.env, event, userId, properties, eventId),
     );

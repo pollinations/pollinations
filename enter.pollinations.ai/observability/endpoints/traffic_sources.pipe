@@ -1,36 +1,16 @@
 DESCRIPTION >
-    Where tabs come from and what they turn into, by week: source is the
-    landing utm_source (or ref), else the external referrer hostname, else
-    'direct'; landing_page is the first page the tab viewed. Visitors are
-    per-tab ids from product_event. signed_in counts tabs that saw a user at
-    any point, logins the tabs that arrived signed out and became signed in,
-    signups those whose user row was created around that moment. paid counts
-    visitors (signed in on arrival or after) who completed a Stripe checkout
-    within conversion_days of the visit, so old purchases are not credited to
-    a new visit. No history before tracking was enabled.
+    Where traffic comes from and what it turns into, by week. source is the
+    campaign utm_source (or ref), else the external referrer hostname, else
+    'direct'; these travel on every page view, so a signed-in view still
+    carries the source the person arrived from. views counts page views,
+    users the distinct signed-in people seen on that source, signups those
+    whose account was created around the view, and paid those who completed a
+    Stripe checkout within conversion_days of it, so an old customer's new
+    visit is not credited as a fresh purchase. No browser identifier is
+    involved, so views are views, not distinct visitors. No history before
+    tracking was enabled.
 
 TOKEN tinybird_read READ
-
-NODE tabs
-SQL >
-    %
-    SELECT
-        flow_id,
-        min(timestamp) AS first_seen,
-        argMin(page, timestamp) AS landing_page,
-        argMin(referrer_host, timestamp) AS referrer_host,
-        argMin(utm_source, timestamp) AS utm_source,
-        argMin(utm_medium, timestamp) AS utm_medium,
-        argMin(utm_campaign, timestamp) AS utm_campaign,
-        anyIf(user_id, user_id != '') AS seen_user_id,
-        countIf(user_id = '') AS anon_views,
-        minIf(timestamp, user_id != '') AS identified_at
-    FROM product_event
-    WHERE environment = {{String(environment, 'production')}}
-        AND event = 'page_viewed'
-        AND flow_id != ''
-        AND timestamp >= now() - toIntervalDay(least(greatest({{Int32(days, 30)}}, 1), 366))
-    GROUP BY flow_id
 
 NODE users
 SQL >
@@ -54,27 +34,28 @@ NODE sources
 SQL >
     %
     SELECT
-        formatDateTime(toStartOfWeek(t.first_seen, 1), '%Y-%m-%d') AS week,
-        multiIf(t.utm_source != '', t.utm_source, t.referrer_host != '', t.referrer_host, 'direct') AS source,
-        t.utm_medium AS medium,
-        t.utm_campaign AS campaign,
-        t.landing_page AS landing_page,
-        uniq(t.flow_id) AS visitors,
-        uniqIf(t.flow_id, t.seen_user_id != '') AS signed_in,
-        uniqIf(t.flow_id, t.seen_user_id != '' AND t.anon_views > 0) AS logins,
-        uniqIf(t.seen_user_id, t.anon_views > 0 AND u.created_at > t.first_seen - toIntervalHour(1)) AS signups,
+        formatDateTime(toStartOfWeek(v.timestamp, 1), '%Y-%m-%d') AS week,
+        multiIf(v.utm_source != '', v.utm_source, v.referrer_host != '', v.referrer_host, 'direct') AS source,
+        v.utm_medium AS medium,
+        v.utm_campaign AS campaign,
+        count() AS views,
+        uniqIf(v.user_id, v.user_id != '') AS users,
+        uniqIf(v.user_id, u.created_at > v.timestamp - toIntervalHour(1)) AS signups,
         uniqIf(
-            t.seen_user_id,
+            v.user_id,
             arrayExists(
-                paid -> paid >= t.first_seen
-                    AND paid <= t.first_seen + toIntervalDay(least(greatest({{Int32(conversion_days, 7)}}, 1), 90)),
+                paid -> paid >= v.timestamp
+                    AND paid <= v.timestamp + toIntervalDay(least(greatest({{Int32(conversion_days, 7)}}, 1), 90)),
                 p.paid_at
             )
         ) AS paid
-    FROM tabs t
-    LEFT JOIN users u ON t.seen_user_id = u.user_id
-    LEFT JOIN payments p ON t.seen_user_id = p.user_id
-    GROUP BY week, source, medium, campaign, landing_page
-    ORDER BY week ASC, visitors DESC
+    FROM product_event v
+    LEFT JOIN users u ON v.user_id = u.user_id
+    LEFT JOIN payments p ON v.user_id = p.user_id
+    WHERE v.environment = {{String(environment, 'production')}}
+        AND v.event = 'page_viewed'
+        AND v.timestamp >= now() - toIntervalDay(least(greatest({{Int32(days, 30)}}, 1), 366))
+    GROUP BY week, source, medium, campaign
+    ORDER BY week ASC, views DESC
 
 TYPE endpoint

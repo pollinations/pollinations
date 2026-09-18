@@ -6,10 +6,11 @@ DESCRIPTION >
     checkout starts, auto top-up toggles and pre-login auth-flow stages
     (sign_in_*, device_*, authorize_granted, link_*). Server-authenticated
     user IDs join directly to d1_user (signups) and stripe_event (fulfilled
-    payments). flow_id is a random per-tab id or the device_code row id,
-    never a code, token or email. client_id is the public app key. Browser
-    events carry where the tab came from: referrer_host (hostname only) and
-    utm_* from the landing URL. No backfill; rows expire after 24 months.
+    payments). flow_id is only the device_code row id, never a code, token or
+    email: the browser sends no identifier at all. client_id is the public app
+    key. Browser events carry where the visit came from: referrer_host
+    (hostname only) and utm_* from the landing URL. No backfill; rows expire
+    after 24 months.
 
 SCHEMA >
     `timestamp` DateTime64(3) `json:$.timestamp`,

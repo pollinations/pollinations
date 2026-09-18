@@ -1,8 +1,7 @@
 DESCRIPTION >
     Daily observed event and user counts, optionally split by page. This is
     activity, not a signup-cohort conversion rate: users can enter at any stage.
-    events counts distinct event ids, so one tab revisiting the same page
-    counts once, not twice. No history before tracking starts.
+    events counts every recorded event. No history before tracking starts.
 
 TOKEN tinybird_read READ
 
@@ -13,7 +12,7 @@ SQL >
         toDate(timestamp) AS date,
         event,
         page,
-        uniq(event_id) AS events,
+        count() AS events,
         uniqIf(user_id, user_id != '') AS users
     FROM product_event
     WHERE environment = {{String(environment, 'production')}}

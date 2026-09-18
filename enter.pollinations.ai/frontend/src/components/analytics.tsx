@@ -10,31 +10,31 @@ export function Analytics() {
     ) : null;
 }
 
-// Random per-tab id plus where the tab came from, captured at the first
-// document load and repeated on every view. sessionStorage survives the
-// GitHub redirect in the same tab, so a tab whose views go from signed out to
-// signed in is a completed sign-in — no cookie and no server hook needed.
-function tabAttribution(): Record<string, string> {
+// Where the visit came from, captured at the first document load and repeated
+// on every view. sessionStorage survives the GitHub redirect, so a signed-in
+// view still carries the source, which is what attribution joins on. No
+// identifier is stored: no cookie, no random id.
+function sourceAttribution(): Record<string, string> {
     try {
-        const stored = sessionStorage.getItem("analytics_tab");
+        const stored = sessionStorage.getItem("analytics_source");
         if (stored) return JSON.parse(stored);
     } catch {}
-    const tab: Record<string, string> = { flow_id: crypto.randomUUID() };
+    const source: Record<string, string> = {};
     try {
         const host = new URL(document.referrer).hostname;
-        if (host && host !== location.hostname) tab.referrer_host = host;
+        if (host && host !== location.hostname) source.referrer_host = host;
     } catch {}
     const params = new URLSearchParams(location.search);
     for (const key of ["utm_source", "utm_medium", "utm_campaign"]) {
         const value =
             params.get(key) ??
             (key === "utm_source" ? params.get("ref") : null);
-        if (value) tab[key] = value.slice(0, 100);
+        if (value) source[key] = value.slice(0, 100);
     }
     try {
-        sessionStorage.setItem("analytics_tab", JSON.stringify(tab));
+        sessionStorage.setItem("analytics_source", JSON.stringify(source));
     } catch {}
-    return tab;
+    return source;
 }
 
 function PageViews() {
@@ -56,7 +56,7 @@ function PageViews() {
         const params = new URLSearchParams(location.search);
         const view = productPageViewSchema.safeParse({
             page,
-            ...tabAttribution(),
+            ...sourceAttribution(),
             client_id: (
                 params.get("client_id") ??
                 params.get("app_key") ??

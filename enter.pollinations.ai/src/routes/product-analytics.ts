@@ -6,7 +6,7 @@ import type { Env } from "../env.ts";
 import { captureProductEvent } from "../utils/product-analytics.ts";
 
 // Same-origin, bodyless beacon. Signed-out views are recorded with an empty
-// user id; the per-tab flow_id makes one event per tab and page.
+// user id. The browser sends no identifier, so every view is its own event.
 export const productAnalyticsRoutes = new Hono<Env>().post(
     "/page-view",
     async (c) => {
@@ -31,7 +31,6 @@ export const productAnalyticsRoutes = new Hono<Env>().post(
                 "page_viewed",
                 session?.user.id ?? "",
                 view.data,
-                `view:${view.data.flow_id}:${view.data.page}`,
             ),
         );
         return c.body(null, 204);

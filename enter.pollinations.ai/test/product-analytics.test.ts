@@ -53,10 +53,9 @@ test("disabled tracking does no network IO", async () => {
     expect(fetch).not.toHaveBeenCalled();
 });
 
-const FLOW_ID = "0f4b2a6e-1c3d-4e5f-8a9b-0c1d2e3f4a5b";
-const VIEW = { page: "/top-up", flow_id: FLOW_ID };
+const VIEW = { page: "/top-up" };
 
-test("page schema accepts only fixed labels, a tab id and length-capped attribution", () => {
+test("page schema accepts only fixed labels and length-capped attribution, never an identifier", () => {
     expect(productPageViewSchema.safeParse(VIEW).success).toBe(true);
     expect(
         productPageViewSchema.safeParse({
@@ -67,10 +66,9 @@ test("page schema accepts only fixed labels, a tab id and length-capped attribut
         }).success,
     ).toBe(true);
     for (const body of [
-        { page: "/top-up" },
-        { ...VIEW, page: "/top-up?key=secret" },
-        { ...VIEW, page: "https://example.com" },
-        { ...VIEW, flow_id: "not-a-uuid" },
+        { page: "/top-up?key=secret" },
+        { page: "https://example.com" },
+        { ...VIEW, flow_id: "0f4b2a6e-1c3d-4e5f-8a9b-0c1d2e3f4a5b" },
         { ...VIEW, user_id: "someone-else" },
         { ...VIEW, event: "payment_completed" },
         { ...VIEW, utm_source: "x".repeat(101) },
@@ -112,7 +110,6 @@ test("signed-out views are recorded without a user and pass attribution through"
     });
     const view = {
         page: "/_dashboard/news",
-        flow_id: FLOW_ID,
         referrer_host: "github.com",
         utm_source: "readme",
         utm_campaign: "launch",
@@ -128,7 +125,6 @@ test("signed-out views are recorded without a user and pass attribution through"
             ...view,
             event: "page_viewed",
             user_id: "",
-            event_id: `view:${FLOW_ID}:/_dashboard/news`,
         }),
         expect.objectContaining({ user_id: "" }),
     ]);
@@ -160,9 +156,8 @@ test("page views derive the user from the authenticated session", async ({
         {
             event: "page_viewed",
             page: "/top-up",
-            flow_id: FLOW_ID,
             user_id: user?.user_id,
-            event_id: `view:${FLOW_ID}:/top-up`,
+            event_id: expect.any(String),
             timestamp: expect.any(String),
             environment: "test",
         },
@@ -211,33 +206,43 @@ test("delivery failure never fails the caller and is not retried", async () => {
     expect(fetch).toHaveBeenCalledTimes(2);
 });
 
-test("a tab that signs in keeps its flow id, so the sign-in is derivable", async ({
-    sessionToken,
+test("signing in records the request to GitHub and the resulting session", async ({
+    mocks,
 }) => {
-    const originalFetch = globalThis.fetch;
-    const rows: Record<string, unknown>[] = [];
-    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
-        if (
-            new URL(String(input)).searchParams.get("name") === "product_event"
-        ) {
-            rows.push(JSON.parse(String(init?.body)));
-            return new Response(null, { status: 202 });
-        }
-        return originalFetch(input, init);
-    });
-    const user = await env.DB.prepare(
-        "SELECT id AS user_id FROM user LIMIT 1",
-    ).first<{ user_id: string }>();
-    const view = { page: "/sign-in", flow_id: FLOW_ID } as const;
-    expect((await pageView(view)).status).toBe(204);
-    expect(
-        (await pageView(view, `better-auth.session_token=${sessionToken}`))
-            .status,
-    ).toBe(204);
-    expect(rows.map((row) => [row.flow_id, row.user_id])).toEqual([
-        [FLOW_ID, ""],
-        [FLOW_ID, user?.user_id],
+    await mocks.enable("github", "tinybird");
+    const started = await SELF.fetch(
+        "http://localhost:3000/api/auth/sign-in/social",
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ provider: "github" }),
+        },
+    );
+    expect(started.status).toBe(200);
+    const cookies = started.headers.get("Set-Cookie") ?? "";
+    const state = new URL(
+        ((await started.json()) as { url: string }).url,
+    ).searchParams.get("state");
+    expect(state).toBeTruthy();
+
+    const callback = await SELF.fetch(
+        `http://localhost:3000/api/auth/callback/github?code=test-code&state=${state}`,
+        { headers: { Cookie: cookies }, redirect: "manual" },
+    );
+    expect(callback.status).toBe(302);
+    await callback.text();
+
+    // Both stages are plain server-side counts: no cookie, no browser id.
+    const signIn = mocks.tinybird.state.productEvents.filter((row) =>
+        String(row.event).startsWith("sign_in_"),
+    );
+    expect(signIn.map((row) => row.event)).toEqual([
+        "sign_in_started",
+        "sign_in_completed",
     ]);
+    expect(signIn[0]?.user_id).toBe("");
+    expect(signIn[1]?.user_id).toEqual(expect.any(String));
+    expect(signIn[1]?.user_id).not.toBe("");
 });
 
 test("server events skip browsers that opted out", async ({ mocks }) => {

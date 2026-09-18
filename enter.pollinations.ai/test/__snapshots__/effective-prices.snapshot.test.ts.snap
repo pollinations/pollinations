@@ -2788,6 +2788,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000015825,
     },
   },
+  "tencent/hy4-preview": {
+    "cost": {
+      "completionTextTokens": 0.000002638555,
+      "promptCachedTokens": 0.00000004431,
+      "promptTextTokens": 0.00000087987,
+    },
+    "price": {
+      "completionTextTokens": 0.000002638555,
+      "promptCachedTokens": 0.00000004431,
+      "promptTextTokens": 0.00000087987,
+    },
+  },
   "thinkingmachines/inkling": {
     "cost": {
       "completionTextTokens": 0.00000405,

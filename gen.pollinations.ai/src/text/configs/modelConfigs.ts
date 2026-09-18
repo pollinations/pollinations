@@ -325,6 +325,23 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    // Reasoning defaults to "high" and burns ~1,300 tokens on even a
+    // trivial schema, so a caller relying on the upstream default (no
+    // explicit max_tokens) can get finish_reason:"length", content:null
+    // under a normal budget. Matches this route's own max_completion_tokens
+    // cap. Callers who pass an explicit max_tokens still hit the same gap —
+    // resolveModelConfig drops this default the moment one is supplied.
+    "tencent/hy4-preview": () =>
+        createOpenRouterModelConfig({
+            model: "tencent/hy4-preview",
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: ["tencent/fp8"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "meituan/longcat-2.0": () =>
         createOpenRouterModelConfig({
             model: "meituan/longcat-2.0",

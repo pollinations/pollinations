@@ -300,6 +300,19 @@ export const CHAT_PARAMETERS = {
     ],
     museSpark: [...CHAT, "temperature", "tools"],
     openRouterMistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
+    // Tencent's only OpenRouter endpoint (2026-09-12): no top_p, penalties,
+    // seed or logprobs in supported_parameters. Forced tool_choice isn't
+    // supported (only "auto"/"none"), so "tools" is declared alone.
+    openRouterHy4Preview: [
+        ...CHAT,
+        "tools",
+        "response_format",
+        "structured_outputs",
+        "temperature",
+        "stop",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
     // Novita route (2026-09-18).
     openRouterHy3: [
         "max_tokens",

@@ -593,6 +593,10 @@ const models: ModelDefinition[] = [
         transform: createReasoningEffortTransform("toggle"),
     },
     {
+        name: "tencent/hy4-preview",
+        config: portkeyConfig["tencent/hy4-preview"],
+    },
+    {
         name: "thinkingmachines/inkling-small",
         config: portkeyConfig["thinkingmachines/inkling-small"],
     },

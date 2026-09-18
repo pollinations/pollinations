@@ -105,6 +105,19 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Hy4 Preview to Tencent on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "tencent/hy4-preview",
+        });
+
+        expect(result.options.model).toBe("tencent/hy4-preview");
+        expect(result.options.max_tokens).toBe(64000);
+        expect(result.options.provider).toEqual({
+            only: ["tencent/fp8"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Hy3 to Novita on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "tencent/hy3",

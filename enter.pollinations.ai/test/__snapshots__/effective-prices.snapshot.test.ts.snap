@@ -2791,11 +2791,11 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "typesafe/jev": {
     "cost": {
       "completionTextTokens": 0,
-      "promptTextTokens": 0.000000042,
+      "promptTextTokens": 0.00000004431,
     },
     "price": {
       "completionTextTokens": 0,
-      "promptTextTokens": 0.000000042,
+      "promptTextTokens": 0.00000004431,
     },
   },
   "x-ai/grok-4.20": {

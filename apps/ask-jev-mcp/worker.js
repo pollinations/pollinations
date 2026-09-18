@@ -19,7 +19,8 @@ function buildServer() {
                 "Evaluate state with independent choice, ordered score, or noul (probability) questions. " +
                 "Supply relevant facts in state; confidence can remain high when facts are missing. " +
                 "Choice criteria map options to descriptions; optional noul criteria.true/false define yes/no. " +
-                "Read score legends; handle counting, arithmetic, and date comparisons in code.",
+                "Read score legends; handle counting, arithmetic, and date comparisons in code. " +
+                "Question and answer shapes: https://docs.typesafe.ai/api",
             inputSchema: z.object(jevInputSchema),
         },
         async ({ state, questions }, context) => {

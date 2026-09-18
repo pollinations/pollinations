@@ -1135,11 +1135,15 @@ const TEXT_BASE_SERVICES = {
         publisher: "TypeSafe",
         category: "text",
         addedDate: new Date("2026-09-17").getTime(),
-        priceMultiplier: 1, // Billed at TypeSafe list price, no margin.
-        paidOnly: false, // Quest Pollen may pay for Jev; no paid balance needed.
+        priceMultiplier: 1, // Billed at cost, no margin.
+        // Deliberately not paid-only, unlike the other OpenRouter routes:
+        // Quest Pollen must reach Jev, and $0.042/M in with free output
+        // bounds what a free-tier account can spend.
+        paidOnly: false,
         cost: {
-            // TypeSafe list price for Jev (docs.typesafe.ai, checked 2026-09-17).
-            promptTextTokens: perMillion(0.042),
+            // TypeSafe list price (docs.typesafe.ai, checked 2026-09-17) plus
+            // OpenRouter's 5.5% credit fee, as every OpenRouter route records.
+            promptTextTokens: perMillion(0.042) * 1.055,
             completionTextTokens: perMillion(0),
         },
         title: "Jev",

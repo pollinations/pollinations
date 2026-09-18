@@ -111,6 +111,7 @@ describe("resolveModelConfig", () => {
         });
 
         expect(result.options.model).toBe("tencent/hy4-preview");
+        expect(result.options.max_tokens).toBe(64000);
         expect(result.options.provider).toEqual({
             only: ["tencent/fp8"],
             allow_fallbacks: false,

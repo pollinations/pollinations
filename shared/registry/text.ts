@@ -1581,10 +1581,12 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Tencent (fp8) route rates (2026-09-12).
-            promptTextTokens: perMillion(0.834),
-            promptCachedTokens: perMillion(0.042),
-            completionTextTokens: perMillion(2.501),
+            // OpenRouter Tencent (fp8) route rates (2026-09-12), including
+            // the mandatory 5.5% OpenRouter credit fee (#14895, merged
+            // 2026-09-15, after this branch was created).
+            promptTextTokens: perMillion(0.834) * 1.055,
+            promptCachedTokens: perMillion(0.042) * 1.055,
+            completionTextTokens: perMillion(2.501) * 1.055,
         },
         title: "Hy4 Preview",
         description:

@@ -376,6 +376,51 @@ describe("community endpoint 3-hour price-change delay", () => {
         ).not.toContain(queued.modelId);
     });
 
+    test("prompt agent updates keep fields that are left out", async ({
+        sessionToken,
+    }) => {
+        await approveCommunityModels();
+        const agentsUrl = "http://localhost:3000/api/account/agents";
+        const headers = {
+            "Content-Type": "application/json",
+            Cookie: `better-auth.session_token=${sessionToken}`,
+        };
+        const createdResponse = await SELF.fetch(agentsUrl, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+                systemPrompt: "Answer briefly.",
+                baseModel: "openai",
+                mcpServers: ["pollinations"],
+                name: "partial-update-agent",
+                title: "Prompt agent",
+            }),
+        });
+        expect(createdResponse.status).toBe(200);
+        const { id } = await createdResponse.json<{ id: string }>();
+
+        const promptResponse = await SELF.fetch(`${agentsUrl}/${id}`, {
+            method: "PATCH",
+            headers,
+            body: JSON.stringify({ systemPrompt: "Answer in detail." }),
+        });
+        expect(promptResponse.status).toBe(200);
+        await promptResponse.text();
+        const titleResponse = await SELF.fetch(`${agentsUrl}/${id}`, {
+            method: "PATCH",
+            headers,
+            body: JSON.stringify({ title: "Renamed" }),
+        });
+        expect(titleResponse.status).toBe(200);
+        expect(await titleResponse.json()).toMatchObject({
+            name: "partial-update-agent",
+            title: "Renamed",
+            systemPrompt: "Answer in detail.",
+            baseModel: "openai",
+            mcpServers: ["pollinations"],
+        });
+    });
+
     test("public-to-private is immediate and clears any pending price change", async ({
         sessionToken,
     }) => {

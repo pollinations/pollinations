@@ -111,8 +111,13 @@ if (
 async function fetchCommunityModels() {
     const list = await fetch(`${GEN}/models`).then((r) => r.json());
     const models = Array.isArray(list) ? list : (list.data ?? list);
+    // Agents are skipped: a probe message makes them do their real work
+    // (tool calls, commits, generations) on the monitor's account.
     return models.filter(
-        (m) => m.community && (m.category === "text" || m.category === "image"),
+        (m) =>
+            m.community &&
+            !m.agent &&
+            (m.category === "text" || m.category === "image"),
     );
 }
 

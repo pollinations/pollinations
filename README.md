@@ -28,16 +28,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🛠️ ApiScribe](https://fadyabohamza-netizen.github.io/apiscribe) | Describe an API in plain English, get organized REST or GraphQL endpoint blueprints with params and responses. BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
+| [🛠️ TestMine](https://fadyabohamza-netizen.github.io/testmine) | Paste source code, pick a framework, get unit tests covering happy path and edge cases. BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
+| [🛠️ SQLCraft](https://fadyabohamza-netizen.github.io/sqlcraft) | Describe a database query in plain English, get clean SQL in your dialect (SQLite/PostgreSQL/MySQL/SQL Server). BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
+| [🛠️ Codeverter](https://fadyabohamza-netizen.github.io/codeverter) | Convert code between 9+ programming languages with AI. BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
+| [🛠️ Regexly](https://fadyabohamza-netizen.github.io/regexly) | Describe a regex pattern in plain English, get the regular expression with flavor-specific explanation (JavaScript/Python/PCRE). BYOP Pollinations-powered. | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
+| [🖼️ DCORE](https://bot.dtempest.online) | A multi-purpose Discord-Telegram bot featuring image generation via Pollinations, along with useful commands for server owners, developers, and much more; it is currently active on 16 servers. | [@dairyum](https://github.com/dairyum) |
 | [🛠️ GitMuse](https://fadyabohamza-netizen.github.io/gitmuse) | AI-powered git workflow assistant: generates Conventional Commits messages from any diff, explains error messages / stack traces with specific fixes, and writes pull request descriptions. It uses the | [@fadyabohamza-netizen](https://github.com/fadyabohamza-netizen) |
 | [✍️ cogitor](https://github.com/SkalaSkalolaz/cogitor) | **_Cogitor AI_** — lightweight AI chat on Go with a web interface and desktop GUI, supporting multiple LLM providers, local models, OpenAI-compatible APIs, Web Search, RAG, Vision, conversation histor | [@SkalaSkalolaz](https://github.com/SkalaSkalolaz) |
 | [🖼️ Comicstyles](https://comicstyles.com) | ComicStyles turns a one-line idea into a comic story, with no install, no account and no API key required. Type your premise, let the platform write the story and its split into panels, then watch eac | [@wannerdev](https://github.com/wannerdev) |
 | [💬 Moko - The Remembering Fox](https://heard-was-lessons-altered.trycloudflare.com) | A web chat with Moko, a desert fox NPC that remembers facts you ask it to keep between conversations. Each user's facts are stored in a per-user memory file (Pollinations Computer MCP), recalled acros | [@mhmdrizzzki](https://github.com/mhmdrizzzki) |
-| [📚 AI Flashcards](https://chibbit-99.github.io/flashcardgen) | Create AI flashcards. Helps turn content into study cards for review. | [@Chibbit-99](https://github.com/Chibbit-99) |
-| [🖼️ PollenBatch Multi-Image Generation + Character Generation Engine](https://donwrightdesigns.github.io/pollenbatch) | Generate multiple variations of the same prompt in low res, select the version that you like the most, and then regenerate at high resolution! Also, create consistent characters with the same top-down | [@donwrightdesigns](https://github.com/donwrightdesigns) |
-| [🖼️ manhwa studio](https://manhwa-studio-320488177521.asia-southeast1.run.app) | Create webtoon comics with character profiles, scene planning, Pollinations-generated panels, dialogue bubbles and a vertical comic canvas. | [@rudigunselawe-oss](https://github.com/rudigunselawe-oss) |
-| [🖼️ Co-Eco-Graph — Enchanted Contract Explorer](https://ceg-wine.vercel.app) | Paste any EVM contract address and explore its subgraph ecosystem as an interactive graph — subgraphs, entities, event handlers from The Graph, plus AI fairy-tale + fantasy illustration. Pollinations | [@alekcangp](https://github.com/alekcangp) |
-| [🖼️ Pollination_chatbot](https://pollinations-chatbot.vercel.app) | Ek simple aur friendly AI chatbot jo Pollinations ke text generation API (openai, mistral, gemini models) se power hota hai. Users apni Pollinations account se secure "Login with Pollinations" (BYOP a | [@zeroxmanhwa053-rgb](https://github.com/zeroxmanhwa053-rgb) |
-| [🖼️ Ziban](https://ziban.pages.dev) | Want to see how a fashion item will fit you before you buy? Ziban uses AI to help you visualize your style, so you can shop with more confidence. | [@ayub-kokabi](https://github.com/ayub-kokabi) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-09-17** – **✨ Your key has a pulse** Account menus now show live Pollen balances, limits, and key details—and refresh after buying Pollen or changing permissions. [Manage keys](https://enter.pollinations.ai/keys)
+- **2026-09-17** – **📱 Model status, minus the weather report** Check cached model uptime directly with the new `/models/status` endpoint. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-09-17** – **🤖 DCORE joins the garden** Generate Pollinations images from a Discord–Telegram bot already tending 16 servers. [Try it](https://bot.dtempest.online) <!-- app -->
+- **2026-09-17** – **💡 A small pile of developer shortcuts** New community tools turn plain English into regexes, SQL, API blueprints, converted code, or unit tests. [Try it](https://fadyabohamza-netizen.github.io/regexly) [Try it](https://fadyabohamza-netizen.github.io/sqlcraft) [Try it](https://fadyabohamza-netizen.github.io/apiscribe) [Try it](https://fadyabohamza-netizen.github.io/codeverter) [Try it](https://fadyabohamza-netizen.github.io/testmine) <!-- app -->
+- **2026-09-16** – **🎵 ElevenLabs Music v2.5** Generate and inpaint music with the newer `elevenlabs/music-v2.5` model through the audio API. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-09-16** – **🎨 CatGPT Has Opinions** Call `Creatneworld/catgpt-comic` through chat to get a sarcastic cat answer and an inline single-panel comic in one Markdown response.
+- **2026-09-16** – **💡 The bees remember now** Computer MCP agents can now share Git-backed collective memory—read, commit, and build on notes without handing shell access any credentials. [MCP Servers](https://gen.pollinations.ai/docs#tag/mcp-servers)
+- **2026-09-16** – **🤖 A fox remembers** Chat with Moko, a desert-fox NPC that keeps the facts you ask it to remember between conversations. [Try it](https://heard-was-lessons-altered.trycloudflare.com) <!-- app -->
 - **2026-09-15** – **✨ A catalog with a pulse** Filter model catalogs by `source=official|community` and opt into healthy models with `reliability=reliable`; responses now include compact 24-hour health data. [Browse models](https://gen.pollinations.ai/v1/models)
 - **2026-09-15** – **🔗 Routes learn to self-report** Inspect primary and fallback model routes, rescue counts, and per-attempt upstream latency through the new `/v1/models/status/routes` endpoint. [Check the API docs](https://gen.pollinations.ai/docs)
-- **2026-09-15** – **🤖 Scout finds the trail** `meta/llama-4-scout` is back: text, vision, streaming, up to 10 images, and 16,384 output tokens, with primary and fallback routes behind it. [Try it](https://pollinations.ai/play)
-- **2026-09-15** – **🎨 Pick the best bloom** PollenBatch generates quick low-res image variations before high-res regeneration, with a character engine for keeping recurring faces less mysteriously mutable. [Try it](https://donwrightdesigns.github.io/pollenbatch) <!-- app -->
-- **2026-09-14** – **🤖 The hive speaks LLM** Install `llm-pollinations` to use Pollinations chat models in LLM’s CLI and Python—streaming, vision, tool calls, reasoning, and multi-turn chat included. [View repo](https://github.com/pollinations/pollinations)
-- **2026-09-14** – **🎯 Agents, meet the quest garden** Use a qualifying agent to earn 0.25 Pollen, or create an agent somebody uses to earn 2 Pollen. The bees have started keeping score.
-- **2026-09-14** – **✨ Media stays in the garden** Apps using the shared UI can now render generated images, audio, and video inline in Markdown, alongside readable code blocks with one-click copy.
-- **2026-09-14** – **🎨 Follow the contract vines** Explore an EVM contract’s The Graph entities and event handlers as an interactive, AI-illustrated ecosystem map. [Try it](https://ceg-wine.vercel.app) <!-- app -->
-- **2026-09-14** – **🎨 Panels in the pollen** Plan scenes, generate art, add dialogue, and assemble a vertical webtoon in one comic-making workspace. [Try it](https://manhwa-studio-320488177521.asia-southeast1.run.app) <!-- app -->
-- **2026-09-13** – **🤖 Polli gets two brains** Ask Polli now runs on GPT-5.6 Terra, while write workflows use GPT-6 Astra—specialized routing without changing your existing Gen auth or endpoint setup. [Try it](https://pollinations.ai/play)
 ---
 
 ## 🌱 Introduction

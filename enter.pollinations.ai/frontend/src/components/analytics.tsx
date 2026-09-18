@@ -4,12 +4,6 @@ import { useEffect, useRef } from "react";
 import { authClient } from "../auth.ts";
 import { config } from "../config.ts";
 
-export function Analytics() {
-    return import.meta.env.VITE_TINYBIRD_ANALYTICS_ENABLED === "true" ? (
-        <PageViews />
-    ) : null;
-}
-
 // Where the visit came from, captured at the first document load and repeated
 // on every view. sessionStorage survives the GitHub redirect, so a signed-in
 // view still carries the source, which is what attribution joins on. No
@@ -37,7 +31,7 @@ function sourceAttribution(): Record<string, string> {
     return source;
 }
 
-function PageViews() {
+export function Analytics() {
     const { data: session, isPending, error } = authClient.useSession();
     const page = useRouterState({
         select: (state) => state.matches.at(-1)?.routeId,
@@ -45,14 +39,7 @@ function PageViews() {
     const lastPage = useRef("");
     const userId = session?.user.id;
     useEffect(() => {
-        if (
-            isPending ||
-            error ||
-            navigator.doNotTrack === "1" ||
-            (navigator as { globalPrivacyControl?: boolean })
-                .globalPrivacyControl
-        )
-            return;
+        if (isPending || error) return;
         const params = new URLSearchParams(location.search);
         const view = productPageViewSchema.safeParse({
             page,

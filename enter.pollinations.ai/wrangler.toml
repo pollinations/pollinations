@@ -273,9 +273,6 @@ TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event_v2"
 TINYBIRD_STRIPE_INGEST_URL = "http://localhost:7181/v0/events?name=stripe_event"
 TINYBIRD_INGEST_TOKEN = "test_tinybird_ingest_token"
 TINYBIRD_READ_TOKEN = "test_tinybird_read_token"
-# Product events reach the Tinybird mock when a test enables it; otherwise the
-# helper swallows the refused connection to localhost:7181.
-TINYBIRD_ANALYTICS_ENABLED = "true"
 TINYBIRD_ECONOMICS_READ_TOKEN = "test_economics_read_token"
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"

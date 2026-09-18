@@ -10,12 +10,6 @@ import { captureProductEvent } from "../utils/product-analytics.ts";
 export const productAnalyticsRoutes = new Hono<Env>().post(
     "/page-view",
     async (c) => {
-        if (
-            c.env.TINYBIRD_ANALYTICS_ENABLED !== "true" ||
-            c.req.header("DNT") === "1" ||
-            c.req.header("Sec-GPC") === "1"
-        )
-            return c.body(null, 204);
         if (c.req.header("Origin") !== getPublicOrigin(c))
             return c.body(null, 403);
         if (c.req.raw.body) return c.body(null, 415);

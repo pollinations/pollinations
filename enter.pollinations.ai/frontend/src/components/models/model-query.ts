@@ -303,10 +303,7 @@ function matchesFilter(model: ModelPrice, filter: ModelQueryFilter): boolean {
         case "source":
             return Boolean(model.community) === (filter.value === "community");
         case "status":
-            return (
-                filter.value === "all" ||
-                (model.health?.status === "healthy" && !model.health.stale)
-            );
+            return filter.value === "all" || model.health?.status === "healthy";
         case "publisher": {
             return getModelPublisher(model) === filter.value;
         }

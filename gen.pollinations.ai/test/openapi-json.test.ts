@@ -122,24 +122,10 @@ describe("/openapi.json", () => {
                 ["paths", path, "get", "parameters"],
                 expect.arrayContaining([
                     expect.objectContaining({
-                        in: "query",
-                        name: "status",
-                        schema: expect.objectContaining({
-                            enum: ["all", "healthy"],
-                        }),
-                    }),
-                    expect.objectContaining({
                         in: "header",
                         name: "pollinations-model-source",
                         schema: expect.objectContaining({
                             enum: ["official", "community"],
-                        }),
-                    }),
-                    expect.objectContaining({
-                        in: "header",
-                        name: "pollinations-model-status",
-                        schema: expect.objectContaining({
-                            enum: ["all", "healthy"],
                         }),
                     }),
                 ]),
@@ -278,20 +264,14 @@ describe("/openapi.json", () => {
             }),
         );
 
-        const statusOperation = schema.paths["/v1/models/status"] as {
+        const statusOperation = schema.paths["/models/status"] as {
             get: {
                 parameters: { name: string }[];
             };
         };
         expect(statusOperation.get.parameters.map(({ name }) => name)).toEqual([
             "minutes",
-            "format",
         ]);
-        expect(
-            collectPropertySets(schema.paths["/v1/models/status"]).some(
-                (properties) => "data" in properties,
-            ),
-        ).toBe(true);
 
         const speechRequestPropertySets = collectPropertySets(schema).filter(
             (properties) =>

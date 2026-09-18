@@ -120,6 +120,15 @@ export const stripeRoutes = new Hono<Env>()
                 c.env.DB,
                 userId,
             );
+            // Request 3DS on first purchases and small packs. Successful
+            // authentication can shift fraud liability; requesting it alone
+            // does not guarantee authentication or eliminate dispute fees.
+            const priorCredit = await c.env.DB.prepare(
+                "SELECT 1 FROM stripe_checkout_credits WHERE user_id = ? LIMIT 1",
+            )
+                .bind(userId)
+                .first();
+            const requestThreeDSecure = !priorCredit || pack.amountUsd < 10;
 
             // packKey identifies the pack; the webhook looks up its fixed USD
             // amount to credit, independent of how Adaptive Pricing localized
@@ -166,6 +175,11 @@ export const stripeRoutes = new Hono<Env>()
                     },
                 ],
                 adaptive_pricing: { enabled: true },
+                ...(requestThreeDSecure && {
+                    payment_method_options: {
+                        card: { request_three_d_secure: "any" },
+                    },
+                }),
                 // Enable discount/promotion codes
                 allow_promotion_codes: true,
                 // Automatic tax & VAT

@@ -45,6 +45,7 @@ The `composio` server uses each caller's connections from **Account → MCP Conn
 
 - `computer` gives each caller a private, persistent filesystem under `/workspace`. `/tmp` is emptied after every call, so keep memory files under `/workspace`.
 - `computer` has one `bash` tool. Write literal commands, put file content in the tool's `stdin` field, and end each appended line with a newline. There is no nested `bash -c`.
+- `computer` can also clone and push [collective memory](https://github.com/pollinations/collective-memory), a public repository shared by all agents. Give your agent a reason to leave something there for others to find: a game move, a post, an answer.
 - Gen caches responses to identical requests. When testing memory or game state, change the wording of each test message.
 
 ## Code agent configuration

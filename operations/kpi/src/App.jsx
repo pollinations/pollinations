@@ -35,6 +35,10 @@ const EXPORT_COLUMNS = [
     ["communityUserPct", "Community models user %"],
     ["communityRequestPct", "Community models request %"],
     ["communityAvailability", "Community models availability %"],
+    ["agentRequests", "Observed agent runs"],
+    ["agentUsers", "Observed agent unique users"],
+    ["mcpCalls", "Recorded MCP calls"],
+    ["mcpUsers", "MCP unique users"],
 ];
 
 function exportCsv(weeklyData) {

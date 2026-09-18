@@ -1,7 +1,105 @@
+test("eight failed cards are recorded without a webhook account ban", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+
+    const customer = mockCustomer("cus_test_card_gate");
+    mocks.stripe.state.customers.push(customer);
+    mocks.stripe.state.checkoutSessions.push({
+        id: "cs_fraud",
+        object: "checkout.session",
+        mode: "payment",
+        customer: customer.id,
+        status: "open",
+        url: "https://checkout.stripe.test/fraud",
+    });
+    for (const fingerprint of [
+        "fp_gate_1",
+        "fp_gate_2",
+        "fp_gate_3",
+        "fp_gate_4",
+        "fp_gate_5",
+        "fp_gate_6",
+        "fp_gate_7",
+        "fp_gate_8",
+    ]) {
+        const paymentIntentId = `pi_${fingerprint}`;
+        mocks.stripe.state.paymentIntents.push({
+            id: paymentIntentId,
+            object: "payment_intent",
+            status: "requires_payment_method",
+            amount: 1000,
+            currency: "usd",
+            metadata: { userId },
+            payment_method_types: ["card"],
+            receipt_email: "buyer@example.com",
+            latest_charge: {
+                id: `ch_${fingerprint}`,
+                object: "charge",
+                amount: 1000,
+                currency: "usd",
+                status: "failed",
+                customer: "cus_test_card_gate",
+                payment_intent: paymentIntentId,
+                metadata: { userId },
+                billing_details: { email: "buyer@example.com" },
+                payment_method_details: {
+                    type: "card",
+                    card: {
+                        fingerprint,
+                        brand: "visa",
+                        country: "US",
+                        network: "visa",
+                    },
+                },
+                outcome: { risk_level: "elevated", risk_score: 61 },
+            },
+        });
+
+        const response = await postSignedStripeWebhook(
+            createCardPaymentFailedEvent({
+                eventId: `evt_${fingerprint}`,
+                paymentIntentId,
+                userId,
+            }),
+        );
+        expect(response.status).toBe(200);
+    }
+
+    await expect
+        .poll(async () => {
+            const rows = await drizzle(env.DB)
+                .select()
+                .from(stripeCardFingerprintAttemptTable)
+                .where(eq(stripeCardFingerprintAttemptTable.userId, userId));
+            return rows.length;
+        })
+        .toBe(8);
+    const [user] = await drizzle(env.DB)
+        .select()
+        .from(userTable)
+        .where(eq(userTable.id, userId));
+    expect(user.banned).not.toBe(true);
+    expect(mocks.stripe.state.checkoutSessions[0].status).toBe("open");
+    expect(
+        (
+            await SELF.fetch(`${base}/checkout/p10`, {
+                headers: {
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                redirect: "manual",
+            })
+        ).status,
+    ).toBe(302);
+});
+
 import { env, SELF } from "cloudflare:test";
 import { createHmac } from "node:crypto";
 import {
     stripeCardFingerprintAttempt as stripeCardFingerprintAttemptTable,
+    stripeCheckoutCredits as stripeCheckoutCreditsTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import {
@@ -366,7 +464,7 @@ test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", asyn
         ],
     ).toBe("ok");
     expect(body?.["payment_method_options[card][request_three_d_secure]"]).toBe(
-        undefined,
+        "any",
     );
 });
 
@@ -458,7 +556,7 @@ test("GET /api/stripe/checkout marks new-card gate locked after four distinct fa
         ],
     ).toBe("4");
     expect(body?.["payment_method_options[card][request_three_d_secure]"]).toBe(
-        undefined,
+        "any",
     );
 });
 
@@ -3213,7 +3311,7 @@ test("POST /api/webhooks/stripe charge.succeeded enriches Tinybird with card iss
     });
 });
 
-test("POST /api/webhooks/stripe charge.succeeded does not record failed-card gate fingerprint or credit checkout", async ({
+test("POST /api/webhooks/stripe charge.succeeded records the gate fingerprint without crediting checkout", async ({
     sessionToken,
     mocks,
 }) => {
@@ -3223,9 +3321,6 @@ test("POST /api/webhooks/stripe charge.succeeded does not record failed-card gat
 
     const creditsBefore = await env.DB.prepare(
         "SELECT COUNT(*) AS count FROM stripe_checkout_credits",
-    ).first<{ count: number }>();
-    const attemptsBefore = await env.DB.prepare(
-        "SELECT COUNT(*) AS count FROM stripe_card_fingerprint_attempt",
     ).first<{ count: number }>();
 
     const response = await postSignedStripeWebhook({
@@ -3263,10 +3358,24 @@ test("POST /api/webhooks/stripe charge.succeeded does not record failed-card gat
     ).first<{ count: number }>();
     expect(after?.count).toBe(creditsBefore?.count);
 
-    const attemptsAfter = await env.DB.prepare(
-        "SELECT COUNT(*) AS count FROM stripe_card_fingerprint_attempt",
-    ).first<{ count: number }>();
-    expect(attemptsAfter?.count).toBe(attemptsBefore?.count);
+    // Successful cards feed the new-card gate too, so a tester rotating
+    // working stolen cards locks the gate like one rotating declined cards.
+    const [attempt] = await drizzle(env.DB)
+        .select({
+            userId: stripeCardFingerprintAttemptTable.userId,
+            cardFingerprint: stripeCardFingerprintAttemptTable.cardFingerprint,
+        })
+        .from(stripeCardFingerprintAttemptTable)
+        .where(
+            eq(
+                stripeCardFingerprintAttemptTable.eventId,
+                "evt_test_charge_no_d1",
+            ),
+        );
+    expect(attempt).toEqual({
+        userId,
+        cardFingerprint: "fp_test_charge_no_d1",
+    });
 });
 
 test("POST /api/webhooks/stripe payment_intent.payment_failed records latest charge fingerprint", async ({
@@ -3500,5 +3609,41 @@ test("GET /api/stripe/checkout/p5 returns to Pollen for any other return value",
             );
             expect(url.pathname, value).toBe("/pollen");
         }
+    }
+});
+
+test("GET /api/stripe/checkout skips 3DS for a returning buyer on a pack of $10 or more", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    await drizzle(env.DB).insert(stripeCheckoutCreditsTable).values({
+        sessionId: "cs_prior_purchase",
+        eventId: "evt_prior_purchase",
+        eventType: "checkout.session.completed",
+        userId,
+        pollenCredited: 10,
+        createdAt: new Date(),
+    });
+
+    for (const [packKey, expected] of [
+        ["p10", undefined],
+        ["p5", "any"],
+    ] as const) {
+        mocks.stripe.state.requests.length = 0;
+        const response = await SELF.fetch(`${base}/checkout/${packKey}`, {
+            method: "GET",
+            headers: { cookie: `better-auth.session_token=${sessionToken}` },
+            redirect: "manual",
+        });
+        expect(response.status).toBe(302);
+        const body = mocks.stripe.state.requests.find(
+            (request) => request.path === "/v1/checkout/sessions",
+        )?.body;
+        expect(
+            body?.["payment_method_options[card][request_three_d_secure]"],
+            packKey,
+        ).toBe(expected);
     }
 });

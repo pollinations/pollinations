@@ -10,6 +10,7 @@ import {
     Section,
     Surface,
     TokensIcon,
+    Tooltip,
 } from "@pollinations/ui";
 import {
     COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
@@ -59,12 +60,18 @@ export function CommunityEndpoints({
     const [error, setError] = useState<string | null>(null);
     const [providerName, setProviderName] = useState("");
     const [providerUrl, setProviderUrl] = useState("");
+    const [providerIconUrl, setProviderIconUrl] = useState("");
     const [savedProvider, setSavedProvider] =
-        useState<CommunityProviderProfile>({ name: null, url: null });
+        useState<CommunityProviderProfile>({
+            name: null,
+            url: null,
+            iconUrl: null,
+        });
     const [isSavingProvider, setIsSavingProvider] = useState(false);
     const providerIsSaved =
         providerName === (savedProvider.name ?? "") &&
-        providerUrl === (savedProvider.url ?? "");
+        providerUrl === (savedProvider.url ?? "") &&
+        providerIconUrl === (savedProvider.iconUrl ?? "");
     const [createOpen, setCreateOpen] = useState(false);
     const [editing, setEditing] = useState<EditableEndpoint | null>(null);
     const [deleting, setDeleting] = useState<CommunityEndpoint | null>(null);
@@ -102,6 +109,7 @@ export function CommunityEndpoints({
         setAgents(agentBody.data);
         setProviderName(endpointBody.provider.name ?? "");
         setProviderUrl(endpointBody.provider.url ?? "");
+        setProviderIconUrl(endpointBody.provider.iconUrl ?? "");
         setSavedProvider(endpointBody.provider);
         setIsLoading(false);
     }, []);
@@ -236,12 +244,17 @@ export function CommunityEndpoints({
             const response = await apiClient.account[
                 "my-models"
             ].provider.$post({
-                json: { name: providerName, url: providerUrl },
+                json: {
+                    name: providerName,
+                    url: providerUrl,
+                    iconUrl: providerIconUrl.trim() || null,
+                },
             });
             if (!response.ok) throw new Error(await readError(response));
             const profile = (await response.json()) as CommunityProviderProfile;
             setProviderName(profile.name ?? "");
             setProviderUrl(profile.url ?? "");
+            setProviderIconUrl(profile.iconUrl ?? "");
             setSavedProvider(profile);
             await onChange?.();
         } catch (thrown) {
@@ -253,6 +266,13 @@ export function CommunityEndpoints({
         } finally {
             setIsSavingProvider(false);
         }
+    }
+
+    function resetProviderChanges(): void {
+        setProviderName(savedProvider.name ?? "");
+        setProviderUrl(savedProvider.url ?? "");
+        setProviderIconUrl(savedProvider.iconUrl ?? "");
+        setError(null);
     }
 
     async function handleToggle(endpoint: CommunityEndpoint): Promise<void> {
@@ -392,6 +412,32 @@ export function CommunityEndpoints({
                                         }
                                     />
                                 </FieldStack>
+                                <FieldStack
+                                    label="Brand icon URL"
+                                    action={
+                                        <Tooltip
+                                            ariaLabel="How to upload a brand icon"
+                                            className="text-xs text-theme-text-muted"
+                                            tapEnabled
+                                            content="Upload an SVG with polli upload icon.svg or POST to https://media.pollinations.ai/upload. Paste the returned URL."
+                                        >
+                                            Upload help
+                                        </Tooltip>
+                                    }
+                                >
+                                    <Input
+                                        type="url"
+                                        name="community-provider-icon-url"
+                                        value={providerIconUrl}
+                                        placeholder="https://media.pollinations.ai/…"
+                                        autoComplete="url"
+                                        onChange={(event) =>
+                                            setProviderIconUrl(
+                                                event.target.value,
+                                            )
+                                        }
+                                    />
+                                </FieldStack>
                             </div>
                             <div>
                                 <Button
@@ -401,6 +447,15 @@ export function CommunityEndpoints({
                                     }
                                 >
                                     {isSavingProvider ? "Saving…" : "Save"}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    disabled={
+                                        providerIsSaved || isSavingProvider
+                                    }
+                                    onClick={resetProviderChanges}
+                                >
+                                    Cancel
                                 </Button>
                             </div>
                         </form>

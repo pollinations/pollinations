@@ -11,7 +11,6 @@ import {
 } from "@shared/registry/usage-headers.ts";
 import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import type { Context } from "hono";
-import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 import {
     attachFallbackTarget,
@@ -31,7 +30,10 @@ import {
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { syncTextEnvironment } from "./environment.js";
 import { throwTextError } from "./errors.js";
-import { supportsTextFallbackRequest } from "./fallbackCompatibility.js";
+import {
+    supportsTextFallbackRequest,
+    textCapabilityError,
+} from "./fallbackCompatibility.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import {
     getChatRequestData,
@@ -85,14 +87,6 @@ async function gatewayContext(
     candidate: FallbackCandidate,
 ): Promise<TransformOptions> {
     const { communityEndpoint, definition } = candidate;
-    if (
-        requestData.agent_model !== undefined &&
-        communityEndpoint?.type !== "endpoint_agent"
-    ) {
-        throw new HTTPException(400, {
-            message: "agent_model is supported only by endpoint agents",
-        });
-    }
     // A fallback must resolve transforms from the model that will actually run.
     const candidateRequest = candidate.entry
         ? { ...requestData, model: candidate.id }
@@ -347,6 +341,12 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
+        const capabilityError = textCapabilityError(
+            c.var.model?.definition,
+            requestData,
+        );
+        if (capabilityError)
+            throw new UpstreamError(400, { message: capabilityError });
         const portkey = c.env.PORTKEY;
         const candidates = fallbackCandidates(c.var.model)
             .map((candidate, originalIndex) => ({

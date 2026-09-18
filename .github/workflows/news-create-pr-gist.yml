@@ -20,6 +20,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: read
+      issues: write
 
     steps:
       - name: Generate Pollinations AI Token
@@ -58,3 +59,9 @@ jobs:
           PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.pr_number || github.event.pull_request.number }}
           REPO_FULL_NAME: ${{ github.repository }}
         run: python operations/social/scripts/publish_realtime.py
+
+      - name: Report failure as an issue
+        if: failure()
+        uses: ./.github/actions/failure-issue
+        with:
+          token: ${{ github.token }}

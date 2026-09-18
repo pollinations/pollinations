@@ -253,7 +253,15 @@ export const CHAT_PARAMETERS = {
         "seed",
         "reasoning_effort",
     ],
-    openRouterLlamaScout: [...SAMPLED_CHAT, ...PENALTIES, "top_k", "seed"],
+    llamaScout: [
+        ...CHAT,
+        ...SAMPLING,
+        ...PENALTIES,
+        "stop",
+        "top_k",
+        "seed",
+        "repetition_penalty",
+    ],
     openRouterMinimax27: [
         ...SAMPLED_CHAT,
         ...PENALTIES,
@@ -292,6 +300,24 @@ export const CHAT_PARAMETERS = {
     ],
     museSpark: [...CHAT, "temperature", "tools"],
     openRouterMistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
+    // OpenRouter azure/openai tags (2026-09-12); azure/swedencentral is
+    // excluded via provider.ignore so pricing stays fixed. Both tags report
+    // max_completion_tokens (not max_tokens) as supported.
+    openRouterGpt4oMini: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "response_format",
+        "structured_outputs",
+        ...SAMPLING,
+        "stop",
+        ...PENALTIES,
+        ...LOGPROBS,
+        "seed",
+        "logit_bias",
+        "prediction",
+        "web_search_options",
+    ],
     qwenCoderNext: [...EXTENDED_CHAT, "repetition_penalty", "logit_bias"],
     openRouterQwenCoderNext: [...SAMPLED_CHAT, "presence_penalty"],
     qwen37: [...EXTENDED_CHAT, ...OPENROUTER_REASONING],

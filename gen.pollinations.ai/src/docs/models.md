@@ -13,19 +13,34 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 | `GET /embeddings/models` | Embedding models with supported modalities |
 | `GET /3d/models` | 3D Generation models with supported modalities |
 
-### Query Parameters
+### Filters
 
-All model discovery endpoints accept an optional `community` query parameter:
+All model list endpoints above accept the same optional `source` filter:
+`official` or `community`. Omit it for both. `community=true|false|1|0`
+remains available as a legacy source filter. The query overrides the
+connection-wide header; `source` overrides `community`. Invalid values return
+**400 Bad Request**. The filter combines with the caller's access restrictions;
+it does not change generation permissions.
 
-| Parameter | Values | Behaviour |
-|-----------|--------|-----------|
-| *(omitted)* | | Returns all models (default, backward-compatible) |
-| `community=false` | `false`, `0` | Excludes community models — returns official models only |
-| `community=true` | `true`, `1` | Returns community models only |
+```bash
+curl 'https://gen.pollinations.ai/v1/models?source=official'
+```
 
-Any other value (e.g. `tru`, `yes`, `2`) returns **400 Bad Request**.
+OpenAI-compatible clients that append `/models` to their base URL can use the
+equivalent header instead of the query parameter:
 
-Example: `GET /models?community=false`
+```text
+Pollinations-Model-Source: official
+```
+
+This header works with Open WebUI and Cline custom OpenAI connections.
+LibreChat administrators can set it in the custom endpoint's `headers` map.
+The client can use any returned model ID for generation without forwarding the
+catalog header.
+
+Model lists carry no health data. Recent request counts, error rates, latency
+and fallback breakdowns per model are served separately by
+`/models/status`, described in [Public Stats](/docs#tag/public-stats).
 
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.
@@ -65,5 +80,8 @@ Reasoning effort levels and forced-tool restrictions remain model-specific.
 Community models and agents use a canonical `community/owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `community=true` to return only community models or `community=false` to exclude them.
 
 The old `owner/model` IDs remain generation aliases in each model's `aliases` array. Key creation and updates accept only canonical model IDs. Existing stored permissions are migrated with the rename.
+
+The `source=community` and `source=official` filters are equivalent source filters
+for discovery. Source, access, and status filters combine with AND semantics.
 
 For registration, publishing, pricing, fallbacks, and health monitoring, see [Publish a Model](/docs#tag/publish-a-model). For ownership endpoints and schemas, see [Community Models](/docs#tag/community-models) under Resources.

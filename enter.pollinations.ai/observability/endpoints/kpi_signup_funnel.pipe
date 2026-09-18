@@ -1,0 +1,74 @@
+DESCRIPTION >
+    Signup-cohort purchase funnel by registration week: registered users who
+    viewed the Pollen or top-up page, started a Stripe checkout, and paid.
+    Each pct column is relative to the previous stage. product_event has no
+    history before tracking started, so earlier cohorts under-count the
+    middle stages; stripe_event and d1_user are complete.
+
+TOKEN tinybird_read READ
+
+NODE registrations
+SQL >
+    %
+    SELECT
+        id AS user_id,
+        toStartOfWeek(fromUnixTimestamp(assumeNotNull(created_at)), 1) AS registration_week
+    FROM d1_user
+    WHERE synced_at = (SELECT max(synced_at) FROM d1_user)
+        AND created_at IS NOT NULL
+        AND created_at >= toUnixTimestamp(toStartOfWeek(now() - toIntervalWeek(least(greatest({{Int32(weeks_back, 12)}}, 1), 52)), 1))
+
+NODE pollen_views
+SQL >
+    %
+    SELECT user_id
+    FROM product_event
+    WHERE environment = {{String(environment, 'production')}}
+        AND event = 'page_viewed'
+        AND page IN ('/_dashboard/pollen', '/top-up')
+        AND user_id != ''
+        AND timestamp >= toStartOfWeek(now() - toIntervalWeek(least(greatest({{Int32(weeks_back, 12)}}, 1), 52)), 1)
+    GROUP BY user_id
+
+NODE checkouts
+SQL >
+    %
+    SELECT user_id
+    FROM product_event
+    WHERE environment = {{String(environment, 'production')}}
+        AND event = 'checkout_started'
+        AND user_id != ''
+        AND timestamp >= toStartOfWeek(now() - toIntervalWeek(least(greatest({{Int32(weeks_back, 12)}}, 1), 52)), 1)
+    GROUP BY user_id
+
+NODE payments
+SQL >
+    %
+    SELECT user_id
+    FROM stripe_event
+    WHERE payment_status = 'paid'
+        AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')
+        AND user_id != ''
+        AND timestamp >= toStartOfWeek(now() - toIntervalWeek(least(greatest({{Int32(weeks_back, 12)}}, 1), 52)), 1)
+    GROUP BY user_id
+
+NODE funnel
+SQL >
+    SELECT
+        formatDateTime(r.registration_week, '%Y-%m-%d') AS week,
+        uniq(r.user_id) AS registered,
+        uniqIf(r.user_id, v.user_id != '') AS viewed_pollen,
+        uniqIf(r.user_id, c.user_id != '') AS started_checkout,
+        uniqIf(r.user_id, p.user_id != '') AS paid,
+        if(registered = 0, 0, round(100 * viewed_pollen / registered, 1)) AS pct_viewed,
+        if(viewed_pollen = 0, 0, round(100 * started_checkout / viewed_pollen, 1)) AS pct_checkout,
+        if(started_checkout = 0, 0, round(100 * paid / started_checkout, 1)) AS pct_paid,
+        if(registered = 0, 0, round(100 * paid / registered, 1)) AS pct_paid_of_registered
+    FROM registrations r
+    LEFT JOIN pollen_views v ON r.user_id = v.user_id
+    LEFT JOIN checkouts c ON r.user_id = c.user_id
+    LEFT JOIN payments p ON r.user_id = p.user_id
+    GROUP BY r.registration_week
+    ORDER BY r.registration_week ASC
+
+TYPE endpoint

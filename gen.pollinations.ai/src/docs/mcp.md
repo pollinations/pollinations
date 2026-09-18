@@ -63,7 +63,40 @@ const { tools } = await client.listTools();
 Other clients use the same endpoint and bearer header; only their configuration
 format differs.
 
-#### Claude Code
+#### Install with the Polli CLI (recommended)
+
+One command installs any catalog server into your client with a dedicated key. The server list comes from `GET https://gen.pollinations.ai/mcp`, so new servers appear without updating the CLI. Install is idempotent, `status` reports what is installed, and `remove` deletes only Pollinations entries.
+
+```bash
+# list catalog
+polli mcp list
+
+# install one, several, or all servers into a client
+polli mcp add claude-code --server pollinations
+polli mcp add cursor --server pollinations --server ffmpeg
+polli mcp add vscode --all
+polli mcp add opencode --all
+polli mcp add codex --all          # uses bearer_token_env_var, key stored in ~/.pollinations/mcp-codex.env
+polli mcp add gemini --all         # or: gemini mcp add --transport http pollinations https://gen.pollinations.ai/mcp/pollinations --header "Authorization: Bearer $KEY"
+
+# status per client
+polli mcp status
+polli mcp status cursor
+
+# remove again
+polli mcp remove cursor --server pollinations
+polli mcp remove claude-code --all
+```
+
+`polli mcp add <client>` mints a dedicated `polli-mcp-<client>` key (via `polli auth login` if needed) and writes the hosted `https://gen.pollinations.ai/mcp/<id>` URL with a bearer header. No `npx` shim or local process is used, except for Claude Desktop where `mcp-remote` is required because headers cannot be expressed. Clients that expect an env var (`codex` `bearer_token_env_var`, VS Code `inputs`) store the secret by env var name rather than as a literal header value. `polli mcp add all` configures every supported client at once.
+
+Supported clients (in priority order): Claude Code, Codex CLI, VS Code / Copilot, Cursor, OpenCode, Gemini CLI, Copilot CLI, Windsurf, Cline, Amp, Kiro, Zed, Warp, Claude Desktop, plus the existing harnesses (Pi, Prime, OpenClaw, Bloom via `polli harness <id> on`). Prefer the client's own `mcp add` command where one exists; otherwise the CLI writes the client's config file directly, leaving unrelated entries untouched.
+
+#### Manual install per client
+
+If you prefer not to use `polli mcp`, the endpoints and bearer header are the same everywhere:
+
+##### Claude Code
 
 ```bash
 claude mcp add --transport http pollinations \
@@ -73,6 +106,64 @@ claude mcp add --transport http pollinations \
 
 Run `/mcp` in Claude Code to verify the connection. Replace the name and URL
 with another endpoint from the table to use FFmpeg or Exa Search.
+
+##### Codex CLI
+
+```bash
+codex mcp add --url https://gen.pollinations.ai/mcp/pollinations --bearer-token-env-var POLLINATIONS_API_KEY
+# export POLLINATIONS_API_KEY=YOUR_KEY
+```
+
+##### VS Code / Copilot
+
+Add to `.vscode/mcp.json` (workspace) or global `settings.json` via `mcp.inputs`:
+
+```json
+{
+  "servers": {
+    "pollinations": {
+      "url": "https://gen.pollinations.ai/mcp/pollinations",
+      "headers": { "Authorization": "Bearer ${input:polli-mcp-key}" }
+    }
+  },
+  "inputs": [{ "id": "polli-mcp-key", "type": "promptString", "description": "Pollinations API key", "password": true }]
+}
+```
+Or run `code --add-mcp '{"name":"pollinations","url":"https://gen.pollinations.ai/mcp/pollinations"}'` then add the header.
+
+##### Cursor
+
+`.cursor/mcp.json`:
+
+```json
+{ "mcpServers": { "pollinations": { "url": "https://gen.pollinations.ai/mcp/pollinations", "headers": { "Authorization": "Bearer YOUR_KEY" } } } }
+```
+
+##### OpenCode
+
+`~/.config/opencode/opencode.json`:
+
+```json
+{ "mcp": { "pollinations": { "type": "remote", "url": "https://gen.pollinations.ai/mcp/pollinations", "headers": { "Authorization": "Bearer YOUR_KEY" } } } }
+```
+
+##### Gemini CLI
+
+```bash
+gemini mcp add --transport http pollinations https://gen.pollinations.ai/mcp/pollinations --header "Authorization: Bearer YOUR_KEY"
+```
+
+##### Windsurf / Cline / Amp / Kiro / Zed / Warp / Copilot CLI
+
+Config file varies (`~/.codeium/windsurf/mcp_config.json`, `~/.config/cline/mcp_settings.json`, etc.) but the same `url` + `Authorization: Bearer` entry applies. Use `polli mcp add <client> --all` to write it automatically.
+
+##### Claude Desktop (headers not supported)
+
+Uses `mcp-remote`:
+
+```json
+{ "mcpServers": { "pollinations": { "command": "npx", "args": ["-y", "mcp-remote", "https://gen.pollinations.ai/mcp/pollinations", "--header", "Authorization: Bearer YOUR_KEY"] } } }
+```
 
 ### Pollinations MCP
 

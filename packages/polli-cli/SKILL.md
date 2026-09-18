@@ -227,6 +227,19 @@ Each adapter checks that its harness can be launched before login, key creation,
 
 Bloom already uses Pollinations and only needs a dedicated key in `$BLOOM_HOME/.env` (default `~/.bloom/.env`). The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). OpenCode enables the existing Pollinations plugin and stores its dedicated key in the plugin config. OpenClaw adds a `pollinations` provider to `~/.openclaw/openclaw.json`, stores a dedicated key in `env.vars`, and installs this skill under `~/.openclaw/skills/polli/`. Pi writes `~/.pi/agent/models.json`, `auth.json`, and `settings.json`, and installs this skill under `~/.pi/agent/skills/polli/`. Guide: `polli docs` section "Coding Harnesses".
 
+### Connect MCP servers to any client
+
+```bash
+polli mcp list                         # live catalog from GET /mcp
+polli mcp add cursor --all             # dedicated polli-mcp-cursor key, writes ~/.cursor/mcp.json
+polli mcp add vscode --server pollinations --server ffmpeg
+polli mcp add codex --all              # uses bearer_token_env_var, key in ~/.pollinations/mcp-codex.env
+polli mcp add claude-code --server pollinations
+polli mcp status                       # per-client installed list
+polli mcp remove cursor --server pollinations
+```
+Install is idempotent, `status` shows what is installed, `remove` deletes only Pollinations entries. Codex and VS Code use env-var inputs rather than literal headers. Claude Desktop uses `mcp-remote` shim. See `gen.pollinations.ai/src/docs/mcp.md` for per-client details.
+
 ### Read API docs
 ```bash
 polli docs                          # full llm.txt reference

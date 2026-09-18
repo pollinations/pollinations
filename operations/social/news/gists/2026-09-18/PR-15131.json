@@ -1,0 +1,34 @@
+{
+  "pr_number": 15131,
+  "title": "refactor: parse all usage headers as numbers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15131",
+  "merged_at": "2026-09-18T12:53:37Z",
+  "labels": [],
+  "pr_body_excerpt": "Follow-up to #15129.\n\n- `parseUsageHeaders()` parses every `x-usage-*` header with `Number()` — the exact inverse of the `String(number)` that `buildUsageHeaders` writes. Removes the `FLOAT_USAGE_TYPES` allowlist whose `parseInt` fallback caused #15129, so a future fractional unit can't silently truncate again.\n- No behavior change for integer token counts; fractional units (seconds, image megapixels) parse exactly, same as after #15129.\n\nThe Tinybird column widening that was in this PR is split out into draft #15134 (speculative: needs a staging probe on `UInt32` truncation-vs-rejection and carries heavy table rebuilds; the telemetry shape for fractional units is an open architecture question).",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Fractions Get Their Due",
+    "blurb": "The usage meter now counts the small bits too. Seconds and image megapixels can pass through the hive without being rounded into administrative pollen dust.",
+    "summary": "`parseUsageHeaders()` now parses every `x-usage-*` header with `Number()`, exactly reversing `buildUsageHeaders()`'s `String(number)` serialization and preventing fractional usage units such as seconds or image megapixels from being truncated.",
+    "impact": "Integer token counts behave exactly as before, while current and future fractional usage values retain their full precision through usage-event parsing.",
+    "keywords": [
+      "usage headers",
+      "billing",
+      "telemetry",
+      "fractional usage",
+      "image megapixels",
+      "precision"
+    ],
+    "visual_concept": "A precise-but-cozy usage-meter scene: Polli, wearing tiny accountant glasses, watches a retro terminal measure a glowing image tile and a little clock with fractional markings. Pixel code-plants and flowers make the abstract header-parsing fix feel like careful garden measurement, with a prominent lime-green display showing that every small unit is preserved.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-hackerspace where Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny accountant glasses and carefully reads a retro lime green (#ecf874) usage meter beside a small clock and a glowing image tile marked with neat fractional ticks; code-plants sprout from flower pots around her. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle CRT glow and pixel-font text: \"0.5 COUNTS\"; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-18/PR-15131.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-hackerspace where Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny accountant glasses and carefully reads a retro lime green (#ecf874) usage meter beside a small clock and a glowing image tile marked with neat fractional ticks; code-plants sprout from flower pots around her. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle CRT glow and pixel-font text: \"0.5 COUNTS\"; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-18T12:55:02.870224+00:00"
+}

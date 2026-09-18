@@ -50,24 +50,6 @@ describe("usageToOpenAIImageUsage", () => {
         });
     });
 
-    it("rounds fractional megapixel units to integer tokens on the wire", () => {
-        expect(
-            usageToOpenAIImageUsage({
-                promptTextTokens: 10,
-                promptImageTokens: 0.3072,
-                completionImageTokens: 1.048576,
-            }),
-        ).toEqual({
-            input_tokens: 10,
-            output_tokens: 1,
-            total_tokens: 11,
-            input_tokens_details: {
-                text_tokens: 10,
-                image_tokens: 0,
-            },
-        });
-    });
-
     it("rejects internally inconsistent upstream usage", () => {
         const response = {
             usage: {

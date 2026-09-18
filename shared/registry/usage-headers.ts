@@ -151,15 +151,10 @@ export function usageToOpenAIImageUsage(usage: Usage): OpenAIImageUsage {
         (usage.promptTextTokens ?? 0) +
         (usage.promptCachedTokens ?? 0) +
         (usage.promptCacheWriteTokens ?? 0);
-    // The OpenAI wire contract (and our published response schema) declares
-    // integer token counts. Image buckets can carry fractional megapixels
-    // internally; billing uses the exact values from the x-usage-* headers,
-    // so only this response shape rounds.
-    const inputImageTokens = Math.round(usage.promptImageTokens ?? 0);
+    const inputImageTokens = usage.promptImageTokens ?? 0;
     const inputTokens = inputTextTokens + inputImageTokens;
-    const outputTokens = Math.round(
-        (usage.completionTextTokens ?? 0) + (usage.completionImageTokens ?? 0),
-    );
+    const outputTokens =
+        (usage.completionTextTokens ?? 0) + (usage.completionImageTokens ?? 0);
     return {
         input_tokens: inputTokens,
         output_tokens: outputTokens,

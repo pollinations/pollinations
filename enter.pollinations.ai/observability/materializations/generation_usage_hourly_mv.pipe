@@ -84,10 +84,10 @@ SQL >
             )
         ) AS completion_reasoning_tokens,
         sumState(
-            toUInt64(if(response_status >= 200 AND response_status < 300, token_count_prompt_image, 0))
+            toFloat64(if(response_status >= 200 AND response_status < 300, token_count_prompt_image, 0))
         ) AS prompt_image_tokens,
         sumState(
-            toUInt64(
+            toFloat64(
                 if(response_status >= 200 AND response_status < 300, token_count_completion_image, 0)
             )
         ) AS completion_image_tokens,

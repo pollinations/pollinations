@@ -109,22 +109,25 @@ const QUESTIONS = {
     is_urgent: {
         type: "noul",
         instructions: "Does this convey urgency?",
+        criteria: { true: "A deadline is stated", false: "No deadline" },
     },
 };
 
 const ANSWERS = {
     department: {
+        type: "choice",
         choice: "technical",
         confidence: 0.85,
         probabilities: { billing: 0.08, technical: 0.92 },
     },
     frustration: {
+        type: "score",
         score: 1.6,
         legend: { 0: "Calm", 1: "Frustrated", 2: "Very angry" },
         confidence: 0.78,
         probabilities: { 0: 0.1, 1: 0.2, 2: 0.7 },
     },
-    is_urgent: { noul: 0.98 },
+    is_urgent: { type: "noul", noul: 0.98 },
 };
 
 function completion(answers = ANSWERS) {
@@ -141,7 +144,7 @@ function completion(answers = ANSWERS) {
     });
 }
 
-test("translates all question types in one non-streaming chat completion", async (t) => {
+test("sends native state and questions in one non-streaming chat completion", async (t) => {
     let calls = 0;
     t.mock.method(globalThis, "fetch", async (input, init) => {
         calls++;
@@ -158,42 +161,13 @@ test("translates all question types in one non-streaming chat completion", async
             new Headers(init.headers).get("content-type"),
             "application/json",
         );
-        assert.deepEqual(JSON.parse(init.body), {
-            model: "openjev",
-            messages: [
-                {
-                    role: "user",
-                    content: "My payouts have been failing for 3 days.",
-                },
-            ],
-            response_format: {
-                type: "json_schema",
-                json_schema: {
-                    name: "jev_decision",
-                    schema: {
-                        type: "object",
-                        properties: {
-                            department: {
-                                type: "string",
-                                enum: ["billing", "technical"],
-                                description:
-                                    'Which team should handle this?\n\nCriteria: {"billing":"Payment issues","technical":"Product failures"}',
-                            },
-                            frustration: {
-                                type: "integer",
-                                enum: ["Calm", "Frustrated", "Very angry"],
-                                description: "How frustrated is the customer?",
-                            },
-                            is_urgent: {
-                                type: "number",
-                                minimum: 0,
-                                maximum: 1,
-                                description: "Does this convey urgency?",
-                            },
-                        },
-                    },
-                },
-            },
+        const body = JSON.parse(init.body);
+        assert.equal(body.model, "openjev");
+        assert.equal(body.messages.length, 1);
+        assert.equal(body.messages[0].role, "user");
+        assert.deepEqual(JSON.parse(body.messages[0].content), {
+            state: "My payouts have been failing for 3 days.",
+            questions: QUESTIONS,
         });
         return completion();
     });
@@ -212,27 +186,19 @@ test("translates all question types in one non-streaming chat completion", async
     assert.equal(calls, 1);
     assert.equal(result.content.length, 1);
     assert.equal(result.content[0].type, "text");
-    assert.deepEqual(JSON.parse(result.content[0].text), {
-        department: { type: "choice", ...ANSWERS.department },
-        frustration: { type: "score", ...ANSWERS.frustration },
-        is_urgent: { type: "noul", ...ANSWERS.is_urgent },
-    });
+    assert.deepEqual(JSON.parse(result.content[0].text), ANSWERS);
 });
 
-test("preserves optional noul criteria in the question description", async (t) => {
+test("preserves optional noul criteria in the user message", async (t) => {
     const criteriaCases = [
         { true: "Explicitly time-sensitive", false: "No urgency expressed" },
         { true: "A deadline is stated" },
         { false: "No deadline is stated" },
     ];
-    const descriptions = [];
+    const seen = [];
     t.mock.method(globalThis, "fetch", async (_input, init) => {
-        const property = JSON.parse(init.body).response_format.json_schema
-            .schema.properties.is_urgent;
-        assert.equal(property.type, "number");
-        assert.equal(property.minimum, 0);
-        assert.equal(property.maximum, 1);
-        descriptions.push(property.description);
+        const content = JSON.parse(init.body).messages[0].content;
+        seen.push(JSON.parse(content).questions.is_urgent.criteria);
         return completion({ is_urgent: ANSWERS.is_urgent });
     });
     const client = await connectClient();
@@ -249,14 +215,10 @@ test("preserves optional noul criteria in the question description", async (t) =
         });
         assert.notEqual(result.isError, true);
         assert.deepEqual(JSON.parse(result.content[0].text), {
-            is_urgent: { type: "noul", ...ANSWERS.is_urgent },
+            is_urgent: ANSWERS.is_urgent,
         });
     }
-    assert.deepEqual(descriptions, [
-        'Does this convey urgency?\n\nCriteria: {"true":"Explicitly time-sensitive","false":"No urgency expressed"}',
-        'Does this convey urgency?\n\nCriteria: {"true":"A deadline is stated"}',
-        'Does this convey urgency?\n\nCriteria: {"false":"No deadline is stated"}',
-    ]);
+    assert.deepEqual(seen, criteriaCases);
 });
 
 test("keeps bearer tokens scoped to concurrent requests", async (t) => {
@@ -270,6 +232,7 @@ test("keeps bearer tokens scoped to concurrent requests", async (t) => {
         seenAuthorizations.add(authorization);
         return completion({
             is_urgent: {
+                type: "noul",
                 noul: authorization === "Bearer pk_first" ? 0.1 : 0.9,
             },
         });
@@ -299,6 +262,44 @@ test("keeps bearer tokens scoped to concurrent requests", async (t) => {
         seenAuthorizations,
         new Set(["Bearer pk_first", "Bearer sk_second"]),
     );
+});
+
+test("accepts native string, object, and array instructions and rubric values", async (t) => {
+    const richQuestions = {
+        department: {
+            type: "choice",
+            instructions: { question: "Which team?", context: "Routing" },
+            criteria: {
+                billing: { covers: "Payments", examples: ["invoice"] },
+                technical: ["Product failures"],
+                other: null,
+            },
+        },
+        frustration: {
+            type: "score",
+            instructions: ["How frustrated?", "Pick a level"],
+            criteria: ["Calm", { level: "Frustrated" }, "Very angry"],
+        },
+    };
+    let content;
+    t.mock.method(globalThis, "fetch", async (_input, init) => {
+        content = JSON.parse(JSON.parse(init.body).messages[0].content);
+        return completion({
+            department: ANSWERS.department,
+            frustration: ANSWERS.frustration,
+        });
+    });
+    const client = await connectClient();
+    t.after(() => client.close());
+    const result = await client.callTool({
+        name: "jev_decide",
+        arguments: { state: "My card was declined.", questions: richQuestions },
+    });
+    assert.notEqual(result.isError, true);
+    assert.deepEqual(content, {
+        state: "My card was declined.",
+        questions: richQuestions,
+    });
 });
 
 test("rejects invalid question types and criteria before fetching", async (t) => {

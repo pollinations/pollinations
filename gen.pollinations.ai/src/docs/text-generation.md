@@ -124,41 +124,22 @@ Models that advertise `/v1/responses` also accept OpenAI's cache controls. Set `
 
 ### Typed decisions (`openjev`)
 
-`openjev` returns calibrated judgments instead of free text. Each property in `response_format.json_schema` becomes one question; the property shape selects the answer type — a string `enum` returns a **choice**, a number/integer with an ordered string `enum` returns a **score**, and a number/integer bounded `0`-`1` returns a **noul** (probability). Streaming is not supported.
+`openjev` returns calibrated judgments instead of free text. The outer `model` selects this route; the upstream TypeSafe model is configured by Pollinations. Send exactly one `user` message whose `content` is a JSON string with the native TypeSafe request: a `state` and a map of `questions`, each a native `choice`, `score`, or `noul`. Streaming is not supported.
 
 ```json
 {
   "model": "openjev",
   "messages": [
-    { "role": "user", "content": "My payouts have been failing for 3 days." }
-  ],
-  "response_format": {
-    "type": "json_schema",
-    "json_schema": {
-      "name": "triage",
-      "schema": {
-        "type": "object",
-        "properties": {
-          "department": {
-            "type": "string",
-            "enum": ["billing", "technical"],
-            "description": "Which team should handle this?"
-          },
-          "is_urgent": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1,
-            "description": "Does this convey urgency?"
-          }
-        }
-      }
+    {
+      "role": "user",
+      "content": "{\"state\":\"My payouts have been failing for 3 days.\",\"questions\":{\"department\":{\"type\":\"choice\",\"instructions\":\"Which team should handle this?\",\"criteria\":{\"billing\":\"Payment issues\",\"technical\":\"Product failures\"}},\"is_urgent\":{\"type\":\"noul\",\"instructions\":\"Does this convey urgency?\"}}}"
     }
-  }
+  ]
 }
 ```
 
-`message.content` returns one JSON field per question, each carrying the fields for its type (`choice` + `confidence` + `probabilities`, `score` + `legend`, or `noul`).
+`message.content` returns the native TypeSafe `answers` object unchanged: one field per question, each carrying `type` and its native fields (`choice` + `confidence` + `probabilities`, `score` + `legend` + `confidence` + `probabilities`, or `noul`). See the [TypeSafe API reference](https://docs.typesafe.ai/api) for the native request and answer shapes.
 
-Supply relevant facts in the message; Jev can be confident even when facts are missing. Explain enum options in the property `description`, interpret scores using `legend`, and handle counting, arithmetic, and date comparisons in code. Questions are evaluated independently.
+Supply relevant facts in `state`; Jev can be confident even when facts are missing. Interpret scores using `legend`, and handle counting, arithmetic, and date comparisons in code. Questions are evaluated independently.
 
 The context limit is 64k tokens for `state` and all questions together, and 32k for `state` plus the longest question.

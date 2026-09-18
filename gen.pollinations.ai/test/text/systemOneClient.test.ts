@@ -2,31 +2,46 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { findModelByName } from "../../src/text/availableModels.js";
 import { generateTextPortkey } from "../../src/text/generateTextPortkey.js";
 import { callSystemOne } from "../../src/text/systemOneClient.js";
-import type { TransformOptions } from "../../src/text/types.js";
 
 const modelConfig = { "typesafe-api-key": "test-key", model: "jev-latest" };
-const properties = {
+
+// Native TypeSafe shapes: instructions and rubric entries may be strings,
+// objects, or arrays; the adapter must forward them untouched.
+const nativeState = {
+    ticket: { subject: "Duplicate charge", messages: ["Charged twice."] },
+};
+const nativeQuestions = {
     department: {
-        type: "string",
-        enum: ["billing", "technical"],
-        description: "Which team?",
+        type: "choice",
+        instructions: "Which team should handle this?",
+        criteria: {
+            billing: "Payment issues",
+            technical: "Product failures",
+        },
     },
     frustration: {
-        type: "integer",
-        enum: ["Calm", "Frustrated", "Very angry"],
-        description: "How frustrated?",
+        type: "score",
+        instructions: { question: "How frustrated?", scale: "Calm to angry" },
+        criteria: [
+            "Calm",
+            { level: "Frustrated", example: "Repeated contact" },
+            "Very angry",
+        ],
     },
     is_urgent: {
-        type: "number",
-        minimum: 0,
-        maximum: 1,
-        description: "Is this urgent?",
+        type: "noul",
+        instructions: "Does this convey urgency?",
+        criteria: {
+            true: "Explicitly time-sensitive",
+            false: "No urgency expressed",
+        },
     },
 };
-const response_format = {
-    type: "json_schema",
-    json_schema: { name: "triage", schema: { type: "object", properties } },
-};
+const nativeContent = JSON.stringify({
+    state: nativeState,
+    questions: nativeQuestions,
+});
+
 const answers = {
     department: {
         type: "choice",
@@ -56,7 +71,7 @@ describe("System One adapter", () => {
         expect(findModelByName("typesafe/jev")).toBeNull();
     });
 
-    it("sends all question types in one call and maps answers and usage", async () => {
+    it("forwards native state and questions in one message and returns native answers", async () => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")
             .mockImplementationOnce(async (input, init) => {
@@ -73,26 +88,8 @@ describe("System One adapter", () => {
                 expect(init?.signal).toBeInstanceOf(AbortSignal);
                 expect(JSON.parse(String(init?.body))).toEqual({
                     model: "jev-latest",
-                    state: "Route the request.\n\nMy payouts have failed\n\nfor 3 days.",
-                    questions: {
-                        department: {
-                            type: "choice",
-                            instructions: "Which team?",
-                            criteria: {
-                                billing: "billing",
-                                technical: "technical",
-                            },
-                        },
-                        frustration: {
-                            type: "score",
-                            instructions: "How frustrated?",
-                            criteria: ["Calm", "Frustrated", "Very angry"],
-                        },
-                        is_urgent: {
-                            type: "noul",
-                            instructions: "Is this urgent?",
-                        },
-                    },
+                    state: nativeState,
+                    questions: nativeQuestions,
                 });
                 return Response.json({
                     model: "jev-1.13.0",
@@ -101,19 +98,8 @@ describe("System One adapter", () => {
                 });
             });
         const result = await callSystemOne(
-            [
-                { role: "system", content: "Route the request." },
-                { role: "assistant", content: "" },
-                {
-                    role: "user",
-                    content: [
-                        { type: "text", text: "My payouts have failed" },
-                        { type: "text", text: "for 3 days." },
-                    ],
-                },
-                { role: "assistant", content: null },
-            ],
-            { modelConfig, response_format },
+            [{ role: "user", content: nativeContent }],
+            { modelConfig },
         );
         expect(fetchSpy).toHaveBeenCalledTimes(1);
         expect(result).toMatchObject({
@@ -136,32 +122,25 @@ describe("System One adapter", () => {
         });
         expect(
             JSON.parse(String(result.choices?.[0]?.message?.content)),
-        ).toEqual({
-            department: {
-                choice: "technical",
-                confidence: 0.85,
-                probabilities: { billing: 0.08, technical: 0.92 },
-            },
-            frustration: {
-                score: 1.6,
-                legend: { "0": "Calm", "1": "Frustrated", "2": "Very angry" },
-                confidence: 0.78,
-                probabilities: { "0": 0.1, "1": 0.2, "2": 0.7 },
-            },
-            is_urgent: { noul: 0.98 },
-        });
+        ).toEqual(answers);
     });
 
     it("routes openjev directly with the configured upstream model", async () => {
+        const payloadWithModel = JSON.stringify({
+            model: "inner-model-must-not-route",
+            state: nativeState,
+            questions: nativeQuestions,
+        });
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")
             .mockImplementationOnce(async (input, init) => {
                 expect(String(input)).toBe(
                     "https://api.typesafe.ai/v1/systemone",
                 );
-                expect(JSON.parse(String(init?.body))).toMatchObject({
+                expect(JSON.parse(String(init?.body))).toEqual({
                     model: "jev-1.13.0",
-                    state: "Payment failed.",
+                    state: nativeState,
+                    questions: nativeQuestions,
                 });
                 expect(
                     new Headers(init?.headers).get("x-portkey-provider"),
@@ -174,16 +153,10 @@ describe("System One adapter", () => {
             });
         const portkeyFetcher = vi.fn();
         await generateTextPortkey(
-            [
-                {
-                    role: "user",
-                    content: [{ type: "text", text: "Payment failed." }],
-                },
-            ],
+            [{ role: "user", content: payloadWithModel }],
             {
                 model: "openjev",
                 modelConfig: { ...modelConfig, model: "jev-1.13.0" },
-                response_format,
             },
             portkeyFetcher,
         );
@@ -199,96 +172,84 @@ describe("System One adapter", () => {
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 
-    it("reports missing credentials as server misconfiguration", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-        await expect(
-            callSystemOne([], { response_format }),
-        ).rejects.toMatchObject({
-            status: 500,
-            message: "TypeSafe credentials are not configured for openjev.",
-        });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
-    it.each([
-        undefined,
-        { type: "text" },
-        { type: "json_object" },
-    ])("diagnoses an absent or wrong format: %j", async (format) => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-        await expect(
-            callSystemOne([], { modelConfig, response_format: format }),
-        ).rejects.toMatchObject({
-            status: 400,
-            message: expect.stringContaining(
-                'response_format.type to be "json_schema"',
-            ),
-        });
-        await expect(
-            callSystemOne([], { modelConfig, response_format: format }),
-        ).rejects.toThrow('"response_format":{"type":"json_schema"');
-        await expect(
-            callSystemOne([], { modelConfig, response_format: format }),
-        ).rejects.toThrow("https://gen.pollinations.ai/docs#tag/text");
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
-    it.each([
-        undefined,
-        null,
-        [],
-        "wrong",
-        12,
-    ])("diagnoses missing or malformed properties: %j", async (value) => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-        const options: TransformOptions = {
-            modelConfig,
-            response_format: {
-                type: "json_schema",
-                json_schema: { schema: { properties: value } },
-            },
-        };
-        await expect(callSystemOne([], options)).rejects.toMatchObject({
-            status: 400,
-            message: expect.stringContaining(
-                "response_format.json_schema.schema.properties",
-            ),
-        });
-        await expect(callSystemOne([], options)).rejects.toThrow(
-            '"properties":{"urgent":{"type":"number","minimum":0,"maximum":1}}',
-        );
-        await expect(callSystemOne([], options)).rejects.toThrow(
-            "https://gen.pollinations.ai/docs#tag/text",
-        );
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
-    it.each([
-        { type: "boolean" },
-        { type: "string", enum: [1, 2] },
-        { type: "integer", enum: ["Only"] },
-        null,
-    ])("names the unsupported property and shows valid alternatives: %j", async (property) => {
+    it("rejects the removed json_schema response_format", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
         const options = {
             modelConfig,
             response_format: {
                 type: "json_schema",
                 json_schema: {
-                    schema: { properties: { invalid_question: property } },
+                    name: "triage",
+                    schema: { type: "object", properties: {} },
                 },
             },
         };
-        await expect(callSystemOne([], options)).rejects.toMatchObject({
+        await expect(
+            callSystemOne([{ role: "user", content: nativeContent }], options),
+        ).rejects.toMatchObject({ status: 400 });
+        await expect(
+            callSystemOne([{ role: "user", content: nativeContent }], options),
+        ).rejects.toThrow("response_format json_schema");
+        await expect(
+            callSystemOne([{ role: "user", content: nativeContent }], options),
+        ).rejects.toThrow("https://docs.typesafe.ai/api");
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        ["no messages", []],
+        [
+            "multiple messages",
+            [
+                { role: "system", content: "Route the request." },
+                { role: "user", content: nativeContent },
+            ],
+        ],
+        [
+            "non-string content",
+            [
+                {
+                    role: "user",
+                    content: [{ type: "text", text: nativeContent }],
+                },
+            ],
+        ],
+        ["non-user role", [{ role: "assistant", content: nativeContent }]],
+    ])("rejects an unsupported message layout: %s", async (_name, messages) => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            callSystemOne(messages, { modelConfig }),
+        ).rejects.toMatchObject({
             status: 400,
-            message: expect.stringContaining('property "invalid_question"'),
+            message: expect.stringContaining("one user message"),
         });
-        await expect(callSystemOne([], options)).rejects.toThrow(
-            'choice: {"type":"string","enum":["billing","technical"]}',
-        );
-        await expect(callSystemOne([], options)).rejects.toThrow(
-            "https://gen.pollinations.ai/docs#tag/text",
-        );
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        ["not json", "not json"],
+        ["an array", "[]"],
+        ["missing state", '{"questions":{}}'],
+        ["missing questions", '{"state":"Payment failed."}'],
+    ])("rejects a malformed native payload: %s", async (_name, content) => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            callSystemOne([{ role: "user", content }], { modelConfig }),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: expect.stringContaining("https://docs.typesafe.ai/api"),
+        });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("reports missing credentials as server misconfiguration", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            callSystemOne([{ role: "user", content: nativeContent }], {}),
+        ).rejects.toMatchObject({
+            status: 500,
+            message: "TypeSafe credentials are not configured for openjev.",
+        });
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 
@@ -303,7 +264,9 @@ describe("System One adapter", () => {
             }),
         );
         await expect(
-            callSystemOne([], { modelConfig, response_format }),
+            callSystemOne([{ role: "user", content: nativeContent }], {
+                modelConfig,
+            }),
         ).rejects.toMatchObject({
             status: 502,
             upstreamStatus: 429,
@@ -318,7 +281,9 @@ describe("System One adapter", () => {
             Response.json({ model: "jev-1.13.0", answers }),
         );
         await expect(
-            callSystemOne([], { modelConfig, response_format }),
+            callSystemOne([{ role: "user", content: nativeContent }], {
+                modelConfig,
+            }),
         ).rejects.toMatchObject({ status: 502 });
     });
 });

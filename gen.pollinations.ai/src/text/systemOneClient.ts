@@ -7,34 +7,13 @@ import type {
 } from "./types.js";
 import { isPlainObject } from "./utils/objectCleaners.js";
 
-const DOCS_URL = "https://gen.pollinations.ai/docs#tag/text";
-const FORMAT_EXAMPLE =
-    '{"response_format":{"type":"json_schema","json_schema":{"name":"decision","schema":{"type":"object","properties":{"urgent":{"type":"number","minimum":0,"maximum":1}}}}}}';
-const PROPERTY_EXAMPLES =
-    'choice: {"type":"string","enum":["billing","technical"]}; score: {"type":"integer","enum":["Calm","Frustrated"]}; noul: {"type":"number","minimum":0,"maximum":1}';
+const DOCS_URL = "https://docs.typesafe.ai/api";
+const REQUEST_EXAMPLE =
+    '{"state":"My payouts have been failing for 3 days.","questions":{"department":{"type":"choice","instructions":"Which team should handle this?","criteria":{"billing":"Payment issues","technical":"Product failures"}},"is_urgent":{"type":"noul","instructions":"Does this convey urgency?"}}}';
 
-type Question =
-    | { type: "choice"; instructions: string; criteria: Record<string, string> }
-    | { type: "score"; instructions: string; criteria: string[] }
-    | { type: "noul"; instructions: string };
-type Answer =
-    | {
-          type: "choice";
-          choice: string;
-          confidence: number;
-          probabilities: Record<string, number>;
-      }
-    | {
-          type: "score";
-          score: number;
-          legend: Record<string, string>;
-          confidence: number;
-          probabilities: Record<string, number>;
-      }
-    | { type: "noul"; noul: number };
 type SystemOneResponse = {
     model: string;
-    answers: Record<string, Answer>;
+    answers: Record<string, unknown>;
     usage: { input_tokens: number; output_tokens: number };
 };
 
@@ -44,6 +23,47 @@ function serviceError(message: string, status: number): ServiceError {
     return error;
 }
 
+function nativeRequestError(detail: string): ServiceError {
+    return serviceError(
+        `${detail} Send exactly one user message whose content is the native TypeSafe request as JSON: ${REQUEST_EXAMPLE}. Docs: ${DOCS_URL}`,
+        400,
+    );
+}
+
+function parseNativeRequest(messages: ChatMessage[]): {
+    state: unknown;
+    questions: Record<string, unknown>;
+} {
+    const message = messages[0];
+    if (
+        messages.length !== 1 ||
+        message?.role !== "user" ||
+        typeof message.content !== "string"
+    ) {
+        throw nativeRequestError(
+            "openjev requires one user message with string content.",
+        );
+    }
+    let payload: unknown;
+    try {
+        payload = JSON.parse(message.content);
+    } catch {
+        throw nativeRequestError(
+            "openjev could not parse the user message content as JSON.",
+        );
+    }
+    if (
+        !isPlainObject(payload) ||
+        payload.state === undefined ||
+        !isPlainObject(payload.questions)
+    ) {
+        throw nativeRequestError(
+            'openjev expects a JSON object with "state" and a "questions" map.',
+        );
+    }
+    return { state: payload.state, questions: payload.questions };
+}
+
 export async function callSystemOne(
     messages: ChatMessage[],
     options: TransformOptions,
@@ -51,6 +71,13 @@ export async function callSystemOne(
     if (options.stream === true) {
         throw serviceError("openjev does not support streaming.", 400);
     }
+    if (options.response_format?.type === "json_schema") {
+        throw serviceError(
+            `openjev does not accept response_format json_schema. Put the native TypeSafe state and questions in the user message instead. Example content: ${REQUEST_EXAMPLE}. Docs: ${DOCS_URL}`,
+            400,
+        );
+    }
+    const { state, questions } = parseNativeRequest(messages);
     const apiKey = options.modelConfig?.["typesafe-api-key"];
     if (typeof apiKey !== "string" || !apiKey) {
         throw serviceError(
@@ -59,93 +86,6 @@ export async function callSystemOne(
         );
     }
     const model = options.modelConfig?.model;
-    const format = options.response_format;
-    if (format?.type !== "json_schema") {
-        throw serviceError(
-            `openjev requires response_format.type to be "json_schema"; received ${JSON.stringify(format?.type) ?? "missing"}. Minimal request shape: ${FORMAT_EXAMPLE}. Full example: ${DOCS_URL}`,
-            400,
-        );
-    }
-    const jsonSchema = format.json_schema;
-    const schema = isPlainObject(jsonSchema) ? jsonSchema.schema : undefined;
-    const properties = isPlainObject(schema) ? schema.properties : undefined;
-    if (!isPlainObject(properties)) {
-        throw serviceError(
-            `openjev requires response_format.json_schema.schema.properties to be an object, not missing, null, an array, or a scalar. Minimal request shape: ${FORMAT_EXAMPLE}. Full example: ${DOCS_URL}`,
-            400,
-        );
-    }
-    const questions = Object.fromEntries(
-        Object.entries(properties).map(
-            ([name, property]): [string, Question] => {
-                if (isPlainObject(property)) {
-                    const instructions =
-                        typeof property.description === "string"
-                            ? property.description
-                            : "";
-                    const numeric =
-                        property.type === "number" ||
-                        property.type === "integer";
-                    const labels = property.enum;
-                    if (
-                        Array.isArray(labels) &&
-                        labels.length > 0 &&
-                        labels.every(
-                            (label): label is string =>
-                                typeof label === "string",
-                        )
-                    ) {
-                        if (property.type === "string") {
-                            return [
-                                name,
-                                {
-                                    type: "choice",
-                                    instructions,
-                                    criteria: Object.fromEntries(
-                                        labels.map((label) => [label, label]),
-                                    ),
-                                },
-                            ];
-                        }
-                        if (numeric && labels.length >= 2) {
-                            return [
-                                name,
-                                {
-                                    type: "score",
-                                    instructions,
-                                    criteria: labels,
-                                },
-                            ];
-                        }
-                    }
-                    if (
-                        numeric &&
-                        property.enum === undefined &&
-                        property.minimum === 0 &&
-                        property.maximum === 1
-                    ) {
-                        return [name, { type: "noul", instructions }];
-                    }
-                }
-                throw serviceError(
-                    `openjev cannot infer a question type for property ${JSON.stringify(name)} from ${JSON.stringify(property)}. Use ${PROPERTY_EXAMPLES}. Choice needs a non-empty string enum; score needs at least two ordered string labels. Full example: ${DOCS_URL}`,
-                    400,
-                );
-            },
-        ),
-    );
-    const state = messages
-        .flatMap(({ content }) =>
-            Array.isArray(content)
-                ? content.map((part) =>
-                      isPlainObject(part) && part.type === "text"
-                          ? part.text
-                          : "",
-                  )
-                : [content],
-        )
-        .filter(Boolean)
-        .join("\n\n");
     const requestUrl = new URL("https://api.typesafe.ai/v1/systemone");
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30_000);
@@ -172,38 +112,6 @@ export async function callSystemOne(
                 502,
             );
         }
-        const answers = Object.fromEntries(
-            Object.entries(result.answers).map(([name, answer]) => {
-                switch (answer.type) {
-                    case "choice":
-                        return [
-                            name,
-                            {
-                                choice: answer.choice,
-                                confidence: answer.confidence,
-                                probabilities: answer.probabilities,
-                            },
-                        ];
-                    case "score":
-                        return [
-                            name,
-                            {
-                                score: answer.score,
-                                legend: answer.legend,
-                                confidence: answer.confidence,
-                                probabilities: answer.probabilities,
-                            },
-                        ];
-                    case "noul":
-                        return [name, { noul: answer.noul }];
-                    default:
-                        throw serviceError(
-                            `TypeSafe returned an unsupported answer type for ${JSON.stringify(name)}.`,
-                            502,
-                        );
-                }
-            }),
-        );
         return {
             id: `systemone-${crypto.randomUUID()}`,
             object: "chat.completion",
@@ -214,7 +122,7 @@ export async function callSystemOne(
                     index: 0,
                     message: {
                         role: "assistant",
-                        content: JSON.stringify(answers),
+                        content: JSON.stringify(result.answers),
                     },
                     finish_reason: "stop",
                 },

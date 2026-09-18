@@ -5,11 +5,7 @@ import {
     createTextContent,
     postChatCompletion,
 } from "../../packages/mcp/src/utils/coreUtils.js";
-import {
-    answersFromContent,
-    jevInputSchema,
-    questionsToProperties,
-} from "./jev.js";
+import { jevInputSchema } from "./jev.js";
 
 function buildServer() {
     const server = new McpServer(
@@ -30,24 +26,17 @@ function buildServer() {
             const result = await postChatCompletion(
                 {
                     model: "openjev",
-                    messages: [{ role: "user", content: state }],
-                    response_format: {
-                        type: "json_schema",
-                        json_schema: {
-                            name: "jev_decision",
-                            schema: {
-                                type: "object",
-                                properties: questionsToProperties(questions),
-                            },
+                    messages: [
+                        {
+                            role: "user",
+                            content: JSON.stringify({ state, questions }),
                         },
-                    },
+                    ],
                 },
                 context,
             );
-            const content = JSON.parse(result.choices?.[0]?.message?.content);
-            return createMCPResponse([
-                createTextContent(answersFromContent(content, questions), true),
-            ]);
+            const answers = JSON.parse(result.choices?.[0]?.message?.content);
+            return createMCPResponse([createTextContent(answers, true)]);
         },
     );
     return server;

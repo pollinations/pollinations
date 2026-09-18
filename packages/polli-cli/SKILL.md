@@ -240,6 +240,16 @@ polli docs --open                   # open in browser
 - **`--json`:** every command emits machine-parseable JSON to stdout; all human messages go to stderr. **Always prefer `--json` when piping into `jq` or parsing** — it's the only shape with a stable contract.
 - **Exit codes:** 0 on success, non-zero on auth failure, rate limit, network error, or invalid args. Error messages go to stderr.
 
+## MCP servers (tools for coding agents)
+
+`polli mcp` connects Pollinations tool servers (image/video generation, web search, a persistent computer, FFmpeg) to coding agents via MCP:
+
+- `polli mcp list` — browse servers (no auth).
+- `polli mcp install [server] [--client <ids>] [--all]` — install into detected clients (Claude Code, Codex, Gemini CLI, Cursor, Windsurf, Cline, Kiro, Zed, Warp, OpenCode, VS Code, Claude Desktop). Mints a dedicated, revocable key per client; restart the client afterwards.
+- `polli mcp status` / `polli mcp remove` — inspect and uninstall.
+
+Details: `packages/polli-cli/docs/mcp.md`.
+
 ## Agent operating rules
 
 1. **Run `polli auth status` first** if you don't know whether the user is logged in. Fail fast with a clear "run `polli auth login`" message if not.

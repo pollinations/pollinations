@@ -100,15 +100,16 @@ export async function callSystemOne(
     options: TransformOptions,
 ): Promise<ChatCompletion> {
     const { state, questions } = parseNativeRequest(messages);
-    const apiKey = options.modelConfig?.["typesafe-api-key"];
-    if (typeof apiKey !== "string" || !apiKey) {
+    const apiKey = options.modelConfig?.authKey;
+    const endpoint = options.modelConfig?.directEndpoint;
+    if (typeof apiKey !== "string" || !apiKey || typeof endpoint !== "string") {
         throw serviceError(
-            "TypeSafe credentials are not configured for typesafe/jev.",
+            "The decisions route is not configured for typesafe/jev.",
             500,
         );
     }
     const model = options.modelConfig?.model;
-    const requestUrl = new URL("https://api.typesafe.ai/v1/systemone");
+    const requestUrl = new URL(endpoint);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30_000);
     try {
@@ -130,7 +131,7 @@ export async function callSystemOne(
             typeof result?.usage?.output_tokens !== "number"
         ) {
             throw serviceError(
-                "TypeSafe returned a response without valid answers or usage.",
+                "Jev returned a response without valid answers or usage.",
                 502,
             );
         }

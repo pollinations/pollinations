@@ -521,7 +521,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "typesafe/jev",
-        config: portkeyConfig["jev-latest"],
+        config: portkeyConfig["jev-1.13"],
         useSystemOneApi: true,
     },
     {

@@ -1131,7 +1131,7 @@ const TEXT_BASE_SERVICES = {
     "typesafe/jev": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: ["jev"],
-        provider: "typesafe",
+        provider: "openrouter",
         publisher: "TypeSafe",
         category: "text",
         addedDate: new Date("2026-09-17").getTime(),

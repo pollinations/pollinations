@@ -3057,17 +3057,6 @@
       "collectionMethod": null
     },
     {
-      "id": "typesafe",
-      "label": "TypeSafe AI",
-      "category": "compute",
-      "meteringBasis": "internal",
-      "aliases": [],
-      "connector": null,
-      "monthlyReview": false,
-      "balanceTracking": false,
-      "collectionMethod": null
-    },
-    {
       "id": "vast",
       "label": "Vast.ai",
       "category": "compute",

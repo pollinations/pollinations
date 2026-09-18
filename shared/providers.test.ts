@@ -76,7 +76,6 @@ const PROTOCOL_VENDORS: Record<string, string> = {
     "vertex-ai": "google",
     "perplexity-ai": "perplexity",
     openrouter: "openrouter",
-    typesafe: "typesafe",
 };
 const HOST_VENDORS: Record<string, string> = {
     "api.fireworks.ai": "fireworks",

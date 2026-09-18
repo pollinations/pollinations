@@ -4,7 +4,11 @@ import { requireChatStreamUsage } from "../../src/text/chat/usage.js";
 import { generateTextPortkey } from "../../src/text/generateTextPortkey.js";
 import { callSystemOne } from "../../src/text/systemOneClient.js";
 
-const modelConfig = { "typesafe-api-key": "test-key", model: "jev-latest" };
+const modelConfig = {
+    authKey: "test-key",
+    directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+    model: "typesafe/jev-1.13",
+};
 
 // Native TypeSafe shapes: instructions and rubric entries may be strings,
 // objects, or arrays; the adapter must forward them untouched.
@@ -76,7 +80,7 @@ describe("System One adapter", () => {
             .spyOn(globalThis, "fetch")
             .mockImplementationOnce(async (input, init) => {
                 expect(String(input)).toBe(
-                    "https://api.typesafe.ai/v1/systemone",
+                    "https://openrouter.ai/api/alpha/decisions",
                 );
                 expect(init?.method).toBe("POST");
                 expect(new Headers(init?.headers).get("authorization")).toBe(
@@ -87,7 +91,7 @@ describe("System One adapter", () => {
                 );
                 expect(init?.signal).toBeInstanceOf(AbortSignal);
                 expect(JSON.parse(String(init?.body))).toEqual({
-                    model: "jev-latest",
+                    model: "typesafe/jev-1.13",
                     state: nativeState,
                     questions: nativeQuestions,
                 });
@@ -125,7 +129,7 @@ describe("System One adapter", () => {
         ).toEqual(answers);
         // Internal routing metadata must not reach the OpenAI response body.
         expect(result.upstreamRequestUrl?.href).toBe(
-            "https://api.typesafe.ai/v1/systemone",
+            "https://openrouter.ai/api/alpha/decisions",
         );
         expect(JSON.parse(JSON.stringify(result))).not.toHaveProperty(
             "upstreamRequestUrl",
@@ -142,7 +146,7 @@ describe("System One adapter", () => {
             .spyOn(globalThis, "fetch")
             .mockImplementationOnce(async (input, init) => {
                 expect(String(input)).toBe(
-                    "https://api.typesafe.ai/v1/systemone",
+                    "https://openrouter.ai/api/alpha/decisions",
                 );
                 expect(JSON.parse(String(init?.body))).toEqual({
                     model: "jev-1.13.0",
@@ -245,7 +249,7 @@ describe("System One adapter", () => {
             .spyOn(globalThis, "fetch")
             .mockImplementationOnce(async (_input, init) => {
                 expect(JSON.parse(String(init?.body))).toEqual({
-                    model: "jev-latest",
+                    model: "typesafe/jev-1.13",
                     state: nativeState,
                     questions: nativeQuestions,
                 });
@@ -304,8 +308,7 @@ describe("System One adapter", () => {
             callSystemOne([{ role: "user", content: nativeContent }], {}),
         ).rejects.toMatchObject({
             status: 500,
-            message:
-                "TypeSafe credentials are not configured for typesafe/jev.",
+            message: "The decisions route is not configured for typesafe/jev.",
         });
         expect(fetchSpy).not.toHaveBeenCalled();
     });

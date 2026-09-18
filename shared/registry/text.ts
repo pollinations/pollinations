@@ -1129,6 +1129,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "typesafe/jev": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: ["jev"],
         provider: "typesafe",
         publisher: "TypeSafe",

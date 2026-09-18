@@ -37,6 +37,7 @@ const BRAND_LOGOS: Record<string, string> = {
     "Stability AI": "stability",
     StepFun: "stepfun",
     "Thinking Machines": "thinking-machines",
+    TypeSafe: "typesafe",
     Xiaomi: "xiaomi",
     "Z.ai": "zai",
     xAI: "xai",

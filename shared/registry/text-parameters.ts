@@ -395,4 +395,7 @@ export const CHAT_PARAMETERS = {
         "frequency_penalty",
     ],
     qwenGuard: [...CHAT, ...SAMPLING, ...LOGPROBS, "seed"],
+    // The System One adapter forwards the native request untouched, so token
+    // caps, sampling and tools have no effect; only the SSE wrapper is ours.
+    typesafeJev: ["stream"],
 } satisfies Record<string, string[]>;

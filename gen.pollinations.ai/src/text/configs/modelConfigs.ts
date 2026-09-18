@@ -73,12 +73,6 @@ function createPinnedOpenRouterGeminiConfig(
 // =============================================================================
 
 export const portkeyConfig: PortkeyConfigMap = {
-    // -- TypeSafe AI (direct, bypasses Portkey — see systemOneClient.ts) -----
-    "jev-latest": () => ({
-        provider: "typesafe",
-        "typesafe-api-key": process.env.TYPESAFE_API_KEY,
-        model: "jev-latest",
-    }),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
         createAzureResponsesModelConfig(

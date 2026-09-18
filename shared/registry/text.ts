@@ -1128,32 +1128,6 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    openjev: {
-        aliases: [],
-        provider: "typesafe",
-        publisher: "TypeSafe",
-        category: "text",
-        addedDate: new Date("2026-09-17").getTime(),
-        priceMultiplier: 1, // PLACEHOLDER — pending business decision
-        paidOnly: false, // Quest Pollen may pay for Jev; no paid balance needed.
-        cost: {
-            // TypeSafe list price for Jev (docs.typesafe.ai, checked 2026-09-17).
-            promptTextTokens: perMillion(0.042),
-            completionTextTokens: perMillion(0),
-        },
-        title: "OpenJev",
-        description:
-            "Typed decisions with calibrated confidence instead of free text; " +
-            "send the native state and questions as JSON in the last user message",
-        inputModalities: ["text"],
-        outputModalities: ["text"],
-        tools: false,
-        reasoning: false,
-        // 64k for state + questions together; 32k for state + the longest
-        // question. https://docs.typesafe.ai/model-jaggedness/jev-1.13
-        contextLength: 64000,
-        isSpecialized: true,
-    },
     "pollinations/midijourney": {
         supportedParameters: CHAT_PARAMETERS.azureGptMini,
         aliases: ["midijourney"],

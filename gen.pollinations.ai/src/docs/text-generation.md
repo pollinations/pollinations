@@ -121,25 +121,3 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 **Nova** — `nova` and `nova-fast` cache. The prefix must be at least ~1,000 tokens (up to 20K tokens cacheable). Cache creates are free; hits bill at 25% of input. ~5-minute TTL.
 
 Models that advertise `/v1/responses` also accept OpenAI's cache controls. Set `prompt_cache_options.mode` to `explicit` and place `prompt_cache_breakpoint: { "mode": "explicit" }` on the content block ending each stable prefix (up to four). Chat requests adapted to Responses preserve these markers; the existing `cache_control: { "type": "ephemeral" }` marker is translated to the same explicit breakpoint. Managed prompt agents apply an explicit request without caller markers to their configured static prompt.
-
-### Typed decisions (`openjev`)
-
-`openjev` returns calibrated judgments instead of free text. The outer `model` selects this route; the upstream TypeSafe model is configured by Pollinations. Only the last `user` message is used; its `content` is a JSON string with the native TypeSafe request: a `state` and a map of `questions`, each a native `choice`, `score`, or `noul`. Earlier turns, system instructions and text-generation settings are ignored. With `stream: true` the finished answers arrive as one content chunk followed by the usage chunk.
-
-```json
-{
-  "model": "openjev",
-  "messages": [
-    {
-      "role": "user",
-      "content": "{\"state\":\"My payouts have been failing for 3 days.\",\"questions\":{\"department\":{\"type\":\"choice\",\"instructions\":\"Which team should handle this?\",\"criteria\":{\"billing\":\"Payment issues\",\"technical\":\"Product failures\"}},\"is_urgent\":{\"type\":\"noul\",\"instructions\":\"Does this convey urgency?\"}}}"
-    }
-  ]
-}
-```
-
-`message.content` returns the native TypeSafe `answers` object unchanged: one field per question, each carrying `type` and its native fields (`choice` + `confidence` + `probabilities`, `score` + `legend` + `confidence` + `probabilities`, or `noul`). See the [TypeSafe API reference](https://docs.typesafe.ai/api) for the native request and answer shapes.
-
-Supply relevant facts in `state`; Jev can be confident even when facts are missing. Interpret scores using `legend`, and handle counting, arithmetic, and date comparisons in code. Questions are evaluated independently.
-
-The context limit is 64k tokens for `state` and all questions together, and 32k for `state` plus the longest question.

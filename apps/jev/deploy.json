@@ -1,0 +1,10 @@
+{
+  "target": "worker",
+  "credentials": "myceli",
+  "install": "npm ci",
+  "build": "npm run test",
+  "deploy": "npm run deploy",
+  "verify": [
+    "https://jev.pollinations.ai/health"
+  ]
+}

@@ -25,7 +25,7 @@ function buildServer() {
         async ({ state, questions }, context) => {
             const result = await postChatCompletion(
                 {
-                    model: "openjev",
+                    model: "community/voodoohop/jev",
                     messages: [
                         {
                             role: "user",

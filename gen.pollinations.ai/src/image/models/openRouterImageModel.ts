@@ -554,9 +554,17 @@ export async function callOpenRouterFlux2MaxAPI(
         });
     }
     const apiKey = requireOpenRouterImageApiKey();
-    const inputReferences = safeParams.image.map((url) => ({
+    // BFL does not follow redirects, so a raw reference URL 400s whenever the
+    // host serves one (e.g. picsum.photos). Download and inline as a data
+    // URI instead, matching callOpenRouterSeedreamProAPI.
+    const downloadedImages = await Promise.all(
+        safeParams.image.map((image) => downloadUserImage(image)),
+    );
+    const inputReferences = downloadedImages.map((downloaded) => ({
         type: "image_url",
-        image_url: { url },
+        image_url: {
+            url: `data:${downloaded.mimeType};base64,${downloaded.buffer.toString("base64")}`,
+        },
     }));
     const requestBody: Record<string, unknown> = {
         model: FLUX2_MAX_MODEL,

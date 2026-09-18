@@ -1,0 +1,33 @@
+{
+  "pr_number": 15149,
+  "title": "chore: always record product analytics, without flag or opt-out branch",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15149",
+  "merged_at": "2026-09-18T23:09:45Z",
+  "labels": [],
+  "pr_body_excerpt": "Follow-up to #15024. Two removals, both making the measurement unconditional.\n\n**Feature flag**\n- Removes `TINYBIRD_ANALYTICS_ENABLED` / `VITE_TINYBIRD_ANALYTICS_ENABLED`. It was the only `*_ENABLED` var in the enter wrangler config and was set in `[env.test.vars]` only, so product events could never reach production.\n- Matches the other three Tinybird ingest paths (generation, stripe, referral), which all send unconditionally. The `environment` column already separates local/staging/production rows.\n- Drops the `Analytics` wrapper in the frontend — it existed only to read the Vite flag.\n\n**DNT / Sec-GPC opt-out**\n- Removes `optedOut()`, its four call sites and the browser-side `navigator.doNotTrack` / `globalPrivacyControl` checks.\n- Removes the matching sentence from `PRIVACY_POLICY.md` §7 in the same commit — the code and the promise can't move separately. §11 still grants objection to legitimate-interest processing via hello@pollinations.ai.\n- `captureAuthStage` goes too: it existed only to apply the guard at every auth site, so the three call sites now wait on `captureProductEvent` directly.\n\n108 lines deleted, 34 added. Unchanged: no cookie, no browser identifier, no third-party SDK.\n\nThe Tinybird datasource and pipes are already deployed and promoted in both workspaces, so rows start arriving on the next production deploy.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The event garden stays watered",
+    "blurb": "Product-event collection now follows the same always-on path as generation, Stripe, and referral events. Fewer branches for the hive to remember.",
+    "summary": "Product analytics events in enter.pollinations.ai now send unconditionally to Tinybird across environments, removing the Tinybird enabled flags, frontend Analytics wrapper, and browser DNT/Sec-GPC guard while retaining environment-separated rows.",
+    "impact": "After the next production deploy, product-event rows will arrive consistently alongside existing generation, Stripe, and referral ingestion, with no cookie, browser identifier, or third-party SDK added.",
+    "keywords": [
+      "product analytics",
+      "Tinybird",
+      "enter",
+      "event ingestion",
+      "privacy policy"
+    ],
+    "visual_concept": "A cozy garden telemetry scene: Polli tends a single always-flowing pollen-data pipe leading from a retro terminal into labeled environment flower beds for local, staging, and production. The visual represents simplified, consistent event delivery without depicting personal tracking.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black oval eyes, pink rectangular cheek blushes, light blue rounded wings, and a tiny gardener hat, carefully watering three small code-plants labeled LOCAL, STAGING, and PROD from one steady lime green (#ecf874) data pipe beside a glowing retro terminal; warm cream, mint, lavender, and peach garden surrounds her. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, subtle CRT glow, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-18/PR-15149.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black oval eyes, pink rectangular cheek blushes, light blue rounded wings, and a tiny gardener hat, carefully watering three small code-plants labeled LOCAL, STAGING, and PROD from one steady lime green (#ecf874) data pipe beside a glowing retro terminal; warm cream, mint, lavender, and peach garden surrounds her. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, subtle CRT glow, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-18T23:10:42.292339+00:00"
+}

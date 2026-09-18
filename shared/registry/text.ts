@@ -1144,7 +1144,7 @@ const TEXT_BASE_SERVICES = {
         title: "OpenJev",
         description:
             "Typed decisions with calibrated confidence instead of free text; " +
-            "ask via response_format.json_schema, one question per schema property",
+            "send the native state and questions as JSON in the last user message",
         inputModalities: ["text"],
         outputModalities: ["text"],
         tools: false,

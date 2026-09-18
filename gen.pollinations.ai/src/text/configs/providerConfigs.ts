@@ -84,15 +84,6 @@ export function createAzureResponsesModelConfig(
     });
 }
 
-/** Credentials and model for the direct System One adapter. */
-export function createTypeSafeModelConfig(): ProviderConfig {
-    return {
-        provider: "typesafe",
-        "typesafe-api-key": process.env.TYPESAFE_API_KEY,
-        model: "jev-latest",
-    };
-}
-
 export function createBedrockNativeConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {

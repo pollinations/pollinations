@@ -225,30 +225,6 @@ describe("System One adapter", () => {
         });
     });
 
-    it("rejects the removed json_schema response_format", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-        const options = {
-            modelConfig,
-            response_format: {
-                type: "json_schema",
-                json_schema: {
-                    name: "triage",
-                    schema: { type: "object", properties: {} },
-                },
-            },
-        };
-        await expect(
-            callSystemOne([{ role: "user", content: nativeContent }], options),
-        ).rejects.toMatchObject({ status: 400 });
-        await expect(
-            callSystemOne([{ role: "user", content: nativeContent }], options),
-        ).rejects.toThrow("response_format json_schema");
-        await expect(
-            callSystemOne([{ role: "user", content: nativeContent }], options),
-        ).rejects.toThrow("https://docs.typesafe.ai/api");
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
     it.each([
         [
             "a system message",

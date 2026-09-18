@@ -99,12 +99,6 @@ export async function callSystemOne(
     messages: ChatMessage[],
     options: TransformOptions,
 ): Promise<ChatCompletion> {
-    if (options.response_format?.type === "json_schema") {
-        throw serviceError(
-            `openjev does not accept response_format json_schema. Put the native TypeSafe state and questions in the user message instead. Example content: ${REQUEST_EXAMPLE}. Docs: ${DOCS_URL}`,
-            400,
-        );
-    }
     const { state, questions } = parseNativeRequest(messages);
     const apiKey = options.modelConfig?.["typesafe-api-key"];
     if (typeof apiKey !== "string" || !apiKey) {

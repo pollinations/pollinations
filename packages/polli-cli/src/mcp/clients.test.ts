@@ -87,6 +87,28 @@ describe("json config clients", () => {
         );
     });
 
+    it("install never overwrites a foreign entry that reuses a server id", async () => {
+        const ctx = freshCtx();
+        const cursor = findClient("cursor");
+        await cursor?.install(ctx, SERVERS, "sk-test");
+        const file = join(ctx.home, ".cursor", "mcp.json");
+        const config = JSON.parse(readFileSync(file, "utf-8"));
+        // The user's own "ffmpeg" server, pointing at another provider.
+        config.mcpServers.ffmpeg = { url: "https://elsewhere.example/mcp" };
+        writeJsonObject(file, config);
+        const result = await cursor?.install(ctx, SERVERS, "sk-test");
+        const after = JSON.parse(readFileSync(file, "utf-8"));
+        expect(after.mcpServers.ffmpeg).toEqual({
+            url: "https://elsewhere.example/mcp",
+        });
+        expect(result?.installed).toEqual(["pollinations"]);
+        expect(
+            result?.notes.some((note) =>
+                note.includes('non-Pollinations server "ffmpeg"'),
+            ),
+        ).toBe(true);
+    });
+
     it("remove deletes only Pollinations-owned entries", async () => {
         const ctx = freshCtx();
         const cursor = findClient("cursor");

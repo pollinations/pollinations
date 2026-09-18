@@ -153,8 +153,17 @@ const jsonClient = (adapter: {
         label,
         description,
         install: (ctx, servers, key) => {
+            const skipped: string[] = [];
             const { installed, file } = update(ctx, (config, table) => {
                 for (const server of servers) {
+                    const existing = table[server.id];
+                    if (existing !== undefined && !isOwnedEntry(existing)) {
+                        // Never clobber a non-Pollinations server that
+                        // happens to share the id: the user keeps their
+                        // own config, and we say what we kept.
+                        skipped.push(server.id);
+                        continue;
+                    }
                     table[server.id] = target.entry(server, key);
                 }
                 target.prepare?.(config, key);
@@ -165,7 +174,13 @@ const jsonClient = (adapter: {
                 label,
                 installed,
                 files: [file],
-                notes: target.notes?.(key) ?? [],
+                notes: [
+                    ...(target.notes?.(key) ?? []),
+                    ...skipped.map(
+                        (serverId) =>
+                            `Kept existing non-Pollinations server "${serverId}" - not overwritten.`,
+                    ),
+                ],
             };
         },
         remove: (ctx, serverIds) => {

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14798,
+  "title": "feat: add tencent/hy4-preview via OpenRouter",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/14798",
+  "merged_at": "2026-09-18T15:36:29Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #15138\n\n## Summary\n- Adds `tencent/hy4-preview` as a new paid-only text model (no aliases), routed through OpenRouter, pinned to its only endpoint (`tencent/fp8` tag — Tencent is the sole provider)\n- Pricing: $0.834/M input, $2.501/M output, $0.042/M cache read — verified live against OpenRouter's `/api/v1/models/tencent/hy4-preview/endpoints`\n- Context 1,048,576, max output 64,000 (also verified live)\n- `priceMultiplier: 1`, `paidOnly: true`\n\nCurrently #1 on OpenRouter's weekly usage rankings (17.8T tokens processed, +31% week-over-week), and Tencent wasn't represented in the catalog at all before this.\n\n## Contract (confirmed)\n| Field | Value |\n|---|---|\n| Canonical name | `tencent/hy4-preview` |\n| Aliases | none |\n| Registry provider | `openrouter` |\n| Primary route | OpenRouter `tencent/fp8` tag (only endpoint) |\n| Fallback | none found — single endpoint, no existing Tencent integration elsewhere in the repo |\n| Pollinations GPU | no |\n\n## Notes\n- Forced `tool_choice` isn't supported by this endpoint (only `auto`/`none` per `supports_tool_choice`), so `tools` is declared without `tool_choice`, matching the existing convention for similarly-limited models\n- No `top_p`, penalties, `seed`, or logprobs in the endpoint's `supported_parameters` — declared parameter set reflects exactly what's live\n- Text-only input (no vision) on this endpoint\n- Adds a placeholder Tencent brand logo (`frontend/public/brand-logos/tencent.svg`) since no verified official vector was available — required by `pricing-data.test.ts`'s catalog logo-resolution test, same convention already used for Thinking Machines and Sakana AI\n\n## Verification\n- Pricing/context/max-output/supported-params confirmed against OpenRouter's public endpoints API\n- Added a unit test (`modelResolver.test.ts`) asserting the pinned `provider.only`/`allow_fallbacks` shape\n- Updated the `effective-prices` snapshot in `enter.pollinations.ai`\n- `npx biome check --write` run on all touched files (no changes beyond a",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Tencent joins the garden",
+    "blurb": "A new Tencent model has landed in the text catalog, routed straight through its one known OpenRouter doorway. Big context, paid-only pollen, no mysterious alias shrubbery.",
+    "summary": "Added the paid-only `tencent/hy4-preview` text model through OpenRouter’s pinned `tencent/fp8` endpoint, with a 1,048,576-token context window, 64,000-token maximum output, and verified pricing of $0.834/M input, $2.501/M output, and $0.042/M cache reads.",
+    "impact": "Developers can now call `tencent/hy4-preview` by its canonical name for large-context text workloads, with its live-supported parameter set and no fallback routing surprises.",
+    "keywords": [
+      "tencent",
+      "hy4-preview",
+      "openrouter",
+      "text-models",
+      "large-context",
+      "paid-models"
+    ],
+    "visual_concept": "Depict Tencent’s arrival as a new, carefully labeled seed packet being planted in Pollinations’ model garden: a huge cozy terminal greenhouse shows a long scroll of text feeding into a single glowing route labeled `tencent/fp8`. Polli, wearing gardener glasses and a tiny tool belt, tends the new code-plant while emphasizing the enormous context window through an oversized-but-friendly scroll; small flowers and vines make the catalog feel broader rather than corporate.",
+    "image_prompt": "Cozy pixel art scene in a warm terminal greenhouse where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny gardener glasses and a tool belt while planting a seed packet labeled `tencent/hy4-preview` beside a single glowing retro terminal route labeled `tencent/fp8`; a long friendly text scroll curls into a blooming code-plant, with flowers and vines around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-18/PR-14798.jpg",
+    "prompt": "Cozy pixel art scene in a warm terminal greenhouse where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny gardener glasses and a tool belt while planting a seed packet labeled `tencent/hy4-preview` beside a single glowing retro terminal route labeled `tencent/fp8`; a long friendly text scroll curls into a blooming code-plant, with flowers and vines around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-18T15:37:35.688189+00:00"
+}

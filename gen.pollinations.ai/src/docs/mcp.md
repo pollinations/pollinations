@@ -63,6 +63,59 @@ const { tools } = await client.listTools();
 Other clients use the same endpoint and bearer header; only their configuration
 format differs.
 
+#### Polli CLI
+
+The [polli CLI](https://github.com/pollinations/pollinations/tree/main/packages/polli-cli)
+writes each client's configuration for you:
+
+```bash
+polli mcp list                     # servers in the live catalog
+polli mcp add all                  # every supported client found on this machine
+polli mcp add claude-code codex    # or name the clients you want
+polli mcp add cursor --server exa  # one catalog server instead of all five
+polli mcp status --verify          # what is installed, and whether it answers
+polli mcp remove all
+```
+
+`add` gives each client its own key, named `polli-harness-mcp-<client>`, so one
+client can be revoked in
+[API key settings](https://enter.pollinations.ai/keys) without touching the
+others, and re-running `add` reuses the key already installed. Clients that
+ship their own `mcp add` command (Claude Code, Codex, Gemini CLI) are
+configured through it. Claude Desktop cannot send headers, so the CLI installs
+the `mcp-remote` bridge there. Codex and VS Code keep the key out of their
+config and read it from a `0600` file under `~/.pollinations/mcp/`.
+
+`status` prints each client's entries and the file that holds them.
+`status --verify` also replays the MCP `initialize` handshake against every
+installed server, so it answers `ok (pollinations)`, `key rejected: HTTP 401`
+or `unreachable` rather than only reporting what the config file says;
+`add --verify` does the same for the servers it just wrote and exits non-zero
+when one of them fails.
+
+| Client | What `polli mcp` writes | Restart to pick it up |
+| --- | --- | --- |
+| `claude-code` | `claude mcp add --scope user` | run `/mcp` |
+| `codex` | `codex mcp add --bearer-token-env-var` | run `/mcp` |
+| `vscode` | user `mcp.json`, key prompted through `inputs` | *MCP: List Servers* |
+| `cursor` | `~/.cursor/mcp.json` | Settings → MCP |
+| `opencode` | `mcp` block in its `opencode.json` | its MCP panel |
+| `gemini` | `gemini mcp add --scope user` | run `/mcp` |
+| `copilot-cli` | `~/.copilot/mcp-config.json` | run `/mcp` |
+| `windsurf` | `~/.codeium/windsurf/mcp_config.json` | Cascade → MCP servers |
+| `cline` | `cline_mcp_settings.json` | the MCP Servers tab |
+| `amp` | `amp.mcpServers` in `~/.config/amp/settings.json` | restart Amp |
+| `kiro` | `~/.kiro/settings/mcp.json` | its MCP Servers panel |
+| `zed` | `context_servers` in Zed's settings | Zed reloads on its own |
+| `warp` | `~/.warp/.mcp.json` | Settings → Agents → MCP servers |
+| `claude-desktop` | `claude_desktop_config.json` via `mcp-remote` | quit and reopen |
+
+Harness ids (`dsh`, `bloom`, `openclaw`, `pi`, `prime`) are accepted as client
+names. The ones that register MCP servers are wired through the harness
+installer (`polli harness <id> on`), which also points them at Pollinations
+models; the rest tell you to run that command instead of guessing at a config
+format.
+
 #### Claude Code
 
 ```bash

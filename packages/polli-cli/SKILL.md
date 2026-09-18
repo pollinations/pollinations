@@ -1,6 +1,6 @@
 ---
 name: polli
-description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, inspect quests, manage agents or my-models, or run polli commands.
+description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, inspect quests, manage agents or my-models, install MCP servers into coding agents, or run polli commands.
 allowed-tools: Bash(polli *)
 ---
 
@@ -19,6 +19,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 - User wants to **browse or filter available models**
 - User wants to inspect **quests** or manage invite-only **my-models**
 - User wants to create or update a hosted prompt **agent**
+- User wants to install the Pollinations **MCP servers** into a coding agent
 
 ## Quick reference
 
@@ -45,6 +46,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Manage invite-only community models | `polli my-models list` |
 | Update the CLI | `polli update` (global installs only; npx/local get instructions) |
 | Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|opencode\|openclaw\|pi\|prime> on` (available adapters: `polli harness --help`) |
+| Install Pollinations MCP servers into coding agents | `polli mcp add all` (or `polli mcp add claude-code cursor`); also `polli mcp list`, `polli mcp status --verify`, `polli mcp remove all` |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -226,6 +228,17 @@ polli harness openclaw off          # remove the Pollinations provider, key, and
 Each adapter checks that its harness can be launched before login, key creation, or configuration. DSH's official launch uses `npx`, so its adapter checks for `npx`; Bloom, OpenCode, OpenClaw, and Pi require their installed commands.
 
 Bloom already uses Pollinations and only needs a dedicated key in `$BLOOM_HOME/.env` (default `~/.bloom/.env`). The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). OpenCode enables the existing Pollinations plugin and stores its dedicated key in the plugin config. OpenClaw adds a `pollinations` provider to `~/.openclaw/openclaw.json`, stores a dedicated key in `env.vars`, and installs this skill under `~/.openclaw/skills/polli/`. Pi writes `~/.pi/agent/models.json`, `auth.json`, and `settings.json`, and installs this skill under `~/.pi/agent/skills/polli/`. Guide: `polli docs` section "Coding Harnesses".
+
+### Install Pollinations MCP servers into coding agents
+```bash
+polli mcp list                   # live catalog: id, name, url, description
+polli mcp add all                # every supported client found on this machine
+polli mcp add claude-code codex  # or name them
+polli mcp add cursor --server pollinations exa
+polli mcp status                 # what is installed per client, and where
+polli mcp remove all
+```
+Clients: `claude-code`, `codex`, `vscode`, `cursor`, `opencode`, `gemini`, `copilot-cli`, `windsurf`, `cline`, `amp`, `kiro`, `zed`, `warp`, `claude-desktop`. Each gets its own key (`polli-harness-mcp-<client>`), reused on re-install, so one client can be revoked without disturbing the rest. Harness ids (`dsh`, `bloom`, `openclaw`, `pi`, `prime`) are accepted as client names too: `dsh` is the only harness that registers MCP servers, so it delegates to `polli harness dsh on`; the others are told to run `polli harness <id> on` instead of guessing at a config format. Clients that ship their own `mcp add` command are configured through it; Claude Desktop gets the `mcp-remote` bridge because it cannot send headers; Codex and VS Code read the key from a `0600` file under `~/.pollinations/mcp/` instead of their config. `--server` limits the install to named catalog servers; without it every server in the live catalog is added.
 
 ### Read API docs
 ```bash

@@ -150,12 +150,15 @@ Use `--stats` before choosing a model. **Caveat**: the `err%` column counts **5x
 polli usage              # current pollen balance
 polli usage --history    # recent individual requests
 polli usage --daily      # daily cost summary
+polli usage --daily --days 1 --key polli-harness-claude   # cost of one harness key, today
 polli earnings           # developer earnings total + per-entity breakdown (default 30d)
 polli earnings --days 7  # rolling window, max 90
 polli quests             # your quests + claim state (open/claimable/claimed/coming)
 polli quests --claimable # only rewards ready to claim
 ```
 **History is eventually consistent** — a request you just made may not appear for 30–60s. When matching costs to freshly-generated media, use `--limit 50` and filter by timestamp, and retry if the expected entry is missing. `polli usage --json` returns `{"pollen": <number>}` — the current balance only; use `--history --json` or `--daily --json` for cost breakdowns.
+
+**Filtering `--history`/`--daily`:** `--key <name-or-id>` (repeatable, resolved via `/account/keys`) and `--model <id>` (repeatable) narrow results; `--days <n>` sets the rolling window (max 90); `--csv` prints the raw export. Placed *before* `usage`, `--key` keeps its existing meaning — the global auth override (`polli --key <secret> usage`); placed *after* `usage`, it filters by key name or id instead. `--model` on `--daily` filters client-side (the daily endpoint has no server-side model filter), so it has no effect combined with `--daily --csv`.
 
 ### Manage my-models
 ```bash

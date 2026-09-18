@@ -25,7 +25,7 @@ function serviceError(message: string, status: number): ServiceError {
 
 function nativeRequestError(detail: string): ServiceError {
     return serviceError(
-        `${detail} Send exactly one user message whose content is the native TypeSafe request as JSON: ${REQUEST_EXAMPLE}. Docs: ${DOCS_URL}`,
+        `${detail} The last user message's content must be the native TypeSafe request as JSON: ${REQUEST_EXAMPLE}. Docs: ${DOCS_URL}`,
         400,
     );
 }
@@ -34,14 +34,12 @@ function parseNativeRequest(messages: ChatMessage[]): {
     state: unknown;
     questions: Record<string, unknown>;
 } {
-    const message = messages[0];
-    if (
-        messages.length !== 1 ||
-        message?.role !== "user" ||
-        typeof message.content !== "string"
-    ) {
+    // Like the media models, only the last user message carries the request;
+    // earlier turns and system instructions are ignored.
+    const message = messages.findLast((item) => item?.role === "user");
+    if (typeof message?.content !== "string") {
         throw nativeRequestError(
-            "openjev requires one user message with string content.",
+            "openjev requires a user message with string content.",
         );
     }
     let payload: unknown;
@@ -64,13 +62,42 @@ function parseNativeRequest(messages: ChatMessage[]): {
     return { state: payload.state, questions: payload.questions };
 }
 
+// TypeSafe answers arrive in one piece, so the stream is the finished
+// completion re-emitted as chunks: content, then the usage chunk billing
+// requires, then the terminator.
+function toStreamedCompletion(completion: ChatCompletion): ChatCompletion {
+    const { id, created, model, choices, usage } = completion;
+    const chunk = { id, object: "chat.completion.chunk", created, model };
+    const body = [
+        {
+            ...chunk,
+            choices: [
+                {
+                    index: 0,
+                    delta: {
+                        role: "assistant",
+                        content: choices?.[0]?.message?.content ?? "",
+                    },
+                    finish_reason: "stop",
+                },
+            ],
+            usage: null,
+        },
+        { ...chunk, choices: [], usage },
+    ]
+        .map((event) => `data: ${JSON.stringify(event)}\n\n`)
+        .join("");
+    return {
+        ...completion,
+        stream: true,
+        responseStream: new Blob([body, "data: [DONE]\n\n"]).stream(),
+    };
+}
+
 export async function callSystemOne(
     messages: ChatMessage[],
     options: TransformOptions,
 ): Promise<ChatCompletion> {
-    if (options.stream === true) {
-        throw serviceError("openjev does not support streaming.", 400);
-    }
     if (options.response_format?.type === "json_schema") {
         throw serviceError(
             `openjev does not accept response_format json_schema. Put the native TypeSafe state and questions in the user message instead. Example content: ${REQUEST_EXAMPLE}. Docs: ${DOCS_URL}`,
@@ -112,7 +139,7 @@ export async function callSystemOne(
                 502,
             );
         }
-        return {
+        const completion: ChatCompletion = {
             id: `systemone-${crypto.randomUUID()}`,
             object: "chat.completion",
             created: Math.floor(Date.now() / 1000),
@@ -135,6 +162,7 @@ export async function callSystemOne(
             },
             upstreamRequestUrl: requestUrl,
         };
+        return options.stream ? toStreamedCompletion(completion) : completion;
     } catch (thrown) {
         const error =
             thrown instanceof Error

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { findModelByName } from "../../src/text/availableModels.js";
+import { requireChatStreamUsage } from "../../src/text/chat/usage.js";
 import { generateTextPortkey } from "../../src/text/generateTextPortkey.js";
 import { callSystemOne } from "../../src/text/systemOneClient.js";
 
@@ -164,12 +165,57 @@ describe("System One adapter", () => {
         expect(portkeyFetcher).not.toHaveBeenCalled();
     });
 
-    it("rejects streaming before fetching or checking credentials", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-        await expect(callSystemOne([], { stream: true })).rejects.toMatchObject(
-            { status: 400, message: "openjev does not support streaming." },
+    it("wraps the finished answers in an SSE stream with terminal usage", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                model: "jev-1.13.0",
+                answers,
+                usage: { input_tokens: 312, output_tokens: 48 },
+            }),
         );
-        expect(fetchSpy).not.toHaveBeenCalled();
+        const result = await callSystemOne(
+            [{ role: "user", content: nativeContent }],
+            { modelConfig, stream: true },
+        );
+        expect(result.stream).toBe(true);
+        // The same validator billing runs the stream through; it appends an
+        // error event instead of the terminator when usage is missing.
+        const body = await new Response(
+            requireChatStreamUsage(
+                result.responseStream as ReadableStream<
+                    Uint8Array<ArrayBuffer>
+                >,
+            ),
+        ).text();
+        expect(body).not.toContain("usage_missing");
+        const events = body
+            .split("\n\n")
+            .filter(Boolean)
+            .map((event) => event.replace(/^data: /, ""));
+        expect(events.at(-1)).toBe("[DONE]");
+        const chunks = events.slice(0, -1).map((event) => JSON.parse(event));
+        expect(chunks).toHaveLength(2);
+        expect(chunks[0]).toMatchObject({
+            object: "chat.completion.chunk",
+            model: "jev-1.13.0",
+            choices: [
+                {
+                    index: 0,
+                    finish_reason: "stop",
+                    delta: { role: "assistant" },
+                },
+            ],
+            usage: null,
+        });
+        expect(JSON.parse(chunks[0].choices[0].delta.content)).toEqual(answers);
+        expect(chunks[1]).toMatchObject({
+            choices: [],
+            usage: {
+                prompt_tokens: 312,
+                completion_tokens: 48,
+                total_tokens: 360,
+            },
+        });
     });
 
     it("rejects the removed json_schema response_format", async () => {
@@ -197,14 +243,42 @@ describe("System One adapter", () => {
     });
 
     it.each([
-        ["no messages", []],
         [
-            "multiple messages",
+            "a system message",
             [
                 { role: "system", content: "Route the request." },
                 { role: "user", content: nativeContent },
             ],
         ],
+        [
+            "an earlier conversation turn",
+            [
+                { role: "user", content: "hello" },
+                { role: "assistant", content: "hi" },
+                { role: "user", content: nativeContent },
+            ],
+        ],
+    ])("reads the last user message past %s", async (_name, messages) => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementationOnce(async (_input, init) => {
+                expect(JSON.parse(String(init?.body))).toEqual({
+                    model: "jev-latest",
+                    state: nativeState,
+                    questions: nativeQuestions,
+                });
+                return Response.json({
+                    model: "jev-1.13.0",
+                    answers,
+                    usage: { input_tokens: 312, output_tokens: 48 },
+                });
+            });
+        await callSystemOne(messages, { modelConfig });
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+        ["no messages", []],
         [
             "non-string content",
             [
@@ -214,14 +288,14 @@ describe("System One adapter", () => {
                 },
             ],
         ],
-        ["non-user role", [{ role: "assistant", content: nativeContent }]],
+        ["no user message", [{ role: "assistant", content: nativeContent }]],
     ])("rejects an unsupported message layout: %s", async (_name, messages) => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
         await expect(
             callSystemOne(messages, { modelConfig }),
         ).rejects.toMatchObject({
             status: 400,
-            message: expect.stringContaining("one user message"),
+            message: expect.stringContaining("a user message"),
         });
         expect(fetchSpy).not.toHaveBeenCalled();
     });

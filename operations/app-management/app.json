@@ -1306,14 +1306,14 @@
     "screenshotUrl": "https://media.pollinations.ai/9e22683b-6c15-4e78-9130-bcb4d11bce13"
   },
   {
-    "emoji": "✍️",
+    "emoji": "💬",
     "name": "Tessera Lumen - Oracle of Sophia Tarot",
     "url": "https://app.963.co.za",
-    "description": "Personalised oracle readings with card draws, guidance, reflection, and daily insight.",
+    "description": "Personalised oracle readings with card draws, guidance, reflection, and daily insight. The first 100 users get 1 FREE reading.",
     "language": "en",
     "category": "chat",
     "platform": "web",
-    "githubUsername": "Jeraque007",
+    "githubUsername": "TesseraLumen",
     "githubUserId": "66101124",
     "repositoryUrl": "https://github.com/Jeraque007/Tessera-Lumen",
     "repositoryStars": null,

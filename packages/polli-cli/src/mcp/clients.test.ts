@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -218,6 +218,59 @@ describe("json config clients", () => {
                 "pollinations",
             ]);
         }
+    });
+});
+
+describe("key recovery for reinstalls", () => {
+    it("cursor recovers the key from owned entry headers", async () => {
+        const ctx = freshCtx();
+        const cursor = findClient("cursor");
+        await cursor?.install(ctx, SERVERS, "sk-stored");
+        expect(cursor?.existingKey?.(ctx)).toBe("sk-stored");
+    });
+
+    it("json clients return null before any install", () => {
+        const ctx = freshCtx();
+        expect(findClient("cursor")?.existingKey?.(ctx)).toBeNull();
+        expect(findClient("opencode")?.existingKey?.(ctx)).toBeNull();
+    });
+
+    it("never recovers a key from a foreign entry", () => {
+        const ctx = freshCtx();
+        writeJsonObject(join(ctx.home, ".cursor", "mcp.json"), {
+            mcpServers: {
+                notion: {
+                    url: "https://mcp.notion.com/mcp",
+                    headers: { Authorization: "Bearer sk-foreign" },
+                },
+            },
+        });
+        expect(findClient("cursor")?.existingKey?.(ctx)).toBeNull();
+    });
+
+    it("zed recovers the key from the mcp-remote bridge args", async () => {
+        const ctx = freshCtx();
+        const zed = findClient("zed");
+        await zed?.install(ctx, [SERVERS[1]], "sk-bridge");
+        expect(zed?.existingKey?.(ctx)).toBe("sk-bridge");
+    });
+
+    it("vscode does not recover: the literal key lives in secret storage", async () => {
+        const ctx = freshCtx();
+        const vscode = findClient("vscode");
+        await vscode?.install(ctx, SERVERS, "sk-secret");
+        expect(vscode?.existingKey?.(ctx)).toBeNull();
+    });
+
+    it("codex recovers the key from its .env file", () => {
+        const ctx = freshCtx();
+        mkdirSync(join(ctx.home, ".codex"));
+        writeFileSync(
+            join(ctx.home, ".codex", ".env"),
+            "POLLI_MCP_CODEX_API_KEY=sk-codex\n",
+            { mode: 0o600 },
+        );
+        expect(findClient("codex")?.existingKey?.(ctx)).toBe("sk-codex");
     });
 });
 

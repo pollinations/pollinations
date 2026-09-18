@@ -43,6 +43,13 @@ export interface McpClientAdapter {
         serverIds?: string[],
     ): Promise<McpClientResult> | McpClientResult;
     status(ctx: McpContext): { installed: string[] };
+    /**
+     * Recover the Pollinations key this adapter previously wrote into the
+     * client's config, so a re-install reuses it instead of minting an
+     * orphan. Null when the client stores the key outside its config
+     * (VS Code secret storage) or none was written yet.
+     */
+    existingKey?(ctx: McpContext): string | null;
     /** Fail fast before any key is minted (e.g. missing client CLI). */
     preflight?(ctx: McpContext): void;
 }
@@ -50,6 +57,53 @@ export interface McpClientAdapter {
 const bearerHeader = (key: string) => ({
     Authorization: `Bearer ${key}`,
 });
+
+/** Extract the key from a `Bearer <key>` string (header value or arg). */
+const keyFromBearer = (value: unknown): string | null => {
+    if (typeof value !== "string") return null;
+    const match =
+        /^Authorization[:=]\s*Bearer\s+(\S+)$/.exec(value.trim()) ??
+        /^Bearer\s+(\S+)$/.exec(value.trim());
+    const key = match?.[1];
+    // VS Code stores a `${input:...}` reference, not a literal key.
+    if (!key || key.includes("${")) return null;
+    return key;
+};
+
+/**
+ * Find the key a previous install wrote into a client config: checks the
+ * headers of Pollinations-owned entries and, for bridge-style entries (Zed),
+ * their args. Only owned entries are read — a foreign key is never reused.
+ */
+export const recoverKeyFromTable = (
+    table: unknown,
+    baseUrl: string = BASE_URL,
+): string | null => {
+    if (!table || typeof table !== "object") return null;
+    for (const value of Object.values(table as JsonObject)) {
+        if (!isOwnedEntry(value, baseUrl)) continue;
+        const entry = value as JsonObject;
+        const headers = entry.headers;
+        if (headers && typeof headers === "object") {
+            for (const headerValue of Object.values(headers as JsonObject)) {
+                const key = keyFromBearer(headerValue);
+                if (key) return key;
+            }
+        }
+        const args = Array.isArray(entry.args)
+            ? entry.args
+            : entry.command &&
+                typeof entry.command === "object" &&
+                Array.isArray((entry.command as JsonObject).args)
+              ? ((entry.command as JsonObject).args as unknown[])
+              : [];
+        for (const arg of args) {
+            const key = keyFromBearer(arg);
+            if (key) return key;
+        }
+    }
+    return null;
+};
 
 // ---------------------------------------------------------------------------
 // JSON config file clients
@@ -138,6 +192,10 @@ const jsonClient = (adapter: {
             const file = target.file(ctx);
             const config = readJsonObject(file);
             return { installed: ownedEntryNames(config[target.table]) };
+        },
+        existingKey: (ctx) => {
+            const config = readJsonObject(target.file(ctx));
+            return recoverKeyFromTable(config[target.table]);
         },
     };
 };
@@ -349,6 +407,8 @@ interface CliTarget {
     installHint: string;
     /** Read installed Pollinations-owned server ids from the client's config. */
     installedIds: (ctx: McpContext) => string[];
+    /** Recover the key a previous install wrote (config headers or env file). */
+    recoverKey?: (ctx: McpContext) => string | null;
     /** Extra wiring after a successful add (e.g. Codex env file). */
     afterAdd?: (
         ctx: McpContext,
@@ -431,6 +491,7 @@ const cliClient = (adapter: {
             };
         },
         status: (ctx) => ({ installed: target.installedIds(ctx) }),
+        existingKey: (ctx) => target.recoverKey?.(ctx) ?? null,
     };
 };
 
@@ -507,6 +568,10 @@ const cliClients: McpClientAdapter[] = [
                 (ctx) => join(ctx.home, ".claude.json"),
                 "mcpServers",
             ),
+            recoverKey: (ctx) =>
+                recoverKeyFromTable(
+                    readJsonObject(join(ctx.home, ".claude.json")).mcpServers,
+                ),
         },
     }),
     cliClient({
@@ -529,6 +594,16 @@ const cliClients: McpClientAdapter[] = [
             installHint: "Install it from https://github.com/openai/codex.",
             installedIds: (ctx) =>
                 codexInstalledIds(readTextIfExists(codexConfigToml(ctx)) ?? ""),
+            recoverKey: (ctx) => {
+                const envFile = join(
+                    ctx.env.CODEX_HOME ?? join(ctx.home, ".codex"),
+                    ".env",
+                );
+                const line = (readTextIfExists(envFile) ?? "")
+                    .split("\n")
+                    .find((l) => new RegExp(`^${CODEX_KEY_ENV}\\s*=`).test(l));
+                return line?.split("=").slice(1).join("=").trim() || null;
+            },
             afterAdd: (ctx, key) => {
                 const envFile = join(
                     ctx.env.CODEX_HOME ?? join(ctx.home, ".codex"),
@@ -569,6 +644,11 @@ const cliClients: McpClientAdapter[] = [
                 (ctx) => join(ctx.home, ".gemini", "settings.json"),
                 "mcpServers",
             ),
+            recoverKey: (ctx) =>
+                recoverKeyFromTable(
+                    readJsonObject(join(ctx.home, ".gemini", "settings.json"))
+                        .mcpServers,
+                ),
         },
     }),
     cliClient({
@@ -597,6 +677,20 @@ const cliClients: McpClientAdapter[] = [
                 "mcpServers",
                 "amp",
             ),
+            recoverKey: (ctx) => {
+                const config = readJsonObject(
+                    join(
+                        ctx.env.XDG_CONFIG_HOME ?? join(ctx.home, ".config"),
+                        "amp",
+                        "settings.json",
+                    ),
+                );
+                const amp =
+                    config.amp && typeof config.amp === "object"
+                        ? (config.amp as JsonObject)
+                        : {};
+                return recoverKeyFromTable(amp.mcpServers);
+            },
         },
     }),
 ];

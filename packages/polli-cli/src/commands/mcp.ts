@@ -53,11 +53,14 @@ const runInstall = async (
             );
         }
         client.preflight?.(context());
+        // Reinstalls reuse the key already written into the client's config
+        // instead of minting another orphan: /account/keys accepts duplicate
+        // names, so always minting leaks dead secret keys onto the account.
         const key = await resolveHarnessKey(
             {
                 id: `mcp-${client.id}`,
                 label: client.label,
-                existingKey: null,
+                existingKey: client.existingKey?.(context()) ?? null,
             },
             { browser: options.browser },
         );

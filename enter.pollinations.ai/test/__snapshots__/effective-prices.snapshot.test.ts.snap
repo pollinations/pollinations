@@ -379,6 +379,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.005,
     },
   },
+  "black-forest-labs/flux.2-max": {
+    "cost": {
+      "completionImageTokens": 0.03,
+      "promptImageTokens": 0.03,
+    },
+    "price": {
+      "completionImageTokens": 0.03,
+      "promptImageTokens": 0.03,
+    },
+  },
+  "black-forest-labs/flux.2-max:openrouter": {
+    "cost": {
+      "completionImageTokens": 0.07385,
+      "promptImageTokens": 0,
+    },
+    "price": {
+      "completionImageTokens": 0.07385,
+      "promptImageTokens": 0,
+    },
+  },
   "black-forest-labs/flux.2-pro": {
     "cost": {
       "completionImageTokens": 0.015,
@@ -1680,6 +1700,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000001055,
     },
   },
+  "openai/gpt-4o-mini": {
+    "cost": {
+      "completionTextTokens": 0.0000006,
+      "promptCachedTokens": 0.000000075,
+      "promptTextTokens": 0.00000015,
+    },
+    "price": {
+      "completionTextTokens": 0.0000006,
+      "promptCachedTokens": 0.000000075,
+      "promptTextTokens": 0.00000015,
+    },
+  },
   "openai/gpt-5-nano": {
     "cost": {
       "completionTextTokens": 0.0000004,
@@ -2730,6 +2762,42 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.00000115,
       "promptCachedTokens": 0.00000004,
       "promptTextTokens": 0.0000002,
+    },
+  },
+  "tencent/hy3": {
+    "cost": {
+      "completionTextTokens": 0.0000006119,
+      "promptCachedTokens": 0.000000036925,
+      "promptTextTokens": 0.0000001477,
+    },
+    "price": {
+      "completionTextTokens": 0.0000006119,
+      "promptCachedTokens": 0.000000036925,
+      "promptTextTokens": 0.0000001477,
+    },
+  },
+  "tencent/hy3:openrouter:phala": {
+    "cost": {
+      "completionTextTokens": 0.0000006752,
+      "promptCachedTokens": 0.0000000422,
+      "promptTextTokens": 0.00000015825,
+    },
+    "price": {
+      "completionTextTokens": 0.0000006752,
+      "promptCachedTokens": 0.0000000422,
+      "promptTextTokens": 0.00000015825,
+    },
+  },
+  "tencent/hy4-preview": {
+    "cost": {
+      "completionTextTokens": 0.000002638555,
+      "promptCachedTokens": 0.00000004431,
+      "promptTextTokens": 0.00000087987,
+    },
+    "price": {
+      "completionTextTokens": 0.000002638555,
+      "promptCachedTokens": 0.00000004431,
+      "promptTextTokens": 0.00000087987,
     },
   },
   "thinkingmachines/inkling": {

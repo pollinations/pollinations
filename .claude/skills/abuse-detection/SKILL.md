@@ -316,9 +316,9 @@ npx wrangler d1 execute production-pollinations-enter-db --remote \
 ## Unbanning: the trap
 
 If the account was banned by the payment-fraud policy, **clearing `banned` is not
-enough**. The daily job rescores all attributable history, so it will re-ban the
-same account on its next run. You must also add the user id to the repository variable
-`FRAUD_BAN_EXCLUDED_USER_IDS` (comma separated), or the unban lasts under an hour.
+enough to remove it from the review queue**. The daily job rescores all attributable
+history but takes no enforcement action. Add a reviewed exception to the repository
+variable `FRAUD_BAN_EXCLUDED_USER_IDS` (comma separated) to omit it from that queue.
 
 Auto top-up stays off after an unban; re-enable it deliberately if the user asks.
 
@@ -327,8 +327,8 @@ Auto top-up stays off after an unban; re-enable it deliberately if the user asks
 Separate from the abuse scoring above, `.github/workflows/billing-check-fraud.yml`
 scores accounts daily on Stripe signals (`enter.pollinations.ai/src/utils/stripe-fraud-score.ts`).
 
-- Bans **only** when `FRAUD_BAN_ENABLED` is set. It is deliberately unset: the job
-  is a review queue, not an enforcer.
+- Scheduled and manually dispatched checks are read-only during calibration.
+  The report always passes `apply: false`; bans and refunds require manual decisions.
 - Every run posts accounts still needing review to the private Discord channel via
   `DISCORD_FRAUD_WEBHOOK_URL`, as a TSV of score, user id, name. No message means
   nothing needs action.

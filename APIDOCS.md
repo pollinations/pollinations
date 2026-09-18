@@ -1219,10 +1219,8 @@ Returns available embedding models with pricing, capabilities, and supported inp
 | Param | In | Type | Description |
 |---|---|---|---|
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `status` | `query` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `pollinations-model-status` | `header` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1231,7 +1229,7 @@ Returns available embedding models with pricing, capabilities, and supported inp
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/embeddings/models?source=official&status=all" \
+curl "https://gen.pollinations.ai/embeddings/models?source=official&community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1305,67 +1303,34 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 | `GET /embeddings/models` | Embedding models with supported modalities |
 | `GET /3d/models` | 3D Generation models with supported modalities |
 
-### Filters and health
+### Filters
 
-All model list endpoints above accept the same optional filters. With no
-filters, the API returns the complete accessible catalog without health data.
-
-| Query | Values | Behaviour |
-|-------|--------|-----------|
-| `source` | `official`, `community` | Return one source; omit for both |
-| `status` | `all`, `healthy` | `all`: include health without filtering; `healthy`: include only healthy models with fresh data |
-
-`community=true|false|1|0` remains available as a legacy source filter.
-Query filters override connection-wide headers; `source` overrides `community`.
-Invalid filter values return **400 Bad Request**. Source and status filters
-combine with the caller's access restrictions; they do not change generation
-permissions. Omitting both the status query and header skips the health lookup.
-
-Health uses the last 24 hours of completed requests. `success_rate` is
-`2xx / (2xx + 5xx)`, so successful fallback rescues count as successes while
-final 4xx responses are excluded. This is the gateway's final-response metric,
-not the health of an individual upstream provider.
-
-`health` is an optional Pollinations extension on every list endpoint, including
-`/v1/models`. It contains only `status`, `success_rate`, `sample_size`,
-`window_minutes`, `checked_at`, and `stale`. With at least 10 measured requests,
-status is `healthy` below 5% failures, `degraded` from 5% to below 20%, and
-`down` at 20% or more. Smaller samples are `unknown`. These describe recent
-request outcomes, not live availability; alpha/preview status is separate.
-`success_rate` is a fraction from 0 to 1, or null when there are no samples.
-
-Health snapshots are cached for 60 seconds. `checked_at` is the snapshot-fetch
-time in UTC, not the model's last request time. If refresh fails, `status=all`
-can return an older snapshot marked `stale`, or `unknown` with a null
-`checked_at` when no snapshot exists. `status=healthy` excludes both stale and
-unknown results.
-
-The dashboard defaults to `source:official status:healthy`, so unknown models
-are hidden. Select `status:all` to include every health state, or
-`source:community` for community models. Its dots are green for healthy, amber
-for degraded/down, and grey for unknown/stale. Filtering is local; it does not
-poll for updates.
-
-Detailed counters and latency statistics remain separate at `/v1/models/status`;
-`/v1/models/status/routes` breaks down individual primary and fallback attempts.
-Neither diagnostic payload is embedded in model lists.
+All model list endpoints above accept the same optional `source` filter:
+`official` or `community`. Omit it for both. `community=true|false|1|0`
+remains available as a legacy source filter. The query overrides the
+connection-wide header; `source` overrides `community`. Invalid values return
+**400 Bad Request**. The filter combines with the caller's access restrictions;
+it does not change generation permissions.
 
 ```bash
-curl 'https://gen.pollinations.ai/v1/models?source=official&status=healthy'
+curl 'https://gen.pollinations.ai/v1/models?source=official'
 ```
 
 OpenAI-compatible clients that append `/models` to their base URL can use the
-equivalent headers instead of query parameters:
+equivalent header instead of the query parameter:
 
 ```text
 Pollinations-Model-Source: official
-Pollinations-Model-Status: healthy
 ```
 
-These headers work with Open WebUI and Cline custom OpenAI connections.
-LibreChat administrators can set them in the custom endpoint's `headers` map.
+This header works with Open WebUI and Cline custom OpenAI connections.
+LibreChat administrators can set it in the custom endpoint's `headers` map.
 The client can use any returned model ID for generation without forwarding the
-catalog headers.
+catalog header.
+
+Model lists carry no health data. Recent request counts, error rates, latency
+and fallback breakdowns per model are served separately by
+`/models/status`, described in [Public Stats](/docs#tag/public-stats).
 
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.
@@ -1420,10 +1385,8 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | Param | In | Type | Description |
 |---|---|---|---|
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `status` | `query` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `pollinations-model-status` | `header` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1454,14 +1417,13 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `data[].reasoning` | `boolean` | — |
 | `data[].context_length` | `number` | — |
 | `data[].per_user_rpm` | `number` \| `null` | — |
-| `data[].health` | `object` | Recent gateway final-response reliability. Final 4xx responses are excluded; successful fallback rescues count as successes. Not individual upstream health. |
 
 <sub>`*` = required field</sub>
 
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/v1/models?source=official&status=all" \
+curl "https://gen.pollinations.ai/v1/models?source=official&community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1542,13 +1504,6 @@ Returns a single model by ID or alias in the OpenAI-compatible format, resolved 
 | `reasoning` | `boolean` | — |
 | `context_length` | `number` | — |
 | `per_user_rpm` | `number` \| `null` | — |
-| `health` | `object` | Recent gateway final-response reliability. Final 4xx responses are excluded; successful fallback rescues count as successes. Not individual upstream health. |
-| `health.status` * | `"healthy"` \| `"degraded"` \| `"down"` \| `"unknown"` | Based on the reported window: healthy above 95% success, degraded above 80% through 95%, down at 80% or below, unknown below 10 measured requests. Check stale before relying on this status. |
-| `health.success_rate` * | `number` \| `null` | Successful requests / measured requests (0–1); null with no samples. |
-| `health.sample_size` * | `integer` | — |
-| `health.window_minutes` * | `integer` | — |
-| `health.checked_at` * | `string · date-time` \| `null` | UTC snapshot-fetch time, not the last model request; null if unavailable. |
-| `health.stale` * | `boolean` | Refresh failed: data is older or unavailable. Excluded by status=healthy. |
 
 <sub>`*` = required field</sub>
 
@@ -1570,10 +1525,8 @@ Returns all available models with pricing, capabilities, and metadata. Official 
 | Param | In | Type | Description |
 |---|---|---|---|
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `status` | `query` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `pollinations-model-status` | `header` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1582,7 +1535,7 @@ Returns all available models with pricing, capabilities, and metadata. Official 
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/models?source=official&status=all" \
+curl "https://gen.pollinations.ai/models?source=official&community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1608,10 +1561,8 @@ Returns all available 3D model generation models with pricing, capabilities, and
 | Param | In | Type | Description |
 |---|---|---|---|
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `status` | `query` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `pollinations-model-status` | `header` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1620,7 +1571,7 @@ Returns all available 3D model generation models with pricing, capabilities, and
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/3d/models?source=official&status=all" \
+curl "https://gen.pollinations.ai/3d/models?source=official&community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1646,10 +1597,8 @@ Returns all available image and video generation models with pricing, capabiliti
 | Param | In | Type | Description |
 |---|---|---|---|
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `status` | `query` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `pollinations-model-status` | `header` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1658,7 +1607,7 @@ Returns all available image and video generation models with pricing, capabiliti
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/image/models?source=official&status=all" \
+curl "https://gen.pollinations.ai/image/models?source=official&community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1684,10 +1633,8 @@ Returns all available video generation models with pricing, capabilities, and me
 | Param | In | Type | Description |
 |---|---|---|---|
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `status` | `query` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `pollinations-model-status` | `header` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1696,7 +1643,7 @@ Returns all available video generation models with pricing, capabilities, and me
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/video/models?source=official&status=all" \
+curl "https://gen.pollinations.ai/video/models?source=official&community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1722,10 +1669,8 @@ Returns all available text generation and community text models with pricing, ca
 | Param | In | Type | Description |
 |---|---|---|---|
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `status` | `query` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `pollinations-model-status` | `header` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1734,7 +1679,7 @@ Returns all available text generation and community text models with pricing, ca
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/text/models?source=official&status=all" \
+curl "https://gen.pollinations.ai/text/models?source=official&community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -1760,10 +1705,8 @@ Returns all available audio models (text-to-speech, music generation, and transc
 | Param | In | Type | Description |
 |---|---|---|---|
 | `source` | `query` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `status` | `query` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 | `community` | `query` | `"0"` \| `"1"` \| `"true"` \| `"false"` | Legacy source filter: `true`/`1` for community, `false`/`0` for official. |
 | `pollinations-model-source` | `header` | `"official"` \| `"community"` | Filter by source. Omit for both official and community models. |
-| `pollinations-model-status` | `header` | `"all"` \| `"healthy"` | Include measured health with `all`, or return only `healthy` models with fresh data. Omit to skip health lookup. |
 
 <sub>`*` = required parameter</sub>
 
@@ -1772,7 +1715,7 @@ Returns all available audio models (text-to-speech, music generation, and transc
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/audio/models?source=official&status=all" \
+curl "https://gen.pollinations.ai/audio/models?source=official&community=0" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -3039,6 +2982,7 @@ Returns information about the API key used in the request: validity, type (secre
 
 | Field | Type | Description |
 |---|---|---|
+| `id` * | `string` | Opaque ID for editing this key in the owner’s account |
 | `valid` * | `boolean` | Whether the API key is valid and active |
 | `type` * | `"publishable"` \| `"secret"` | Type of API key |
 | `name` * | `any` | Display name of the API key |
@@ -3271,131 +3215,28 @@ curl "https://gen.pollinations.ai/quests/catalog"
 
 ### 📊 Monitor
 
-#### `GET` `/v1/models/status` — Model Health Status
+#### `GET` `/models/status` — Model Health Status
 
-Returns raw model health rows from the public Tinybird `model_health` pipe.
+Pollinations-specific diagnostics, not part of the OpenAI-compatible surface. Returns the raw response of the public Tinybird `model_route_health` pipe: a `data` array of rows plus a `meta` array typing each column.
 
-Each row is one (model, event_type): `model_used`/`provider` name whichever route served most of its traffic, so a model rescued by a fallback on every request can still read as healthy here. Use `/v1/models/status/routes` to see each route — primary and fallbacks — separately.
+Each model has one rollup row (`is_rollup` 1) counting the final outcome of every request, plus one row per execution route (`is_rollup` 0): the model's own primary and every fallback it fell through to, counting every attempt so a primary rescued by fallbacks cannot read as healthy. Routes that never fired have no row.
 
-The optional `minutes` query parameter controls the rolling window and must be an integer between 1 and 10080.
-The X-Model-Status-Timestamp response header reports when the data was fetched from Tinybird; X-Model-Status-Stale is set when stale data is returned during an upstream failure.
-
-⚙️ **Parameters**
-
-| Param | In | Type | Description |
-|---|---|---|---|
-| `minutes` | `query` | `integer` | Rolling window in minutes (default 60, maximum 10080). · default: `60` · range: `1…10080` |
-| `format` | `query` | `"raw"` | Optional compatibility parameter. Only `raw` is accepted. |
-
-<sub>`*` = required parameter</sub>
-
-📤 **Response** · `200` · `application/json` — Success
-
-| Field | Type | Description |
-|---|---|---|
-| `data` * | `object`[] | — |
-| `data[].model` * | `string` | — |
-| `data[].event_type` * | `string` | — |
-| `data[].provider` * | `string` | — |
-| `data[].model_used` * | `string` | — |
-| `data[].total_requests` * | `integer` | — |
-| `data[].status_2xx` * | `integer` | — |
-| `data[].errors_4xx` * | `integer` | — |
-| `data[].errors_5xx` * | `integer` | — |
-| `data[].own_calls` * | `integer` | — |
-| `data[].own_calls_ok` * | `integer` | — |
-| `data[].primary_5xx` * | `integer` | — |
-| `data[].primary_retried_503s` * | `integer` | — |
-| `data[].fallback_rescues` * | `integer` | — |
-| `data[].last_error_at` * | `string` | — |
-| `data[].latency_p50_ms` * | `number` \| `null` | — |
-| `data[].latency_p95_ms` * | `number` \| `null` | — |
-| `data[].avg_latency_ms` * | `number` \| `null` | — |
-| `data[].last_request_at` * | `string` | — |
-| `data[].tokens_per_second` * | `number` \| `null` | — |
-| `meta` | `object`[] | — |
-| `meta[].name` * | `string` | — |
-| `meta[].type` * | `string` | — |
-| `rows` | `integer` | — |
-| `statistics` | `object` | — |
-| `statistics.elapsed` * | `number` | — |
-| `statistics.rows_read` * | `integer` | — |
-| `statistics.bytes_read` * | `integer` | — |
-
-<sub>`*` = required field</sub>
-
-💻 **Example**
-
-```bash
-curl "https://gen.pollinations.ai/v1/models/status?minutes=60&format=raw" \
-  -H "Authorization: Bearer $POLLINATIONS_KEY"
-```
-
----
-
-#### `GET` `/v1/models/status/routes` — Model Route Health Status
-
-Returns raw per-route health rows from the public Tinybird `model_route_health` pipe.
-
-Returns two grains. A row with `is_rollup` 1 counts the model’s final request outcomes, has an empty `model_used`, and reports the most frequent observed provider; a row with `is_rollup` 0 is a single execution route — the model's own primary, or a fallback it fell through to.
-
-Rollup counts match `/v1/models/status`: a rescued request counts as its final outcome. Route rows count every attempt, including failures retried elsewhere. `served` on a route counts final outcomes; summing it across a model’s routes gives the rollup request count. Route attempt counts can exceed that total.
-
-Rollup latency measures full request duration. Route latency measures the successful attempt through response completion, excluding earlier attempts; rows without attempt timing do not contribute to route latency. Token throughput uses full request duration at both grains.
-
-Routes that have never fired have no row here; this reflects observed traffic only, not the configured fallback list.
-
-The optional `minutes` query parameter controls the rolling window and must be an integer between 1 and 10080.
-The X-Model-Status-Timestamp response header reports when the data was fetched from Tinybird; X-Model-Status-Stale is set when stale data is returned during an upstream failure.
+Cached for 60 seconds per window.
 
 ⚙️ **Parameters**
 
 | Param | In | Type | Description |
 |---|---|---|---|
 | `minutes` | `query` | `integer` | Rolling window in minutes (default 60, maximum 10080). · default: `60` · range: `1…10080` |
-| `format` | `query` | `"raw"` | Optional compatibility parameter. Only `raw` is accepted. |
 
 <sub>`*` = required parameter</sub>
 
-📤 **Response** · `200` · `application/json` — Success
-
-| Field | Type | Description |
-|---|---|---|
-| `data` * | `object`[] | — |
-| `data[].model` * | `string` | — |
-| `data[].event_type` * | `string` | — |
-| `data[].provider` * | `string` | — |
-| `data[].model_used` * | `string` | — |
-| `data[].is_rollup` * | `any` | — |
-| `data[].fallback_used` * | `any` | — |
-| `data[].total_requests` * | `integer` | — |
-| `data[].status_2xx` * | `integer` | — |
-| `data[].errors_4xx` * | `integer` | — |
-| `data[].errors_5xx` * | `integer` | — |
-| `data[].served` * | `integer` | — |
-| `data[].fallback_rescues` * | `integer` | — |
-| `data[].retried_503s` * | `integer` | — |
-| `data[].last_error_at` * | `string` | — |
-| `data[].latency_p50_ms` * | `number` \| `null` | — |
-| `data[].latency_p95_ms` * | `number` \| `null` | — |
-| `data[].avg_latency_ms` * | `number` \| `null` | — |
-| `data[].last_request_at` * | `string` | — |
-| `data[].tokens_per_second` * | `number` \| `null` | — |
-| `meta` | `object`[] | — |
-| `meta[].name` * | `string` | — |
-| `meta[].type` * | `string` | — |
-| `rows` | `integer` | — |
-| `statistics` | `object` | — |
-| `statistics.elapsed` * | `number` | — |
-| `statistics.rows_read` * | `integer` | — |
-| `statistics.bytes_read` * | `integer` | — |
-
-<sub>`*` = required field</sub>
+📤 **Response** · `200` — Raw Tinybird pipe response; upstream errors pass through with their status.
 
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/v1/models/status/routes?minutes=60&format=raw" \
+curl "https://gen.pollinations.ai/models/status?minutes=60" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 

@@ -320,6 +320,16 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "sakana/fugu-max": () =>
+        createOpenRouterModelConfig({
+            model: "sakana/fugu-max",
+            defaultOptions: {
+                provider: {
+                    only: ["sakana"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "meituan/longcat-2.0": () =>
         createOpenRouterModelConfig({
             model: "meituan/longcat-2.0",

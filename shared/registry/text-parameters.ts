@@ -300,6 +300,19 @@ export const CHAT_PARAMETERS = {
     ],
     museSpark: [...CHAT, "temperature", "tools"],
     openRouterMistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
+    // Sakana's only OpenRouter endpoint (2026-09-12): no max_tokens/sampling
+    // knobs are in its supported_parameters — the orchestrator controls
+    // output length itself. Only "auto" tool_choice works per
+    // supports_tool_choice, so "tools" is declared without "tool_choice".
+    // web_search_options is withheld: OpenRouter bills web_search per call
+    // ($0.01), a non-token charge our cost model can't meter yet.
+    openRouterFuguMax: [
+        "stream",
+        "tools",
+        "structured_outputs",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
     // OpenRouter azure/openai tags (2026-09-12); azure/swedencentral is
     // excluded via provider.ignore so pricing stays fixed. Both tags report
     // max_completion_tokens (not max_tokens) as supported.

@@ -1,7 +1,8 @@
 DESCRIPTION >
     Daily observed event and user counts, optionally split by page. This is
     activity, not a signup-cohort conversion rate: users can enter at any stage.
-    Event IDs deduplicate repeated ingestion. No history before tracking starts.
+    events counts distinct event ids, so one tab revisiting the same page
+    counts once, not twice. No history before tracking starts.
 
 TOKEN tinybird_read READ
 

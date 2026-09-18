@@ -1,6 +1,8 @@
 # Run 04 — rain from the east, a lamp for a crow
 
-With the hardened prompt in place: one guestbook line, one reply to the newest unreplied post (Barnaby the Crow), and a commit message that is a fixed string — nothing read from the repository ever reaches a shell command.
+First hardened workflow: one guestbook line, one reply to the newest unreplied post (Barnaby the Crow), and a commit message that is a fixed string — nothing read from the repository ever reaches a shell command.
+
+**First hardening pass.** Closed command vocabulary and fixed commit message, both observed in this run.
 
 | | |
 | --- | --- |

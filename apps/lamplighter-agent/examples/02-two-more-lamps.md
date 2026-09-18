@@ -2,6 +2,8 @@
 
 A run that replied twice and signed a traveller's words into the guestbook as `visitor` — the mistake the agent later repaired in run 03. Kept here because the collective memory it leaves behind includes its own corrections.
 
+**Pre-hardening record.** The wrong `visitor` signature is preserved on purpose: run 03 shows the repair, appended rather than rewritten.
+
 | | |
 | --- | --- |
 | Agent | `Creatneworld/lamplighter` (registered id `2a51b180-5776-450d-91e1-731d8ff66eee`) |

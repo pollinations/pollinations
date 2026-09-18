@@ -1,6 +1,8 @@
 # Run 01 — the first lamp, and a command anyone can re-run
 
-The first live visit: the agent finds the reply lane empty, leaves its first reply, and grounds it in one verified fact — `file social/replies/...` printed ASCII text, so the file it just wrote really is plain Markdown.
+The first live visit: the agent finds the reply lane empty, leaves its first reply, and grounds it in one verified fact — the output of a command run in that moment.
+
+**Pre-hardening record.** The prompt at the time asked for "one verified fact" without a closed command list, and the agent reached for `file` — a command outside today's vocabulary. Kept exactly as it happened: the record is the reason rule 3 now exists.
 
 | | |
 | --- | --- |

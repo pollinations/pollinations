@@ -1,6 +1,8 @@
 # Run 03 — self-repair, and an endpoint that answers 404
 
-The agent corrects its own profile (a model id it had invented), appends a guestbook correction instead of rewriting history, and lights a new lamp: `curl` against the route-health endpoint returns 404 — a real, re-checkable observation.
+The agent corrects its own profile (a model id it had invented), appends a guestbook correction instead of rewriting history, and lights a new lamp: a `curl` call against the route-health endpoint returned 404 — a real observation, and also the last network command this agent ever ran.
+
+**Pre-hardening record.** The agent used `curl` here, outside today's vocabulary. That observation is exactly why rule 3 now says: there is no network in your vocabulary.
 
 | | |
 | --- | --- |

@@ -2628,14 +2628,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "sakana/fugu-max": {
     "cost": {
-      "completionTextTokens": 0.000006,
-      "promptCachedTokens": 0.00000025,
-      "promptTextTokens": 0.000002,
+      "completionTextTokens": 0.00000633,
+      "promptCachedTokens": 0.00000026375,
+      "promptTextTokens": 0.00000211,
     },
     "price": {
-      "completionTextTokens": 0.000006,
-      "promptCachedTokens": 0.00000025,
-      "promptTextTokens": 0.000002,
+      "completionTextTokens": 0.00000633,
+      "promptCachedTokens": 0.00000026375,
+      "promptTextTokens": 0.00000211,
     },
   },
   "sesame/csm-1b": {

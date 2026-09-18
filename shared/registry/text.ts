@@ -1581,15 +1581,22 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Sakana AI route rates (2026-09-12). Excludes the
+            // OpenRouter Sakana AI route rates (2026-09-12), including the
+            // mandatory 5.5% OpenRouter credit fee (#14895, merged
+            // 2026-09-15, after this branch was created). Excludes the
             // separate $0.01-per-call web_search charge OpenRouter reports —
             // web_search_options is not exposed on this model until that
             // non-token charge has a billing path (see perplexity-billing.ts
             // for the only precedent). Image inputs are tokenized into
             // promptTextTokens; no separate usage is reported for them.
-            promptTextTokens: perMillion(2),
-            promptCachedTokens: perMillion(0.25),
-            completionTextTokens: perMillion(6),
+            //
+            // UNVERIFIED IN PRODUCTION: every request to this model's only
+            // endpoint (the "sakana" tag) 403s with "not available in your
+            // region" from OpenRouter's own infrastructure — see PR review.
+            // Left in draft; do not merge until Sakana access is confirmed.
+            promptTextTokens: perMillion(2) * 1.055,
+            promptCachedTokens: perMillion(0.25) * 1.055,
+            completionTextTokens: perMillion(6) * 1.055,
         },
         title: "Fugu Max",
         description:

@@ -1,0 +1,35 @@
+{
+  "pr_number": 15024,
+  "title": "feat: auth-flow drop-off tracking and signup funnel percentages",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/15024",
+  "merged_at": "2026-09-18T21:26:14Z",
+  "labels": [],
+  "pr_body_excerpt": "Re-applies #14938 (reverted in #15025 before it reached production) together with its follow-ups, so the conversion tracking ships as one change. Addresses #14234.\n\n**No browser identifier.** No cookie and no random id. The browser keeps only the referrer hostname and the campaign tags of the landing URL in `sessionStorage`, so they survive the GitHub redirect and a signed-in view still carries the source it came from. Attribution then joins on the server-authenticated `user_id`.\n\n**Writes (all into Tinybird `product_event`, behind `TINYBIRD_ANALYTICS_ENABLED` / `VITE_TINYBIRD_ANALYTICS_ENABLED`)**\n- Page views, signed in and signed out, via one same-origin beacon. Each carries page, referrer hostname, `utm_*` / `ref`, and the app key from the page URL. Values are length-capped, not filtered.\n- Sign-in drop-off as two server-side counts: `sign_in_started` when GitHub is requested, `sign_in_completed` when the session exists. No browser state, so the `/app/sign-in` flow is covered too. Both honour DNT and Global Privacy Control.\n- Device code issued / approved / denied / token, PKCE consent grants, Discord link start/complete, checkout started, auto top-up enabled/disabled with amount. No codes, tokens, emails or IPs. Rows expire after 24 months.\n\n**Reads (pipes)**\n- `traffic_sources`: source × campaign → views, users, signups, paid, by week.\n- `kpi_signup_funnel`: registration week → Pollen/top-up view → checkout → paid, pct per stage.\n- `auth_flow_funnel`: daily sign-in and device stages, pct per stage.\n- `checkout_outcomes`: fulfilled vs expired vs failed Stripe sessions by pack, from existing `stripe_event`.\n- `product_analytics_daily`: as in #14938, anonymous rows not counted as users.\n\n**Tests**: analytics enabled in the test worker, `product_event` recorded by the Tinybird mock; beacon guards, attribution passthrough, sign-in start/complete through a real OAuth round trip, device approve/deny/token, PKCE consent, opt-out.\n\n**Privacy policy**: §7 describes the ",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Following the pollen trail",
+    "blurb": "The hive can now see where a visit becomes a signup, checkout, or a politely abandoned GitHub redirect. It does this without cookies or a browser ID, because apparently software can remember less.",
+    "summary": "Added privacy-respecting Tinybird product analytics for page attribution, GitHub sign-in and device-code funnels, PKCE consent, Discord linking, checkout and auto-top-up events, plus weekly traffic-source and funnel-percentage pipes.",
+    "impact": "The team can measure signup, auth, and checkout stages—including drop-off percentages and campaign sources—using server-authenticated user IDs and session-only referrer/UTM data, with DNT and Global Privacy Control honored.",
+    "keywords": [
+      "analytics",
+      "privacy",
+      "authentication",
+      "signup-funnel",
+      "Tinybird",
+      "attribution",
+      "checkout"
+    ],
+    "visual_concept": "A cozy observability garden: Polli follows a short trail of pollen dots from a landing-page flower through a GitHub-shaped sign-in gate to a blooming signup plant, while a friendly CRT robot reads a simple funnel chart. The trail represents session-only campaign/referrer attribution rather than cookies or persistent browser tracking; small privacy leaves and a DNT sign convey the opt-out safeguards.",
+    "image_prompt": "A cozy pixel-art observability garden where Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, rounded light-blue translucent wings, and a tiny analyst visor, follows lime green (#ecf874) pollen dots from a flower-shaped landing page through a GitHub sign-in gate toward a blooming signup plant; a chunky CRT-monitor robot beside her reads a simple funnel chart, with a small pixel sign reading “DNT OK.” Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, warm cream and lavender background, dark purple (#110518) outlines, subtle flowers and code-vines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-18/PR-15024.jpg",
+    "prompt": "A cozy pixel-art observability garden where Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, rounded light-blue translucent wings, and a tiny analyst visor, follows lime green (#ecf874) pollen dots from a flower-shaped landing page through a GitHub sign-in gate toward a blooming signup plant; a chunky CRT-monitor robot beside her reads a simple funnel chart, with a small pixel sign reading “DNT OK.” Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, warm cream and lavender background, dark purple (#110518) outlines, subtle flowers and code-vines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-18T21:27:20.183007+00:00"
+}

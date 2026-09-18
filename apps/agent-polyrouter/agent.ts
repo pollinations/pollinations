@@ -332,8 +332,7 @@ export default async function agent({
     // The status feed is advisory: when it is unreachable the router still
     // works, just without health/latency signals (price-only routing).
     const statusRows: StatusRow[] = statusResponse?.ok
-        ? (((await statusResponse.json()) as { data?: StatusRow[] }).data ??
-          [])
+        ? (((await statusResponse.json()) as { data?: StatusRow[] }).data ?? [])
         : [];
     const health = aggregateHealth(statusRows);
 

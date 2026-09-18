@@ -379,6 +379,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.005,
     },
   },
+  "black-forest-labs/flux.2-max": {
+    "cost": {
+      "completionImageTokens": 0.03,
+      "promptImageTokens": 0.03,
+    },
+    "price": {
+      "completionImageTokens": 0.03,
+      "promptImageTokens": 0.03,
+    },
+  },
+  "black-forest-labs/flux.2-max:openrouter": {
+    "cost": {
+      "completionImageTokens": 0.07385,
+      "promptImageTokens": 0,
+    },
+    "price": {
+      "completionImageTokens": 0.07385,
+      "promptImageTokens": 0,
+    },
+  },
   "black-forest-labs/flux.2-pro": {
     "cost": {
       "completionImageTokens": 0.015,

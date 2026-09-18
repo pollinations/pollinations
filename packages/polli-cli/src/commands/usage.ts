@@ -8,6 +8,7 @@ import {
     printResult,
     printTable,
 } from "../lib/output.js";
+import { parseDaysWindow } from "./earnings.js";
 
 interface UsageRecord {
     timestamp: string;
@@ -57,19 +58,12 @@ export interface UsageKeyInfo {
     name: string | null;
 }
 
-/** The usage API accepts a rolling window of at most 90 days. */
-export const MAX_USAGE_DAYS = 90;
+// better-auth mints API key ids as 32-char alphanumerics; anything else is a
+// key name. Ids pass through without a /account/keys lookup, so keys scoped
+// to just `account:usage` can still filter by id.
+const KEY_ID_RE = /^[a-zA-Z0-9]{32}$/;
 
-export function parseUsageDays(value: string): number {
-    const days = Number(value);
-    if (!Number.isInteger(days) || days < 1) {
-        throw new Error("--days must be a positive integer");
-    }
-    if (days > MAX_USAGE_DAYS) {
-        throw new Error(`--days must be ${MAX_USAGE_DAYS} or less`);
-    }
-    return days;
-}
+export const isKeyId = (value: string): boolean => KEY_ID_RE.test(value);
 
 /**
  * Resolve --key values (names or ids) to key ids. Names resolve against the
@@ -212,6 +206,34 @@ export const usageCommand = new Command("usage")
         setKeyOverride(authKey);
         const key = requireKey();
 
+        const models: string[] = opts.model;
+
+        // Filters only apply to the two views; error instead of silently
+        // printing the balance.
+        if (
+            !opts.history &&
+            !opts.daily &&
+            (filterKeys.length > 0 ||
+                models.length > 0 ||
+                opts.days !== undefined ||
+                opts.csv)
+        ) {
+            printError(
+                "--key, --model, --days and --csv require --history or --daily",
+            );
+            process.exit(1);
+        }
+
+        // The daily endpoint has no `models` param, and a raw CSV export
+        // can't be filtered client-side - refuse instead of printing an
+        // unfiltered export.
+        if (opts.daily && opts.csv && models.length > 0) {
+            printError(
+                "--model can't filter the raw --daily --csv export (the endpoint has no models param)",
+            );
+            process.exit(1);
+        }
+
         // Default: show balance (unless --history or --daily)
         if (!opts.history && !opts.daily) {
             try {
@@ -239,7 +261,7 @@ export const usageCommand = new Command("usage")
         let days: number | undefined;
         if (opts.days !== undefined) {
             try {
-                days = parseUsageDays(opts.days);
+                days = parseDaysWindow(opts.days);
             } catch (err) {
                 printError(
                     err instanceof Error ? err.message : "Invalid --days value",
@@ -248,23 +270,26 @@ export const usageCommand = new Command("usage")
             }
         }
 
-        const models: string[] = opts.model;
-
         let keyIds: string[] = [];
         if (filterKeys.length > 0) {
-            try {
-                const res = await gen<{ data: UsageKeyInfo[] }>(
-                    "/account/keys",
-                    { apiKey: key },
-                );
-                keyIds = resolveKeyIds(res.data ?? [], filterKeys);
-            } catch (err) {
-                printError(
-                    err instanceof Error
-                        ? err.message
-                        : "Failed to resolve keys",
-                );
-                process.exit(1);
+            const ids = filterKeys.filter(isKeyId);
+            const names = filterKeys.filter((v) => !isKeyId(v));
+            keyIds = ids;
+            if (names.length > 0) {
+                try {
+                    const res = await gen<{ data: UsageKeyInfo[] }>(
+                        "/account/keys",
+                        { apiKey: key },
+                    );
+                    keyIds = [...ids, ...resolveKeyIds(res.data ?? [], names)];
+                } catch (err) {
+                    printError(
+                        err instanceof Error
+                            ? err.message
+                            : "Failed to resolve keys",
+                    );
+                    process.exit(1);
+                }
             }
         }
 

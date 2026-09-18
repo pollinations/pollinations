@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
     filterDailyRows,
-    MAX_USAGE_DAYS,
-    parseUsageDays,
+    isKeyId,
     resolveKeyIds,
     splitKeyArgs,
     tokensIn,
@@ -16,32 +15,18 @@ const keys: UsageKeyInfo[] = [
     { id: "id_harness", name: "polli-harness-claude" },
 ];
 
-describe("parseUsageDays", () => {
-    it("accepts a plain day count", () => {
-        expect(parseUsageDays("1")).toBe(1);
-        expect(parseUsageDays("30")).toBe(30);
+describe("isKeyId", () => {
+    it("accepts 32-char alphanumerics", () => {
+        expect(isKeyId("lIa3Q9Wdq2jAw1mkdI38g5zpsaZr45qz")).toBe(true);
+        expect(isKeyId("a".repeat(32))).toBe(true);
     });
 
-    it("rejects zero, negatives and non-integers", () => {
-        expect(() => parseUsageDays("0")).toThrow(
-            "--days must be a positive integer",
-        );
-        expect(() => parseUsageDays("-5")).toThrow(
-            "--days must be a positive integer",
-        );
-        expect(() => parseUsageDays("1.5")).toThrow(
-            "--days must be a positive integer",
-        );
-        expect(() => parseUsageDays("abc")).toThrow(
-            "--days must be a positive integer",
-        );
-    });
-
-    it("rejects windows beyond the API maximum", () => {
-        expect(parseUsageDays(String(MAX_USAGE_DAYS))).toBe(MAX_USAGE_DAYS);
-        expect(() => parseUsageDays(String(MAX_USAGE_DAYS + 1))).toThrow(
-            `--days must be ${MAX_USAGE_DAYS} or less`,
-        );
+    it("rejects names and other lengths", () => {
+        expect(isKeyId("polli-harness-claude")).toBe(false);
+        expect(isKeyId("kimi")).toBe(false);
+        expect(isKeyId("a".repeat(31))).toBe(false);
+        expect(isKeyId("a".repeat(33))).toBe(false);
+        expect(isKeyId(`${"a".repeat(31)}-`)).toBe(false);
     });
 });
 

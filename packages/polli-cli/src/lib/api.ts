@@ -28,11 +28,11 @@ interface RequestOptions {
     apiKey?: string;
 }
 
-const request = async <T>(
+const send = async (
     baseUrl: string,
     path: string,
     options: RequestOptions = {},
-): Promise<T> => {
+): Promise<Response> => {
     const { method = "GET", body, apiKey } = options;
     const key = resolveApiKey(apiKey);
 
@@ -55,28 +55,22 @@ const request = async <T>(
         );
     }
 
+    return res;
+};
+
+const request = async <T>(
+    baseUrl: string,
+    path: string,
+    options: RequestOptions = {},
+): Promise<T> => {
+    const res = await send(baseUrl, path, options);
     return res.json() as Promise<T>;
 };
 
 export const gen = <T>(path: string, options?: RequestOptions) =>
     request<T>(BASE_URL, path, options);
 
-/** GET that returns the raw body (e.g. format=csv exports). */
-export const genText = async (
-    path: string,
-    options?: RequestOptions,
-): Promise<string> => {
-    const key = resolveApiKey(options?.apiKey);
-    const headers: Record<string, string> = {};
-    if (key) headers.Authorization = `Bearer ${key}`;
-
-    const res = await fetch(`${BASE_URL}${path}`, { headers });
-    if (!res.ok) {
-        const text = await res.text().catch(() => "Unknown error");
-        throw new ApiError(
-            res.status,
-            `${res.status} ${res.statusText}: ${text}`,
-        );
-    }
-    return res.text();
-};
+/** Same as `gen`, but returns the raw response body for non-JSON formats
+ * (e.g. `format=csv` exports). */
+export const genText = async (path: string, options?: RequestOptions) =>
+    (await send(BASE_URL, path, options)).text();

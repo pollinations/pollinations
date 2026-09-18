@@ -29,6 +29,7 @@ type WalletState = {
  * go back to the app.
  */
 export const Route = createFileRoute("/top-up")({
+    head: () => ({ meta: [{ title: "Top-up | pollinations.ai" }] }),
     validateSearch: validateTopUpSearch,
     component: TopUpPage,
 });

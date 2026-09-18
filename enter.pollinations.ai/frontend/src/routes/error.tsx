@@ -5,6 +5,7 @@ import { authClient } from "../auth.ts";
 import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 
 export const Route = createFileRoute("/error")({
+    head: () => ({ meta: [{ title: "Sign in | pollinations.ai" }] }),
     component: ErrorPage,
     validateSearch: (search: Record<string, unknown>) => ({
         error: (search.error as string) || "",

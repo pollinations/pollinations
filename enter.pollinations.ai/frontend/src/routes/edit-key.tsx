@@ -31,6 +31,9 @@ type EditKeySearch = {
  * can raise the budget and go back to the app.
  */
 export const Route = createFileRoute("/edit-key")({
+    head: () => ({
+        meta: [{ title: "Edit key permissions | pollinations.ai" }],
+    }),
     validateSearch: (search: Record<string, unknown>): EditKeySearch => ({
         id: typeof search.id === "string" ? search.id : "",
         redirect: parseAppUrl(search.redirect) ?? undefined,

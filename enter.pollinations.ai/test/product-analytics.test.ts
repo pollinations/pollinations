@@ -11,13 +11,11 @@ import { captureProductEvent } from "../src/utils/product-analytics.ts";
 import { test } from "./fixtures.ts";
 
 afterEach(() => vi.restoreAllMocks());
-const bindings = { ...env, TINYBIRD_ANALYTICS_ENABLED: "true" };
 
 async function pageView(
     query: Record<string, string>,
     cookie = "",
     overrides: Record<string, string> = {},
-    enabled = "true",
     body?: string,
 ) {
     const ctx = createExecutionContext();
@@ -34,24 +32,12 @@ async function pageView(
                 body,
             },
         ),
-        { ...bindings, TINYBIRD_ANALYTICS_ENABLED: enabled },
+        env,
         ctx,
     );
     await waitOnExecutionContext(ctx);
     return response;
 }
-
-test("disabled tracking does no network IO", async () => {
-    const fetch = vi.spyOn(globalThis, "fetch");
-    await captureProductEvent(
-        { ...env, TINYBIRD_ANALYTICS_ENABLED: "false" },
-        "checkout_started",
-        "user-1",
-    );
-    const response = await pageView(VIEW, "", {}, "false");
-    expect(response.status).toBe(204);
-    expect(fetch).not.toHaveBeenCalled();
-});
 
 const VIEW = { page: "/top-up" };
 
@@ -87,9 +73,7 @@ test("browser cannot submit server events, cross-origin traffic, or request bodi
             })
         ).status,
     ).toBe(403);
-    expect(
-        (await pageView(VIEW, "", {}, "true", "x".repeat(2000))).status,
-    ).toBe(415);
+    expect((await pageView(VIEW, "", {}, "x".repeat(2000))).status).toBe(415);
     expect((await pageView({ page: "x".repeat(2000) })).status).toBe(400);
     expect((await pageView(VIEW, "", { DNT: "1" })).status).toBe(204);
 });
@@ -167,7 +151,7 @@ test("capture reuses Tinybird ingestion and carries the pack key", async () => {
     const fetch = vi
         .spyOn(globalThis, "fetch")
         .mockResolvedValue(new Response(null, { status: 202 }));
-    await captureProductEvent(bindings, "checkout_started", "user-1", {
+    await captureProductEvent(env, "checkout_started", "user-1", {
         pack_key: "pack-1",
     });
     expect(fetch).toHaveBeenCalledTimes(1);
@@ -190,12 +174,12 @@ test("delivery failure never fails the caller and is not retried", async () => {
         .mockRejectedValue(new Error("offline"));
     vi.spyOn(console, "warn").mockImplementation(() => {});
     await expect(
-        captureProductEvent(bindings, "checkout_started", "user-1"),
+        captureProductEvent(env, "checkout_started", "user-1"),
     ).resolves.toBeUndefined();
     expect(fetch).toHaveBeenCalledTimes(1);
     fetch.mockResolvedValue(new Response(null, { status: 503 }));
     await expect(
-        captureProductEvent(bindings, "checkout_started", "user-1"),
+        captureProductEvent(env, "checkout_started", "user-1"),
     ).resolves.toBeUndefined();
     expect(fetch).toHaveBeenCalledTimes(2);
 });

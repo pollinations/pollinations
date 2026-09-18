@@ -21,14 +21,12 @@ export type ProductEvent =
     | "link_completed";
 
 // Signups and fulfilled payments are not recorded here: join d1_user and
-// stripe_event instead. Deploy the datasource and verify the existing ingest
-// token's APPEND scope before enabling TINYBIRD_ANALYTICS_ENABLED and
-// VITE_TINYBIRD_ANALYTICS_ENABLED.
+// stripe_event instead.
 export async function captureProductEvent(
     env: Pick<
         CloudflareBindings,
         "ENVIRONMENT" | "TINYBIRD_INGEST_URL" | "TINYBIRD_INGEST_TOKEN"
-    > & { TINYBIRD_ANALYTICS_ENABLED?: string },
+    >,
     event: ProductEvent,
     // "" for stages that happen before a user exists.
     userId: string,
@@ -44,7 +42,6 @@ export async function captureProductEvent(
         amount_usd?: number;
     } = {},
 ): Promise<void> {
-    if (env.TINYBIRD_ANALYTICS_ENABLED !== "true") return;
     try {
         const response = await fetch(
             getTinybirdDatasourceIngestUrl(

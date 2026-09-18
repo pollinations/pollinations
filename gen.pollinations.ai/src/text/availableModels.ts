@@ -50,6 +50,8 @@ interface ModelDefinition {
     transform?: TransformFn;
     /** Route Chat requests through the model's declared Responses endpoint. */
     useResponsesApi?: boolean;
+    /** Route typed decisions directly through TypeSafe System One. */
+    useSystemOneApi?: boolean;
 }
 
 function usesGrokReasoning(options: TransformOptions): boolean {
@@ -516,6 +518,11 @@ const models: ModelDefinition[] = [
             createGeminiToolsTransform(["google_search"]),
             createGeminiThinkingTransform("v2.5"),
         ),
+    },
+    {
+        name: "openjev",
+        config: portkeyConfig["jev-latest"],
+        useSystemOneApi: true,
     },
     {
         name: "pollinations/midijourney",

@@ -5,6 +5,7 @@ import {
     createApiKeyPlugin,
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
+import { ACCOUNT_RESTRICTED_MESSAGE } from "@shared/auth/ban.ts";
 import * as betterAuthSchema from "@shared/db/better-auth.ts";
 import {
     account as accountTable,
@@ -76,7 +77,10 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             message: "Only one Discord account can be connected.",
         });
 
-    const adminPlugin = admin({ adminUserIds: ADMIN_USER_IDS });
+    const adminPlugin = admin({
+        adminUserIds: ADMIN_USER_IDS,
+        bannedUserMessage: ACCOUNT_RESTRICTED_MESSAGE,
+    });
 
     const oauthProviderPlugin = oauthProvider({
         loginPage: "/app/sign-in",

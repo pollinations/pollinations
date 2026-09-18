@@ -1,46 +1,102 @@
 import {
+    useAccountBalance,
+    useAccountKey,
     useAccountProfile,
     useAuthActions,
     useAuthState,
 } from "@pollinations/sdk/react";
+import { useEffect } from "react";
+import markUrl from "../../brand/mark.svg";
 import { AccountMenu } from "../../compositions/AccountMenu.tsx";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
 import {
     ExternalLinkIcon,
-    LockIcon,
-    SignOutIcon,
-    SproutIcon,
+    KeyIcon,
+    PowerIcon,
     WalletIcon,
 } from "../../primitives/icons/index.tsx";
 import { LoginButton } from "../auth/sdk.ts";
-import { Balance } from "../wallet/sdk.ts";
+import {
+    AccountPollen,
+    type AccountPollenSource,
+} from "../wallet/AccountPollen.tsx";
 
 export type AppUserMenuLabels = {
     authorize: string;
     appUserMenu: string;
-    getFreePollen: string;
-    topUpAccount: string;
+    permissions: string;
+    buyPollen: string;
     logout: string;
 };
 
 export type AppUserMenuProps = {
+    /** Optional caller-owned dashboard destination for the linked avatar. */
+    dashboardHref?: string;
     labels?: Partial<AppUserMenuLabels>;
 };
 
 const defaultLabels: AppUserMenuLabels = {
-    authorize: "Connect Pollen",
+    authorize: "Pollinations Connect",
     appUserMenu: "App user menu",
-    getFreePollen: "Get free Pollen",
-    topUpAccount: "Buy Pollen",
+    permissions: "Permissions",
+    buyPollen: "Buy Pollen",
     logout: "Disconnect",
 };
 
-/** Delegated API access. Logging out forgets this app's key; it does not revoke it. */
-export function AppUserMenu({ labels: labelOverrides }: AppUserMenuProps) {
+export function AppUserMenu({
+    dashboardHref,
+    labels: labelOverrides,
+}: AppUserMenuProps) {
     const labels = { ...defaultLabels, ...labelOverrides };
     const { logout, enterUrl } = useAuthActions();
     const { isLoggedIn } = useAuthState();
     const profile = useAccountProfile({ enabled: isLoggedIn });
+    const key = useAccountKey({ enabled: isLoggedIn });
+    // The wallet is shown only for an unlimited key that may read it; ask only then.
+    const canReadWallet =
+        key.data?.pollenBudget === null &&
+        (key.data.permissions?.account?.includes("usage") ?? false);
+    const balance = useAccountBalance({
+        enabled: isLoggedIn && canReadWallet,
+    });
+    const wallet = balance.data?.accountBalance;
+    useEffect(() => {
+        if (!isLoggedIn) return;
+        const onVisible = () => {
+            if (document.visibilityState !== "visible") return;
+            void key.refresh();
+            void balance.refresh();
+        };
+        document.addEventListener("visibilitychange", onVisible);
+        return () =>
+            document.removeEventListener("visibilitychange", onVisible);
+    }, [isLoggedIn, key.refresh, balance.refresh]);
+    const returnUrl =
+        typeof window === "undefined" ? undefined : window.location.href;
+    const topUpUrl = new URL("/top-up", enterUrl);
+    if (returnUrl) topUpUrl.searchParams.set("redirect", returnUrl);
+    const keyId = key.data?.id;
+    let editKeyUrl: URL | undefined;
+    if (keyId) {
+        editKeyUrl = new URL("/edit-key", enterUrl);
+        editKeyUrl.searchParams.set("id", keyId);
+        if (returnUrl) editKeyUrl.searchParams.set("redirect", returnUrl);
+    }
+    let pollenSource: AccountPollenSource | undefined;
+    if (key.data && key.data.pollenBudget !== null) {
+        pollenSource = {
+            type: "budget",
+            remaining: key.data.pollenBudget,
+            generationEnabled: key.data.permissions?.models?.length !== 0,
+        };
+    } else if (wallet) {
+        pollenSource = {
+            type: "wallet",
+            balances: { paid: wallet.paid, quest: wallet.tier },
+        };
+    } else if (key.data && !canReadWallet) {
+        pollenSource = { type: "budget", remaining: null };
+    }
 
     return (
         <div
@@ -48,9 +104,21 @@ export function AppUserMenu({ labels: labelOverrides }: AppUserMenuProps) {
             className="polli:flex polli:shrink-0 polli:justify-end"
         >
             {!isLoggedIn ? (
-                <LoginButton className="polli:gap-1.5 polli:whitespace-nowrap">
-                    <LockIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
-                    {labels.authorize}
+                <LoginButton className="polli:h-10 polli:gap-0 polli:overflow-hidden polli:border polli:border-theme-bg-active polli:bg-surface-white polli:p-0 polli:text-theme-text-strong polli:whitespace-nowrap polli:hover:bg-surface-white polli:[.dark_&]:bg-transparent polli:[.dark_&]:hover:bg-transparent">
+                    {/* Amber cell with the mark, then a light cell with the label. */}
+                    <span
+                        aria-hidden="true"
+                        className="polli:flex polli:h-full polli:w-10 polli:shrink-0 polli:items-center polli:justify-center polli:bg-theme-bg-active"
+                    >
+                        <span
+                            className="polli:relative polli:-top-px polli:left-px polli:block polli:h-6 polli:w-6 polli:bg-current"
+                            style={{
+                                mask: `url('${markUrl}') center / contain no-repeat`,
+                                WebkitMask: `url('${markUrl}') center / contain no-repeat`,
+                            }}
+                        />
+                    </span>
+                    <span className="polli:px-3">{labels.authorize}</span>
                 </LoginButton>
             ) : (
                 <AccountMenu
@@ -60,35 +128,41 @@ export function AppUserMenu({ labels: labelOverrides }: AppUserMenuProps) {
                         "Connected user"
                     }
                     avatarUrl={profile.data?.image}
+                    dashboardHref={
+                        dashboardHref ?? new URL("/pollen", enterUrl).href
+                    }
                     menuLabel={labels.appUserMenu}
-                    className="polli:max-w-64"
-                    menuClassName="polli:w-max polli:min-w-0"
+                    className="polli:max-w-80"
                     secondaryContent={
-                        <Balance className="polli:bg-transparent polli:px-0 polli:py-0 polli:text-xs polli:text-theme-text-base" />
+                        pollenSource ? (
+                            <AccountPollen source={pollenSource} />
+                        ) : undefined
                     }
                 >
                     {(close) => (
                         <>
+                            {editKeyUrl && (
+                                <DropdownItem
+                                    as="a"
+                                    href={editKeyUrl.href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={close}
+                                >
+                                    <KeyIcon
+                                        className="polli:h-4 polli:w-4 polli:shrink-0"
+                                        aria-hidden="true"
+                                    />
+                                    {labels.permissions}
+                                    <ExternalLinkIcon
+                                        className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
+                                        aria-hidden="true"
+                                    />
+                                </DropdownItem>
+                            )}
                             <DropdownItem
                                 as="a"
-                                href={new URL("/quests", enterUrl).href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={close}
-                            >
-                                <SproutIcon
-                                    className="polli:h-4 polli:w-4 polli:shrink-0"
-                                    aria-hidden="true"
-                                />
-                                {labels.getFreePollen}
-                                <ExternalLinkIcon
-                                    className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
-                                    aria-hidden="true"
-                                />
-                            </DropdownItem>
-                            <DropdownItem
-                                as="a"
-                                href={new URL("/pollen", enterUrl).href}
+                                href={topUpUrl.href}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={close}
@@ -97,19 +171,24 @@ export function AppUserMenu({ labels: labelOverrides }: AppUserMenuProps) {
                                     className="polli:h-4 polli:w-4 polli:shrink-0"
                                     aria-hidden="true"
                                 />
-                                {labels.topUpAccount}
+                                {labels.buyPollen}
                                 <ExternalLinkIcon
                                     className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
                                     aria-hidden="true"
                                 />
                             </DropdownItem>
                             <DropdownItem
+                                type="button"
+                                className="polli:justify-start polli:text-left"
                                 onClick={() => {
                                     close();
                                     logout();
                                 }}
                             >
-                                <SignOutIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
+                                <PowerIcon
+                                    className="polli:h-4 polli:w-4 polli:shrink-0"
+                                    aria-hidden="true"
+                                />
                                 {labels.logout}
                             </DropdownItem>
                         </>

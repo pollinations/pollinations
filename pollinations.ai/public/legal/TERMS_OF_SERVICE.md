@@ -1,6 +1,8 @@
 # Terms of Service
 
-**Updated: 2026-09-04**
+**Updated: 2026-09-16**
+
+_2026-09-16 — Accounts may be suspended immediately where we reasonably believe there is payment fraud or abuse._
 
 _2026-09-04 — Added terms for the Polli Discord bot and related assistant service._
 
@@ -123,7 +125,7 @@ Each party protects the other's confidential information and uses it only for th
 
 ## 12) Term; Suspension; Termination
 
-Term begins on first access and continues per plan. Either party may terminate for uncured material breach after 30 days' notice. On termination we delete/return Customer Data per the DPA within 30 days unless legal retention applies. **Survival:** fees, confidentiality, IP, warranties & liability, and governing law survive.
+Term begins on first access and continues per plan. Either party may terminate for uncured material breach after 30 days' notice. We may suspend an account and its API keys immediately, without that notice period, where we reasonably believe there is payment fraud or abuse, use of a payment method without the cardholder's authorization, or a security or legal risk to the Service or its users; suspension is protective and not a finding of wrongdoing. On termination we delete/return Customer Data per the DPA within 30 days unless legal retention applies. **Survival:** fees, confidentiality, IP, warranties & liability, and governing law survive.
 
 ## 13) Publicity; Export; Changes; Misc.
 

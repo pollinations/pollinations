@@ -1,0 +1,34 @@
+{
+  "pr_number": 14791,
+  "title": "feat: add openai/gpt-4o-mini via OpenRouter",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/14791",
+  "merged_at": "2026-09-18T10:17:11Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\r\n- Adds `openai/gpt-4o-mini` as a new paid-only text model (no aliases), routed through OpenRouter\r\n- Pins OpenRouter provider order to `[azure, openai]` with `allow_fallbacks: false`, excluding the `azure/swedencentral` endpoint (bills 10% higher) so pricing stays fixed\r\n- Pricing: $0.15/M input, $0.60/M output, $0.075/M cache read — verified live against OpenRouter's `/api/v1/models/openai/gpt-4o-mini/endpoints`\r\n- Context 128K, max output 16,384 tokens (also verified live)\r\n- `priceMultiplier: 1`, `paidOnly: true`\r\n\r\n## Contract (confirmed)\r\n| Field | Value |\r\n|---|---|\r\n| Canonical name | `openai/gpt-4o-mini` |\r\n| Aliases | none |\r\n| Registry provider | `openrouter` |\r\n| Primary route | OpenRouter `azure` tag |\r\n| Fallback | OpenRouter `openai` tag (same price) |\r\n| Pollinations GPU | no |\r\n\r\n## Verification\r\n- Pricing/context/max-output/supported-params confirmed against OpenRouter's public endpoints API (unauthenticated, no request needed)\r\n- Added a unit test (`modelResolver.test.ts`) mirroring existing pinned-OpenRouter-model tests, asserting the `provider.order`/`allow_fallbacks` shape\r\n- `npx biome check --write` run on all touched files (no changes beyond authored content)\r\n- **Known limitation**: could not run the Vitest/CF-Workers suite or `tsc` in this sandbox — both fail environment-wide due to a pre-existing, unrelated issue (missing `@better-auth/api-key` dependency and a workerd compatibility-flag mismatch), not caused by this change. Structure and field types were manually verified against working entries (e.g. `poolside/laguna-s-2.1`, `meituan/longcat-2.0`). Recommend running the full suite in CI before merge.\r\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A small model, carefully routed",
+    "blurb": "GPT-4o mini has joined the text garden as a paid model, with its route pinned so the price does not wander off into the woods. Small, capable, and unusually well supervised.",
+    "summary": "Added the paid-only `openai/gpt-4o-mini` text model through OpenRouter, with Azure then OpenAI provider routing pinned at fixed pricing, a 128K context window, and 16,384 maximum output tokens.",
+    "impact": "Developers can now call `openai/gpt-4o-mini` with predictable OpenRouter routing and verified rates of $0.15/M input, $0.60/M output, and $0.075/M cached-input tokens.",
+    "keywords": [
+      "gpt-4o-mini",
+      "openrouter",
+      "text-models",
+      "api",
+      "pricing",
+      "model-registry"
+    ],
+    "visual_concept": "A cozy model-routing garden: Polli, wearing a tiny traffic-controller cap, guides a small glowing GPT-4o mini seedling along two clearly marked, matching-price paths labeled Azure and OpenAI. A retro terminal displays a 128K token scroll while flowers and code-plants grow around the fixed route, representing a new model with stable provider selection.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny traffic-controller cap while guiding a glowing little code-seedling labeled “GPT-4o mini” through a garden with two neat signposts, “AZURE” and “OPENAI.” A retro CRT terminal glows prominently lime green (#ecf874) beside 128K token scrolls and flowering code-plants; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-18/PR-14791.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny traffic-controller cap while guiding a glowing little code-seedling labeled “GPT-4o mini” through a garden with two neat signposts, “AZURE” and “OPENAI.” A retro CRT terminal glows prominently lime green (#ecf874) beside 128K token scrolls and flowering code-plants; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-18T10:18:11.517499+00:00"
+}

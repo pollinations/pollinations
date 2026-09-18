@@ -195,6 +195,38 @@ describe("prime harness", () => {
         expect(prime.status(ctx).configured).toBe(false);
     });
 
+    it("provisions the Pollinations MCP server entry", () => {
+        const result = configurePrime(ctx, models, "sk_test_key", "deepseek");
+        expect(result.mcp).toBe(true);
+        const doc = JSON.parse(read(settingsFile())) as {
+            mcpServers?: Record<
+                string,
+                { type: string; url: string; bearerTokenEnvVar: string }
+            >;
+        };
+        expect(doc.mcpServers?.pollinations).toEqual({
+            type: "http",
+            url: "https://gen.pollinations.ai/mcp/pollinations",
+            bearerTokenEnvVar: "POLLINATIONS_MCP_KEY_PRIME",
+        });
+
+        disablePrime(ctx);
+        const after = existsSync(settingsFile())
+            ? (JSON.parse(read(settingsFile())) as {
+                  mcpServers?: Record<string, unknown>;
+              })
+            : {};
+        expect(after.mcpServers?.pollinations).toBeUndefined();
+    });
+
+    it("skips MCP provisioning when requested", () => {
+        configurePrime(ctx, models, "sk_test_key", "deepseek", false);
+        const doc = JSON.parse(read(settingsFile())) as {
+            mcpServers?: Record<string, unknown>;
+        };
+        expect(doc.mcpServers?.pollinations).toBeUndefined();
+    });
+
     it("stops before configuration when Prime Agent is unavailable", async () => {
         await expect(prime.on(ctx, {})).rejects.toThrow(
             "Prime Agent was not found",

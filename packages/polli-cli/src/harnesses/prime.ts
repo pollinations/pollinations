@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
+import { printInfo } from "../lib/output.js";
 import {
     commandExists,
     readTextIfExists,
@@ -22,6 +23,10 @@ const ID = "prime";
 const LABEL = "Prime Agent";
 const PROVIDER = "pollinations";
 const DEFAULT_MODEL = "deepseek/deepseek-v4-flash";
+const MCP_SERVER_ID = "pollinations";
+const MCP_URL = `${BASE_URL}/mcp/pollinations`;
+/** Prime accepts only env-var references for bearer secrets. */
+const MCP_KEY_ENV = "POLLINATIONS_MCP_KEY_PRIME";
 
 /** Prime Agent resolves its agent dir from this override, tilde included. */
 export const primeAgentDir = (ctx: HarnessContext) => {
@@ -86,9 +91,17 @@ interface PrimeModels {
 
 type PrimeAuth = Record<string, { type?: string; key?: string }>;
 
+interface PrimeMcpServer {
+    type?: string;
+    url?: string;
+    bearerTokenEnvVar?: string;
+    [key: string]: unknown;
+}
+
 interface PrimeSettings {
     defaultProvider?: string;
     defaultModel?: string;
+    mcpServers?: Record<string, PrimeMcpServer>;
     [key: string]: unknown;
 }
 
@@ -115,11 +128,41 @@ const deleteAuth = (ctx: HarnessContext) => {
     return true;
 };
 
+/** Our Prime MCP entry: named pollinations, our hosted URL, env-var bearer. */
+const mcpEntry = (settings: PrimeSettings): PrimeMcpServer | null => {
+    const entry = settings?.mcpServers?.[MCP_SERVER_ID];
+    if (!entry || entry.url !== MCP_URL) return null;
+    return entry;
+};
+
+const writeMcpEntry = (settings: PrimeSettings) => {
+    const servers = settings.mcpServers ?? {};
+    servers[MCP_SERVER_ID] = {
+        type: "http",
+        url: MCP_URL,
+        bearerTokenEnvVar: MCP_KEY_ENV,
+    };
+    settings.mcpServers = servers;
+};
+
+const stripMcpEntry = (settings: PrimeSettings): boolean => {
+    if (!mcpEntry(settings)) return false;
+    delete settings.mcpServers?.[MCP_SERVER_ID];
+    if (Object.keys(settings.mcpServers ?? {}).length === 0) {
+        delete settings.mcpServers;
+    }
+    return true;
+};
+
+const hasMcpEntry = (settings: PrimeSettings): boolean =>
+    mcpEntry(settings) !== null;
+
 const writeConfig = (
     ctx: HarnessContext,
     models: HarnessModel[],
     apiKey: string,
     model: string,
+    mcp: boolean = true,
 ) => {
     const doc = loadJson(modelsPath(ctx)) as PrimeModels;
     const providers = (doc.providers ?? {}) as Record<string, unknown>;
@@ -131,6 +174,8 @@ const writeConfig = (
     const settings = loadJson(settingsPath(ctx)) as PrimeSettings;
     settings.defaultProvider = PROVIDER;
     settings.defaultModel = model;
+    if (mcp) writeMcpEntry(settings);
+    else stripMcpEntry(settings);
     saveJson(settingsPath(ctx), settings);
 
     if (readTextIfExists(skillPath(ctx)) === null) {
@@ -150,9 +195,14 @@ const stripConfig = (ctx: HarnessContext) => {
     changed = deleteAuth(ctx) || changed;
 
     const settings = loadJson(settingsPath(ctx)) as PrimeSettings;
-    if (settings && settings.defaultProvider === PROVIDER) {
+    const hadDefault = settings?.defaultProvider === PROVIDER;
+    if (hadDefault) {
         delete settings.defaultProvider;
         delete settings.defaultModel;
+        changed = true;
+    }
+    const mcpChanged = stripMcpEntry(settings);
+    if (hadDefault || mcpChanged) {
         saveJson(settingsPath(ctx), settings);
         changed = true;
     }
@@ -184,6 +234,7 @@ const result = (ctx: HarnessContext): HarnessResult => {
             readKey(ctx) !== null &&
             readTextIfExists(skillPath(ctx)) !== null,
         model: typeof model === "string" ? model : undefined,
+        mcp: hasMcpEntry(settings),
         files: files(ctx),
     };
 };
@@ -193,9 +244,10 @@ export const configurePrime = (
     models: HarnessModel[],
     apiKey: string,
     model: string,
+    mcp: boolean = true,
 ): HarnessResult => {
     applyWithSnapshot(ctx, ID, files(ctx), () =>
-        writeConfig(ctx, models, apiKey, model),
+        writeConfig(ctx, models, apiKey, model, mcp),
     );
     return result(ctx);
 };
@@ -225,7 +277,19 @@ export const prime: HarnessAdapter = {
             { id: ID, label: LABEL, existingKey: readKey(ctx) },
             { browser: options.browser },
         );
-        return configurePrime(ctx, models, apiKey, model);
+        const configured = configurePrime(
+            ctx,
+            models,
+            apiKey,
+            model,
+            options.mcp !== false,
+        );
+        if (options.mcp !== false) {
+            printInfo(
+                `Prime reads the MCP bearer token from an env var — add to your shell profile:\n  export ${MCP_KEY_ENV}="${apiKey}"`,
+            );
+        }
+        return configured;
     },
 
     off: disablePrime,

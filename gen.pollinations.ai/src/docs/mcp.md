@@ -74,6 +74,23 @@ claude mcp add --transport http pollinations \
 Run `/mcp` in Claude Code to verify the connection. Replace the name and URL
 with another endpoint from the table to use FFmpeg or Exa Search.
 
+#### Automated install with the polli CLI
+
+`polli mcp install` configures supported clients from the live catalog in one
+step — Claude Code, Codex, VS Code/Copilot, Cursor, OpenCode, Gemini CLI,
+Copilot CLI, Windsurf, Cline, Amp, Kiro, Zed, and Claude Desktop (the Warp app
+auto-discovers `~/.claude.json`, so it is covered by the Claude Code entry):
+
+```bash
+polli mcp install             # detected clients, all catalog servers
+polli mcp install codex --servers pollinations
+polli mcp status              # which clients carry Pollinations servers
+polli mcp remove              # remove entries + delete the per-client keys
+```
+
+Each client gets a dedicated child key (`polli-mcp-<client>`) so access can be
+revoked per client, and uninstall touches only Pollinations-owned entries.
+
 ### Pollinations MCP
 
 The Pollinations server exposes the main Pollinations API as agent-friendly

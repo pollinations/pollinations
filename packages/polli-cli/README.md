@@ -156,7 +156,32 @@ and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`). OpenCode uses
 its official plugin; OpenClaw uses `openclaw.json`, while Pi and Prime Agent use
 their native `models.json` provider support.
 
+OpenClaw and Prime Agent also register the hosted Pollinations MCP server in
+their own config (OpenClaw via its `mcp.servers` registry, Prime via
+`bearerTokenEnvVar`); use `--no-mcp` to skip. Pi has no MCP support by design,
+and Bloom has no documented MCP mechanism yet.
+
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
+
+## MCP servers
+
+Install the live MCP catalog into your coding agents — one command, one
+dedicated key per client:
+
+```bash
+polli mcp install                # every detected client
+polli mcp install codex          # a single client
+polli mcp install --servers pollinations,ffmpeg
+polli mcp status
+polli mcp remove                 # strips Pollinations entries + deletes their keys
+```
+
+`install` reads the server catalog from `gen.pollinations.ai/mcp` at runtime,
+mints a child API key (`polli-mcp-<client>`) for each client, and writes the
+client's own config format. Codex points at an env var (`POLLINATIONS_MCP_KEY`)
+and VS Code at a password prompt input, so no plaintext key lands in those
+configs. Claude Desktop is bridged via `mcp-remote`; every other client talks
+to the hosted HTTPS URL directly.
 
 ## Links
 

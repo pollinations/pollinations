@@ -27,6 +27,8 @@ const DEFAULT_MODEL = "moonshotai/kimi-k2.6";
 // Key is stored once in env.vars and referenced as ${VAR} from the provider,
 // matching OpenClaw's own config-level variable substitution.
 const KEY_ENV = "POLLI_OPENCLAW_API_KEY";
+const MCP_SERVER_ID = "pollinations";
+const MCP_URL = `${BASE_URL}/mcp/pollinations`;
 
 /** OPENCLAW_STATE_DIR wins; otherwise OPENCLAW_HOME relocates the home. */
 export const openclawStateDir = (ctx: HarnessContext) => {
@@ -89,6 +91,7 @@ interface OpenClawConfig {
     agents?: {
         defaults?: { model?: { primary?: unknown } };
     };
+    mcp?: { servers?: Record<string, unknown> };
     [key: string]: unknown;
 }
 
@@ -102,6 +105,7 @@ const writeConfig = (
     models: HarnessModel[],
     apiKey: string,
     model: string,
+    mcp: boolean,
 ) => {
     const doc = loadJson(configPath(ctx)) as OpenClawConfig;
 
@@ -125,6 +129,9 @@ const writeConfig = (
     agents.defaults = defaults;
     doc.agents = agents;
 
+    if (mcp) writeMcpEntry(doc);
+    else stripMcpEntry(doc);
+
     saveJson(configPath(ctx), doc);
 
     if (readTextIfExists(skillFile(ctx)) === null) {
@@ -143,7 +150,6 @@ const stripConfig = (ctx: HarnessContext): boolean => {
         saveJson(configPath(ctx), doc);
         changed = true;
     }
-
     const providers = asRecord(doc.models?.providers);
     if (PROVIDER in providers) {
         delete providers[PROVIDER];
@@ -161,12 +167,46 @@ const stripConfig = (ctx: HarnessContext): boolean => {
         changed = true;
     }
 
+    changed = stripMcpEntry(doc) || changed;
+    if (changed) saveJson(configPath(ctx), doc);
+
     if (readTextIfExists(skillFile(ctx)) === polliSkill) {
         removeIfExists(skillFile(ctx));
         changed = true;
     }
     return changed;
 };
+
+/** The OpenClaw MCP registry entry we own: named pollinations, our URL. */
+const mcpEntry = (doc: OpenClawConfig): Record<string, unknown> | null => {
+    const servers = asRecord(asRecord(doc.mcp).servers);
+    const entry = asRecord(servers[MCP_SERVER_ID]);
+    if (entry.url !== MCP_URL) return null;
+    return entry;
+};
+
+const writeMcpEntry = (doc: OpenClawConfig) => {
+    const mcp = asRecord(doc.mcp);
+    const servers = asRecord(mcp.servers);
+    servers[MCP_SERVER_ID] = {
+        url: MCP_URL,
+        transport: "streamable-http",
+        headers: { Authorization: `Bearer \${${KEY_ENV}}` },
+        enabled: true,
+    };
+    mcp.servers = servers;
+    doc.mcp = mcp;
+};
+
+const stripMcpEntry = (doc: OpenClawConfig): boolean => {
+    if (!mcpEntry(doc)) return false;
+    const servers = asRecord(asRecord(doc.mcp).servers);
+    delete servers[MCP_SERVER_ID];
+    if (Object.keys(servers).length === 0) delete asRecord(doc.mcp).servers;
+    return true;
+};
+
+const hasMcpEntry = (doc: OpenClawConfig): boolean => mcpEntry(doc) !== null;
 
 const result = (ctx: HarnessContext): HarnessResult => {
     const doc = loadJson(configPath(ctx)) as OpenClawConfig;
@@ -187,6 +227,7 @@ const result = (ctx: HarnessContext): HarnessResult => {
             typeof primary === "string" && primary.startsWith(`${PROVIDER}/`)
                 ? primary.slice(`${PROVIDER}/`.length)
                 : undefined,
+        mcp: hasMcpEntry(doc),
         files: files(ctx),
     };
 };
@@ -196,9 +237,10 @@ export const configureOpenClaw = (
     models: HarnessModel[],
     apiKey: string,
     model: string,
+    mcp: boolean = true,
 ): HarnessResult => {
     applyWithSnapshot(ctx, ID, files(ctx), () =>
-        writeConfig(ctx, models, apiKey, model),
+        writeConfig(ctx, models, apiKey, model, mcp),
     );
     return result(ctx);
 };
@@ -244,7 +286,13 @@ export const openclaw: HarnessAdapter = {
             { id: ID, label: LABEL, existingKey: readKey(ctx) },
             { browser: options.browser },
         );
-        return configureOpenClaw(ctx, models, apiKey, model);
+        return configureOpenClaw(
+            ctx,
+            models,
+            apiKey,
+            model,
+            options.mcp !== false,
+        );
     },
 
     off: disableOpenClaw,

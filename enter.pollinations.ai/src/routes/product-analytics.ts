@@ -3,14 +3,13 @@ import { getPublicOrigin } from "@shared/public-origin.ts";
 import { Hono } from "hono";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
-import { captureProductEvent, optedOut } from "../utils/product-analytics.ts";
+import { captureProductEvent } from "../utils/product-analytics.ts";
 
 // Same-origin, bodyless beacon. Signed-out views are recorded with an empty
 // user id. The browser sends no identifier, so every view is its own event.
 export const productAnalyticsRoutes = new Hono<Env>().post(
     "/page-view",
     async (c) => {
-        if (optedOut(c.req.raw.headers)) return c.body(null, 204);
         if (c.req.header("Origin") !== getPublicOrigin(c))
             return c.body(null, 403);
         if (c.req.raw.body) return c.body(null, 415);

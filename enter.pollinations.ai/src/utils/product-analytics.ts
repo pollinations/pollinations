@@ -72,15 +72,7 @@ export async function captureProductEvent(
     }
 }
 
-/** A browser asking not to be measured, on any request that carries headers. */
-export function optedOut(headers?: Headers | null): boolean {
-    return headers?.get("DNT") === "1" || headers?.get("Sec-GPC") === "1";
-}
-
-/**
- * Fire-and-forget capture from a request handler. Browsers that ask not to be
- * measured are skipped here too, not just on the page-view beacon.
- */
+/** Fire-and-forget capture from a request handler. */
 export function captureFromRequest(
     // biome-ignore lint/suspicious/noExplicitAny: every route shape may capture
     c: Context<any>,
@@ -88,7 +80,6 @@ export function captureFromRequest(
     userId: string,
     properties?: Parameters<typeof captureProductEvent>[3],
 ): void {
-    if (optedOut(c.req.raw.headers)) return;
     c.executionCtx.waitUntil(
         captureProductEvent(c.env, event, userId, properties),
     );

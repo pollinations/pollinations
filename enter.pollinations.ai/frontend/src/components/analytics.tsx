@@ -39,14 +39,7 @@ export function Analytics() {
     const lastPage = useRef("");
     const userId = session?.user.id;
     useEffect(() => {
-        if (
-            isPending ||
-            error ||
-            navigator.doNotTrack === "1" ||
-            (navigator as { globalPrivacyControl?: boolean })
-                .globalPrivacyControl
-        )
-            return;
+        if (isPending || error) return;
         const params = new URLSearchParams(location.search);
         const view = productPageViewSchema.safeParse({
             page,

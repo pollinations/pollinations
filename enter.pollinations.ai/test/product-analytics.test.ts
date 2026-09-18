@@ -75,7 +75,6 @@ test("browser cannot submit server events, cross-origin traffic, or request bodi
     ).toBe(403);
     expect((await pageView(VIEW, "", {}, "x".repeat(2000))).status).toBe(415);
     expect((await pageView({ page: "x".repeat(2000) })).status).toBe(400);
-    expect((await pageView(VIEW, "", { DNT: "1" })).status).toBe(204);
 });
 
 test("signed-out views are recorded without a user and pass attribution through", async ({
@@ -221,16 +220,4 @@ test("signing in records the request to GitHub and the resulting session", async
     expect(signIn[0]?.user_id).toBe("");
     expect(signIn[1]?.user_id).toEqual(expect.any(String));
     expect(signIn[1]?.user_id).not.toBe("");
-});
-
-test("server events skip browsers that opted out", async ({ mocks }) => {
-    await mocks.enable("tinybird");
-    const issued = await SELF.fetch("http://localhost:3000/api/device/code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Sec-GPC": "1" },
-        body: JSON.stringify({ client_id: "test-cli" }),
-    });
-    expect(issued.status).toBe(200);
-    await mocks.clear();
-    expect(mocks.tinybird.state.productEvents).toEqual([]);
 });

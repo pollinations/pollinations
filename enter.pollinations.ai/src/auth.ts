@@ -32,6 +32,7 @@ import { admin, openAPI } from "better-auth/plugins";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { discordConfigFromEnv } from "./services/discord.ts";
+import { captureProductEvent, optedOut } from "./utils/product-analytics.ts";
 
 const DELETE_ACCOUNT_FRESH_SESSION_MS = 10 * 60 * 1000;
 const ADMIN_USER_IDS = ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"];
@@ -104,6 +105,17 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         disableDefaultReference: true,
     });
 
+    // Every auth-stage capture goes through here: a browser that opted out
+    // must be skipped at all four sites, not just the ones that remember.
+    const captureAuthStage = (
+        headers: Headers | null | undefined,
+        event: Parameters<typeof captureProductEvent>[1],
+        userId: string,
+    ) => {
+        if (optedOut(headers)) return;
+        ctx?.waitUntil(captureProductEvent(env, event, userId));
+    };
+
     return betterAuth({
         // Always anchor auth (callbacks, cookies, redirects) to the public
         // Pollinations hostname, never the Myceli upstream. The proxy
@@ -119,14 +131,17 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             // scales freshAge by 1e3 twice (update-user.mjs), so the threshold
             // lands ~1000x too high and never fires. Enforce it here instead.
             before: createAuthMiddleware(async (authContext) => {
-                if (
-                    authContext.path === "/sign-in/social" &&
-                    authContext.body.provider === "discord"
-                ) {
-                    throw new APIError("BAD_REQUEST", {
-                        message:
-                            "Discord can only be connected to an existing Pollinations account.",
-                    });
+                if (authContext.path === "/sign-in/social") {
+                    if (authContext.body.provider === "discord")
+                        throw new APIError("BAD_REQUEST", {
+                            message:
+                                "Discord can only be connected to an existing Pollinations account.",
+                        });
+                    captureAuthStage(
+                        authContext.headers,
+                        "sign_in_started",
+                        "",
+                    );
                 }
                 if (
                     authContext.path === "/link-social" &&
@@ -136,6 +151,12 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                     if (session && (await hasDiscordAccount(session.user.id))) {
                         throw discordAccountAlreadyConnected();
                     }
+                    if (session)
+                        captureAuthStage(
+                            authContext.headers,
+                            "link_started",
+                            session.user.id,
+                        );
                 }
                 if (authContext.path !== "/delete-user") return;
 
@@ -172,7 +193,13 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                             throw discordAccountAlreadyConnected();
                         }
                     },
-                    after: async (account) => {
+                    after: async (account, accountCtx) => {
+                        if (account.providerId === "discord")
+                            captureAuthStage(
+                                accountCtx?.headers,
+                                "link_completed",
+                                account.userId,
+                            );
                         if (account.providerId !== "github") return;
                         // These authorization fields stay read-only in Better
                         // Auth, so persist the verified provider profile here.
@@ -324,8 +351,12 @@ function onAfterSessionCreate(
 ) {
     return async (
         session: { userId: string },
-        _ctx?: GenericEndpointContext | null,
+        ctx?: GenericEndpointContext | null,
     ) => {
+        if (!optedOut(ctx?.headers))
+            executionCtx?.waitUntil(
+                captureProductEvent(env, "sign_in_completed", session.userId),
+            );
         executionCtx?.waitUntil(
             (async () => {
                 try {

@@ -600,6 +600,10 @@ const models: ModelDefinition[] = [
         transform: createReasoningEffortTransform("toggle"),
     },
     {
+        name: "tencent/hy4-preview",
+        config: portkeyConfig["tencent/hy4-preview"],
+    },
+    {
         name: "thinkingmachines/inkling-small",
         config: portkeyConfig["thinkingmachines/inkling-small"],
     },
@@ -691,6 +695,14 @@ const models: ModelDefinition[] = [
         name: "minimax/minimax-m2.7:deepinfra",
         config: portkeyConfig["MiniMaxAI/MiniMax-M2.7"],
         transform: mandatoryReasoning,
+    },
+    {
+        name: "tencent/hy3",
+        config: portkeyConfig["tencent/hy3"],
+    },
+    {
+        name: "tencent/hy3:openrouter:phala",
+        config: portkeyConfig["hy3-openrouter-phala"],
     },
     {
         name: "minimax/minimax-m3",

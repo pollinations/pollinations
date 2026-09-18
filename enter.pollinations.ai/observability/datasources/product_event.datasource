@@ -1,0 +1,33 @@
+TOKEN tinybird_ingest APPEND
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+    Best-effort product analytics: page views (user_id '' when signed out),
+    checkout starts, auto top-up toggles and pre-login auth-flow stages
+    (sign_in_*, device_*, authorize_granted, link_*). Server-authenticated
+    user IDs join directly to d1_user (signups) and stripe_event (fulfilled
+    payments). flow_id is only the device_code row id, never a code, token or
+    email: the browser sends no identifier at all. client_id is the public app
+    key. Browser events carry where the visit came from: referrer_host
+    (hostname only) and utm_* from the landing URL. No backfill; rows expire
+    after 24 months.
+
+SCHEMA >
+    `timestamp` DateTime64(3) `json:$.timestamp`,
+    `event` LowCardinality(String) `json:$.event`,
+    `user_id` String `json:$.user_id`,
+    `environment` LowCardinality(String) `json:$.environment`,
+    `page` LowCardinality(String) `json:$.page` DEFAULT '',
+    `pack_key` LowCardinality(String) `json:$.pack_key` DEFAULT '',
+    `flow_id` String `json:$.flow_id` DEFAULT '',
+    `client_id` String `json:$.client_id` DEFAULT '',
+    `referrer_host` String `json:$.referrer_host` DEFAULT '',
+    `utm_source` String `json:$.utm_source` DEFAULT '',
+    `utm_medium` String `json:$.utm_medium` DEFAULT '',
+    `utm_campaign` String `json:$.utm_campaign` DEFAULT '',
+    `amount_usd` Float64 `json:$.amount_usd` DEFAULT 0
+
+ENGINE "MergeTree"
+ENGINE_SORTING_KEY "environment, timestamp, event, user_id"
+ENGINE_PRIMARY_KEY "environment, timestamp"
+ENGINE_TTL "toDateTime(timestamp) + toIntervalMonth(24)"

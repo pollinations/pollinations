@@ -232,6 +232,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         "minimax/minimax-m2.7",
         "deepinfra/fp8",
     ),
+    "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
+    "hy3-openrouter-phala": createPinnedOpenRouterConfig(
+        "tencent/hy3",
+        "phala",
+    ),
     // Reasoning models: explicit max_tokens default below. Without one, the
     // upstream provider's own default applies (Chutes AI defaults to 1024),
     // which reasoning models can burn entirely on their internal thinking
@@ -325,6 +330,23 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: {
                 provider: {
                     only: ["Poolside"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
+    // Reasoning defaults to "high" and burns ~1,300 tokens on even a
+    // trivial schema, so a caller relying on the upstream default (no
+    // explicit max_tokens) can get finish_reason:"length", content:null
+    // under a normal budget. Matches this route's own max_completion_tokens
+    // cap. Callers who pass an explicit max_tokens still hit the same gap —
+    // resolveModelConfig drops this default the moment one is supplied.
+    "tencent/hy4-preview": () =>
+        createOpenRouterModelConfig({
+            model: "tencent/hy4-preview",
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: ["tencent/fp8"],
                     allow_fallbacks: false,
                 },
             },

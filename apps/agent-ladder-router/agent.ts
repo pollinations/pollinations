@@ -37,10 +37,17 @@ function normalize(raw: RawEntry): CatalogModel {
 
 function priceOf(m: CatalogModel): number {
 	const p = m.pricing ?? {};
-	const prompt = Number(p.promptTextTokens ?? NaN);
-	const completion = Number(p.completionTextTokens ?? NaN);
-	const sum = (Number.isFinite(prompt) ? prompt : 0) + (Number.isFinite(completion) ? completion : 0);
-	return sum > 0 ? sum : Number.POSITIVE_INFINITY;
+	let sum = 0;
+	let found = false;
+	for (const [k, v] of Object.entries(p)) {
+		if (k === "currency") continue;
+		const n = Number(v);
+		if (Number.isFinite(n)) {
+			sum += n;
+			found = true;
+		}
+	}
+	return found && sum > 0 ? sum : Number.POSITIVE_INFINITY;
 }
 
 function healthRank(m: CatalogModel): number {

@@ -350,6 +350,22 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    // Azure primary, OpenAI second: both OpenRouter tags bill the same
+    // $0.15/$0.60/$0.075 per-M rate. The base slug "azure" also matches
+    // azure/swedencentral (bills 10% higher), so it is excluded explicitly.
+    // The azure tag does not advertise tools, so tool requests are served by
+    // the openai tag at the same rate.
+    "openai/gpt-4o-mini": () =>
+        createOpenRouterModelConfig({
+            model: "openai/gpt-4o-mini",
+            defaultOptions: {
+                provider: {
+                    order: ["azure", "openai"],
+                    ignore: ["azure/swedencentral"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
 
     // -- DeepInfra (NVIDIA) ---------------------------------------------------
     "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B": () =>
@@ -398,9 +414,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "anthropic/claude-opus-4.7",
         "google-vertex/global",
     ),
-    "llama-scout-openrouter-vertex": createPinnedOpenRouterConfig(
+    "llama-scout-openrouter-novita": createPinnedOpenRouterConfig(
         "meta-llama/llama-4-scout",
-        "google-vertex/us-east5",
+        "novita/bf16",
+        16384,
     ),
     "grok-openrouter-xai-zdr": createPinnedOpenRouterConfig(
         "x-ai/grok-4.20",
@@ -433,6 +450,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "gemini-openrouter-ai-studio-priority": createPinnedOpenRouterGeminiConfig(
         "gemini-3.7-flash",
         "google-ai-studio/priority",
+    ),
+    "gemini-fast-openrouter-vertex-global": createPinnedOpenRouterGeminiConfig(
+        "gemini-2.5-flash-lite",
+        "google-vertex",
     ),
     "gemini-fast-openrouter-ai-studio": createPinnedOpenRouterGeminiConfig(
         "gemini-2.5-flash-lite",
@@ -691,6 +712,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
 
     // -- Vercel AI Gateway (Meta) --------------------------------------------
+    "meta/llama-4-scout": () =>
+        createVercelAIGatewayModelConfig({
+            model: "meta/llama-4-scout",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: {
+                max_tokens: 16384,
+                providerOptions: { gateway: { only: ["deepinfra"] } },
+            },
+        }),
     "meta/muse-spark-1.2": () =>
         createVercelAIGatewayModelConfig({
             model: "meta/muse-spark-1.2",
@@ -708,13 +738,6 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Llama-4-Maverick-17B-128E-Instruct-FP8/chat/completions?api-version=2024-12-01-preview",
             { requiresBase64ImageUrls: true },
         ),
-    // Llama 4 Scout is Marketplace SaaS pass-through on Azure (not
-    // credit-eligible). OpenRouter is the cheapest provider with the same SKU.
-    "Llama-4-Scout-17B-16E-Instruct": createPinnedOpenRouterConfig(
-        "meta-llama/llama-4-scout",
-        "deepinfra/fp8",
-    ),
-
     // -- OpenRouter (Qwen Coder, Qwen VL) -------------------------------------
     // Exact provider pins keep OpenRouter routing and billing deterministic.
     "qwen/qwen3-coder-next": createPinnedOpenRouterConfig(

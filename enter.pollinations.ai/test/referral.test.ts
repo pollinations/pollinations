@@ -8,6 +8,7 @@ for (const ref of [
     "image",
     "agent_low_balance_topup",
     "agent_low_balance_quests",
+    "agent_key_budget",
 ]) {
     test(`tracks the ${ref} referral`, async ({ mocks }) => {
         await mocks.enable("tinybird");

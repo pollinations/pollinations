@@ -127,6 +127,9 @@ jobs:
                 });
               }
 
+              if (body.model === "pollinations-router/polli") {
+                body.metadata = { ...body.metadata, model: "openai/gpt-6-astra" };
+              }
               let r;
               try {
                 r = await fetch(UPSTREAM, {

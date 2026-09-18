@@ -1,15 +1,21 @@
+import { env } from "cloudflare:test";
+import { validator } from "@shared/middleware/validator.ts";
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import {
     type CreateResponseRequest,
     CreateResponseRequestSchema,
     CreateResponseResponseSchema,
     ResponseUsageSchema,
 } from "@shared/schemas/openai.ts";
+import { Hono } from "hono";
 import { describe, expect, it, vi } from "vitest";
+import type { Env } from "@/env.ts";
 import {
     callDirectResponses,
     type DirectResponsesTarget,
     resolveDirectResponsesTarget,
 } from "@/text/responses/client.ts";
+import { generateCreateResponse } from "@/text/responses/handler.ts";
 import {
     buildDirectResponsesRequestBody,
     validateDirectResponsesRequest,
@@ -74,6 +80,33 @@ describe("direct Responses transport", () => {
             status: 502,
             upstreamStatus: 429,
             responseBody: body,
+        });
+    });
+
+    it("keeps a managed agent's caller-facing status instead of remapping it", async () => {
+        const directRequest = request();
+        const body = JSON.stringify({
+            error: {
+                message:
+                    "Model 'openai/gpt-5-nano' is not allowed for this API key",
+                code: "agent_error",
+            },
+        });
+        const fetcher = vi.fn(async () => new Response(body, { status: 403 }));
+        await expect(
+            callDirectResponses(
+                directRequest,
+                {
+                    ...authorizedTarget(directRequest),
+                    callerFacingStatus: true,
+                },
+                fetcher,
+            ),
+        ).rejects.toMatchObject({
+            status: 403,
+            upstreamStatus: 403,
+            message:
+                "Model 'openai/gpt-5-nano' is not allowed for this API key",
         });
     });
 
@@ -387,5 +420,59 @@ describe("direct Responses transport", () => {
                 completionTextTokens: 1,
             }),
         });
+    });
+});
+
+it.each([
+    [
+        {
+            tools: [
+                {
+                    type: "function",
+                    name: "weather",
+                    parameters: { type: "object", properties: {} },
+                },
+            ],
+        },
+        "tool calling",
+    ],
+    [{ text: { format: { type: "json_object" } } }, "structured output"],
+    [{ max_output_tokens: 16385 }, "16384 output tokens"],
+])("Scout capability errors use the Responses invalid-request envelope: %j", async (options, message) => {
+    const app = new Hono<Env>();
+    app.use("*", async (c, next) => {
+        c.set("model", {
+            requested: "llama-scout",
+            resolved: "meta/llama-4-scout",
+            definition: TEXT_SERVICES["meta/llama-4-scout"],
+        });
+        await next();
+    });
+    app.post(
+        "/v1/responses",
+        validator("json", CreateResponseRequestSchema),
+        generateCreateResponse,
+    );
+    const response = await app.request(
+        "/v1/responses",
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model: "llama-scout",
+                input: "Hello",
+                safe: false,
+                ...options,
+            }),
+        },
+        env,
+    );
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+        error: {
+            type: "invalid_request_error",
+            code: "unsupported_parameter",
+            message: expect.stringContaining(message),
+        },
     });
 });

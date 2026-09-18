@@ -226,6 +226,7 @@ describe("genericOpenAIClient", () => {
                 modelDef: { name: "openai/gpt-5-nano" },
                 requestedModel: "openai/gpt-5-nano",
                 userApiKey: "sk_should_not_leak",
+                key: "body_key_should_not_leak",
                 portkeyGatewayUrl: "https://portkey.test",
                 additionalHeaders: { Authorization: "Bearer secret" },
                 temperature: 1,
@@ -247,6 +248,7 @@ describe("genericOpenAIClient", () => {
         expect(upstreamBody).not.toHaveProperty("portkeyGatewayUrl");
         expect(upstreamBody).not.toHaveProperty("requestedModel");
         expect(upstreamBody).not.toHaveProperty("userApiKey");
+        expect(upstreamBody).not.toHaveProperty("key");
         expect(completion.upstreamRequestUrl?.href).toBe(
             "https://portkey.test/chat",
         );

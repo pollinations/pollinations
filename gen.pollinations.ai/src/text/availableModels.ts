@@ -96,6 +96,10 @@ const models: ModelDefinition[] = [
         transform: omitOpenAISampling,
     },
     {
+        name: "openai/gpt-4o-mini",
+        config: portkeyConfig["openai/gpt-4o-mini"],
+    },
+    {
         name: "openai/gpt-oss-20b",
         config: portkeyConfig["gpt-oss-20b"],
     },
@@ -488,6 +492,14 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "google/gemini-2.5-flash-lite:openrouter:vertex-global",
+        config: portkeyConfig["gemini-fast-openrouter-vertex-global"],
+        transform: pipe(
+            adaptGoogleSearchToolForOpenRouter,
+            createGeminiThinkingTransform("v2.5"),
+        ),
+    },
+    {
         name: "google/gemini-2.5-flash-lite:openrouter:ai-studio",
         config: portkeyConfig["gemini-fast-openrouter-ai-studio"],
         transform: pipe(
@@ -714,13 +726,13 @@ const models: ModelDefinition[] = [
     },
     {
         name: "meta/llama-4-scout",
-        config: portkeyConfig["Llama-4-Scout-17B-16E-Instruct"],
+        config: portkeyConfig["meta/llama-4-scout"],
         // No reasoning mode.
         transform: stripReasoning,
     },
     {
-        name: "meta/llama-4-scout:openrouter:vertex-us-east5",
-        config: portkeyConfig["llama-scout-openrouter-vertex"],
+        name: "meta/llama-4-scout:openrouter:novita-bf16",
+        config: portkeyConfig["llama-scout-openrouter-novita"],
         transform: stripReasoning,
     },
     {

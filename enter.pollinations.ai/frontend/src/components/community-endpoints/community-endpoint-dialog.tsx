@@ -5,7 +5,8 @@ import {
     CheckIcon,
     ChevronIcon,
     Dialog,
-    DialogTitle,
+    DialogFooter,
+    DialogHeader,
     Dropdown,
     DropdownItem,
     EditableCombobox,
@@ -395,16 +396,16 @@ export function CommunityEndpointDialog({
             triggerAsChild
             contentClassName="flex max-h-[calc(100dvh-2rem)] flex-col"
         >
-            <div className="shrink-0 p-6 pb-4">
-                <DialogTitle className="text-lg font-semibold">
-                    {isEndpointAgent
+            <DialogHeader
+                title={
+                    isEndpointAgent
                         ? "Edit Endpoint Agent"
                         : isEdit
                           ? "Edit Model"
-                          : "Add Model"}
-                </DialogTitle>
-                <p className="mt-1 text-sm text-theme-text-muted">
-                    {isEndpointAgent ? (
+                          : "Add Model"
+                }
+                description={
+                    isEndpointAgent ? (
                         "Update the externally hosted agent listing and its endpoint URL."
                     ) : (
                         <>
@@ -414,9 +415,9 @@ export function CommunityEndpointDialog({
                             </code>{" "}
                             model.
                         </>
-                    )}
-                </p>
-            </div>
+                    )
+                }
+            />
 
             <form
                 onSubmit={handleSubmit}
@@ -889,7 +890,7 @@ export function CommunityEndpointDialog({
                     )}
                 </ScrollArea>
 
-                <div className="flex shrink-0 items-center justify-end gap-2 p-6 pt-4">
+                <DialogFooter>
                     {testableModelId && (
                         <div className="mr-auto">
                             <OpenWebUiLink
@@ -920,7 +921,7 @@ export function CommunityEndpointDialog({
                                 ? "Publish Model"
                                 : "Add Private Model"}
                     </Button>
-                </div>
+                </DialogFooter>
             </form>
         </Dialog>
     );

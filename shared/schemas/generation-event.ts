@@ -26,6 +26,8 @@ export type TinybirdEvent = {
     startTime: Date;
     endTime?: Date;
     responseTime?: number;
+    /** Duration of this upstream attempt, excluding earlier attempts. */
+    attemptResponseTime?: number;
     responseStatus?: number;
     environment?: string;
     eventType: TinybirdEventType;

@@ -12,6 +12,7 @@
 @import "./fonts.css";
 @import "./tokens.css";
 @import "../modules/wallet/styles.css";
+@import "./theme.css";
 
 .polli-scrollbar-subtle {
     scrollbar-width: thin;

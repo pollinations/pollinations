@@ -116,6 +116,20 @@ export const ModelInfoSchema = z.object({
             "Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`.",
         ),
     tools: z.boolean().optional(),
+    supports_structured_output: z
+        .boolean()
+        .optional()
+        .describe(
+            "Whether JSON and JSON-schema output are supported; omitted when unverified.",
+        ),
+    max_completion_tokens: z
+        .number()
+        .int()
+        .positive()
+        .optional()
+        .describe(
+            "Maximum requested output tokens, including max_tokens, max_completion_tokens and max_output_tokens.",
+        ),
     reasoning: z.boolean().optional(),
     context_length: z.number().optional(),
     voices: z.array(z.string()).optional(),
@@ -235,6 +249,8 @@ export function modelInfoFromDefinition(
         capabilities: getCapabilities(service),
         supported_parameters: service.supportedParameters,
         tools: service.tools,
+        supports_structured_output: service.supportsStructuredOutput,
+        max_completion_tokens: service.maxCompletionTokens,
         reasoning: service.reasoning,
         context_length: service.contextLength,
         voices: service.voices,

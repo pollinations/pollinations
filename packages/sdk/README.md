@@ -156,9 +156,8 @@ console.log(`Logged in as ${me.name} (${me.preferred_username})`);
 
 ### React auth provider
 
-React apps can use the `@pollinations/sdk/react` subpath for shared login
-state. The provider handles the OAuth authorization-code + PKCE flow and stores
-the resulting delegated API token; account data is loaded by opt-in hooks.
+`PolliProvider` handles login with OAuth + PKCE and saves the user's API key.
+Use account hooks to fetch profile, balance or usage data.
 
 ```tsx
 import {
@@ -191,17 +190,29 @@ export function App() {
 }
 ```
 
-Account hooks are intentionally separate from the provider: `useAccountProfile`,
-`useAccountBalance`, `useAccountKey`, and `useAccountKeyUsage` return the raw
-SDK response shapes plus `{ isLoading, error, refresh }`.
+`useAccountProfile`, `useAccountBalance`, `useAccountKey`, and `useAccountKeyUsage`
+return `{ data, isLoading, error, refresh }`.
 
-#### SSR / Next.js App Router / RSC
+#### Connection and errors
 
-`PolliProvider` is **SSR-safe** but is a **client component** (it uses `useState` / `useEffect` and reads from `window.localStorage`):
+- Saved keys load without a network request. `isHydrated` means startup is done;
+  `isLoggedIn` means a key is present, not that the server has validated it.
+- Account hooks clear the connection on `401`. Other failures appear in the
+  hook's `error`; call `refresh()` to try again.
+- `useAuth().error` reports storage and login failures. You can call `login()`
+  again after a failed attempt. A key that could not be saved works until reload.
+- `logout()` clears the local connection without revoking the key. If deleting
+  the saved key fails, `error` reports it and the key may return after a reload.
 
-- **First paint contract**: state starts `null` on both server and client, so initial HTML always renders as logged-out. No hydration mismatch.
-- **Hydration**: after mount, the provider reads the session token from storage (default `localStorage`) or exchanges an OAuth callback code using its saved PKCE verifier. The original query/hash route is restored after login. No account data is fetched until an account hook is mounted.
-- **Next.js App Router**: mount the provider inside a client component. Either put it in a file with `"use client"` at the top, or wrap a small client subtree from a server component:
+#### Server rendering and Next.js
+
+The first render is signed out on both server and browser. After mounting,
+the provider loads the saved key or completes the OAuth callback. Login restores
+the original query string and hash. Storage defaults to `localStorage`; you can
+pass `sessionStorage` or a custom synchronous `StorageAdapter`.
+
+In Next.js, put the provider and components that use auth or account hooks
+inside a `"use client"` component:
 
   ```tsx
   // app/providers.tsx
@@ -217,9 +228,6 @@ SDK response shapes plus `{ isLoading, error, refresh }`.
     return <html><body><Providers>{children}</Providers></body></html>;
   }
   ```
-
-- **React Server Components**: `useAuth`, `useAuthState`, `useAuthActions`, and account hooks cannot be called from server components. Any component that reads auth state must be a client component.
-- **Custom storage**: pass a sync `StorageAdapter` if the default `localStorage` doesn't fit. Async backends (IndexedDB, RN AsyncStorage) are not supported — see the storage section below.
 
 ### Managing API keys
 

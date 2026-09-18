@@ -51,7 +51,7 @@ function readConfig(path: string): Record<string, unknown> {
 }
 
 export function agentBody(
-    configPath: string,
+    configPath: string | undefined,
     opts: Record<string, unknown>,
 ): Record<string, unknown> {
     if (
@@ -63,7 +63,7 @@ export function agentBody(
         process.exit(1);
     }
     return {
-        ...readConfig(configPath),
+        ...(configPath && readConfig(configPath)),
         ...(opts.name !== undefined && { name: opts.name }),
         ...(opts.title !== undefined && { title: opts.title }),
         ...(opts.description !== undefined && {
@@ -177,11 +177,11 @@ const create = new Command("create")
     });
 
 const update = new Command("update")
-    .description("Update an agent")
+    .description("Update an agent; fields you leave out keep their values")
     .argument("<id>", "Agent id")
-    .requiredOption(
+    .option(
         "--config <file>",
-        "JSON agent config file sent directly to the API",
+        'JSON with only the fields to change, e.g. {"systemPrompt": "..."}',
     )
     .option("--name <name>", "Callable model name")
     .option("--title <title>", "Display title shown in the catalog")

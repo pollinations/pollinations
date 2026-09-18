@@ -11,3 +11,4 @@ Follow the Git workflow, production deployment, and secret-safety rules in root 
 - Check the current PR head, required checks, conflicts, and deployment prerequisites. Merge through the PR when authorized and checks pass; resolve or report blockers within that workflow.
 - Follow the resulting GitHub Actions deployments. When path filters do not trigger the required production workflow, dispatch it from `production` as specified in `AGENTS.md`.
 - Verify the deployed revision, required bindings, and affected behavior; report any incomplete verification.
+- The production deploy re-pushes unchanged, already-approved secrets; that is not a rotation and needs no new approval. A new or changed value does. Per-Worker secret checks: `enter-services` skill.

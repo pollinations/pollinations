@@ -313,6 +313,40 @@ export const CHAT_PARAMETERS = {
         ...OPENROUTER_REASONING,
         "reasoning_effort",
     ],
+    // Novita route (2026-09-18).
+    openRouterHy3: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "top_k",
+        ...PENALTIES,
+        "repetition_penalty",
+        "stop",
+        "seed",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
+    // Phala fallback route for Hy3 (2026-09-18): distinct provider from
+    // Novita primary, adds min_p over Novita's parameter surface.
+    openRouterHy3Phala: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "top_k",
+        "min_p",
+        ...PENALTIES,
+        "repetition_penalty",
+        "stop",
+        "seed",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
     // OpenRouter azure/openai tags (2026-09-12); azure/swedencentral is
     // excluded via provider.ignore so pricing stays fixed. Both tags report
     // max_completion_tokens (not max_tokens) as supported.

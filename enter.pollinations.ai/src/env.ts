@@ -4,7 +4,6 @@ import type { LoggerVariables } from "./middleware/logger.ts";
 
 export type Env = {
     Bindings: CloudflareBindings & {
-        TINYBIRD_ANALYTICS_ENABLED?: string;
         CODE_AGENT_DEPLOY_API_TOKEN?: string;
         CODE_AGENT_DISPATCH_NAMESPACE?: string;
         CODE_AGENT_CONTEXT?: {

@@ -21,14 +21,12 @@ export type ProductEvent =
     | "link_completed";
 
 // Signups and fulfilled payments are not recorded here: join d1_user and
-// stripe_event instead. Deploy the datasource and verify the existing ingest
-// token's APPEND scope before enabling TINYBIRD_ANALYTICS_ENABLED and
-// VITE_TINYBIRD_ANALYTICS_ENABLED.
+// stripe_event instead.
 export async function captureProductEvent(
     env: Pick<
         CloudflareBindings,
         "ENVIRONMENT" | "TINYBIRD_INGEST_URL" | "TINYBIRD_INGEST_TOKEN"
-    > & { TINYBIRD_ANALYTICS_ENABLED?: string },
+    >,
     event: ProductEvent,
     // "" for stages that happen before a user exists.
     userId: string,
@@ -44,7 +42,6 @@ export async function captureProductEvent(
         amount_usd?: number;
     } = {},
 ): Promise<void> {
-    if (env.TINYBIRD_ANALYTICS_ENABLED !== "true") return;
     try {
         const response = await fetch(
             getTinybirdDatasourceIngestUrl(
@@ -75,15 +72,7 @@ export async function captureProductEvent(
     }
 }
 
-/** A browser asking not to be measured, on any request that carries headers. */
-export function optedOut(headers?: Headers | null): boolean {
-    return headers?.get("DNT") === "1" || headers?.get("Sec-GPC") === "1";
-}
-
-/**
- * Fire-and-forget capture from a request handler. Browsers that ask not to be
- * measured are skipped here too, not just on the page-view beacon.
- */
+/** Fire-and-forget capture from a request handler. */
 export function captureFromRequest(
     // biome-ignore lint/suspicious/noExplicitAny: every route shape may capture
     c: Context<any>,
@@ -91,7 +80,6 @@ export function captureFromRequest(
     userId: string,
     properties?: Parameters<typeof captureProductEvent>[3],
 ): void {
-    if (optedOut(c.req.raw.headers)) return;
     c.executionCtx.waitUntil(
         captureProductEvent(c.env, event, userId, properties),
     );

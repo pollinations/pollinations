@@ -190,14 +190,13 @@ export type ModelDefinition = {
     // User-facing metadata
     title: string; // Human display name, e.g. "FLUX.1 Kontext"
     brandUrl?: string;
+    brandIconUrl?: string;
     // Backward compatibility: public descriptions currently include the title
     // prefix ("Title - description"). Prefer `title` for display names.
     description?: string;
     inputModalities?: ModelInputModality[];
     outputModalities?: ModelOutputModality[];
     tools?: boolean;
-    /** Internal route limitation: false when forced/named tool selection fails. */
-    supportsForcedToolChoice?: boolean;
     /** Controls honored by this model through `/v1/chat/completions`. */
     supportedParameters?: string[];
     reasoning?: boolean;
@@ -227,8 +226,10 @@ export type ModelDefinition = {
     durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
-    /** Internal provider-route output-token cap used for fallback compatibility. */
+    /** Output-token limit enforced on public requests and fallback routes. */
     maxCompletionTokens?: number;
+    /** False when the model rejects JSON/structured output requests. */
+    supportsStructuredOutput?: boolean;
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.

@@ -14,7 +14,7 @@ const TINYBIRD_CACHE_TTL = 1800; // 30 minutes
 // Part of the cache key, not the request. A pipe that gains a column keeps
 // serving the old shape for TINYBIRD_CACHE_TTL because a Worker redeploy does
 // not clear the cache — bump this in the same commit as the pipe change.
-const TINYBIRD_CACHE_VERSION = "5";
+const TINYBIRD_CACHE_VERSION = "6";
 
 async function fetchTinybird(
     env: Env["Bindings"],
@@ -206,6 +206,20 @@ kpiRoutes.get("/usage", async (c) => {
         "weekly_usage_stats",
         parseWeeksBack(c),
     );
+    return c.json({ data: result.data });
+});
+
+// Tinybird: Agent/MCP usage — separate from existing model KPIs.
+kpiRoutes.get("/agent-mcp-usage", async (c) => {
+    const result = await fetchTinybirdByWeek(
+        c.env,
+        "weekly_agent_mcp_usage",
+        parseWeeksBack(c),
+    );
+    // A missing pipe or failed week is unavailable, not zero activity.
+    if (result.errors.length) {
+        return c.json({ error: "Agent/MCP usage unavailable", data: [] }, 503);
+    }
     return c.json({ data: result.data });
 });
 

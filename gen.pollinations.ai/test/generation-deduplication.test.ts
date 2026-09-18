@@ -175,6 +175,8 @@ describe("generation request deduplication", () => {
                         "Content-Type": "application/json",
                         "X-Forwarded-Host": "gen.pollinations.ai",
                         "X-Original-Client-IP": "203.0.113.42",
+                        "X-Custom-Option": "caller-setting",
+                        Cookie: "session=test-cookie",
                     },
                     body: JSON.stringify({
                         model: "test",
@@ -199,9 +201,9 @@ describe("generation request deduplication", () => {
         expect(owner.headers.get("X-Cache")).toBe("HIT");
         expect(joiner.headers.get("X-Cache")).toBe("HIT");
         expect(jobs[0].request.url).toBe(
-            "https://gen.pollinations.ai/generate?model=test",
+            "https://gen.pollinations.ai/generate?model=test&key=query-secret",
         );
-        expect(jobs[0].request.headers).not.toContainEqual([
+        expect(jobs[0].request.headers).toContainEqual([
             "authorization",
             "Bearer header-secret",
         ]);
@@ -210,6 +212,8 @@ describe("generation request deduplication", () => {
                 ["cf-connecting-ip", "203.0.113.42"],
                 ["x-forwarded-host", "gen.pollinations.ai"],
                 ["x-original-client-ip", "203.0.113.42"],
+                ["x-custom-option", "caller-setting"],
+                ["cookie", "session=test-cookie"],
             ]),
         );
         expect(jobs[0].auth.apiKey).not.toHaveProperty("rawKey");
@@ -224,8 +228,71 @@ describe("generation request deduplication", () => {
                 model: "resolved-model",
                 prompt: "hello",
                 seed: 123,
+                key: "body-secret",
             }),
         );
+    });
+
+    it("preserves raw JSON and binary request bodies", async () => {
+        for (const body of [
+            new TextEncoder().encode(
+                ' { "key": "body-secret", "custom": 42 }\n',
+            ),
+            new Uint8Array([0, 255, 128, 1]),
+        ]) {
+            const cache = new Map<string, string>();
+            const generation = createApp(createAdapter(cache));
+            let job: GenerationJob | undefined;
+            const bindings = {
+                GENERATION_COORDINATOR: {
+                    getByName: () => ({
+                        startAndWait: async (captured: GenerationJob) => {
+                            job = captured;
+                            cache.set("same-request", "generated");
+                            return { status: "cached" as const };
+                        },
+                    }),
+                },
+            } as unknown as CloudflareBindings;
+            const response = await generation.app.fetch(
+                new Request("https://gen.pollinations.ai/generate", {
+                    method: "POST",
+                    body,
+                }),
+                bindings,
+                executionContext(),
+            );
+            expect(await response.text()).toBe("generated");
+            expect(job?.request.body).toEqual(body);
+        }
+    });
+
+    it("keeps prepared JSON intact but excludes credentials from cache identity", async () => {
+        const body = ' { "key": "body-secret", "custom": 42 }\n';
+        for (const prepared of [false, true]) {
+            const app = new Hono<TestEnv>().post(
+                "/generate",
+                async (c, next) => {
+                    if (prepared) c.set("generationRequestBody", body);
+                    await next();
+                },
+                prepareGenerationRequest,
+                (c) =>
+                    c.json({
+                        body: c.var.generationRequestBody,
+                        identity: c.var.generationCacheBody,
+                    }),
+            );
+            const response = await app.request("/generate", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body,
+            });
+            expect(await response.json()).toEqual({
+                body,
+                identity: '{"custom":42}',
+            });
+        }
     });
 
     it("leaves explicit streams on the direct request path", async () => {
@@ -254,7 +321,7 @@ describe("generation request deduplication", () => {
         expect(generation.originHits).toBe(1);
     });
 
-    it("replays multipart files without putting API keys in the job", async () => {
+    it("replays all multipart fields while excluding credentials from cache identity", async () => {
         const cache = new Map<string, string>();
         const jobs: GenerationJob[] = [];
         const adapter = createAdapter(cache);
@@ -336,7 +403,8 @@ describe("generation request deduplication", () => {
             headers: job.request.headers,
             body: job.request.body?.slice().buffer,
         }).formData();
-        expect(replayed.get("key")).toBeNull();
+        expect(replayed.get("key")).toBe("body-secret");
+        expect(job.cache.key).not.toContain("body-secret");
         expect(replayed.get("model")).toBe("voice-transform");
         const audio = replayed.get("audio");
         expect(audio).toBeInstanceOf(File);

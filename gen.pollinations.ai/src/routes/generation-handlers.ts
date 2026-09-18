@@ -58,7 +58,7 @@ export const simpleAudioQuerySchema = z.object({
         .pipe(z.number().min(0.5).max(300).optional())
         .meta({
             description:
-                "Music duration in seconds (`elevenlabs/music-v2` 3-300; `google/lyria-3-clip-preview` fixed at 30)",
+                "Music duration in seconds (`elevenlabs/music-v2` and `elevenlabs/music-v2.5` 3-300; `google/lyria-3-clip-preview` fixed at 30)",
             example: "30",
         }),
     seconds: z.coerce.number().min(1).max(380).optional().meta({
@@ -80,7 +80,7 @@ export const simpleAudioQuerySchema = z.object({
         .transform((v) => v === "true")
         .meta({
             description:
-                "If true, guarantees instrumental output (`elevenlabs/music-v2` only)",
+                "If true, guarantees instrumental output (`elevenlabs/music-v2` and `elevenlabs/music-v2.5` only)",
             example: "false",
         }),
     instructions: z.string().optional().meta({

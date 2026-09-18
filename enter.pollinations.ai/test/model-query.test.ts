@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-    ensureModelQuerySource,
+    ensureModelQueryDefaults,
     getModelQueryDraftFilter,
     getModelQueryDraftSuggestionValue,
     getModelQueryFilterTokens,
@@ -88,17 +88,44 @@ describe("parseModelQuery", () => {
     });
 });
 
-describe("model query source", () => {
-    it("preselects official without replacing an explicit source", () => {
-        expect(ensureModelQuerySource("")).toBe("source:official");
-        expect(ensureModelQuerySource("capability:reasoning")).toBe(
-            "source:official capability:reasoning",
+describe("model query defaults", () => {
+    it("preselects official and healthy without replacing explicit or unfinished filters", () => {
+        expect(ensureModelQueryDefaults("")).toBe(
+            "source:official status:healthy",
         );
-        expect(ensureModelQuerySource("source:community")).toBe(
-            "source:community",
+        expect(ensureModelQueryDefaults("capability:reasoning")).toBe(
+            "source:official status:healthy capability:reasoning",
         );
-        expect(ensureModelQuerySource("source:")).toBe("source:");
+        expect(ensureModelQueryDefaults("source:community")).toBe(
+            "status:healthy source:community",
+        );
+        expect(ensureModelQueryDefaults("source: status:")).toBe(
+            "source: status:",
+        );
+        expect(ensureModelQueryDefaults("SOURCE:community status:all")).toBe(
+            "SOURCE:community status:all",
+        );
     });
+});
+
+it("filters by health without hiding unknown models in all mode", () => {
+    for (const status of ["healthy", "degraded", "down", "unknown"] as const) {
+        const candidate = model({
+            health: { status, requests: 0, successRate: null },
+        });
+        expect(matches(candidate, "status:healthy")).toBe(status === "healthy");
+        expect(matches(candidate, ensureModelQueryDefaults(""))).toBe(
+            status === "healthy",
+        );
+        expect(matches(candidate, "status:all")).toBe(true);
+    }
+    expect(matches(model(), "status:healthy")).toBe(false);
+    expect(matches(model(), ensureModelQueryDefaults(""))).toBe(false);
+    expect(matches(model(), "status:all")).toBe(true);
+    expect(getModelQuerySuggestions("status:", [])).toEqual([
+        "status:all ",
+        "status:healthy ",
+    ]);
 });
 
 describe("model query filter tokens", () => {
@@ -312,6 +339,7 @@ describe("getModelQuerySuggestions", () => {
             "id:",
             "publisher:",
             "source:",
+            "status:",
             "type:",
         ]);
         expect(getModelQuerySuggestions("access:", models)).toEqual([

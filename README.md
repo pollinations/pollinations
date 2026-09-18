@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-09-17** – **✨ Your key has a pulse** Account menus now show live Pollen balances, limits, and key details—and refresh after buying Pollen or changing permissions. [Manage keys](https://enter.pollinations.ai/keys)
+- **2026-09-17** – **📱 Model status, minus the weather report** Check cached model uptime directly with the new `/models/status` endpoint. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-09-17** – **🤖 DCORE joins the garden** Generate Pollinations images from a Discord–Telegram bot already tending 16 servers. [Try it](https://bot.dtempest.online) <!-- app -->
+- **2026-09-17** – **💡 A small pile of developer shortcuts** New community tools turn plain English into regexes, SQL, API blueprints, converted code, or unit tests. [Try it](https://fadyabohamza-netizen.github.io/regexly) [Try it](https://fadyabohamza-netizen.github.io/sqlcraft) [Try it](https://fadyabohamza-netizen.github.io/apiscribe) [Try it](https://fadyabohamza-netizen.github.io/codeverter) [Try it](https://fadyabohamza-netizen.github.io/testmine) <!-- app -->
 - **2026-09-16** – **🎵 ElevenLabs Music v2.5** Generate and inpaint music with the newer `elevenlabs/music-v2.5` model through the audio API. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-09-16** – **🎨 CatGPT Has Opinions** Call `Creatneworld/catgpt-comic` through chat to get a sarcastic cat answer and an inline single-panel comic in one Markdown response.
 - **2026-09-16** – **💡 The bees remember now** Computer MCP agents can now share Git-backed collective memory—read, commit, and build on notes without handing shell access any credentials. [MCP Servers](https://gen.pollinations.ai/docs#tag/mcp-servers)
 - **2026-09-16** – **🤖 A fox remembers** Chat with Moko, a desert-fox NPC that keeps the facts you ask it to remember between conversations. [Try it](https://heard-was-lessons-altered.trycloudflare.com) <!-- app -->
 - **2026-09-15** – **✨ A catalog with a pulse** Filter model catalogs by `source=official|community` and opt into healthy models with `reliability=reliable`; responses now include compact 24-hour health data. [Browse models](https://gen.pollinations.ai/v1/models)
 - **2026-09-15** – **🔗 Routes learn to self-report** Inspect primary and fallback model routes, rescue counts, and per-attempt upstream latency through the new `/v1/models/status/routes` endpoint. [Check the API docs](https://gen.pollinations.ai/docs)
-- **2026-09-15** – **🤖 Scout finds the trail** `meta/llama-4-scout` is back: text, vision, streaming, up to 10 images, and 16,384 output tokens, with primary and fallback routes behind it. [Try it](https://pollinations.ai/play)
-- **2026-09-15** – **🎨 Pick the best bloom** PollenBatch generates quick low-res image variations before high-res regeneration, with a character engine for keeping recurring faces less mysteriously mutable. [Try it](https://donwrightdesigns.github.io/pollenbatch) <!-- app -->
-- **2026-09-14** – **🤖 The hive speaks LLM** Install `llm-pollinations` to use Pollinations chat models in LLM’s CLI and Python—streaming, vision, tool calls, reasoning, and multi-turn chat included. [View repo](https://github.com/pollinations/pollinations)
-- **2026-09-14** – **🎯 Agents, meet the quest garden** Use a qualifying agent to earn 0.25 Pollen, or create an agent somebody uses to earn 2 Pollen. The bees have started keeping score.
 ---
 
 ## 🌱 Introduction

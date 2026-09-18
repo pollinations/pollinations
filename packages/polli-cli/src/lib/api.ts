@@ -26,6 +26,8 @@ interface RequestOptions {
     method?: string;
     body?: unknown;
     apiKey?: string;
+    /** Return the body as raw text instead of parsed JSON (e.g. CSV exports). */
+    raw?: boolean;
 }
 
 const request = async <T>(
@@ -55,7 +57,9 @@ const request = async <T>(
         );
     }
 
-    return res.json() as Promise<T>;
+    return options.raw
+        ? (res.text() as Promise<T>)
+        : (res.json() as Promise<T>);
 };
 
 export const gen = <T>(path: string, options?: RequestOptions) =>

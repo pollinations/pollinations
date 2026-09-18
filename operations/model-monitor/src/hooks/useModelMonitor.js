@@ -6,8 +6,7 @@ import {
     rollupRows,
 } from "../model-data.js";
 
-const MODEL_ROUTE_HEALTH_URL =
-    "https://gen.pollinations.ai/v1/models/status/routes";
+const MODEL_ROUTE_HEALTH_URL = "https://gen.pollinations.ai/models/status";
 const MODEL_CATALOG_URL = "https://gen.pollinations.ai/models";
 
 // Minutes parameter for the parameterized model_route_health pipe
@@ -82,21 +81,10 @@ export function useModelMonitor(aggregationWindow = "60m") {
                 throw new Error(`Model status API error: ${response.status}`);
             }
 
-            const sourceTimestamp = response.headers.get(
-                "X-Model-Status-Timestamp",
-            );
-            if (!sourceTimestamp) {
-                throw new Error("Model status API omitted its data timestamp");
-            }
-
             const data = await response.json();
             setRouteStats(data.data || []);
-            setLastUpdated(new Date(sourceTimestamp));
-            setHealthError(
-                response.headers.get("X-Model-Status-Stale") === "true"
-                    ? "Live health data unavailable; showing cached data"
-                    : null,
-            );
+            setLastUpdated(new Date());
+            setHealthError(null);
         } catch (err) {
             console.error("Failed to fetch model health stats:", err);
             setHealthError("Failed to fetch health stats");

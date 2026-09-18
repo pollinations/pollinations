@@ -65,6 +65,7 @@ type EarningsDataResult = {
     usedModels: { id: string; label: string }[];
     chartData: DataPoint[];
     hasData: boolean;
+    hasPeriodData: boolean;
     exportRows: DeveloperEarningsRow[];
     stats: {
         totalRequests: number;
@@ -312,5 +313,6 @@ export function useEarningsData(
         stats,
         exportRows: dailyEarnings,
         hasData: filteredDailyEarnings.length > 0,
+        hasPeriodData: dailyEarnings.length > 0,
     };
 }

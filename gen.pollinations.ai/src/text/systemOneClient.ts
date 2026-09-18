@@ -1,4 +1,5 @@
 import { ensureUpstreamOk } from "@shared/error.ts";
+import { withUpstreamRequestUrl } from "./genericOpenAIClient.js";
 import type {
     ChatCompletion,
     ChatMessage,
@@ -160,9 +161,11 @@ export async function callSystemOne(
                 total_tokens:
                     result.usage.input_tokens + result.usage.output_tokens,
             },
-            upstreamRequestUrl: requestUrl,
         };
-        return options.stream ? toStreamedCompletion(completion) : completion;
+        return withUpstreamRequestUrl(
+            options.stream ? toStreamedCompletion(completion) : completion,
+            requestUrl,
+        );
     } catch (thrown) {
         const error =
             thrown instanceof Error

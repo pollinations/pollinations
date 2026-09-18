@@ -124,6 +124,13 @@ describe("System One adapter", () => {
         expect(
             JSON.parse(String(result.choices?.[0]?.message?.content)),
         ).toEqual(answers);
+        // Internal routing metadata must not reach the OpenAI response body.
+        expect(result.upstreamRequestUrl?.href).toBe(
+            "https://api.typesafe.ai/v1/systemone",
+        );
+        expect(JSON.parse(JSON.stringify(result))).not.toHaveProperty(
+            "upstreamRequestUrl",
+        );
     });
 
     it("routes openjev directly with the configured upstream model", async () => {

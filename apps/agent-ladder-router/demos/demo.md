@@ -45,6 +45,14 @@ occurred live. The escalation path is covered by static tests in
 429/5xx/abort, trace lists every attempt (`A failed, escalated ->
 B ok`).
 
+## Endpoint-awareness (live-catalog verified, 2026-09-18)
+
+`community/MarcosFRG/deepseek-v4-flash-0731` was ~10x cheaper than the
+winner, yet never picked on `/v1/responses`: its catalog entry lists
+only `/v1/chat/completions, /text, /text/{prompt}`. The ladder's
+endpoint filter excluded it correctly there. Health-first ordering
+kept the healthy pick on top per endpoint.
+
 ## Notes
 
 - Streaming requests forward to the first ladder pick unchanged

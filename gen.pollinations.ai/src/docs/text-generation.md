@@ -122,13 +122,13 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 
 Models that advertise `/v1/responses` also accept OpenAI's cache controls. Set `prompt_cache_options.mode` to `explicit` and place `prompt_cache_breakpoint: { "mode": "explicit" }` on the content block ending each stable prefix (up to four). Chat requests adapted to Responses preserve these markers; the existing `cache_control: { "type": "ephemeral" }` marker is translated to the same explicit breakpoint. Managed prompt agents apply an explicit request without caller markers to their configured static prompt.
 
-### Typed decisions (`openjev`)
+### Typed decisions (`typesafe/jev`)
 
-`openjev` returns calibrated judgments instead of free text. The outer `model` selects this route; the upstream TypeSafe model is configured by Pollinations. Only the last `user` message is used; its `content` is a JSON string with the native TypeSafe request: a `state` and a map of `questions`, each a native `choice`, `score`, or `noul`. Earlier turns, system instructions and text-generation settings are ignored. With `stream: true` the finished answers arrive as one content chunk followed by the usage chunk.
+`typesafe/jev` (alias `jev`) returns calibrated judgments instead of free text. The outer `model` selects this route; the upstream TypeSafe model is configured by Pollinations. Only the last `user` message is used; its `content` is a JSON string with the native TypeSafe request: a `state` and a map of `questions`, each a native `choice`, `score`, or `noul`. Earlier turns, system instructions and text-generation settings are ignored. With `stream: true` the finished answers arrive as one content chunk followed by the usage chunk.
 
 ```json
 {
-  "model": "openjev",
+  "model": "typesafe/jev",
   "messages": [
     {
       "role": "user",

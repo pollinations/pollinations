@@ -162,7 +162,7 @@ test("sends native state and questions in one non-streaming chat completion", as
             "application/json",
         );
         const body = JSON.parse(init.body);
-        assert.equal(body.model, "openjev");
+        assert.equal(body.model, "typesafe/jev");
         assert.equal(body.messages.length, 1);
         assert.equal(body.messages[0].role, "user");
         assert.deepEqual(JSON.parse(body.messages[0].content), {

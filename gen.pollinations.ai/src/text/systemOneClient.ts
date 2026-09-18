@@ -40,7 +40,7 @@ function parseNativeRequest(messages: ChatMessage[]): {
     const message = messages.findLast((item) => item?.role === "user");
     if (typeof message?.content !== "string") {
         throw nativeRequestError(
-            "openjev requires a user message with string content.",
+            "typesafe/jev requires a user message with string content.",
         );
     }
     let payload: unknown;
@@ -48,7 +48,7 @@ function parseNativeRequest(messages: ChatMessage[]): {
         payload = JSON.parse(message.content);
     } catch {
         throw nativeRequestError(
-            "openjev could not parse the user message content as JSON.",
+            "typesafe/jev could not parse the user message content as JSON.",
         );
     }
     if (
@@ -57,7 +57,7 @@ function parseNativeRequest(messages: ChatMessage[]): {
         !isPlainObject(payload.questions)
     ) {
         throw nativeRequestError(
-            'openjev expects a JSON object with "state" and a "questions" map.',
+            'typesafe/jev expects a JSON object with "state" and a "questions" map.',
         );
     }
     return { state: payload.state, questions: payload.questions };
@@ -103,7 +103,7 @@ export async function callSystemOne(
     const apiKey = options.modelConfig?.["typesafe-api-key"];
     if (typeof apiKey !== "string" || !apiKey) {
         throw serviceError(
-            "TypeSafe credentials are not configured for openjev.",
+            "TypeSafe credentials are not configured for typesafe/jev.",
             500,
         );
     }

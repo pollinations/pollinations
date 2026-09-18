@@ -1128,8 +1128,8 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
-    openjev: {
-        aliases: [],
+    "typesafe/jev": {
+        aliases: ["jev"],
         provider: "typesafe",
         publisher: "TypeSafe",
         category: "text",
@@ -1141,7 +1141,7 @@ const TEXT_BASE_SERVICES = {
             promptTextTokens: perMillion(0.042),
             completionTextTokens: perMillion(0),
         },
-        title: "OpenJev",
+        title: "Jev",
         description:
             "Typed decisions with calibrated confidence instead of free text; " +
             "send the native state and questions as JSON in the last user message",

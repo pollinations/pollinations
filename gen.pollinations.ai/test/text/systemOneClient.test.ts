@@ -66,10 +66,9 @@ afterEach(() => {
 });
 
 describe("System One adapter", () => {
-    it("resolves openjev without the retired public names", () => {
-        expect(findModelByName("openjev")?.name).toBe("openjev");
-        expect(findModelByName("jev")).toBeNull();
-        expect(findModelByName("typesafe/jev")).toBeNull();
+    it("resolves the canonical name and the jev alias", () => {
+        expect(findModelByName("typesafe/jev")?.name).toBe("typesafe/jev");
+        expect(findModelByName("jev")?.name).toBe("typesafe/jev");
     });
 
     it("forwards native state and questions in one message and returns native answers", async () => {
@@ -133,7 +132,7 @@ describe("System One adapter", () => {
         );
     });
 
-    it("routes openjev directly with the configured upstream model", async () => {
+    it("routes typesafe/jev directly with the configured upstream model", async () => {
         const payloadWithModel = JSON.stringify({
             model: "inner-model-must-not-route",
             state: nativeState,
@@ -163,7 +162,7 @@ describe("System One adapter", () => {
         await generateTextPortkey(
             [{ role: "user", content: payloadWithModel }],
             {
-                model: "openjev",
+                model: "typesafe/jev",
                 modelConfig: { ...modelConfig, model: "jev-1.13.0" },
             },
             portkeyFetcher,
@@ -305,7 +304,8 @@ describe("System One adapter", () => {
             callSystemOne([{ role: "user", content: nativeContent }], {}),
         ).rejects.toMatchObject({
             status: 500,
-            message: "TypeSafe credentials are not configured for openjev.",
+            message:
+                "TypeSafe credentials are not configured for typesafe/jev.",
         });
         expect(fetchSpy).not.toHaveBeenCalled();
     });

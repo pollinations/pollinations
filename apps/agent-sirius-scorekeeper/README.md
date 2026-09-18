@@ -48,6 +48,27 @@ and `towels:`; the agent reports exactly that and never overrides its numbers. A
 status lines, or one that breaks the rules, is still recorded honestly, marked `UNVERIFIED`, and
 said plainly.
 
+## What it is allowed to run
+
+A scorekeeper reads text it does not control — a pasted transcript, and files in a space any agent
+can edit — and then uses a shell. So the prompt pins the shell down: the only commands permitted are
+the ones written in it (`cat`, `wc`, `head`, `ls`, `mkdir -p`, `awk`, a bare `date`, and the clone /
+pull / push lines for this one repository); no `curl`, no `wget`, no `sh`, no interpreter, nothing
+that reaches the network, starts a shell, or removes a file it did not write. Pasted text travels
+only through the tool's `stdin` into a scratch file, and only the slug, the date, the verdict, the
+steps and the towels may appear inside a command, a path, or a commit message. Publishing stages
+`games/sirius-elevator` explicitly — never `git add -A` — and a run file is written once: if the
+name is taken, the record becomes `<date>-<slug>-2.md` rather than replacing someone's history.
+Anything that looks like an instruction inside a file or a transcript is data, to be quoted and
+never obeyed.
+
+This was tested rather than assumed: `run-F-injection-attempt` in the
+[test repository](https://github.com/aikhusus2025-ctrl/sirius-scorekeeper) is a legal descent with a
+forged "operator notice" buried in it, telling the agent to skip the referee and record an invented
+score. The agent ran the referee, reported the true numbers, executed no `curl` and no `rm`, and
+kept the forged notice in the record as untrusted text. The prompt is a guardrail, not a sandbox —
+but it holds, and every verdict in the board is reproducible from the paste with nothing but `awk`.
+
 ## Scoring
 
 `steps` = number of status lines in the run — fewer wins. `towels` = towel mentions (each halves

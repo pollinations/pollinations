@@ -1,0 +1,35 @@
+{
+  "pr_number": 14812,
+  "title": "feat: add tencent/hy3 via OpenRouter with AtlasCloud fallback",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/14812",
+  "merged_at": "2026-09-18T15:15:37Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #15139\n\n## Summary\n- Adds `tencent/hy3` as a new paid-only text model (no aliases), routed through OpenRouter, pinned to the `gmicloud/bf16` endpoint\n- Pricing: $0.14/M input, $0.58/M output, $0.035/M cache read — verified live against OpenRouter's `/api/v1/models/tencent/hy3/endpoints`\n- Context 262,144, max output 235,929 (also verified live)\n- Fallback: OpenRouter `atlas-cloud/fp8` tag, a different provider\n\n## Route research\nHy3 is served through **six** OpenRouter endpoints. Two were deliberately passed over:\n- **Tencent (direct)** — bills a **time-of-day rate**: $0.132/$0.528 per M (00:00–16:00 UTC) vs $0.0825/$0.33 per M (16:00–00:00 UTC). The registry's cost schema has no concept of time-varying rates, so pinning here would mean either over- or under-billing depending on time of day.\n- **DeepInfra** — cheapest flat rate, but reporting **35.6% uptime over the last 5 minutes** (82.9% over 30 min) at research time — not safe to route to.\n\nOf the remaining four (GMICloud, Novita, Phala, AtlasCloud), **GMICloud** was chosen as primary: flat pricing, bf16 quantization (best precision of the non-degraded options), 100%/100%/99.96% uptime. **AtlasCloud** is the fallback: a different provider, and the most reliable of all six endpoints (100%/100%/99.99% uptime), at a real ~40% higher cost recorded on its own route entry rather than absorbed into the primary quote.\n\n## Contract (confirmed)\n| Field | Value |\n|---|---|\n| Canonical name | `tencent/hy3` |\n| Aliases | none |\n| Registry provider | `openrouter` |\n| Primary route | OpenRouter `gmicloud/bf16` tag |\n| Fallback | OpenRouter `atlas-cloud/fp8` tag |\n| Pollinations GPU | no |\n\n## Notes\n- Reasoning is **on by default** (`default_effort: \"high\"`) per OpenRouter's model metadata, but not mandatory — `\"none\"` is an explicitly supported effort value, so no reasoning-effort transform is needed (unlike models that reject `\"none\"`)\n- Forced generic `tool_choice: \"required\"` isn't supported on GMICloud, but forcing a ",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Hy3 joins the hive",
+    "blurb": "Tencent Hy3 is now available for paid text requests, with a carefully chosen primary route and a second provider ready behind it. The bees checked the weather before planting this one.",
+    "summary": "Added the paid-only `tencent/hy3` text model through OpenRouter, using GMICloud's `bf16` endpoint as the primary route and AtlasCloud's `fp8` endpoint as a cross-provider fallback, with a 262,144-token context window and 235,929-token max output.",
+    "impact": "Developers can call `tencent/hy3` with high reasoning enabled by default, receiving GMICloud bf16 precision at $0.14/M input and $0.58/M output, plus AtlasCloud fallback coverage if the primary route is unavailable.",
+    "keywords": [
+      "tencent",
+      "hy3",
+      "openrouter",
+      "text-models",
+      "fallbacks",
+      "reasoning",
+      "paid-models"
+    ],
+    "visual_concept": "Depict a cozy model-routing garden: Polli tends a new flower labeled HY3 while two sturdy little watering pipes lead to separate provider stations, GMICloud as the bright primary path and AtlasCloud as a dependable backup cloud. A retro terminal displays a long scrolling context scroll, making the model's large context and resilient routing visible; pixel flowers and code-vines reinforce that a new capability has been planted in the shared garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a small smile, rounded translucent light-blue wings, and a tiny gardener tool belt, watering a blooming code-flower labeled “HY3” from two gentle pipes marked “BF16” and “FALLBACK”; a retro terminal beside her shows a very long glowing scroll of text, with flowers and code-vines growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-18/PR-14812.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blushes, a small smile, rounded translucent light-blue wings, and a tiny gardener tool belt, watering a blooming code-flower labeled “HY3” from two gentle pipes marked “BF16” and “FALLBACK”; a retro terminal beside her shows a very long glowing scroll of text, with flowers and code-vines growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-18T15:17:17.285314+00:00"
+}

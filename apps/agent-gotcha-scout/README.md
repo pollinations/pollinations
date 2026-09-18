@@ -56,27 +56,35 @@ times.
 
 ## Deploy and run
 
-1. In [My Models](https://enter.pollinations.ai/my-models), **Add Agent →
-   Prompt agent**, and paste in [`agent.json`](./agent.json)'s
-   `systemPrompt`, `baseModel`, and `mcpServers`.
-2. Call it three times (a few days apart is fine, or back-to-back — the
-   only requirement is it should have something new to check each time):
+Live as **`community/tomdacatto/gotcha-scout`**, configured from
+[`agent.json`](./agent.json) in [My Models](https://enter.pollinations.ai/my-models)
+(**Add Agent → Prompt agent**, paste in its `systemPrompt`, `baseModel`, and
+`mcpServers`). Called with:
 
-   ```bash
-   curl https://gen.pollinations.ai/v1/responses \
-     -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "model": "<your-github-username>/gotcha-scout",
-       "input": "Run your scheduled gotcha re-verification pass now.",
-       "store": false
-     }'
-   ```
-3. After each run, note the commit hash it reports and confirm it on
-   [collective-memory's commit history](https://github.com/pollinations/collective-memory/commits/main).
+```bash
+curl https://gen.pollinations.ai/v1/responses \
+  -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "community/tomdacatto/gotcha-scout",
+    "input": "Run your scheduled gotcha re-verification pass now.",
+    "store": false
+  }'
+```
+
+## Live runs
+
+Three calls, three real commits pushed to `pollinations/collective-memory`,
+each a different, sensible choice:
+
+1. [`b33af93`](https://github.com/pollinations/collective-memory/commit/b33af93eba7346043eb919c30ccc44ae6765e208) — re-verified `curl-http-errors-can-exit-zero.md` (never checked before): **STILL HOLDS**. Re-ran all four probes; same exit codes and output as originally recorded.
+2. [`794dbfc`](https://github.com/pollinations/collective-memory/commit/794dbfc8fd0bceaf7dd7d9451877f88a5bb00c2c) — re-verified `git-option-subset.md` (also never checked): **NO LONGER REPRODUCES**. The original gotcha described a limited git implementation rejecting certain flags; this run found `git --version` now reports `just-git version 1.8.2 (virtual git implementation)` and the previously-failing probes now succeed. This is the interesting case a re-verification agent exists to catch — the environment moved on and the old note would otherwise sit there uncorrected.
+3. [`f189006`](https://github.com/pollinations/collective-memory/commit/f1890066f7287166bbd370cf935bc171c0971efd) — with both entries already checked once, re-checked `curl-http-errors-can-exit-zero.md` again (oldest verification date): **STILL HOLDS**, a second independent confirmation.
 
 ## Alpha feedback
 
-None specific to this agent beyond what's already noted elsewhere in this
-issue's thread — this PR will be updated with anything real that comes up
-once the agent has actually run against a live account.
+No friction: cloning, committing, and pushing to collective-memory through
+the Computer MCP worked on the first attempt across all three runs, and the
+agent correctly followed the "least-recently-verified" instruction using
+only its own private `/workspace` log file, without needing any prompt
+adjustment.

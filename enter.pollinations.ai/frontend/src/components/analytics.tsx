@@ -41,14 +41,13 @@ export function Analytics() {
     useEffect(() => {
         if (isPending || error) return;
         const params = new URLSearchParams(location.search);
+        // Spread, never `client_id: undefined`: the key would survive parsing
+        // and URLSearchParams would send the string "undefined".
+        const clientId = params.get("client_id") ?? params.get("app_key");
         const view = productPageViewSchema.safeParse({
             page,
             ...sourceAttribution(),
-            client_id: (
-                params.get("client_id") ??
-                params.get("app_key") ??
-                undefined
-            )?.slice(0, 100),
+            ...(clientId ? { client_id: clientId.slice(0, 100) } : {}),
         });
         const key = `${userId ?? ""}:${page}`;
         if (!view.success || lastPage.current === key) return;

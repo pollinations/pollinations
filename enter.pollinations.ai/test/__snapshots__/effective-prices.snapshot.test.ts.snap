@@ -1122,50 +1122,50 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "google/gemma-4-26b-a4b-it": {
     "cost": {
-      "completionTextTokens": 0.000000422,
-      "promptImageTokens": 0.00000013715,
-      "promptTextTokens": 0.00000013715,
+      "completionTextTokens": 0.00000034,
+      "promptImageTokens": 0.00000007,
+      "promptTextTokens": 0.00000007,
     },
     "price": {
-      "completionTextTokens": 0.000000422,
-      "promptImageTokens": 0.00000013715,
-      "promptTextTokens": 0.00000013715,
+      "completionTextTokens": 0.00000034,
+      "promptImageTokens": 0.00000007,
+      "promptTextTokens": 0.00000007,
     },
   },
-  "google/gemma-4-26b-a4b-it:deepinfra": {
+  "google/gemma-4-26b-a4b-it:openrouter:novita-bf16": {
     "cost": {
-      "completionTextTokens": 0.00000034,
-      "promptImageTokens": 0.00000007,
-      "promptTextTokens": 0.00000007,
+      "completionTextTokens": 0.000000422,
+      "promptImageTokens": 0.00000013715,
+      "promptTextTokens": 0.00000013715,
     },
     "price": {
-      "completionTextTokens": 0.00000034,
-      "promptImageTokens": 0.00000007,
-      "promptTextTokens": 0.00000007,
+      "completionTextTokens": 0.000000422,
+      "promptImageTokens": 0.00000013715,
+      "promptTextTokens": 0.00000013715,
     },
   },
   "google/gemma-4-31b-it": {
     "cost": {
-      "completionTextTokens": 0.000000422,
-      "promptImageTokens": 0.0000001477,
-      "promptTextTokens": 0.0000001477,
+      "completionTextTokens": 0.00000038,
+      "promptImageTokens": 0.00000013,
+      "promptTextTokens": 0.00000013,
     },
     "price": {
-      "completionTextTokens": 0.000000422,
-      "promptImageTokens": 0.0000001477,
-      "promptTextTokens": 0.0000001477,
+      "completionTextTokens": 0.00000038,
+      "promptImageTokens": 0.00000013,
+      "promptTextTokens": 0.00000013,
     },
   },
-  "google/gemma-4-31b-it:deepinfra": {
+  "google/gemma-4-31b-it:openrouter:novita-bf16": {
     "cost": {
-      "completionTextTokens": 0.00000038,
-      "promptImageTokens": 0.00000013,
-      "promptTextTokens": 0.00000013,
+      "completionTextTokens": 0.000000422,
+      "promptImageTokens": 0.0000001477,
+      "promptTextTokens": 0.0000001477,
     },
     "price": {
-      "completionTextTokens": 0.00000038,
-      "promptImageTokens": 0.00000013,
-      "promptTextTokens": 0.00000013,
+      "completionTextTokens": 0.000000422,
+      "promptImageTokens": 0.0000001477,
+      "promptTextTokens": 0.0000001477,
     },
   },
   "google/lyria-3-clip-preview": {

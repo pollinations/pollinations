@@ -3124,6 +3124,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000015,
     },
   },
+  "z-ai/glm-5.3-flashx": {
+    "cost": {
+      "completionTextTokens": 0.00000131875,
+      "promptCachedTokens": 0.000000079125,
+      "promptTextTokens": 0.00000039035,
+    },
+    "price": {
+      "completionTextTokens": 0.00000131875,
+      "promptCachedTokens": 0.000000079125,
+      "promptTextTokens": 0.00000039035,
+    },
+  },
   "z-ai/glm-5.3:openrouter:friendli": {
     "cost": {
       "completionTextTokens": 0.0000041778,

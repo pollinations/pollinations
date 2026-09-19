@@ -347,6 +347,18 @@ export const CHAT_PARAMETERS = {
         ...OPENROUTER_REASONING,
         "reasoning_effort",
     ],
+    // OpenRouter Z.AI fp8 tag for GLM-5.3 FlashX (2026-09-19).
+    openRouterGlmFlashx: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "response_format",
+        "temperature",
+        "top_p",
+        "top_k",
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
     // OpenRouter azure/openai tags (2026-09-12); azure/swedencentral is
     // excluded via provider.ignore so pricing stays fixed. Both tags report
     // max_completion_tokens (not max_tokens) as supported.

@@ -686,6 +686,10 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoning,
     },
     {
+        name: "z-ai/glm-5.3-flashx",
+        config: portkeyConfig["z-ai/glm-5.3-flashx"],
+    },
+    {
         name: "minimax/minimax-m2.7",
         config: portkeyConfig["minimax/minimax-m2.7"],
         // Reasoning mandatory: rejects "none"/"minimal", accepts low/medium/high.

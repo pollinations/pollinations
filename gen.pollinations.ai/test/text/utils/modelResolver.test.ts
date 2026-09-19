@@ -142,6 +142,18 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins GLM-5.3 FlashX to Z.AI on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "z-ai/glm-5.3-flashx",
+        });
+
+        expect(result.options.model).toBe("z-ai/glm-5.3-flashx");
+        expect(result.options.provider).toEqual({
+            only: ["z-ai/fp8"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("pins Inkling to Together on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "thinkingmachines/inkling-small",

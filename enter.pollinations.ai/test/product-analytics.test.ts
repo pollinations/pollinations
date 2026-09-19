@@ -261,4 +261,32 @@ test("a start from an untracked page stays out of the funnel ratio", async ({
         (row) => row.event === "sign_in_started",
     );
     expect(start?.page ?? "").toBe("");
+    // The host is recorded even when the path is not one of ours: most starts
+    // come from outside the tracked routes and would otherwise be one bucket.
+    expect(start?.referrer_host).toBe("pollinations.ai");
+});
+
+test("an external path that collides with one of our routes is not our page", async ({
+    mocks,
+}) => {
+    await mocks.enable("github", "tinybird");
+    // '/' is a route of ours, so matching the path alone would credit this
+    // start to our landing page.
+    const started = await SELF.fetch(
+        "http://localhost:3000/api/auth/sign-in/social",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Referer: "https://pollinations.ai/",
+            },
+            body: JSON.stringify({ provider: "github" }),
+        },
+    );
+    expect(started.status).toBe(200);
+    const start = mocks.tinybird.state.productEvents.find(
+        (row) => row.event === "sign_in_started",
+    );
+    expect(start?.referrer_host).toBe("pollinations.ai");
+    expect(start?.page ?? "").toBe("");
 });

@@ -16,7 +16,7 @@ import type { Env } from "../env.ts";
 import { getCohortFromCountry } from "../utils/currency-router.ts";
 import {
     captureFromRequest,
-    referringPage,
+    referringSource,
 } from "../utils/product-analytics.ts";
 import { createStripeClient } from "../utils/stripe.ts";
 import { getUserStripeBillingRow } from "../utils/stripe-billing/customer.ts";
@@ -224,9 +224,12 @@ export const stripeRoutes = new Hono<Env>()
             if (checkoutSession.url) {
                 captureFromRequest(c, "checkout_started", userId, {
                     pack_key: pack.packKey,
-                    // The page the buyer came from, so checkouts divide by
+                    // Where the buyer came from, so checkouts divide by
                     // views of that same page, as sign-ins already do.
-                    page: referringPage(c.req.raw.headers),
+                    ...referringSource(
+                        c.req.raw.headers,
+                        c.env.BETTER_AUTH_URL,
+                    ),
                 });
                 return c.redirect(checkoutSession.url);
             }

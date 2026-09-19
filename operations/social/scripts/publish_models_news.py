@@ -40,6 +40,7 @@ import requests
 
 from common import (
     GISTS_BRANCH,
+    post_discord_webhook,
     GITHUB_API_BASE,
     OWNER,
     REPO,
@@ -95,11 +96,17 @@ def post_to_discord(webhook_url: str, content: str) -> bool:
     """POST to Discord webhook. Truncates safely if the AI overran the prompt's
     1900-char cap so we never split a role mention or code span."""
     content = _safe_truncate(content, DISCORD_CHAR_LIMIT)
-    resp = requests.post(
-        webhook_url,
-        json={"content": content, "allowed_mentions": {"parse": ["roles"]}},
-        timeout=30,
-    )
+    try:
+        resp = post_discord_webhook(
+            webhook_url,
+            json_body={
+                "content": content,
+                "allowed_mentions": {"parse": ["roles"]},
+            },
+        )
+    except Exception as e:
+        print(f"  Discord post failed: {e}", file=sys.stderr)
+        return False
     if 200 <= resp.status_code < 300:
         print("  Discord post sent.")
         return True

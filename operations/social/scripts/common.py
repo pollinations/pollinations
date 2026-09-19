@@ -122,6 +122,50 @@ def github_api_request(
     return resp
 
 
+def post_discord_webhook(
+    webhook_url: str,
+    *,
+    json_body: Optional[Dict] = None,
+    files: Optional[Dict] = None,
+    timeout: int = 30,
+    max_retries: int = MAX_RETRIES,
+) -> requests.Response:
+    """POST to a Discord webhook with retry on transient 5xx / 429 failures.
+
+    Discord occasionally returns 503 during brief outages; without retries the
+    News workflows open failure issues for a one-shot blip.
+    """
+    url = webhook_url
+    if "wait=" not in url:
+        url += ("&" if "?" in url else "?") + "wait=true"
+
+    resp = None
+    last_exc = None
+    for attempt in range(max_retries):
+        try:
+            if files is not None:
+                resp = requests.post(url, files=files, timeout=timeout)
+            else:
+                resp = requests.post(url, json=json_body or {}, timeout=timeout)
+            if resp.status_code < 500 and resp.status_code != 429:
+                return resp
+            print(
+                f"  Discord webhook {resp.status_code} on attempt "
+                f"{attempt + 1}/{max_retries}"
+            )
+        except requests.exceptions.RequestException as e:
+            last_exc = e
+            print(
+                f"  Discord webhook error on attempt "
+                f"{attempt + 1}/{max_retries}: {e}"
+            )
+        if attempt < max_retries - 1:
+            time.sleep(INITIAL_RETRY_DELAY * (2 ** attempt))
+    if last_exc:
+        raise last_exc
+    return resp
+
+
 def parse_json_response(response: str) -> Optional[Dict]:
     """Parse JSON from AI response, stripping markdown fences."""
     text = response.strip()

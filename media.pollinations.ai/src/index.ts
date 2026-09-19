@@ -373,6 +373,15 @@ api.post(
         if (!authResult) {
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
+        // Publishable keys ship in public clients; anyone holding one could
+        // burn the owner's R2 quota. Uploads are secret-key only (same rule
+        // as deletion). A dedicated media:upload scope is tracked in #10249.
+        if (authResult.type !== "secret") {
+            return c.json(
+                { error: "Uploading media requires a secret (sk_) API key" },
+                403,
+            );
+        }
 
         const maxSize = parseInt(c.env.MAX_FILE_SIZE, 10) || DEFAULT_MAX_SIZE;
 

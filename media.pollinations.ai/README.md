@@ -16,7 +16,7 @@ Upload files and get back a URL to use with Pollinations models.
 
 ### Upload a file
 
-Uploads require a pollinations.ai API key. Get one at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
+Uploads require a **secret** (`sk_`) pollinations.ai API key. Publishable (`pk_`) keys are rejected so browser-exposed keys cannot burn R2 quota. Get a key at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
 
 ```bash
 # Multipart form-data
@@ -82,7 +82,7 @@ curl -I https://media.pollinations.ai/3f9c1e2a-7b4d-4e2f-9a1c-8d6b5e4f3a2b
 
 ### `POST /upload`
 
-Upload a media file. **Requires API key** via `Authorization: Bearer <key>` header or `?key=<key>` query parameter.
+Upload a media file. **Requires a secret (`sk_`) API key** via `Authorization: Bearer <key>` header or `?key=<key>` query parameter. Publishable keys receive **403**.
 
 **Request:**
 - `Content-Type: multipart/form-data` with `file` field (optional `tags` field: comma-separated)

@@ -1,0 +1,9 @@
+{
+  "label": "simple text question",
+  "request": {
+    "input": "What is the capital of France?",
+    "store": false
+  },
+  "chosen_model": "qwen/qwen3.7-flash",
+  "reason": "tier fast; no constraints; cost rank 1/60; cost 0.17; no fresh latency"
+}

@@ -1,0 +1,9 @@
+{
+  "label": "hard coding and reasoning task",
+  "request": {
+    "input": "Implement a lock-free ring buffer in Rust and prove its memory ordering is correct under the C++ memory model.",
+    "store": false
+  },
+  "chosen_model": "openai/gpt-6-astra",
+  "reason": "tier deep; needs reasoning; cost rank 44/44; cost 45.00; p95 2661ms"
+}

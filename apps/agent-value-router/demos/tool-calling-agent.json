@@ -1,0 +1,14 @@
+{
+  "label": "tool-calling agent",
+  "request": {
+    "input": "Look up the weather in Lisbon.",
+    "tools": [
+      {
+        "type": "function",
+        "name": "get_weather"
+      }
+    ]
+  },
+  "chosen_model": "qwen/qwen3.7-plus",
+  "reason": "tier balanced; needs tool calling; cost rank 30/59; cost 1.69; no fresh latency"
+}

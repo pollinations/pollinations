@@ -1,0 +1,22 @@
+{
+  "label": "image description",
+  "request": {
+    "input": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "input_text",
+            "text": "Describe this image."
+          },
+          {
+            "type": "input_image",
+            "image_url": "https://example.com/photo.png"
+          }
+        ]
+      }
+    ]
+  },
+  "chosen_model": "google/gemini-3.5-flash-lite",
+  "reason": "tier balanced; needs image input; cost rank 23/44; cost 2.95; p95 1366ms"
+}

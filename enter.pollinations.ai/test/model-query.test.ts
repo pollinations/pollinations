@@ -89,15 +89,13 @@ describe("parseModelQuery", () => {
 });
 
 describe("model query defaults", () => {
-    it("preselects official and healthy without replacing explicit or unfinished filters", () => {
-        expect(ensureModelQueryDefaults("")).toBe(
-            "source:official status:healthy",
-        );
+    it("preselects official without replacing explicit or unfinished filters", () => {
+        expect(ensureModelQueryDefaults("")).toBe("source:official");
         expect(ensureModelQueryDefaults("capability:reasoning")).toBe(
-            "source:official status:healthy capability:reasoning",
+            "source:official capability:reasoning",
         );
         expect(ensureModelQueryDefaults("source:community")).toBe(
-            "status:healthy source:community",
+            "source:community",
         );
         expect(ensureModelQueryDefaults("source: status:")).toBe(
             "source: status:",
@@ -114,13 +112,9 @@ it("filters by health without hiding unknown models in all mode", () => {
             health: { status, requests: 0, successRate: null },
         });
         expect(matches(candidate, "status:healthy")).toBe(status === "healthy");
-        expect(matches(candidate, ensureModelQueryDefaults(""))).toBe(
-            status === "healthy",
-        );
         expect(matches(candidate, "status:all")).toBe(true);
     }
     expect(matches(model(), "status:healthy")).toBe(false);
-    expect(matches(model(), ensureModelQueryDefaults(""))).toBe(false);
     expect(matches(model(), "status:all")).toBe(true);
     expect(getModelQuerySuggestions("status:", [])).toEqual([
         "status:all ",

@@ -39,6 +39,38 @@ it("derives health from the model's rollup row and keeps it for filtering", () =
     ]);
 });
 
+it("resolves video and 3d model health from generate.image rollup rows", () => {
+    const rows = [
+        {
+            model: "video/model",
+            event_type: "generate.image",
+            is_rollup: 1,
+            status_2xx: 99,
+            errors_5xx: 1,
+        },
+        {
+            model: "threed/model",
+            event_type: "generate.image",
+            is_rollup: 1,
+            status_2xx: 100,
+            errors_5xx: 0,
+        },
+    ];
+    const models = getModelPricesFromCatalog(
+        withModelHealth(
+            [
+                { name: "video/model", category: "video" },
+                { name: "threed/model", category: "3d" },
+            ],
+            rows,
+        ),
+    );
+    expect(models.map((model) => model.health?.status)).toEqual([
+        "healthy",
+        "healthy",
+    ]);
+});
+
 it("keeps search aliases but never transfers historical statistics to a new ID", () => {
     const catalog = [
         {

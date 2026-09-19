@@ -3104,6 +3104,37 @@ describe("trackResponse modelUsed", () => {
         });
     });
 
+    it("keeps choice.error.message when finish_reason is error", async () => {
+        const error = {
+            message: "tool call aborted: rate limited",
+            code: "agent_error",
+        };
+        const body = `data: ${JSON.stringify({
+            choices: [{ finish_reason: "error", error }],
+            usage: {
+                prompt_tokens: 10,
+                completion_tokens: 0,
+                total_tokens: 10,
+            },
+        })}\n\ndata: [DONE]\n\n`;
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            new Response(body, {
+                headers: { "content-type": "text/event-stream" },
+            }),
+            candidateFixture(),
+        );
+        expect(tracking).toMatchObject({
+            responseStatus: 502,
+            isBilledUsage: false,
+            errorTracking: {
+                errorResponseCode: "agent_error",
+                errorMessage: error.message,
+            },
+        });
+    });
+
     it("keeps the code and message of any terminal stream error", async () => {
         const error = {
             message: "Agent reused a tool call ID",

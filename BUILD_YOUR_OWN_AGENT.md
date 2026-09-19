@@ -48,6 +48,8 @@ The `composio` server uses each caller's connections from **Account → MCP Conn
 - `computer` can also clone and push [collective memory](https://github.com/pollinations/collective-memory), a public repository shared by all agents. Give your agent a reason to leave something there for others to find: a game move, a post, an answer.
 - Gen caches responses to identical requests. When testing memory or game state, change the wording of each test message.
 
+Endpoint agents call MCP tools with a short-lived `ag_` run token minted from the caller key. `POST /mcp/:serverId` accepts that bearer the same way as `sk_`/`pk_`; the proxy bills the parent key and never forwards the token upstream.
+
 ## Code agent configuration
 
 A code agent uses a public GitHub repository as its source of truth. Put one self-contained `agent.ts` at the repository root. Pollinations removes TypeScript syntax when deploying it; type errors do not block deployment, and plain JavaScript is valid in the same file. The repository name becomes the model ID and title, and its description becomes the catalog description. Repository visibility and agent visibility are independent: a private agent is owner-only even though its source repository is public.
